@@ -17,6 +17,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -24,10 +27,14 @@ import java.util.regex.Pattern;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.crypt.Base64;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -45,6 +52,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
@@ -106,6 +114,51 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    public static void main(String[] args) {
+        LookAndFeelController.getInstance().setUIManager();
+        showFreeDialog();
+
+        System.exit(1);
+
+    }
+
+    private static void showFreeDialog() {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    String lng = System.getProperty("user.language").toLowerCase();
+                    String message = null;
+                    String title = null;
+                    if ("de".equals(lng)) {
+                        title = "Uploaded.to Free Download";
+                        message = "Du lädst im kostenlosen Modus von Uploaded.to.\r\n";
+                        message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n";
+                        message += "Falls du allerdings mehrere Dateien\r\n" + "                        - und das möglichst Fullspeed ohne Unterbrechungen - \r\n" + "laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnser Erfahrung nach lohnt sich das - Aber entscheide am besten selbst.   ";
+
+                    } else {
+                        title = "Uploaded.to Free Download";
+                        message = "You are using the Uploaded.to Free Mode.\r\n";
+                        message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n";
+                        message += "However, if you want to download serveral files\r\n" + "                         - and if possible  fullspeed and without any wait times - \r\n" + "you really should have a look at the Premium Mode.\r\n\r\nAccording to our experience, Premium is worth the money - but decide yourself. Give it a try!   ";
+
+                    }
+                    JOptionPane.showMessageDialog(JDGui.getInstance().getMainFrame(), message, title, JOptionPane.INFORMATION_MESSAGE, null);
+                    try {
+                        CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?ul.to&freedialog"));
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://uploaded.to/");
@@ -152,8 +205,7 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content
-                     * length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.to/api/filemultiple", sb.toString());
@@ -370,8 +422,7 @@ public class Uploadedto extends PluginForHost {
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("Datei herunterladen")) {
                 /*
-                 * we get fresh entry page after clicking download, means we
-                 * have to start from beginning
+                 * we get fresh entry page after clicking download, means we have to start from beginning
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
             }
