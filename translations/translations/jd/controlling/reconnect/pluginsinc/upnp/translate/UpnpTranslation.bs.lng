@@ -1,6 +1,9 @@
 AutoDetectAction_run_optimize=Optimiziraj: %s1
 UPNPReconnectInvoker_getName_=Ponovno konektovanje UPNP Rutera
+UPNPRouterPlugin_run_error=Nije bilo moguće pronaći niti jedan UPNP uređaj. Probajte Aktivnmo Zaglavlje Ponovnu konekciju umjesto toga!
+UPNPRouterPlugin_run_mesg=Skeniranje svih mrežnih sučelja
 UPNPRouterPlugin_run_wizard_title=UPNP Ruter Čarobnjak
+UPNPScannerAction_UPNPScannerAction_tt=Pokušava da pronađe sve UPNP Uređaje za Ponovno konektovanje u vašoj Mreži, i nudi vam da izaberete koji želite da koristite za Ponovno konektovanje
 auto=UPNP Automatsko Podešavanje
 interaction_UpnpReconnect_wanservice_ppp=Protokol od-tačke-do-tačke
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Nije uspjelo
