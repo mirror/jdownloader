@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -33,8 +31,6 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.crypt.Base64;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -114,48 +110,37 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
-    public static void main(String[] args) {
-        LookAndFeelController.getInstance().setUIManager();
-        showFreeDialog();
-
-        System.exit(1);
-
-    }
-
     private static void showFreeDialog() {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 @Override
                 public void run() {
-                    String lng = System.getProperty("user.language").toLowerCase();
-                    String message = null;
-                    String title = null;
-                    if ("de".equals(lng)) {
-                        title = "Uploaded.to Free Download";
-                        message = "Du lädst im kostenlosen Modus von Uploaded.to.\r\n";
-                        message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n";
-                        message += "Falls du allerdings mehrere Dateien\r\n" + "                        - und das möglichst Fullspeed ohne Unterbrechungen - \r\n" + "laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnser Erfahrung nach lohnt sich das - Aber entscheide am besten selbst.   ";
-
-                    } else {
-                        title = "Uploaded.to Free Download";
-                        message = "You are using the Uploaded.to Free Mode.\r\n";
-                        message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n";
-                        message += "However, if you want to download serveral files\r\n" + "                         - and if possible  fullspeed and without any wait times - \r\n" + "you really should have a look at the Premium Mode.\r\n\r\nAccording to our experience, Premium is worth the money - but decide yourself. Give it a try!   ";
-
-                    }
-                    JOptionPane.showMessageDialog(JDGui.getInstance().getMainFrame(), message, title, JOptionPane.INFORMATION_MESSAGE, null);
                     try {
-                        CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?ul.to&freedialog"));
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = "Uploaded.to Free Download";
+                            message = "Du lädst im kostenlosen Modus von Uploaded.to.\r\n";
+                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst.   ";
+                        } else {
+                            title = "Uploaded.to Free Download";
+                            message = "You are using the Uploaded.to Free Mode.\r\n";
+                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Give it a try!   ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?ul.to&freedialog"));
+                        }
+                    } catch (Throwable e) {
                     }
                 }
             });
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
         }
     }
 
@@ -360,6 +345,14 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
+        try {
+            if (getPluginConfig().getBooleanProperty("premAdShown", false) == false) {
+                showFreeDialog();
+            }
+        } catch (final Throwable e) {
+        } finally {
+            getPluginConfig().setProperty("premAdShown", true);
+        }
         workAroundTimeOut(br);
         String id = getID(downloadLink);
         br.setFollowRedirects(false);
@@ -570,7 +563,7 @@ public class Uploadedto extends PluginForHost {
             String ret = br.getRedirectLocation();
             if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
-            String size = br.getRegex(".+[\r\n]{1,2}(.+)").getMatch(0);
+            String size = br.getRegex("[\r\n]([0-9\\, TBMK]+)").getMatch(0);
             if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
             downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));
