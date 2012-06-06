@@ -76,6 +76,7 @@ gui_downloadview_statustext_jac=Rilevazione Captcha
 gui_javacheck_newerjavaavailable_msg=JDownloader viene eseguito basandosi su Java. Assicuranrsi di avere la versione aggiornata di Java installata comporta migliori prestazioni e un'esperienza migliore con JDownloader!  JDownloader verrà eseguito più stabilmente, velocemente e con un aspetto migliore.     Visita http://jdownloader.org/download
 gui_javacheck_newerjavaavailable_title=Versione Java non aggiornata: %s1!
 gui_mainframe_title_updatemessage2=%s1 aggiornamenti disponibili
+gui_menu_extensions=Strumenti
 gui_setting_folderchooser_title=Scegli cartella
 gui_settings__gui_title=Aspetto
 gui_settings_basicauth_title=Autentificazione base
