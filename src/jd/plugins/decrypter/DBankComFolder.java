@@ -17,11 +17,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -51,20 +54,38 @@ public class DBankComFolder extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
         }
-        final String[][] linkInformation = br.getRegex("\"name\":\"([^<>\"]*?)\".*?\"size\":(\\d+).*?\"downloadurl\":\"([^<>\"]*?)\"").getMatches();
-        if (linkInformation != null && linkInformation.length != 0) {
-            for (final String[] linkInfo : linkInformation) {
-                final String finalfilename = Encoding.htmlDecode(linkInfo[0].trim());
-                DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-                dl.setDownloadSize(SizeFormatter.getSize(linkInfo[1] + "b"));
-                dl.setFinalFileName(finalfilename);
-                dl.setAvailable(true);
-                dl.setProperty("premiumonly", true);
-                dl.setProperty("plainfilename", linkInfo[0]);
-                dl.setProperty("mainlink", parameter);
-                decryptedLinks.add(dl);
+
+        String globalLinkData = br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
+        String links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
+
+        if (links == null) return null;
+
+        HashMap<String, String> linkParameter = new HashMap<String, String>();
+
+        for (String[] all : new Regex(links, "\\{(.*?)\\}").getMatches()) {
+            for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
+                linkParameter.put(single[0], single[1]);
             }
+            DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            for (final Entry<String, String> next : linkParameter.entrySet()) {
+                dl.setProperty(next.getKey(), next.getValue());
+            }
+            dl.setProperty("mainlink", parameter);
+            try {
+                dl.setDownloadSize(SizeFormatter.getSize(dl.getStringProperty("size") + "b"));
+            } catch (Throwable e) {
+            }
+            dl.setName(dl.getStringProperty("name", "UnknownTitle" + System.currentTimeMillis()));
+            dl.setAvailable(true);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            decryptedLinks.add(dl);
+            linkParameter.clear();
         }
+
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

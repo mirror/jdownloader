@@ -19,11 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,9 +37,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbank.com" }, urls = { "http://(www\\.)?dbankdecrypted\\.com/\\d+" }, flags = { 2 })
 public class DBankCom extends PluginForHost {
@@ -55,22 +55,68 @@ public class DBankCom extends PluginForHost {
     private static final String MAINPAGE = "http://dbank.com/";
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        account.setValid(true);
+        ai.setStatus("Registered (free) User");
+        return ai;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getStringProperty("mainlink"));
-        final Regex linkInfo = br.getRegex("\"name\":\"" + downloadLink.getStringProperty("plainfilename") + "\".*?\"size\":(\\d+).*?\"downloadurl\":\"([^<>\"]*?)\"");
-        if (linkInfo.getMatches().length < 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(downloadLink.getStringProperty("plainfilename").trim()));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(linkInfo.getMatch(0) + "b"));
+        String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
+        Regex linkInfo = br.getRegex("\"id\":" + downloadLink.getStringProperty("id") + ",\"downloadurl\":\"([^<>\"]*?)\"");
+        /* single download link */
+        if (linkInfo.getMatches().length == 0) linkInfo = br.getRegex("\"downloadurl\":\"([^<>\"]*?)\"");
+
+        if (linkInfo.getMatches().length == 0 || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(decodeUnicode(downloadLink.getStringProperty("name"))));
+        downloadLink.setProperty("downloadurl", linkInfo.getMatch(0));
+        downloadLink.setProperty("encryKey", key);
         return AvailableStatus.TRUE;
+    }
+
+    private void doFree(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getStringProperty("mainlink"));
+
+        String key = downloadLink.getStringProperty("encryKey", null);
+        String enc = downloadLink.getStringProperty("downloadurl", null);
+        String dllink = decrypt(enc, key);
+
+        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.dbankcom.registeredonly", "Only registered users can download"));
+        doFree(downloadLink);
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        requestFileInformation(downloadLink);
+        login(account, false);
+        doFree(downloadLink);
+
     }
 
     @SuppressWarnings("unchecked")
@@ -95,7 +141,7 @@ public class DBankCom extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 // br.getPage("http://login.dbank.com/accounts/loginAuth");
-                br.postPage("http://login.dbank.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.dbank.com%2FServiceLogin.action&forward=&relog=&client=00a5454f01212e0dbe310ea1688c6245&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://login.dbank.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.dbank.com%2FServiceLogin.action&forward=&relog=&client=&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
                 if (!"normal".equals(br.getCookie(MAINPAGE, "login_type"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -114,47 +160,6 @@ public class DBankCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        account.setValid(true);
-        ai.setStatus("Registered (free) User");
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "Development of this plugin isn't finished yet!");
-        login(account, false);
-        br.setFollowRedirects(false);
-        // Hauptlink aufrufen
-        br.getPage(link.getStringProperty("mainlink"));
-        // Darin könnte was nützliches sein, ist halt net static
-        br.getPage("http://www.dbank.com/app/cms/getData.php?callback=jsonp1338205337285&id=1003&_atc_=145");
-        // Den Dateiname brauchste, um an die richtigen Downloadlinks zu kommen
-        final String plainfilename = link.getStringProperty("plainfilename");
-        String dllink = br.getRegex("").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
@@ -170,6 +175,64 @@ public class DBankCom extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    private String decrypt(String enc, String key) {
+        if (enc == null || key == null) return null;
+        enc = new String(jd.nutils.encoding.Base64.decode(enc));
+        String ver = key.substring(0, 2);
+        if ("eb".equals(ver)) { return decryptA(enc, decryptB(key)); }
+        if ("ed".equals(ver)) { return decryptA(enc, JDHash.getMD5(key)); }
+        return enc != null && enc.startsWith("http") ? enc : null;
+    }
+
+    private String decryptA(String enc, String key) {
+        String ret = "";
+        int encLen = enc.length();
+        int keyLen = key.length();
+        for (int i = 0; i < encLen; i++) {
+            ret += String.valueOf((char) (enc.codePointAt(i) ^ key.codePointAt(i % keyLen)));
+        }
+        return ret;
+    }
+
+    private String decryptB(String key) {
+        String ret = "";
+        try {
+            int[] h = new int[256];
+            int c = 0, d = 0, e = 0;
+            for (int i = 0; i < 256; i++) {
+                h[i] = i;
+            }
+            for (int i = 0; i < 256; i++) {
+                d = (d + h[i] + key.codePointAt(i % key.length())) % 256;
+                c = h[i];
+                h[i] = h[d];
+                h[d] = c;
+            }
+            d = 0;
+            for (int i = 0; i < key.length(); i++) {
+                e = (e + 1) % 256;
+                d = (d + h[e]) % 256;
+                c = h[e];
+                h[e] = h[d];
+                h[d] = c;
+                ret += String.valueOf((char) (key.codePointAt(i) ^ h[h[e] + h[d] % 256]));
+            }
+        } catch (Throwable e) {
+            return null;
+        }
+        return ret.equals("") ? null : ret;
+    }
+
+    private String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
 }

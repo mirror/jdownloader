@@ -52,12 +52,12 @@ public class DrTuberCom extends PluginForHost {
         if (fun == null) { return null; }
         fun = fun.replaceAll("s1\\.addVariable\\(\\'config\\',", "var result = ").replaceAll("params\\);", "params;");
         Object result = new Object();
-        final ScriptEngineManager manager = new ScriptEngineManager();
-        final ScriptEngine engine = manager.getEngineByName("javascript");
+        ScriptEngineManager manager = new ScriptEngineManager();
+        ScriptEngine engine = manager.getEngineByName("javascript");
         try {
             engine.eval(fun);
             result = engine.get("result");
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             return null;
         }
         return result.toString();
@@ -69,7 +69,7 @@ public class DrTuberCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -80,14 +80,14 @@ public class DrTuberCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         // Check if link is an embedded link e.g. from a decrypter
-        final String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(.+)").getMatch(0);
+        String vk = new Regex(downloadLink.getDownloadURL(), "vkey=(.+)").getMatch(0);
         if (vk != null) {
-            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("a1hoSjZOYTVHcUR2RjBz")));
-            final String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
+            br.getPage(downloadLink.getDownloadURL() + "&pkey=" + JDHash.getMD5(vk + Encoding.Base64Decode("S0s2Mml5aUliWFhIc2J3")));
+            String finallink = br.getRegex("type=video_click\\&amp;target_url=(http.*?)</url>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Failed to find original link for: " + downloadLink.getDownloadURL());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,7 +103,7 @@ public class DrTuberCom extends PluginForHost {
 
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         String continueLink = getContinueLink(br.getRegex("(var configPath.*?addVariable\\(\\'config\\',.*?;)").getMatch(0));
-        final String vKey = new Regex(continueLink, "vkey=([0-9a-z]+)").getMatch(0);
+        String vKey = new Regex(continueLink, "vkey=([0-9a-z]+)").getMatch(0);
         if (continueLink == null || vKey == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         continueLink = "http://drtuber.com" + Encoding.htmlDecode(continueLink) + "&pkey=" + JDHash.getMD5(vKey + Encoding.Base64Decode("a1hoSjZOYTVHcUR2RjBz"));
         br.getPage(continueLink);
@@ -111,7 +111,7 @@ public class DrTuberCom extends PluginForHost {
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
-        final Browser br2 = br.cloneBrowser();
+        Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
@@ -134,10 +134,11 @@ public class DrTuberCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
+
 }
