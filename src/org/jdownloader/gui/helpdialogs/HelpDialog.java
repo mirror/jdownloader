@@ -26,7 +26,7 @@ public class HelpDialog {
         if (CrossSystem.isWindows()) {
             try {
 
-                SimpleTextBallon d = new SimpleTextBallon(flags, title, msg, icon) {
+                SimpleTextBallon d = new SimpleTextBallon(flags | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, msg, icon) {
 
                     @Override
                     protected boolean doExpandToBottom(boolean b) {
@@ -48,6 +48,7 @@ public class HelpDialog {
                     @Override
                     protected String getDontShowAgainKey() {
                         if (dontShowAgainKey == null) return super.getDontShowAgainKey();
+                        Log.L.info(dontShowAgainKey);
                         return dontShowAgainKey;
                     }
 
@@ -64,7 +65,7 @@ public class HelpDialog {
         } else {
             try {
 
-                ConfirmDialog d = new ConfirmDialog(flags | Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
+                ConfirmDialog d = new ConfirmDialog(flags | Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
                     @Override
                     protected String getDontShowAgainKey() {
                         if (dontShowAgainKey == null) return super.getDontShowAgainKey();
