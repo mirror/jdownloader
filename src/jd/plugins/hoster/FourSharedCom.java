@@ -29,7 +29,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -48,8 +47,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
-    private static String       agent        = RandomUserAgent.generate();
 
+    private static final String agent        = jd.plugins.hoster.MediafireCom.stringUserAgent();
     private static final String PASSWORDTEXT = "enter a password to access";
     private static final Object LOCK         = new Object();
     private static final String COOKIE_HOST  = "http://4shared.com";
@@ -155,8 +154,7 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        // If file isn't available for freeusers we can still try to get the
-        // streamlink
+        // If file isn't available for freeusers we can still try to get the streamlink
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
@@ -199,9 +197,8 @@ public class FourSharedCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         /**
-         * Maybe download failed because we got a wrong directlink, disable
-         * getting directlinks first, if it then fails again the correct error
-         * message is shown
+         * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct
+         * error message is shown
          */
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
@@ -285,8 +282,10 @@ public class FourSharedCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                /** Load cookies */
+                /** Load everything required login and fetchAccountInfo also! */
                 br.setCookiesExclusive(true);
+                br.getHeaders().put("User-Agent", agent);
+                br.setReadTimeout(3 * 60 * 1000);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -301,8 +300,6 @@ public class FourSharedCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setReadTimeout(3 * 60 * 1000);
-                br.getHeaders().put("User-Agent", agent);
                 br.getPage("http://www.4shared.com/");
                 br.setCookie("http://www.4shared.com", "4langcookie", "en");
                 br.postPage("http://www.4shared.com/login", "callback=jsonp" + System.currentTimeMillis() + "&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=false&doNotRedirect=true");
@@ -339,7 +336,7 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
             ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
         }
-        final String accountDetails = br.getRegex("(/account/myAccount\\.jsp\\?sId=[^\"]+)").getMatch(0);
+        final String accountDetails = br.getRegex("(/account/(myAccount|settingsAjax)\\.jsp\\?sId=[^\"]+)").getMatch(0);
         if (accountDetails == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(accountDetails);
         final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
