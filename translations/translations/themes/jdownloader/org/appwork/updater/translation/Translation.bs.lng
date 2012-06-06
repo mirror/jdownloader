@@ -20,6 +20,7 @@ guiless_locked_close_app=Nije moguće pristupiti %s2. Za nastavak molimo zatvori
 guiless_locked_closed_app=%s1 je zatvoren. Nastavi sada.
 guiless_noupdates=Obiđi  Nadgradnje. - postavljena je zastavica bez nadgradnje
 guiless_progress=Napredak: %s1% | %s2/%s3
+guiless_progress1=...Napredak: %s1%
 guiless_started_download=Pokreni Download: %s1
 guiless_update_failed=Nadgradnja nije uspjela. Razlog: %s1
 guiless_updates_waiting_for_download=%s1 dokumenata mora biti download-ovano
