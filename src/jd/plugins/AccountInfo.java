@@ -172,7 +172,7 @@ public class AccountInfo extends Property {
     }
 
     public void setTrafficLeft(final String freeTraffic) {
-        this.setTrafficLeft(SizeFormatter.getSize(freeTraffic));
+        this.setTrafficLeft(SizeFormatter.getSize(freeTraffic, true, true));
     }
 
     public void setTrafficMax(final long trafficMax) {
@@ -184,7 +184,7 @@ public class AccountInfo extends Property {
     }
 
     public void setUsedSpace(final String string) {
-        this.setUsedSpace(SizeFormatter.getSize(string));
+        this.setUsedSpace(SizeFormatter.getSize(string, true, true));
     }
 
     /**

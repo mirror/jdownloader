@@ -526,7 +526,6 @@ public class Multi extends IExtraction {
                     continue;
                 }
                 String path = item.getPath();
-
                 if (StringUtils.isEmpty(path)) {
                     // example: test.tar.gz contains a test.tar file, that has
                     // NO name. we create a dummy name here.
@@ -542,7 +541,19 @@ public class Multi extends IExtraction {
                     ctrl.setProgress(progressInBytes / size);
                     continue;
                 }
-
+                if (CrossSystem.isWindows()) {
+                    String pathParts[] = path.split(File.separator);
+                    /* remove invalid path chars */
+                    for (int pathIndex = 0; pathIndex < pathParts.length - 1; pathIndex++) {
+                        pathParts[pathIndex] = CrossSystem.alleviatePathParts(pathParts[pathIndex]);
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (String pathPartItem : pathParts) {
+                        if (sb.length() > 0) sb.append(File.separator);
+                        sb.append(pathPartItem);
+                    }
+                    path = sb.toString();
+                }
                 String lastTryFilename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
                 String filename = lastTryFilename;
                 try {
