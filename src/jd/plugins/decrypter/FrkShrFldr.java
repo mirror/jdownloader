@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/[a-z\\d]+\\.html)|\\?x=folder\\&f_id=\\d+&f_md5=[a-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.com" }, urls = { "http://(www\\.)?freakshare\\.(com|net)/(folder/\\d+/[^<>\"]+\\.html|\\?x=folder\\&f_id=\\d+\\&f_md5=[a-z0-9]+)" }, flags = { 0 })
 public class FrkShrFldr extends PluginForDecrypt {
 
     public FrkShrFldr(PluginWrapper wrapper) {
@@ -37,24 +37,20 @@ public class FrkShrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        final Regex fInfo = new Regex(parameter, "/folder/(\\d+)/([a-z0-9]+)\\.html");
+        final Regex fInfo = new Regex(parameter, "/folder/(\\d+)/([^<>\"]+)\\.html");
         final Regex fInfo2 = new Regex(parameter, "/\\?x=folder\\&f_id=(\\d+)\\&f_md5=([a-z0-9]+)\\&");
         String fid = fInfo.getMatch(0);
         String fmd5 = fInfo.getMatch(1);
         if (fid == null) fid = fInfo2.getMatch(0);
         if (fmd5 == null) fmd5 = fInfo2.getMatch(1);
-        if (fid == null || fmd5 == null) {
-            logger.warning("could not find either fid fmd5: " + parameter);
-            return null;
-        }
         parameter = "http://freakshare.com/?x=folder&f_id=" + fid + "&f_md5=" + fmd5 + "&entrys=10000&page=0&order=";
         br.setCookiesExclusive(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(parameter);
         // they return no data on invalid url
         if (br.containsHTML("No htmlCode read") || br.containsHTML("<b>Choose a File:</b>")) {
-            logger.warning("Invalid URL: " + parameter);
-            return null;
+            logger.warning("Maybe invalid URL: " + parameter);
+            return decryptedLinks;
         }
 
         String fpName = br.getRegex("<b>Folder:</b> ([^\r\n\t]+)").getMatch(0);
