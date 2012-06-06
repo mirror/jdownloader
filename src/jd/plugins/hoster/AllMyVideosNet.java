@@ -62,15 +62,14 @@ public class AllMyVideosNet extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
-    // mods:
-    // non account: 1 * 10 (they only allow 1*1 but they have many servers , ngnix throws 503 and jd waits 10mins when connection thresh
-    // hold is too high.)
+    // mods: decodeDownloadLink is changed
+    // non account: 1 (resumes) * 10 (locked to some reasonable number)
     // free account:
     // premium account:
     // protocol: no https
     // captchatype: null
     // other: no redirects, size not possible until dl.
-    // Mods: decodeDownloadLink is changed
+    // other: they only allow 1*1 but they have many servers , ngnix throws 503 and jd waits 10mins when connection threshold reached.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -151,7 +150,7 @@ public class AllMyVideosNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
