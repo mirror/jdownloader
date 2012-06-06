@@ -1,3 +1,4 @@
+UpdateException_notavailable2=Descrizione problema:                     → "%s1"
 UpdateException_proxyauth=Autentificazione non valida proxy: %s1
 UpdateException_proxyconnect=Connessione fallita proxy: %s1
 UpdateServer_UpdaterGui_UpdaterGui_path=Percorso instalalzione: %s1
@@ -53,6 +54,7 @@ guiless_locked_close_app=Impossibile accedere a %s2. Chiudi %s1 per continuare.
 guiless_locked_closed_app=%s1 è stato chiuso. Continuare ora.
 guiless_noupdates=Ignora aggiornamenti. Impostato flag -noupdates
 guiless_progress=...Progresso: %s1%
+guiless_progress2=Progresso: %s1% | %s2/%s3
 guiless_start_install=Avvio installazione file %s1
 guiless_started_download=Avvia download di %s1
 guiless_started_download_resume=Recupero download di %s1

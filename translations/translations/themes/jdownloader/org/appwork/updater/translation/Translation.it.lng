@@ -14,6 +14,7 @@ guiless_installFinished=Installazione completata
 guiless_locked_close_app=Impossibile accedere a %s2. Chiudi %s1 per continuare.
 guiless_locked_closed_app=%s1 è stato chiuso. Continaure ora.
 guiless_noupdates=Ignora aggiornamenti. Impostato flag -noupdates
+guiless_progress=Progresso: %s1% | %s2/%s3
 guiless_start_install=Avvio installazione file %s1
 guiless_started_download=Avvia download: %s1
 guiless_updates_waiting_for_download=Devono essere scaricati %s1 file

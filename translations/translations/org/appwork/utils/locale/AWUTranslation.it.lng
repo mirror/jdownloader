@@ -1,5 +1,5 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=Annulla
-ABSTRACTDIALOG_BUTTON_OK=Ok
+ABSTRACTDIALOG_BUTTON_OK=OK
 ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Non visualizzare nuovamente
 AccountNew_AccountNew_message=Inserisci qui i dati di accesso
 AccountNew_AccountNew_title=Inserisci dati di accesso
@@ -38,7 +38,7 @@ Layover_size=(px) L:%s1, A:%s2
 LockColumnWidthAction=Blocca larghezza colonna
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nuova Password:
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Conferma Password:
-PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Vecchia Password:
+PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Vecchia password:
 ResetColumnsAction=Ripristina colonne
 SEARCHDIALOG_BUTTON_FIND=Trova
 SEARCHDIALOG_CHECKBOX_CASESENSITIVE=Sensibile maiuscolo/minuscolo
