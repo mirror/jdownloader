@@ -3,6 +3,7 @@ ValidateArchiveAction_ValidateArchiveAction_object_=Potvrdi Arhive
 ValidateArchiveAction_actionPerformed_=Arhiva ima %s1 dijelova i završena je
 ValidateArchiveAction_actionPerformed_bad=Arhiva ima %s1 dijelova i nije završena.
 archivename=Ime arhive
+cannot_extract_incopmplete=Nije moguće ekstraktovati %s1. Arhiva nije kompletna!
 close=Zatvori
 contextmenu_auto_extract_package=Omogućena je Automatska Ekstrakcija
 contextmenu_autoextract=Omogućena je Automatska Ekstrakcija
