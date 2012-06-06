@@ -92,3 +92,4 @@ update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_yes=Sì (suggerito)
 updates_are_ready_for_install_now=%s1 aggiornamenti pronti per l'installazione.
 updates_ready_for_install=%s1 aggiornamenti pronti per l'installazione.
+virtual_file_system_detected=Diritti insufficenti per scrivere in %s1

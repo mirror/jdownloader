@@ -1,4 +1,5 @@
 JDUpdater_start_updater_update_msg=Riavvia ora per effettuare l'aggiornamento.
+JDUpdater_start_updater_update_title=Trovata nuova versione!
 dialog_rly_cancel=Annullare l'aggiornamento?
 error_service_not_available_right_now=Servizio non disponibile. Riprova tra 60 secondi.
 error_unknown_app=Impossibile aggiornare %s1.          Riprova più tardi!
