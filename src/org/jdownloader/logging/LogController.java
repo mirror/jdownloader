@@ -1,5 +1,7 @@
 package org.jdownloader.logging;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
@@ -23,8 +25,7 @@ public class LogController {
     }
 
     /**
-     * Create a new instance of LogController. This is a singleton class. Access
-     * the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LogController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private LogController() {
 
@@ -32,7 +33,6 @@ public class LogController {
 
     public Logger createLogger(Class<?> clazz) {
         Logger ret = Logger.getLogger(clazz.getName());
-
         if (ret.getHandlers().length == 0) {
             final ConsoleHandler cHandler = new ConsoleHandler();
             cHandler.setLevel(Level.ALL);
@@ -49,9 +49,16 @@ public class LogController {
                 Log.exception(e);
             }
         }
-
         ret.setLevel(Level.ALL);
         return ret;
+    }
 
+    public static String getStackTrace(final Throwable thrown) {
+        if (thrown == null) return null;
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw);
+        thrown.printStackTrace(pw);
+        pw.close();
+        return sw.toString();
     }
 }
