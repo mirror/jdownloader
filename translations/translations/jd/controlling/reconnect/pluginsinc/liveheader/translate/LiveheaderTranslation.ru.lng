@@ -1,4 +1,6 @@
+DataCompareDialog_layoutDialogContent_ip=IP или имя хоста
 DataCompareDialog_layoutDialogContent_password=Пароль
+LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Сервис не активен
 gui_btn_abort=Прервать
 gui_btn_cancel=Отмена
 gui_btn_help=Помощь
