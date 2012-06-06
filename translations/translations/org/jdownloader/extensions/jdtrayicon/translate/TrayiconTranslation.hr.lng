@@ -1,0 +1,11 @@
+plugins_optional_JDLightTray_always=Uvijek
+plugins_optional_JDLightTray_closetotray=Zatvori u tray
+plugins_optional_JDLightTray_never=Nikada
+plugins_optional_JDLightTray_passwordRequired=Unesite lozinku za otvaranje iz tray-a
+plugins_optional_trayIcon_dl_finished=Završeno:
+plugins_optional_trayIcon_dl_total=Ukupno:
+plugins_optional_trayIcon_downloads=Preuzimanja:
+plugins_optional_trayIcon_progress=Napredak:
+plugins_optional_trayIcon_speed=Brzina:
+popup_pause=Pauziraj preuzimanja
+popup_update=Provjeri za Nadogradnje
