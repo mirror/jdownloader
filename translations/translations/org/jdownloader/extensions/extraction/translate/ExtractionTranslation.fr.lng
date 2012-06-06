@@ -42,6 +42,7 @@ plugins_optional_extraction_filefilter=Tous les formats supportés
 plugins_optional_extraction_filefilter_extractto=Répertoire d'extraction
 plugins_optional_extraction_filenotfound=Extraction : échec (fichier introuvable)
 plugins_optional_extraction_messages=Le chemin %s1 est introuvable.
+plugins_optional_extraction_status_crackingpass_progress=Cassage du mot de passe: %s1 %
 plugins_optional_extraction_status_extractfailedpass=Extraction échouée (mot de passe)
 plugins_optional_extraction_status_extracting2=Extraction
 plugins_optional_extraction_status_extracting_filename=Extraction de %s1
