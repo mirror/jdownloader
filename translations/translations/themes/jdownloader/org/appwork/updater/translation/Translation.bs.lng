@@ -38,6 +38,7 @@ update_dialog_cancel=Otkaži
 update_dialog_later=Pitaj me kasnije
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_yes=Da (preporučeno)
+updateloop=Update nije uspio da nadgradi samoga sebe. Molimo pokušajte ponovo za nekoliko minuta.
 updateloop_title=Detektovana je petlja nadgradnje!
 updates_are_ready_for_install_now=%s1 nadgradnji je spremno za instalaciju.
 updates_ready_for_install=%s1 nadgradnji je spremno za instalaciju.
