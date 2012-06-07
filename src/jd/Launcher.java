@@ -51,7 +51,6 @@ import jd.http.ext.security.JSPermissionRestricter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.CommandSwitchListener;
@@ -263,10 +262,7 @@ public class Launcher {
                 if (event.getSwitchCommand().equalsIgnoreCase("update")) {
                     JDInitFlags.REFRESH_CACHE = true;
                 }
-                if (event.getSwitchCommand().equalsIgnoreCase("trdebug")) {
-                    JDL.DEBUG = true;
-                    Launcher.LOG.info("Translation DEBUG Modus aktiv");
-                }
+
                 if (event.getSwitchCommand().equalsIgnoreCase("rfu")) {
                     JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
                 }

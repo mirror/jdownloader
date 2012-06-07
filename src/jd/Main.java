@@ -36,6 +36,36 @@ public class Main {
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(Launcher.class);
 
+        if (Application.isJared(Main.class) || true) {
+            org.appwork.utils.Application.redirectOutputStreams();
+            final Calendar cal = Calendar.getInstance();
+
+            cal.setTimeInMillis(new Date().getTime());
+
+            final File file = Application.getResource("JDownloader_" + System.currentTimeMillis() + ".log");
+
+            try {
+                file.getParentFile().mkdirs();
+
+                if (!file.isFile()) {
+                    file.createNewFile();
+                }
+
+                FileOutputStream outStr;
+
+                outStr = new FileOutputStream(file, true);
+
+                final PrintStream printStream = new PrintStream(outStr);
+
+                System.setErr(printStream);
+                System.setOut(printStream);
+
+            } catch (final IOException e) {
+                Log.exception(e);
+            }
+
+        }
+
     }
 
     public static void checkLanguageSwitch(final String[] args) {
@@ -60,30 +90,6 @@ public class Main {
             checkLanguageSwitch(args);
 
             // workaround.. write all log to a logfile
-            if (Application.isJared(Main.class)) {
-                final Calendar cal = Calendar.getInstance();
-
-                cal.setTimeInMillis(new Date().getTime());
-
-                final File file = Application.getResource("JDownloader_" + System.currentTimeMillis() + ".log");
-
-                try {
-                    file.getParentFile().mkdirs();
-
-                    if (!file.isFile()) {
-                        file.createNewFile();
-                    }
-                    final FileOutputStream outStr = new FileOutputStream(file, true);
-                    final PrintStream printStream = new PrintStream(outStr);
-
-                    System.setErr(printStream);
-                    System.setOut(printStream);
-
-                } catch (final IOException e) {
-                    Log.exception(e);
-                }
-
-            }
 
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
