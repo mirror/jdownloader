@@ -17,9 +17,18 @@
 
 package jd;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Calendar;
+import java.util.Date;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.Application;
+import org.appwork.utils.logging.Log;
 
 public class Main {
 
@@ -49,6 +58,33 @@ public class Main {
         try {
             /* FAKE Commit for coalado */
             checkLanguageSwitch(args);
+
+            // workaround.. write all log to a logfile
+            if (Application.isJared(Main.class)) {
+                final Calendar cal = Calendar.getInstance();
+
+                cal.setTimeInMillis(new Date().getTime());
+
+                final File file = Application.getResource("JDownloader_" + System.currentTimeMillis() + ".log");
+
+                try {
+                    file.getParentFile().mkdirs();
+
+                    if (!file.isFile()) {
+                        file.createNewFile();
+                    }
+                    final FileOutputStream outStr = new FileOutputStream(file, true);
+                    final PrintStream printStream = new PrintStream(outStr);
+
+                    System.setErr(printStream);
+                    System.setOut(printStream);
+
+                } catch (final IOException e) {
+                    Log.exception(e);
+                }
+
+            }
+
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
         } catch (Throwable e) {
