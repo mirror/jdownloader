@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
@@ -32,11 +33,14 @@ import org.appwork.utils.logging.Log;
 
 public class Main {
 
+    private static FileOutputStream outStr;
+    private static PrintStream      amprintStream;
+
     static {
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(Launcher.class);
 
-        if (Application.isJared(Main.class) || true) {
+        if (Application.isJared(Main.class)) {
             org.appwork.utils.Application.redirectOutputStreams();
             final Calendar cal = Calendar.getInstance();
 
@@ -51,14 +55,12 @@ public class Main {
                     file.createNewFile();
                 }
 
-                FileOutputStream outStr;
-
                 outStr = new FileOutputStream(file, true);
 
-                final PrintStream printStream = new PrintStream(outStr);
+                amprintStream = new PrintStream(outStr);
 
-                System.setErr(printStream);
-                System.setOut(printStream);
+                System.setErr(amprintStream);
+                System.setOut(amprintStream);
 
             } catch (final IOException e) {
                 Log.exception(e);
@@ -93,6 +95,23 @@ public class Main {
 
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
+            if (amprintStream != null) {
+                ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+                    {
+                        setHookPriority(Integer.MIN_VALUE);
+                    }
+
+                    @Override
+                    public void run() {
+                        amprintStream.flush();
+                        try {
+                            outStr.flush();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
         } catch (Throwable e) {
             e.printStackTrace();
             try {
