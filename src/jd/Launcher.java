@@ -249,7 +249,7 @@ public class Launcher {
                     JDInitFlags.SWITCH_FORCELOG = true;
                     Launcher.LOG.info("FORCED LOGGING Modus aktiv");
                 }
-                if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
+                if (event.getSwitchCommand().equalsIgnoreCase("debug") || true) {
                     JDInitFlags.SWITCH_DEBUG = true;
                     Launcher.LOG.info("DEBUG Modus aktiv");
                 }
@@ -571,7 +571,9 @@ public class Launcher {
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
-                                         * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
+                                         * we do this check inside IOEQ because
+                                         * initDownloadLinks also does its final
+                                         * init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -588,7 +590,8 @@ public class Launcher {
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
-                                             * no downloadlinks available to autostart
+                                             * no downloadlinks available to
+                                             * autostart
                                              */
                                             return null;
                                         }
