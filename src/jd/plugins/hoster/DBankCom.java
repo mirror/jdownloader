@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -74,13 +75,41 @@ public class DBankCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        br.getPage(downloadLink.getStringProperty("mainlink"));
+        String dllink = downloadLink.getStringProperty("mainlink");
+        br.getPage(dllink);
+
+        /* Password protected link */
+        if (br.getURL().contains("/m_accessPassword.html")) {
+            String passCode = null;
+            String id = new Regex(br.getURL(), "id=(\\w+)$").getMatch(0);
+            id = id == null ? dllink.substring(dllink.lastIndexOf("/") + 1) : id;
+
+            for (int i = 0; i < 3; i++) {
+
+                if (downloadLink.getStringProperty("password", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    passCode = downloadLink.getStringProperty("password");
+                }
+
+                br.postPage("http://dl.dbank.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
+                if (br.getRegex("\"retcode\":\"0000\"").matches()) {
+                    break;
+                }
+            }
+            if (!br.getRegex("\"retcode\":\"0000\"").matches()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong password!"); }
+            br.getPage(dllink);
+        }
         String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
+        /* normal link list */
         Regex linkInfo = br.getRegex("\"id\":" + downloadLink.getStringProperty("id") + ",\"downloadurl\":\"([^<>\"]*?)\"");
+        /* password protected link list */
+        if (linkInfo.getMatches().length == 0) linkInfo = br.getRegex("\"id\":" + downloadLink.getStringProperty("id") + ",\"nspurl\":\".*?\",\"size\":\\d+,\"downloadurl\":\"([^<>\"]*?)\"");
         /* single download link */
         if (linkInfo.getMatches().length == 0) linkInfo = br.getRegex("\"downloadurl\":\"([^<>\"]*?)\"");
-
+        /* fail */
         if (linkInfo.getMatches().length == 0 || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         downloadLink.setFinalFileName(Encoding.htmlDecode(decodeUnicode(downloadLink.getStringProperty("name"))));
         downloadLink.setProperty("downloadurl", linkInfo.getMatch(0));
         downloadLink.setProperty("encryKey", key);
@@ -116,7 +145,6 @@ public class DBankCom extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account, false);
         doFree(downloadLink);
-
     }
 
     @SuppressWarnings("unchecked")
@@ -140,7 +168,6 @@ public class DBankCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                // br.getPage("http://login.dbank.com/accounts/loginAuth");
                 br.postPage("http://login.dbank.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.dbank.com%2FServiceLogin.action&forward=&relog=&client=&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
                 if (!"normal".equals(br.getCookie(MAINPAGE, "login_type"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies

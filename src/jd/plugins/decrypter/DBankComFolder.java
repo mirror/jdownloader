@@ -26,9 +26,11 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -50,6 +52,23 @@ public class DBankComFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        /* Password protected links */
+        String passCode = null;
+        if (br.getURL().contains("/m_accessPassword.html")) {
+            String id = new Regex(br.getURL(), "id=(\\w+)$").getMatch(0);
+            id = id == null ? parameter.substring(parameter.lastIndexOf("/") + 1) : id;
+
+            for (int i = 0; i < 3; i++) {
+                passCode = Plugin.getUserInput(null, param);
+                br.postPage("http://dl.dbank.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
+                if (br.getRegex("\"retcode\":\"0000\"").matches()) {
+                    break;
+                }
+            }
+            if (!br.getRegex("\"retcode\":\"0000\"").matches()) { throw new DecrypterException(DecrypterException.PASSWORD); }
+            br.getPage(parameter);
+        }
+
         String fpName = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
@@ -63,6 +82,7 @@ public class DBankComFolder extends PluginForDecrypt {
         HashMap<String, String> linkParameter = new HashMap<String, String>();
 
         for (String[] all : new Regex(links, "\\{(.*?)\\}").getMatches()) {
+            if (passCode != null) linkParameter.put("password", passCode);
             for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
                 linkParameter.put(single[0], single[1]);
             }
