@@ -1,2 +1,4 @@
 interaction_externreconnect_command=Komanda (koristi apsolutne putanje do direktorija)
+interaction_externreconnect_dummybat=Koristi specijalni pokretač za prozore
 interaction_externreconnect_parameter=Parametar (1 parametar po liniji)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Ponovna konekcija na Eksterni Alat

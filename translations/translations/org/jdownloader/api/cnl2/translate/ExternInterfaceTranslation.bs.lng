@@ -1,3 +1,4 @@
 jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Dozvoli!
 jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Odbij pristup!
 jd_plugins_optional_interfaces_jdflashgot_security_message=Eksterna aplikacija pokušava da doda linkove
+jd_plugins_optional_interfaces_jdflashgot_security_title=Eksterni zahtjev od %s1!

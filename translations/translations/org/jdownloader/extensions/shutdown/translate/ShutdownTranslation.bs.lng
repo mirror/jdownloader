@@ -5,6 +5,7 @@ gui_config_jdshutdown_enabledOnStart=Omogućeno na Startu
 gui_config_jdshutdown_forceshutdown=Isključi računar (Nije za sve OS)
 gui_config_jdshutdown_hibernate=Hibernate (Nije za sve OS)
 gui_config_jdshutdown_mode=Modus:
+gui_config_jdshutdown_osx_force_long=Instaliraj Prislino Gašenje (Samo MacOS)
 gui_config_jdshutdown_osx_force_short=Instaliraj
 gui_config_jdshutdown_shutdown=Ugasi računar
 gui_config_jdshutdown_standby=Standby (Nije za sve OS)
@@ -12,6 +13,7 @@ interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader će bi
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem će biti postavljen u hibernaciju!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem će biti isključen!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Sistem će biti postavljen u pripravnost!</font></h2>
+interaction_shutdown_dialog_title_closejd=Zatvoriti JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernirati?
 interaction_shutdown_dialog_title_shutdown=Ugasiti računar
 interaction_shutdown_dialog_title_standby=Pripravnost?
