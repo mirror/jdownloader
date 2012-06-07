@@ -50,7 +50,10 @@ public class PasteBinCom extends PluginForDecrypt {
         if (plaintxt == null) return null;
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.info("Found no links in link: " + parameter);
+            return decryptedLinks;
+        }
         logger.info("Found " + links.length + " links in total.");
         for (String dl : links)
             if (!dl.contains(parameter) && !new Regex(dl, "http://(www\\.)?pastebin\\.com/(raw.*?=)?[0-9A-Za-z]+").matches()) decryptedLinks.add(createDownloadlink(dl));

@@ -789,3 +789,5 @@ jd/plugins/hoster/HolderFileCom.class
 jd/plugins/decrypter/NwsrlD.class
 jd/plugins/hoster/AllSharesGe.class
 jd/plugins/hoster/AllDrivesGe.class
+jd/plugins/hoster/PrzeklejPl.class
+jd/plugins/decrypter/PrzeklejPlFolder.class
