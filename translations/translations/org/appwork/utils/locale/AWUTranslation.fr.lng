@@ -70,4 +70,5 @@ pathchooser_browselabel=Naviguer
 pathchooser_dialog_title=Choisissez le chemin !
 pathchooser_helptext=Entrez un chemin...
 please_wait=Veuillez patienter jusqu'à ce que le téléchargement soit terminé
+proxy_direct=Direct %s1
 proxy_none=Direct
