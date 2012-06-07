@@ -324,6 +324,7 @@ public class DdlStorageCom extends PluginForHost {
         if (correctedBR.contains(">You have reached the download-limit:")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (correctedBR.contains("You have to wait")) {
             /** TODO: Improve those regexes */
+            int tmphours = 0, tmpminutes = 0, tmpseconds = 0;
             String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(correctedBR, "\\s+(\\d+)\\s+minutes?").getMatch(0);
@@ -333,7 +334,10 @@ public class DdlStorageCom extends PluginForHost {
                 logger.info("Waittime regexes seem to be broken");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(tmphrs) * 60 * 60) + (Integer.parseInt(tmpmin) * 60) + Integer.parseInt(tmpsec)) * 1001l);
+                if (tmphrs != null) tmphours = Integer.parseInt(tmphrs);
+                if (tmpmin != null) tmpminutes = Integer.parseInt(tmpmin);
+                if (tmpsec != null) tmpseconds = Integer.parseInt(tmpsec);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((tmphours * 60 * 60) + (tmpminutes * 60) + tmpseconds) * 1001l);
             }
         }
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }

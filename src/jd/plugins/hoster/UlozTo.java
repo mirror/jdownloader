@@ -40,12 +40,14 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?((uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+|bagruj\\.cz/[a-z0-9]{12}/.*?\\.html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uloz.to" }, urls = { "http://(www\\.)?(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)/[a-zA-Z0-9]+/.+" }, flags = { 2 })
 public class UlozTo extends PluginForHost {
 
-    private static final String REPEAT_CAPTCHA = "REPEAT_CAPTCHA";
-    private static final String CAPTCHA_TEXT   = "CAPTCHA_TEXT";
-    private static final String CAPTCHA_ID     = "CAPTCHA_ID";
+    private static final String REPEAT_CAPTCHA      = "REPEAT_CAPTCHA";
+    private static final String CAPTCHA_TEXT        = "CAPTCHA_TEXT";
+    private static final String CAPTCHA_ID          = "CAPTCHA_ID";
+    private static final String QUICKDOWNLOAD       = "http://(www\\.)?uloz\\.to/quickDownload/\\d+";
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,6 +79,10 @@ public class UlozTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
+        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
+            downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
         handleDownloadUrl(downloadLink);
         // not sure if this is still needed with 2012/02/01 changes
         String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
@@ -89,7 +95,7 @@ public class UlozTo extends PluginForHost {
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
-        final String filesize = br.getRegex("<span id=\"fileSize\">(.*?)</span>").getMatch(0);
+        final String filesize = br.getRegex("<span id=\"fileSize\">(\\d+:\\d+ \\| )?(.*?)</span>").getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -98,10 +104,7 @@ public class UlozTo extends PluginForHost {
 
     private void handleDownloadUrl(DownloadLink downloadLink) throws IOException {
         br.getPage(downloadLink.getDownloadURL());
-        if (downloadLink.getDownloadURL().matches(".*?bagruj\\.cz/[a-z0-9]{12}.*?") && br.getRedirectLocation() != null) {
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(downloadLink.getDownloadURL());
-        } else if (br.getRedirectLocation() != null) {
+        if (br.getRedirectLocation() != null) {
             logger.info("Getting redirect-page");
             br.getPage(br.getRedirectLocation());
         }
@@ -110,6 +113,7 @@ public class UlozTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = null;
         Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
@@ -202,12 +206,9 @@ public class UlozTo extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
-        br.getPage(parameter.getDownloadURL());
-        String dllink = br.getRegex("<div class=\"downloadForm\"><form action=\"(/[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(/\\d+/[^<>\"\\']+\\?do=downloadDialog\\-downloadForm\\-submit)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, "http://uloz.to" + dllink, "download=St%C3%A1hnout", true, 0);
+        String dllink = parameter.getDownloadURL() + "?do=directDownload";
+        if (parameter.getDownloadURL().matches(QUICKDOWNLOAD)) dllink = parameter.getDownloadURL();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

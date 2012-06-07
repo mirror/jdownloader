@@ -42,25 +42,42 @@ public class PanBaiduCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        final String correctedBR = br.toString().replace("\\", "");
-        final String[][] linkInfo = new Regex(correctedBR, "\"server_filename\":\"([^<>\"]*?)\",\"s3_handle\":\"(http://[^<>\"]*?)\",\"size\":(\\d+)").getMatches();
-        if (linkInfo == null || linkInfo.length == 0) {
+        String correctedBR = br.toString().replace("\\", "");
+        decryptData(decryptedLinks, correctedBR, parameter, null);
+        final String uk = new Regex(correctedBR, "type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
+        final String[] dirs = new Regex(correctedBR, "\"server_filename\":\"([^<>\"]*?)\",\"server_mtime\":\\d+,\"server_ctime\":\\d+,\"local_mtime\":\\d+,\"local_ctime\":\\d+,\"dir_ref\":\\-1,\"isdir\":1").getColumn(0);
+        if (dirs != null && dirs.length != 0 && uk != null) {
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            for (final String dir : dirs) {
+                br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=%2F" + dir + "&t=0." + System.currentTimeMillis() + "&type=1&uk=" + uk);
+                correctedBR = br.toString().replace("\\", "");
+                decryptData(decryptedLinks, correctedBR, parameter, dir);
+            }
+        }
+        if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-        for (String[] sglnkInfo : linkInfo) {
-            final String finalfilename = Encoding.htmlDecode(sglnkInfo[0]);
-            final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
-            dl.setFinalFileName(finalfilename);
-            dl.setProperty("plainfilename", sglnkInfo[0]);
-            dl.setProperty("mainlink", parameter);
-            dl.setDownloadSize(SizeFormatter.getSize(sglnkInfo[2] + "b"));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName("Links: " + new Regex(parameter, "([0-9_]+)$").getMatch(0));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private void decryptData(ArrayList<DownloadLink> decryptedLinks, String correctedBR, final String parameter, final String dirName) {
+        final String[][] linkInfo = new Regex(correctedBR, "\"server_filename\":\"([^<>\"]*?)\",\"s3_handle\":\"(http://[^<>\"]*?)\",\"size\":(\\d+)").getMatches();
+        if (linkInfo != null && linkInfo.length != 0) {
+            for (String[] sglnkInfo : linkInfo) {
+                final String finalfilename = Encoding.htmlDecode(sglnkInfo[0]);
+                final DownloadLink dl = createDownloadlink("http://pan.baidudecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+                dl.setFinalFileName(finalfilename);
+                dl.setProperty("plainfilename", sglnkInfo[0]);
+                dl.setProperty("mainlink", parameter);
+                if (dirName != null) dl.setProperty("dirname", dirName);
+                dl.setDownloadSize(SizeFormatter.getSize(sglnkInfo[2] + "b"));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
+        }
     }
 }

@@ -786,3 +786,6 @@ jd/plugins/hoster/UpJejeGe.class
 jd/plugins/hoster/LinkGe.class
 jd/plugins/hoster/MegaShareVnnVn.class
 jd/plugins/hoster/HolderFileCom.class
+jd/plugins/decrypter/NwsrlD.class
+jd/plugins/hoster/AllSharesGe.class
+jd/plugins/hoster/AllDrivesGe.class

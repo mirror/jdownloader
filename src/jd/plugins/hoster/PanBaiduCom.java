@@ -49,7 +49,14 @@ public class PanBaiduCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String dirName = link.getStringProperty("dirname");
         br.getPage(link.getStringProperty("mainlink"));
+        if (dirName != null) {
+            final String uk = br.getRegex("type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
+            if (uk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=%2F" + dirName + "&t=0." + System.currentTimeMillis() + "&type=1&uk=" + uk);
+        }
         if (br.containsHTML("<title>[\t\n\r ]+的完全公开目录_百度网盘")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String correctedBR = br.toString().replace("\\", "");
         final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"" + link.getStringProperty("plainfilename") + "\",\"s3_handle\":\"(http://[^<>\"]*?)\",\"size\":(\\d+)");

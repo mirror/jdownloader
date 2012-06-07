@@ -108,35 +108,8 @@ public class ImgSrcRu extends PluginForDecrypt {
     }
 
     private DownloadLink getDownloadLink() {
-        // Main pic in the page has class=big (no quotes for now), but the class
-        // can be near the beggining or end of the tag
-        String[] picLinks = br.getRegex("class=big src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*?><br></a>").getRow(0);
-        if (picLinks == null || picLinks.length == 0) picLinks = br.getRegex("src=\\'?(http://[^\"\\']+)\\'? alt=\\'(.*?)\\'.*? class=big><br></a>").getRow(0);
-        if (picLinks == null || picLinks.length == 0) return null;
-
-        // Gets suffix put in URL by Javascript
-        String suf = br.getRegex("var r='([A-Za-z]+)';").getMatch(0);
-        if (suf == null) return null;
-
-        // Reverse suffix, as done in javascript
-        StringBuilder sb = new StringBuilder();
-        for (int i = suf.length() - 1; i >= 0; i--)
-            sb.append(suf.charAt(i));
-        suf = sb.toString();
-
-        // Choose original pic if available, else big pic
-        String newUrl;
-        if (br.getRegex("oripic").matches())
-            newUrl = "o$1" + suf + ".$2";
-        else
-            newUrl = "b$1" + suf + ".$2";
-
-        // Replace small image server s\d.eu.imgsrc.ru, by original size image
-        // o\d.eu.imgsrc.ru
-        // and replace suffix (3 last chars before extension) with new one
-        picLinks[0] = picLinks[0].replaceFirst("s(\\d+\\.eu\\.imgsrc\\.ru/\\w/\\w+/\\d+/\\d+)[A-Za-z]+.(\\w+)", newUrl);
-        DownloadLink dlink = createDownloadlink("directhttp://" + picLinks[0]);
-        dlink.setFinalFileName(picLinks[1]);
-        return dlink;
+        final String finallink = br.getRegex("style=\\'\\{width:610;\\}\\' value=\\'\\&lt;a href=http://imgsrc\\.ru>\\&lt;img src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) return null;
+        return createDownloadlink("directhttp://" + finallink);
     }
 }
