@@ -248,7 +248,7 @@ public class Launcher {
                     JDInitFlags.SWITCH_FORCELOG = true;
                     Launcher.LOG.info("FORCED LOGGING Modus aktiv");
                 }
-                if (event.getSwitchCommand().equalsIgnoreCase("debug") || true) {
+                if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
                     JDInitFlags.SWITCH_DEBUG = true;
                     Launcher.LOG.info("DEBUG Modus aktiv");
                 }
