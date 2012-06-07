@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemade.com" }, urls = { "https?://(www\\.)?filemade\\.com?/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemade.com", "filemade.co" }, urls = { "https?://(www\\.)?filemade\\.com?/[a-z0-9]{12}", "http://we\\.love\\.to\\.change\\.domains\\-filemade\\.co" }, flags = { 2, 0 })
 public class FileMadeCom extends PluginForHost {
 
     private String               correctedBR                  = "";
