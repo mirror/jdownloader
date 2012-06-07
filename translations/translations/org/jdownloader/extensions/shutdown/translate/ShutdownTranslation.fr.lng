@@ -1,6 +1,7 @@
 addons_jdshutdown_statusmessage_disabled=Le Système ne sera pas arrêté par JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader arrêtera le Système après les téléchargements complétés
 gui_config_jdshutdown_close=Fermer JD
+gui_config_jdshutdown_enabledOnStart=Activer au démarrage
 gui_config_jdshutdown_forceshutdown=Forcer la mise hors tension (pas pour tous les OS)
 gui_config_jdshutdown_hibernate=Mise en veille prolongée (pas pour tous les OS)
 gui_config_jdshutdown_mode=Mode :

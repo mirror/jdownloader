@@ -99,6 +99,7 @@ gui_warning_reconnect_running=en cours ...
 gui_warning_reconnectunknown=Reconnexion inconnue
 jd_controlling_SingleDownloadController_askexists_title=Fichier existant
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Aucune reconnexion
+jd_plugins_PluginUtils_askPassword=S'il vous plaît entrez le mot de passe pour %s1
 literally_offline=Hors ligne
 literally_yes=Oui
 pluginforhost_infogenerator_title=Compte %s1@%s2
