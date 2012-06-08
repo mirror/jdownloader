@@ -40,6 +40,7 @@ import org.appwork.txtresource.TranslationFactory;
 import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -302,6 +303,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                                 Dialog.getInstance().showMessageDialog("Nothing has Changed");
                                 return;
                             }
+                            stopEditing(true);
                             getExtension().write();
                             Dialog.getInstance().showMessageDialog("Save Succesful.\r\nDo not forget to click [Upload] when you stop translating.");
                             return;
@@ -353,7 +355,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     public void run() throws Exception {
 
                         try {
-
+                            stopEditing(true);
                             SVNCommitPacket commit = getExtension().save();
                             if (commit == null) return;
                             if (commit.getCommitItems().length == 0) {
@@ -816,6 +818,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             public void run() throws Exception {
                 try {
+
+                    stopEditing(true);
                     if (getExtension().getLoadedLocale() != null) {
                         try {
                             if (getExtension().hasChanges()) {
@@ -939,11 +943,30 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         };
     }
 
-    public void stopEditing() throws InterruptedException {
+    public void stopEditing(boolean requestStop) throws InterruptedException {
+        if (requestStop) {
+            new EDTRunner() {
+
+                @Override
+                protected void runInEDT() {
+                    if (table.getCellEditor() != null) {
+                        table.getCellEditor().stopCellEditing();
+                    }
+                }
+            };
+
+        }
         stopEditing = true;
         try {
             Log.L.info("Wait for editstop");
-            while (table.isEditing() || isWizard) {
+
+            while (new EDTHelper<Boolean>() {
+
+                @Override
+                public Boolean edtRun() {
+                    return table.isEditing();
+                }
+            }.getReturnValue() || isWizard) {
                 Thread.sleep(10);
             }
         } finally {

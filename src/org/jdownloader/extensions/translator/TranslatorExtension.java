@@ -187,6 +187,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 } else {
                     try {
                         try {
+                            getGUI().stopEditing(true);
                             write();
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -241,23 +242,24 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         Log.L.finer("Started " + getClass().getSimpleName());
         timer = new Thread("TranslatorSyncher") {
             public void run() {
-                try {
-                    while (true) {
+
+                while (true) {
+                    try {
                         Thread.sleep(1 * 60 * 1000);
 
                         if (getGUI().isShown()) {
                             if (loggedIn) {
-                                getGUI().stopEditing();
+                                getGUI().stopEditing(false);
                                 refresh();
                             }
 
                         }
-
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
+
             }
         };
         timer.start();
@@ -485,6 +487,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public void doLogout() throws InterruptedException {
         try {
+            getGUI().stopEditing(true);
             write();
         } catch (IOException e) {
             e.printStackTrace();
@@ -673,7 +676,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     public void write() throws IOException, InterruptedException {
         synchronized (this) {
-            getGUI().stopEditing();
+            getGUI().stopEditing(false);
             if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return;
             TLocale localLoaded = loaded;
             TranslationInfo info = JSonStorage.restoreFrom(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
