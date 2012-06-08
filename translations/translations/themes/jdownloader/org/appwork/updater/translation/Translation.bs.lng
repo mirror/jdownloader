@@ -1,6 +1,7 @@
 JDUpdater_start_restart_update_now_=Nadgradi i Restartuj sada!
 JDUpdater_start_updater_update_msg=Restartujte sada da izvršite nadgradnju.
 JDUpdater_start_updater_update_title=Pronađena je Nova Verzija!
+UpdateException_socket=Nema internet konekcije do servera za nadgradnju: %s1
 dialog_rly_cancel=Stvarno otkazati nadgradnju?
 error_service_not_available_right_now=Usluga nije dostupna. Pokušajte ponovo za 60 sek.)
 error_unknown_app=Nije moguće nadgraditi %s1.                   Pokušajte ponovo kasnije!
@@ -41,6 +42,7 @@ udpates_found=Pronađene su nadgradnje!
 update_already_running=Nadgradnja je u toku
 update_dialog_cancel=Otkaži
 update_dialog_later=Pitaj me kasnije
+update_dialog_msg_x_updates_available=Nadgradnje su spremne za instalaciju. Želite li sada da pokrenete nadgradnju?
 update_dialog_news_button=Otvori Log izmjena
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Dostupne su nadgradnje
