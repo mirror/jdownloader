@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -49,19 +47,32 @@ public class RomHustlerNet extends PluginForHost {
         requestFileInformation(downloadLink);
         final String dlink = br.getRegex("\"(/download/\\d+)\"").getMatch(0);
         if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://romhustler.net" + dlink);
-        int wait = 8;
-        final String waittime = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        br.getPage(dlink);
+
+        boolean skipWaittime = true;
+        if (!skipWaittime) {
+            int wait = 8;
+            final String waittime = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
+            if (waittime != null) wait = Integer.parseInt(waittime);
+            sleep(wait * 1001l, downloadLink);
+        }
+
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://romhustler.net/link/" + new Regex(dlink, "(\\d+)$").getMatch(0) + "?_=" + System.currentTimeMillis());
         String finallink = br.toString().trim();
         if (finallink == null || !finallink.startsWith("http://") || finallink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, -2);
+
+        br.getHeaders().put("X-Requested-With", null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        String filename = dl.getConnection().getURL().toString();
+        filename = Encoding.htmlDecode(filename.substring(filename.lastIndexOf("/") + 1));
+        if (filename != null && filename.contains(downloadLink.getName())) {
+            downloadLink.setFinalFileName(filename);
         }
         dl.startDownload();
     }
@@ -77,21 +88,6 @@ public class RomHustlerNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private static String decodeurl(String page) {
-        if (page == null) return null;
-        StringBuffer sb = new StringBuffer();
-        String pattern = "('.'),?";
-        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(page);
-        while (r.find()) {
-            if (r.group(1).length() > 0) {
-                String content = r.group(1).replaceAll("'|,", "");
-                r.appendReplacement(sb, content);
-            }
-        }
-        r.appendTail(sb);
-        return sb.toString();
-    }
-
     public void reset() {
     }
 
@@ -100,4 +96,5 @@ public class RomHustlerNet extends PluginForHost {
 
     public void resetPluginGlobals() {
     }
+
 }
