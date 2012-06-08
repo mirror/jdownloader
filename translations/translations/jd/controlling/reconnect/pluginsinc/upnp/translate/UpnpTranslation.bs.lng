@@ -11,4 +11,5 @@ jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_ti
 literally_choose_router=Izaberite Uređaj
 literally_router=UPNP Ruter
 literally_service_type=Tip Usluge
+servicetype_help=Unesite Tip Usluge (npr. urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=Pokušajte Upnp Ponovno konektovanje: %s1
