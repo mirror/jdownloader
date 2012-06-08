@@ -1,5 +1,5 @@
 jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
-jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar o cerrar JDownloader al Área de Notificación, además e otras funciones como protegerlo con contraseña y más.
+jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar o cerrar JDownloader al Área de Notificación, además de otras funciones como protegerlo con contraseña y más.
 plugins_optional_JDLightTray_always=Archivos fuera de línea
 plugins_optional_JDLightTray_closetotray=Cerrar al area de notificación
 plugins_optional_JDLightTray_linkgrabberresults=Traer al frente la ventana principar al agregar nuevos links
