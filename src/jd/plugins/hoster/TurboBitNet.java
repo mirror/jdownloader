@@ -339,13 +339,13 @@ public class TurboBitNet extends PluginForHost {
 
         String res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 666);
         if (res == null || res != null && !res.matches(tb(10))) {
-            res = rhino(fun + "@" + rtUpdate, 100);
+            res = rhino("var id = \'" + id + "\';@" + fun + "@" + rtUpdate, 100);
             if (new Regex(res, "/~ID~/").matches()) {
                 res = res.replaceAll("/~ID~/", id);
             }
         }
 
-        if (res != null && res.matches(tb(10))) {
+        if (res != null) {
             sleep(tt * 1001, downloadLink);
             br.getPage(res);
             downloadUrl = br.getRegex("<a alt=\'link\' href=\'([^\']+)").getMatch(0);
@@ -559,7 +559,7 @@ public class TurboBitNet extends PluginForHost {
                 break;
             case 100:
                 String[] code = s.split("@");
-                engine.eval("var b = 3;var inn = \'" + code[0] + "\';" + code[1]);
+                engine.eval(code[0] + "var b = 3;var inn = \'" + code[1] + "\';" + code[2]);
                 result = engine.get("out");
                 break;
             case 666:

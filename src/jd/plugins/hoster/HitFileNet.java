@@ -297,13 +297,13 @@ public class HitFileNet extends PluginForHost {
 
         String res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 666);
         if (res == null || res != null && !res.matches(hf(10))) {
-            res = rhino(fun + "@" + rtUpdate, 100);
+            res = rhino("var id = \'" + fileID + "\';@" + fun + "@" + rtUpdate, 100);
             if (new Regex(res, "/~ID~/").matches()) {
                 res = res.replaceAll("/~ID~/", fileID);
             }
         }
 
-        if (res != null && res.matches(hf(10))) {
+        if (res != null) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
                 br.getPage(res);
@@ -490,7 +490,7 @@ public class HitFileNet extends PluginForHost {
                 break;
             case 100:
                 String[] code = s.split("@");
-                engine.eval("var b = 3;var inn = \'" + code[0] + "\';" + code[1]);
+                engine.eval(code[0] + "var b = 3;var inn = \'" + code[1] + "\';" + code[2]);
                 result = engine.get("out");
                 break;
             case 666:
