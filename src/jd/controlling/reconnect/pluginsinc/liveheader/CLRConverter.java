@@ -111,7 +111,7 @@ public class CLRConverter {
             hlh.append("[[[/HSRC]]]");
 
             return new String[] { routerName, hlh.toString() };
-        } catch (Exception e) {
+        } catch (Throwable e) {
             JDLogger.exception(e);
             return null;
         }

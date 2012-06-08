@@ -34,6 +34,8 @@ public class DownloadLinkStorable implements Storable {
     }
 
     public HashMap<String, Object> getProperties() {
+        /* WORKAROUND for Idiots using null as HashMap Key :p */
+        link.getProperties().remove(null);
         return link.getProperties();
     }
 

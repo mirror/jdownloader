@@ -44,8 +44,8 @@ public class JumboFilesCom extends PluginForHost {
 
     private String              BRBEFORE    = "";
     private static final String COOKIE_HOST = "http://jumbofiles.com";
-    private static final String NOCHUNKS    = null;
-    private static final String NORESUME    = null;
+    private static final String NOCHUNKS    = "NOCHUNKS";
+    private static final String NORESUME    = "NORESUME";
     private static String       UA          = RandomUserAgent.generate();
 
     public JumboFilesCom(final PluginWrapper wrapper) {

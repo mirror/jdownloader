@@ -21,6 +21,8 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.HashMap;
 
+import org.appwork.exceptions.WTFException;
+
 /**
  * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache Dialogelemente zu
  * erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
@@ -207,6 +209,7 @@ public class Property implements Serializable {
      * @param value
      */
     public void setProperty(final String key, final Object value) {
+        if (key == null) { throw new WTFException("key ==null is forbidden!"); }
         if (value == NULL) {
             if (properties != null) {
                 properties.remove(key);

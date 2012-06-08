@@ -111,6 +111,7 @@ public class SubConfiguration extends Property implements Serializable {
                 /* importOnly dont get saved */
                 /* used to convert old hsqldb to json */
                 /* never save any data */
+                JSonStorage.removeStorage(cfg.json);
                 cfg.json.close();
             } else {
                 cfg.save();
