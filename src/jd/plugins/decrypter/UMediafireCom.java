@@ -45,7 +45,8 @@ public class UMediafireCom extends PluginForDecrypt {
         if (br.containsHTML("google\\.com/recaptcha")) {
             br.getPage("http://umediafire.com/" + iFrame);
             if (br.containsHTML("google\\.com/recaptcha")) {
-                logger.warning("Couldn't skip captcha and there is no captcha handling, stopping, link: " + parameter);
+                logger.warning("Couldn't skip captcha and there is no captcha handling, stopping, link: " + parameter + "\n");
+                logger.warning(br.toString());
                 return null;
             }
         }

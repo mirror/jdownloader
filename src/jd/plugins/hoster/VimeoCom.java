@@ -69,7 +69,10 @@ public class VimeoCom extends PluginForHost {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
         try {
             if (ret != null && ret.size() > 0) {
-                /* we make sure only one result is in ret, thats the case for svn/next major version */
+                /*
+                 * we make sure only one result is in ret, thats the case for
+                 * svn/next major version
+                 */
                 DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
                 if (ID != null) {
@@ -81,7 +84,10 @@ public class VimeoCom extends PluginForHost {
                     String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
                     if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
                     if (br.containsHTML("iconify_down_b")) {
-                        /* little pause needed so the next call does not return trash */
+                        /*
+                         * little pause needed so the next call does not return
+                         * trash
+                         */
                         Thread.sleep(1000);
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.getPage("http://vimeo.com/" + ID + "?action=download");
@@ -150,7 +156,10 @@ public class VimeoCom extends PluginForHost {
                                     newRet.add(keep);
                                 }
                             }
-                            /* only replace original found links by new ones, when we have some */
+                            /*
+                             * only replace original found links by new ones,
+                             * when we have some
+                             */
                             if (fp != null) {
                                 fp.addLinks(newRet);
                                 fp.remove(sourceLink);
@@ -465,7 +474,8 @@ public class VimeoCom extends PluginForHost {
         String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
         clipData = br.toString();
-        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("isHD")) ? "hd" : "sd");
+        // Info: getClipData("hd") was getClipData("isHD") before
+        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("hd")) ? "hd" : "sd");
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         finalURL = br.getRedirectLocation();

@@ -66,7 +66,7 @@ public class SharpFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
     // mods:
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account: not tested, set same as non account
     // premium account: 10 * 1
     // protocol: no https
@@ -144,7 +144,7 @@ public class SharpFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -515,7 +515,7 @@ public class SharpFileCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -2, "freelink2");
+            doFree(link, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
