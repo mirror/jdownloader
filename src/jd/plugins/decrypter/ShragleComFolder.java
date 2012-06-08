@@ -21,14 +21,12 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com" }, urls = { "http://(www\\.)?shragle\\.com/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudnator.com" }, urls = { "http://(www\\.)?(shragle|cloudnator)\\.com/folder/[a-z0-9]+" }, flags = { 0 })
 public class ShragleComFolder extends PluginForDecrypt {
 
     public ShragleComFolder(PluginWrapper wrapper) {
@@ -37,13 +35,15 @@ public class ShragleComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setCookie("http://www.shragle.com/", "lang", "en_GB");
+        String parameter = param.toString().replace("shragle.com/", "cloudnator.com/");
+        br.setCookie("http://www.cloudnator.com/", "lang", "en_GB");
         br.getPage(parameter);
-        if (br.containsHTML("(><b>An unknown error occured </b|>The selected folder was not found\\.<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("id=\"content\"><h2>(.*?)</h2>").getMatch(0);
-        String[] links = br.getRegex("<td><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)?shragle\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
+        if (br.containsHTML("(><b>An unknown error occured </b|>The selected folder was not found\\.<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String fpName = br.getRegex("<h2 class=\"box\\-title bold\">([^<>\"]*?)<span style=").getMatch(0);
+        final String[] links = br.getRegex("\"(http://(www\\.)?cloudnator\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

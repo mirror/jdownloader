@@ -44,7 +44,10 @@ public class Tnypst extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String link = parameter.toString();
         br.getPage(link);
-
+        if (br.containsHTML("(Hello, my name is 404\\!<|The page you requested is no longer here)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("(Enter the correct password|has been password protected)")) {
             for (int i = 0; i <= 3; i++) {
                 String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);

@@ -791,3 +791,9 @@ jd/plugins/hoster/AllSharesGe.class
 jd/plugins/hoster/AllDrivesGe.class
 jd/plugins/hoster/PrzeklejPl.class
 jd/plugins/decrypter/PrzeklejPlFolder.class
+jd/plugins/decrypter/RfrHshCm.class
+jd/plugins/decrypter/ShareMoleCom.class
+jd/plugins/decrypter/TLnkParaCm.class
+jd/plugins/decrypter/TkdsyCm.class
+jd/plugins/decrypter/TastroNet.class
+jd/plugins/decrypter/RmHstlrNt.class

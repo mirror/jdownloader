@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "secured.in" }, urls = { "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[\\w]+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "secured.in" }, urls = { "http://(www\\.)?secured\\.in/download\\-[\\d]+\\-[\\w]+\\.html" }, flags = { 0 })
 public class Scrd extends PluginForDecrypt {
 
     static private final String MAINPAGE = "http://secured.in";
@@ -82,7 +82,11 @@ public class Scrd extends PluginForDecrypt {
         // CNL2
         if (br.containsHTML("cnl\\.jpg") && isExternInterfaceActive()) {
             br.submitForm(br.getForm(0));
-            if (br.toString().trim().equals("success")) { return decryptedLinks; }
+            if (br.toString().trim().equals("success")) {
+                logger.info("CNL2 decrypt successful!");
+                decryptedLinks.clear();
+                return decryptedLinks;
+            }
         }
         // Containerhandling
         if (br.containsHTML("dlc\\.jpg")) {

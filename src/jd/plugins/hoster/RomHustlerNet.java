@@ -16,11 +16,13 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,8 +30,52 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://[\\w\\.]*?romhustler\\.net/download/.*?/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "romhustler.net" }, urls = { "http://(www\\.)?romhustler\\.net/rom/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?" }, flags = { 0 })
 public class RomHustlerNet extends PluginForHost {
+
+    public RomHustlerNet(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
+    public String getAGBLink() {
+        return "http://romhustler.net/disclaimer.php";
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final String dlink = br.getRegex("\"(/download/\\d+)\"").getMatch(0);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://romhustler.net" + dlink);
+        int wait = 8;
+        final String waittime = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("http://romhustler.net/link/" + new Regex(dlink, "(\\d+)$").getMatch(0) + "?_=" + System.currentTimeMillis());
+        String finallink = br.toString().trim();
+        if (finallink == null || !finallink.startsWith("http://") || finallink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">404 \\- Page got lost")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String name = br.getRegex("<title>Download ([^<>\"]*?) Rom / Iso").getMatch(0);
+        if (name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(Encoding.htmlDecode(name.trim()));
+        return AvailableStatus.TRUE;
+    }
 
     private static String decodeurl(String page) {
         if (page == null) return null;
@@ -46,44 +92,9 @@ public class RomHustlerNet extends PluginForHost {
         return sb.toString();
     }
 
-    private String downloadUrl;
-
-    public RomHustlerNet(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
-    public String getAGBLink() {
-        return "http://romhustler.net/disclaimer.php";
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, -2);
-        dl.startDownload();
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            this.setBrowserExclusive();
-            br.getPage(downloadLink.getDownloadURL());
-            downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String name = Encoding.htmlDecode(downloadUrl.replaceAll("^.*/", ""));
-            downloadLink.setName(name);
-            return AvailableStatus.TRUE;
-        } catch (Exception e) {
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
     public void reset() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 

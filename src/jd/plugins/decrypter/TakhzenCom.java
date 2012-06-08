@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "takhzen.com" }, urls = { "http://[\\w\\.]*?takhzen\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "takhzen.com" }, urls = { "http://(www\\.)?takhzen\\.com/[A-Za-z0-9]+" }, flags = { 0 })
 public class TakhzenCom extends PluginForDecrypt {
 
     public TakhzenCom(PluginWrapper wrapper) {
@@ -39,17 +37,20 @@ public class TakhzenCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("<h1>Not found</h1>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex("<td class=\"servlogo\">[\t\r\n ]+<a href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        final String[] links = br.getRegex("<td class=\"servlogo\">[\t\r\n ]+<a href=\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.info("Decrypter broken for link: " + parameter);
+            return null;
+        }
         logger.info(links.length + " links were found!");
         for (String singleLink : links) {
             br.getPage(singleLink);
             String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.info("Decrypter broken for link: " + parameter);
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

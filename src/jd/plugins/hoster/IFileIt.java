@@ -47,8 +47,8 @@ public class IFileIt extends PluginForHost {
     private int                 MAXFREECHUNKS           = 0;
     private static final String ONLY4REGISTERED         = "You need to be a registered user in order to download this file";
     private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Only downloadable for registered users");
-    private static final String NOCHUNKS                = null;
-    private static final String NORESUME                = null;
+    private static final String NOCHUNKS                = "NOCHUNKS";
+    private static final String NORESUME                = "NORESUME";
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);

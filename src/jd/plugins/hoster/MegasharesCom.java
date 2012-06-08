@@ -52,7 +52,7 @@ public class MegasharesCom extends PluginForHost {
     private final String                   UserAgent   = "JD_" + "$Revision$";
     private static HashMap<String, String> premCookies = null;
     private static final Object            LOCK        = new Object();
-    private static final String            NOCHUNKS    = null;
+    private static final String            NOCHUNKS    = "NOCHUNKS";
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
