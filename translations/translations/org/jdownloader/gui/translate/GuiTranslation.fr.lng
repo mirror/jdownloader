@@ -79,6 +79,7 @@ ConnectionColumn_getStringValue_pluginonly=%s1
 ConnectionColumn_getStringValue_withchunks=%s2/%s3 Parties %s1
 ContextMenuFactory_createPopup_cleanup=Supprimer et...
 ContextMenuFactory_createPopup_other=Autre
+ContextMenuFactory_createPopup_properties=Propriétés de %s1
 ContextMenuFactory_createPopup_properties_package=Propriétés
 ContextMenuFactory_createPopup_speed=Limite de vitesse de téléchargement
 ContextMenuFactory_createPopup_url=voir l'URL des téléchargements
