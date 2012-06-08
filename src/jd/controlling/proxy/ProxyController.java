@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
+import jd.config.SubConfiguration;
 import jd.controlling.IOEQ;
-import jd.controlling.JSonWrapper;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -284,12 +284,13 @@ public class ProxyController {
 
     private List<HTTPProxy> restoreFromOldConfig() {
         ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
+        SubConfiguration oldConfig = SubConfiguration.getConfig("DOWNLOAD", true);
+        if (oldConfig.getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
             /* import old http proxy settings */
-            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_HOST, "");
-            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
-            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER, "");
-            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS, "");
+            final String host = oldConfig.getStringProperty(UpdaterConstants.PROXY_HOST, "");
+            final int port = oldConfig.getIntegerProperty(UpdaterConstants.PROXY_PORT, 8080);
+            final String user = oldConfig.getStringProperty(UpdaterConstants.PROXY_USER, "");
+            final String pass = oldConfig.getStringProperty(UpdaterConstants.PROXY_PASS, "");
             if (!StringUtils.isEmpty(host)) {
                 final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.HTTP, host, port);
                 if (!StringUtils.isEmpty(user)) {
@@ -301,12 +302,12 @@ public class ProxyController {
                 ret.add(pr);
             }
         }
-        if (JSonWrapper.get("DOWNLOAD").getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
+        if (oldConfig.getBooleanProperty(UpdaterConstants.USE_SOCKS, false)) {
             /* import old socks5 settings */
-            final String user = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
-            final String pass = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
-            final String host = JSonWrapper.get("DOWNLOAD").getStringProperty(UpdaterConstants.SOCKS_HOST, "");
-            final int port = JSonWrapper.get("DOWNLOAD").getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
+            final String user = oldConfig.getStringProperty(UpdaterConstants.PROXY_USER_SOCKS, "");
+            final String pass = oldConfig.getStringProperty(UpdaterConstants.PROXY_PASS_SOCKS, "");
+            final String host = oldConfig.getStringProperty(UpdaterConstants.SOCKS_HOST, "");
+            final int port = oldConfig.getIntegerProperty(UpdaterConstants.SOCKS_PORT, 1080);
             if (!StringUtils.isEmpty(host)) {
                 final HTTPProxy pr = new HTTPProxy(HTTPProxy.TYPE.SOCKS5, host, port);
                 if (!StringUtils.isEmpty(user)) {
@@ -473,8 +474,7 @@ public class ProxyController {
     }
 
     /**
-     * returns the default proxy for all normal browser activity as well as for
-     * premium usage
+     * returns the default proxy for all normal browser activity as well as for premium usage
      * 
      * @return
      */
@@ -542,8 +542,7 @@ public class ProxyController {
     }
 
     /**
-     * enable/disable given proxy, enables none-proxy in case no proxy would be
-     * enabled anymore
+     * enable/disable given proxy, enables none-proxy in case no proxy would be enabled anymore
      * 
      * @param proxy
      * @param enabled
@@ -578,8 +577,7 @@ public class ProxyController {
         if (acc != null) {
             /* an account must be used or waittime must be over */
             /*
-             * only the default proxy may use accounts, to prevent accountblocks
-             * because of simultan ip's using it
+             * only the default proxy may use accounts, to prevent accountblocks because of simultan ip's using it
              */
             ProxyInfo ldefaultProxy = defaultproxy;
             int active = ldefaultProxy.activeDownloadsbyHosts(host);

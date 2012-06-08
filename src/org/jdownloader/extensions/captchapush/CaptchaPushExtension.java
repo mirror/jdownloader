@@ -106,11 +106,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     }
 
     @Override
-    public String getConfigID() {
-        return "captchapush";
-    }
-
-    @Override
     public String getAuthor() {
         return "Greeny";
     }

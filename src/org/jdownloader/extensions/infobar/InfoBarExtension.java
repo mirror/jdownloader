@@ -68,7 +68,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         if (infoDialog == null) return;
         final int newValue;
         if (value == null) {
-            newValue = getPluginConfig().getIntegerProperty(PROPERTY_OPACITY, 100);
+            newValue = getPropertyConfig().getIntegerProperty(PROPERTY_OPACITY, 100);
         } else {
             newValue = Integer.parseInt(value.toString());
         }
@@ -91,8 +91,8 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
         if (b) {
             if (infoDialog == null) {
                 infoDialog = InfoDialog.getInstance(getShowGuiAction());
-                infoDialog.setEnableDropLocation(getPluginConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
-                infoDialog.setEnableDocking(getPluginConfig().getBooleanProperty(PROPERTY_DOCKING, true));
+                infoDialog.setEnableDropLocation(getPropertyConfig().getBooleanProperty(PROPERTY_DROPLOCATION, true));
+                infoDialog.setEnableDocking(getPropertyConfig().getBooleanProperty(PROPERTY_DOCKING, true));
                 if (Application.getJavaVersion() >= 16000000) updateOpacity(null);
             }
             infoDialog.showDialog();
@@ -121,7 +121,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         if (Application.getJavaVersion() >= 16000000) {
-            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
+            ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPropertyConfig(), PROPERTY_OPACITY, T._.jd_plugins_optional_infobar_opacity(), 1, 100, 10) {
                 private static final long serialVersionUID = 1L;
 
                 @Override
@@ -134,7 +134,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
             config.addEntry(ce);
             config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         }
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPropertyConfig(), PROPERTY_DROPLOCATION, T._.jd_plugins_optional_infobar_dropLocation2()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -144,7 +144,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPropertyConfig(), PROPERTY_DOCKING, T._.jd_plugins_optional_infobar_docking()) {
 
             private static final long serialVersionUID = 1L;
 
@@ -154,11 +154,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
                 super.valueChanged(newValue);
             }
         }.setDefaultValue(true));
-    }
-
-    @Override
-    public String getConfigID() {
-        return "infobar";
     }
 
     @Override

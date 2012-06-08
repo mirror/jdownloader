@@ -178,9 +178,8 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                 /*
                  * SwingUtilities.invokeLater(new Runnable() { // @Override
                  * 
-                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(),
-                 * _NT._.failed_WatchAsYouDownload_Message() + "\n" + jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(),
-                 * JOptionPane.ERROR_MESSAGE); } });
+                 * public void run() { JOptionPane.showMessageDialog(SwingGui.getInstance ().getMainFrame(), _NT._.failed_WatchAsYouDownload_Message() + "\n" +
+                 * jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE); } });
                  */
 
                 logger.log(Level.SEVERE, "Could not start a watch as you download session", a);
@@ -289,15 +288,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
     @Override
     public boolean hasConfigPanel() {
         return false;
-    }
-
-    /**
-     * DO NOT USE THIS FUNCTION. it is only used for compatibility reasons
-     */
-    @Override
-    @Deprecated
-    public String getConfigID() {
-        return null;
     }
 
     @Override

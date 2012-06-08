@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JProgressBar;
 
 import jd.controlling.JDLogger;
-import jd.controlling.JSonWrapper;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;

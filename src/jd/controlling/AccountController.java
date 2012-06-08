@@ -321,7 +321,7 @@ public class AccountController implements AccountControllerListener {
      * @return
      */
     private HashMap<String, ArrayList<AccountData>> restore() {
-        SubConfiguration sub = SubConfiguration.getConfig("AccountController");
+        SubConfiguration sub = SubConfiguration.getConfig("AccountController", true);
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
         Object mapRet = sub.getProperty("accountlist");
         if (mapRet != null || mapRet instanceof Map) {

@@ -77,11 +77,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     @Override
-    public String getConfigID() {
-        return "improvedmacosxdock";
-    }
-
-    @Override
     public String getAuthor() {
         return null;
     }

@@ -167,6 +167,11 @@ public class CFG_GUI {
      * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
      **/
     public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
+
+    /**
+     * If true, The Hostercolumn will show full hostname
+     **/
+    public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                               = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
     // true
     /**
      * True if move button should be visible in downloadview
@@ -174,12 +179,11 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              SHOW_MOVE_UP_BUTTON                              = SH.getKeyHandler("ShowMoveUpButton", BooleanKeyHandler.class);
     // false
     /**
-     * Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner
-     * background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real
-     * translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is
-     * ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is
-     * supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency
-     * feature is enabled
+     * Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is
+     * visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like
+     * SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to
+     * activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance.
+     * Default value is false which means the translucency feature is enabled
      **/
     public static final BooleanKeyHandler                              WINDOW_OPAQUE                                    = SH.getKeyHandler("WindowOpaque", BooleanKeyHandler.class);
 }

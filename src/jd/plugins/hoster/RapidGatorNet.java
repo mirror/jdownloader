@@ -208,6 +208,10 @@ public class RapidGatorNet extends PluginForHost {
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
+            link.setUrlDownload(link.getDownloadURL().replace("%", ""));
+            br.getPage(link.getDownloadURL());
+        }
         if (br.containsHTML("File not found")) {
             String filenameFromURL = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
             if (filenameFromURL != null) link.setName(filenameFromURL);

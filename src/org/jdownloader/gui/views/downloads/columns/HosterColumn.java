@@ -32,9 +32,22 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class HosterColumn extends ExtColumn<AbstractNode> {
     private static boolean    COLORED_ICONS;
+    private static boolean    FULL_HOSTNAME;
 
     static {
         COLORED_ICONS = CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.isEnabled();
+        FULL_HOSTNAME = CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled();
+        CFG_GUI.SHOW_FULL_HOSTNAME.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+            @Override
+            public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                FULL_HOSTNAME = CFG_GUI.SHOW_FULL_HOSTNAME.isEnabled();
+            }
+
+            @Override
+            public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+            }
+        });
         CFG_GUI.COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
             @Override
@@ -186,6 +199,11 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
             if (dl != null && dl.getFavIcon() != null) {
                 labels[0].setVisible(true);
                 labels[0].setIcon(dl.getFavIcon());
+                if (FULL_HOSTNAME) {
+                    labels[0].setText(dl.getTld());
+                } else {
+                    labels[0].setText(null);
+                }
             }
         }
     }

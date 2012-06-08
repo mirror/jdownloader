@@ -24,11 +24,11 @@ import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
 
 import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.JSonWrapper;
+import jd.config.Property;
 import jd.gui.swing.jdgui.views.settings.sidebar.AddonConfig;
 import jd.plugins.AddonPanel;
 import jd.plugins.ExtensionConfigInterface;
+import jd.update.JSonWrapper;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.txtresource.TranslateInterface;
@@ -144,7 +144,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     private String         name;
 
-    private int            version = -1;
+    private int            version        = -1;
     @Deprecated
     private JSonWrapper    classicConfig;
 
@@ -153,6 +153,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * The Translationobject. Extent me if you need further Entries
      */
     public TranslationType _;
+
+    private Property       propertyConfig = null;
 
     public TranslationType getTranslation() {
         return _;
@@ -164,29 +166,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     public Logger getLogger() {
         return logger;
-    }
-
-    /**
-     * converts old dynamic getConfigName entries to static getID entries, WE MUST USE STATIC getID to access db
-     * 
-     * @deprecated Use {@link #getSettings()}
-     */
-
-    @Deprecated
-    public synchronized JSonWrapper getPluginConfig() {
-        if (classicConfig != null) return classicConfig;
-        classicConfig = JSonWrapper.get(this.getConfigID());
-        if (classicConfig.size() == 0 && SubConfiguration.hasConfig(getName())) {
-            /* convert old to new */
-            SubConfiguration oldConfig = SubConfiguration.getConfig(getName());
-            if (oldConfig != null) {
-                /* put old values into new db and delete old one then */
-                oldConfig.copyTo(classicConfig);
-                SubConfiguration.removeConfig(getName());
-                classicConfig.save();
-            }
-        }
-        return classicConfig;
     }
 
     /**
@@ -204,9 +183,39 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         store = buildStore();
         AdvancedConfigManager.getInstance().register(store);
         logger.info("Loaded");
-
         initTranslation();
+    }
 
+    /* Dirty workaround for old Extensions to save primitive data inside the new ConfigSystem */
+    /* Those Plugins should be rewritten to use new ConfigSystem correct! */
+    @Deprecated
+    protected Property getPropertyConfig() {
+        if (propertyConfig != null) return propertyConfig;
+        synchronized (this) {
+            if (propertyConfig != null) return propertyConfig;
+            propertyConfig = new Property() {
+                /**
+                 * 
+                 */
+                private static final long serialVersionUID = -7487373530144101894L;
+
+                {
+                    /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
+                    store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
+                    this.setProperties(store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
+                    store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().remove("addWorkaround");
+                }
+
+                @Override
+                public void setProperty(String key, Object value) {
+                    super.setProperty(key, value);
+                    /* this changes changeFlag in JSonStorage to signal that it must be saved */
+                    store.getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
+                }
+
+            };
+        }
+        return propertyConfig;
     }
 
     private void initTranslation() {
@@ -215,7 +224,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
             Class<TranslationType> cl = (Class<TranslationType>) ((ParameterizedTypeImpl) type).getActualTypeArguments()[1];
             if (cl == TranslateInterface.class) return;
             _ = TranslationFactory.create(cl);
-
         }
     }
 
@@ -283,12 +291,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     private Logger createLogger(Class<? extends AbstractExtension> class1) {
         return LogController.getInstance().createLogger(class1);
     }
-
-    /**
-     * @deprecated Use {@link #getSettings()}
-     */
-    @Deprecated
-    public abstract String getConfigID();
 
     public abstract String getAuthor();
 

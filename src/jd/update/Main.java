@@ -43,7 +43,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JSonWrapper;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.nutils.Formatter;

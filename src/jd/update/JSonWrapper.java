@@ -1,4 +1,4 @@
-package jd.controlling;
+package jd.update;
 
 import java.io.File;
 import java.util.HashMap;
@@ -18,8 +18,7 @@ import org.appwork.utils.logging.Log;
 import org.appwork.utils.reflection.Clazz;
 
 /**
- * A Wrapperclass that wrapps a (Old) JD- Property class around the new appwork
- * utils jsonstorage
+ * A Wrapperclass that wrapps a (Old) JD- Property class around the new appwork utils jsonstorage
  * 
  * @author thomas
  * 
@@ -43,6 +42,7 @@ public class JSonWrapper extends Property {
 
     }
 
+    @Deprecated
     public static JSonWrapper get(String string) {
         synchronized (MAP) {
 

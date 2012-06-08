@@ -181,7 +181,6 @@ public class RealDebridCom extends PluginForHost {
         String dlLinks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
         if (dlLinks == null || dlLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         showMessage(link, "Task 2: Download begins!");
-        PluginException e = null;
         for (String dllink : dlLinks) {
             if (dllink == null || !dllink.startsWith("http")) continue;
             dllink = dllink.replaceAll("\\\\/", "/");
@@ -189,7 +188,6 @@ public class RealDebridCom extends PluginForHost {
                 handleDL(link, dllink);
                 return;
             } catch (PluginException e1) {
-                e = e1;
             }
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

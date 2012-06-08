@@ -42,7 +42,7 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     }
 
     public int getMode() {
-        return getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
+        return getPropertyConfig().getIntegerProperty(CONFIG_MODE, 0);
     }
 
     public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
@@ -93,13 +93,8 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     protected void initSettings(ConfigContainer config) {
         config.setGroup(new ConfigGroup(getName(), "settings"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), CONFIG_MODE, modes, _.gui_config_antistandby_mode()).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPropertyConfig(), CONFIG_MODE, modes, _.gui_config_antistandby_mode()).setDefaultValue(0));
 
-    }
-
-    @Override
-    public String getConfigID() {
-        return "jdantistandby";
     }
 
     @Override

@@ -162,11 +162,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
-    public String getConfigID() {
-        return "trayicon";
-    }
-
-    @Override
     public boolean isQuickToggleEnabled() {
         return false;
     }

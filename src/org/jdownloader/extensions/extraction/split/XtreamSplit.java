@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import jd.config.ConfigContainer;
-import jd.controlling.JSonWrapper;
+import jd.update.JSonWrapper;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;

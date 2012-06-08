@@ -1027,11 +1027,6 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     @Override
-    public String getConfigID() {
-        return "chat";
-    }
-
-    @Override
     public String getAuthor() {
         return "JD Team";
     }

@@ -30,8 +30,8 @@ public class SubConfiguration extends Property implements Serializable {
 
     private static final long                                  serialVersionUID = 7803718581558607222L;
     protected String                                           name;
-    transient boolean                                          valid            = false;
-    private Storage                                            json             = null;
+    transient protected boolean                                valid            = false;
+    protected Storage                                          json             = null;
     transient private static HashMap<String, SubConfiguration> SUB_CONFIGS      = new HashMap<String, SubConfiguration>();
 
     public SubConfiguration() {
@@ -47,10 +47,14 @@ public class SubConfiguration extends Property implements Serializable {
             final Object props = JDUtilities.getDatabaseConnector().getData(name);
             if (props != null && props instanceof HashMap) {
                 HashMap<String, Object> tmp = (HashMap<String, Object>) props;
-                /* we save memory by NOT using an empty hashmap */
-                if (tmp.isEmpty()) tmp = new HashMap<String, Object>();
-                ((JsonKeyValueStorage) json).getInternalStorageMap().putAll(tmp);
+                /* remove obsolet variables from old stable (09581) */
+                tmp.remove("USE_PLUGIN");
+                tmp.remove("AGB_CHECKED");
+                /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
+                ((JsonKeyValueStorage) json).getInternalStorageMap().put("addWorkaround", true);
                 this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
+                ((JsonKeyValueStorage) json).getInternalStorageMap().remove("addWorkaround");
+                getProperties().putAll(tmp);
             } else {
                 if (props != null) {
                     valid = false;
@@ -58,12 +62,29 @@ public class SubConfiguration extends Property implements Serializable {
                 }
             }
         }
+        /* this avoids fresh conversions on next startup as we load the JSonStorage */
         json.put("saveWorkaround", System.currentTimeMillis());
     }
 
     public void save() {
         if (valid) {
             json.save();
+        }
+    }
+
+    @Override
+    public void setProperty(final String key, final Object value) {
+        super.setProperty(key, value);
+        /* this changes changeFlag in JSonStorage to signal that it must be saved */
+        json.put("saveWorkaround", System.currentTimeMillis());
+    }
+
+    @Override
+    public void copyTo(Property dest) {
+        super.copyTo(dest);
+        if (dest != null && dest instanceof SubConfiguration) {
+            /* this changes changeFlag in JSonStorage to signal that it must be saved */
+            ((SubConfiguration) dest).json.put("saveWorkaround", System.currentTimeMillis());
         }
     }
 
@@ -80,19 +101,34 @@ public class SubConfiguration extends Property implements Serializable {
         }
     }
 
-    public synchronized static SubConfiguration getConfig(final String name) {
+    public synchronized static SubConfiguration getConfig(final String name, boolean ImportOnly) {
         if (SUB_CONFIGS.containsKey(name)) {
             return SUB_CONFIGS.get(name);
         } else {
             final SubConfiguration cfg = new SubConfiguration(name);
             SUB_CONFIGS.put(name, cfg);
-            cfg.save();
+            if (ImportOnly) {
+                /* importOnly dont get saved */
+                /* used to convert old hsqldb to json */
+                /* never save any data */
+                cfg.json.close();
+            } else {
+                cfg.save();
+            }
             return cfg;
         }
     }
 
+    public synchronized static SubConfiguration getConfig(final String name) {
+        return getConfig(name, false);
+    }
+
     public synchronized static void removeConfig(final String name) {
-        SUB_CONFIGS.remove(name);
-        JDUtilities.getDatabaseConnector().removeData(name);
+        try {
+            JDUtilities.getDatabaseConnector().removeData(name);
+        } finally {
+            SUB_CONFIGS.remove(name);
+        }
+
     }
 }

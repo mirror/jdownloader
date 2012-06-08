@@ -199,13 +199,32 @@ public class ExtMatrixCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, -2);
+        int maxChunks = -2;
+        if (oldStyle()) {
+            /* stable has bug with openDownload and postData, cookies are not forwared to chunks */
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
     }
 
     private String getLink() {

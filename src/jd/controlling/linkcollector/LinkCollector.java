@@ -1102,7 +1102,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     private LinkedList<CrawledPackage> load(File file, HashMap<CrawledPackage, CrawledPackageStorable> restoreMap) {
         LinkedList<CrawledPackage> ret = null;
-        if (file != null) {
+        if (file != null && file.exists()) {
             ZipIOReader zip = null;
             try {
                 zip = new ZipIOReader(file);

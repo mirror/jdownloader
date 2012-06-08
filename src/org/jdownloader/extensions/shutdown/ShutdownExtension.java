@@ -30,7 +30,7 @@ import javax.swing.JMenuItem;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.ConfigGroup;
-import jd.controlling.JSonWrapper;
+import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
 import jd.nutils.Executer;
@@ -73,7 +73,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     public ShutdownExtension() throws StartException {
         setTitle(_.jd_plugins_optional_jdshutdown());
         MODES_AVAIL = new String[] { _.gui_config_jdshutdown_shutdown(), _.gui_config_jdshutdown_standby(), _.gui_config_jdshutdown_hibernate(), _.gui_config_jdshutdown_close() };
-        shutdownEnabled = getPluginConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
+        shutdownEnabled = getPropertyConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
     }
 
     private void closejd() {
@@ -94,7 +94,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case CrossSystem.OS_WINDOWS_NT:
         case CrossSystem.OS_WINDOWS_SERVER_2008:
             /* not so modern windows versions */
-            if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+            if (getPropertyConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
@@ -146,7 +146,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case CrossSystem.OS_MAC_OTHER:
             /* mac os */
-            if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+            if (getPropertyConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 /* force shutdown */
                 try {
                     JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
@@ -327,7 +327,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             // }
             // }
 
-            int ret = getPluginConfig().getIntegerProperty(CONFIG_MODE, 0);
+            int ret = getPropertyConfig().getIntegerProperty(CONFIG_MODE, 0);
             String message;
             int ret2;
             switch (ret) {
@@ -442,7 +442,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     protected void initSettings(ConfigContainer config) {
-        JSonWrapper subConfig = getPluginConfig();
+        Property subConfig = getPropertyConfig();
 
         config.setGroup(new ConfigGroup(getName(), getIconKey()));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, _.gui_config_jdshutdown_enabledOnStart()).setDefaultValue(false));
@@ -473,11 +473,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
             }, _.gui_config_jdshutdown_osx_force_short(), _.gui_config_jdshutdown_osx_force_long(), null));
         }
-    }
-
-    @Override
-    public String getConfigID() {
-        return "shutdown";
     }
 
     @Override

@@ -310,15 +310,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         return false;
     }
 
-    /**
-     * DO NOT USE THIS FUNCTION. it is only used for compatibility reasons
-     */
-    @Override
-    @Deprecated
-    public String getConfigID() {
-        return null;
-    }
-
     @Override
     public String getAuthor() {
         return "Coalado";

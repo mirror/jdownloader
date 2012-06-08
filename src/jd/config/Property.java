@@ -22,10 +22,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 /**
- * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties
- * unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
- * Dialogelemente zu erstellen. Ein Automatisiertes speichern/laden wird dadurch
- * möglich
+ * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache Dialogelemente zu
+ * erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
  * 
  * @author JD-Team
  * 
@@ -52,8 +50,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt einen Boolean zu key zurück. Es wird versuchtden Wert zu einem
-     * passendem Wert umzuformen
+     * Gibt einen Boolean zu key zurück. Es wird versuchtden Wert zu einem passendem Wert umzuformen
      * 
      * @param key
      * @return
@@ -81,8 +78,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem
-     * passendem Integer umzuformen
+     * Gibt einen Integerwert zu key zurück. Es wird versucht, den Wert zu einem passendem Integer umzuformen
      * 
      * @param key
      *            Schlüssel des Wertes
@@ -167,8 +163,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Gibt einen String zu key zurück. Es wird versuchtden Wert zu einem
-     * passendem Wert umzuformen
+     * Gibt einen String zu key zurück. Es wird versuchtden Wert zu einem passendem Wert umzuformen
      * 
      * @param key
      * @return
@@ -206,8 +201,7 @@ public class Property implements Serializable {
     }
 
     /**
-     * Stores a value. Warning: DO not store other stuff than
-     * primitives/lists/maps!!
+     * Stores a value. Warning: DO not store other stuff than primitives/lists/maps!!
      * 
      * @param key
      * @param value

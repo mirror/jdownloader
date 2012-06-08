@@ -643,7 +643,7 @@ public class JDGui extends SwingGui {
         if (e.getComponent() == this.getMainFrame()) {
             ArrayList<AbstractExtension<?, ?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
             for (AbstractExtension<?, ?> ext : allExt) {
-                if ("trayicon".equals(ext.getConfigID())) {
+                if (ext.getClass().getName().contains("TrayExtension")) {
                     try {
                         if (SystemTray.isSupported() && ((org.jdownloader.extensions.jdtrayicon.TrayConfig) ext.getSettings()).isCloseToTrayEnabled()) {
                             /*

@@ -227,6 +227,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     boolean isTooltipEnabled();
 
+    @AboutConfig
+    @Description("If true, hostcolumn will also show full hostname")
+    @DefaultBooleanValue(false)
+    boolean isShowFullHostname();
+
+    public void setShowFullHostname(boolean b);
+
     // void setDownloadViewSidebarEnabled(boolean b);
     //
     // void setDownloadViewSidebarToggleButtonEnabled(boolean b);

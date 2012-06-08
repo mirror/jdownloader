@@ -39,6 +39,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     void setPasswordList(ArrayList<String> list);
 
+    @DefaultBooleanValue(false)
+    boolean isOldPWListImported();
+
+    void setOldPWListImported(boolean b);
+
     /**
      * Only use subpath if archive conatins more than X files
      * 

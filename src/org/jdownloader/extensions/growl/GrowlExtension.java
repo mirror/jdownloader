@@ -74,11 +74,6 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     }
 
     @Override
-    public String getConfigID() {
-        return null;
-    }
-
-    @Override
     public String getAuthor() {
         return null;
     }

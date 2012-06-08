@@ -34,6 +34,7 @@ import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
 import jd.Launcher;
+import jd.config.SubConfiguration;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -472,6 +473,30 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     @Override
     protected void initExtension() throws StartException {
+        /* import old passwordlist */
+        boolean oldPWListImported = false;
+        try {
+            if ((oldPWListImported = getSettings().isOldPWListImported())) return;
+            SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
+            Object oldList = oldConfig.getProperties().get("LIST2");
+            ArrayList<String> currentList = getSettings().getPasswordList();
+            if (currentList == null) currentList = new ArrayList<String>();
+            if (oldList != null && oldList instanceof List) {
+                for (Object item : (List<?>) oldList) {
+                    if (item != null && item instanceof String) {
+                        String pw = (String) item;
+                        currentList.remove(pw);
+                        currentList.add(pw);
+                    }
+                }
+            }
+            getSettings().setPasswordList(currentList);
+        } catch (final Throwable e) {
+        } finally {
+            if (oldPWListImported == false) {
+                getSettings().setOldPWListImported(true);
+            }
+        }
         extractFileAction = new AbstractToolbarAction() {
 
             /**
@@ -619,18 +644,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
             }
         };
-
         configPanel = new ExtractionConfigPanel(this);
     }
 
     @Override
     public boolean hasConfigPanel() {
         return true;
-    }
-
-    @Override
-    public String getConfigID() {
-        return "extraction";
     }
 
     @Override
@@ -678,7 +697,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         if (caller instanceof SingleDownloadController) {
             DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
-            if (link.getFilePackage().isPostProcessing() && this.getPluginConfig().getBooleanProperty("ACTIVATED", true) && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
+            if (link.getFilePackage().isPostProcessing() && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                 Archive archive;
                 try {
                     archive = buildArchive(new DownloadLinkArchiveFactory(link));
@@ -1079,7 +1098,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         setName(_.contextmenu_auto_extract_package());
                         setIconKey(ExtractionExtension.this.getIconKey());
                         setSelected(fp.isPostProcessing());
-                        setEnabled(getPluginConfig().getBooleanProperty("ACTIVATED", true));
                     }
 
                     public void actionPerformed(ActionEvent e) {
