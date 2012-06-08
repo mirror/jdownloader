@@ -37,6 +37,7 @@ decrypter_invalidaccount=Aucun compte valide trouvé
 decrypter_unknownerror=Erreur inconnue
 decrypter_wrongcaptcha=Mauvais code captcha
 decrypter_wrongpassword=Mauvais mot de passe
+dialog_optional_showRestartRequiredMessage_msg=Vos changements nécessitent un redémarrage de JDownloader pour prendre effet. Redémarrer maintenant ?
 dialog_optional_showRestartRequiredMessage_title=Redémarrage nécessaire
 dialog_title_exception=Une erreur est survenue !
 download_connection_normal=Télécharger
