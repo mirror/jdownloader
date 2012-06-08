@@ -29,6 +29,7 @@ gui_config_routeripfinder_notfound=Nije moguće pronaći ime domaćina vašeg ru
 gui_config_routeripfinder_ready=IP pronađen: %s1
 gui_fengshuiconfig_routerip=Router-IP
 ipcheck=Automatska detekcija Podešenja Ponovne konekcije moraju omogućiti funkciju provjere IP-a. Nastaviti?
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests=Testna Skripta %s1%s2: %s3
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Sačuvaj
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Provjera je onemogućena
 jd_nrouter_recorder_Gui_info3=Nakon Ponovne konekcije, pritisnite Stop dugme i sačuvajte

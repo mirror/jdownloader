@@ -92,6 +92,7 @@ gui_settings_proxy_title=Upravitelj Konekcija
 gui_settings_reconnect_title=Ponovo se konektuj
 gui_settings_reconnect_title_method=Metod za Ponovnu konekciju
 gui_warning_reconnectSuccess=Ponovno konektovanje je bilo uspješno
+jd_controlling_SingleDownloadController_askexists_title=Dokument postoji
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nije izabrana Ponovna konekcija</u></b><br/><p>Ponovna konekcija je napredni pristup za preskakanje dugih čekanja koja neki domaćini nameću korisnicima koji ne plaćaju. <br>Nije od pomoći kada koristite premium nalog.</p><p>Pročitajte više o Ponovnom konektovanju <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nema Ponovne konekcije
 literally_offline=Offline
