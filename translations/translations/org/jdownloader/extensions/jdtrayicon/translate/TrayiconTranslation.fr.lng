@@ -1,5 +1,6 @@
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Autoriser la minimisation ou la fermeture de JDownloader dans la zone de notification, et d'autres fonctionnalités liées comme la protection par mot de passe et plus.
 plugins_optional_JDLightTray_always=Toujours
+plugins_optional_JDLightTray_closetotray=Fermer dans la zone de notification
 plugins_optional_JDLightTray_minimized=Seulement quand la fenêtre principale est minimisée
 plugins_optional_JDLightTray_never=Jamais
 plugins_optional_JDLightTray_passwordRequired=Entrer un mot de passe pour ouvrir de la zone de notification
