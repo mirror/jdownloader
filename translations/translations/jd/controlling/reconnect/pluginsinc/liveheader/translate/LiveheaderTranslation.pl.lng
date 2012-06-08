@@ -1,10 +1,15 @@
 EditScriptAction_EditScriptAction_=Edycja Skryptu
+EditScriptAction_EditScriptAction_tt=Wprowadź własny skrypt lub zmodyfikuj istniejący
 GetIPAction_GetIPAction_=Pobierz Adres IP Routera
-GetIPAction_GetIPAction_tt=Przeszukuje Twoją sieć i próbuje odnaleźć adres IP Twojego Routera
+GetIPAction_GetIPAction_tt=Przeszukuję Twoją sieć i próbuje odnaleźć adres IP Twojego Routera
+GetIPAction_actionPerformed_d_msg=Znajduję Adres IP Routera
 GetIPAction_actionPerformed_d_title=Wyszukiwanie Adresu IP Routera
 GetIPAction_getString_progress=Przeszukiwanie sieci...
 LiveHeaderReconnect_onConfigValueModified_ask_title=Podziel się ustawieniami Ponownego Połączenia
-RouterSendAction_RouterSendAction_=Podziel się z ustawieniami
+ReconnectRecorderAction_ReconnectRecorderAction_=Stwórz Nowy Skrypt
+RouterSendAction_RouterSendAction_=Podziel się ustawieniami
+RouterSendAction_RouterSendAction_tt=Podziel się ustawieniami z innymi. Pomocnik pozwoli ci przesłać twoje ustawienia Ponownego Połączenia na nasz serwer. Pozwoli to na automatyczną detekcję ustawień u innych użytkowników.
+RouterSendAction_actionPerformed_title=Podziel się ustawieniami Ponownego Połączenia
 gui_btn_abort=Przerwij
 gui_btn_cancel=Anuluj
 gui_btn_help=Pomoc
@@ -29,5 +34,5 @@ jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_wa
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=Wyłączone sprawdzanie adresu IP
 literally_password=Hasło
 literally_router_ip=IP routera
-literally_router_model=model routera
+literally_router_model=Model routera
 literally_username=Nazwa użytkownika
