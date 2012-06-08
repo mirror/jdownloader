@@ -101,6 +101,7 @@ EnabledAllAction_EnabledAllAction_object_hide=Cacher la sélection
 EnabledAllAction_EnabledAllAction_object_show=Afficher la sélection
 ExceptionsRuleDialog_getIfText_=Permet tous les liens correspondant à ces conditions, et ignore la liste de filtres
 ExceptionsTableModel_initColumns_condition_=Autoriser les liens si,
+FileColumn_setStringValue_msg_=Vous avez renommé un fichier d'une archive qui a plusieurs parties. Vous devez renommer toutes les parties afin de garder l'archive extractible !
 FilesizeFilter_toString_=est entre %s1 et %s2
 FilesizeFilter_toString_not=n'est pas entre %s1 et %s2
 FilesizeFilter_toString_same=est %s1
