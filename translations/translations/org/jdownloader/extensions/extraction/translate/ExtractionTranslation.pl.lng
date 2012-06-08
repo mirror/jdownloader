@@ -11,4 +11,5 @@ contextmenu_set_password=Hasło do rozpakowanie
 contextmenu_validate_parent=Weryfikacja archiwum
 downloadedok=Plik już istnieje
 local=Status pliku
+menu_tools_extract_files=Wypakuj Pliki
 online_tt=Link dostępny
