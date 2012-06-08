@@ -1,4 +1,4 @@
 interaction_externreconnect_command=Commande (utiliser des chemins de répertoire absolus)
 interaction_externreconnect_dummybat=Utiliser une routine spéciale pour Windows
 interaction_externreconnect_parameter=Paramètres (1 paramètre par ligne)
-jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=outil externe de reconnection
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Outil externe de reconnection
