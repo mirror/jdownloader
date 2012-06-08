@@ -5,6 +5,7 @@ UpdateException_socket=Pas de connexion internet au serveur de mise à jour: %s1
 dialog_rly_cancel=Voulez-vous vraiment annuler la mise à jour ?
 error_invalid_branch=L'édition '%s1' ne peut pas être mise à jour maintenant. Merci de réessayer plus tard
 error_service_not_available_right_now=Service non disponible. Réessayer dans 60 sec.)
+error_unknown_app=Impossible de mettre à jour %s1.                  Réessayer plus tard !
 error_unknown_branch=Edition inconnue : %s1
 error_unknown_server=Problèmes inconnus avec le serveur de mise à jour. S'il vous plaît réessayez plus tard.
 exception_msg=Une erreur inattendue s'est produite. Contactez le support.
