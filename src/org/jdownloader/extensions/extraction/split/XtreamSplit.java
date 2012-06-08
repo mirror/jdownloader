@@ -30,9 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.config.ConfigContainer;
-import jd.update.JSonWrapper;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.StringFormatter;
@@ -301,9 +298,6 @@ public class XtreamSplit extends IExtraction {
             }
         }
         return true;
-    }
-
-    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
     public String getArchiveName(ArchiveFactory factory) {

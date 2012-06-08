@@ -61,9 +61,9 @@ public class SubConfiguration extends Property implements Serializable {
                     JDLogger.getLogger().severe("Invalid Config Entry for " + name);
                 }
             }
+            /* this avoids fresh conversions on next startup as we load the JSonStorage */
+            json.put("saveWorkaround", System.currentTimeMillis());
         }
-        /* this avoids fresh conversions on next startup as we load the JSonStorage */
-        json.put("saveWorkaround", System.currentTimeMillis());
     }
 
     public void save() {

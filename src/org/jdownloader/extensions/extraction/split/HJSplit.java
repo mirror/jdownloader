@@ -20,9 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import jd.config.ConfigContainer;
-import jd.update.JSonWrapper;
-
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.extensions.extraction.Archive;
@@ -90,9 +87,6 @@ public class HJSplit extends IExtraction {
 
     public boolean prepare() {
         return true;
-    }
-
-    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
     public String getArchiveName(ArchiveFactory factory) {

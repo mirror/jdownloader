@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import jd.config.ConfigContainer;
-import jd.update.JSonWrapper;
-
 import org.appwork.utils.Regex;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -90,9 +87,6 @@ public class Unix extends IExtraction {
 
     public boolean prepare() {
         return true;
-    }
-
-    public void initConfig(ConfigContainer config, JSonWrapper subConfig) {
     }
 
     public String getArchiveName(ArchiveFactory factory) {
