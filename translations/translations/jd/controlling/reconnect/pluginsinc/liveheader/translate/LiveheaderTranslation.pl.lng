@@ -1,3 +1,10 @@
+EditScriptAction_EditScriptAction_=Edycja Skryptu
+GetIPAction_GetIPAction_=Pobierz Adres IP Routera
+GetIPAction_GetIPAction_tt=Przeszukuje Twoją sieć i próbuje odnaleźć adres IP Twojego Routera
+GetIPAction_actionPerformed_d_title=Wyszukiwanie Adresu IP Routera
+GetIPAction_getString_progress=Przeszukiwanie sieci...
+LiveHeaderReconnect_onConfigValueModified_ask_title=Podziel się ustawieniami Ponownego Połączenia
+RouterSendAction_RouterSendAction_=Podziel się z ustawieniami
 gui_btn_abort=Przerwij
 gui_btn_cancel=Anuluj
 gui_btn_help=Pomoc

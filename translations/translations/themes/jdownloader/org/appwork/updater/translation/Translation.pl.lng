@@ -1,2 +1,4 @@
 exit=Zamknij
+guiless_progress=Postęp: %s1% | %s2/%s3
+guiless_progress1=...Postęp: %s1%
 update_dialog_cancel=Anuluj
