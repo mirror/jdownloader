@@ -1,2 +1,14 @@
+archivename=Nazwa archiwum
+cannot_extract_incopmplete=Nie można wypakować %s1. Archiwum jest niekompletne!
+close=Zamknij
+contextmenu_auto_extract_package=Automatyczne wypakowywanie włączone
+contextmenu_autoextract=Automatyczne wypakowywanie włączone
+contextmenu_extract=Wypakuj
+contextmenu_extract_to=Ustaw ścieżkę wypakowywania
+contextmenu_main=Archiwum(-a)
+contextmenu_openextract_folder=Pokaż ścieżkę wypakowywania
+contextmenu_set_password=Hasło do rozpakowanie
+contextmenu_validate_parent=Weryfikacja archiwum
+downloadedok=Plik już istnieje
 local=Status pliku
 online_tt=Link dostępny

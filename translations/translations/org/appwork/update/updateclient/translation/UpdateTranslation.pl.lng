@@ -1,3 +1,12 @@
+cancel_update=Przerwij aktualizację
+clientUpdate=Updater się teraz zaktualizuje
+clientupdate_title=Updater jest przestarzały!
+close=Zamknij
+close_timeout=Zamknij (%s1 s)
+download_failed_resume=Pobieranie przerwane. Spróbuj wznowić...
+download_failed_retry=Pobieranie przerwane. Ponawianie...
+error_occured=Błąd
+exit=Zamknij
 guiless_downloadfinished=Pobieranie zakończone
 guiless_installFinished=Instalacja zakończona
 guiless_start_install=Instalowanie %s1 plik(ów)
