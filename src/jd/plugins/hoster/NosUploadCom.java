@@ -304,13 +304,16 @@ public class NosUploadCom extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "(?i)<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
                         if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
+                            dllink = new Regex(correctedBR, "<input type=button onClick=\"location.href=\\'([^\\'\"]+)").getMatch(0);
+                            if (dllink == null) {
+                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
+                                    }
                                 }
                             }
                         }

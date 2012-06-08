@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -46,7 +47,7 @@ public class ChThnhInfo extends PluginForDecrypt {
         if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String finallink : links) {
-            finallink = "http://chauthanh.info" + finallink;
+            finallink = "http://chauthanh.info" + Encoding.htmlDecode(finallink);
             decryptedLinks.add(createDownloadlink(finallink));
         }
         if (fpName != null) {
