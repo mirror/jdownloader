@@ -13,6 +13,7 @@ COPYCUTPASTE_SELECT=Wybierz
 DIALOG_MESSAGE_TITLE=Wiadomość
 EXTTABLE_SEARCH_DIALOG_TITLE=Przeszukaj tabelę
 ResetColumnsAction=Przywróć ustawienia kolumn
+SearchContextAction=Przeszukaj Tabelę
 Statusbar_Statusbar_visiturl_tooltip=Odwiedź naszą stronę
 active=Włączone
 connecting=Łączenie...
