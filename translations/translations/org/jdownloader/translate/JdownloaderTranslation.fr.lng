@@ -6,6 +6,7 @@ ImportAction_tt=Importer les règles depuis les fichiers *.jdfilter (*.jdregexfi
 LinkCollector_addCrawledLink_offlinepackage=Fichier hors ligne
 LinkCollector_addCrawledLink_variouspackage=Fichiers divers
 LinkCollector_archiv=%s1
+LinkCollector_onShutdownRequest_=Le collecteur de lien est toujours en cours !
 LinkCollector_onShutdownRequest_msg=Voulez-vous stopper la collecte de liens ?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Fichiers hors ligne
 LinkgrabberFilterRule_duplicate=%s1 (copie)
