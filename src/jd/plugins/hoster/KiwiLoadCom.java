@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwiload.com" }, urls = { "http://(www\\.)?kiwiload\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kiwiload.com" }, urls = { "http://(www\\.)?kiwiload\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es|de)/)?file/[0-9]+/)" }, flags = { 0 })
 public class KiwiLoadCom extends PluginForHost {
 
     public KiwiLoadCom(PluginWrapper wrapper) {
@@ -41,9 +41,12 @@ public class KiwiLoadCom extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST   = "http://kiwiload.com";
-    private static final String IPBLOCKED     = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
-    private static final String RECAPTCHATEXT = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
+    private static final String COOKIE_HOST = "http://kiwiload.com";
+    private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
