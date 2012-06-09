@@ -99,6 +99,7 @@ literally_exit=Završena je provjera Nadgradnji - Izlaz
 locked=Update nije moguć. %s1 još uvijek radi.
 log_you_are_up2date=Već imate posljednju verziju
 please_wait=Molimo sačekajte!
+please_wait_until_update_finished=Molimo sačekajte dok nadgrađivač završi svoj posao!
 readyToDownloadUpdates=%s1 nadgradnjije dostupno!
 readyToDownloadUpdatesDetailed=Download-ovati %s1 Nadgradnji sada?
 readyToInstallFiles=Instalirati %s1 dokumenata i foldera?
