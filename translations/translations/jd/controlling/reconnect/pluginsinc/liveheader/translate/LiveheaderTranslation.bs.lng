@@ -11,6 +11,7 @@ LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Usluga nije Dostupna
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Ponovna konekcija nije uspjela. Možete dijeliti samo radne postavke za ponovnu konekciju.
 ReconnectRecorderAction_ReconnectRecorderAction_=Kreiraj Novu Skriptu
 RouterSendAction_RouterSendAction_=Podijeli Podešenja
+RouterSendAction_RouterSendAction_tt=Podijelite svoj apodešenja sa drugima. Ovaj čarobnjak vam pomaže da upload-ujete svoja podešenja za Ponovnu Konekciju na naš Server. Ovo drugima pomaže unaprijeđenju automatske detekcije.
 RouterSendAction_actionPerformed_title=Podijeli Podešenja za Ponovno konektovanje
 gui_btn_abort=Prekini
 gui_btn_cancel=Otkaži
