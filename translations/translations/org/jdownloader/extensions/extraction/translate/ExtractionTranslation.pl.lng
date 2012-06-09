@@ -27,6 +27,7 @@ filename=Nazwa pliku
 hoster=Serwis
 local=Status pliku
 menu_tools_extract_files=Wypakuj Pliki
+name=Wypakowywanie Archiwów
 offline=Plik niedostępny lub usunięty
 offline_tt=Nie ma linku dla tej części w pakiecie lub link jest niedostępny
 online=Link dostępny
