@@ -118,3 +118,4 @@ settings_sidebar_tooltip_enable_extension=Omogući/Onemogući ovaj Dodatak
 system_download_errors_couldnotoverwrite=Nije moguće prepisati postojeći dokument
 system_download_errors_couldnotrename=Nije bilo moguće preimenovati Dio (Part) dokumenta
 system_download_errors_invalidoutputfile=Neispravan izlazni dokument
+system_download_errors_linkisBlocked=Mirror %s1 se učitava
