@@ -38,15 +38,23 @@ public class SprzrCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString();
+        br.setCookie("http://sprezer.com", "lang", "english");
         br.getPage(parameter);
-        final String fpName = br.getRegex("<title>Download ([^<>\"\\']+)</title>").getMatch(0);
-        String[] links = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http://(www\\.)?" + this.getHost() + "/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (br.containsHTML(">File Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String fpName = br.getRegex("<title>Download ([^<>\"\\']*?)</title>").getMatch(0);
+        final String[] links = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http://(www\\.)?" + this.getHost() + "/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String link : links) {
             // Saves traffic and time
             br.getHeaders().put("Referer", "http://www.sprezer.com/r_counter");
             br.getPage(link);
-            String finallink = br.getRegex("\\'>[\t\n\r ]+<frame src=\"(http://[^<>\"\\']+)\"").getMatch(0);
+            final String finallink = br.getRegex("\\'>[\t\n\r ]+<frame src=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

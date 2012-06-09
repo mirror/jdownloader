@@ -37,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(df|st|so|hf|fs|mu|rc|rs|nl|u[tl]|ff|fc|wu)[_-].*", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
 public class Srnnks extends PluginForDecrypt {
@@ -108,7 +109,7 @@ public class Srnnks extends PluginForDecrypt {
             ret = UserIO.RETURN_OK;
         } else {
             if (br.containsHTML("Error 503")) {
-                UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
+                UserIO.getInstance().requestMessageDialog(JDL.L("plugins.decrypter.srnks.overloaded", "Serienjunkies ist überlastet. Bitte versuche es später erneut."));
                 return true;
             }
 
@@ -120,7 +121,7 @@ public class Srnnks extends PluginForDecrypt {
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
                 }
-                ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+                ret = UserIO.getInstance().requestConfirmDialog(0, "Captchalimit", JDL.L("plugins.decrypter.srnks.CaptchaLimitReached", "Sie haben zu oft das Captcha falsch eingegeben sie müssen entweder warten oder einen Reconnect durchführen"), null, "Reconnect", JDL.L("plugins.decrypter.srnks.canceldecrypt", "Decryptvorgang abbrechen"));
 
             }
             if (br.containsHTML("Download-Limit")) {
@@ -130,7 +131,7 @@ public class Srnnks extends PluginForDecrypt {
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
                 }
-                ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen", null, "Reconnect", "Decrypten abbrechen");
+                ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", JDL.L("plugins.decrypter.srnks.DownloadLimitReached", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen"), null, "Reconnect", JDL.L("plugins.decrypter.srnks.canceldecrypt", "Decryptvorgang abbrechen"));
 
             }
         }
@@ -262,7 +263,8 @@ public class Srnnks extends PluginForDecrypt {
                             }
                             if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                 /*
-                                 * this form contains captcha image, so it must be valid
+                                 * this form contains captcha image, so it must
+                                 * be valid
                                  */
                             } else if (bestdist > 100) {
                                 form = null;
@@ -283,7 +285,7 @@ public class Srnnks extends PluginForDecrypt {
                                     captchaLink = "http://download.serienjunkies.org" + captchaLink;
                                 }
 
-                                crawlStatus = br.getRegex("<TITLE>.* - (.*?)</TITLE>").getMatch(0);
+                                crawlStatus = br.getRegex("<TITLE>.* \\- (.*?)</TITLE>").getMatch(0);
                                 if (crawlStatus == null) crawlStatus = "";
                                 crawlStatus += "(" + RUNNING.intValue() + " pending)";
                                 final File captcha = this.getLocalCaptchaFile(".png");

@@ -25,32 +25,33 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superuploader.net" }, urls = { "http://[\\w\\.]*?superuploader\\.net/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "superuploader.net" }, urls = { "http://(www\\.)?superuploader\\.net/.*?\\.html" }, flags = { 0 })
 public class SprpldrNt extends PluginForDecrypt {
 
     public SprpldrNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
-        if (br.containsHTML("File not found")) return null;
-        String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);
-        String packagename = br.getRegex("<title>SuperUploader.net :: Download (.*?)</title>").getMatch(0);
+        if (br.containsHTML("File not found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("<td>\\s+<a href=\"(http://.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String packagename = br.getRegex("<title>SuperUploader\\.net :: Download (.*?)</title>").getMatch(0);
         for (String link : links) {
             DownloadLink declink = createDownloadlink(link);
             decryptedLinks.add(declink);
-            if (packagename != null) {
-                declink.setName(packagename.trim());
-            }
+            if (packagename != null) declink.setName(packagename.trim());
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

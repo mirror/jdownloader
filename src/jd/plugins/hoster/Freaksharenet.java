@@ -106,7 +106,7 @@ public class Freaksharenet extends PluginForHost {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
                 rc.setCode(c);
-                if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
+                if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     continue;
                 }

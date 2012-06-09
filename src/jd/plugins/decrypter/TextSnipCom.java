@@ -22,13 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://[\\w\\.]*?textsnip\\.com/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "textsnip.com" }, urls = { "http://(www\\.)?textsnip\\.com/(?!user)[a-z0-9]+" }, flags = { 0 })
 public class TextSnipCom extends PluginForDecrypt {
 
     public TextSnipCom(PluginWrapper wrapper) {
@@ -41,14 +39,20 @@ public class TextSnipCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().equals("http://textsnip.com")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
-        if (br.getRedirectLocation() != null) return null;
-        String plaintxt = br.getRegex("<code>(.*?)</code>").getMatch(0);
-        if (plaintxt == null) return null;
+        if ("http://textsnip.com".equals(br.getRedirectLocation())) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getRedirectLocation() != null) { return null; }
+        final String plaintxt = br.getRegex("<code>(.*?)</code>").getMatch(0);
+        if (plaintxt == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {
             logger.info("Found no hosterlinks in plaintext from link " + parameter);
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+            return decryptedLinks;
         }
         /* avoid recursion */
         for (String link : links) {

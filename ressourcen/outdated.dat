@@ -797,3 +797,6 @@ jd/plugins/decrypter/TLnkParaCm.class
 jd/plugins/decrypter/TkdsyCm.class
 jd/plugins/decrypter/TastroNet.class
 jd/plugins/decrypter/RmHstlrNt.class
+jd/plugins/decrypter/SndTo.class
+jd/plugins/decrypter/ShrBsTFldr.class
+jd/plugins/decrypter/ShrngMtrxCm.class

@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "http://[\\w\\.]*?soundsnap.com/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "http://(www\\.)?soundsnap\\.com/.+" }, flags = { 0 })
 public class SndSnapDecrypt extends PluginForDecrypt {
 
     public SndSnapDecrypt(PluginWrapper wrapper) {
@@ -38,9 +36,15 @@ public class SndSnapDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(Page not found|Sorry, unable to find that page)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] ids = br.getRegex("node(-|/)(\\d+)").getColumn(1);
-        if (ids == null || ids.length == 0) return null;
+        if (br.containsHTML("(Page not found|Sorry, unable to find that page)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] ids = br.getRegex("node(-|/)(\\d+)").getColumn(1);
+        if (ids == null || ids.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String id : ids)
             decryptedLinks.add(createDownloadlink("decryptedsndspnr=" + id));
 

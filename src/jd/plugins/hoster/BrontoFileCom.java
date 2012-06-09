@@ -16,20 +16,15 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
-
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -75,74 +70,14 @@ public class BrontoFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        if (br.containsHTML("value=\"Free Users\""))
-            br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
-        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
-        String passCode = null;
-        Form captchaform = br.getFormbyProperty("name", "verifyform");
-        if (br.containsHTML("class=textinput name=downloadpw") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-            if (captchaform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (int i = 0; i <= 3; i++) {
-                if (br.containsHTML(RECAPTCHATEXT)) {
-                    logger.info("Found reCaptcha");
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.parse();
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    captchaform.put("recaptcha_challenge_field", rc.getChallenge());
-                    captchaform.put("recaptcha_response_field", getCaptchaCode(cf, downloadLink));
-                } else if (br.containsHTML(CHEAPCAPTCHATEXT)) {
-                    logger.info("Found normal captcha");
-                    String captchaurl = COOKIE_HOST + "/captcha.php";
-                    String code = getCaptchaCode("mhfstandard", captchaurl, downloadLink);
-                    captchaform.put("captchacode", code);
-                }
-                if (br.containsHTML("class=textinput name=downloadpw")) {
-                    if (downloadLink.getStringProperty("pass", null) == null) {
-                        passCode = Plugin.getUserInput("Password?", downloadLink);
-
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = downloadLink.getStringProperty("pass", null);
-                    }
-                    captchaform.put("downloadpw", passCode);
-                }
-                br.submitForm(captchaform);
-                if (br.containsHTML("Password Error")) {
-                    logger.warning("Wrong password!");
-                    downloadLink.setProperty("pass", null);
-                    continue;
-                }
-                if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    downloadLink.setProperty("pass", null);
-                    continue;
-                }
-                break;
-            }
-        }
-        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        if (br.containsHTML("Password Error")) {
-            logger.warning("Wrong password!");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-            logger.warning("Wrong captcha or wrong password!");
-            downloadLink.setProperty("pass", null);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
-        }
-        int wait = 30;
+        br.postPage(downloadLink.getDownloadURL(), "downloadtype=free&d=1&Free=Go+on+downloading%21");
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1001l);
+        String finalLink = findLink();
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int wait = 5;
         final String waittime = br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        String finalLink = findLink();
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, -10);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

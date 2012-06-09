@@ -38,6 +38,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "serienjunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/\\?(cat|p)=\\d+", "http://[\\w\\.]{0,4}serienjunkies\\.org/(?!safe).*?/.+" }, flags = { 0, 0 })
 public class SrnnksCategory extends PluginForDecrypt {
@@ -50,7 +51,7 @@ public class SrnnksCategory extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, final ProgressController progress) throws Exception {
         Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
         Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
-        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?"))) { return new ArrayList<DownloadLink>(); }
+        if (!UserIO.isOK(UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN, JDL.L("plugins.decrypter.srnkscategory.AddCategory", "Kategorie Decrypter!\r\nWillst du wirklich eine ganze Kategorie hinzufügen?")))) { return new ArrayList<DownloadLink>(); }
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
         if (br.containsHTML("<FRAME SRC")) {
@@ -58,7 +59,7 @@ public class SrnnksCategory extends PluginForDecrypt {
             br.getPage(br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
         }
         if (br.containsHTML("Error 503")) {
-            UserIO.getInstance().requestMessageDialog("Serienjunkies ist überlastet. Bitte versuch es später nocheinmal!");
+            UserIO.getInstance().requestMessageDialog(JDL.L("plugins.decrypter.srnks.overloaded", "Serienjunkies ist überlastet. Bitte versuche es später erneut."));
             return new ArrayList<DownloadLink>();
         }
 
@@ -81,14 +82,14 @@ public class SrnnksCategory extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
 
         String linksAsSingleString = convertListOfLinksToString(links);
-        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, "Entferne ungewollte Links", linksAsSingleString);
+        String linklist = UserIO.getInstance().requestInputDialog(UserIO.STYLE_LARGE | UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.RemoveUnwantedLinks", "Entferne ungewollte Links"), linksAsSingleString);
         if (linklist == null) return new ArrayList<DownloadLink>();
 
         String[] urls = HTMLParser.getHttpLinks(linklist, null);
         for (String url : urls) {
             ret.add(this.createDownloadlink(url));
         }
-        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, "Jetzt " + ret.size() + " Links Decrypten? Für Jeden Link muss ein Captcha eingegeben werden!"))) {
+        if (UserIO.isOK(UserIO.getInstance().requestConfirmDialog(0, String.format(JDL.L("plugins.decrypter.srnkscategory.DecryptLinks", "Jetzt %s Links Decrypten? Für Jeden Link muss ein Captcha eingegeben werden!"), ret.size())))) {
             return ret;
         } else {
             return new ArrayList<DownloadLink>();
@@ -99,12 +100,12 @@ public class SrnnksCategory extends PluginForDecrypt {
         String[] mirrors = selectedFormat.getMirrors();
         int[] selectedMirrorsIndices = null;
         try {
-            selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, "Bitte Mirrors auswählen", "Bitte die gewünschten Anbieter auswählen.", mirrors, null, null, null, null);
+            selectedMirrorsIndices = UserIO.getInstance().requestMultiSelectionDialog(0, JDL.L("plugins.decrypter.srnkscategory.SelectHostersHeadline", "Bitte Mirrors auswählen"), JDL.L("plugins.decrypter.srnkscategory.SelectHosters", "Bitte die gewünschten Anbieter auswählen."), mirrors, null, null, null, null);
         } catch (Throwable e) {
             /* this function DOES NOT exist in 09581 stable */
             // TODO Get rid of this catch section once MultiSelectionDialog
             // makes its way into stable
-            int selectedMirror = UserIO.getInstance().requestComboDialog(0, "Bitte Mirror auswählen", "Bitte den gewünschten Anbieter auswählen.", mirrors, 0, null, null, null, null);
+            int selectedMirror = UserIO.getInstance().requestComboDialog(0, JDL.L("plugins.decrypter.srnkscategory.SelectHostersHeadline", "Bitte Mirrors auswählen"), JDL.L("plugins.decrypter.srnkscategory.SelectHosters", "Bitte die gewünschten Anbieter auswählen."), mirrors, 0, null, null, null, null);
             if (selectedMirror < 0) return null;
             selectedMirrorsIndices = new int[] { selectedMirror };
         }
@@ -119,7 +120,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         Format[] formats = parseFormats(page);
         int res;
         if (formats.length > 1) {
-            res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, "Bitte Format auswählen", "Bitte das gewünsche Format auswählen.", formats, 0, null, null, null, null);
+            res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.SelectFormatHeadline", "Bitte Format auswählen"), JDL.L("plugins.decrypter.srnkscategory.SelectFormat", "Bitte das gewünsche Format auswählen."), formats, 0, null, null, null, null);
             if (res < 0) {
                 return null;
             } else {
@@ -136,7 +137,7 @@ public class SrnnksCategory extends PluginForDecrypt {
     private IdNamePair letTheUserSelectCategory() {
         IdNamePair[] categories = parseCategories();
         if (categories.length == 0) return null;
-        int res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, "Bitte Kategorie auswählen", "Bitte die gewünschte Staffel auswählen", categories, 0, null, null, null, null);
+        int res = UserIO.getInstance().requestComboDialog(UserIO.NO_COUNTDOWN, JDL.L("plugins.decrypter.srnkscategory.SelectSeasonHeadline", "Bitte Stabbel auswählen"), JDL.L("plugins.decrypter.srnkscategory.SelectSeason", "Bitte die gewünschte Staffel auswählen"), categories, 0, null, null, null, null);
         if (res < 0) return null;
 
         IdNamePair selectedCategory = categories[res];

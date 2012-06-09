@@ -20,7 +20,9 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -43,16 +45,25 @@ public class UMediafireCom extends PluginForDecrypt {
         }
         br.getPage("http://umediafire.com/" + iFrame);
         if (br.containsHTML("google\\.com/recaptcha")) {
-            br.getPage("http://umediafire.com/" + iFrame);
             if (br.containsHTML("google\\.com/recaptcha")) {
-                logger.warning("Couldn't skip captcha and there is no captcha handling, stopping, link: " + parameter + "\n");
-                logger.warning(br.toString());
-                return null;
+                for (int i = 0; i <= 5; i++) {
+                    final String captchaLink = br.getRegex("var captcha = \"(https?://[^<>\"]*?)\";").getMatch(0);
+                    final String challenge = br.getRegex("var captchaInput = \"([^<>\"]*?)\"").getMatch(0);
+                    if (captchaLink == null || challenge == null) {
+                        logger.info("Decrypter broken for link: " + parameter);
+                        return null;
+                    }
+                    final String code = getCaptchaCode(captchaLink, param);
+                    br.postPage("http://umediafire.com/index.php", "type=captcha&proxy=0&get=" + new Regex(iFrame, "(\\d+)$").getMatch(0) + "&recaptcha_challenge_field=" + challenge + "&captcha=" + code);
+                    logger.warning(br.toString());
+                    if (br.containsHTML("google\\.com/recaptcha")) continue;
+                    break;
+                }
+                if (br.containsHTML("google\\.com/recaptcha")) throw new Exception(DecrypterException.CAPTCHA);
             }
         }
-        System.out.println(br.toString());
-        final String check = br.getRegex("var check = \\'(http://[^<>\"]*?)\\';").getMatch(0);
-        if (check == null) {
+        final String fastWay = br.getRegex("var check = \\'http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+/([a-z0-9]+)").getMatch(0);
+        if (fastWay == null) {
             final String finallink = br.getRegex("var link = \"(http://[^<>\"]*?)\";").getMatch(0);
             if (finallink == null) {
                 logger.info("Decrypter broken for link: " + parameter);
@@ -60,7 +71,7 @@ public class UMediafireCom extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
-            decryptedLinks.add(createDownloadlink("directhttp://" + check));
+            decryptedLinks.add(createDownloadlink("http://mediafire.com/?" + fastWay));
         }
         return decryptedLinks;
     }
