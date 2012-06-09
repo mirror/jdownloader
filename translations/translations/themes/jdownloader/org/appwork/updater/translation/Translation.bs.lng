@@ -34,6 +34,7 @@ guiless_you_are_up2date=Već imate posljednju verziju
 install_updates_later=Pitaj me kasnije!
 install_updates_now=Instaliraj sada!
 literally_exit=Završena je provjera Nadgradnji - Izlaz
+restart_msg=Nadgradnja sada mora restartovati.
 restart_required_msg=Nadgrađivač će se sada sam restartovati
 restart_required_title=Potreban je Restart
 restart_title=Restartuj!
