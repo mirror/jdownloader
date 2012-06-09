@@ -6,4 +6,7 @@ gui_download_filesize_unknown=Ukuran berkas tak diketahui
 gui_download_waittime_status2=Tunggu %s1
 gui_downloadlink_hostertempunavail=Unduh saat ini tak mungkin
 gui_downloadlink_hosterwaittime=Waktu tunggu penyedia
+gui_javacheck_newerjavaavailable_title=Java veri usang terdeteksi : %s1
+gui_mainframe_title_updatemessage2=%s1 pemutakhiran telah tersedia
 jd_controlling_SingleDownloadController_askexists_title=Berkas sudah ada
+literally_yes=Ya
