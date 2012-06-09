@@ -38,7 +38,8 @@ public class FilePackageStorable implements Storable {
 
     public HashMap<String, Object> getProperties() {
         /* WORKAROUND for Idiots using null as HashMap Key :p */
-        filePackage.getProperties().remove(null);
+        HashMap<String, Object> properties = filePackage.getProperties();
+        if (properties != null) properties.remove(null);
         return filePackage.getProperties();
     }
 
