@@ -1,5 +1,6 @@
 DownloadWatchDog_onShutdownRequest_=Pobieranie w toku!
 DownloadWatchDog_onShutdownRequest_msg=Czy chcesz zatrzymać wszystkie pobierania i opuścić JDownloader?
+DuplicateAction_DuplicateAction_=Zdublowana Reguła
 LinkCollector_addCrawledLink_offlinepackage=Pliki niedostępne (offline)
 LinkCollector_addCrawledLink_variouspackage=Pozostałe pliki
 Main_run_autostart_=Uruchamianie Pobierania
@@ -14,6 +15,7 @@ basics_no=Nie
 basics_yes=Tak
 captchacontroller_cancel_dialog_allorhost_all=Pomiń wszystkie oczekujące Captcha
 captchacontroller_cancel_dialog_allorhost_cancelhost=Nie pokazuj oczekujących Captcha przez %s1
+captchacontroller_cancel_dialog_allorhost_next=Pokaż wszytkie oczekujące kody Captcha
 configheader_enabled=Włączony
 controller_packages_defaultname=różny
 controller_status_connectionproblems=Połączenie utracone
