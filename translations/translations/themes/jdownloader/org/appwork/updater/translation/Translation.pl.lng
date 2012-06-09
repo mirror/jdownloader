@@ -1,4 +1,10 @@
+JDUpdater_start_updater_update_msg=Uruchom ponownie i wykonaj aktyalizację.
+dialog_rly_cancel=Przerwać aktualizację?
+exception_title=Wystąpił błąd
 exit=Zamknij
+guiless_download_data=Pobieranie pakietu aktualizacyjnego
+guiless_downloadfinished=Pobieranie zakończone.
+guiless_error_occured_start_reverting=Wystąpił błąd. Wycofywanie zmian...
 guiless_progress=Postęp: %s1% | %s2/%s3
 guiless_progress1=...Postęp: %s1%
 guiless_selfupdate=Updater wykona samo-aktualizację

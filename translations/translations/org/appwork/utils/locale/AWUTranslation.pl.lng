@@ -37,3 +37,5 @@ literally_tebibyte=%s1 TB
 pathchooser_browselabel=Przeglądaj
 pathchooser_dialog_title=Wybierz ścieżkę!
 pathchooser_helptext=Wprowadź scieżkę...
+proxy_direct=Bezpośrednie %s1
+proxy_none=Bezpośrednie

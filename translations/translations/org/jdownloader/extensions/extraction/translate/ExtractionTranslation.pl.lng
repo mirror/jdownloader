@@ -64,6 +64,7 @@ settings_passwords=Lista haseł
 settings_remove_after_extract=Usunąć archiwum po pomyślnym rozpakowaniu?
 settings_remove_after_extract_downloadlink=Usunąć linki po pomyślnym rozpakowaniu?
 settings_use_subpath=Utwórz podkatalog
+settings_various=Różne
 tooltip_NameColumn=Nazwa archiwum
 tooltip_empty=Brak zadania "wypakowanie archiwum"
 unknown=Nieznany
