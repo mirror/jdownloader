@@ -213,7 +213,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=", false);
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=");
         String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
         for (String element : decryptedData) {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
@@ -246,16 +246,15 @@ public class VKontakteRu extends PluginForDecrypt {
         if (parameter.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) parameter = "http://vk.com/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
         br.getPage(parameter);
         final String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
-        if (numberOfEntrys == null) {
+        final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
+        if (numberOfEntrys == null || startOffset == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
-        if (startOffset == null) startOffset = "14";
         /** Photos are placed in different locations, find them all */
         final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "0" } };
         final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, parameter, "al=1&part=1&offset=", false);
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, parameter, "al=1&part=1&offset=");
         for (String element : decryptedData) {
             final String decryptedLink = "http://vk.com/" + element;
             decryptedLinks.add(createDownloadlink(decryptedLink));
@@ -276,7 +275,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesPage1 = { { "<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[(\\d+, \\d+), \\'", "0" } };
         final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=", false);
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
         int counter = 1;
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
@@ -374,10 +373,9 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData, boolean forceOneLoop) throws IOException {
+    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
-        int maxLoops = 1;
-        if (!forceOneLoop) maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
+        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
         if (maxLoops < 0) maxLoops = 0;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int addedLinks = 0;
