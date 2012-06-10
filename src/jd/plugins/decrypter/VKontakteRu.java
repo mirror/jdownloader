@@ -213,7 +213,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=", false);
         String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
         for (String element : decryptedData) {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
@@ -250,10 +250,12 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
+        if (startOffset == null) startOffset = "14";
         /** Photos are placed in different locations, find them all */
-        final String[][] regexesPage1 = { { "class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_album_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" }, { "<div class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)\"", "0" } };
+        final String[][] regexesPage1 = { { "class=\"photo_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "0" } };
         final String[][] regexesAllOthers = { { "class=\"photo(_album)?_row\" id=\"(tag\\d+|album(\\-)?\\d+_\\d+)", "1" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 49, 12, 40, parameter, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, Integer.parseInt(startOffset), 12, 18, parameter, "al=1&part=1&offset=", false);
         for (String element : decryptedData) {
             final String decryptedLink = "http://vk.com/" + element;
             decryptedLinks.add(createDownloadlink(decryptedLink));
@@ -274,7 +276,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesPage1 = { { "<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[(\\d+, \\d+), \\'", "0" } };
         final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=", false);
         int counter = 1;
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
@@ -372,11 +374,13 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData, boolean forceOneLoop) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
-        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
+        int maxLoops = 1;
+        if (!forceOneLoop) maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
         if (maxLoops < 0) maxLoops = 0;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        int addedLinks = 0;
         for (int i = 0; i <= maxLoops; i++) {
             if (i > 0) {
                 offset += increase;
@@ -384,21 +388,25 @@ public class VKontakteRu extends PluginForDecrypt {
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
-                    if (theData == null || theData.length == 0) continue;
+                    if (theData == null || theData.length == 0) break;
+                    addedLinks = theData.length;
                     for (String data : theData) {
                         decryptedData.add(data);
                     }
                 }
             } else {
-                for (String regex[] : regexesAllOthers) {
+                for (String regex[] : regexesPageOne) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
-                    if (theData == null || theData.length == 0) continue;
+                    if (theData == null || theData.length == 0) break;
+                    addedLinks = theData.length;
                     for (String data : theData) {
                         decryptedData.add(data);
                     }
                 }
             }
+            // Prevent unneeded requests
+            if (addedLinks < increase) break;
         }
         if (decryptedData == null || decryptedData.size() == 0) {
             logger.warning("Decrypter couldn't find theData for linktype: " + type);

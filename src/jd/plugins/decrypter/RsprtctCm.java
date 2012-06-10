@@ -22,13 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rsprotect.com" }, urls = { "http://(www\\.)?rsprotect\\.com/visit_\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rsprotect.com" }, urls = { "http://(www\\.)?rsprotect\\.com/rc\\-[A-Za-z0-9]+/[^<>\"/]+" }, flags = { 0 })
 public class RsprtctCm extends PluginForDecrypt {
 
     public RsprtctCm(PluginWrapper wrapper) {
@@ -39,11 +37,17 @@ public class RsprtctCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("No htmlCode read")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String link = br.getRegex("<font color=\"#990000\" style=\"font\\-size:12px;\"><b><u>(http://.*?)</u></b></font></td>").getMatch(0);
-        if (link == null) link = br.getRegex("<title>You want to visit (http://.*?)</title>").getMatch(0);
-        if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        String finallink = br.getRegex("onsubmit=\"return checkStatus\\(\\)\" action=\"(https?://[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        finallink = Encoding.htmlDecode(finallink);
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
         return decryptedLinks;
     }
 

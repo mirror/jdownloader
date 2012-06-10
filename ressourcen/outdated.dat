@@ -800,3 +800,5 @@ jd/plugins/decrypter/RmHstlrNt.class
 jd/plugins/decrypter/SndTo.class
 jd/plugins/decrypter/ShrBsTFldr.class
 jd/plugins/decrypter/ShrngMtrxCm.class
+jd/plugins/decrypter/ShrnknCm.class
+jd/plugins/decrypter/RsdStr.class

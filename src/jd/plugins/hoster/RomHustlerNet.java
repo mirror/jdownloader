@@ -40,7 +40,7 @@ public class RomHustlerNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -63,7 +63,7 @@ public class RomHustlerNet extends PluginForHost {
         if (finallink == null || !finallink.startsWith("http://") || finallink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         br.getHeaders().put("X-Requested-With", null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

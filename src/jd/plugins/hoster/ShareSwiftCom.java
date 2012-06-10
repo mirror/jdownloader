@@ -43,15 +43,45 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class ShareSwiftCom extends PluginForHost {
 
     public String               brbefore     = "";
-
     private static final String passwordText = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-
     private static final String COOKIE_HOST  = "http://shareswift.com";
-
     public boolean              nopremium    = false;
 
     public ShareSwiftCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (new Regex(brbefore, "(>File Not Found<|>The file expired|>The file was deleted by its owner)").matches()) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex info = new Regex(brbefore, "<br><br>[\t\n\r ]+<div>([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;<b>([^<>\"]*?)</b>");
+        String filename = info.getMatch(0);
+        if (filename == null) filename = new Regex(brbefore, "<b>Filename:</b></td><td nowrap>([^<>\"]*?)</div>").getMatch(0);
+        String filesize = info.getMatch(1);
+        if (filesize == null) filesize = new Regex(brbefore, "\\((\\d+ bytes)\\)").getMatch(0);
+        if (filename == null || filename.equals("")) {
+            if (brbefore.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -328,39 +358,6 @@ public class ShareSwiftCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (brbefore.contains("(No such file|No such user exist|File not found)")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Regex info = new Regex(brbefore, "<br><br>[\t\n\r ]+<div>([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;\\&nbsp;<b>([^<>\"]*?)</b>");
-        String filename = info.getMatch(0);
-        if (filename == null) filename = new Regex(brbefore, "<b>Filename:</b></td><td nowrap>([^<>\"]*?)</div>").getMatch(0);
-        String filesize = info.getMatch(1);
-        if (filesize == null) filesize = new Regex(brbefore, "\\((\\d+ bytes)\\)").getMatch(0);
-        if (filename == null || filename.equals("")) {
-            if (brbefore.contains("You have reached the download-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
