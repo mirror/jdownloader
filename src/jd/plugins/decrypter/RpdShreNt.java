@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.net" }, urls = { "http://[\\w\\.]*?rapidshare\\.net/(files/[0-9]+/.+|go/[0-9a-zA-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.net" }, urls = { "http://(www\\.)?rapidshare\\.net/(files/[0-9]+/.+|go/[0-9a-zA-Z]+)" }, flags = { 0 })
 public class RpdShreNt extends PluginForDecrypt {
 
     public RpdShreNt(PluginWrapper wrapper) {

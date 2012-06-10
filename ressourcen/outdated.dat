@@ -802,3 +802,6 @@ jd/plugins/decrypter/ShrBsTFldr.class
 jd/plugins/decrypter/ShrngMtrxCm.class
 jd/plugins/decrypter/ShrnknCm.class
 jd/plugins/decrypter/RsdStr.class
+jd/plugins/decrypter/NmNt.class
+jd/plugins/decrypter/RpdshrM.class
+jd/plugins/decrypter/RpdSprdCm.class

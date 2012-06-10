@@ -213,7 +213,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         final String[][] regexesPage1 = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
         final String[][] regexesAllOthers = { { "><a href=\"/photo((\\-)?\\d+_\\d+(\\?tag=\\d+)?)\"", "0" } };
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 40, 40, 80, parameter, "al=1&part=1&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 80, 40, 80, parameter, "al=1&part=1&offset=");
         String albumID = new Regex(parameter, "/(album.+)").getMatch(0);
         for (String element : decryptedData) {
             if (albumID == null) albumID = "tag" + new Regex(element, "\\?tag=(\\d+)").getMatch(0);
@@ -275,7 +275,7 @@ public class VKontakteRu extends PluginForDecrypt {
         final String[][] regexesPage1 = { { "<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[(\\d+, \\d+), \\'", "0" } };
         final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
-        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 0, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
+        final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
         int counter = 1;
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
@@ -381,22 +381,28 @@ public class VKontakteRu extends PluginForDecrypt {
         int addedLinks = 0;
         for (int i = 0; i <= maxLoops; i++) {
             if (i > 0) {
-                offset += increase;
                 br.postPage(postPage, postData + offset);
                 for (String regex[] : regexesAllOthers) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
-                    if (theData == null || theData.length == 0) break;
+                    if (theData == null || theData.length == 0) {
+                        addedLinks = 0;
+                        break;
+                    }
                     addedLinks = theData.length;
                     for (String data : theData) {
                         decryptedData.add(data);
                     }
                 }
+                offset += increase;
             } else {
                 for (String regex[] : regexesPageOne) {
                     String correctedBR = br.toString().replace("\\", "");
                     String[] theData = new Regex(correctedBR, regex[0]).getColumn(Integer.parseInt(regex[1]));
-                    if (theData == null || theData.length == 0) break;
+                    if (theData == null || theData.length == 0) {
+                        addedLinks = 0;
+                        break;
+                    }
                     addedLinks = theData.length;
                     for (String data : theData) {
                         decryptedData.add(data);
