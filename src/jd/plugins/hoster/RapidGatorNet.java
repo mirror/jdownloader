@@ -55,6 +55,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://rapidgator.net/";
     private static final Object LOCK     = new Object();
+    private static final String UA       = jd.plugins.hoster.MediafireCom.stringUserAgent();
 
     @Override
     public String getAGBLink() {
@@ -71,7 +72,7 @@ public class RapidGatorNet extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
         if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 15 * 60 * 1000l);
-        final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
         if (freedlsizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
         final String reconnectWait = br.getRegex("Delay between downloads must be not less than (\\d+) min\\.<br>Don`t want to wait\\? <a style=\"").getMatch(0);
         if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnectWait) + 1) * 60 * 1000l);
@@ -207,6 +208,7 @@ public class RapidGatorNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepareBrowser(br);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
             link.setUrlDownload(link.getDownloadURL().replace("%", ""));
@@ -217,14 +219,15 @@ public class RapidGatorNet extends PluginForHost {
             if (filenameFromURL != null) link.setName(filenameFromURL);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String freedlsizelimit = br.getRegex("(?i)\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
-        if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "No free download link for this file"));
+        final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
         String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
         String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
@@ -241,7 +244,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private void prepareBrowser(Browser br) {
         if (br == null) return;
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.168 Safari/535.19");
+        br.getHeaders().put("User-Agent", UA);
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
         br.getHeaders().put("Cache-Control", null);
@@ -256,7 +259,6 @@ public class RapidGatorNet extends PluginForHost {
         synchronized (LOCK) {
             try {
                 // Load cookies
-                br.setReadTimeout(2 * 60 * 1000);
                 br.setCookiesExclusive(true);
                 prepareBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
