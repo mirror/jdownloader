@@ -476,21 +476,22 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         /* import old passwordlist */
         boolean oldPWListImported = false;
         try {
-            if ((oldPWListImported = getSettings().isOldPWListImported())) return;
-            SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
-            Object oldList = oldConfig.getProperties().get("LIST2");
-            ArrayList<String> currentList = getSettings().getPasswordList();
-            if (currentList == null) currentList = new ArrayList<String>();
-            if (oldList != null && oldList instanceof List) {
-                for (Object item : (List<?>) oldList) {
-                    if (item != null && item instanceof String) {
-                        String pw = (String) item;
-                        currentList.remove(pw);
-                        currentList.add(pw);
+            if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
+                SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
+                Object oldList = oldConfig.getProperties().get("LIST2");
+                ArrayList<String> currentList = getSettings().getPasswordList();
+                if (currentList == null) currentList = new ArrayList<String>();
+                if (oldList != null && oldList instanceof List) {
+                    for (Object item : (List<?>) oldList) {
+                        if (item != null && item instanceof String) {
+                            String pw = (String) item;
+                            currentList.remove(pw);
+                            currentList.add(pw);
+                        }
                     }
                 }
+                getSettings().setPasswordList(currentList);
             }
-            getSettings().setPasswordList(currentList);
         } catch (final Throwable e) {
         } finally {
             if (oldPWListImported == false) {
