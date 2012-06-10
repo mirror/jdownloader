@@ -100,6 +100,7 @@ gui_warning_reconnectSuccess=Ponowne połączenie udane
 gui_warning_reconnect_running=Trwa ponowne połączanie...
 gui_warning_reconnectunknown=Nieznany stan ponownego połączenia
 jd_controlling_SingleDownloadController_askexists_title=Plik istnieje
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nie wybrano metody Ponownego Połączenia</u></b><br/><p>Ponowne Połączenie to sposób skrócenie czasu długiego oczekiwania pomiędzy kolejnymi pobraniami, zazwyczaj dla użytkowników darmowych.<br>Dla użytkowników kont Premium nie ma to znaczenia.</p><p>Więcej można znaleść pod adresem: <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Bez Ponownego Połączenia
 jd_plugins_PluginUtils_askPassword=Wproadź hasło dla %s1
 literally_offline=Niedostępne

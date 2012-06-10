@@ -5,6 +5,7 @@ GetIPAction_GetIPAction_tt=Przeszukuję Twoją sieć i próbuje odnaleźć adres
 GetIPAction_actionPerformed_d_msg=Znajduję Adres IP Routera
 GetIPAction_actionPerformed_d_title=Wyszukiwanie Adresu IP Routera
 GetIPAction_getString_progress=Przeszukiwanie sieci...
+LiveHeaderReconnect_onConfigValueModified_ask_msg=Ustawiłeś pomyślnie konfigurację Ponownego Połączenia.\r\nProszę podziel się ustawieniami aby usprawnić działanie naszego Pomocnika tworzenia skryptu Ponownego Połączenia.
 LiveHeaderReconnect_onConfigValueModified_ask_title=Podziel się ustawieniami Ponownego Połączenia
 ReconnectRecorderAction_ReconnectRecorderAction_=Stwórz Nowy Skrypt
 RouterSendAction_RouterSendAction_=Podziel się ustawieniami
