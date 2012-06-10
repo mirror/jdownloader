@@ -109,7 +109,7 @@ public class BitoManRu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Файл не найден\\. Возможно указан неверный идентификатор|<title>Bitoman\\.ru \\- Ошибка</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Файл удален из\\-за того, что его никто не качал более 30 дней\\.|>Файл не найден\\. Возможно указан неверный идентификатор|<title>Bitoman\\.ru \\- Ошибка</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Скачать:</p>\\&nbsp;\\&nbsp;<p class=\"valueNameSize\" title=\"\">(.*?)</p>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("class=\"download_kachaem\">Качаем: <b>(.*?)</b></div>").getMatch(0);

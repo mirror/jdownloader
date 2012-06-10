@@ -22,7 +22,6 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -37,7 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15422 $", interfaceVersion = 2, names = { "vip.animea.net", "manga.animea.net" }, urls = { "REGEX_NOT_YET_KNOWN_ASDFASDFASD", "ANIMEA://.+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision: 15422 $", interfaceVersion = 2, names = { "vip.animea.net", "manga.animea.net" }, urls = { "https?://vip\\.animea\\.net/list/d\\.php\\?f=\\d+", "ANIMEA://.+" }, flags = { 2, 0 })
 public class AnimeaNet extends PluginForHost {
 
     /**
@@ -45,22 +44,25 @@ public class AnimeaNet extends PluginForHost {
      */
 
     // DEV NOTES
-    // other: required because jd urldecodes %23 into #. Which results in 404.
-    // Impractical to use directhttp
+    // other: required because jd urldecodes %23 into #. Which results in 404. Impractical to use directhttp
     // other: also a place holder for vip.animea.net
 
-    private static final String COOKIE_HOST = "http://vip.animea.net";
-    private static final Object LOCK        = new Object();
+    private static final Object LOCK = new Object();
 
     public AnimeaNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST.replace("http://", "https://") +
-        // "/join/");
+        this.enablePremium("http://" + this.getHost() + "/");
+    }
+
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie("http://" + this.getHost(), "lang", "english");
     }
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/signup.php";
+        return this.getHost() + "/signup.php";
     }
 
     @Override
@@ -71,6 +73,7 @@ public class AnimeaNet extends PluginForHost {
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
+        prepBrowser();
         br.setFollowRedirects(false);
         if (urls == null || urls.length == 0) { return false; }
         try {
@@ -101,6 +104,7 @@ public class AnimeaNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        prepBrowser();
         String dllink = downloadLink.getDownloadURL();
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -118,6 +122,8 @@ public class AnimeaNet extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        this.setBrowserExclusive();
+        login(account, false);
         String dllink = downloadLink.getDownloadURL();
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
@@ -136,54 +142,49 @@ public class AnimeaNet extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        if (true) {
-            account.setValid(false);
-            return ai;
-        }
         try {
-            login(account, this.br);
+            login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
         account.setValid(true);
-        ai.setStatus("Free Registered User");
+        ai.setStatus("Premium User");
         return ai;
     }
 
     @SuppressWarnings("unchecked")
-    public void login(Account account, Browser br) throws Exception {
-        // needs changing to COOKIE_HOST..... still deviantart
+    public void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            br.setCookie(COOKIE_HOST, key, value);
+                            br.setCookie("http://" + this.getHost(), key, value);
                         }
                         return;
                     }
                 }
-                br.setCookie(COOKIE_HOST, "lang", "english");
-                br.getPage(COOKIE_HOST + "/login.php");
-                Form loginform = br.getFormbyProperty("id", "login");
+                br.setFollowRedirects(true);
+                br.getPage("http://" + this.getHost() + "/login.php");
+                Form loginform = br.getFormbyProperty("name", "login");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_me", "1");
+                loginform.put("amember_login", Encoding.urlEncode(account.getUser()));
+                loginform.put("amember_pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
-                if (!br.getRedirectLocation().contains("/users/loggedin")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie("http://" + this.getHost().replace("vip.", "") + "/", "amember_nr") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = br.getCookies(COOKIE_HOST);
+                final Cookies add = br.getCookies("http://" + this.getHost());
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }

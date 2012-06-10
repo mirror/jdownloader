@@ -40,6 +40,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private ArrayList<PackagizerRuleWrapper>    urlFilter;
 
     public static final String                  ORGFILENAME = "orgfilename";
+    public static final String                  ORGFILETYPE = "orgfiletype";
     public static final String                  HOSTER      = "hoster";
     public static final String                  SOURCE      = "source";
     public static final String                  PACKAGENAME = "packagename";
@@ -137,6 +138,23 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
             public String getID() {
                 return ORGFILENAME;
+            }
+
+        });
+
+        addReplacer(new PackagizerReplacer() {
+
+            private Pattern pat = Pattern.compile("<jd:orgfiletype/?>");
+
+            public String replace(String modifiers, CrawledLink link, String input, PackagizerRuleWrapper lgr) {
+                String fileType = new Regex(link.getName(), "\\.([0-9a-zA-Z]+)$").getMatch(0);
+
+                if (modifiers != null) { return Pattern.compile("<jd:orgfiletype:" + modifiers + "/?>").matcher(input).replaceAll(new Regex(fileType, lgr.getFileNameRule().getPattern()).getRow(0)[Integer.parseInt(modifiers) - 1]); }
+                return pat.matcher(input).replaceAll(fileType);
+            }
+
+            public String getID() {
+                return ORGFILETYPE;
             }
 
         });

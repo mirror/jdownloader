@@ -27,7 +27,6 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,7 +46,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8}/[^<>\"/]*?\\.html|files/[a-z0-9]{8}/.+)" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
-    // private static final String RECAPTCHA = "/recaptcha/";
     private static final String  JSONHOST         = "http://bitshare.com/files-ajax/";
     private static final String  AJAXIDREGEX      = "var ajaxdl = \"(.*?)\";";
     private static final String  FILEIDREGEX      = "bitshare\\.com/files/([a-z0-9]{8})/";
@@ -57,7 +55,7 @@ public class BitShareCom extends PluginForHost {
     private static final Object  LOCK             = new Object();
     private static char[]        FILENAMEREPLACES = new char[] { '-' };
 
-    private static final String  agent            = RandomUserAgent.generate();
+    private static final String  agent            = jd.plugins.hoster.MediafireCom.stringUserAgent();
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -170,15 +168,13 @@ public class BitShareCom extends PluginForHost {
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br2.postPage(JSONHOST + fileID + "/request.html", "request=generateID&ajaxid=" + tempID);
         String regexedWait = null;
-        /** Difference between file links and streams */
-        if (dllink != null)
-            regexedWait = br2.getRegex("mp4:(\\d+):").getMatch(0);
-        else
-            regexedWait = br2.getRegex("file:(\\d+):").getMatch(0);
+        regexedWait = br2.getRegex("\\w+:(\\d+):").getMatch(0);
         int wait = 45;
         if (regexedWait != null) {
             wait = Integer.parseInt(regexedWait);
-            logger.info("Waittime-Regex worked, regexed waittime = " + wait);
+            logger.info("Waittime Regex Worked!, regexed waittime = " + wait);
+        } else {
+            logger.warning("Waittime Regex Failed!, failsafe waittime = " + wait);
         }
         wait += 3;
         sleep(wait * 1001l, downloadLink);
@@ -219,7 +215,7 @@ public class BitShareCom extends PluginForHost {
         /** For files */
         if (dllink == null) {
             br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
-            if (br.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br2.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
             if (dllink == null) {
                 logger.severe(br2.toString());
@@ -300,6 +296,8 @@ public class BitShareCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                br.getHeaders().put("User-Agent", agent);
+                br.setCookie(MAINPAGE, "language_selection", "EN");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -314,8 +312,6 @@ public class BitShareCom extends PluginForHost {
                         return;
                     }
                 }
-                br.getHeaders().put("User-Agent", agent);
-                br.setCookie(MAINPAGE, "language_selection", "EN");
                 br.postPage("http://bitshare.com/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=&submit=Login");
                 if (br.containsHTML(">Free</a></b>")) {
                     account.setProperty("freeaccount", true);
@@ -356,10 +352,10 @@ public class BitShareCom extends PluginForHost {
             }
             link.setUrlDownload(newlink);
         }
-        Regex nameAndSize = br.getRegex("<h1>(Downloading|Streaming) (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
+        Regex nameAndSize = br.getRegex("<h1>(Listen to|Downloading|Streaming) (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
         String filename = nameAndSize.getMatch(1);
         String filesize = nameAndSize.getMatch(2);
-        if (filename == null || filesize == null) {
+        if (filename == null) {
             logger.warning("Filename or filesize is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -377,7 +373,7 @@ public class BitShareCom extends PluginForHost {
             }
         }
         link.setName(filename);
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
 
         return AvailableStatus.TRUE;
     }
