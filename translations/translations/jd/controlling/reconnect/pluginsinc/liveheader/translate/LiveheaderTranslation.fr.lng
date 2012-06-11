@@ -30,6 +30,7 @@ LiveHeaderReconnect_onConfigValueModified_ask_title=Partager paramètres de reco
 ReconnectRecorderAction_ReconnectRecorderAction_=Créer un nouveau script
 RouterSendAction_RouterSendAction_=Partager les paramètres
 RouterSendAction_actionPerformed_=Partager vos paramètres de reconnexion
+RouterSendAction_actionPerformed_msg=JDownloader a détecté que vous avez réussi à configurer vos paramètres de reconnexion. S'il vous plaît utilisez cet assistant et partagez vos paramètres avec d'autres. Cela ne vous prendra que quelques secondes.
 RouterSendAction_actionPerformed_title=Partager paramètres de reconnexion
 gui_btn_abort=Abandonner
 gui_btn_cancel=Annuler

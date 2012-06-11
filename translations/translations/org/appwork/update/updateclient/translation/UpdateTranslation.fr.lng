@@ -98,6 +98,7 @@ list_optionals_header=Paquets optionnels
 locked=Impossible de mettre à jour, %s1 est toujours en cours.
 locked_dialog_msg=Impossible d'installer la mise à jour. Il semble que %s1 soit toujours en cours. S'il vous plaît fermer l'application  principale %s1.
 locked_dialog_title=Fermer l'application principale
+log_x_files_to_update_found=Trouvé : %s2 fichier(s) à télécharger, %s1 fichier(s) à installer & %s3 fichier(s) périmés
 log_you_are_up2date=Vous avez déjà la dernière version
 please_wait=Veuillez attendre !
 please_wait_until_update_finished=Merci de d'attendre que la mise à jour soit terminée!
