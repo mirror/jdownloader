@@ -100,6 +100,7 @@ DeleteFailedAction_DeleteFailedAction_object_=Liens échoués
 DeleteOfflineAction_DeleteOfflineAction_object_=Liens hors ligne
 DeleteQuickAction_DeleteQuickAction_object_=Effacer
 DeleteSuccessFulAction_DeleteSuccessFulAction_object_=Liens Réussis
+DownloadFolderChooserDialog_handleNonExistingFolders_title_=Le dossier n'existe pas !
 DownloadFolderColumn_onSingleClick_object_=... un simple clic et un double clic sur la barre d'un dossier de téléchargement ont différentes fonctions:     Un simple clic ouvre une boîte de dialogue pour choisir un nouveau dossier de téléchargement.     Un double clic ouvre le dossier de téléchargement en cours dans l'explorateur.
 DownloadPasswordColumn_DownloadPasswordColumn_object_=Mot de passe du téléchargement
 DownloadTableContextMenuFactory_createDeleteFromListAndDisk_object_=... supprimer les fichiers téléchargés
