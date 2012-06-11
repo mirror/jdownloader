@@ -1,2 +1,4 @@
 jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Pozwól!
 jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Dostęp zabroniony!
+jd_plugins_optional_interfaces_jdflashgot_security_message=Zewnętrzna aplikacja próbuje dodać odnośniki
+jd_plugins_optional_interfaces_jdflashgot_security_title=Zewnętrzne żądanie pd %s1!
