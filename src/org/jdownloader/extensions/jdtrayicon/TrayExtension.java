@@ -51,7 +51,6 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -235,9 +234,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         try {
             SystemTray systemTray = SystemTray.getSystemTray();
             BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
-            if (CrossSystem.isMac()) {
-                img = ImageProvider.convertToGrayScale(img);
-            }
+            // if (CrossSystem.isMac()) {
+            // img = ImageProvider.convertToGrayScale(img);
+            // }
             /*
              * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
              */
