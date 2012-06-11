@@ -763,6 +763,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ret.setCreated(pkg.getCreated());
         ret.setExpanded(pkg.isExpanded());
         ret.setComment(pkg.getComment());
+        ret.setPostProcessing(pkg.isAutoExtractionEnabled());
         synchronized (pkg) {
             /* add Children from CrawledPackage to FilePackage */
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(pkg.getChildren().size());

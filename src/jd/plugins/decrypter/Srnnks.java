@@ -263,8 +263,7 @@ public class Srnnks extends PluginForDecrypt {
                             }
                             if (form.getRegex("img.*?src=\"([^\"]*?secure)").matches()) {
                                 /*
-                                 * this form contains captcha image, so it must
-                                 * be valid
+                                 * this form contains captcha image, so it must be valid
                                  */
                             } else if (bestdist > 100) {
                                 form = null;
@@ -282,7 +281,12 @@ public class Srnnks extends PluginForDecrypt {
                                 System.out.println("CAPTCHA!!!");
                                 // only each 5 link needs captchas
                                 if (!captchaLink.toLowerCase().startsWith("http://")) {
-                                    captchaLink = "http://serienjunkies.org" + captchaLink;
+                                    String base = new Regex(br.getURL(), "(http.*?\\.org)").getMatch(0);
+                                    if (base != null) {
+                                        captchaLink = base + captchaLink;
+                                    } else {
+                                        captchaLink = "http://download.serienjunkies.org" + captchaLink;
+                                    }
                                 }
 
                                 crawlStatus = br.getRegex("<TITLE>.* \\- (.*?)</TITLE>").getMatch(0);
