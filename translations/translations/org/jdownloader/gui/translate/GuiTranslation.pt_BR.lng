@@ -261,6 +261,7 @@ PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help=Insira Url de Te
 PackagizerFilterRuleDialog_createVariablesMenu_date=Data ou Hora
 PackagizerFilterRuleDialog_createVariablesMenu_filename=Curinga do Nome do Arquivo Original(*) #%s1
 PackagizerFilterRuleDialog_createVariablesMenu_filename_org=Nome Original do Arquivo
+PackagizerFilterRuleDialog_createVariablesMenu_filetype_org=Tipo do Arquivo Original
 PackagizerFilterRuleDialog_createVariablesMenu_hoster=Curinga da Url do Servidor(*) #%s1
 PackagizerFilterRuleDialog_createVariablesMenu_menu=Variáveis Dinâmicas
 PackagizerFilterRuleDialog_createVariablesMenu_packagename=Nome do Pacote
