@@ -1,3 +1,9 @@
+plugins_optional_JDLightTray_always=Vždy
+plugins_optional_JDLightTray_closetotray=Zavřít na lištu
+plugins_optional_trayIcon_dl_total=Celkem:
+plugins_optional_trayIcon_downloads=Stahování:
 plugins_optional_trayIcon_eta=Zbývá:
 plugins_optional_trayIcon_speed=Rychlost:
+popup_exit=Ukončit JDownloader
 popup_pause=Pozastavit stahování
+popup_update=Zkontrolovat aktualizace
