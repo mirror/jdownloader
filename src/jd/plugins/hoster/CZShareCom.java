@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.\\-]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9\\-]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9\\-]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
     private final static int    SIMULTANEOUS_PREMIUM = -1;
@@ -210,6 +210,7 @@ public class CZShareCom extends PluginForHost {
         if (br.getURL().contains("/error.php?co=4") || br.containsHTML("Omluvte, prosím, výpadek databáze\\. Na opravě pracujeme")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         /** First regex is only for video links */
         String filename = br.getRegex("onmouseover=\"video_thumb_start\\(this,\\'http://www\\d+\\.czshare\\.com/images_velke\\',\\'\\d+\\'\\)\" title=\"([^<>\"/]+)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("page-download\"><img src.*?alt=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = Encoding.htmlDecode(br.getRegex("<div class=\"left\\-col\">[\t\n\r ]+<h1>(.*?)<span>\\&nbsp;</span></h1>").getMatch(0));
             if (filename == null) filename = Encoding.htmlDecode(br.getRegex("<title>(.*?) CZshare\\.com download</title>").getMatch(0));

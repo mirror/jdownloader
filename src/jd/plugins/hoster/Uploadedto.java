@@ -30,6 +30,7 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -345,13 +346,25 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
+        SubConfiguration config = null;
         try {
-            if (getPluginConfig().getBooleanProperty("premAdShown", false) == false) {
-                showFreeDialog();
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    showFreeDialog();
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
             }
         } catch (final Throwable e) {
         } finally {
-            getPluginConfig().setProperty("premAdShown", true);
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
         }
         workAroundTimeOut(br);
         String id = getID(downloadLink);
