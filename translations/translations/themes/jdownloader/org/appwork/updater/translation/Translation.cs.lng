@@ -9,6 +9,7 @@ guiless_started_download=Spustit stahování: %s1
 guiless_updates_waiting_for_download=%s1 soubor(ů) musí být staženo!
 guiless_you_are_up2date=Již máte poslední verzi
 install_updates_later=Zeptat se později
+restart_required_msg=Aktualizátor se nyní restartuje
 start=Spuštěn aktualizátor
 update_dialog_cancel=Zrušit
 update_dialog_later=Zeptat se později
