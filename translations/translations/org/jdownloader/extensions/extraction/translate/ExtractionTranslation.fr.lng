@@ -71,6 +71,7 @@ settings_subpath_no_folder2=... seulement s'il n'y a pas de dossiers à la racin
 settings_subpath_no_folder_tt=Ne pas utiliser de sous-dossier si tous les fichiers dans l'archive sont déjà empaquetés dans des dossiers.
 settings_use_subpath=Créer un sous-répertoire
 settings_various=Divers
+subfolder=Chemin de téléchargement du sous-dossier
 tooltip_NameColumn=Nom de l'archive
 tooltip_empty=Extraction non réalisée
 unknown=Inconnu
