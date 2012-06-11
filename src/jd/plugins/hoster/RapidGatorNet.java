@@ -252,6 +252,7 @@ public class RapidGatorNet extends PluginForHost {
         br.setCookie("http://rapidgator.net/", "lang", "en");
         br.setCustomCharset("UTF-8");
         br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
     }
 
     @SuppressWarnings("unchecked")
