@@ -140,8 +140,8 @@ public class FilestoreTo extends PluginForHost {
             if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             haveFun();
-            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename):\n(.*?)\n").getMatch(1);
-            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize):\n(.*?)\n").getMatch(1);
+            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename): (.*?)(Dateigröße|Filesize):").getMatch(1);
+            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize): (.*?)Uploaded:").getMatch(1);
             if (downloadName != null) {
                 downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
                 if (downloadSize != null) {
