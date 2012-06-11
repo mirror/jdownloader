@@ -26,6 +26,7 @@ LiveHeaderDetectionWizard_runOnlineScan_collect=Przeszukiwanie informacji o poł
 LiveHeaderDetectionWizard_runOnlineScan_notalive=Usługa niedostępna. Proszę spróbować później.
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Usługa jest obecnie niedostępna. Proszę spróbuj ponownie później!
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Usługa niedostępna
+LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=Adres IP Routera: %s1 jest nieprawidłowy!
 LiveHeaderReconnect_getGUI_help_password=Wprowadź Hasło dostępu do Interfejsu WWW routera
 LiveHeaderReconnect_getGUI_help_user=Wprowadź Nazwę Użytkownika do Interfejsu WWW routera
 LiveHeaderReconnect_onConfigValueModified_ask_msg=Ustawiłeś pomyślnie konfigurację Ponownego Połączenia.\r\nProszę podziel się ustawieniami aby usprawnić działanie naszego Pomocnika tworzenia skryptu Ponownego Połączenia.

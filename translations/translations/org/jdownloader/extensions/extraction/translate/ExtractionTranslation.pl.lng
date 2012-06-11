@@ -24,6 +24,7 @@ extraction_failed=Rozpakowywanie %s1 nieudane
 file_exists=Plik już istnieje
 file_exists_not=Plik nie istnieje
 filename=Nazwa pliku
+files=pliki
 hoster=Serwis
 local=Status pliku
 menu_tools_extract_files=Wypakuj Pliki

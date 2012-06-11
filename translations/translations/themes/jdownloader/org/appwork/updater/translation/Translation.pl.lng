@@ -11,6 +11,7 @@ error_unknown_server=Nieokreślony błąd serwera aktualizacyjnego. Proszę spr�
 exception_msg=Wystąpił nieokreślony błąd. Proszę skontaktować się z Supportem.
 exception_title=Wystąpił błąd
 exit=Zamknij
+guiless_branch_updated=Aktualizacja %s1 - Edycja %s2
 guiless_create_package=Proszę czekać... trwa przygotowanie pakietów aktualizacyjnych
 guiless_done=Aktualizacja zakończona.
 guiless_download_data=Pobieranie pakietu aktualizacyjnego
