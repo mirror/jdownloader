@@ -507,6 +507,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     public void windowClosing(WindowEvent e) {
+        if (e.getSource() == null) {
+            /* source got removed by jdgui, user aborted close */
+            return;
+        }
         if (getSettings().isCloseToTrayEnabled()) {
             miniIt(true);
         }

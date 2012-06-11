@@ -119,7 +119,7 @@ public interface GeneralSettings extends ConfigInterface {
     int getHttpConnectTimeout();
 
     @AboutConfig
-    @Description("Timeout for reading to a httpserver")
+    @Description("Timeout for reading from a httpserver")
     @SpinnerValidator(min = 0, max = 600000)
     @DefaultIntValue(300000)
     @RequiresRestart

@@ -653,6 +653,11 @@ public class JDGui extends SwingGui {
                                 Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
                                 return;
                             } catch (DialogNoAnswerException e1) {
+                                if (e1.isCausedbyESC() || e1.isCausedByClosed()) {
+                                    /* set source to null so the trayicon extension does nothing in its windowlistener */
+                                    e.setSource(null);
+                                    return;
+                                }
                                 e1.printStackTrace();
 
                             }
