@@ -39,6 +39,7 @@ decrypter_invalidaccount=Nije pronađen validan nalog
 decrypter_unknownerror=Nepoznata greška
 decrypter_wrongcaptcha=Pogrešan Captcha
 decrypter_wrongpassword=Pogrešna šifra
+dialog_optional_showRestartRequiredMessage_msg=Da bi vaše izmjene bile primijenjene, potreban je restart JDownloader-a. Restartovati sada?
 dialog_optional_showRestartRequiredMessage_title=Potreban je Restart
 dialog_title_exception=Pojavila se greška!
 download_connection_normal=Download

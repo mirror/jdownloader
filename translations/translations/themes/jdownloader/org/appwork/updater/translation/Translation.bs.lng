@@ -6,6 +6,7 @@ dialog_rly_cancel=Stvarno otkazati nadgradnju?
 error_service_not_available_right_now=Usluga nije dostupna. Pokušajte ponovo za 60 sek.)
 error_unknown_app=Nije moguće nadgraditi %s1.                   Pokušajte ponovo kasnije!
 error_unknown_branch=Nepoznato izdanje: %s1
+error_unknown_server=Nepoznati problemi Servera za Nadgradnju. Molimo pokušajte ponovo kasnije
 exception_title=Pojavila se greška
 exit=Zatvori
 guiless_branch_updated=Nadgradnja %s1 - %s2 Izdanje
