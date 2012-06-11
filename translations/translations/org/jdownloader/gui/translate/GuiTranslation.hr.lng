@@ -1,4 +1,7 @@
+AddLinksAction_=Dodaj preuzimanja
+CommentColumn_CommentColumn_=Komentar
 FilterRule_toString_name2=%s1 %s2
+LinkGrabberSideBarHeader_LinkGrabberSideBarHeader=Pogledi
 config_fontname=zadano
 gui_btn_select=Odaberi
 gui_column_host=Host
