@@ -32,7 +32,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoooster.com", "picsapart.com", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?hoooster\\.com/showimage/\\d+/[^<>\"\\']+", "http://(www\\.)?picsapart\\.com/photo/\\d+", "http://(www\\.)?imgur\\.com(/gallery|/a)?/(?<!download/)[A-Za-z0-9]{5,}", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?img\\d+\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoooster.com", "picsapart.com", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "pixhost.info", "picturedumper.com", "imagetwist.com", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?hoooster\\.com/showimage/\\d+/[^<>\"\\']+", "http://(www\\.)?picsapart\\.com/photo/\\d+", "http://(www\\.)?imgur\\.com(/gallery|/a)?/(?<!download/)[A-Za-z0-9]{5,}", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html", "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+",
         "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://[\\w\\.]*?media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?pixhost\\.info/pictures/\\d+", "http://(www\\.)?picturedumper\\.com/picture/\\d+/[a-z0-9]+/", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
@@ -140,9 +140,14 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             }
         } else if (parameter.contains("imagehyper.com/img")) {
             br.getPage(parameter);
-            finallink = br.getRegex("imagehyper: dudoso \\- DO NOT MODIFY \\-\\-></td><td>[\t\n\r ]+<img src=\"(http://.*?)\"").getMatch(0);
+            finallink = br.getRegex("<img class=\"mainimg\" id=\"mainimg\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("\"(http://img\\d+\\.imagehyper\\.com/img/.*?)\"").getMatch(0);
+            }
+            if (finallink != null) {
+                String ext = finallink.substring(finallink.lastIndexOf("."));
+                if (ext == null || ext.length() > 5) ext = ".jpg";
+                finalfilename = new Regex(parameter, "([a-z0-9]+)$") + ext;
             }
         } else if (parameter.contains("turboimagehost.com/")) {
             br.getPage(parameter);
@@ -197,7 +202,10 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             String[] downloadLinks = br.getRegex("Download full resolution.*?href=\"(/download/.*?)\"").getColumn(0);
             if (downloadLinks != null) {
                 if (downloadLinks.length == decryptedLinks.size()) {
-                    /* we have a full resolution image for each picture, so lets only download them */
+                    /*
+                     * we have a full resolution image for each picture, so lets
+                     * only download them
+                     */
                     decryptedLinks.clear();
                 }
                 for (String link : downloadLinks) {

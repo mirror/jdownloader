@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://[\\w\\.]*?multiup\\.org/(\\?lien=.+|fichiers/download.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien=.+|fichiers/download.+)" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     public MultiupOrg(PluginWrapper wrapper) {
@@ -40,13 +40,19 @@ public class MultiupOrg extends PluginForDecrypt {
         br.getPage(parameter);
         final String quest = br.getRegex("name=\"data\\[Fichier\\]\\[indiceQuestion\\]\" value=\"(.*?)\"").getMatch(0);
         final Regex additionValues = br.getRegex("What is the result of (\\d+) \\+ (\\d+) :");
-        if (quest == null || additionValues.getMatch(0) == null || additionValues.getMatch(1) == null) {
+        final Regex multiplyValues = br.getRegex("What is the result of (\\d+) \\* (\\d+) : </th>");
+        if (quest == null || (additionValues.getMatches().length < 1 && multiplyValues.getMatches().length < 1)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        int result = 0;
+        if (additionValues.getMatches().length > 1) {
+            result = (Integer.parseInt(additionValues.getMatch(0)) + Integer.parseInt(additionValues.getMatch(1)));
+        } else {
+            result = (Integer.parseInt(multiplyValues.getMatch(0)) * Integer.parseInt(multiplyValues.getMatch(1)));
+        }
         if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks|<h2>Not Found</h2>)")) return decryptedLinks;
         Thread.sleep(1000l);
-        final int result = (Integer.parseInt(additionValues.getMatch(0)) + Integer.parseInt(additionValues.getMatch(1)));
         br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=" + result + "&data%5BFichier%5D%5BindiceQuestion%5D=" + quest);
         boolean decrypt = false;
         String[] links = br.getRegex("<a target=\"_blank\" onMouseDown=\"\" href=\"([^<>\"\\']+)\"").getColumn(0);

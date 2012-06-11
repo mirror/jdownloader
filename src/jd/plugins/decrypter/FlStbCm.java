@@ -23,12 +23,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search|look_for\\.html.+|sponsored_go.html.+)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
@@ -44,19 +42,30 @@ public class FlStbCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(Requested file was not found|Error 404 \\-|> ?File no longer available ?<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(Requested file was not found|Error 404 \\-|> ?File no longer available ?<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("video.filestube.com/watch")) {
-            final String youtubeID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)\\&").getMatch(1);
-            if (youtubeID == null) {
+            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)\\&").getMatch(1);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis()));
+                return decryptedLinks;
+            }
+            if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + youtubeID));
         } else {
             String fpName = br.getRegex("<title>(.*?)\\- Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of

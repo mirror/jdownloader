@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,6 +37,8 @@ public class AmateurGaloreNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        String filename = br.getRegex("<meta name=\"DC\\.title\" content=\"([^<>\"]*?) \\- Amateur Porn \\- AmateurGalore \\- Free Amateur Porn\"").getMatch(0);
+        if (filename != null) filename = Encoding.htmlDecode(filename.trim());
         String tempID = br.getRegex("\"http://videobam\\.com/widget/(.*?)/custom").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("http://videobam.com/videos/download/" + tempID);
@@ -45,12 +48,17 @@ public class AmateurGaloreNet extends PluginForDecrypt {
         tempID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)keezmovies\\.com/.*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage(tempID);
-            String finallink = br.getRegex("<share>(http://.*?)</share>").getMatch(0);
+            String finallink = br.getRegex("<flv_url>(http://.*?)</flv_url>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink(finallink);
+            if (filename == null) {
+                logger.warning("Decrypter broken for link:" + parameter);
+                return null;
+            }
+            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

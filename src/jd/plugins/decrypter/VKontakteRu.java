@@ -41,7 +41,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|video\\?section=tagged\\&id=\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
@@ -409,11 +408,14 @@ public class VKontakteRu extends PluginForDecrypt {
                     }
                 }
             }
-            // Prevent unneeded requests
-            if (addedLinks < increase) break;
+            if (addedLinks < increase) {
+                logger.info("Fail safe activated, stopping page parsing at page " + i + " of " + maxLoops);
+                break;
+            }
+            logger.info("Parsing page " + i + " of " + maxLoops);
         }
         if (decryptedData == null || decryptedData.size() == 0) {
-            logger.warning("Decrypter couldn't find theData for linktype: " + type);
+            logger.warning("Decrypter couldn't find theData for linktype: " + type + "\n");
             logger.warning("Decrypter broken for link: " + parameter + "\n");
             return null;
         }
@@ -427,9 +429,9 @@ public class VKontakteRu extends PluginForDecrypt {
         Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
         if (aa == null) {
             String username = UserIO.getInstance().requestInputDialog("Enter Loginname for vkontakte.ru :");
-            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.vkontakteru.nousername", "Username not entered!"));
+            if (username == null) throw new DecrypterException("Username not entered!");
             String password = UserIO.getInstance().requestInputDialog("Enter password for vkontakte.ru :");
-            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.vkontakteru.nopassword", "Password not entered!"));
+            if (password == null) throw new DecrypterException("Password not entered!");
             aa = new Account(username, password);
         }
         try {

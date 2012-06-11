@@ -68,8 +68,8 @@ public class BadJoJoCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(HTTP-EQUIV=\"REFRESH\" content=\"1; url=http://www\\.badjojo\\.com/\">|back to <b>badjojo</b>\\.com for PORN)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (br.containsHTML("(images/unavailablevideo\\.jpg\"|HTTP\\-EQUIV=\"REFRESH\" content=\"\\d+; url=http://www\\.badjojo\\.com/)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)\\- badjojo\\.com</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\"content_video\", \"(files/.*?)\"\\)").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(files/videos/videos[A-Z0-9]+/[a-z0-9]+\\.flv)\"").getMatch(0);

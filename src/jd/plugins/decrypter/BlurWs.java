@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
@@ -46,7 +45,7 @@ public class BlurWs extends PluginForDecrypt {
     }
 
     public static final Object  LOCK          = new Object();
-    private static final String RECAPTCHATEXT = "/recaptcha/api/challenge\\?k=";
+    private static final String RECAPTCHATEXT = "google\\.com/recaptcha";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         // Allow only 1 instance of this decrypter at the same time
@@ -55,9 +54,11 @@ public class BlurWs extends PluginForDecrypt {
             ArrayList<DownloadLink> dlclinks = new ArrayList<DownloadLink>();
             ArrayList<String> passwords = new ArrayList<String>();
             ArrayList<String> clearedlinks = new ArrayList<String>();
-            br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0");
+            br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+            br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
             String parameter = param.toString();
-            br.setFollowRedirects(false);
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML(">Keine Daten vorhanden")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
             if (br.containsHTML(RECAPTCHATEXT)) {
@@ -69,17 +70,19 @@ public class BlurWs extends PluginForDecrypt {
                     rc.load();
                     File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     String c = getCaptchaCode(cf, param);
-                    rc.setCode(c);
-                    if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("wrongcaptcha")) {
+                    br.postPage(parameter, "send=senden&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                    System.out.println(br.toString() + "\n");
+                    if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(">Deine CAPTCHA Eingabe war nicht korrekt")) {
                         logger.info("User didn't enter the correct captcha, retrying...");
                         br.getPage(parameter);
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML(RECAPTCHATEXT)) throw new DecrypterException(DecrypterException.CAPTCHA);
+                if (br.containsHTML(RECAPTCHATEXT) || br.containsHTML(">Deine CAPTCHA Eingabe war nicht korrekt")) throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            br.setFollowRedirects(false);
+            System.out.println(br.toString() + "\n");
             String fpName = br.getRegex("<title>blur :: Ordneransicht zu (.*?)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<h3 class=\"center\">(.*?)</h3>").getMatch(0);
             String password = br.getRegex("<strong>Passwort:</strong>(.*?)</p>").getMatch(0);
@@ -100,8 +103,11 @@ public class BlurWs extends PluginForDecrypt {
             }
             logger.info("Failed to get the links via DLC, trying webdecryption...");
             String[] links = br.getRegex("<li><a href=\"(http://.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)blur\\.ws/out\\.php\\?link=[0-9a-z-]+)\"").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://(www\\.)blur\\.ws/out\\.php\\?link=[0-9a-z\\-]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String aLink : links)
                 if (!clearedlinks.contains(aLink)) clearedlinks.add(aLink);
             progress.setRange(clearedlinks.size());
@@ -131,7 +137,7 @@ public class BlurWs extends PluginForDecrypt {
         theLink = Encoding.htmlDecode(theLink);
         File file = null;
         brc.getHeaders().put("Referer", theLink);
-        final String dlcLink = br.getRegex("\\'(http://(www\\.)?blur\\.ws/out\\.php\\?link=dlc\\&id=[a-z0-9]+)\\'").getMatch(0);
+        final String dlcLink = br.getRegex("id=\"jdbdlc\" onClick=\"location\\.href=\\'(http://[^<>\"]*?)\\'\"").getMatch(0);
         if (dlcLink != null) {
             URLConnectionAdapter con = brc.openGetConnection(dlcLink);
             if (con.getResponseCode() == 200) {
