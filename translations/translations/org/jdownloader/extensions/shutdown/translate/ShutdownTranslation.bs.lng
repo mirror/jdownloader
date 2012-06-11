@@ -18,4 +18,4 @@ interaction_shutdown_dialog_title_hibernate=Hibernirati?
 interaction_shutdown_dialog_title_shutdown=Ugasiti računar
 interaction_shutdown_dialog_title_standby=Pripravnost?
 jd_plugins_optional_jdshutdown=JD Gašenje
-jd_plugins_optional_jdshutdown_description=Automatski isključi, suspenduj, hiberniraj računar ili zatvroi JDownloader kada se završe svi download-i.
+jd_plugins_optional_jdshutdown_description=Automatski isključi, suspenduj, hiberniraj računar ili zatvori JDownloader kada se završe svi download-i.
