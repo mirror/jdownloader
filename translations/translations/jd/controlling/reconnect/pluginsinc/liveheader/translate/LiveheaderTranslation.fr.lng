@@ -58,6 +58,7 @@ jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_wa
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Check désactivé !
 jd_nrouter_recorder_Gui_info1=Vérifier l'adresse ip du routeur, puis appuyer sur le bouton Démarrer
 jd_nrouter_recorder_Gui_info3=Après la reconnexion cliquez sur le bouton d'arrêt et sauvegardez
+jd_router_reconnectrecorder_Gui_icon_bad=Erreur durant l'enregistrement de la reconnection !
 literally_password=Mot de passe
 literally_router_ip=Ip du routeur
 literally_router_model=Modèle du routeur
