@@ -1,5 +1,6 @@
 Extraction_onShutdownRequest_msg=Přerušit extrahování?
 LinkCollector_archiv=%s1
+LinkgrabberFilterRule_duplicate=%s1 (kopie)
 controller_packages_defaultname=Ostatní
 controller_status_connectionproblems=Spojení ztraceno
 controller_status_containererror=Chyba kontejneru

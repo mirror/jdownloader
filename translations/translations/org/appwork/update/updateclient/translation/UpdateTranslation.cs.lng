@@ -1,4 +1,10 @@
 UpdateServer_UpdaterGui_onStateChange_failed2=%s1
+UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=Nalezeno %s1 aktualizací!
 error_unknown=%s1
 exception_msg=%s1
+guiless_files_ready_for_install=%s1 soubor(ů) čeká na instalaci!
+guiless_updates_waiting_for_download=%s1 soubor(ů) musí být staženo!
+readyToDownloadUpdates=%s1 aktualizací je dostupných!
 timer=%s1 s
+updates_are_ready_for_install_now=%s1 aktualizací je připraveno na instalaci.
+updates_ready_for_install=%s1 aktualizací je připraveno na instalaci.

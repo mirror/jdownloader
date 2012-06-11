@@ -126,6 +126,7 @@ premiumaccounttablemodel_column_password=Heslo
 searchcategory_package=Jméno balíčku
 searchcategory_package_help=Prosím zadejte jméno balíčku který hledáte...
 settings_linkgrabber_filter_action_add=Přidat
+settings_linkgrabber_filter_columns_if=%s1!
 sys_warning_loguploadfailed=Nahrání log souboru selhalo!
 system_download_triggerfileexists=Soubor již existuje:
 system_download_triggerfileexists_ask=Ptát se na každý soubor
