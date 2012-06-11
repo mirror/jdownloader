@@ -303,6 +303,7 @@ public class LinkChecker<E extends CheckableLink> {
                                             /*
                                              * this will check the link, if not already checked
                                              */
+                                            br.reset();
                                             LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
                                         }
                                         link.getLinkChecker().linkChecked(link);

@@ -80,6 +80,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Download Speed limit in bytes.")
+    @DefaultIntValue(50 * 1024)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getDownloadSpeedLimit();
 
@@ -112,15 +113,15 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @Description("Timeout for connecting to a httpserver")
-    @SpinnerValidator(min = 0, max = 300000)
-    @DefaultIntValue(20000)
+    @SpinnerValidator(min = 0, max = 600000)
+    @DefaultIntValue(60000)
     @RequiresRestart
     int getHttpConnectTimeout();
 
     @AboutConfig
     @Description("Timeout for reading to a httpserver")
-    @SpinnerValidator(min = 0, max = 300000)
-    @DefaultIntValue(120000)
+    @SpinnerValidator(min = 0, max = 600000)
+    @DefaultIntValue(300000)
     @RequiresRestart
     int getHttpReadTimeout();
 

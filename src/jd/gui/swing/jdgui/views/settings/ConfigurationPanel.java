@@ -77,10 +77,6 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
     }
 
     public void valueChanged(ListSelectionEvent e) {
-        if (e.getValueIsAdjusting() == false) {
-            /* ValueIsAdjusting will be true, false, no need to react twice */
-            return;
-        }
         new Thread() {
             public void run() {
                 final SwitchPanel p = sidebar.getSelectedPanel();

@@ -749,8 +749,8 @@ public class MediafireCom extends PluginForHost {
             try {
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
-                final Form form = this.br.getFormbyProperty("name", "form_captcha");
-                final String id = this.br.getRegex("e\\?k=(.+?)\"").getMatch(0);
+                Form form = this.br.getFormbyProperty("name", "form_captcha");
+                String id = this.br.getRegex("e\\?k=(.+?)\"").getMatch(0);
                 if (id != null) {
                     rc.setId(id);
                     final InputField challenge = new InputField("recaptcha_challenge_field", null);
@@ -764,6 +764,12 @@ public class MediafireCom extends PluginForHost {
                     try {
                         final String c = this.getCaptchaCode(cf, downloadLink);
                         rc.setCode(c);
+                        form = this.br.getFormbyProperty("name", "form_captcha");
+                        id = this.br.getRegex("e\\?k=(.+?)\"").getMatch(0);
+                        if (form != null && id != null) {
+                            /* captcha wrong */
+                            continue;
+                        }
                     } catch (final PluginException e) {
                         /**
                          * captcha input timeout run out.. try to reconnect

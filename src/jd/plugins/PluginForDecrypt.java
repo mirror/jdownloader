@@ -176,6 +176,10 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (DecrypterException e) {
             if (DecrypterException.CAPTCHA.equals(e.getMessage())) {
                 showException = false;
+            } else if (DecrypterException.PASSWORD.equals(e.getMessage())) {
+                showException = false;
+            } else if (DecrypterException.ACCOUNT.equals(e.getMessage())) {
+                showException = false;
             }
             /*
              * we got a decrypter exception, clear log and note that something went wrong

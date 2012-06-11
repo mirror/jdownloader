@@ -23,4 +23,12 @@ public interface LinkCollectorConfig extends ConfigInterface {
     boolean getDoMergeTopBottom();
 
     void setDoMergeTopBottom(boolean b);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @Description("autoexpand packages in linkcollector")
+    boolean isPackageAutoExpanded();
+
+    void setPackageAutoExpanded(boolean b);
+
 }

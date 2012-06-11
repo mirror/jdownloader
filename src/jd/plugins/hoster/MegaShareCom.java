@@ -71,6 +71,8 @@ public class MegaShareCom extends PluginForHost {
         freeForm.remove("PremDz");
         final String crap = br.getRegex("src=\"images/dwn\\-btn3\\.gif\" name=\"(.*?)\"").getMatch(0);
         if (freeForm == null || crap == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        freeForm.remove(crap);
+        freeForm.remove(Encoding.urlEncode(crap));
         freeForm.put(Encoding.urlEncode(crap) + ".x", Integer.toString(new Random().nextInt(100)));
         freeForm.put(Encoding.urlEncode(crap) + ".y", Integer.toString(new Random().nextInt(100)));
         br.submitForm(freeForm);
@@ -138,7 +140,7 @@ public class MegaShareCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         br.forceDebug(true);
-        final boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1);
+        final boolean waitReconnecttime = getPluginConfig().getBooleanProperty(WAIT1, false);
         final String reconnectWaittime = br.getRegex("var cTmr = (\\d+);").getMatch(0);
         int rWait = 10;
         final String cDelay = br.getRegex("(var )?cDly ?= ?(\\d+);").getMatch(1);
@@ -161,7 +163,8 @@ public class MegaShareCom extends PluginForHost {
         sleep(rWait * cDly, downloadLink);
         br.submitForm(DLFORM);
         /** Filesize can't be set in linkgrabber, we set it here */
-        final String filesize = br.getRegex("\\'>File Size: </span>([^<>\"/\\']*?)</div>").getMatch(0);
+        String filesize = br.getRegex("\\'>File Size: </span>([^<>\"/\\']*?)</div>").getMatch(0);
+        if (filesize != null) filesize = filesize.replaceFirst("Kb", "");
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         /* FORM_POST_2 */
         remove.add("image");

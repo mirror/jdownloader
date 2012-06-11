@@ -355,6 +355,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
             public void newPackage(final ArrayList<CrawledLink> links, String packageName, String downloadFolder, String identifier) {
                 CrawledPackage pkg = new CrawledPackage();
+                pkg.setExpanded(JsonConfig.create(LinkCollectorConfig.class).isPackageAutoExpanded());
                 pkg.setCreated(System.currentTimeMillis());
                 pkg.setName(packageName);
                 if (downloadFolder != null) {

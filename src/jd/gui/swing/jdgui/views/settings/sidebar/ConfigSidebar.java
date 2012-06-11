@@ -75,11 +75,12 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (mouse != null) {
+                Point lmouse = mouse;
+                if (lmouse != null) {
                     final Graphics2D g2 = (Graphics2D) g;
                     final AlphaComposite ac5 = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f);
                     g2.setComposite(ac5);
-                    int index = locationToIndex(mouse);
+                    int index = locationToIndex(lmouse);
 
                     if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
                     if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
