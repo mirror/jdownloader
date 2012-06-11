@@ -24,6 +24,7 @@ easycaptcha_loadcaptchas_threaded=Télécharger les images pixélisées aléatoi
 easycaptcha_loadcaptchas_title=Charger des captchas
 easycaptcha_mask=Masque :
 easycaptcha_needCaptchas=Vous devez d'abord résoudre les Captchas!
+easycaptcha_openCaptchaFolder=Ouvrir le dossier captcha
 easycaptcha_orginal=Original :
 easycaptcha_remove=supprimer
 easycaptcha_settings=Paramètres :
