@@ -1,5 +1,8 @@
 AutoDetectAction_AutoDetectAction_=Automatsko Podešavanje
 AutoDetectAction_run_failed=JDownloader nije mogao pronaći funkcionalnu LiveHeader Skriptu z aPonovno konektovanje. Molimo provjerite da li ste unijeli ispravne informacije i da li imate dinamičku IP konekciju.
+DataCompareDialog_DataCompareDialog_=Uporedi Informacije o Ruteru
+DataCompareDialog_layoutDialogContent__desc=Molimo provjerite sljedeće informacije i pokušajte popuniti prazna polja što možete tačnije.
+DataCompareDialog_layoutDialogContent_firmware=Firmware/Verzija
 DataCompareDialog_layoutDialogContent_manufactorName=Proizvođač
 DataCompareDialog_layoutDialogContent_name=Ime Modela
 DataCompareDialog_layoutDialogContent_password=Šifra
@@ -20,6 +23,8 @@ RouterSendAction_actionPerformed_=Podijelite svoja Podešenja Ponovnog konektova
 RouterSendAction_actionPerformed_msg=JDownloader je detektovao da ste uspješno izvršili podešenje ponovne konekcije.   Molimo pratite ovaj čarobnjak i podijelite svoa podešenja sa drugima.   Ovo će trajati samo nekoliko sekundi.
 RouterSendAction_actionPerformed_msg2=Potrebna nam je vaša pomoć da unaprijedimo svoju bazu ponovnih konekcija.  Molimo doprinesite 'JD Projektu' i pošaljite svoje skripte za ponovno konektovanje.   Ovaj čarobnjak će vas voditi kroz sve potrebne korake.
 RouterSendAction_actionPerformed_title=Podijeli Podešenja za Ponovno konektovanje
+autodetection_failed=Ups! JDownloader nije mogao pronaći funkcionalna Podešenja za Ponovno konektovanje. Molimo provjerite da li imate dinamički IP i pokušajte ponovo sa drugačijim Unosom.
+autodetection_success=JDownloader je uspješno konfigurisao vaša Podešenja Ponovnog konektovanja. Dobijanje IP-a traje %s1.
 gui_btn_abort=Prekini
 gui_btn_cancel=Otkaži
 gui_btn_help=Pomoć

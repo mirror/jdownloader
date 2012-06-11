@@ -2,6 +2,7 @@ JDUpdater_start_restart_update_now_=Nadgradi i Restartuj sada!
 JDUpdater_start_updater_update_msg=Restartujte sada da izvršite nadgradnju.
 JDUpdater_start_updater_update_title=Pronađena je Nova Verzija!
 UpdateException_socket=Nema internet konekcije do servera za nadgradnju: %s1
+could_not_update_updater=Nadgrađivač je zastario. Nije bilo moguće nadgraditi nadgrađivač!
 dialog_rly_cancel=Stvarno otkazati nadgradnju?
 error_service_not_available_right_now=Usluga nije dostupna. Pokušajte ponovo za 60 sek.)
 error_unknown_app=Nije moguće nadgraditi %s1.                   Pokušajte ponovo kasnije!
