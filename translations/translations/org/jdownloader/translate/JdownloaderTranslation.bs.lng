@@ -110,6 +110,7 @@ gui_warning_reconnectFailed=Ponovna konekcija nije uspjela!
 gui_warning_reconnectSuccess=Ponovno konektovanje je bilo uspješno
 gui_warning_reconnect_running=U toku...
 gui_warning_reconnectunknown=Ponovna konekcija nije poznata
+jd_controlling_SingleDownloadController_askexists=Dokument '%s1' u paketu %s2 već postoji. Šta želite da uradite?
 jd_controlling_SingleDownloadController_askexists_title=Dokument postoji
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nije izabrana Ponovna konekcija</u></b><br/><p>Ponovna konekcija je napredni pristup za preskakanje dugih čekanja koja neki domaćini nameću korisnicima koji ne plaćaju. <br>Nije od pomoći kada koristite premium nalog.</p><p>Pročitajte više o Ponovnom konektovanju <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>ovdje</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nema Ponovne konekcije
