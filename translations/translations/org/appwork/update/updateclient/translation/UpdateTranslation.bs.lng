@@ -114,6 +114,7 @@ list_optionals_header=Opcioni Paketi
 literally_exit=Završena je provjera Nadgradnji - Izlaz
 locked=Update nije moguć. %s1 još uvijek radi.
 locked_dialog_title=Zatvori Glavnu Aplikaciju
+log_x_files_to_update_found=Pronađeno je: %s2 dokumenata za download, %s1 dokument za instalaciju i %s3 zastario dokument
 log_you_are_up2date=Već imate posljednju verziju
 please_wait=Molimo sačekajte!
 please_wait_until_update_finished=Molimo sačekajte dok nadgrađivač završi svoj posao!
