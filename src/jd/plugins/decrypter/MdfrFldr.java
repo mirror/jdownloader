@@ -37,7 +37,7 @@ import jd.plugins.hoster.MediafireCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(imageview.+|i/\\?.+|\\\\?sharekey=.+|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php).+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(imageview|i/\\?|\\\\?sharekey=|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php)).+" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     private static boolean pluginloaded = false;

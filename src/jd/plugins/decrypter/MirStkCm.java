@@ -95,7 +95,7 @@ public class MirStkCm extends PluginForDecrypt {
                 brc.getPage(singleLink);
                 finallink = brc.getRedirectLocation();
                 if (finallink == null) {
-                    brc.getPage("http://mirrorstack.com/?q=r_counter");
+                    brc.getPage("/?q=r_counter");
                     Thread.sleep(1000);
                     brc.getPage(singleLink);
                     finallink = brc.getRedirectLocation();

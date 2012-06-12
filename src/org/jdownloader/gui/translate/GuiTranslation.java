@@ -235,7 +235,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "-" })
     String action_start_update_mnemonic();
 
-    @Default(lngs = { "en" }, values = { "Check if there are uninstalled updates." })
+    @Default(lngs = { "en" }, values = { "Check for new updates." })
     String action_start_update_tooltip();
 
     @Default(lngs = { "en" }, values = { "ctrl+s" })
