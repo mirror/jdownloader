@@ -84,58 +84,76 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     @SuppressWarnings("unchecked")
     public void agregate() {
+        ArrayList<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
         HashSet<AbstractNode> has = rawSelection == null ? new HashSet<AbstractNode>() : new HashSet<AbstractNode>(rawSelection);
+        // HashSet<AbstractNode> notSelectedParents = new HashSet<AbstractNode>();
+        // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
+        for (AbstractNode node : rawSelection) {
+            rawMap.add(node);
+            if (node instanceof AbstractPackageChildrenNode) {
+                if (!has.contains(((AbstractPackageChildrenNode) node).getParentNode())) {
+                    if (has.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode())) {
+                        raw.add((AbstractNode) ((AbstractPackageChildrenNode) node).getParentNode());
+
+                    }
+
+                }
+            }
+        }
+
         HashSet<ChildrenType> ret = new HashSet<ChildrenType>();
         HashSet<PackageType> allPkg = new HashSet<PackageType>();
         HashSet<PackageType> fullPkg = new HashSet<PackageType>();
         HashSet<PackageType> incPkg = new HashSet<PackageType>();
-        if (rawSelection != null) {
-            for (AbstractNode node : rawSelection) {
-                rawMap.add(node);
-                if (node instanceof AbstractPackageChildrenNode) {
-                    ret.add((ChildrenType) node);
-                    allPkg.add(((ChildrenType) node).getParentNode());
-                } else {
 
-                    // if we selected a package, and ALL it's links, we want all
-                    // links
-                    // if we selected a package, and nly afew links, we probably
-                    // want only these few links.
-                    // if we selected a package, and it is NOT expanded, we want
-                    // all
-                    // links
-                    allPkg.add((PackageType) node);
-                    if (!((PackageType) node).isExpanded()) {
-                        // add allTODO
-                        List<ChildrenType> childs = ((PackageType) node).getChildren();
+        for (AbstractNode node : raw) {
+
+            if (node instanceof AbstractPackageChildrenNode) {
+                ret.add((ChildrenType) node);
+                allPkg.add(((ChildrenType) node).getParentNode());
+            } else {
+
+                // if we selected a package, and ALL it's links, we want all
+                // links
+                // if we selected a package, and nly afew links, we probably
+                // want only these few links.
+                // if we selected a package, and it is NOT expanded, we want
+                // all
+                // links
+                allPkg.add((PackageType) node);
+                if (!((PackageType) node).isExpanded()) {
+                    // add allTODO
+                    List<ChildrenType> childs = ((PackageType) node).getChildren();
+                    ret.addAll(childs);
+                    fullPkg.add((PackageType) node);
+
+                } else {
+                    List<ChildrenType> childs = ((PackageType) node).getChildren();
+                    boolean containsNone = true;
+                    boolean containsAll = true;
+                    ArrayList<ChildrenType> selected = new ArrayList<ChildrenType>();
+                    for (ChildrenType l : childs) {
+                        if (has.contains(l)) {
+                            selected.add(l);
+                            containsNone = false;
+                        } else {
+                            containsAll = false;
+                        }
+
+                    }
+                    if (containsAll || containsNone) {
                         ret.addAll(childs);
                         fullPkg.add((PackageType) node);
-
                     } else {
-                        List<ChildrenType> childs = ((PackageType) node).getChildren();
-                        boolean containsNone = true;
-                        boolean containsAll = true;
-                        for (ChildrenType l : childs) {
-                            if (has.contains(l)) {
-                                containsNone = false;
-                            } else {
-                                containsAll = false;
-                            }
-
+                        if (incPkg.add((PackageType) node)) {
+                            incompleteSelectecPackages.put((PackageType) node, selected);
                         }
-                        if (containsAll || containsNone) {
-                            ret.addAll(childs);
-                            fullPkg.add((PackageType) node);
-                        } else {
-                            if (incPkg.add((PackageType) node)) {
-                                incompleteSelectecPackages.put((PackageType) node, childs);
-                            }
 
-                        }
                     }
                 }
             }
         }
+
         selectedChildren.addAll(ret);
         allPackages.addAll(allPkg);
         fullPackages.addAll(fullPkg);
@@ -144,8 +162,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * A List of all packages in this selection. the list contains
-     * {@link #getFullPackages()} & {@link #getIncompletePackages()}
+     * A List of all packages in this selection. the list contains {@link #getFullPackages()} & {@link #getIncompletePackages()}
      * 
      * @return
      */
@@ -163,8 +180,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * if this object is a childcontext, this returns the child, else throws
-     * exception
+     * if this object is a childcontext, this returns the child, else throws exception
      * 
      * @return
      */
@@ -175,8 +191,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * If there is a context Object, this method returns it. try to muse
-     * {@link #getContextLink()} or {@link #getContextPackage()} instead
+     * If there is a context Object, this method returns it. try to muse {@link #getContextLink()} or {@link #getContextPackage()} instead
      * 
      * @return
      */
@@ -185,8 +200,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * if we have packagecontext, this returns the package, else the child's
-     * PACKAGE
+     * if we have packagecontext, this returns the package, else the child's PACKAGE
      * 
      * @return
      */
@@ -201,8 +215,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns either the context pacakge, or the context link's package, or the
-     * first links package
+     * Returns either the context pacakge, or the context link's package, or the first links package
      * 
      * @see #getContextPackage()
      * @return
@@ -225,8 +238,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a list of packages. This list only contains packages that have
-     * their full linklist selected as well.
+     * Returns a list of packages. This list only contains packages that have their full linklist selected as well.
      * 
      * @see #getAllPackages()
      * @see #getIncompletePackages()
@@ -237,8 +249,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * This method returns a list of packages. Only Packages whose linklist ist
-     * NOT completly selected as well are contained
+     * This method returns a list of packages. Only Packages whose linklist ist NOT completly selected as well are contained
      * 
      * @return
      */
@@ -265,8 +276,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Returns a List of the rawselection. Contains packages and links as they
-     * were selected in the table. USe {@link #getSelectedChildren()} instead
+     * Returns a List of the rawselection. Contains packages and links as they were selected in the table. USe
+     * {@link #getSelectedChildren()} instead
      * 
      * @return
      */
@@ -275,8 +286,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * A list of all selected children. This list also contains the children of
-     * collapsed selected packages
+     * A list of all selected children. This list also contains the children of collapsed selected packages
      * 
      * @return
      */
@@ -285,9 +295,8 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * Not all links of a package may have been selected @see (
-     * {@link #getIncompletePackages()}. to get a list of all selected links for
-     * a certain package, use this method
+     * Not all links of a package may have been selected @see ( {@link #getIncompletePackages()}. to get a list of all selected links for a
+     * certain package, use this method
      * 
      * @param pkg
      * @return
@@ -327,8 +336,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     }
 
     /**
-     * returns true if the shift key has been pressed when generating this
-     * instance
+     * returns true if the shift key has been pressed when generating this instance
      * 
      * @return
      */

@@ -149,7 +149,9 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         d.setFileSelectionMode(FileChooserSelectionMode.DIRECTORIES_ONLY);
 
         final File[] dest = Dialog.getInstance().showDialog(d);
-        if (!dest[0].getParentFile().exists()) handleNonExistingFolders(dest[0]);
+        if (dest[0].getParentFile() != null && !dest[0].getParentFile().exists()) {
+            handleNonExistingFolders(dest[0]);
+        }
         if (!isDownloadFolderValid(dest[0])) return null;
         DownloadPath.saveList(dest[0].getAbsolutePath());
         return dest[0];
