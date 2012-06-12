@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -38,6 +39,7 @@ public class MuchaCarneCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        String filename = br.getRegex("<title>([^<>\"]*?) at MuchaCarne.com</title>").getMatch(0);
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
@@ -55,6 +57,39 @@ public class MuchaCarneCom extends PluginForDecrypt {
         if (tempID == null) tempID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("isharemybitch\\-gallery\\-(\\d+)\"").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.isharemybitch.com/galleries/" + tempID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        // For all following ids, a filename is needed
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        tempID = br.getRegex("<iframe id=\"preview\" src=\"(http://gallys\\.nastydollars\\.com/[^<>\"]+)").getMatch(0);
+        if (tempID != null) {
+            br.getPage(tempID);
+            tempID = br.getRegex("<iframe src=\"(http://[^<>\"]+)").getMatch(0);
+            if (tempID != null) {
+                br.getPage(tempID);
+                tempID = br.getRegex("<a href=\"(http://[^<>]+\\.flv)\" id=\"media\"").getMatch(0);
+                if (tempID != null) {
+                    final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+                    dl.setFinalFileName(filename + ".flv");
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
+        }
+        tempID = br.getRegex("url: \\'(http://static\\.crakmembers\\.com/[^<>\"]*?)\\'").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (tempID == null) {

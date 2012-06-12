@@ -59,11 +59,6 @@ public class StolenVideosNet extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        if (filename == null) {
-            logger.warning("Couldn't decrypt link: " + parameter);
-            return null;
-        }
-        filename = Encoding.htmlDecode(filename.trim());
         tempID = br.getRegex("\"file=(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)\\&").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
@@ -76,6 +71,12 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // For all following ids, a filename is needed
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
         tempID = br.getRegex("\\&file=(http://[^<>\"]*?\\.flv)\\&").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + tempID);
@@ -91,7 +92,8 @@ public class StolenVideosNet extends PluginForDecrypt {
                 br.getPage(tempID);
                 tempID = br.getRegex("<a href=\"(http://[^<>]+\\.flv)\" id=\"media\"").getMatch(0);
                 if (tempID != null) {
-                    DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+                    final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+                    dl.setFinalFileName(filename + ".flv");
                     decryptedLinks.add(dl);
                     return decryptedLinks;
                 }

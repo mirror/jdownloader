@@ -16,12 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.captcha.easy.load.LoadImage;
 import jd.controlling.ProgressController;
-import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,110 +29,62 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?deviantclip\\.com/Media\\-([0-9]+\\-[0-9]+|[0-9]+_).*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantclip.com" }, urls = { "http://(www\\.)?deviantclip\\.com/watch/[a-z0-9\\-]+" }, flags = { 0 })
 public class DeviantClipComGallery extends PluginForDecrypt {
 
     public DeviantClipComGallery(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public String fpName = null;
-
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">PICTURE GALLERY<") || parameter.matches(".*?deviantclip\\.com/Media-[0-9]+\\-[0-9]+_.*?\\.html")) {
-            if (parameter.matches(".*?deviantclip\\.com/Media\\-[0-9]+\\-[0-9]+_.*?\\.html")) {
-                getfpName();
-                if (fpName != null) {
-                    DownloadLink dl = createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture");
-                    dl.setName(fpName);
-                    br.getPage(parameter);
-                    String dllink = br.getRegex("\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?)\"").getMatch(0);
-                    if (dllink != null) {
-                        dllink = dllink.replace("amp;", "");
-                        URLConnectionAdapter con = br.openGetConnection(dllink);
-                        if (!con.getContentType().contains("html")) {
-                            String ending = LoadImage.getFileType(dllink, con.getContentType());
-                            if (ending != null) dl.setFinalFileName(dl.getName() + ending);
-                            long size = con.getLongContentLength();
-                            if (size != 0) {
-                                dl.setDownloadSize(con.getLongContentLength());
-                                dl.setAvailable(true);
-                            }
-                        }
-                    }
+        if (br.containsHTML(">PICTURE GALLERY<")) {
+            String fpName = getfpName();
+            if (fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName.trim());
+            if (parameter.matches("http://(www\\.)?deviantclip\\.com/watch/[a-z0-9\\-]+")) {
+                final String[] picLinks = br.getRegex("\"(/watch/[a-z0-9\\-]+\\?fileid=[A-Za-z0-9]+)\"").getColumn(0);
+                if (picLinks == null || picLinks.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                int counter = 1;
+                DecimalFormat df = new DecimalFormat("0000");
+                for (final String picLink : picLinks) {
+                    final DownloadLink dl = createDownloadlink("http://deviantclipdecrypted.com" + picLink);
+                    dl.setName(fpName + "_" + df.format(counter));
                     decryptedLinks.add(dl);
-                } else {
-                    decryptedLinks.add(createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture"));
+                    counter++;
                 }
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
             } else {
-                getfpName();
-                String[] links = br.getRegex("(http://www\\.deviantclip\\.com/Media\\-[0-9]+\\-[0-9]+_.*?\\.html)").getColumn(0);
-                if (links == null || links.length == 0) return null;
-                progress.setRange(links.length);
-                if (fpName != null) {
-                    int counter = 1;
-                    for (String photolink : links) {
-                        DownloadLink dl = createDownloadlink(photolink.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture");
-                        dl.setName(fpName + "_" + counter);
-                        br.getPage(photolink);
-                        String dllink = br.getRegex("\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?)\"").getMatch(0);
-                        if (dllink != null) {
-                            dllink = dllink.replace("amp;", "");
-                            URLConnectionAdapter con = br.openGetConnection(dllink);
-                            if (!con.getContentType().contains("html")) {
-                                String ending = LoadImage.getFileType(dllink, con.getContentType());
-                                if (ending != null) dl.setFinalFileName(dl.getName() + ending);
-                                long size = con.getLongContentLength();
-                                if (size != 0) {
-                                    dl.setDownloadSize(con.getLongContentLength());
-                                    dl.setAvailable(true);
-                                }
-                            }
-                        }
-                        decryptedLinks.add(dl);
-                        counter = counter + 1;
-                        progress.increase(1);
-                    }
-                } else {
-                    for (String photolink : links) {
-                        decryptedLinks.add(createDownloadlink(photolink.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---picture"));
-                    }
-                }
-                if (fpName != null) {
-                    FilePackage fp = FilePackage.getInstance();
-                    fp.setName(fpName.trim());
-                    fp.addLinks(decryptedLinks);
-                }
+                logger.info("Found no valid link for: " + parameter);
             }
         } else {
-            getfpName();
-            if (fpName != null) {
-                DownloadLink dl = createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---video");
-                dl.setFinalFileName(fpName + ".flv");
-                decryptedLinks.add(dl);
+            if (br.containsHTML("flvplayer\\.swf\"")) {
+                decryptedLinks.add(createDownloadlink(parameter.replace("deviantclip.com", "deviantclipdecrypted.com")));
             } else {
-                decryptedLinks.add(createDownloadlink(parameter.replace("deviantclip.com", "gsghe366REHrtzegiolp") + "---video"));
+                logger.info("Found no valid link for: " + parameter);
             }
         }
         return decryptedLinks;
     }
 
-    public void getfpName() throws NumberFormatException, PluginException {
-        fpName = br.getRegex("<li class=\"text\"><h1>(.*?)</h1></li>").getMatch(0);
+    private String getfpName() throws NumberFormatException, PluginException {
+        String fpName = br.getRegex("class=\"main\\-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("title:\\'(.*?)\\'").getMatch(0);
+            fpName = br.getRegex("name=\"DC\\.title\" content=\"(.*?)\">").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("class=\"main\\-sectioncontent\"><p class=\"footer\">.*?<b>(.*?)</b>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("name=\"DC\\.title\" content=\"(.*?)\">").getMatch(0);
-                    if (fpName == null) {
-                        fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                    }
-                }
+                fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
         }
+        return fpName;
     }
 }

@@ -41,7 +41,6 @@ public class VoaYeursCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String filename = br.getRegex("<title>Porno XXX \\- ([^<>\"]*?)</title>").getMatch(0);
-        if (filename != null) filename = Encoding.htmlDecode(filename.trim());
         String externID = br.getRedirectLocation();
         if (externID != null && externID.length() < 40) {
             logger.info("Link offline: " + parameter);
@@ -125,9 +124,14 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
             return decryptedLinks;
         }
-        // Sites for which the filename is needed start here
+        // For all following ids, a filename is needed
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
         externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=false\\&mediaid=(\\d+)\\&").getMatch(0);
-        if (externID != null && filename != null) {
+        if (externID != null) {
             br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");
             String finallink = br.getRegex("<location>(http[^<>\"]*?)</location>").getMatch(0);
             if (finallink == null) {
