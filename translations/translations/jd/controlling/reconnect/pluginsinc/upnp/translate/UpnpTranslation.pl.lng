@@ -18,3 +18,4 @@ literally_service_type=Rodzaj usługi
 malformedservicetype=Nieprawidłowy Typ Usługi. Spróbuj Auto-konfiguracji UPNP.
 malformedurl=Adres Konrolny URL jest nieprawidłowy. Spróbuj Auto-Konfuguracji UPNP.
 servicetype_help=Wybierz typ usługi (np. urn:schemas-upnp-org:service:ConnectionManager:1)
+try_reconnect=Spróbuj Ponownego Połączenia typu UPNP: %s1

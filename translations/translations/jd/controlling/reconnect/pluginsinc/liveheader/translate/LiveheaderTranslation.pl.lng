@@ -50,6 +50,7 @@ gui_config_jdrr_savereconnect=Ponowne nawiązanie połączenia powiodło się. C
 gui_config_jdrr_status_title=Stan nagrywania
 gui_config_jdrr_success=Powodzenie!
 gui_config_jdrr_title=Nagrywanie ponownego naw. poł.
+gui_config_liveHeader_warning_noCURLConvert=JD nie mógł przekonwertować skryptu wsadowego curl do skryptu Live-Header.\r\nSkontaktuj się z Supportem JD!
 gui_config_liveheader_dialog_importrouter=Importuj router
 gui_config_reconnect_selectrouter=Wyszukaj model routera
 gui_config_reconnect_selectrouter_example=Przykład: 3Com ADSL

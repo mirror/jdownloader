@@ -51,6 +51,7 @@ plugins_optional_extraction_status_notenoughspace=Brak miejsca na dysku dla rozp
 plugins_optional_extraction_status_openingarchive=Otwieranie archiwum...
 plugins_optional_extraction_status_passfound=Znaleziono hasło
 plugins_optional_extraction_status_queued=Zakolejkowane do wypakowywania
+properties=Właściwości Podkatalogu
 settings_blacklist=Nie wypakowuj plików spełniających wymienione kryteria (jedno w linii)
 settings_cpupriority=Priorytet procesora
 settings_cpupriority_high=Wysoki

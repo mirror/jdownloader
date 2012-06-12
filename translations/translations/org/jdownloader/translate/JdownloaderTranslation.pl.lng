@@ -28,6 +28,7 @@ basics_yes=Tak
 captchacontroller_cancel_dialog_allorhost=Anulowano wprowadzanie kodów Captcha
 captchacontroller_cancel_dialog_allorhost_all=Pomiń wszystkie oczekujące Captcha
 captchacontroller_cancel_dialog_allorhost_cancelhost=Nie pokazuj oczekujących Captcha przez %s1
+captchacontroller_cancel_dialog_allorhost_msg=Przerwałeś wprowadzanie kodów Captch! Jak zamierzasz kontynuować?
 captchacontroller_cancel_dialog_allorhost_next=Pokaż wszytkie oczekujące kody Captcha
 configheader_enabled=Włączony
 controller_packages_defaultname=różny
