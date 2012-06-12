@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fickporno.net" }, urls = { "http://(www\\.)?fickporno\\.net/[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class FickPornoNet extends PluginForDecrypt {
@@ -55,7 +53,7 @@ public class FickPornoNet extends PluginForDecrypt {
             if (finallink == null) {
                 finallink = br.getRegex("<video_url>(<\\!\\[CDATA\\[)?(.*?)(\\]\\])?></video_url>").getMatch(1);
                 if (finallink == null) {
-                    logger.warning("fickporno decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
             }
@@ -72,9 +70,13 @@ public class FickPornoNet extends PluginForDecrypt {
                 logger.warning("fickporno -> youporn link invalid, please check browser to confirm: " + parameter);
                 return null;
             }
+            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+                logger.info("Link broken or offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
             if (finallink == null) {
-                logger.warning("fickporno decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
@@ -86,7 +88,7 @@ public class FickPornoNet extends PluginForDecrypt {
         }
         if (br.containsHTML("holyxxx\\.com/")) {
             logger.info("This link is probably broken: " + parameter);
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            return decryptedLinks;
         }
         logger.warning("fickporno decrypter broken for link: " + parameter);
         return null;

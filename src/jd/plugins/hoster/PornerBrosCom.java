@@ -77,7 +77,7 @@ public class PornerBrosCom extends PluginForHost {
         String filename = br.getRegex("<title>(.*?)(\\.)?</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)(\\.)?</h1>").getMatch(0);
         filename = filename.trim().replaceAll("\\.$", "");
-        // new method 10/1/2012
+        // both downloadmethods are still in use
         String paramJs = br.getRegex("<script type=\"text/javascript\" src=\"(/content/\\d+\\.js)\"></script>").getMatch(0);
         if (paramJs != null) {
             br.getPage("http://www.pornerbros.com" + paramJs);
@@ -88,7 +88,6 @@ public class PornerBrosCom extends PluginForHost {
                 downloadLink.setFinalFileName(Encoding.htmlDecode(filename + ".flv"));
             else if (fileExtension != "." && fileExtension != null) downloadLink.setFinalFileName(Encoding.htmlDecode(filename + fileExtension));
         } else {
-            // old method kept just in case it's still in use
             String paramXml = br.getRegex("name=\"FlashVars\" value=\"xmlfile=(.*?)?(http://.*?)\"").getMatch(1);
             if (paramXml == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getPage(paramXml);
@@ -97,9 +96,12 @@ public class PornerBrosCom extends PluginForHost {
 
             DLLINK = decryptUrl(urlCipher);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-            if (ext == null) ext = ".flv";
+            String ext = new Regex(DLLINK, "\\&format=([A-Za-z0-9]{1,5})").getMatch(0);
+            if (ext == null) {
+                ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+                if (ext == null || ext.length() > 5) ext = ".mp4";
+            }
+            if (!ext.startsWith(".")) ext = "." + ext;
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         }
 

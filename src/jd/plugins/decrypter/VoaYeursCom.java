@@ -21,12 +21,12 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "voayeurs.com" }, urls = { "http://(www\\.)?voayeurs\\.com/(video_\\d+/.*?|.*?\\d+)\\.html" }, flags = { 0 })
 public class VoaYeursCom extends PluginForDecrypt {
@@ -40,8 +40,13 @@ public class VoaYeursCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        String filename = br.getRegex("<title>Porno XXX \\- ([^<>\"]*?)</title>").getMatch(0);
+        if (filename != null) filename = Encoding.htmlDecode(filename.trim());
         String externID = br.getRedirectLocation();
-        if (externID != null && externID.length() < 40) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (externID != null && externID.length() < 40) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink(externID);
             decryptedLinks.add(dl);
@@ -68,6 +73,70 @@ public class VoaYeursCom extends PluginForDecrypt {
         externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed", "tube8.com/")));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("drtuber\\.com/embed/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.drtuber.com/video/" + externID + "/" + System.currentTimeMillis()));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("pornerbros\\.com/content/(\\d+)\\.xml").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.pornerbros.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("freeporn\\.com/swf/player/AppLauncher_secure\\.swf\\'><param.*?<param name=\\'flashvars\\' value=\\'file=([^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) {
+            externID = Encoding.urlEncode(externID.trim());
+            br.postPage("http://www.freeporn.com/getcdnurl/", "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + externID + "%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22505%22%2C%22path%22%3A%22" + externID + "%22%2C%22height%22%3A%22400%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Eimage%2Efreeporn%2Ecom%2Fswf%2Fplayer%2FAppLauncher%5Fsecure%2Eswf%22%2C%22htmlHostDomain%22%3A%22www%2Evoayeurs%2Ecom%22%7D&cacheBuster=1339506847983");
+            externID = new Regex(br.toString().replace("\\", ""), "image\\.freeporn\\.com/media/videos/tmb/(\\d+)/").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.freeporn.com/video/" + externID + "/"));
+                return decryptedLinks;
+            }
+        }
+        externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://pornrabbit.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            return decryptedLinks;
+        }
+        // Sites for which the filename is needed start here
+        externID = br.getRegex("flashvars=\"enablejs=true\\&autostart=false\\&mediaid=(\\d+)\\&").getMatch(0);
+        if (externID != null && filename != null) {
+            br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");
+            String finallink = br.getRegex("<location>(http[^<>\"]*?)</location>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Couldn't decrypt link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (externID == null) {
