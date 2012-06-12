@@ -1,4 +1,5 @@
 AutoDetectAction_run_failed=Trovati dispostivi UPNP, ma impossibile effettuare una riconnessione. Prova invece riconnessione live header.
+AutoDetectAction_run_optimize=Ottimizza: %s1
 UPNPRouterPlugin_run_mesg=Scansione di tutte le schede di rete
 UPNPRouterPlugin_run_wizard_title=Procedura guida uPnP router
 interaction_UpnpReconnect_wanservice_ip=Protocollo internet
