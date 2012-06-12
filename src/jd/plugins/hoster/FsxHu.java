@@ -122,10 +122,11 @@ public class FsxHu extends PluginForHost {
         for (int i = 0; i <= 3; i++) {
             final String code = getCaptchaCode("http://www.fsx.hu/" + captcha, downloadLink);
             br.postPage("http://www.fsx.hu/download.php?i=1", "capcha=" + code);
+            if (br.containsHTML("download\\.php")) break;
             if (br.containsHTML("/?(kep(\\d+)?\\.php)")) continue;
             break;
         }
-        if (br.containsHTML("/?(kep(\\d+)?\\.php)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML("/?(kep(\\d+)?\\.php)") && !br.containsHTML("download\\.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("(>Az FSX szerverekről 24 óra alatt maximum|>Ingyenesen ekkor tölthetsz le legközelebb)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         for (int i = 0; i <= 50; i++) {
             String place = br.getRegex("<span style=\"color:#dd0000;font\\-weight:bold;\">(\\d+)</span>").getMatch(0);
