@@ -83,6 +83,12 @@ public class ExtaBitCom extends PluginForHost {
         }
         String filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
         if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
+        if (filename.startsWith("file ")) {
+            String newFilename = br.getRegex("df_html_link\" name=\"df_html_link\" class.*?>(.*?)</").getMatch(0);
+            if (newFilename != null && newFilename.length() > filename.length()) {
+                filename = newFilename;
+            }
+        }
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY))
