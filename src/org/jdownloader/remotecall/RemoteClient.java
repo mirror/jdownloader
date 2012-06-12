@@ -1,6 +1,7 @@
 package org.jdownloader.remotecall;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URLEncoder;
 
 import jd.http.Browser;
@@ -33,10 +34,11 @@ public class RemoteClient extends RemoteCallClient {
     }
 
     @Override
-    protected String send(String serviceName, String routine, String serialise) throws ServerInvokationException {
+    protected Object send(String serviceName, Method routine, String serialise) throws ServerInvokationException {
         try {
-            String url = "http://" + this.host + "/" + serviceName + "/" + URLEncoder.encode(routine, "UTF-8");
+            String url = "http://" + this.host + "/" + serviceName + "/" + URLEncoder.encode(routine.getName(), "UTF-8");
             Log.L.finer(url + "?" + serialise);
+
             String red = br.postPageRaw(url, serialise);
 
             URLConnectionAdapter con = br.getHttpConnection();
@@ -44,7 +46,7 @@ public class RemoteClient extends RemoteCallClient {
                 return red;
             } else if (con.getResponseCode() == HTTPConstants.ResponseCode.SERVERERROR_INTERNAL.getCode()) {
                 // Exception
-                throw new ServerInvokationException(red, new Requestor(serviceName, routine, serialise));
+                throw new ServerInvokationException(red, new Requestor(serviceName, routine.getName(), serialise));
             } else {
                 throw new RemoteCallCommunicationException("Wrong ResponseCode " + con.getResponseCode());
             }
