@@ -56,6 +56,7 @@ gui_config_jdrr_title=Snimač Ponovnih konekcija
 gui_config_liveheader_dialog_importrouter=Importuj Ruter
 gui_config_reconnect_selectrouter=Potraži Model Rutera
 gui_config_reconnect_selectrouter_example=Primjer: 3Com ADSL
+gui_config_routeripfinder_featchIP=Traženje imena domaćina rutera...
 gui_config_routeripfinder_notfound=Nije moguće pronaći ime domaćina vašeg rutera
 gui_config_routeripfinder_ready=IP pronađen: %s1
 gui_fengshuiconfig_routerip=Router-IP
