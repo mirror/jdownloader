@@ -1398,4 +1398,8 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         this.allowSave = allowSave;
     }
 
+    public boolean isOfflinePackage(CrawledPackage parentNode) {
+        return parentNode == offlinePackage;
+    }
+
 }
