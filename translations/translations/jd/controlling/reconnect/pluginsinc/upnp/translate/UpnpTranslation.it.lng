@@ -10,3 +10,4 @@ literally_control_url=URL controllo
 literally_service_type=Tipo servizio
 malformedservicetype=Tipo servizio non valido. Prova impostazione automatica UPNP.
 malformedurl=LA URl di controllo non è valida. Prova l'impostazione automatica UPNP.
+try_reconnect=Prova riconnessione uPnP: %s1

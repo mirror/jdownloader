@@ -100,6 +100,7 @@ gui_warning_reconnectFailed=Riconnessione fallita!
 gui_warning_reconnectSuccess=Riconnessione completata
 gui_warning_reconnect_running=in esecuzione...
 gui_warning_reconnectunknown=Riconnessione sconosciuta
+jd_controlling_reconnect_Reconnector_progress_failed2=La riconnessione fallisce spesso! Riconnessione automatica disabilitata! Verifica le impostazioni di riconnessione!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nessuna riconnessione
 literally_yes=Sì
 pluginforhost_infogenerator_title=Account %s1@%s2

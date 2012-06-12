@@ -16,6 +16,7 @@ GetIPAction_getTooltipText_tt_2=Impostazioni IP router: %s1. Fai clic qui per an
 LiveHeaderDetectionWizard_runOnlineScan_collect=Ricerca informazioni connessione
 LiveHeaderDetectionWizard_runOnlineScan_notalive=Servizio non disponibile. Riprova più tardi.
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servizio non disponibile
+LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Riconnesione fallita. Puoi solo condividere le impostazioni di riconnessione funzionanti.
 LiveHeaderReconnect_onConfigValueModified_ask_title=Condividi le impostazioni di riconnessione.
 ReconnectRecorderAction_ReconnectRecorderAction_=Crea nuovo script
 RouterSendAction_RouterSendAction_=Impostazioni condivisione
