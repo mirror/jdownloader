@@ -17,11 +17,20 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision: 17707 $", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category)[^/]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
+    private enum Category {
+        UNDEF,
+        SITERIP,
+        CLIP,
+        MOVIE
+    }
+
     public NaughtyBlgOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        Category category = Category.UNDEF;
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -29,12 +38,38 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
 
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
         if (contentReleaseName == null) return null;
-        contentReleaseName = contentReleaseName.replaceAll("&#8217;", "");
 
-        String contentReleaseLinks = br.getRegex("<em>Download:</em>(.*?)<span style=").getMatch(0);
-        if (contentReleaseLinks == null) {
-            logger.warning("contentReleaseLinks == null");
-            return null;
+        // check if DL is from the 'clips' section
+        Regex categoryCheck = null;
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">");
+        if (categoryCheck.matches()) {
+            category = Category.CLIP;
+        }
+        // check if DL is from the 'movies' section
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">");
+        if (categoryCheck.matches()) {
+            category = Category.MOVIE;
+        }
+        // check if DL is from the 'siterips' section
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">");
+        if (categoryCheck.matches()) {
+            category = Category.SITERIP;
+        }
+        String contentReleaseLinks = null;
+        if (category != Category.SITERIP) {
+            contentReleaseLinks = br.getRegex("<em>Download:</em>(.*?)<span style=").getMatch(0);
+            if (contentReleaseLinks == null) {
+                logger.warning("contentReleaseLinks == null");
+                return null;
+            }
+        } else {
+            // <em>Download all screenhots:</em>
+            // <font size="3px">
+            contentReleaseLinks = br.getRegex("<em>Download all screenhots:</em>(.*?)<p><em>Previews:</em><br/>").getMatch(0);
+            if (contentReleaseLinks == null) {
+                logger.warning("contentReleaseLinks == null");
+                return null;
+            }
         }
         String[] links = new Regex(contentReleaseLinks, "<a href=\"(http[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
@@ -48,12 +83,26 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(img));
             }
         }
-
-        if (contentReleaseName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(contentReleaseName.trim()));
-            fp.addLinks(decryptedLinks);
+        FilePackage fp = FilePackage.getInstance();
+        String filePackageName = Encoding.htmlDecode(contentReleaseName).trim();
+        switch (category) {
+        case CLIP:
+            int firstOccurrenceOfSeparator = filePackageName.indexOf(" – ");
+            StringBuffer sb = new StringBuffer(filePackageName);
+            sb.insert(firstOccurrenceOfSeparator, " – Clips");
+            filePackageName = sb.toString();
+            break;
+        case MOVIE:
+            filePackageName += " – Movie";
+            break;
+        case SITERIP:
+            if (!filePackageName.toLowerCase().contains("siterip")) filePackageName += " – SiteRip";
+            break;
+        default:
+            break;
         }
+        fp.setName(filePackageName);
+        fp.addLinks(decryptedLinks);
 
         return decryptedLinks;
     }
