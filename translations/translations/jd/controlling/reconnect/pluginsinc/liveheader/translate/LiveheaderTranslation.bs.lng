@@ -75,4 +75,5 @@ jd_router_reconnectrecorder_Gui_icon_good=Ponovno konektovanje je bilo uspješno
 jd_router_reconnectrecorder_Gui_icon_progress=Snimanje Ponovnog konektovanja...
 literally_password=Šifra
 literally_router_ip=IP Rutera
+literally_router_model=Model Rutera
 literally_username=Korisničko Ime
