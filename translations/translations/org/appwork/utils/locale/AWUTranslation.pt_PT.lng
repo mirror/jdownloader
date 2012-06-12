@@ -63,6 +63,7 @@ extpasswordeditorcolumn_tooltip=Palavra-passe
 extttable_disable_all=Descativar todos
 extttable_enabled_all=Activar todos
 fileditcontroller_geteditor_for=Escolher editor para tipo de ficheiro '%s1'
+fileeditcontroller_exechooser_description=%s1 - Editor (aplicação)
 inactive=Desactivo
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB
