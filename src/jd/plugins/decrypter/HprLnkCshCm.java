@@ -43,7 +43,6 @@ public class HprLnkCshCm extends PluginForDecrypt {
             Form form = br.getForm(0);
             if (form == null) return null;
             br.submitForm(form);
-            System.out.println(br.toString() + "\n");
             dlink = br.getRegex("<center>.*?<br>.*?<a href=\"(.*?)\"").getMatch(0);
             if (dlink == null) dlink = br.getRegex("<a href=\"(.*?)\"").getMatch(0);
             if (dlink == null) return null;
