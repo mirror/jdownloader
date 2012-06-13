@@ -324,15 +324,15 @@ public class CokluindirCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 120:
                 // 120 - You have to buy a special membership for download from Depositfiles.com
-                // free account error, which we do not support.
+                // raz: free account error, which we do not support.
                 break;
             case 121:
                 // 121 - You have to buy a special membership for download bigger than 100 MB
-                // free account error, which we do not support.
+                // raz: free account error, which we do not support.
                 break;
             case 122:
                 // 122 - You have to buy a special membership for download bigger than 50 MB from Uploaded.to
-                // free account error, which we do not support.
+                // raz: free account error, which we do not support.
                 break;
             case 130:
                 // 130 - This hoster isn't supported
@@ -351,7 +351,7 @@ public class CokluindirCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL);
             case 141:
                 // 141 - You can't enter more than 10 links in same time
-                // shouldn't happen in jd ?? not entirely sure what they mean by this..
+                // raz: shouldn't happen in jd ?? not entirely sure what they mean by this..
                 if (statusMessage == null) statusMessage = "Threshold reached";
                 break;
             case 142:
