@@ -48,9 +48,10 @@ public class CokluindirCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String mName = "cokluindir.com";
-    private static final String mProt = "http://";
-    private static final Object LOCK  = new Object();
+    private static final String                                  mName              = "cokluindir.com";
+    private static final String                                  mProt              = "http://";
+    private static final Object                                  LOCK               = new Object();
+    private static final HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public CokluindirCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,10 +67,10 @@ public class CokluindirCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
-        br.setConnectTimeout(60 * 1000);
-        br.setReadTimeout(60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
     }
 
     public boolean checkLinks(DownloadLink[] urls) {
@@ -125,6 +126,18 @@ public class CokluindirCom extends PluginForHost {
             /* without account its not possible to download the link */
             return false;
         }
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap != null) {
+                Long lastUnavailable = unavailableMap.get(downloadLink.getHost());
+                if (lastUnavailable != null && System.currentTimeMillis() < lastUnavailable) {
+                    return false;
+                } else if (lastUnavailable != null) {
+                    unavailableMap.remove(downloadLink.getHost());
+                    if (unavailableMap.size() == 0) hostUnavailableMap.remove(account);
+                }
+            }
+        }
         return true;
     }
 
@@ -176,7 +189,7 @@ public class CokluindirCom extends PluginForHost {
         } else {
             br.postPage(mProt + mName + "/indir10.php", "link=" + Encoding.urlEncode(link.getDownloadURL()) + "&password=");
         }
-        handleErrors();
+        handleErrors(acc, link);
         String dllink = br.getRegex("(http[^\"]+)").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         showMessage(link, "Task 2: Download begins!");
@@ -197,19 +210,19 @@ public class CokluindirCom extends PluginForHost {
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
-        String expire = br.getRegex("(?i)<br>([\\d\\-]+)").getMatch(0);
+        String expire = br.getRegex("<br>([\\d\\-]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", null));
         }
         ai.setStatus("Premium User");
         try {
             String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/saglayicilar.php");
-            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
+            String[] hosts = new Regex(hostsSup, "\"([^\", ]+)").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);
-            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
+            logger.info("Could not fetch ServerList from " + mName + ": " + e.toString());
         }
         return ai;
     }
@@ -235,8 +248,8 @@ public class CokluindirCom extends PluginForHost {
                 }
                 prepBrowser();
                 br.getPage(mProt + mName + "/giris.php?isim=" + Encoding.urlEncode(account.getUser()) + "&parola=" + Hash.getMD5(account.getPass()));
-                if (br.containsHTML("102")) logger.warning("Non Premium accounts are not supported");
-                if ((br.getCookie(mProt + mName, "cokluindir") == null) || !br.containsHTML("101")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                handleErrors(account, null);
+                if (br.getCookie(mProt + mName, "cokluindir") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(mProt + mName);
@@ -257,50 +270,103 @@ public class CokluindirCom extends PluginForHost {
         link.getLinkStatus().setStatusText(message);
     }
 
-    private void handleErrors() throws PluginException {
-        // begin the error handing..
-        if (br.containsHTML("103")) {
-            logger.warning("Apparently you're not logged in!");
-            prepBrowser();
-            try {
-                Account aa = AccountController.getInstance().getValidAccount(this);
-                if (aa == null || !aa.isValid()) {
-                    logger.info("No valid account present, Please add or enable a premium" + mName + "account.");
-                    return;
-                }
-                login(aa, false);
-            } catch (Exception e) {
-                return;
+    private void tempUnavailableHoster(Account account, DownloadLink downloadLink, long timeout) throws PluginException {
+        if (downloadLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unable to handle this errorcode!");
+        synchronized (hostUnavailableMap) {
+            HashMap<String, Long> unavailableMap = hostUnavailableMap.get(account);
+            if (unavailableMap == null) {
+                unavailableMap = new HashMap<String, Long>();
+                hostUnavailableMap.put(account, unavailableMap);
             }
+            /* wait 'long timeout' to retry this host */
+            unavailableMap.put(downloadLink.getHost(), (System.currentTimeMillis() + timeout));
         }
-        if (br.containsHTML("110")) {
-            logger.warning("Account has been banned! Please communicate this issue with " + mName);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (br.containsHTML("115")) {
-            logger.warning("Account has been banned! Please communicate this issue with " + mName);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        if (br.containsHTML("130")) {
-            logger.warning("Hoster isn't supported, links has been disabled. Removed from supported hoster list");
-            // method to remove hoster from supported array HERE.
-            throw new PluginException(LinkStatus.ERROR_FATAL);
-        }
-        if (br.containsHTML("131")) {
-            logger.warning("Invalid URL, it's been disabled. Please communicate this issue with " + mName);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
-        }
-        if (br.containsHTML("140")) {
-            logger.warning("Possible VPS/Dedicated Server in use. Please communicate this issue with " + mName);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
-        }
-        if (br.containsHTML("141")) {
-            logger.warning("Hoster isn't supported, links been disabled.");
-            // ArrayList<String> supportedHosts = new
-            // ArrayList<String>(ArraysList(ai.getProperty("multiHostSupport")));
-            // supportedHosts.remove("host");
-            // ai.setProperty("multiHostSupport", supportedHosts);
-            throw new PluginException(LinkStatus.ERROR_FATAL);
+        throw new PluginException(LinkStatus.ERROR_RETRY);
+    }
+
+    private void handleErrors(Account account, DownloadLink downloadLink) throws PluginException {
+        // begin the error handing..
+        String error = null;
+        String statusMessage = null;
+        String err = br.getRegex("(.+)").getMatch(0);
+        // errors are shown as numerical text response, but also shared at times with other data.
+        if (err != null && !err.startsWith(new Regex(err, "(\\d+)").getMatch(0)))
+            return;
+        else if (err != null && err.startsWith(new Regex(err, "(\\d+)").getMatch(0))) error = new Regex(err, "(\\d+)").getMatch(0);
+        try {
+            int status = Integer.parseInt(error);
+            switch (status) {
+            case 100:
+                // 100 - Login Failed
+                if (statusMessage == null) statusMessage = "Login creditials are invalid!";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 101:
+                // 101 - Successful Login as Premium
+                if (statusMessage == null) statusMessage = "Sucessfully logged in!";
+                break;
+            case 102:
+                // 102 - Successful Login as Normal
+                // raz: free/expired account user, disable account!
+                if (statusMessage == null) statusMessage = "You are a non Premium user, JDownloader does not support this.";
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 103:
+                // 103 - You didn't log in (You must login)
+                // raz: not possible JD wont allow dl unless they are logged in.
+                break;
+            case 110:
+                // 110 - It can be either file is unavailable in hoster (deleted from file hoster) or ONLY this hoster is temporary
+                // unavailable in Coklu Indir. We say 110 for both of them.
+                if (statusMessage == null) statusMessage = "Tempory hoster issue, wait for retry" + mName;
+                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
+            case 115:
+                // 115 - You were banned
+                if (statusMessage == null) statusMessage = "Account has been banned! Please communicate this issue with " + mName;
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 120:
+                // 120 - You have to buy a special membership for download from Depositfiles.com
+                // free account error, which we do not support.
+                break;
+            case 121:
+                // 121 - You have to buy a special membership for download bigger than 100 MB
+                // free account error, which we do not support.
+                break;
+            case 122:
+                // 122 - You have to buy a special membership for download bigger than 50 MB from Uploaded.to
+                // free account error, which we do not support.
+                break;
+            case 130:
+                // 130 - This hoster isn't supported
+                // raz: unsupported link/hoster
+                if (statusMessage == null) statusMessage = "Hoster isn't supported by " + mName;
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            case 131:
+                // 131 - You have to enter a link (You didn't enter any link)
+                // raz: shouldn't be needed as JD wont send null links.
+                if (statusMessage == null) statusMessage = "Invalid URL, trying normal hoster";
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            case 140:
+                // 140 - Means dedicated or virtual server is detected. Your account is available in premium (you weren't banned), but you
+                // cann't download any file in this IP.
+                if (statusMessage == null) statusMessage = "Possible VPS/Dedicated Server in use. Please communicate this issue with " + mName;
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            case 141:
+                // 141 - You can't enter more than 10 links in same time
+                // shouldn't happen in jd ?? not entirely sure what they mean by this..
+                if (statusMessage == null) statusMessage = "Threshold reached";
+                break;
+            case 142:
+                // 142 - You didn't enter any password.
+                // raz: predl password not provided, yet required
+                if (statusMessage == null) statusMessage = "This download password protected. Please provide a password in order to start the download process.";
+                throw new PluginException(LinkStatus.ERROR_FATAL);
+            default:
+                // unknown error, do not try again with this multihoster
+                if (statusMessage == null) statusMessage = "Unknown error code, please inform JDownloader Development Team";
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } finally {
+            // not all codes/messages are errors with exception, so finally is fine
+            if (error != null) logger.info("Code: " + error + " Message: " + statusMessage);
         }
     }
 
