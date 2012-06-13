@@ -53,10 +53,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
+import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
@@ -65,6 +67,8 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.LocationStorage;
+import org.appwork.utils.swing.dialog.RememberAbsoluteLocator;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
@@ -100,6 +104,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     private CaptchaType         captchaType;
 
     private CaptchaResult       captchaResult = new CaptchaResult();
+
+    private LocationStorage     config;
 
     public static void main(String[] args) {
         CaptchaDialog cp;
@@ -156,6 +162,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         if (CaptchaType.CLICK.equals(captchaType)) {
             super.flagMask = flag | Dialog.BUTTONS_HIDE_OK;
         }
+        setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
         this.hosterInfo = domainInfo;
         this.images = images;
         fps = 24;
@@ -226,6 +233,12 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     protected String createReturnValue() {
         if (Dialog.isOK(this.getReturnmask())) return this.textField.getText();
         return null;
+    }
+
+    public void pack() {
+
+        this.getDialog().pack();
+
     }
 
     @Override
@@ -390,7 +403,10 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
                 }
             });
         }
+        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle()) + ".json"), LocationStorage.class);
+
         iconPanel.setPreferredSize(new Dimension(images[0].getWidth(null), images[0].getHeight(null)));
+
         field.add(iconPanel);
 
         HeaderScrollPane sp;
@@ -419,11 +435,35 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             paintTimer.start();
 
         }
+        if (config.isValid()) {
+            getDialog().setSize(new Dimension(Math.max(config.getX(), images[0].getWidth(null)), Math.max(config.getY(), images[0].getHeight(null))));
+        }
 
         return panel;
     }
 
+    @Override
+    protected int getPreferredWidth() {
+        if (!config.isValid()) return super.getPreferredWidth();
+        return config.getX();
+    }
+
+    protected int getPreferredHeight() {
+        if (!config.isValid()) return super.getPreferredHeight();
+        return config.getY();
+    }
+
+    public void setVisible(final boolean b) {
+
+        super.setVisible(b);
+
+    }
+
     public void dispose() {
+
+        config.setX(getDialog().getWidth());
+        config.setValid(true);
+        config.setY(getDialog().getHeight());
         super.dispose();
         if (paintTimer != null) {
             paintTimer.stop();

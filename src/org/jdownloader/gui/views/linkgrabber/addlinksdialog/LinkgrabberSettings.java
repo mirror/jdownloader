@@ -111,18 +111,6 @@ public interface LinkgrabberSettings extends ConfigInterface {
     void setVariousPackageLimit(int b);
 
     @AboutConfig
-    @DefaultIntValue(-1)
-    void setAddDialogXLocation(int x);
-
-    int getAddDialogXLocation();
-
-    @AboutConfig
-    @DefaultIntValue(-1)
-    void setAddDialogYLocation(int y);
-
-    int getAddDialogYLocation();
-
-    @AboutConfig
     @RequiresRestart
     @Description("AutoConfirm waits a delay before confirming the links. Default is 15000ms")
     @DefaultIntValue(15000)

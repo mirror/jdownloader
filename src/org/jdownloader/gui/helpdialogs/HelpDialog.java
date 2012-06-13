@@ -10,6 +10,7 @@ import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.PointOnScreenLocator;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -26,16 +27,15 @@ public class HelpDialog {
         try {
 
             ConfirmDialog d = new ConfirmDialog(flags | Dialog.BUTTONS_HIDE_CANCEL | Dialog.BUTTONS_HIDE_OK | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, title, _GUI._.literall_usage_tipp() + "\r\n\r\n..." + msg, icon, null, null) {
+                {
+                    if (point != null) setLocator(new PointOnScreenLocator(point));
+                }
+
                 @Override
                 protected String getDontShowAgainKey() {
                     if (test) return "bla_" + System.currentTimeMillis();
                     if (dontShowAgainKey == null) return super.getDontShowAgainKey();
                     return dontShowAgainKey;
-                }
-
-                protected Point getDesiredLocation() {
-                    if (point != null) return point;
-                    return super.getDesiredLocation();
                 }
 
                 public void windowClosing(final WindowEvent arg0) {
