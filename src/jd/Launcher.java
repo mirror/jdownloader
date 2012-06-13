@@ -239,7 +239,7 @@ public class Launcher {
             final String key = it.toString();
             Launcher.LOG.finer(key + "=" + pr.get(key));
         }
-        Launcher.LOG.info("Start JDownloader");
+        Launcher.LOG.info("JDownloader");
         PARAMETERS = new ParameterParser(args);
         PARAMETERS.getEventSender().addListener(new CommandSwitchListener() {
 
