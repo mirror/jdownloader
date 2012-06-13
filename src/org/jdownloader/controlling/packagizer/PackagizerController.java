@@ -28,6 +28,7 @@ import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
@@ -397,13 +398,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
             return;
         } else if (caller instanceof ExtractionController) {
             if (((ExtractionController) caller).getArchiv() instanceof DownloadLinkArchive) {
-                DownloadLinkArchiveFile af = (DownloadLinkArchiveFile) ((ExtractionController) caller).getArchiv().getFirstArchiveFile();
-                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    CrawledLink cl = new CrawledLink(link);
-                    for (File f : fileList) {
-                        if (f.exists()) {
-                            cl.setName(f.getName());
-                            runAfterExtraction(f, cl);
+                for (ArchiveFile af : ((ExtractionController) caller).getArchiv().getArchiveFiles()) {
+                    if (af instanceof DownloadLinkArchiveFile) {
+                        for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                            CrawledLink cl = new CrawledLink(link);
+                            for (File f : fileList) {
+                                if (f.exists()) {
+                                    cl.setName(f.getName());
+                                    runAfterExtraction(f, cl);
+                                }
+                            }
                         }
                     }
                 }

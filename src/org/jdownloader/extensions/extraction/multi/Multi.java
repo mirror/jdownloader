@@ -163,28 +163,27 @@ public class Multi extends IExtraction {
         boolean canBeSingleType = true;
         if (file.matches(PATTERN_RAR_MULTI)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
-            archive.setArchiveFiles(link.createPartFileList(pattern));
+            archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ENDS_WITH_DOT_RAR)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.rar$", "")) + REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER;
-            archive.setArchiveFiles(link.createPartFileList(pattern));
-            archive.getArchiveFiles().add(link);
+            archive.setArchiveFiles(link.createPartFileList(file, pattern));
+
         } else if (file.matches(REGEX_ANY_DOT_R19_FILE)) {
             // matches.add(link);
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.r\\d+$", "")) + "\\.(r\\d+|rar)$";
-            archive.setArchiveFiles(link.createPartFileList(pattern));
+            archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ANY_7ZIP_PART)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.7z\\.\\d+$", "")) + _7Z_D;
-            archive.setArchiveFiles(link.createPartFileList(pattern));
+            archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ZIP$)) {
             pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.zip$", "")) + ZIP$;
-            archive.setArchiveFiles(link.createPartFileList(pattern));
+            archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = true;
         } else {
-            archive.setArchiveFiles(link.createPartFileList(pattern));
-            archive.getArchiveFiles().add(link);
+            throw new ArchiveException("Unsupported Archive: " + link.getFilePath());
         }
 
         if (archive.getArchiveFiles().size() == 1 && canBeSingleType) {

@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.controlling.downloadcontroller.DownloadController;
@@ -16,12 +16,14 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
@@ -35,7 +37,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public String createExtractSubPath(String path, Archive archiv) {
 
-        DownloadLink link = ((DownloadLinkArchiveFile) archiv.getFirstArchiveFile()).getDownloadLinks().get(0);
+        DownloadLink link = getFirstLink(archiv);
         try {
             String packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
             if (!StringUtils.isEmpty(packageName)) {
@@ -90,13 +92,13 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return null;
     }
 
-    public ArrayList<ArchiveFile> createPartFileList(String pattern) {
+    public ArrayList<ArchiveFile> createPartFileList(final String file, String pattern) {
 
         final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
             public boolean isChildrenNodeFiltered(DownloadLink node) {
-                return pat.matcher(node.getFileOutput()).matches();
+                return pat.matcher(node.getFileOutput()).matches() || file.equals(node.getFileOutput());
             }
 
             public int returnMaxResults() {
@@ -117,7 +119,16 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
 
         }
+        ArrayList<ArchiveFile> filelist = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
+        for (ArchiveFile af : filelist) {
+            DownloadLinkArchiveFile downloadLinkArchiveFile = map.get(af.getName());
+            if (downloadLinkArchiveFile == null) {
+                // There is a matching local file, without a downloadlink link. this can happen if the user removes finished downloads
+                // immediatelly
+                ret.add(af);
 
+            }
+        }
         return ret;
     }
 
@@ -126,37 +137,74 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public void fireExtractToChange(Archive archive) {
-        for (ArchiveFile link1 : archive.getArchiveFiles()) {
-            ((DownloadLinkArchiveFile) link1).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());
+
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                ((DownloadLinkArchiveFile) af).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());
+            }
         }
 
     }
 
     public Collection<? extends String> getPasswordList(Archive archive) {
 
-        Set<String> ret = FilePackage.getPasswordAuto(((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks().get(0).getFilePackage());
-        // VM crashes if password is filename
-        // ret.add(new
-        // File(archive.getFirstArchiveFile().getFilePath()).getName());
-        return ret;
+        HashSet<String> all = new HashSet<String>();
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                    all.addAll(FilePackage.getPasswordAuto(link.getFilePackage()));
+                }
+            }
+
+        }
+
+        return all;
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {
-        for (DownloadLink link : ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks()) {
-            link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-            link.getLinkStatus().setErrorMessage(null);
+
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                    link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
+                    link.getLinkStatus().setErrorMessage(null);
+                }
+            }
+
         }
+
+    }
+
+    private DownloadLink getFirstLink(Archive archive) {
+        if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) { return ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getDownloadLinks().get(0); }
+
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) { return ((DownloadLinkArchiveFile) af).getDownloadLinks().get(0); }
+
+        }
+        throw new WTFException("Archive should always have at least one link");
     }
 
     public String getExtractPath(Archive archive) {
-        try {
+
+        if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) {
             try {
                 String path = (String) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
                 if (path != null) { return path; }
             } catch (Throwable e) {
             }
-        } catch (Throwable e) {
         }
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                try {
+                    String path = (String) ((DownloadLinkArchiveFile) af).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+                    if (path != null) { return path; }
+                } catch (Throwable e) {
+                }
+            }
+
+        }
+
         try {
             return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
         } catch (final Throwable e) {

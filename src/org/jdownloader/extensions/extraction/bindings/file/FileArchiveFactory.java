@@ -47,13 +47,13 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     // return buildArchive(link);
     // }
 
-    public ArrayList<ArchiveFile> createPartFileList(String pattern) {
+    public ArrayList<ArchiveFile> createPartFileList(String file, String pattern) {
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
 
         if (getFile().getParentFile() != null) {
             for (File f : getFile().getParentFile().listFiles()) {
                 if (f.isDirectory()) continue;
-                if (new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
+                if (f.getAbsolutePath().equals(file) || new Regex(f.getAbsolutePath(), pattern, Pattern.CASE_INSENSITIVE).matches()) {
                     ret.add(new FileArchiveFile(f));
 
                 }

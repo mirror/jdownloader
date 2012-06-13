@@ -31,7 +31,7 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
         this.si = si;
 
         setName(_GUI._.SetDownloadFolderAction_SetDownloadFolderAction_());
-        path = LinkTreeUtils.getDownloadDirectory(si.getContextPackage());
+        path = LinkTreeUtils.getRawDownloadDirectory(si.getContextPackage());
         setIconKey("save");
     }
 
@@ -41,8 +41,8 @@ public abstract class SetDownloadFolderAction<PackageType extends AbstractPackag
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must
-     * be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return

@@ -24,7 +24,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
     }
 
-    public ArrayList<ArchiveFile> createPartFileList(String pattern) {
+    public ArrayList<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         if (getLink().getParentNode() == null) {
@@ -32,7 +32,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
             ret.add(this);
         } else {
             for (CrawledLink l : getLink().getParentNode().getView().getItems()) {
-                if (pat.matcher(l.getName()).matches()) {
+                if (l.getName().equals(file) || pat.matcher(l.getName()).matches()) {
                     CrawledLinkArchiveFile claf = new CrawledLinkArchiveFile(l);
                     // if(claf.isComplete()&&claf.isValid()){
                     boolean contains = false;

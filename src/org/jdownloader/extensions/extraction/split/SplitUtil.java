@@ -92,7 +92,7 @@ class SplitUtil {
 
         // }
 
-        archive.setArchiveFiles(link.createPartFileList(pattern));
+        archive.setArchiveFiles(link.createPartFileList(startfile, pattern));
 
         for (ArchiveFile l : archive.getArchiveFiles()) {
             if (new Regex(l.getFilePath(), startfile, Pattern.CASE_INSENSITIVE).matches()) {

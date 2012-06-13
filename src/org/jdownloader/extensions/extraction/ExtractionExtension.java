@@ -208,7 +208,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         IExtraction extractor = archive.getExtractor();
 
-        if (!archive.getFirstArchiveFile().exists()) return null;
+        if (!archive.getFirstArchiveFile().exists()) {
+            Log.L.info("First File does not exist " + archive.getFirstArchiveFile());
+            return null;
+        }
+        archives.add(archive);
+
         archive.getFactory().fireArchiveAddedToQueue(archive);
 
         archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
@@ -275,9 +280,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
 
         Archive archive = extrctor.buildArchive(link);
-        Log.L.info("Created Archive: " + archive);
+        // Log.L.info("Created Archive: " + archive);
         Log.L.info("Files: " + archive.getArchiveFiles());
-        archives.add(archive);
 
         return archive;
     }
@@ -695,14 +699,19 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-
+        Log.L.info("New File by " + caller);
         if (caller instanceof SingleDownloadController) {
             DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
+
+            Log.L.info("postprocess " + link.getFilePackage().isPostProcessing());
+            Log.L.info("link supported  " + isLinkSupported(new DownloadLinkArchiveFactory(link)));
             if (link.getFilePackage().isPostProcessing() && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                 Archive archive;
                 try {
                     archive = buildArchive(new DownloadLinkArchiveFactory(link));
-
+                    Log.L.info("archive active " + archive.isActive());
+                    Log.L.info("archive size " + archive.getArchiveFiles().size());
+                    Log.L.info("archive complete " + archive.isComplete());
                     if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
                         this.addToQueue(archive);
                     }
