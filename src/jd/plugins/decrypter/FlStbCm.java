@@ -42,7 +42,7 @@ public class FlStbCm extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(Requested file was not found|Error 404 \\-|> ?File no longer available ?<)")) {
+        if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested file was not found<)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
