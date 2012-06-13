@@ -16,7 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -280,7 +282,7 @@ public class TurboBitNet extends PluginForHost {
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false)) {
+                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 3) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -345,8 +347,13 @@ public class TurboBitNet extends PluginForHost {
             }
         }
 
-        if (res != null) {
+        if (res != null && res.matches(tb(10))) {
             sleep(tt * 1001, downloadLink);
+            // Wed Jun 13 12:29:47 UTC 0200 2012
+            SimpleDateFormat df = new SimpleDateFormat("EEE MMM dd HH:mm:ss zZ yyyy");
+            Date date = new Date();
+            br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
+
             br.getPage(res);
             downloadUrl = br.getRegex("<a alt=\'link\' href=\'([^\']+)").getMatch(0);
             if (downloadUrl != null) {
@@ -364,8 +371,6 @@ public class TurboBitNet extends PluginForHost {
         }
         if (downloadUrl == null) {
             getPluginConfig().setProperty("isUpdateNeeded", true);
-            getPluginConfig().save();
-            if (br.containsHTML("Error: ")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 60 * 1000l); }
             if (br.containsHTML("The file is not avaliable now because of technical problems")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000l); }
 
             if (attemps > 1) {
@@ -595,7 +600,7 @@ public class TurboBitNet extends PluginForHost {
         s[7] = "fddefaf6fb07";
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
-        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262ecdc19c";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ed523ac8b7";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         /*
          * we have to load the plugin first! we must not reference a plugin class without loading it before

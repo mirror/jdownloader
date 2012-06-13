@@ -235,7 +235,7 @@ public class HitFileNet extends PluginForHost {
             if (captchaForm == null || captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             for (int i = 1; i <= 3; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false)) {
+                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 3) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
@@ -303,7 +303,7 @@ public class HitFileNet extends PluginForHost {
             }
         }
 
-        if (res != null) {
+        if (res != null && res.matches(hf(10))) {
             sleep(tt * 1001, downloadLink);
             for (int i = 0; i <= 4; i++) {
                 br.getPage(res);
@@ -411,7 +411,7 @@ public class HitFileNet extends PluginForHost {
         s[7] = "fddefaf6fb07";
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
-        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f181b5b6f143d85d05dd9f86c8b5be73c254755b5ef741d72e5262f98c19a6560af75d6b4";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ed523ac8b7";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
