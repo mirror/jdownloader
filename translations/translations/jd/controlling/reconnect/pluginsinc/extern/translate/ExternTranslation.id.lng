@@ -1,2 +1,4 @@
+interaction_externreconnect_command=Perintah (pakai jalur arah absolut)
 interaction_externreconnect_dummybat=Pakai pekerja khusus untuk Windows
+interaction_externreconnect_parameter=Parameter (1 parameter tiap baris)
 jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Alat sambung ulang luaran
