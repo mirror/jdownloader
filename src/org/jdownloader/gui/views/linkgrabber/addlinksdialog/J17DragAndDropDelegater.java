@@ -69,7 +69,20 @@ public class J17DragAndDropDelegater extends TransferHandler {
         boolean ret = org.importData(support);
         if (ret) {
             String txt = input.getText();
-            input.setText(AddLinksDialog.list(HTMLParser.getHttpLinks(txt)));
+            String[] list = HTMLParser.getHttpLinks(txt);
+            if (list.length == 0) {
+                list = HTMLParser.getHttpLinks(txt.replace("www.", "http://www."));
+            }
+            if (list.length == 0) {
+                list = HTMLParser.getHttpLinks("http://" + txt);
+            }
+            if (list.length == 0) {
+                input.setText(txt);
+            } else {
+                String parsed = AddLinksDialog.list(list);
+                input.setText(parsed);
+            }
+
         }
         return ret;
     }

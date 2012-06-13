@@ -2159,4 +2159,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You have to restart JDownloader for a language change. Restart now?" })
     String GUISettings_save_language_changed_restart_required_msg();
 
+    @Default(lngs = { "en" }, values = { "Nothing found!" })
+    String AddLinksAction_actionPerformed_deep_title();
+
+    @Default(lngs = { "en" }, values = { "JDownloader couldn't find any links to download on this website.\r\nWould you like to perform a deep link analysis to show all the files that can be downloaded from it?" })
+    String AddLinksAction_actionPerformed_deep_msg();
+
 }

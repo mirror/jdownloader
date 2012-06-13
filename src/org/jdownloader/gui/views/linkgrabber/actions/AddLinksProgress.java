@@ -24,6 +24,8 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -96,11 +98,29 @@ public class AddLinksProgress extends AbstractDialog<Object> {
         filtered.setText("0");
         thread = new Thread("AddLinksDialog") {
             public void run() {
+
+                // LinkCollector clears the text, so we store it here to keep ot for a later deep decrypt
+                final String txt = job.getText();
                 lc = LinkCollector.getInstance().addCrawlerJob(job);
 
                 if (lc != null) {
                     lc.waitForCrawling();
                     System.out.println("JOB DONE: " + lc.crawledLinksFound());
+                    if (!job.isDeepAnalyse() && lc.crawledLinksFound() == 0) {
+                        try {
+                            Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
+                            job.setDeepAnalyse(true);
+                            job.setText(txt);
+                            lc = LinkCollector.getInstance().addCrawlerJob(job);
+                            lc.waitForCrawling();
+                            System.out.println("DEEP JOB DONE: " + lc.crawledLinksFound());
+                        } catch (DialogClosedException e) {
+                            e.printStackTrace();
+                        } catch (DialogCanceledException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
                 }
                 new EDTRunner() {
 

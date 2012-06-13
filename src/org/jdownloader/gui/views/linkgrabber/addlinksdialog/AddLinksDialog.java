@@ -484,7 +484,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
                 } else {
                     input.setToolTipText(null);
-                    input.setBadgeIcon(null);
+
                 }
                 if (!validateFolder(destination.getFile().getAbsolutePath())) {
                     if (errorLabel.getText().length() == 0) errorLabel.setText(_GUI._.AddLinksDialog_validateForm_folder_invalid_missing());
