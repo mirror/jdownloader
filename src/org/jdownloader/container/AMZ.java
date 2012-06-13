@@ -43,11 +43,9 @@ public class AMZ extends PluginsC {
         try {
             iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_IV").get(null);
             seckey = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("AMZ_SEC").get(null);
-
         } catch (Throwable e) {
-
+            logger.log(e);
         }
-
         SecretKey key = new SecretKeySpec(seckey, "DES");
         AlgorithmParameterSpec paramSpec = new IvParameterSpec(iv);
         try {
@@ -80,6 +78,7 @@ public class AMZ extends PluginsC {
             cs.setStatus(ContainerStatus.STATUS_FINISHED);
             return cs;
         } catch (Exception e) {
+            logger.log(e);
         }
         return null;
     }

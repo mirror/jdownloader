@@ -29,13 +29,10 @@ import java.util.logging.Logger;
 import jd.utils.JDUtilities;
 
 /**
- * The logging class for jDownloader. The logger will put the log to the
- * JDownloader.log file located in the JDownloader home directory and also to
- * the console. The console output will be removed, if you start JDownloader
- * without -DEBUG.
+ * The logging class for jDownloader. The logger will put the log to the JDownloader.log file located in the JDownloader home directory and also to the console.
+ * The console output will be removed, if you start JDownloader without -DEBUG.
  * 
- * The logger is a singleton and not instantiateable. You will get the logger
- * with JDLogger.getLogger.
+ * The logger is a singleton and not instantiateable. You will get the logger with JDLogger.getLogger.
  */
 public final class JDLogger {
     private JDLogger() {
@@ -48,8 +45,7 @@ public final class JDLogger {
     private static String         logpath;
 
     /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
-     * Falls dieser Logger nicht existiert, wird ein neuer erstellt
+     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
      */
@@ -80,16 +76,6 @@ public final class JDLogger {
     }
 
     /**
-     * Adds a message with the time to the log.
-     * 
-     * @param The
-     *            message.
-     */
-    public static void timestamp(final String msg) {
-        getLogger().warning(jd.nutils.Formatter.formatMilliseconds(System.currentTimeMillis()) + " : " + msg);
-    }
-
-    /**
      * Adds a exception message to the log with the logging level SERVE.
      * 
      * @param The
@@ -97,16 +83,6 @@ public final class JDLogger {
      */
     public static void exception(final Throwable e) {
         exception(Level.SEVERE, e);
-    }
-
-    /**
-     * Removes the consoleoutput from the logger.
-     */
-    public static void removeConsoleHandler() {
-        if (console != null) {
-            getLogger().removeHandler(console);
-        }
-        System.err.println("Removed Consolehandler. Start with -debug to see console output");
     }
 
     /**
@@ -129,13 +105,6 @@ public final class JDLogger {
      */
     public static void exception(final Level level, final Throwable e) {
         getLogger().log(level, level.getName() + " Exception occurred", e);
-    }
-
-    /**
-     * Prints the position form the caller.
-     */
-    public static void quickLog() {
-        System.out.println("Footstep: " + new Exception().getStackTrace()[1]);
     }
 
     /**

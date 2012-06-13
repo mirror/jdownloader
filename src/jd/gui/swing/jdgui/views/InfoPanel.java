@@ -25,7 +25,6 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.event.EventListenerList;
 
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.interfaces.DroppedPanel;
 import net.miginfocom.swing.MigLayout;
 
@@ -43,7 +42,6 @@ public abstract class InfoPanel extends DroppedPanel {
 
     public InfoPanel(String iconKey) {
         super();
-        SwingGui.checkEDT();
 
         listenerList = new EventListenerList();
         map = new HashMap<String, JComponent>();
@@ -83,14 +81,12 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     /**
-     * Updates an entry previously added my addInfoEntry. Use as key the
-     * previously used title
+     * Updates an entry previously added my addInfoEntry. Use as key the previously used title
      * 
      * @param key
      * @param string
      */
     protected void updateInfo(String key, Object value) {
-        SwingGui.checkEDT();
         JComponent c = map.get(key);
 
         if (c != null && c instanceof JLabel) {
@@ -99,8 +95,7 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     /**
-     * Adds an info entry at x ,y title has to be constant and value may be
-     * updated later by using updateInfo(..)
+     * Adds an info entry at x ,y title has to be constant and value may be updated later by using updateInfo(..)
      * 
      * @param title
      * @param value
@@ -108,14 +103,12 @@ public abstract class InfoPanel extends DroppedPanel {
      * @param y
      */
     protected void addInfoEntry(String title, String value, int x, int y) {
-        SwingGui.checkEDT();
         JLabel myValue = new JLabel(value);
         myValue.setForeground(valueColor);
         addComponent(title, myValue, x, y);
     }
 
     protected void addComponent(JComponent myComponent, int x, int y) {
-        SwingGui.checkEDT();
         x *= 2;
         x += 1;
         myComponent.setForeground(valueColor);
@@ -124,7 +117,6 @@ public abstract class InfoPanel extends DroppedPanel {
     }
 
     protected void addComponent(String title, JComponent myComponent, int x, int y) {
-        SwingGui.checkEDT();
         x *= 2;
         x += 1;
         JLabel myTitle = new JLabel((title != null && title.length() > 0) ? title + ":" : "");

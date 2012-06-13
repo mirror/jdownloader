@@ -7,39 +7,47 @@ import java.util.ArrayList;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class PluginController<T extends Plugin> {
 
     @SuppressWarnings("unchecked")
     public ArrayList<PluginInfo<T>> scan(String hosterpath) {
-        File path = null;
-        PluginClassLoaderChild cl = null;
-
-        path = Application.getRootByClass(jd.Launcher.class, hosterpath);
-
-        cl = PluginClassLoader.getInstance().getChild();
-
-        final File[] files = path.listFiles(new FilenameFilter() {
-            public boolean accept(final File dir, final String name) {
-                return name.endsWith(".class") && !name.contains("$");
-            }
-        });
-
+        LogSource logger = LogController.CL();
+        logger.setAllowTimeoutFlush(false);
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
-        final String pkg = hosterpath.replace("/", ".");
-        if (files != null) {
-            for (final File f : files) {
+        try {
+            File path = null;
+            PluginClassLoaderChild cl = null;
 
-                try {
-                    String classFileName = f.getName().substring(0, f.getName().length() - 6);
-                    ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
-                    Log.L.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
-                } catch (Throwable e) {
-                    Log.exception(e);
+            path = Application.getRootByClass(jd.Launcher.class, hosterpath);
+
+            cl = PluginClassLoader.getInstance().getChild();
+
+            final File[] files = path.listFiles(new FilenameFilter() {
+                public boolean accept(final File dir, final String name) {
+                    return name.endsWith(".class") && !name.contains("$");
+                }
+            });
+            final String pkg = hosterpath.replace("/", ".");
+            boolean errorFree = true;
+            if (files != null) {
+                for (final File f : files) {
+                    try {
+                        String classFileName = f.getName().substring(0, f.getName().length() - 6);
+                        ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
+                        logger.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
+                    } catch (Throwable e) {
+                        errorFree = false;
+                        logger.log(e);
+                    }
                 }
             }
+            if (errorFree) logger.clear();
+        } finally {
+            logger.close();
         }
         return ret;
 

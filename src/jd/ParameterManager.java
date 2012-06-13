@@ -27,14 +27,11 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIConstants;
 import jd.gui.UserIF;
 
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.host.HostPluginController;
-
 public class ParameterManager {
 
     private static final Logger LOG = jd.controlling.JDLogger.getLogger();
 
-    public static void processParameters(final String[] input, boolean currentInstance) {
+    public static void processParameters(final String[] input) {
 
         boolean addLinksSwitch = false;
         boolean addContainersSwitch = false;
@@ -45,10 +42,7 @@ public class ParameterManager {
 
         for (final String currentArg : input) {
 
-            if (currentInstance == false && (currentArg.equals("--scan") || currentArg.equals("-scan"))) {
-                HostPluginController.getInstance().init(true);
-                CrawlerPluginController.getInstance().init(true);
-            } else if (currentArg.equals("--help") || currentArg.equals("-h")) {
+            if (currentArg.equals("--help") || currentArg.equals("-h")) {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;

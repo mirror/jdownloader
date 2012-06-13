@@ -60,6 +60,7 @@ public class MegaShareCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceFirst("(?i)megashare\\.com", "megashare.com"));
         setBrowserExclusive();
         br.getHeaders().put("User-Agent", UA);
         br.setFollowRedirects(true);

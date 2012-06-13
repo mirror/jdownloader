@@ -22,6 +22,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Random;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +31,6 @@ import javax.swing.ImageIcon;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.SubConfiguration;
-import jd.controlling.JDPluginLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -39,6 +39,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 /**
@@ -57,7 +58,16 @@ public abstract class Plugin implements ActionListener {
     // protected static Logger logger = jd.controlling.JDLogger.getLogger();
 
     /* afer 0.95xx */
-    protected JDPluginLogger   logger           = JDPluginLogger.Trash;
+    protected Logger           logger           = LogController.TRASH;
+
+    public void setLogger(Logger logger) {
+        if (logger == null) logger = LogController.TRASH;
+        this.logger = logger;
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
 
     /**
      * Gibt nur den Dateinamen aus der URL extrahiert zurück. Um auf den dateinamen zuzugreifen sollte bis auf Ausnamen immer DownloadLink.getName() verwendet

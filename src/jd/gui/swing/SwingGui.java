@@ -27,11 +27,8 @@ import java.awt.event.WindowStateListener;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.JDInitFlags;
-import jd.controlling.JDLogger;
 import jd.gui.UserIF;
 import jd.gui.swing.jdgui.interfaces.View;
 
@@ -96,16 +93,15 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     /**
-     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive
-     * keyboard events.
+     * Invoked when the Window is set to be the focused Window, which means that the Window, or one of its subcomponents, will receive keyboard events.
      * 
      */
     public void windowGainedFocus(final WindowEvent e) {
     }
 
     /**
-     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window
-     * or any of its subcomponents.
+     * Invoked when the Window is no longer the focused Window, which means that keyboard events will no longer be delivered to the Window or any of its
+     * subcomponents.
      * 
      */
     public void windowLostFocus(final WindowEvent e) {
@@ -217,20 +213,6 @@ public abstract class SwingGui extends UserIF implements WindowListener, WindowS
     }
 
     abstract public void setContent(View view, boolean setActive);
-
-    /**
-     * Throws an RuntimeException if the current thread is not the edt
-     */
-    public static boolean checkEDT() {
-        if (!JDInitFlags.SWITCH_DEBUG) return true;
-        final Thread th = Thread.currentThread();
-
-        if (!SwingUtilities.isEventDispatchThread()) {
-            JDLogger.exception(new RuntimeException("EDT Violation! Runs in " + th));
-            return false;
-        }
-        return true;
-    }
 
     /**
      * remove a panel completly.. e.g. unloading an plugin.

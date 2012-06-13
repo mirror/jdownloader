@@ -29,7 +29,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -41,6 +40,8 @@ import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginsC;
+
+import org.jdownloader.logging.LogController;
 
 public class C extends PluginsC {
 
@@ -65,16 +66,14 @@ public class C extends PluginsC {
             }
 
             if (offset < bytes.length) {
-                JDLogger.getLogger().severe("Could not completely read file " + file.getName());
+                LogController.CL().severe("Could not completely read file " + file.getName());
             }
             is.close();
             return bytes;
         } catch (FileNotFoundException e) {
-
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         } catch (IOException e) {
-
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
         return null;
     }
@@ -135,7 +134,7 @@ public class C extends PluginsC {
                     }
 
                 } catch (Exception e) {
-                    JDLogger.exception(e);
+                    logger.log(e);
                 }
             }
             if (dlc != null) {
@@ -169,11 +168,6 @@ public class C extends PluginsC {
     }
 
     // @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    // @Override
     public ArrayList<CrawledLink> getContainedDownloadlinks() {
         return new ArrayList<CrawledLink>();
     }
@@ -181,8 +175,7 @@ public class C extends PluginsC {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * jd.plugins.PluginForContainer#getContainedDownloadlinks(java.lang.String)
+     * @see jd.plugins.PluginForContainer#getContainedDownloadlinks(java.lang.String)
      */
     // @Override
     public void initContainer(final String filename) {

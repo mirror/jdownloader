@@ -16,7 +16,8 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
@@ -51,49 +52,59 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     public void init(boolean noCache) {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-        final long t = System.currentTimeMillis();
+        LogSource logger = LogController.CL();
+        logger.info("HostPluginController: init " + noCache);
+        logger.setAllowTimeoutFlush(false);
         try {
-            if (noCache) {
-                try {
-                    /* do a fresh scan */
-                    plugins = update();
-                } catch (Throwable e) {
-                    Log.L.severe("@HostPluginController: update failed!");
-                    Log.exception(e);
-                }
-            } else {
-                /* try to load from cache */
-                try {
-                    plugins = loadFromCache();
-                } catch (Throwable e) {
-                    Log.L.severe("@HostPluginController: cache failed!");
-                    Log.exception(e);
-                }
-                if (plugins.size() == 0) {
+            final long t = System.currentTimeMillis();
+            try {
+                if (noCache) {
                     try {
                         /* do a fresh scan */
-                        plugins = update();
+                        plugins = update(logger);
                     } catch (Throwable e) {
-                        Log.L.severe("@HostPluginController: update failed!");
-                        Log.exception(e);
+                        logger.severe("@HostPluginController: update failed!");
+                        logger.log(e);
+                    }
+                } else {
+                    /* try to load from cache */
+                    try {
+                        plugins = loadFromCache();
+                    } catch (Throwable e) {
+                        logger.severe("@HostPluginController: cache failed!");
+                        logger.log(e);
+                    }
+                    if (plugins.size() == 0) {
+                        try {
+                            /* do a fresh scan */
+                            plugins = update(logger);
+                        } catch (Throwable e) {
+                            logger.severe("@HostPluginController: update failed!");
+                            logger.log(e);
+                        }
                     }
                 }
+            } finally {
+                logger.info("@HostPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
+            }
+            if (plugins.size() == 0) {
+                logger.severe("@HostPluginController: WTF, no plugins!");
+            } else {
+                /* everything was okay */
+                logger.clear();
+            }
+            try {
+                Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
+
+                    public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
+                        return o1.getDisplayName().compareTo(o2.getDisplayName());
+                    }
+                });
+            } catch (final Throwable e) {
+                logger.log(e);
             }
         } finally {
-            Log.L.info("@HostPluginController: init " + (System.currentTimeMillis() - t) + " :" + plugins.size());
-        }
-        if (plugins.size() == 0) {
-            Log.L.severe("@HostPluginController: WTF, no plugins!");
-        }
-        try {
-            Collections.sort(plugins, new Comparator<LazyHostPlugin>() {
-
-                public int compare(LazyHostPlugin o1, LazyHostPlugin o2) {
-                    return o1.getDisplayName().compareTo(o2.getDisplayName());
-                }
-            });
-        } catch (final Throwable e) {
-            Log.exception(e);
+            logger.close();
         }
         list = plugins;
         System.gc();
@@ -123,7 +134,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         return ret;
     }
 
-    private List<LazyHostPlugin> update() throws MalformedURLException {
+    private List<LazyHostPlugin> update(LogSource logger) throws MalformedURLException {
         HashMap<String, AbstractHostPlugin> ret = new HashMap<String, AbstractHostPlugin>();
         HashMap<String, LazyHostPlugin> ret2 = new HashMap<String, LazyHostPlugin>();
         PluginClassLoaderChild classLoader = PluginClassLoader.getInstance().getChild();
@@ -149,7 +160,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
                         if (flags.length != names.length && a.interfaceVersion() == 2) {
                             /* interfaceVersion 2 is for Stable/Nightly */
-                            Log.exception(new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName));
+                            logger.log((new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName)));
                         }
                         if (names.length == 0) { throw new WTFException("names.length=0"); }
                         for (int i = 0; i < names.length; i++) {
@@ -180,7 +191,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                     l.setPremiumUrl(purl);
                                 } catch (Throwable e) {
                                     if (e instanceof UpdateRequiredClassNotFoundException) {
-                                        Log.L.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
+                                        logger.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
                                     } else
                                         throw e;
                                 }
@@ -192,20 +203,20 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                 }
                                 existingPlugin = ret.put(ap.getDisplayName(), ap);
                                 if (existingPlugin != null) {
-                                    Log.L.finest("@HostPlugin replaced:" + simpleName + " " + names[i] + " " + revision);
+                                    logger.finest("@HostPlugin replaced:" + simpleName + " " + names[i] + " " + revision);
                                 }
-                                Log.L.finer("@HostPlugin ok:" + simpleName + " " + names[i] + " " + revision);
+                                logger.finer("@HostPlugin ok:" + simpleName + " " + names[i] + " " + revision);
                             } catch (Throwable e) {
-                                Log.L.severe("@HostPlugin failed:" + simpleName + " " + names[i] + " " + revision);
-                                Log.exception(e);
+                                logger.severe("@HostPlugin failed:" + simpleName + " " + names[i] + " " + revision);
+                                logger.log(e);
                             }
                         }
                     } catch (final Throwable e) {
-                        Log.L.severe("@HostPlugin failed:" + simpleName);
-                        Log.exception(e);
+                        logger.severe("@HostPlugin failed:" + simpleName);
+                        logger.log(e);
                     }
                 } else {
-                    Log.L.severe("@HostPlugin missing:" + simpleName);
+                    logger.severe("@HostPlugin missing:" + simpleName);
                 }
             }
         } finally {
@@ -240,7 +251,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                 }
             });
         } catch (final Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
         this.list = list;
     }

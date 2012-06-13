@@ -26,8 +26,6 @@ import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
-import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaResult;
@@ -36,6 +34,7 @@ import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
@@ -69,10 +68,6 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public void setDistributer(LinkCrawlerDistributer distributer) {
         this.distributer = distributer;
-    }
-
-    public JDPluginLogger getLogger() {
-        return (JDPluginLogger) logger;
     }
 
     /**
@@ -138,10 +133,6 @@ public abstract class PluginForDecrypt extends Plugin {
         return new DownloadLink(null, null, getHost(), Encoding.urlDecode(link, true), true);
     }
 
-    public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
-    }
-
     /**
      * Die Methode entschlüsselt einen einzelnen Link.
      */
@@ -184,24 +175,32 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * we got a decrypter exception, clear log and note that something went wrong
              */
-            if (logger instanceof JDPluginLogger) {
+            if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
-                ((JDPluginLogger) logger).clear();
+                ((LogSource) logger).clear();
+                ((LogSource) logger).log(e);
+            } else {
+                logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
             }
-            logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
         } catch (InterruptedException e) {
             /* plugin got interrupted, clear log and note what happened */
-            if (logger instanceof JDPluginLogger) {
+            if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
-                ((JDPluginLogger) logger).clear();
+                ((LogSource) logger).clear();
+                ((LogSource) logger).log(e);
+            } else {
+                logger.log(Level.SEVERE, "Interrupted", e);
             }
-            logger.log(Level.SEVERE, "Interrupted", e);
-
         } catch (Throwable e) {
             /*
              * damn, something must have gone really really bad, lets keep the log
              */
-            logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
+            if (logger instanceof LogSource) {
+                /* make sure we use the right logger */
+                ((LogSource) logger).log(e);
+            } else {
+                logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
+            }
         } finally {
             this.currentLink = null;
         }
@@ -212,14 +211,14 @@ public abstract class PluginForDecrypt extends Plugin {
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
 
             /* lets forward the log */
-            if (logger instanceof JDPluginLogger) {
+            if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
-                ((JDPluginLogger) logger).logInto(JDLogger.getLogger());
+                ((LogSource) logger).flush();
             }
         }
-        if (logger instanceof JDPluginLogger) {
+        if (logger instanceof LogSource) {
             /* make sure we use the right logger */
-            ((JDPluginLogger) logger).clear();
+            ((LogSource) logger).clear();
         }
         return tmpLinks;
     }

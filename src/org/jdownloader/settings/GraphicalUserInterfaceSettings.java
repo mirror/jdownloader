@@ -329,4 +329,13 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     String getLanguage();
+
+    @AboutConfig
+    @DefaultIntValue(2500)
+    @SpinnerValidator(min = 50, max = 5000, step = 50)
+    @RequiresRestart
+    int getTooltipTimeout();
+
+    void setTooltipTimeout(int t);
+
 }

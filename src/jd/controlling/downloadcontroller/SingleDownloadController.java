@@ -26,8 +26,6 @@ import java.util.logging.Logger;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOPermission;
-import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.proxy.ProxyInfo;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -47,13 +45,14 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -86,6 +85,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private DownloadSpeedManager            connectionHandler = null;
 
     private Throwable                       exception         = null;
+
+    private LogSource                       downloadLogger    = null;
 
     public DownloadSpeedManager getConnectionHandler() {
         return connectionHandler;
@@ -135,6 +136,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         downloadLink.setDownloadLinkController(this);
         this.account = account;
         this.setCurrentProxy(proxy);
+        downloadLogger = LogController.getInstance().getLogger(dlink.getDefaultPlugin());
+        downloadLogger.setAllowTimeoutFlush(false);
+        downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
     }
 
     @Override
@@ -172,7 +176,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
-                        Log.exception(e);
+                        downloadLogger.log(e);
                     }
                 }
             }
@@ -277,9 +281,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                         ai.setTrafficLeft(left);
                         if (left == 0) {
                             if (ai.isSpecialTraffic()) {
-                                logger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
+                                downloadLogger.severe("Premium Account " + account.getUser() + ": Traffic Limit could be reached, but SpecialTraffic might be available!");
                             } else {
-                                logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+                                downloadLogger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
                                 account.setTempDisabled(true);
                             }
                         }
@@ -292,7 +296,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 return;
             }
             if (linkStatus.isFailed()) {
-                logger.warning("\r\nError occured- " + downloadLink.getLinkStatus());
+                downloadLogger.warning("\r\nError occured- " + downloadLink.getLinkStatus());
             }
             if (handler != null) {
                 /* special handler is used */
@@ -350,8 +354,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 }
             }
         } catch (Throwable e) {
-            logger.severe(JDLogger.getStackTrace(e));
-            logger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
+            downloadLogger.log(e);
+            downloadLogger.severe("Error in Plugin Version: " + downloadLink.getLivePlugin().getVersion());
         }
     }
 
@@ -359,27 +363,27 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorCaptcha() {
-        logger.warning("Captcha not correct-> will retry!");
+        downloadLogger.warning("Captcha not correct-> will retry!");
         retry();
     }
 
     protected void onErrorPluginDefect() {
         if (exception != null) {
             /* show stacktrace where the exception happened */
-            logger.info(JDLogger.getStackTrace(exception));
+            downloadLogger.log(exception);
         }
         long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
-        logger.warning("The Plugin for " + livePlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
+        downloadLogger.warning("The Plugin for " + livePlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink.getLinkStatus().getErrorMessage() != null) {
-            logger.warning(downloadLink.getLinkStatus().getErrorMessage());
+            downloadLogger.warning(downloadLink.getLinkStatus().getErrorMessage());
         }
         /* show last browser request headers+content in logfile */
         try {
-            logger.finest(livePlugin.getBrowser().getRequest().getHttpConnection() + "");
+            downloadLogger.finest(livePlugin.getBrowser().getRequest().getHttpConnection() + "");
         } catch (Throwable e2) {
         }
         try {
-            logger.finest(livePlugin.getBrowser() + "");
+            downloadLogger.finest(livePlugin.getBrowser() + "");
         } catch (Throwable e2) {
         }
         String orgMessage = downloadLink.getLinkStatus().getErrorMessage();
@@ -485,7 +489,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     }
                     downloadLink.forceFileName(newName);
                 } catch (Throwable e) {
-                    logger.severe(JDLogger.getStackTrace(e));
+                    downloadLogger.log(e);
                     downloadLink.forceFileName(null);
                 }
                 linkStatus.reset();
@@ -505,7 +509,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorFileNotFound() {
-        logger.severe("Link is no longer available:" + downloadLink.getDownloadURL());
+        downloadLogger.severe("Link is no longer available:" + downloadLink.getDownloadURL());
         downloadLink.setAvailable(false);
         downloadLink.setEnabled(false);
     }
@@ -515,10 +519,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorNoConnection() {
-        logger.severe("Error occurred: No Server connection");
+        downloadLogger.severe("Error occurred: No Server connection");
         if (exception != null) {
             /* show stacktrace where the exception happened */
-            logger.severe(JDLogger.getStackTrace(exception));
+            downloadLogger.log(exception);
         }
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(JsonConfig.create(GeneralSettings.class).getWaittimeOnConnectionLoss());
@@ -533,18 +537,18 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
             return;
         } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
-            logger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
+            downloadLogger.severe("Premium Account " + account.getUser() + ": Traffic Limit reached");
             account.setTempDisabled(true);
             account.getAccountInfo().setTrafficLeft(0);
         } else if (linkStatus.getValue() == PluginException.VALUE_ID_PREMIUM_DISABLE) {
-            logger.severe("Premium Account " + account.getUser() + ": expired");
+            downloadLogger.severe("Premium Account " + account.getUser() + ": expired");
             account.setEnabled(false);
         } else {
-            logger.severe("Premium Account " + account.getUser() + ": exception");
+            downloadLogger.severe("Premium Account " + account.getUser() + ": exception");
             account.setEnabled(false);
             if (exception != null) {
                 /* show stacktrace where the exception happened */
-                logger.info(JDLogger.getStackTrace(exception));
+                downloadLogger.log(exception);
             }
         }
         /* we reset linkStatus so link can be download again as free user */
@@ -552,7 +556,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorLocalIO() {
-        logger.severe("LOCALIO Error on: " + downloadLink.getFileOutput() + " -> disable link!");
+        downloadLogger.severe("LOCALIO Error on: " + downloadLink.getFileOutput() + " -> disable link!");
         downloadLink.setEnabled(false);
     }
 
@@ -564,12 +568,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
-            logger.warning("Error occurred: Temporarily unavailable: Please wait " + linkStatus.getValue() + " ms for a retry");
+            downloadLogger.warning("Error occurred: Temporarily unavailable: Please wait " + linkStatus.getValue() + " ms for a retry");
         } else if (linkStatus.getValue() == 0) {
             linkStatus.setWaitTime(JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime());
-            logger.warning("Error occurred: Temporarily unavailable: Please wait " + JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime() + " ms for a retry");
+            downloadLogger.warning("Error occurred: Temporarily unavailable: Please wait " + JsonConfig.create(GeneralSettings.class).getDownloadTempUnavailableRetryWaittime() + " ms for a retry");
         } else {
-            logger.warning("Error occurred: Temporarily unavailable: disable link!");
+            downloadLogger.warning("Error occurred: Temporarily unavailable: disable link!");
             linkStatus.resetWaitTime();
             downloadLink.setEnabled(false);
         }
@@ -582,17 +586,17 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorHostTemporarilyUnavailable() {
         long milliSeconds = linkStatus.getValue();
         if (milliSeconds <= 0) {
-            logger.severe(_JDT._.plugins_errors_pluginerror());
+            downloadLogger.severe(_JDT._.plugins_errors_pluginerror());
             milliSeconds = 60 * 60 * 1000l;
         }
         if (account != null) {
             /*
              * check blocked account(eg free user accounts with waittime)
              */
-            logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+            downloadLogger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
             AccountController.getInstance().addAccountBlocked(account, milliSeconds);
         }
-        logger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
+        downloadLogger.warning("Error occurred: Download from this host is currently not possible: Please wait " + milliSeconds + " ms for a retry");
         linkStatus.setWaitTime(milliSeconds);
         HTTPProxy proxyInfo = getCurrentProxy();
         if (proxyInfo != null && proxyInfo instanceof ProxyInfo) {
@@ -605,14 +609,14 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorIPWaittime() {
         long milliSeconds = linkStatus.getValue();
         if (milliSeconds <= 0) {
-            logger.severe(_JDT._.plugins_errors_pluginerror());
+            downloadLogger.severe(_JDT._.plugins_errors_pluginerror());
             milliSeconds = 3600000l;
         }
         if (account != null) {
             /*
              * check blocked account(eg free user accounts with waittime)
              */
-            logger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
+            downloadLogger.severe("Account: " + account.getUser() + " is blocked, temp. disabling it!");
             AccountController.getInstance().addAccountBlocked(account, milliSeconds);
             /*
              * we reset linkStatus so link can be download again as free user(not with this account)
@@ -631,11 +635,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     @Override
     public void run() {
-        JDPluginLogger llogger = null;
         try {
             stateMachine.setStatus(RUNNING_STATE);
-            llogger = new JDPluginLogger(downloadLink.getHost() + ":Download:" + downloadLink.getName());
-            super.setLogger(llogger);
+            super.setLogger(downloadLogger);
             linkStatus.setStatusText(null);
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();
@@ -645,7 +647,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             try {
                 originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance();
             } catch (UpdateRequiredClassNotFoundException e) {
-                logger.severe(JDLogger.getStackTrace(e));
+                downloadLogger.log(e);
                 downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (account != null && !account.getHoster().equalsIgnoreCase(downloadLink.getHost())) {
@@ -654,7 +656,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     LazyHostPlugin lazy = HostPluginController.getInstance().get(account.getHoster());
                     downloadLink.setLivePlugin(lazy.newInstance());
                 } catch (UpdateRequiredClassNotFoundException e) {
-                    logger.severe(JDLogger.getStackTrace(e));
+                    downloadLogger.log(e);
                     downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
@@ -663,7 +665,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             livePlugin = downloadLink.getLivePlugin();
             if (livePlugin != null && originalPlugin != null) {
                 livePlugin.setIOPermission(ioP);
-                livePlugin.setLogger(llogger);
+                livePlugin.setLogger(downloadLogger);
 
                 /*
                  * handle is only called in download situation, that why we create a new browser instance here
@@ -674,7 +676,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     /* we have 2 different plugins -> multihoster */
                     originalPlugin.setBrowser(new Browser());
                     originalPlugin.setIOPermission(ioP);
-                    originalPlugin.setLogger(llogger);
+                    originalPlugin.setLogger(downloadLogger);
                     originalPlugin.setDownloadLink(downloadLink);
                 }
                 if (downloadLink.getDownloadURL() == null) {
@@ -700,34 +702,30 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 handlePlugin();
                 if (isAborted() && !linkStatus.isFinished()) {
                     /* download aborted */
-                    llogger.clear();
-                    llogger.info("\r\nDownload stopped- " + downloadLink.getName());
+                    LogController.GL.info("\r\nDownload stopped- " + downloadLink.getName());
+                    downloadLogger.clear();
                 } else if (linkStatus.isFinished()) {
                     /* error free */
-                    llogger.clear();
-                    llogger.finest("\r\nFinished- " + downloadLink.getLinkStatus());
-                    llogger.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                    LogController.GL.finest("\r\nFinished- " + downloadLink.getLinkStatus());
+                    LogController.GL.info("\r\nFinished- " + downloadLink.getName() + "->" + downloadLink.getFileOutput());
+                    downloadLogger.clear();
                     FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
                     if (CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
-                        Log.L.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
+                        LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
                         ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
                         remove.add(downloadLink);
                         DownloadController.getInstance().removeChildren(remove);
                     } else if (CleanAfterDownloadAction.CLEANUP_AFTER_PACKAGE_HAS_FINISHED.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
                         FilePackage fp = downloadLink.getFilePackage();
                         if (new FilePackageView(fp).isFinished()) {
-                            Log.L.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
+                            LogController.GL.info("Remove Package " + fp.getName() + " because Finished and CleanupPackageFinished!");
                             DownloadController.getInstance().removePackage(fp);
                         }
                     }
                 }
             }
         } finally {
-            if (llogger != null) {
-                /* move download log into global log */
-                llogger.logInto(JDLogger.getLogger());
-                llogger.clear();
-            }
+            downloadLogger.close();
             try {
                 linkStatus.setInProgress(false);
                 /* cleanup the DownloadInterface/Controller references */
@@ -738,14 +736,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     /* we have 2 different plugins */
                     originalPlugin.getBrowser().disconnect();
                     originalPlugin.setBrowser(null);
-                    originalPlugin.getLogger().clear();
                     originalPlugin.setDownloadLink(null);
                     originalPlugin.clean();
                 }
                 if (livePlugin != null) {
                     livePlugin.getBrowser().disconnect();
                     livePlugin.setBrowser(null);
-                    livePlugin.getLogger().clear();
                     livePlugin.setDownloadLink(null);
                     livePlugin.clean();
                 }

@@ -46,7 +46,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.Hash;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.update.JDUpdater;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -133,14 +133,14 @@ public class D extends PluginsC {
                     } else {
                         x = cs(s2, a0);
                         if (x != null && x.trim().equals("2YVhzRFdjR2dDQy9JL25aVXFjQ1RPZ")) {
-                            Log.L.severe("You recently opened to many DLCs. Please wait a few minutes.");
+                            logger.severe("You recently opened to many DLCs. Please wait a few minutes.");
                             ee += "DLC Limit reached." + " ";
                             continue;
 
                         }
                         // Log.L.info("Dec key "+decodedKey);
                         if (x == null) {
-                            Log.L.severe("DLC Error(key): " + s2);
+                            logger.severe("DLC Error(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_key", "DLC: Key Fehler") + " ";
 
                             continue;
@@ -154,7 +154,7 @@ public class D extends PluginsC {
                         // dsk("8dEAMOh4EcaP8QgExlHZRNeCYL9EzB3cGJIdDG2prCE=");
                         p = Encoding.filterString(p);
                         if (p.length() != 16) {
-                            Log.L.severe("DLC Error2(key): " + s2);
+                            logger.severe("DLC Error2(key): " + s2);
                             ee += s2 + "" + JDL.L("sys.warning.dlcerror_version", "DLC Fehler(1) ") + " ";
 
                             continue;
@@ -167,7 +167,7 @@ public class D extends PluginsC {
                     dds1 = fds(dds1);
                     if (dds1 == null) {
 
-                        Log.L.severe("DLC Error(xml): " + s2);
+                        logger.severe("DLC Error(xml): " + s2);
                         ee += s2 + "" + JDL.L("sys.warning.dlcerror_xml", "DLC: XML Fehler ") + " ";
 
                         continue;
@@ -203,7 +203,7 @@ public class D extends PluginsC {
                     e.printStackTrace();
                     ee += s2 + "" + JDL.L("sys.warning.dlcerror_unknown", "DLC Fehler: ") + e.getMessage() + " ";
 
-                    Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                    logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
                 }
             }
         } catch (Exception e) {
@@ -341,8 +341,8 @@ public class D extends PluginsC {
             // return new BASE64Encoder().encode(original);
         } catch (Exception e) {
 
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
-            Log.L.severe("DLC encryption failed (5)");
+            logger.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.severe("DLC encryption failed (5)");
             return null;
 
         }
@@ -369,8 +369,7 @@ public class D extends PluginsC {
             f.close();
             return bf.toString();
         } catch (IOException e) {
-
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(e);
         }
         return "";
     }
@@ -379,9 +378,8 @@ public class D extends PluginsC {
         int i = 0;
         while (true) {
             i++;
-            Log.L.finer("Call " + s9);
+            logger.finer("Call " + s9);
             Browser br = new Browser();
-
             br.getHeaders().put("rev", JDUtilities.getRevision());
 
             //
@@ -452,11 +450,11 @@ public class D extends PluginsC {
             String pln = new String(Base64.decode(opl));
             rte = pln;
         } catch (Exception e) {
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(e);
         }
 
         if (rte == null || rte.indexOf("<content") < 0) {
-            Log.L.info("Old DLC Version");
+            logger.info("Old DLC Version");
             try {
                 byte[] ii;
                 ii = Base64.decode(ct);
@@ -482,7 +480,7 @@ public class D extends PluginsC {
 
                 rte = po;
             } catch (Exception e) {
-                Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+                logger.log(e);
 
                 rte = null;
 
@@ -490,7 +488,7 @@ public class D extends PluginsC {
 
         }
         if (rte == null) {
-            Log.L.severe("DLC Decryption failed (3)");
+            logger.severe("DLC Decryption failed (3)");
         }
         return rte;
     }
@@ -667,7 +665,7 @@ public class D extends PluginsC {
          * alle inhalte sind base64 verschlüsselt. XML Str5uktur wurde angepasst
          */
 
-        Log.L.info("Parse v3");
+        logger.info("Parse v3");
         cls = new ArrayList<CrawledLink>();
         CrawledLink nl;
 
@@ -714,7 +712,7 @@ public class D extends PluginsC {
                             String[] lsr = HTMLParser.getHttpLinks(sls, null);
                             if (lsr.length == 0) {
                                 while (true) {
-                                    Log.L.warning("Failed DLC Decoding. Try to decode again");
+                                    logger.warning("Failed DLC Decoding. Try to decode again");
                                     String old = sls;
                                     sls = Encoding.Base64Decode(sls);
                                     if (old.equals(sls)) {
@@ -731,7 +729,7 @@ public class D extends PluginsC {
 
                             }
                             if (lsr.length > 1) {
-                                Log.L.severe("DLC Error. Generator Link split Error");
+                                logger.severe("DLC Error. Generator Link split Error");
                                 break;
                             }
                         }
@@ -856,7 +854,7 @@ public class D extends PluginsC {
                 }
             }
             if (node.getNodeName().equalsIgnoreCase("content")) {
-                Log.L.info("dlcxmlversion: " + header.get("dlcxmlversion"));
+                logger.info("dlcxmlversion: " + header.get("dlcxmlversion"));
                 if (header.containsKey("dlcxmlversion") && header.get("dlcxmlversion") != null && header.get("dlcxmlversion").equals("20_02_2008")) {
                     pcx3(node, dlc);
                 } else if (header.containsKey("generator.app") && header.get("generator.app").equals("jDownloader") && header.containsKey("generator.version") && Double.parseDouble(header.get("generator.version")) < 654.0) {
@@ -910,7 +908,7 @@ public class D extends PluginsC {
             String xmlString = result.getWriter().toString();
             return xmlString;
         } catch (Exception e) {
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            LogController.CL().log(e);
         }
         return null;
     }
@@ -1040,7 +1038,7 @@ public class D extends PluginsC {
 
             return "<dlc>" + ret + "</dlc>";
         } catch (Exception e) {
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(e);
         }
         return null;
     }

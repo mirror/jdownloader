@@ -19,14 +19,12 @@ package jd;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -63,6 +61,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.update.updateclient.InstallLogList;
@@ -89,9 +88,12 @@ import org.jdownloader.gui.uiserio.JDSwingUserIO;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.jdserv.stats.StatsManager;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
@@ -107,7 +109,7 @@ public class Launcher {
         }
     }
 
-    private static Logger              LOG;
+    private static LogSource           LOG;
     private static boolean             instanceStarted            = false;
     public static SingleAppInstance    SINGLE_INSTANCE_CONTROLLER = null;
 
@@ -128,7 +130,7 @@ public class Launcher {
         } catch (final Throwable e) {
             /* not every mac has this */
             Launcher.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            e.printStackTrace();
+            Launcher.LOG.log(e);
         }
 
         // Use ScreenMenu in every LAF
@@ -150,7 +152,7 @@ public class Launcher {
             MacOSApplicationAdapter.enableMacSpecial();
         } catch (final Throwable e) {
             Launcher.LOG.info("Error Initializing  Mac Look and Feel Special: " + e);
-            e.printStackTrace();
+            Launcher.LOG.log(e);
         }
 
     }
@@ -206,7 +208,7 @@ public class Launcher {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        Launcher.LOG = JDLogger.getLogger();
+        Launcher.LOG = LogController.GL;
 
         // Mac OS specific
         if (CrossSystem.isMac()) {
@@ -227,9 +229,9 @@ public class Launcher {
         System.setProperty("sun.java2d.d3d", "false");
         try {
             // log source revision infos
-            Log.L.info(IO.readFileToString(Application.getResource("build.json")));
+            Launcher.LOG.info(IO.readFileToString(Application.getResource("build.json")));
         } catch (Throwable e1) {
-            Log.exception(e1);
+            Launcher.LOG.log(e1);
         }
         final Properties pr = System.getProperties();
         final TreeSet<Object> propKeys = new TreeSet<Object>(pr.keySet());
@@ -243,110 +245,77 @@ public class Launcher {
 
             @Override
             public void executeCommandSwitch(CommandSwitch event) {
+                if ("debug".equalsIgnoreCase(event.getSwitchCommand())) {
 
-                if (event.getSwitchCommand().equalsIgnoreCase("forcelog")) {
-                    JDInitFlags.SWITCH_FORCELOG = true;
-                    Launcher.LOG.info("FORCED LOGGING Modus aktiv");
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("debug")) {
-                    JDInitFlags.SWITCH_DEBUG = true;
-                    Launcher.LOG.info("DEBUG Modus aktiv");
-                }
-
-                if (event.getSwitchCommand().equalsIgnoreCase("brdebug")) {
-                    JDInitFlags.SWITCH_DEBUG = true;
+                    Launcher.LOG.info("Activated JD Debug Mode");
+                } else if ("brdebug".equalsIgnoreCase(event.getSwitchCommand())) {
                     Browser.setGlobalVerbose(true);
-                    Launcher.LOG.info("Browser DEBUG Modus aktiv");
-
-                }
-                if (event.getSwitchCommand().equalsIgnoreCase("update")) {
+                    Launcher.LOG.info("Activated Browser Debug Mode");
+                } else if ("update".equalsIgnoreCase(event.getSwitchCommand())) {
                     JDInitFlags.REFRESH_CACHE = true;
-                }
-
-                if (event.getSwitchCommand().equalsIgnoreCase("rfu")) {
-                    JDInitFlags.SWITCH_RETURNED_FROM_UPDATE = true;
+                    Launcher.LOG.info("RefreshCache=true");
                 }
             }
         });
-
         PARAMETERS.parse(null);
         checkSessionInstallLog();
         org.jdownloader.controlling.JDRestartController.getInstance().setStartArguments(PARAMETERS.getRawArguments());
-
-        if (!Application.isJared(Launcher.class)) {
-            JDInitFlags.SWITCH_DEBUG = true;
+        boolean jared = Application.isJared(Launcher.class);
+        String revision = JDUtilities.getRevision();
+        if (!jared) {
+            /* always enable debug and cache refresh in developer version */
+            Launcher.LOG.info("Not Jared Version(" + revision + "): RefreshCache=true");
             JDInitFlags.REFRESH_CACHE = true;
+        } else {
+            Launcher.LOG.info("Jared Version(" + revision + ")");
         }
 
         Launcher.preInitChecks();
 
         for (int i = 0; i < args.length; i++) {
-
             if (args[i].equalsIgnoreCase("-branch")) {
-
                 if (args[i + 1].equalsIgnoreCase("reset")) {
                     JDUpdater.getInstance().setForcedBranch(null);
-
                     Launcher.LOG.info("Switching back to default JDownloader branch");
-
                 } else {
                     JDUpdater.getInstance().setForcedBranch(args[i + 1]);
-
                     Launcher.LOG.info("Switching to " + args[i + 1] + " JDownloader branch");
-
                 }
-
                 i++;
             } else if (args[i].equals("-prot")) {
-
                 Launcher.LOG.finer(args[i] + " " + args[i + 1]);
                 i++;
-
-            } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
-
-                Launcher.LOG.finer(args[i] + " parameter");
-                JDInitFlags.SWITCH_NEW_INSTANCE = true;
-
             } else if (args[i].equals("--help") || args[i].equals("-h")) {
-
                 ParameterManager.showCmdHelp();
                 System.exit(0);
-
             } else if (args[i].equals("--captcha") || args[i].equals("-c")) {
 
                 if (args.length > i + 2) {
-
                     Launcher.LOG.setLevel(Level.OFF);
                     final String captchaValue = JAntiCaptcha.getCaptcha(args[i + 1], args[i + 2]);
                     System.out.println(captchaValue);
                     System.exit(0);
-
                 } else {
-
                     System.out.println("Error: Please define filepath and JAC method");
                     System.out.println("Usage: java -jar JDownloader.jar --captcha /path/file.png example.com");
                     System.exit(0);
-
                 }
-
-            } else if (args[i].equals("--show") || args[i].equals("-s")) {
-
-                JACController.showDialog(false);
-                JDInitFlags.STOP = true;
-
-            } else if (args[i].equals("--train") || args[i].equals("-t")) {
-
-                JACController.showDialog(true);
-                JDInitFlags.STOP = true;
-
             }
-
+        }
+        if (PARAMETERS.hasCommandSwitch("show") || PARAMETERS.hasCommandSwitch("s")) {
+            Launcher.LOG.info("Show Captcha (JAC)");
+            JACController.showDialog(false);
+            System.exit(0);
+        } else if (PARAMETERS.hasCommandSwitch("train") || PARAMETERS.hasCommandSwitch("t")) {
+            Launcher.LOG.info("Train Captcha (JAC)");
+            JACController.showDialog(true);
+            System.exit(0);
         }
         try {
             Launcher.SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
             Launcher.SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
                 public void parseMessage(final String[] args) {
-                    ParameterManager.processParameters(args, false);
+                    ParameterManager.processParameters(args);
                 }
             });
             Launcher.SINGLE_INSTANCE_CONTROLLER.start();
@@ -359,8 +328,10 @@ public class Launcher {
             Launcher.LOG.severe("Instance Handling not possible!");
             Launcher.instanceStarted = true;
         }
-        System.out.println("Remove me");
-        if (Launcher.instanceStarted || JDInitFlags.SWITCH_NEW_INSTANCE) {
+        if (Launcher.instanceStarted) {
+            Launcher.start(args);
+        } else if (PARAMETERS.hasCommandSwitch("n")) {
+            Launcher.LOG.severe("Forced to start new instance!");
             Launcher.start(args);
         } else {
             if (args.length > 0) {
@@ -381,32 +352,32 @@ public class Launcher {
             InstallLogList tmpInstallLog = new InstallLogList();
             logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
             if (logFile.exists()) {
-                Log.L.info("Check SessionInstallLog");
+                Launcher.LOG.info("Check SessionInstallLog");
                 tmpInstallLog = JSonStorage.restoreFrom(logFile, tmpInstallLog);
 
                 for (InstalledFile iFile : tmpInstallLog) {
                     if (iFile.getRelPath().endsWith(".class")) {
                         // Updated plugins
                         JDInitFlags.REFRESH_CACHE = true;
-                        Log.L.info("RefreshCache=true");
+                        Launcher.LOG.info("RefreshCache=true");
                         break;
                     }
                     if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar")) {
                         // Updated extensions
                         JDInitFlags.REFRESH_CACHE = true;
-                        Log.L.info("RefreshCache=true");
+                        Launcher.LOG.info("RefreshCache=true");
                         break;
                     }
                     if (iFile.getRelPath().endsWith(".class.backup")) {
                         // Updated plugins
                         JDInitFlags.REFRESH_CACHE = true;
-                        Log.L.info("RefreshCache=true");
+                        Launcher.LOG.info("RefreshCache=true");
                         break;
                     }
                     if (iFile.getRelPath().startsWith("extensions") && iFile.getRelPath().endsWith(".jar.backup")) {
                         // Updated extensions
                         JDInitFlags.REFRESH_CACHE = true;
-                        Log.L.info("RefreshCache=true");
+                        Launcher.LOG.info("RefreshCache=true");
                         break;
                     }
                 }
@@ -414,7 +385,7 @@ public class Launcher {
 
         } catch (Throwable e) {
             // JUst to be sure
-            Log.exception(e);
+            Launcher.LOG.log(e);
         } finally {
             if (logFile != null) {
                 logFile.renameTo(new File(logFile.getAbsolutePath() + "." + System.currentTimeMillis()));
@@ -428,25 +399,19 @@ public class Launcher {
     }
 
     private static void start(final String args[]) {
-        if (!JDInitFlags.STOP) {
-            go();
-            for (final String p : args) {
-                Launcher.LOG.finest("Param: " + p);
-            }
-            ParameterManager.processParameters(args, true);
+        go();
+        for (final String p : args) {
+            Launcher.LOG.finest("Param: " + p);
         }
+        ParameterManager.processParameters(args);
     }
 
     private static void go() {
-        Launcher.LOG.info(new Date().toString());
-        Launcher.LOG.info("init Configuration");
-        if (JDInitFlags.SWITCH_DEBUG) {
-            Launcher.LOG.info("DEBUG MODE ACTIVATED");
-            // new PerformanceObserver().start();
-            Launcher.LOG.setLevel(Level.ALL);
-            Log.L.setLevel(Level.ALL);
-        } else {
-            JDLogger.removeConsoleHandler();
+        Launcher.LOG.info("Initialize JDownloader");
+        Log.L.setLevel(Level.ALL);
+        if (!PARAMETERS.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
+            Launcher.LOG.info("Remove ConsoleHandler");
+            LogController.getInstance().removeConsoleHandler();
         }
         /* these can be initiated without a gui */
         final Thread thread = new Thread() {
@@ -469,7 +434,7 @@ public class Launcher {
                     try {
                         JSPermissionRestricter.init();
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        Launcher.LOG.log(e);
                     }
                     /* set gloabel logger for browser */
                     Browser.setGlobalLogger(JDLogger.getLogger());
@@ -485,7 +450,7 @@ public class Launcher {
                             if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
                                 HTTPProxy proxy = null;
                                 if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
-                                    Log.L.info("Set new DefaultProxy: " + proxy);
+                                    Launcher.LOG.info("Set new DefaultProxy: " + proxy);
                                     Browser.setGlobalProxy(proxy);
                                 }
                             }
@@ -493,7 +458,7 @@ public class Launcher {
                         }
                     });
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    Launcher.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                     org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -517,6 +482,7 @@ public class Launcher {
                     @Override
                     public void run() {
                         try {
+                            ToolTipController.getInstance().setDelay(JsonConfig.create(GraphicalUserInterfaceSettings.class).getTooltipTimeout());
                             Thread.currentThread().setName("ExecuteWhenGuiReachedThread: Init Host Plugins");
                             HostPluginController.getInstance().ensureLoaded();
                             /* load links */
@@ -567,9 +533,7 @@ public class Launcher {
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         /*
-                                         * we do this check inside IOEQ because
-                                         * initDownloadLinks also does its final
-                                         * init in IOEQ
+                                         * we do this check inside IOEQ because initDownloadLinks also does its final init in IOEQ
                                          */
                                         List<DownloadLink> dlAvailable = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
 
@@ -586,8 +550,7 @@ public class Launcher {
                                         });
                                         if (dlAvailable.size() == 0) {
                                             /*
-                                             * no downloadlinks available to
-                                             * autostart
+                                             * no downloadlinks available to autostart
                                              */
                                             return null;
                                         }
@@ -628,7 +591,7 @@ public class Launcher {
                                 });
                             }
                         } catch (Throwable e) {
-                            Log.exception(e);
+                            Launcher.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                             org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -645,14 +608,14 @@ public class Launcher {
                 /* init gui here */
                 try {
                     lafInit.waitForEDT();
-                    Log.L.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
+                    Launcher.LOG.info("InitGUI->" + (System.currentTimeMillis() - Launcher.startup));
                     JDGui.getInstance();
 
                     EDTEventQueue.initEventQueue();
 
-                    Log.L.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
+                    Launcher.LOG.info("GUIDONE->" + (System.currentTimeMillis() - Launcher.startup));
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    Launcher.LOG.log(e);
                     Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
 
                     org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
@@ -668,8 +631,6 @@ public class Launcher {
             thread.join(10000);
         } catch (InterruptedException e) {
         }
-        Launcher.LOG.info("Revision: " + JDUtilities.getRevision());
-        Launcher.LOG.info("Jared: " + Application.isJared(Launcher.class));
         if (!JDGui.getInstance().getMainFrame().isVisible()) {
             ShutdownController.getInstance().requestShutdown(true);
             return;

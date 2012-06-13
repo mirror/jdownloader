@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import jd.config.Property;
 import jd.config.SubConfiguration;
@@ -48,7 +49,8 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
@@ -154,24 +156,29 @@ public class AccountController implements AccountControllerListener {
         }
         final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(account.getHoster());
         if (plugin == null) {
-            Log.L.severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
+            LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
             account.setEnabled(false);
             return null;
         }
         String whoAmI = account.getUser() + "->" + account.getHoster();
-        JDPluginLogger logger = new JDPluginLogger("AccountCheck: " + whoAmI);
+        LogSource logger = LogController.getInstance().getLogger(plugin);
+        logger.info("Account Update: " + whoAmI);
+        logger.setAllowTimeoutFlush(false);
         plugin.setLogger(logger);
         Thread currentThread = Thread.currentThread();
         BrowserSettingsThread bThread = null;
+        Logger oldLogger = null;
         if (currentThread instanceof BrowserSettingsThread) {
             bThread = (BrowserSettingsThread) currentThread;
         }
         if (bThread != null) {
             /* set logger to browserSettingsThread */
+            oldLogger = bThread.getLogger();
             bThread.setLogger(logger);
         }
         try {
             Browser br = new Browser();
+            br.setLogger(logger);
             plugin.setBrowser(br);
             /* not every plugin sets this info correct */
             account.setValid(true);
@@ -202,12 +209,12 @@ public class AccountController implements AccountControllerListener {
             account.setAccountInfo(ai);
             if (ai.isExpired()) {
                 logger.clear();
-                logger.info("Account " + whoAmI + " is expired!");
+                LogController.CL().info("Account " + whoAmI + " is expired!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
             } else if (!account.isValid()) {
                 account.setEnabled(false);
                 logger.clear();
-                logger.info("Account " + whoAmI + " is invalid!");
+                LogController.CL().info("Account " + whoAmI + " is invalid!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
             } else {
                 logger.clear();
@@ -224,7 +231,7 @@ public class AccountController implements AccountControllerListener {
                 if ((pe.getLinkStatus() == LinkStatus.ERROR_PREMIUM)) {
                     if (pe.getValue() == PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE) {
                         logger.clear();
-                        logger.info("Account " + whoAmI + " traffic limit reached!");
+                        LogController.CL().info("Account " + whoAmI + " traffic limit reached!");
                         if (!StringUtils.isEmpty(pe.getErrorMessage())) {
                             ai.setStatus(pe.getErrorMessage());
                         } else {
@@ -243,7 +250,7 @@ public class AccountController implements AccountControllerListener {
                             ai.setStatus("Invalid Account!");
                         }
                         logger.clear();
-                        logger.info("Account " + whoAmI + " is invalid!");
+                        LogController.CL().info("Account " + whoAmI + " is invalid!");
                         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
                         return ai;
                     }
@@ -258,23 +265,23 @@ public class AccountController implements AccountControllerListener {
                      * we are offline, so lets just return without any account update
                      */
                     logger.clear();
-                    logger.info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
+                    LogController.CL().info("It seems Computer is currently offline, skipped Accountcheck for " + whoAmI);
                     return ai;
                 } catch (final IPCheckException e2) {
                 }
             }
             logger.severe("AccountCheck: Failed because of exception");
-            logger.severe(JDLogger.getStackTrace(e));
+            logger.log(e);
             /* move download log into global log */
             account.setAccountInfo(null);
             account.setEnabled(false);
             account.setValid(false);
             this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
         } finally {
-            logger.logInto(JDLogger.getLogger());
+            logger.close();
             if (bThread != null) {
                 /* remove logger from browserSettingsThread */
-                bThread.setLogger(null);
+                bThread.setLogger(oldLogger);
             }
         }
         return ai;
@@ -290,7 +297,7 @@ public class AccountController implements AccountControllerListener {
             try {
                 dat = restore();
             } catch (final Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
             }
         }
         if (dat == null) {
@@ -387,7 +394,7 @@ public class AccountController implements AccountControllerListener {
         synchronized (blockedAccounts) {
             long blockedTime = Math.max(0, value);
             if (blockedTime == 0) {
-                Log.L.info("Invalid AccountBlock timeout! set 30 mins!");
+                LogController.CL().info("Invalid AccountBlock timeout! set 30 mins!");
                 blockedTime = 60 * 60 * 1000l;
             }
             blockedAccounts.put(account, System.currentTimeMillis() + blockedTime);
@@ -610,7 +617,6 @@ public class AccountController implements AccountControllerListener {
     }
 
     public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {
-
         return "http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + Encoding.urlEncode(buyPremiumUrl) + "&" + Encoding.urlEncode(id);
     }
 }

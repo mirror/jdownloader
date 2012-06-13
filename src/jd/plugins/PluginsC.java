@@ -19,10 +19,8 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
@@ -33,7 +31,8 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -43,19 +42,16 @@ import org.appwork.utils.logging.Log;
 
 public abstract class PluginsC {
 
-    private Pattern          pattern;
+    private Pattern     pattern;
 
-    private String           name;
+    private String      name;
 
-    private long             version;
+    private long        version;
 
-    protected JDPluginLogger logger = JDPluginLogger.Trash;
+    protected LogSource logger = LogController.TRASH;
 
-    public JDPluginLogger getLogger() {
-        return logger;
-    }
-
-    public void setLogger(JDPluginLogger logger) {
+    public void setLogger(LogSource logger) {
+        if (logger == null) logger = LogController.TRASH;
         this.logger = logger;
     }
 
@@ -65,6 +61,7 @@ public abstract class PluginsC {
         try {
             version = Formatter.getRevision(rev);
         } catch (Throwable e) {
+            logger.log(e);
             version = -1;
         }
     }
@@ -116,14 +113,14 @@ public abstract class PluginsC {
      * @throws IOException
      */
     private synchronized void doDecryption(final String parameter) throws IOException {
-        Log.L.info("DO STEP");
+        logger.info("DO STEP");
         final String file = parameter;
         if (status == STATUS_ERROR_EXTRACTING) {
-            Log.L.severe("Expired JD Version. Could not extract links");
+            logger.severe("Expired JD Version. Could not extract links");
             return;
         }
         if (file == null) {
-            Log.L.severe("Containerfile == null");
+            logger.severe("Containerfile == null");
             return;
         }
         final File f = JDUtilities.getResourceFile(file);
@@ -138,7 +135,7 @@ public abstract class PluginsC {
                 IO.copyFile(f, res);
             }
             if (!res.exists()) {
-                Log.L.severe("Could not copy file to homedir");
+                logger.severe("Could not copy file to homedir");
             }
             callDecryption(res);
         }
@@ -186,12 +183,12 @@ public abstract class PluginsC {
         }
 
         if (cls == null || cls.size() == 0) {
-            Log.L.info("Init Container");
+            logger.info("Init Container");
             if (bs != null) k = bs;
             try {
                 doDecryption(filename);
             } catch (Throwable e) {
-                Log.L.severe(e.toString());
+                logger.log(e);
             }
         }
     }
@@ -215,14 +212,13 @@ public abstract class PluginsC {
              * damn, something must have gone really really bad, lets keep the log
              */
 
-            Log.L.log(Level.SEVERE, "Exception", e);
+            logger.log(e);
         }
         if (retLinks == null && showException) {
             /*
              * null as return value? something must have happened, do not clear log
              */
-            Log.L.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
-
+            logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
         }
         return retLinks;
     }

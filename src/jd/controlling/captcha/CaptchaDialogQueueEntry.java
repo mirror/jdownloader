@@ -2,11 +2,10 @@ package jd.controlling.captcha;
 
 import java.awt.Image;
 import java.io.File;
-import java.net.MalformedURLException;
+import java.util.logging.Logger;
 
 import jd.controlling.IOPermission;
 import jd.controlling.IOPermission.CAPTCHA;
-import jd.controlling.JDPluginLogger;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.CaptchaDialogInterface.DialogType;
@@ -21,12 +20,11 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ComboBoxDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.gui.uiserio.NewUIO;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeException> {
@@ -97,14 +95,14 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
 
     private CaptchaResult viaGUI() {
         if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return null; }
+        Logger logger = LogController.GL;
         try {
             DialogType dialogType = null;
-            JDPluginLogger logger = null;
             if (captchaController.getPlugin() instanceof PluginForHost) {
-                logger = ((PluginForHost) captchaController.getPlugin()).getLogger();
+                logger = captchaController.getPlugin().getLogger();
                 dialogType = DialogType.HOSTER;
             } else if (captchaController.getPlugin() instanceof PluginForDecrypt) {
-                logger = ((PluginForDecrypt) captchaController.getPlugin()).getLogger();
+                logger = captchaController.getPlugin().getLogger();
                 dialogType = DialogType.CRAWLER;
             }
             int f = flag;
@@ -153,19 +151,16 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
                             CaptchaSettings.CFG.setLastCancelOption(2);
                             break;
                         }
-                    } catch (DialogClosedException e1) {
-                        e1.printStackTrace();
-                    } catch (DialogCanceledException e1) {
-                        e1.printStackTrace();
+
+                    } catch (DialogNoAnswerException e1) {
                     } catch (StorageException e1) {
-                        e1.printStackTrace();
+                        logger.severe(LogController.getStackTrace(e1));
                     }
                 }
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            logger.severe(LogController.getStackTrace(e));
         }
-
         return null;
     }
 

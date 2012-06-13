@@ -33,7 +33,6 @@ import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
 import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -89,14 +88,6 @@ public abstract class PluginForHost extends Plugin {
         /* defaultPlugins do not have any working logger */
         /* workaround for all the lazy init issues */
         this.lazyP = (LazyHostPlugin) wrapper.getLazy();
-    }
-
-    public void setLogger(JDPluginLogger logger) {
-        this.logger = logger;
-    }
-
-    public JDPluginLogger getLogger() {
-        return (JDPluginLogger) logger;
     }
 
     public void setBrowser(Browser brr) {

@@ -9,8 +9,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.JDLogger;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
@@ -22,7 +20,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -223,7 +222,7 @@ public class LinkChecker<E extends CheckableLink> {
                 public void run() {
                     int stopDelay = 1;
                     PluginForHost plg = null;
-                    JDPluginLogger logger = null;
+                    LogSource logger = null;
                     Browser br = new Browser();
                     while (true) {
                         /*
@@ -275,7 +274,9 @@ public class LinkChecker<E extends CheckableLink> {
                                         LazyHostPlugin lazyp = HostPluginController.getInstance().get(massLinkCheck.get(0).getDefaultPlugin().getHost());
                                         plg = lazyp.newInstance();
                                         plg.setBrowser(br);
-                                        plg.setLogger(logger = new JDPluginLogger(lazyp.getDisplayName() + ":LinkCheck"));
+                                        plg.setLogger(logger = LogController.getInstance().getLogger(plg));
+                                        logger.info("LinkChecker: " + threadHost);
+                                        logger.setAllowTimeoutFlush(false);
                                         ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
                                         plg.init();
                                     }
@@ -288,8 +289,8 @@ public class LinkChecker<E extends CheckableLink> {
                                         logger.clear();
                                         plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
                                     } catch (final Throwable e) {
-                                        logger.severe(JDLogger.getStackTrace(e));
-                                        logger.logInto(JDLogger.getLogger());
+                                        logger.log(e);
+                                        logger.flush();
                                     } finally {
                                         logger.clear();
                                         massLinkCheck = null;
@@ -311,12 +312,17 @@ public class LinkChecker<E extends CheckableLink> {
                                 }
                             }
                         } catch (Throwable e) {
-                            Log.exception(e);
+                            LogController.CL().log(e);
+                        } finally {
+                            try {
+                                logger.close();
+                            } catch (final Throwable e) {
+                            }
                         }
                         try {
                             Thread.sleep(KEEP_ALIVE);
                         } catch (InterruptedException e) {
-                            Log.exception(e);
+                            LogController.CL().log(e);
                             synchronized (LOCK) {
                                 CHECK_THREADS.remove(threadHost);
                                 return;
@@ -374,7 +380,7 @@ public class LinkChecker<E extends CheckableLink> {
         }
     }
 
-    private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, JDPluginLogger logger) {
+    private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, LogSource logger) {
         if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) return;
         AvailableStatus availableStatus = null;
         try {
@@ -382,6 +388,7 @@ public class LinkChecker<E extends CheckableLink> {
             plgToUse.reset();
             availableStatus = plgToUse.requestFileInformation(link);
         } catch (PluginException e) {
+            logger.log(e);
             e.fillLinkStatus(link.getLinkStatus());
             if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT) || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                 availableStatus = AvailableStatus.UNCHECKABLE;
@@ -389,8 +396,8 @@ public class LinkChecker<E extends CheckableLink> {
                 availableStatus = AvailableStatus.FALSE;
             }
         } catch (Throwable e) {
-            logger.severe(JDLogger.getStackTrace(e));
-            logger.logInto(JDLogger.getLogger());
+            logger.log(e);
+            logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
             logger.clear();

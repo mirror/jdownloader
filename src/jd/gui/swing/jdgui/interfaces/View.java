@@ -21,7 +21,6 @@ import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 
-import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.ViewToolbar;
 import net.miginfocom.swing.MigLayout;
@@ -45,7 +44,7 @@ public abstract class View extends SwitchPanel {
     private SwitchPanel       defaultInfoPanel;
 
     public View() {
-        SwingGui.checkEDT();
+
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
 
         this.add(this.rightPane = new JPanel(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]")));
@@ -111,7 +110,6 @@ public abstract class View extends SwitchPanel {
      * @param right
      */
     public synchronized void setContent(final SwitchPanel right) {
-        SwingGui.checkEDT();
         boolean found = false;
         for (final Component c : this.rightPane.getComponents()) {
             c.setVisible(false);
@@ -142,7 +140,6 @@ public abstract class View extends SwitchPanel {
      * @param toolbar
      */
     protected void setToolBar(final ViewToolbar toolbar) {
-        SwingGui.checkEDT();
         if (toolbar == null) {
             this.topContent.setVisible(false);
         } else {

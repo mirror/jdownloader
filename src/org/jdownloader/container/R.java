@@ -32,8 +32,6 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.ContainerStatus;
 import jd.plugins.PluginsC;
 
-import org.appwork.utils.logging.Log;
-
 public class R extends PluginsC {
     public R() {
         super("RSDF", "file://.+\\.rsdf", "$Revision$");
@@ -89,10 +87,10 @@ public class R extends PluginsC {
             return cs;
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
-            Log.exception(e);
+            logger.log(e);
         } catch (SecurityException e) {
             // TODO Auto-generated catch block
-            Log.exception(e);
+            logger.log(e);
         }
         cs.setStatus(ContainerStatus.STATUS_FAILED);
         return cs;
@@ -151,12 +149,12 @@ public class R extends PluginsC {
             k = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDF").get(null);
 
         } catch (Throwable e) {
-
+            logger.log(e);
         }
 
         getEKey(k);
         if (k == null) {
-            Log.L.severe("RSDF Decryption failed.");
+            logger.severe("RSDF Decryption failed.");
             return new String[0];
         }
         AESencrypt aes = new AESencrypt(k, 6);
@@ -167,7 +165,7 @@ public class R extends PluginsC {
             iv = (byte[]) getClass().forName(getClass().getPackage().getName() + ".Config").getField("RSDFIV").get(null);
 
         } catch (Throwable e) {
-
+            logger.log(e);
         }
 
         String[] lines = Regex.getLines(input64);
@@ -204,7 +202,7 @@ public class R extends PluginsC {
     private String filterRSDF(String rsdf) {
         // rsdf.split("\r")
         rsdf = rsdf.trim().toUpperCase();
-        Log.L.info("RSDF length: " + rsdf.length() + "   ");
+        logger.info("RSDF length: " + rsdf.length() + "   ");
         String ret = "";
         for (int i = 0; i < rsdf.length(); i++) {
             // Log.L.info(new String(new char[] { rsdf.charAt(i) }));
@@ -231,7 +229,7 @@ public class R extends PluginsC {
                 break;
             default:
                 if (i > 0) {
-                    Log.L.info("iii" + i);
+                    logger.info("iii" + i);
 
                     return ret;
                 }
@@ -269,7 +267,7 @@ public class R extends PluginsC {
             return buffer.toString();
         } catch (IOException e) {
 
-            Log.exception(e);
+            logger.log(e);
         }
         return "";
     }
@@ -287,7 +285,7 @@ public class R extends PluginsC {
             return links;
         } catch (Exception e) {
 
-            Log.exception(e);
+            logger.log(e);
         }
         return null;
     }

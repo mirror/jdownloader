@@ -69,7 +69,6 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     public void addTab(View view) {
-        SwingGui.checkEDT();
         if (view instanceof ClosableView) {
             addClosableTab((ClosableView) view);
         } else {
@@ -132,13 +131,11 @@ public class MainTabbedPane extends JTabbedPane {
      * returns the currently selected View
      */
     public View getSelectedView() {
-        SwingGui.checkEDT();
         return (View) super.getSelectedComponent();
     }
 
     @Override
     public void setSelectedComponent(Component e) {
-        SwingGui.checkEDT();
         super.setSelectedComponent(getComponentEquals((View) e));
     }
 
@@ -149,7 +146,6 @@ public class MainTabbedPane extends JTabbedPane {
      * @return
      */
     public View getComponentEquals(View view) {
-        SwingGui.checkEDT();
         for (int i = 0; i < this.getTabCount(); i++) {
             Component c = this.getComponentAt(i);
             if (c.equals(view)) return (View) c;

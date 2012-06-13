@@ -17,7 +17,6 @@ import java.util.regex.Pattern;
 import jd.config.Property;
 import jd.controlling.IOEQ;
 import jd.controlling.IOPermission;
-import jd.controlling.JDPluginLogger;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
@@ -32,8 +31,9 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
@@ -461,7 +461,7 @@ public class LinkCrawler implements IOPermission {
                                         }
                                     }
                                 } catch (Throwable e) {
-                                    Log.exception(e);
+                                    LogController.CL().log(e);
                                 }
                                 continue mainloop;
                             }
@@ -507,7 +507,7 @@ public class LinkCrawler implements IOPermission {
                                         }
                                     }
                                 } catch (Throwable e) {
-                                    Log.exception(e);
+                                    LogController.CL().log(e);
                                 }
                                 continue mainloop;
                             }
@@ -546,7 +546,7 @@ public class LinkCrawler implements IOPermission {
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            LogController.CL().log(e);
                         }
                         /* lets retry this crawledLink */
                         continue mainloopretry;
@@ -718,7 +718,9 @@ public class LinkCrawler implements IOPermission {
                 boolean oldVerbose = false;
                 Logger oldLogger = null;
                 try {
-                    JDPluginLogger logger = new JDPluginLogger(possibleCryptedLink.getURL());
+                    LogSource logger = LogController.getInstance().getLogger(wplg);
+                    logger.setAllowTimeoutFlush(false);
+                    logger.info("Processing: " + possibleCryptedLink.getURL());
                     if (lct != null) {
                         /* mark thread to be used by crawler plugin */
                         lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
@@ -750,9 +752,13 @@ public class LinkCrawler implements IOPermission {
                     ArrayList<DownloadLink> hosterLinks = null;
                     try {
                         hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
+                        /* in case the function returned without exceptions, we can clear log */
+                        logger.clear();
                     } finally {
                         long endTime = System.currentTimeMillis() - startTime;
                         wplg.getLazyP().updateParseRuntime(endTime);
+                        /* close the logger */
+                        logger.close();
                     }
                     if (hosterLinks != null) {
                         forwardDownloadLinkInfos(possibleCryptedLink.getDownloadLink(), hosterLinks);
@@ -776,10 +782,10 @@ public class LinkCrawler implements IOPermission {
                     }
                 }
             } else {
-                Log.L.info("Hoster Plugin not available:" + pHost.getDisplayName());
+                LogController.CL().info("Hoster Plugin not available:" + pHost.getDisplayName());
             }
         } catch (Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         } finally {
             /* restore old ClassLoader for current Thread */
             Thread.currentThread().setContextClassLoader(oldClassLoader);
@@ -913,7 +919,7 @@ public class LinkCrawler implements IOPermission {
             try {
                 plg = oplg.getClass().newInstance();
             } catch (final Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
                 return;
             }
             /* now we run the plugin and let it find some links */
@@ -927,7 +933,8 @@ public class LinkCrawler implements IOPermission {
             boolean oldVerbose = false;
             Logger oldLogger = null;
             try {
-                JDPluginLogger logger = new JDPluginLogger(cryptedLink.getURL());
+                LogSource logger = LogController.getInstance().getLogger(plg.getName());
+                logger.setAllowTimeoutFlush(false);
                 if (lct != null) {
                     /* mark thread to be used by crawler plugin */
                     lctb = lct.isLinkCrawlerThreadUsedbyDecrypter();
@@ -944,21 +951,28 @@ public class LinkCrawler implements IOPermission {
                     lct.setDebug(true);
                 }
                 plg.setLogger(logger);
-                final ArrayList<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
-                if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
-                    /* we found some links, distribute them */
-                    for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
-                        forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink);
-                    }
-                    if (!checkStartNotify()) return;
-                    /* enqueue distributing of the links */
-                    threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                        @Override
-                        void crawling() {
-                            LinkCrawler.this.distribute(decryptedPossibleLinks);
+                try {
+                    final ArrayList<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+                    /* in case the function returned without exceptions, we can clear log */
+                    logger.clear();
+                    if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
+                        /* we found some links, distribute them */
+                        for (CrawledLink decryptedPossibleLink : decryptedPossibleLinks) {
+                            forwardCrawledLinkInfos(cryptedLink, decryptedPossibleLink);
                         }
-                    });
+                        if (!checkStartNotify()) return;
+                        /* enqueue distributing of the links */
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                            @Override
+                            void crawling() {
+                                LinkCrawler.this.distribute(decryptedPossibleLinks);
+                            }
+                        });
+                    }
+                } finally {
+                    /* close the logger */
+                    logger.close();
                 }
             } finally {
                 if (lct != null) {
@@ -1000,16 +1014,19 @@ public class LinkCrawler implements IOPermission {
             try {
                 wplg = lazyC.newInstance();
             } catch (UpdateRequiredClassNotFoundException e1) {
-                Log.exception(e1);
+                LogController.CL().log(e1);
                 return;
             }
             wplg.setIOPermission(this);
             wplg.setBrowser(new Browser());
-            JDPluginLogger logger = null;
+            LogSource logger = null;
             Logger oldLogger = null;
             boolean oldVerbose = false;
             boolean oldDebug = false;
-            wplg.setLogger(logger = new JDPluginLogger(cryptedLink.getURL()));
+            logger = LogController.getInstance().getLogger(wplg);
+            logger.info("Crawling: " + cryptedLink.getURL());
+            logger.setAllowTimeoutFlush(false);
+            wplg.setLogger(logger);
             /* now we run the plugin and let it find some links */
             LinkCrawlerThread lct = null;
             if (Thread.currentThread() instanceof LinkCrawlerThread) {
@@ -1116,7 +1133,11 @@ public class LinkCrawler implements IOPermission {
                 long startTime = System.currentTimeMillis();
                 try {
                     decryptedPossibleLinks = wplg.decryptLink(cryptedLink);
+                    /* in case we return normally, clear the logger */
+                    logger.clear();
                 } finally {
+                    /* close the logger */
+                    logger.close();
                     distributeLinksDelayer.stop();
                     /* make sure we dont have any unprocessed delayed Links */
                     distributeLinksDelayer.delayedrun();
@@ -1144,7 +1165,7 @@ public class LinkCrawler implements IOPermission {
                 try {
                     brokenCrawler.brokenCrawler(cryptedLink, this);
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    LogController.CL().log(e);
                 }
             }
         } finally {
@@ -1173,7 +1194,7 @@ public class LinkCrawler implements IOPermission {
             /* call the general LinkModifier first */
             generalCrawledLinkModifier(link);
         } catch (final Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
         /*
          * build history of this crawledlink so we can call each existing LinkModifier in correct order
@@ -1199,7 +1220,7 @@ public class LinkCrawler implements IOPermission {
                 try {
                     customModifier.modifyCrawledLink(link);
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    LogController.CL().log(e);
                 }
             }
         }

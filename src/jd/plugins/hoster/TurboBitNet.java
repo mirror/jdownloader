@@ -256,6 +256,7 @@ public class TurboBitNet extends PluginForHost {
         }
 
         if (captchaform == null) {
+            if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
             logger.warning("captchaform equals null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

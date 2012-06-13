@@ -23,7 +23,7 @@ import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.plaf.FontUIResource;
 
-import jd.JDInitFlags;
+import jd.Launcher;
 import jd.controlling.JDLogger;
 
 import org.appwork.storage.JSonStorage;
@@ -57,8 +57,7 @@ public class LookAndFeelController {
     private String                         laf = null;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -161,7 +160,7 @@ public class LookAndFeelController {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName("Light(GTK)");
                 ret.add(lafm);
-            } else if (JDInitFlags.SWITCH_DEBUG) {
+            } else if (!Application.isJared(Launcher.class)) {
                 LookAndFeelWrapper lafm = new LookAndFeelWrapper(lafis[i]);
                 lafm.setName(lafis[i].getName() + " [Debug]");
                 ret.add(lafm);
@@ -326,8 +325,8 @@ public class LookAndFeelController {
             UIManager.put("Synthetica.window.opaque", true);
         }
         /*
-         * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode,
-         * you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+         * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to remove
+         * this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
          */
         try {
             /* we save around x-400 ms here by not using AES */
