@@ -121,7 +121,8 @@ public class UlozTo extends PluginForHost {
         for (int i = 0; i <= 5; i++) {
             String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-            if (captchaForm == null || captchaUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String captchaKey = br.getRegex("id=\"captcha_key\" name=\"captcha_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (captchaForm == null || captchaUrl == null || captchaKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             String key = null, code = null;
             // Tries to read if property selected
@@ -144,8 +145,9 @@ public class UlozTo extends PluginForHost {
             // if something failed
             if (key == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-            captchaForm.put("captcha%5Bid%5D", key);
-            captchaForm.put("captcha%5Btext%5D", code);
+            captchaForm.put("captcha_id", key);
+            captchaForm.put("captcha_value", code);
+            captchaForm.put("captcha_key", captchaKey);
             captchaForm.remove(null);
             br.submitForm(captchaForm);
 

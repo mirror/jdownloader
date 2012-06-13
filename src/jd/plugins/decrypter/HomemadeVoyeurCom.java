@@ -36,11 +36,11 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
+        br.getPage(parameter);
         if (br.getURL().equals("http://www.homemade-voyeur.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        br.getPage(parameter);
         String filename = br.getRegex("class=\"he2\"><span>(.*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Daily Free Homemade and Voyeur Videos - Beach Sex \\- Hidden Sex \\- Public Sex \\- Voyeur Videos  \\- (.*?)</title>").getMatch(0);
         String tempID = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?\\.flv)\\'").getMatch(0);

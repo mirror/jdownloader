@@ -58,7 +58,7 @@ public class MetacafeCom extends PluginForHost {
             br.getPage("http://www.metacafe.com/f/index.php?inputType=filter&controllerGroup=user&filters=0");
             br.getPage(link.getDownloadURL());
         }
-        String fileName = br.getRegex("name=\"title\" content=\"(.*?) - Video\"").getMatch(0);
+        String fileName = br.getRegex("name=\"title\" content=\"(.*?) \\- Video\"").getMatch(0);
         if (fileName == null) fileName = br.getRegex("<h1 id=\"ItemTitle\" >(.*?)</h1>").getMatch(0);
         if (fileName != null) link.setFinalFileName(fileName.trim() + ".mp4");
         if (!link.getDownloadURL().contains("metacafe.com/watch/sy-")) {

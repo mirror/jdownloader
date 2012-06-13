@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "HyperLinkCash.com" }, urls = { "http://[\\w\\.]*?hyperlinkcash\\.com/link\\.php\\?r=[\\w%]+(&k=[\\w%]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hyperlinkcash.com" }, urls = { "http://(www\\.)?hyperlinkcash\\.com/link\\.php\\?r=[\\w%]+(&k=[\\w%]+)?" }, flags = { 0 })
 public class HprLnkCshCm extends PluginForDecrypt {
 
     public HprLnkCshCm(PluginWrapper wrapper) {
@@ -43,6 +43,7 @@ public class HprLnkCshCm extends PluginForDecrypt {
             Form form = br.getForm(0);
             if (form == null) return null;
             br.submitForm(form);
+            System.out.println(br.toString() + "\n");
             dlink = br.getRegex("<center>.*?<br>.*?<a href=\"(.*?)\"").getMatch(0);
             if (dlink == null) dlink = br.getRegex("<a href=\"(.*?)\"").getMatch(0);
             if (dlink == null) return null;

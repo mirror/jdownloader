@@ -25,9 +25,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ewe1.com" }, urls = { "http://[\\w\\.]*?ewe1\\.com/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ewe1.com" }, urls = { "http://(www\\.)?ewe1\\.com/\\d+" }, flags = { 0 })
 public class Ewe1Com extends PluginForDecrypt {
 
     public Ewe1Com(PluginWrapper wrapper) {
@@ -38,22 +37,26 @@ public class Ewe1Com extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(parameter);
         /* Error handling */
         if (br.containsHTML("you followed a wrong link")) {
-            logger.warning("The requested document was not found on this server.");
-            logger.warning(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-            return new ArrayList<DownloadLink>();
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         Form decryptform = br.getForm(0);
-        if (decryptform == null) return null;
+        if (decryptform == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         br.submitForm(decryptform);
-        String dl = br.getRegex("onclick=\"popUp\\('(.*?)'\\)").getMatch(0);
-        if (dl == null) return null;
+        final String dl = br.getRegex("onclick=\"popUp\\('(.*?)'\\)").getMatch(0);
+        if (dl == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(dl));
         return decryptedLinks;
     }
-
-    // @Override
 
 }
