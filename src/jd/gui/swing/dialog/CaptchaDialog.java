@@ -162,7 +162,8 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
         if (CaptchaType.CLICK.equals(captchaType)) {
             super.flagMask = flag | Dialog.BUTTONS_HIDE_OK;
         }
-        setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
+
+        setLocator(new RememberAbsoluteLocator("CaptchaDialog_" + domainInfo.getTld()));
         this.hosterInfo = domainInfo;
         this.images = images;
         fps = 24;
