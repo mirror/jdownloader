@@ -103,7 +103,7 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -111,7 +111,7 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -192,8 +192,7 @@ public class FilePremiercom extends PluginForHost implements JDPremInterface {
                         return false;
                     }
                     /*
-                     * after x retries we disable this host and retry with
-                     * normal plugin
+                     * after x retries we disable this host and retry with normal plugin
                      */
                     if (link.getLinkStatus().getRetryCount() >= 3) {
                         synchronized (LOCK) {

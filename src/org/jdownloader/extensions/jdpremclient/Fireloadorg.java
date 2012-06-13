@@ -100,7 +100,7 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -108,7 +108,7 @@ public class Fireloadorg extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 

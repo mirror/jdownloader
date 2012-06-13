@@ -223,7 +223,6 @@ public class LinkChecker<E extends CheckableLink> {
                     int stopDelay = 1;
                     PluginForHost plg = null;
                     LogSource logger = null;
-                    Browser br = new Browser();
                     while (true) {
                         /*
                          * arraylist to hold the current checkable links
@@ -273,11 +272,12 @@ public class LinkChecker<E extends CheckableLink> {
                                         /* create plugin if not done yet */
                                         LazyHostPlugin lazyp = HostPluginController.getInstance().get(massLinkCheck.get(0).getDefaultPlugin().getHost());
                                         plg = lazyp.newInstance();
-                                        plg.setBrowser(br);
+
                                         plg.setLogger(logger = LogController.getInstance().getLogger(plg));
                                         logger.info("LinkChecker: " + threadHost);
                                         logger.setAllowTimeoutFlush(false);
                                         ((BrowserSettingsThread) Thread.currentThread()).setLogger(logger);
+                                        plg.setBrowser(new Browser());
                                         plg.init();
                                     }
                                     /*
@@ -287,7 +287,10 @@ public class LinkChecker<E extends CheckableLink> {
                                     try {
                                         /* try mass link check */
                                         logger.clear();
-                                        plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
+                                        plg.setBrowser(new Browser());
+                                        logger.info("Check Multiple FileInformation");
+                                        boolean massCheck = plg.checkLinks(massLinkCheck.toArray(new DownloadLink[massLinkCheck.size()]));
+                                        logger.info("Multiple FileInformation Available: " + massCheck);
                                     } catch (final Throwable e) {
                                         logger.log(e);
                                         logger.flush();
@@ -304,7 +307,7 @@ public class LinkChecker<E extends CheckableLink> {
                                             /*
                                              * this will check the link, if not already checked
                                              */
-                                            br.reset();
+                                            plg.setBrowser(new Browser());
                                             LinkChecker.updateAvailableStatus(plg, link.getCheckableLink().getDownloadLink(), logger);
                                         }
                                         link.getLinkChecker().linkChecked(link);
@@ -386,6 +389,7 @@ public class LinkChecker<E extends CheckableLink> {
         try {
             logger.clear();
             plgToUse.reset();
+            logger.info("Check Single FileInformation: " + link.getDownloadURL());
             availableStatus = plgToUse.requestFileInformation(link);
         } catch (PluginException e) {
             logger.log(e);
@@ -400,6 +404,7 @@ public class LinkChecker<E extends CheckableLink> {
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
+            logger.info("Link is: " + availableStatus);
             logger.clear();
             try {
                 plgToUse.getBrowser().getHttpConnection().disconnect();

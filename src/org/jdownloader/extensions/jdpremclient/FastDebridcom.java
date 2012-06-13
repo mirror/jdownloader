@@ -102,7 +102,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -110,7 +110,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -182,23 +182,15 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                 String url = Encoding.urlEncode(link.getDownloadURL());
                 fastLogin(acc);
                 /*
-                 * Removing old method because a lot of the link this API
-                 * returns are corrupted; - the API isn't updated by
-                 * fast-debrid, but we can count on the new method to always be
-                 * updated
+                 * Removing old method because a lot of the link this API returns are corrupted; - the API isn't updated by fast-debrid, but we can count on the
+                 * new method to always be updated
                  * 
-                 * genlink =
-                 * br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" +
-                 * user + "&password=" + pw + "&view=1&viewlink=1" + "&link=" +
-                 * url);
+                 * genlink = br.getPage("https://www.fast-debrid.com/tool.php?pseudo=" + user + "&password=" + pw + "&view=1&viewlink=1" + "&link=" + url);
                  */
 
                 /*
-                 * Getting the link via a new method, that is better because: it
-                 * returns valid links for all hosts; mimics the way their
-                 * firefox plugin downloads, and therefore we can count on this
-                 * API to always be up to date links gotten by this method allow
-                 * for more connections to be made
+                 * Getting the link via a new method, that is better because: it returns valid links for all hosts; mimics the way their firefox plugin
+                 * downloads, and therefore we can count on this API to always be up to date links gotten by this method allow for more connections to be made
                  */
 
                 br.getPage("https://www.fast-debrid.com/plugin.php?link=" + url);
@@ -215,8 +207,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
                         return false;
                     }
                     /*
-                     * after x retries we disable this host and retry with
-                     * normal plugin
+                     * after x retries we disable this host and retry with normal plugin
                      */
                     if (link.getLinkStatus().getRetryCount() >= 3) {
                         synchronized (LOCK) {

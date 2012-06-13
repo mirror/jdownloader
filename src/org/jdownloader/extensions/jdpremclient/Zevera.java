@@ -103,7 +103,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -111,7 +111,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -204,8 +204,7 @@ public class Zevera extends PluginForHost implements JDPremInterface {
                 return true;
             } else {
                 /*
-                 * download is not contentdisposition, so remove this host from
-                 * premiumHosts list
+                 * download is not contentdisposition, so remove this host from premiumHosts list
                  */
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

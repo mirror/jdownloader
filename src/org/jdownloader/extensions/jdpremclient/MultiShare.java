@@ -108,7 +108,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -116,7 +116,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -184,8 +184,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
                 String rnd = "dl" + Math.round(Math.random() * 10000l * Math.random());
                 String fUrl = "http://" + rnd + "mms.multishare.cz/html/mms_process.php?link=" + url + "&u_ID=" + u_ID + "&u_hash=" + u_HASH;
                 /*
-                 * resume is supported, chunks make no sense and did not work
-                 * for me either
+                 * resume is supported, chunks make no sense and did not work for me either
                  */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, 1);
                 if (dl.getConnection().isContentDisposition()) {
@@ -194,8 +193,7 @@ public class MultiShare extends PluginForHost implements JDPremInterface {
                     return true;
                 } else {
                     /*
-                     * download is not contentdisposition, so remove this host
-                     * from premiumHosts list
+                     * download is not contentdisposition, so remove this host from premiumHosts list
                      */
                     br.followConnection();
                 }

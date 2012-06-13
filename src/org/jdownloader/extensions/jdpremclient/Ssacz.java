@@ -118,7 +118,7 @@ public class Ssacz extends PluginForHost implements JDPremInterface {
     public void handleFree(DownloadLink link) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handleFree(link);
     }
 
@@ -126,7 +126,7 @@ public class Ssacz extends PluginForHost implements JDPremInterface {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (plugin == null) return;
         proxyused = false;
-        br.reset();
+
         plugin.handlePremium(downloadLink, account);
     }
 
@@ -184,8 +184,7 @@ public class Ssacz extends PluginForHost implements JDPremInterface {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
         /*
-         * I realy wanted to use Content Disposition below, but it just don't
-         * work for resume at hotfile
+         * I realy wanted to use Content Disposition below, but it just don't work for resume at hotfile
          */
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html"))
 
