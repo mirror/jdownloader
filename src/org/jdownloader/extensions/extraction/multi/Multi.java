@@ -108,16 +108,16 @@ public class Multi extends IExtraction {
     private static final String      BZ2$                                                        = "\\.bz2$";
     private static final String      GZ$                                                         = "\\.gz$";
     private static final String      REGEX_FIRST_PART_7ZIP                                       = "(?i).*\\.7z\\.001$";
-    private static final String      REGEX_ZERO_PART_MULTI_RAR                                   = "(?i).*\\.pa?r?t?\\.?[0]*0.rar$";
-    private static final String      REGEX_FIRST_PART_MULTI_RAR                                  = "(?i).*\\.pa?r?t?\\.?[0]*1.rar$";
+    private static final String      REGEX_ZERO_PART_MULTI_RAR                                   = "(?i).*\\.pa?r?t?\\.?[0]*0\\.rar$";
+    private static final String      REGEX_FIRST_PART_MULTI_RAR                                  = "(?i).*\\.pa?r?t?\\.?[0]*1.*?\\.rar$";
     private static final String      REGEX_ANY_MULTI_RAR_PART_FILE                               = "(?i).*\\.pa?r?t?\\.?[0-9]+.*?.rar$";
     private static final String      REGEX_ANY_DOT_R19_FILE                                      = "(?i).*\\.r\\d+$";
     private static final String      REGEX_ENDS_WITH_DOT_RAR                                     = "(?i).*\\.rar$";
-    private static final String      PA_R_T_0_9_RAR$                                             = "\\.pa?r?t?\\.?[0-9]+.rar$";
+    private static final String      PA_R_T_0_9_RAR$                                             = "\\.pa?r?t?\\.?[0-9]+.*?\\.rar$";
     private static final String      REGEX_FIND_PARTNUMBER_MULTIRAR                              = "\\.pa?r?t?\\.?(\\d+)\\.rar$";
     private static final String      REGEX_FIND_MULTIPARTRAR_FULL_PART_EXTENSION_AND_PART_NUMBER = "(\\.pa?r?t?\\.?)(\\d+)\\.";
     private static final String      REGEX_ANY_7ZIP_PART                                         = "(?i).*\\.7z\\.\\d+$";
-    private static final String      PATTERN_RAR_MULTI                                           = "(?i).*\\.pa?r?t?\\.?\\d+.rar$";
+    public static final String       PATTERN_RAR_MULTI                                           = "(?i).*\\.pa?r?t?\\.?\\d+.*?\\.rar$";
     private static final String      REGEX_FIND_PARTNUMBER                                       = "\\.r(\\d+)$";
     private static final String      REGEX_FIND_PART_EXTENSION_AND_PARTNUMBER                    = "(\\.r)(\\d+)$";
 
@@ -126,7 +126,7 @@ public class Multi extends IExtraction {
 
     private static final String      TAR_GZ$                                                     = "(\\.tar\\.gz|\\.tgz)$";
 
-                                                                                                                                         ;
+                                                                                                                                          ;
     private static final String      TAR$                                                        = "\\.tar$";
 
     private static final String      REGEX_ZIP$                                                  = "(?i).*\\.zip$";
@@ -162,7 +162,7 @@ public class Multi extends IExtraction {
         String pattern = "";
         boolean canBeSingleType = true;
         if (file.matches(PATTERN_RAR_MULTI)) {
-            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+\\.rar$";
+            pattern = "^" + Regex.escape(file.replaceAll("(?i)\\.pa?r?t?\\.?[0-9]+.*?\\.rar$", "")) + "\\.pa?r?t?\\.?[0-9]+.*?\\.rar$";
             archive.setArchiveFiles(link.createPartFileList(file, pattern));
             canBeSingleType = false;
         } else if (file.matches(REGEX_ENDS_WITH_DOT_RAR)) {
@@ -375,7 +375,7 @@ public class Multi extends IExtraction {
                         getpartid = REGEX_FIND_PARTNUMBER_MULTIRAR;
                         start = 1;
                         format = af.getName().replace("%", "\\%").replace("$", "\\$").replaceAll(REGEX_FIND_MULTIPARTRAR_FULL_PART_EXTENSION_AND_PART_NUMBER, "$1%s.");
-                        length = new Regex(af.getName(), "\\.pa?r?t?\\.?(\\d+)\\.").getMatch(0).length();
+                        length = new Regex(af.getName(), "\\.pa?r?t?\\.?(\\d+).*?\\.").getMatch(0).length();
                         // Just get partnumbers to speed up the checking.
 
                         for (ArchiveFile l : archive.getArchiveFiles()) {
@@ -755,8 +755,8 @@ public class Multi extends IExtraction {
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener(password);
-                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
+                raropener = new RarOpener(archive, password);
+                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
 
@@ -982,8 +982,8 @@ public class Multi extends IExtraction {
                 IInStream inStream = new VolumedArchiveInStream(archive.getFirstArchiveFile().getFilePath(), multiopener);
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
-                raropener = new RarOpener();
-                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile().getFilePath());
+                raropener = new RarOpener(archive);
+                IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } else {
                 return false;

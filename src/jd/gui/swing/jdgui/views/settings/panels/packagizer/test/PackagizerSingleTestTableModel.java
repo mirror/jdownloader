@@ -9,7 +9,9 @@ import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -343,7 +345,8 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return value.getName();
+                return PackagizerController.getInstance().replaceVariables(rule.getFilename(), value, new PackagizerRuleWrapper(rule)) + "(" + rule.getFilename() + ")";
+                // return rule.getFilenameFilter().getRegex()
             }
         });
 

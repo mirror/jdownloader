@@ -373,7 +373,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
-    private String replaceVariables(String txt, CrawledLink link, PackagizerRuleWrapper lgr) {
+    public String replaceVariables(String txt, CrawledLink link, PackagizerRuleWrapper lgr) {
         String[][] matches = new Regex(txt, "<jd:(.*?)(:(.+?))?>").getMatches();
         if (matches != null) {
             try {

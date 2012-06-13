@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jd.parser.Regex;
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
 import net.sf.sevenzipjbinding.IArchiveOpenVolumeCallback;
 import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
@@ -31,6 +32,10 @@ import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
+
+import org.appwork.exceptions.WTFException;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveFile;
 
 /**
  * Used to join the separated rar files.
@@ -42,13 +47,39 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     private Map<String, RandomAccessFile> openedRandomAccessFileList = new HashMap<String, RandomAccessFile>();
     private String                        name;
     private String                        password;
+    private Archive                       archive;
+    private HashMap<String, ArchiveFile>  map;
+    private String                        firstName;
 
-    RarOpener() {
+    RarOpener(Archive archive) {
         this.password = "";
+        this.archive = archive;
+        init();
     }
 
-    RarOpener(String password) {
+    RarOpener(Archive archive, String password) {
         this.password = password;
+        this.archive = archive;
+        init();
+    }
+
+    private void init() {
+        map = new HashMap<String, ArchiveFile>();
+        // support for test.part01-blabla.tat archives.
+        // we have to create a rename matcher map in this case because 7zip cannot handle this type
+        if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
+            for (ArchiveFile af : archive.getArchiveFiles()) {
+                String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
+                if (af == archive.getFirstArchiveFile()) {
+                    firstName = name;
+                }
+                if (map.put(name, af) != null) {
+                    //
+                    throw new WTFException("Cannot handle " + af.getFilePath());
+                }
+            }
+
+        }
     }
 
     public Object getProperty(PropID propID) throws SevenZipException {
@@ -63,15 +94,21 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         return openedRandomAccessFileList.containsKey(filename);
     }
 
+    public IInStream getStream(ArchiveFile firstArchiveFile) throws SevenZipException {
+        return getStream(firstName == null ? firstArchiveFile.getFilePath() : firstName);
+    }
+
     public IInStream getStream(String filename) throws SevenZipException {
         try {
             RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
+
             if (randomAccessFile != null) {
                 randomAccessFile.seek(0);
                 name = filename;
                 return new RandomAccessFileInStream(randomAccessFile);
             }
-            randomAccessFile = new RandomAccessFile(filename, "r");
+            ArchiveFile af = map.get(filename);
+            randomAccessFile = new RandomAccessFile(af == null ? filename : af.getFilePath(), "r");
             openedRandomAccessFileList.put(filename, randomAccessFile);
             name = filename;
             return new RandomAccessFileInStream(randomAccessFile);
@@ -109,4 +146,5 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
         return password;
     }
+
 }
