@@ -84,7 +84,7 @@ public class XtshareCom extends PluginForHost {
         if (iAmHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.submitForm(iAmHuman);
 
-        String flashUrl = br.getRegex("new SWFObject\\(\'[\\./]+?(\\d+\\.swf)\',").getMatch(0);
+        String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\d+\\.swf)\',").getMatch(1);
         String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
         if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         flashUrl = "http://" + br.getHost() + "/" + flashUrl;

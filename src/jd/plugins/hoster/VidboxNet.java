@@ -81,7 +81,7 @@ public class VidboxNet extends PluginForHost {
         if (br.containsHTML(">Video not found") || br.getURL().endsWith("404.htm")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(dllink);
 
-        String flashUrl = br.getRegex("new SWFObject\\(\'[\\./]+?(\\d+\\.swf)\',").getMatch(0);
+        String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\d+\\.swf)\',").getMatch(1);
         String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
         if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         flashUrl = "http://" + br.getHost() + "/" + flashUrl;
