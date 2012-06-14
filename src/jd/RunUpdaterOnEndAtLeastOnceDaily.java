@@ -28,7 +28,8 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     }
 
     /**
-     * Create a new instance of RunUpdaterOnEndAtLeastOnceDaily. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of RunUpdaterOnEndAtLeastOnceDaily. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private RunUpdaterOnEndAtLeastOnceDaily() {
         setHookPriority(Integer.MIN_VALUE);
@@ -238,11 +239,13 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
 
     @Override
     public void run() {
+
         if (!Application.isJared(Launcher.class)) return;
         if (ShutdownController.getInstance().hasShutdownEvent(RestartViaUpdaterEvent.getInstance())) return;
         if (ShutdownController.getInstance().hasShutdownEvent(RestartDirectEvent.getInstance())) return;
         if (ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent.getInstance())) return;
 
+        if (System.getProperty("noBetaUpdater") != null) return;
         ArrayList<String> command = new ArrayList<String>();
         command.add(getJavaBinary());
         command.add("-jar");
