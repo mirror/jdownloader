@@ -57,6 +57,7 @@ public class XtshareCom extends PluginForHost {
         rtmp.setPlayPath("mp4:" + stream[1]);
         rtmp.setUrl(stream[0]);
         rtmp.setSwfVfy(stream[2]);
+        rtmp.setPageUrl(stream[3]);
         rtmp.setTimeOut(10);
         rtmp.setResume(true);
     }
@@ -94,7 +95,7 @@ public class XtshareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD or JD2Beta needed!");
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl;
+        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
         downloadLink.setName(fileName);
         return AvailableStatus.TRUE;
     }
