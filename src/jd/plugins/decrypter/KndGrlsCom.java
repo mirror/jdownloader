@@ -20,12 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/gallery/.*?/[a-z0-9_-]+/[a-z0-9_-]+/\\d+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/(video|gallery)/[a-z0-9_-]+(/[a-zA-Z0-9_-]+/\\d+/?)?" }, flags = { 0 })
+// http://www.kindgirls.com/gallery/errotica/raisa/5948
 public class KndGrlsCom extends PluginForDecrypt {
 
     public KndGrlsCom(PluginWrapper wrapper) {
@@ -36,13 +39,42 @@ public class KndGrlsCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] links = br.getRegex("/></a><br /><a href=\"(/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(/gal-\\d+/[a-z0-9]+_\\d+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String finallink : links)
-            decryptedLinks.add(createDownloadlink("directhttp://http://www.kindgirls.com" + finallink));
-
-        return decryptedLinks;
+        Regex rex = new Regex(parameter, "http://(www\\.)?kindgirls\\.com/gallery");
+        if (rex.matches()) {
+            // it's a gallery
+            String[] links = br.getRegex("/></a><br /><a href=\"(/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(/gal-\\d+/[a-z0-9]+_\\d+/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) return null;
+            for (String finallink : links) {
+                DownloadLink dlLink = createDownloadlink("directhttp://http://www.kindgirls.com" + finallink);
+                // rename the files if the numbering is incorrect
+                String fileName = dlLink.getName();
+                Regex regex = new Regex(fileName, "(.*_)(\\d\\.[a-zA-Z0-9]+)$");
+                if (regex.matches()) {
+                    dlLink.forceFileName(regex.getMatch(0) + "0" + regex.getMatch(1));
+                }
+                decryptedLinks.add(dlLink);
+            }
+            // set the filepackage name
+            FilePackage fp = FilePackage.getInstance();
+            String girlsname = br.getRegex("<h3>Photo.*<a href='.*'>([a-zA-Z0-9\\S-]+)</a>.*</h3>").getColumn(0)[0];
+            String filePackageName = "Kindgirls - " + girlsname.trim();
+            fp.setName(filePackageName);
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
+        } else {
+            // it's a video
+            Regex videoRegex = br.getRegex("so\\.addParam\\('flashvars',.*file=(http://www\\.kindgirls\\.com//videos\\d+/[a-zA-Z0-9]+\\.m4v).*volume=.*");
+            String link = videoRegex.getColumn(0)[0];
+            DownloadLink dLink = createDownloadlink("directhttp://" + link);
+            FilePackage fp = FilePackage.getInstance();
+            Regex girlsnameregex = br.getRegex("<h3>Video\\s.\\s([a-zA-Z0-9-_]+).*");
+            String girlsname = girlsnameregex.getColumn(0)[0];
+            String filePackageName = "Kindgirls - " + girlsname.trim();
+            fp.setName(filePackageName);
+            fp.addLinks(decryptedLinks);
+            return decryptedLinks;
+        }
     }
 
 }
