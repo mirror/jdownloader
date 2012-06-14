@@ -52,15 +52,17 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         String fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
         // do not catch first "name", only items within array
         String[] items = br.getRegex("\\{[\r\n\t]+(\"name\":[^\\}]+)\\} ").getColumn(0);
+        // fail over for single items ?. Either that or they changed website yet again and do not display the full gallery array.
+        if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
         if (items == null || items.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (String singleitems : items) {
-            String filename = new Regex(singleitems, "\"name\": \"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
-            final String filesize = new Regex(singleitems, "\"filesize_bytes\": (\\d+)").getMatch(0);
-            final String secureprefix = new Regex(singleitems, "\"secure_prefix\":\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String linkid = new Regex(singleitems, "\"id\": \"([A-Za-z0-9\\-_]+)\"").getMatch(0);
+            String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
+            final String filesize = new Regex(singleitems, "\"filesize_bytes\": ?(\\d+)").getMatch(0);
+            final String secureprefix = new Regex(singleitems, "\"secure_prefix\": ?\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+            final String linkid = new Regex(singleitems, "\"id\": ?\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
             if (filename == null || filesize == null || secureprefix == null || linkid == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
