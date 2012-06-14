@@ -101,6 +101,7 @@ import org.jdownloader.update.JDUpdater;
 public class Launcher {
     static {
         try {
+
             statics();
         } catch (Throwable e) {
             e.printStackTrace();
