@@ -158,6 +158,8 @@ public class JDUpdater extends AppUpdater {
         return sb.toString();
     }
 
+    private boolean iconVisible;
+
     /**
      * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
@@ -226,7 +228,11 @@ public class JDUpdater extends AppUpdater {
                             // JDGui.getInstance().getStatusBar().remove(icon);
                             // // icon.setIndeterminate(true);
                             icon.setValue(0);
-                            JDGui.getInstance().getStatusBar().add(icon);
+                            icon.setIndeterminate(false);
+                            if (!iconVisible) {
+                                iconVisible = true;
+                                JDGui.getInstance().getStatusBar().add(icon);
+                            }
                         }
                     };
 
@@ -245,7 +251,14 @@ public class JDUpdater extends AppUpdater {
 
                         @Override
                         protected void runInEDT() {
-                            JDGui.getInstance().getStatusBar().remove(icon);
+                            if (getTotalTodoCount() <= 0) {
+                                JDGui.getInstance().getStatusBar().remove(icon);
+                                iconVisible = false;
+                            } else {
+                                icon.setIndeterminate(true);
+                                icon.setTitle(_GUI._.JDUpdater_JDUpdater_updates_available_title_());
+                                icon.setDescription(_GUI._.JDUpdater_JDUpdater_updates_available_msg_(getTotalTodoCount()));
+                            }
                         }
                     };
 

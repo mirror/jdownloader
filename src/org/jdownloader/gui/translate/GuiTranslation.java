@@ -2165,4 +2165,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "JDownloader couldn't find any links to download on this website.\r\nWould you like to perform a deep link analysis to show all the files that can be downloaded from it?" })
     String AddLinksAction_actionPerformed_deep_msg();
 
+    @Default(lngs = { "en" }, values = { "Updates available!" })
+    String JDUpdater_JDUpdater_updates_available_title_();
+
+    @Default(lngs = { "en" }, values = { "%s1 Update(s) are ready for installation." })
+    String JDUpdater_JDUpdater_updates_available_msg_(int totalTodoCount);
+
 }
