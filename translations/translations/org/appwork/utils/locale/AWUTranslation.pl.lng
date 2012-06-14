@@ -44,6 +44,7 @@ SEARCHDIALOG_CHECKBOX_CASESENSITIVE=Uwzględniać wielkość liter
 SEARCHDIALOG_CHECKBOX_REGULAREXPRESSION=Wyrażenia Regularne
 SearchContextAction=Przeszukaj Tabelę
 Statusbar_Statusbar_visiturl_tooltip=Odwiedź naszą stronę
+TIMERDIALOG_TOOLTIP_TIMERLABEL=Okienko dialogowe posiada licznik oczekiwania, po upłynięciu którego okienko zostanie zamknięte. Naciśnij Anulu aby przerwać odliczanie.
 active=Włączone
 connecting=Łączenie...
 crossSystem_open_url_failed_msg=Proszę otworzyć link w przeglądarce:

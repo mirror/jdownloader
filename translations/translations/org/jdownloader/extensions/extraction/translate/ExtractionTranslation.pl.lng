@@ -73,6 +73,7 @@ settings_subpath_no_folder2=.. tylko gdy archiwum nie posiada głównego katalog
 settings_subpath_no_folder_tt=Nie używaj podkatalogu, jeśli wszystkie pliki w archiwum są już umieszczone w katalogach.
 settings_use_subpath=Utwórz podkatalog
 settings_various=Różne
+subfolder=Podkatalog Ścieżki Pobierania
 tooltip_NameColumn=Nazwa archiwum
 tooltip_empty=Brak zadania "wypakowanie archiwum"
 unknown=Nieznany

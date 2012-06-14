@@ -1,11 +1,11 @@
-description=Skontaktuj się z twórcami i osobami wsparcia technicznego JD
+description=Skontaktuj się z twórcami i osobami Wsparcia Technicznego JD
 gui_tab_title=Kanał %s1
-jd_plugins_optional_jdchat_JDChatView_title=Czat wsparcia technicznego JD
-jd_plugins_optional_jdchat_JDChatView_tooltip=Czat wsparcia technicznego JD
+jd_plugins_optional_jdchat_JDChatView_title=Czat Wsparcia Technicznego JD (Support)
+jd_plugins_optional_jdchat_JDChatView_tooltip=Czat Wsparcia Technicznego JD (Support)
 jd_plugins_optional_jdchat_JDChat_topic_default=Ładowanie Wiadomości Dnia
 jd_plugins_optional_jdchat_JDChat_topic_tooltip=Wiadomość dnia
 jd_plugins_optional_jdchat_closeTab=Zamknij zakładkę
-jd_plugins_optional_jdchat_jdchat=Czat wsparcia technicznego JD
+jd_plugins_optional_jdchat_jdchat=Czat Wsparcia Technicznego JD (Support)
 jd_plugins_optional_jdchat_newmessage=Nowa wiadomość od %s1:<hr>%s2
 plugin_optional_jdchat_getlog=%s1 potrzebuje dziennika zdarzeń, by rozwiązać twój problem. Czy zgadzasz się, by wysłać mu swój dziennik zdarzeń?
 plugins_optional_jdchat_enternick=Wybierz pseudonim (nick) dla siebie
