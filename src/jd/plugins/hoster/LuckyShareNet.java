@@ -215,12 +215,7 @@ public class LuckyShareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /**
-         * Simultan downloads possible as long as we have the hashes BEFORE any
-         * download is started. Because this host is using reCaptcha this will
-         * always work
-         */
-        return -1;
+        return 1;
     }
 
     @Override

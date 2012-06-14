@@ -110,7 +110,7 @@ public class FourSharedCom extends PluginForHost {
     }
 
     private String getNormalDownloadlink() {
-        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3\" href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
+        String url = br.getRegex("<div class=\"xxlarge bold\">[\t\n\r ]+<a class=\"linkShowD3.*?href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
         if (url == null) {
             url = br.getRegex("<input type=\"hidden\" name=\"d3torrent\" value=\"(http://dc\\d+\\.4shared\\.com/download\\-torrent/[^<>\"\\']+)\"").getMatch(0);
             if (url != null) url = url.replace("/download-torrent/", "/download/");

@@ -365,4 +365,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setWaittimeOnConnectionLoss(int milliseconds);
 
+    @AboutConfig
+    @Description("Should JDownloader check free available diskspace before download starts?")
+    @DefaultBooleanValue(true)
+    boolean isFreeSpaceCheckEnabled();
+
+    void setFreeSpaceCheckEnabled(boolean b);
+
 }
