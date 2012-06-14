@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -31,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9\\-_]+" }, flags = { 2 })
@@ -50,27 +52,34 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-        // They do allow resume and unlimited chunks but resuming or using more
-        // than 1 chunk causes problems, the file will then b corrupted!
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (dl.startDownload()) {
-            if (subtitles != null && subtitles.length != 0) {
-                String previousFilename = downloadLink.getName();
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
-                for (String subtitlelink : subtitles) {
-                    final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
-                    if (language != null)
-                        downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
-                    else
-                        downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
-                    if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
+        if (dllink.startsWith("rtmp")) {
+            String[] stream = dllink.split("@");
+            dl = new RTMPDownload(this, downloadLink, stream[0]);
+            setupRTMPConnection(stream, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            // They do allow resume and unlimited chunks but resuming or using more
+            // than 1 chunk causes problems, the file will then b corrupted!
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (dl.startDownload()) {
+                if (subtitles != null && subtitles.length != 0) {
+                    String previousFilename = downloadLink.getName();
+                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.downloadingsubtitles", "Downloading subtitles..."));
+                    for (String subtitlelink : subtitles) {
+                        final String language = new Regex(subtitlelink, ".*?\\d+:subtitle_(.{1,4}).srt.*?").getMatch(0);
+                        if (language != null)
+                            downloadLink.setFinalFileName("Subtitle_" + language + ".srt");
+                        else
+                            downloadLink.setFinalFileName("Subtitle_" + Integer.toString(new Random().nextInt(1000)) + ".srt");
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, subtitlelink, false, 1);
+                        if (!dl.getConnection().getContentType().contains("html")) dl.startDownload();
+                    }
+                    downloadLink.setName(previousFilename);
                 }
-                downloadLink.setName(previousFilename);
             }
         }
     }
@@ -183,6 +192,11 @@ public class DailyMotionCom extends PluginForHost {
             }
         }
         if (dllink == null) {
+            dllink = downloadLink.getDownloadURL();
+            if (isRtmp()) {
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+                return AvailableStatus.TRUE;
+            }
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -211,6 +225,24 @@ public class DailyMotionCom extends PluginForHost {
         dllink = new Regex(allLinks, "\"" + quality + "\":\"(http:[^<>\"\\']+)\"").getMatch(0);
     }
 
+    private boolean isRtmp() throws IOException {
+        String[] values = br.getRegex("new SWFObject\\(\"(http://player\\.grabnetworks\\.com/swf/GrabOSMFPlayer\\.swf)\\?id=\\d+\\&content=v([0-9a-f]+)\"").getRow(0);
+        if (values == null || values.length != 2) return false;
+        Browser rtmp = br.cloneBrowser();
+        rtmp.getPage("http://content.grabnetworks.com/v/" + values[1] + "?from=" + dllink);
+        dllink = rtmp.getRegex("\"url\":\"(rtmp[^\"]+)").getMatch(0);
+        if (dllink == null) return false;
+        dllink = dllink + "@" + values[0];
+        return true;
+    }
+
+    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setUrl(stream[0]);
+        rtmp.setSwfVfy(stream[1]);
+        rtmp.setResume(true);
+    }
+
     @Override
     public void reset() {
     }
@@ -222,4 +254,5 @@ public class DailyMotionCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
