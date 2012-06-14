@@ -338,4 +338,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setTooltipTimeout(int t);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    boolean isCaptchaDialogUniquePositionByHosterEnabled();
+
+    void setCaptchaDialogUniquePositionByHosterEnabled(boolean b);
+
 }

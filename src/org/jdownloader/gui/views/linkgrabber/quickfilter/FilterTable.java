@@ -143,6 +143,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     private void updateSelection() {
+
         // clear selection in other filter tables if we switched to a new one
         if (this.hasFocus()) {
 
@@ -222,7 +223,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     protected void processMouseEvent(final MouseEvent e) {
 
-        if (e.getID() == MouseEvent.MOUSE_PRESSED) {
+        if (e.getID() == MouseEvent.MOUSE_PRESSED && !e.isControlDown()) {
             if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 1) {
                 final int row = this.rowAtPoint(e.getPoint());
                 ExtColumn<Filter> col = this.getExtColumnAtPoint(e.getPoint());
@@ -233,9 +234,9 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
                     } else {
                         getSelectionModel().removeSelectionInterval(row, row);
                     }
-
                     return;
                 }
+
             }
         }
         super.processMouseEvent(e);
@@ -272,13 +273,14 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected void updateNow() {
+
         reset();
         ArrayList<Filter> newData = updateQuickFilerTableData();
-        for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
-            if (it.next().getCounter() == 0) {
-                // it.remove();
-            }
-        }
+        // for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
+        // if (it.next().getCounter() == 0) {
+        // it.remove();
+        // }
+        // }
         setVisible(newData.size() > 0);
         filters = newData;
         if (visibleKeyHandler.getValue()) getExtTableModel()._fireTableStructureChanged(newData, true);

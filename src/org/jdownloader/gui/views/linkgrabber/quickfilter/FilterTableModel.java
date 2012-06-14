@@ -1,5 +1,7 @@
 package org.jdownloader.gui.views.linkgrabber.quickfilter;
 
+import java.util.EventObject;
+
 import javax.swing.Icon;
 
 import net.miginfocom.swing.MigLayout;
@@ -177,6 +179,11 @@ public class FilterTableModel extends ExtTableModel<Filter> {
             @Override
             public int getDefaultWidth() {
                 return getMaxWidth();
+            }
+
+            @Override
+            public boolean shouldSelectCell(final EventObject anEvent) {
+                return false;
             }
 
             @Override

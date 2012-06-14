@@ -76,6 +76,7 @@ import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 /**
  * This Dialog is used to display a Inputdialog for the captchas
@@ -163,7 +164,12 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             super.flagMask = flag | Dialog.BUTTONS_HIDE_OK;
         }
 
-        setLocator(new RememberAbsoluteLocator("CaptchaDialog_" + domainInfo.getTld()));
+        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isCaptchaDialogUniquePositionByHosterEnabled()) {
+            setLocator(new RememberAbsoluteLocator("CaptchaDialog_" + domainInfo.getTld()));
+        } else {
+            setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
+        }
+
         this.hosterInfo = domainInfo;
         this.images = images;
         fps = 24;
