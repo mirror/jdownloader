@@ -1,6 +1,7 @@
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Berkas terputus
 LinkgrabberFilterRule_duplicate=%s1 (salin)
 controller_packages_defaultname=Aneka
+download_connection_normal=Unduh
 gui_download_create_connection=Hubungi...
 gui_download_filesize_unknown=Ukuran berkas tak diketahui
 gui_download_waittime_status2=Tunggu %s1
