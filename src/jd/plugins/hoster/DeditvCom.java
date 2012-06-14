@@ -79,7 +79,7 @@ public class DeditvCom extends PluginForHost {
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
-        if (br.containsHTML(">Video not found") || br.getURL().endsWith("404.htm")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">404 error , this file do not exist any more") || br.getURL().endsWith("removed.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(dllink);
 
         String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\d+\\.swf)\',").getMatch(1);
