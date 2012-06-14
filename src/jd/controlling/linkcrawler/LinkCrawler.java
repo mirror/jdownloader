@@ -1034,6 +1034,7 @@ public class LinkCrawler implements IOPermission {
             }
             boolean lctb = false;
             LinkCrawlerDistributer dist = null;
+            DelayedRunnable distributeLinksDelayer = null;
             LinkCrawler previousCrawler = null;
             PluginForDecrypt previousPlugin = null;
             ArrayList<DownloadLink> decryptedPossibleLinks = null;
@@ -1045,26 +1046,31 @@ public class LinkCrawler implements IOPermission {
                 if (maximumDelay == 0) {
                     maximumDelay = -1;
                 }
-                final DelayedRunnable distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, minimumDelay, maximumDelay) {
+                distributeLinksDelayer = new DelayedRunnable(IOEQ.TIMINGQUEUE, minimumDelay, maximumDelay) {
 
                     @Override
                     public void delayedrun() {
+                        /* we are now in IOEQ, thats why we create copy and then push work back into LinkCrawler */
+                        ArrayList<CrawledLink> linksToDistribute = null;
                         synchronized (distributedLinks) {
                             if (distributedLinks.size() == 0) return;
-                            final ArrayList<CrawledLink> distributeThis = new ArrayList<CrawledLink>(distributedLinks);
+                            linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
                             distributedLinks.clear();
-                            if (!checkStartNotify()) { return; }
-                            /* enqueue distributing of the links */
-                            threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
-
-                                @Override
-                                void crawling() {
-                                    LinkCrawler.this.distribute(distributeThis);
-                                }
-                            });
                         }
+                        final ArrayList<CrawledLink> linksToDistributeFinal = linksToDistribute;
+                        if (!checkStartNotify()) { return; }
+                        /* enqueue distributing of the links */
+                        threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
+
+                            @Override
+                            void crawling() {
+                                final ArrayList<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
+                                LinkCrawler.this.distribute(distributeThis);
+                            }
+                        });
                     }
                 };
+                final DelayedRunnable distributeLinksDelayerFinal = distributeLinksDelayer;
                 /*
                  * set LinkCrawlerDistributer in case the plugin wants to add links in realtime
                  */
@@ -1098,7 +1104,7 @@ public class LinkCrawler implements IOPermission {
                                 distributedLinks.addAll(possibleCryptedLinks);
                             }
                             /* restart delayer to distribute links */
-                            distributeLinksDelayer.run();
+                            distributeLinksDelayerFinal.run();
                         } else {
                             /* we do not delay the distribute */
                             if (!checkStartNotify()) { return; }
@@ -1138,7 +1144,7 @@ public class LinkCrawler implements IOPermission {
                 } finally {
                     /* close the logger */
                     logger.close();
-                    distributeLinksDelayer.stop();
+                    distributeLinksDelayer.setDelayerEnabled(false);
                     /* make sure we dont have any unprocessed delayed Links */
                     distributeLinksDelayer.delayedrun();
                     long endTime = System.currentTimeMillis() - startTime;
