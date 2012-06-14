@@ -78,6 +78,8 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.PremiumInfoDialog;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
+import sun.swing.SwingUtilities2;
+
 /**
  * This Dialog is used to display a Inputdialog for the captchas
  */
@@ -296,7 +298,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
             // setBorder(new JTextField().getBorder());
 
-            headerPanel = new MigPanel("ins 0 0 1 0", "[][grow,fill]", "[grow,fill]");
+            headerPanel = new MigPanel("ins 0 0 1 0", "[grow,fill]", "[]");
             headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
 
             headerPanel.setBackground(new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor()));
@@ -305,7 +307,46 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
-            JLabel header = new JLabel();
+            final String headerText;
+            if (getFilename() != null) {
+                if (getFilesize() > 0) {
+                    headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header(getFilename(), SizeFormatter.formatBytes(getFilesize()), hosterInfo.getTld()));
+                } else {
+                    headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header2(getFilename(), hosterInfo.getTld()));
+                }
+            } else {
+                headerText = null;
+            }
+            JLabel header = new JLabel() {
+                private boolean setting = false;
+
+                public void revalidate() {
+                    if (setting) return;
+                    super.revalidate();
+                }
+
+                // public Dimension getPreferredSize() {
+                // return new Dimension(10, 10);
+                // }
+
+                public void repaint() {
+
+                    if (setting) return;
+                    super.repaint();
+                }
+
+                protected void paintComponent(Graphics g) {
+                    if (headerText != null) {
+                        setting = true;
+
+                        setText(SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
+                        setting = false;
+                    }
+                    super.paintComponent(g);
+
+                }
+            };
+
             header.setIcon(hosterInfo.getFavIcon());
 
             // if (col >= 0) {
@@ -315,11 +356,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // header.setOpaque(false);
             // header.setLabelMode(true);
             if (getFilename() != null) {
-                if (getFilesize() > 0) {
-                    header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header(getFilename(), SizeFormatter.formatBytes(getFilesize()), hosterInfo.getTld()));
-                } else {
-                    header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header2(getFilename(), hosterInfo.getTld()));
-                }
+
                 headerPanel.add(header);
             }
 
@@ -334,8 +371,43 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
 
             // headerPanel.setOpaque(false);
             // headerPanel.setOpaque(false);
+            final String headerText;
+            if (getCrawlerStatus() == null) {
+                headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
+            } else {
+                headerText = (_GUI._.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
+
+            }
             // headerPanel.setOpaque(false);
-            JLabel header = new JLabel();
+            JLabel header = new JLabel() {
+                private boolean setting = false;
+
+                public void revalidate() {
+                    if (setting) return;
+                    super.revalidate();
+                }
+
+                // public Dimension getPreferredSize() {
+                // return new Dimension(10, 10);
+                // }
+
+                public void repaint() {
+
+                    if (setting) return;
+                    super.repaint();
+                }
+
+                protected void paintComponent(Graphics g) {
+                    if (headerText != null) {
+                        setting = true;
+
+                        setText(SwingUtilities2.clipStringIfNecessary(this, this.getFontMetrics(getFont()), headerText, getWidth() - 30));
+                        setting = false;
+                    }
+                    super.paintComponent(g);
+
+                }
+            };
             header.setIcon(hosterInfo.getFavIcon());
 
             // if (col >= 0) {
@@ -344,12 +416,6 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
             // }
             // header.setOpaque(false);
             // header.setLabelMode(true);
-            if (getCrawlerStatus() == null) {
-                header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header_crawler(hosterInfo.getTld()));
-            } else {
-                header.setText(_GUI._.CaptchaDialog_layoutDialogContent_header_crawler2(getCrawlerStatus(), hosterInfo.getTld()));
-
-            }
 
             headerPanel.add(header);
         }
@@ -531,6 +597,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     }
 
     public String getFilename() {
+
         switch (type) {
         case HOSTER:
             if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return null;
@@ -542,7 +609,7 @@ public class CaptchaDialog extends AbstractDialog<String> implements ActionListe
     public long getFilesize() {
         switch (type) {
         case HOSTER:
-            if (((PluginForHost) plugin).getDownloadLink() == null) return -1;
+            if (plugin == null || ((PluginForHost) plugin).getDownloadLink() == null) return -1;
             return ((PluginForHost) plugin).getDownloadLink().getDownloadMax();
         }
         return -1;
