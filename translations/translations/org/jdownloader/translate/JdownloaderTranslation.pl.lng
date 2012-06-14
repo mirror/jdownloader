@@ -1,5 +1,5 @@
 DownloadWatchDog_onShutdownRequest_=Pobieranie w toku!
-DownloadWatchDog_onShutdownRequest_msg=Czy chcesz zatrzymać wszystkie pobierania i opuścić JDownloader?
+DownloadWatchDog_onShutdownRequest_msg=Czy chcesz zatrzymać wszystkie działające pobierania i zamknąć JDownloadera?
 DownloadWatchDog_onShutdownRequest_nonresumable=Pobrania bez możliwości wznowienia są w toku!
 DuplicateAction_DuplicateAction_=Zdublowana Reguła
 Extraction_onShutdownRequest_=Wciąż trwa rozpakowywanie archiwum!
@@ -9,7 +9,7 @@ LinkCollector_addCrawledLink_offlinepackage=Pliki niedostępne (offline)
 LinkCollector_addCrawledLink_variouspackage=Pozostałe pliki
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Zbieracz Linków nadal działa!
-LinkCollector_onShutdownRequest_msg=Czy chcesz zatrzymać Zbieracz Linków?
+LinkCollector_onShutdownRequest_msg=Czy chcesz zatrzymać działanie Zbieracza Linków?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Pliki niedostępne (offline)
 LinkgrabberFilterRule_duplicate=%s1 (kopia)
 Main_run_autostart_=Uruchamianie Pobierania
