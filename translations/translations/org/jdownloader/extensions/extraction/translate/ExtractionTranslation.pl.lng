@@ -75,6 +75,6 @@ settings_use_subpath=Utwórz podkatalog
 settings_various=Różne
 subfolder=Podkatalog Ścieżki Pobierania
 tooltip_NameColumn=Nazwa archiwum
-tooltip_empty=Brak zadania "wypakowanie archiwum"
+tooltip_empty=Brak zadania "wypakowywanie archiwum"
 unknown=Nieznany
 unknown_tt=Link dla tej części może być niedostępny (offline).
