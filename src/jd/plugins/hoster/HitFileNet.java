@@ -191,10 +191,11 @@ public class HitFileNet extends PluginForHost {
         if (filesize != null) {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".").replace(" ", "")));
         }
-        br.setFollowRedirects(false);
         String downloadUrl = null, waittime = null;
         final String fileID = new Regex(downloadLink.getDownloadURL(), "hitfile\\.net/(.+)").getMatch(0);
         if (fileID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.getPage("/turbolight?file=" + fileID);
+        br.setFollowRedirects(false);
         br.getPage("/download/free/" + fileID);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(downloadLink.getDownloadURL().replace("www.", ""))) { throw new PluginException(LinkStatus.ERROR_FATAL, JDL.LF("plugins.hoster.hitfilenet.only4premium", "This file is only available for premium users!")); }
@@ -411,7 +412,7 @@ public class HitFileNet extends PluginForHost {
         s[7] = "fddefaf6fb07";
         s[8] = "fe8cfbfafa57cde31bc2b798df5146ad29c071b6080edbca1a135f6f156984d75982fc6e8800e338";
         s[9] = "ff88";
-        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ed523ac8b7";
+        s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
