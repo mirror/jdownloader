@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -54,7 +53,7 @@ public class Rdrctr extends PluginForDecrypt {
             }
             completePattern.append(pattern);
         }
-        JDLogger.getLogger().finest("Redirecter: " + list.length + " Pattern added!");
+        System.out.println(("Redirecter: " + list.length + " Pattern added!"));
         return new String[] { completePattern.toString() };
     }
 

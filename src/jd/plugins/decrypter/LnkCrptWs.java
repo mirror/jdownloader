@@ -51,7 +51,6 @@ import javax.swing.JPanel;
 import javax.swing.event.MouseInputAdapter;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
@@ -210,7 +209,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 parse();
                 load();
             } catch (final Throwable e) {
-                JDLogger.getLogger().severe(e.getMessage() + rcBr.getHttpConnection());
+                System.out.println(e.getMessage() + rcBr.getHttpConnection());
                 return null;
             } finally {
                 try {
@@ -253,7 +252,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
             if (out == null) { return null; }
             if (out.equals("CANCEL")) {
-                JDLogger.getLogger().finest("KeyCaptcha: User aborted captcha dialog.");
+                System.out.println("KeyCaptcha: User aborted captcha dialog.");
                 return out;
             }
 

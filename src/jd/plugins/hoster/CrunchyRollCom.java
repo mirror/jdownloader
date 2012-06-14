@@ -36,7 +36,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -47,12 +46,12 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -130,7 +129,7 @@ public class CrunchyRollCom extends PluginForHost {
                 final int decLength = cipher.processBytes(encData, 0, encData.length, decrypted, 0);
                 cipher.doFinal(decrypted, decLength);
             } catch (final Throwable e) {
-                JDLogger.exception(e);
+                logger.severe(e.getMessage());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Error decrypting subtitles!");
             }
             // Create the XML Parser (and zlib decompress using InflaterInputStream)
@@ -258,8 +257,8 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
-     * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
+     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf", "swfdir". These are set
+     * by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
      * 
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
@@ -452,16 +451,14 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
-     * "000900100002".
+     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in "000900100002".
      * 
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
      *            The character(s) to split the numbers by (e.g. '.')
      * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this
-     *            are not truncated.
+     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this are not truncated.
      * @return The formatted version number ready to be compared
      */
     private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {

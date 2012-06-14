@@ -17,7 +17,6 @@
 package jd.plugins.decrypter;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -37,7 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
@@ -192,7 +190,6 @@ public class MxCloudCom extends PluginForDecrypt {
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
                 LocalBrowser.openDefaultURL(new URL("http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html"));
-                JDUtilities.openExplorer(new File(System.getProperty("java.home") + "/lib/security"));
             } else {
                 return;
             }

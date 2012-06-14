@@ -148,7 +148,7 @@ public class DirectHTTP extends PluginForHost {
                 // recaptcha stil found. so it is not solved yet
                 return false;
             } catch (final Exception e) {
-                JDLogger.getLogger().severe(e.toString());
+                e.printStackTrace();
                 return true;
             }
         }
@@ -161,7 +161,7 @@ public class DirectHTTP extends PluginForHost {
             this.challenge = this.rcBr.getRegex("challenge.*?:.*?'(.*?)',").getMatch(0);
             this.server = this.rcBr.getRegex("server.*?:.*?'(.*?)',").getMatch(0);
             if (this.challenge == null || this.server == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+                System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.captchaAddress = this.server + "image?c=" + this.challenge;
@@ -176,7 +176,7 @@ public class DirectHTTP extends PluginForHost {
 
                 // find form that contains the found div id
                 if (div == null || this.id == null) {
-                    JDLogger.getLogger().warning("reCaptcha ID or div couldn't be found...");
+                    System.out.println("reCaptcha ID or div couldn't be found...");
 
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -202,7 +202,7 @@ public class DirectHTTP extends PluginForHost {
                     this.id = this.form.getRegex("k=(.*?)\"").getMatch(0);
                     if (this.id == null || this.id.equals("") || this.id.contains("\\")) findID();
                     if (this.id == null || this.id.equals("")) {
-                        JDLogger.getLogger().warning("reCaptcha ID couldn't be found...");
+                        System.out.println("reCaptcha ID couldn't be found...");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else {
                         this.id = this.id.replace("&amp;error=1", "");
@@ -210,11 +210,11 @@ public class DirectHTTP extends PluginForHost {
                 }
             }
             if (this.id == null || this.id.equals("")) {
-                JDLogger.getLogger().warning("reCaptcha ID couldn't be found...");
+                System.out.println("reCaptcha ID couldn't be found...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (this.form == null) {
-                JDLogger.getLogger().warning("reCaptcha form couldn't be found...");
+                System.out.println("reCaptcha form couldn't be found...");
 
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -224,7 +224,7 @@ public class DirectHTTP extends PluginForHost {
         /* do not use for plugins at the moment */
         private void prepareForm(final String code) throws PluginException {
             if (this.challenge == null || code == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fail: challenge or code equals null!");
+                System.out.println("Recaptcha Module fail: challenge or code equals null!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.form.put("recaptcha_challenge_field", this.challenge);
@@ -237,7 +237,7 @@ public class DirectHTTP extends PluginForHost {
             this.challenge = this.rcBr.getRegex("Recaptcha\\.finish\\_reload\\(\\'(.*?)\\'\\, \\'image\\'\\)\\;").getMatch(0);
 
             if (this.challenge == null) {
-                JDLogger.getLogger().severe("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
+                System.out.println("Recaptcha Module fails: " + this.rcBr.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             this.captchaAddress = this.server + "image?c=" + this.challenge;

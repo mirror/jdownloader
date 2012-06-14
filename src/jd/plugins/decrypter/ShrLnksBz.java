@@ -28,7 +28,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -332,7 +331,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 result = inv.invokeFunction("f");
             }
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.severe(e.getMessage());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

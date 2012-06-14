@@ -47,7 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -135,7 +134,6 @@ public class VeohCom extends PluginForHost {
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
                 LocalBrowser.openDefaultURL(new URL("http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html"));
-                JDUtilities.openExplorer(new File(System.getProperty("java.home") + "/lib/security"));
             } else {
                 return;
             }
@@ -239,8 +237,7 @@ public class VeohCom extends PluginForHost {
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /*
-                         * TODO: add this inputstream to this downloads
-                         * ManagedThrottledConnectionManager
+                         * TODO: add this inputstream to this downloads ManagedThrottledConnectionManager
                          */
                     } catch (final Throwable e) {
                         /* 0.95xx comp */

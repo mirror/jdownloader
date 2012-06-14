@@ -558,7 +558,7 @@ public class Rapidshare extends PluginForHost {
 
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             } else {
-                JDLogger.getLogger().fine(br.toString());
+                logger.fine(br.toString());
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
         }

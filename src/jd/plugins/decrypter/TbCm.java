@@ -24,13 +24,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
@@ -114,8 +112,6 @@ public class TbCm extends PluginForDecrypt {
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
-    private static final Logger                 LOG                 = JDLogger.getLogger();
-
     private static final String                 TEMP_EXT            = ".tmp$";
 
     ArrayList<String>                           done                = new ArrayList<String>();
@@ -123,9 +119,9 @@ public class TbCm extends PluginForDecrypt {
     private boolean                             verifyAge           = false;
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
-        TbCm.LOG.info("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
+        System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
-            TbCm.LOG.info("No Conversion needed, renaming...");
+            System.out.println("No Conversion needed, renaming...");
             final File oldone = new File(downloadlink.getFileOutput());
             final File newone = new File(downloadlink.getFileOutput().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
             downloadlink.setFinalFileName(downloadlink.getName().replaceAll(TbCm.TEMP_EXT, OutType.getExtFirst()));
@@ -140,7 +136,7 @@ public class TbCm extends PluginForDecrypt {
             // Inputformat FLV
             switch (OutType) {
             case AUDIOMP3:
-                TbCm.LOG.info("Convert FLV to mp3...");
+                System.out.println("Convert FLV to mp3...");
                 new FLV(downloadlink.getFileOutput(), true, true);
 
                 // FLV löschen
@@ -154,12 +150,12 @@ public class TbCm extends PluginForDecrypt {
 
                 return true;
             default:
-                TbCm.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+                System.out.println("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
                 downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
                 return false;
             }
         default:
-            TbCm.LOG.warning("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
+            System.out.println("Don't know how to convert " + InType.getText() + " to " + OutType.getText());
             downloadlink.getLinkStatus().setErrorMessage(JDL.L("convert.progress.unknownintype", "Unknown format"));
             return false;
         }

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
@@ -303,7 +302,7 @@ public class Srnnks extends PluginForDecrypt {
                                     // dummy captcha without content.. wait
                                     // before
                                     // reloading
-                                    JDLogger.getLogger().warning("Dummy Captcha. wait 3 seconds");
+                                    logger.warning("Dummy Captcha. wait 3 seconds");
                                     Thread.sleep(3000);
                                     continue;
                                 }
