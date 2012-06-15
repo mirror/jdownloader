@@ -28,7 +28,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kindgirls.com" }, urls = { "http://(www\\.)?kindgirls\\.com/(video|gallery)/[a-z0-9_-]+(/[a-zA-Z0-9_-]+/\\d+/?)?" }, flags = { 0 })
-// http://www.kindgirls.com/gallery/errotica/raisa/5948
 public class KndGrlsCom extends PluginForDecrypt {
 
     public KndGrlsCom(PluginWrapper wrapper) {
@@ -47,16 +46,14 @@ public class KndGrlsCom extends PluginForDecrypt {
             if (links == null || links.length == 0) return null;
             for (String finallink : links) {
                 DownloadLink dlLink = createDownloadlink("directhttp://http://www.kindgirls.com" + finallink);
-                // rename the files if the numbering is incorrect
-                String fileName = dlLink.getName();
-                Regex regex = new Regex(fileName, "(.*_)(\\d\\.[a-zA-Z0-9]+)$");
+                // rename files if required. Fixes alpha numeric sorting issues
+                Regex regex = new Regex(dlLink.getName(), "(.*_)(\\d\\.[a-zA-Z0-9]+)$");
                 if (regex.matches()) {
-                    dlLink.forceFileName(regex.getMatch(0) + "0" + regex.getMatch(1));
+                    dlLink.setFinalFileName(regex.getMatch(0) + "0" + regex.getMatch(1));
                 }
                 decryptedLinks.add(dlLink);
             }
-            // set the filepackage name
-            String girlsname = br.getRegex("<h3>Photo.*<a href='.*'>([a-zA-Z0-9\\S-]+)</a>.*</h3>").getColumn(0)[0];
+            String girlsname = br.getRegex("<h3>Photo.*<a href='.*'>([a-zA-Z0-9\\S-]+)</a>.*</h3>").getMatch(0);
             if (girlsname != null) fpName = "Kindgirls - " + girlsname.trim();
         } else {
             // it's a video
