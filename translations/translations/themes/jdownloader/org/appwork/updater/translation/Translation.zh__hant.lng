@@ -1,0 +1,14 @@
+exit=關閉
+guiless_done=更新完成。
+install_updates_later=稍後詢問我！
+install_updates_now=現在安裝！
+restart_required_title=需要重新啟動
+restart_title=重新啟動！
+start=開始更新
+udpates_found=找到數個更新！
+update_dialog_cancel=取消
+update_dialog_later=稍後提醒我
+update_dialog_title_updates_available=可用更新
+update_dialog_yes=是(建議)
+updates_are_ready_for_install_now=%s1 更新準備安裝
+updates_ready_for_install=%s1 更新準備安裝
