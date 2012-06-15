@@ -249,7 +249,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             mac.init(key);
             mac.reset();
             mac.update(s.getBytes());
-            return jd.crypt.Base64.encodeBytes(mac.doFinal(), jd.crypt.Base64.URL_SAFE).replace("=", "");
+            return jd.crypt.Base64.encodeBytes(mac.doFinal()).replace("=", "");
         } catch (final Throwable e) {
             return null;
         }

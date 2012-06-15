@@ -24,18 +24,19 @@ import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelobject.PixelObject;
-import jd.controlling.JDLogger;
 import jd.nutils.Colors;
 
-public class Circle {
-    int inBorder = 4;
-    int outBorder = 2;
+import org.jdownloader.logging.LogController;
 
-    int minArea = 150;
-    private Captcha captcha;
-    int backgroundColor = 0xffffff;
+public class Circle {
+    int                       inBorder        = 4;
+    int                       outBorder       = 2;
+
+    int                       minArea         = 150;
+    private Captcha           captcha;
+    int                       backgroundColor = 0xffffff;
     private List<PixelObject> objectArray;
-    private Letter openCircle;
+    private Letter            openCircle;
 
     public Circle(Captcha captcha, List<PixelObject> objectArray) {
         this.captcha = captcha;
@@ -47,19 +48,19 @@ public class Circle {
      */
     Comparator<Integer> isElementColor = new Comparator<Integer>() {
 
-        public int compare(Integer o1, Integer o2) {
-            int c = o1;
-            int c2 = o2;
-            if (isBackground(o1) || isBackground(o2)) return 0;
-            if (c == 0x000000 || c2 == 0x000000) return c == c2 ? 1 : 0;
-            int[] hsvC = Colors.rgb2hsv(c);
-            int[] hsvC2 = Colors.rgb2hsv(c2);
-            //TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
-            //Is it a typo? Was a different comparison meant in the second place?
-            return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
-        }
+                                           public int compare(Integer o1, Integer o2) {
+                                               int c = o1;
+                                               int c2 = o2;
+                                               if (isBackground(o1) || isBackground(o2)) return 0;
+                                               if (c == 0x000000 || c2 == 0x000000) return c == c2 ? 1 : 0;
+                                               int[] hsvC = Colors.rgb2hsv(c);
+                                               int[] hsvC2 = Colors.rgb2hsv(c2);
+                                               // TODO The "hsvC[1] / hsvC2[2] == 1" is repeated twice
+                                               // Is it a typo? Was a different comparison meant in the second place?
+                                               return ((hsvC[0] == hsvC2[0] && (hsvC[1] == hsvC2[1] || hsvC[2] == hsvC2[2] || hsvC[1] / hsvC2[2] == 1 || hsvC[1] / hsvC2[2] == 1)) && Colors.getRGBColorDifference2(c, c2) < 80) ? 1 : 0;
+                                           }
 
-    };
+                                       };
 
     private boolean equalElements(int c, int c2) {
         return isElementColor.compare(c, c2) == 1;
@@ -133,8 +134,7 @@ public class Circle {
     }
 
     /**
-     * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang
-     * sollte noch bei y gemacht werden um bessere ergebnisse zu bekommen
+     * returns the Circles Bounds on the Captcha TODO geht nur bei x entlang sollte noch bei y gemacht werden um bessere ergebnisse zu bekommen
      * 
      * @param pixelObject
      * @param captcha
@@ -231,7 +231,7 @@ public class Circle {
                 }
             }
         } else {
-            JDLogger.warning("can not detect circle bounds");
+            LogController.CL().warning("can not detect circle bounds");
             // BasicWindow.showImage(pixelObject.toColoredLetter().getImage(),""+pixelObject.getArea());
 
         }

@@ -24,11 +24,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -778,7 +778,7 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
             } catch (final Exception e) {
-                JDLogger.exception(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
 
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {

@@ -16,12 +16,11 @@
 
 package org.jdownloader.extensions.extraction;
 
-import java.util.logging.Logger;
-
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Interface for the individual extraction programs.
@@ -33,7 +32,7 @@ public abstract class IExtraction {
 
     protected Archive              archive;
     protected ExtractionController controller;
-    protected Logger               logger;
+    protected LogSource            logger;
     protected ExtractionConfig     config;
     private Exception              exception;
 
@@ -80,7 +79,7 @@ public abstract class IExtraction {
      * 
      * @param logger
      */
-    public final void setLogger(Logger logger) {
+    public final void setLogger(LogSource logger) {
         this.logger = logger;
     }
 
@@ -97,9 +96,11 @@ public abstract class IExtraction {
 
     /**
      * Checks a single password if the archive is encrypted with it.
+     * 
      * @param password
      *            The password.
-     * @param optimized TODO
+     * @param optimized
+     *            TODO
      * 
      * @return True if the password is correct.
      */

@@ -29,13 +29,12 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
 
-import jd.controlling.JDLogger;
+import org.jdownloader.logging.LogController;
 
 public class JUndoManager {
 
     /**
-     * Adds Undo/Redo capabilities to the passed in JTextComponent, it also
-     * binds the JTextComponent with the Ctrl-z and Ctrl-y key strokes.
+     * Adds Undo/Redo capabilities to the passed in JTextComponent, it also binds the JTextComponent with the Ctrl-z and Ctrl-y key strokes.
      * 
      * @param area
      */
@@ -61,7 +60,7 @@ public class JUndoManager {
                         undo.undo();
                     }
                 } catch (CannotUndoException e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
             }
 
@@ -78,7 +77,7 @@ public class JUndoManager {
                         undo.redo();
                     }
                 } catch (CannotRedoException e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
             }
 

@@ -30,22 +30,18 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.utils.IO;
+import org.jdownloader.logging.LogController;
 
 public class DatabaseConnector implements Serializable {
 
     private static final long             serialVersionUID = 8074213660382482620L;
-
-    private static Logger                 logger           = jd.controlling.JDLogger.getLogger();
 
     private String                        configpath       = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
 
@@ -83,7 +79,7 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector(String config) throws SQLException {
         if (config != null) this.configpath = config;
         if (con != null) return;
-        logger.finer("Loading database");
+        LogController.CL().finer("Loading database");
         if (new File(configpath + "database.script").exists()) {
             if (!checkDatabaseHeader()) { throw new SQLException("Database broken!");
 
@@ -96,18 +92,18 @@ public class DatabaseConnector implements Serializable {
         con.createStatement().executeUpdate("SET LOGSIZE 1");
 
         if (!new File(configpath + "database.script").exists()) {
-            logger.finer("No CONFIGURATION database found. Creating new one.");
+            LogController.CL().finer("No CONFIGURATION database found. Creating new one.");
 
             con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
             con.createStatement().executeUpdate("CREATE TABLE links (name VARCHAR(256), obj OTHER)");
 
             final PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-            logger.finer("Starting database wrapper");
+            LogController.CL().finer("Starting database wrapper");
             // cfg file conversion
             for (final String tmppath : new File(configpath).list()) {
                 try {
                     if (tmppath.endsWith(".cfg")) {
-                        logger.finest("Wrapping " + tmppath);
+                        LogController.CL().finest("Wrapping " + tmppath);
 
                         final Object props = JDIO.loadObject(JDUtilities.getResourceFile("config/" + tmppath), false);
 
@@ -118,7 +114,7 @@ public class DatabaseConnector implements Serializable {
                         }
                     }
                 } catch (final Exception e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
             }
         }
@@ -156,7 +152,7 @@ public class DatabaseConnector implements Serializable {
      * @throws IOException
      */
     private boolean checkDatabaseHeader() {
-        logger.finer("Checking database");
+        LogController.CL().finer("Checking database");
         final File f = new File(configpath + "database.script");
         if (!f.exists()) return true;
         boolean databaseok = true;
@@ -314,8 +310,7 @@ public class DatabaseConnector implements Serializable {
                         }
                     }
                 } catch (final Exception e) {
-                    JDLogger.getLogger().warning("Database not available. Create new one: " + name);
-                    JDLogger.exception(Level.FINEST, e);
+                    LogController.CL().warning("Database not available. " + name);
                 } finally {
                     try {
                         rs.close();
@@ -353,8 +348,8 @@ public class DatabaseConnector implements Serializable {
                         ret.add(conf);
                     }
                 }
-            } catch (final SQLException e) {
-                e.printStackTrace();
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
             } finally {
                 try {
                     rs.close();
@@ -373,60 +368,6 @@ public class DatabaseConnector implements Serializable {
      * Saves a CONFIGURATION into the database
      */
     public void saveConfiguration(final String name, final Object data) {
-
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                dbdata.put(name, data);
-                ResultSet rs = null;
-                Statement cs = null;
-                PreparedStatement pst = null;
-                try {
-                    cs = con.createStatement();
-                    rs = cs.executeQuery("SELECT COUNT(name) FROM config WHERE name = '" + name + "'");
-                    rs.next();
-                    if (rs.getInt(1) > 0) {
-                        pst = con.prepareStatement("UPDATE config SET obj = ? WHERE name = '" + name + "'");
-                        pst.setObject(1, data);
-                        pst.execute();
-                    } else {
-                        pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                        pst.setString(1, name);
-                        pst.setObject(2, data);
-                        pst.execute();
-                    }
-                } catch (final Exception e) {
-                    PreparedStatement pst2 = null;
-                    try {
-                        System.out.println("First save " + name);
-                        pst2 = con.prepareStatement("INSERT INTO config VALUES (?,?)");
-                        pst.setString(1, name);
-                        pst.setObject(2, data);
-                        pst.execute();
-                    } catch (final Exception e2) {
-                        JDLogger.getLogger().warning("Database save error: " + name);
-                        JDLogger.exception(Level.FINEST, e2);
-                    } finally {
-                        try {
-                            pst2.close();
-                        } catch (final Throwable e2) {
-                        }
-                    }
-                } finally {
-                    try {
-                        rs.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        cs.close();
-                    } catch (final Throwable e) {
-                    }
-                    try {
-                        pst.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -438,8 +379,7 @@ public class DatabaseConnector implements Serializable {
                 try {
                     dbshutdown = true;
                     con.close();
-                } catch (final SQLException e) {
-                    JDLogger.exception(e);
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -461,8 +401,7 @@ public class DatabaseConnector implements Serializable {
                     rs.next();
                     return rs.getObject(2);
                 } catch (final Throwable e) {
-                    JDLogger.exception(Level.FINEST, e);
-                    JDLogger.getLogger().warning("Database not available. Create new one: links");
+                    LogController.CL().warning("Database not available.");
                 } finally {
                     try {
                         rs.close();
@@ -479,22 +418,6 @@ public class DatabaseConnector implements Serializable {
     }
 
     public void save() {
-        synchronized (LOCK) {
-            if (!isDatabaseShutdown()) {
-                PreparedStatement pst = null;
-                try {
-                    pst = con.prepareStatement("CHECKPOINT");
-                    pst.execute();
-                } catch (final Exception e) {
-                    JDLogger.exception(e);
-                } finally {
-                    try {
-                        pst.close();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        }
     }
 
     /**

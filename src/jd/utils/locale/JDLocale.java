@@ -23,8 +23,7 @@ import jd.utils.JDGeoCode;
 import org.appwork.storage.Storable;
 
 /**
- * This class represents a Language and is used by {@link jd.utils.locale.JDL}
- * Locale System
+ * This class represents a Language and is used by {@link jd.utils.locale.JDL} Locale System
  * 
  * @author unkown
  * 
@@ -80,7 +79,7 @@ public class JDLocale implements Serializable, Storable {
 
     @Override
     public String toString() {
-        return JDGeoCode.toLonger(lngGeoCode) + " (" + JDGeoCode.toLongerNative(lngGeoCode) + ")";
+        return lngGeoCode;
     }
 
     @Override

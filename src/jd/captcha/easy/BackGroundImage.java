@@ -21,15 +21,16 @@ import java.io.File;
 
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
-import jd.controlling.JDLogger;
+
+import org.jdownloader.logging.LogController;
 
 public class BackGroundImage extends CPoint {
     /**
      * 
      */
     private static final long serialVersionUID = 8700548338559980634L;
-    private transient Image image = null;
-    private String backgroundImage;
+    private transient Image   image            = null;
+    private String            backgroundImage;
 
     /**
      * gibt den namen des Hindergrundbildes aus
@@ -74,9 +75,9 @@ public class BackGroundImage extends CPoint {
         Image bImage = getImage(methode);
 
         if (bImage == null || bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
-            if (Utilities.isLoggerActive()) {
-                JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
-            }
+
+            LogController.CL().severe("ERROR Maske und Bild passen nicht zusammmen");
+
             return;
         }
         Captcha cleanImg = captchaImage.owner.createCaptcha(bImage);

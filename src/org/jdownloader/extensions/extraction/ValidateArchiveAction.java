@@ -13,7 +13,6 @@ import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -26,6 +25,7 @@ import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
@@ -66,7 +66,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
                                 archives.add(archive);
                             }
                         } catch (ArchiveException e1) {
-                            Log.exception(e1);
+                            LogController.CL().log(e1);
                         }
                     }
                 }
@@ -84,7 +84,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
                                 archives.add(archive);
                             }
                         } catch (ArchiveException e1) {
-                            Log.exception(e1);
+                            LogController.CL().log(e1);
                         }
                     }
                 }

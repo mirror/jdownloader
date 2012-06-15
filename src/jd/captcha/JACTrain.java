@@ -16,9 +16,6 @@
 
 package jd.captcha;
 
-import java.util.logging.Logger;
-
-import jd.captcha.utils.Utilities;
 import jd.gui.swing.jdgui.events.EDTEventQueue;
 import jd.gui.swing.laf.LookAndFeelController;
 import jd.utils.JDUtilities;
@@ -35,8 +32,6 @@ public class JACTrain {
         main.go();
     }
 
-    private Logger logger = Utilities.getLogger();
-
     private void go() {
         final String hoster = "nrdr";
         final JAntiCaptcha jac = new JAntiCaptcha(hoster);
@@ -46,7 +41,7 @@ public class JACTrain {
         jac.trainAllCaptchas(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/captchas/" + hoster);
 
         // jac.saveMTHFile();
-        logger.info("Training Ende");
+
         // jac.addLetterMap();
         // jac.saveMTHFile();
     }

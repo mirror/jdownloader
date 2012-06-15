@@ -17,9 +17,7 @@
 package jd.controlling.reconnect;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
 
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.gui.UserIO;
@@ -28,7 +26,8 @@ import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {
@@ -46,7 +45,6 @@ public final class Reconnecter implements StateMachineInterface {
     }
     private static final Reconnecter   INSTANCE                         = new Reconnecter();
 
-    private static final Logger        LOG                              = JDLogger.getLogger();
     public static final String         RECONNECT_FAILED_COUNTER_GLOBAL  = "RECONNECT_FAILED_COUNTER_GLOBAL";
     public static final String         RECONNECT_SUCCESS_COUNTER_GLOBAL = "RECONNECT_SUCCESS_COUNTER_GLOBAL";
 
@@ -183,17 +181,18 @@ public final class Reconnecter implements StateMachineInterface {
     /**
      * Führt einen Reconnect durch.
      * 
-     * @return <code>true</code>, wenn der Reconnect erfolgreich war, sonst
-     *         <code>false</code>
+     * @return <code>true</code>, wenn der Reconnect erfolgreich war, sonst <code>false</code>
      */
     public boolean doReconnect() {
         if (!this.statemachine.isStartState()) { return false; }
         boolean ret = false;
         long startTime = System.currentTimeMillis();
+        LogSource logger = LogController.CL();
+        logger.setAllowTimeoutFlush(false);
+        logger.info("Perform reconnect");
         try {
-
             this.eventSender.fireEvent(new ReconnecterEvent(ReconnecterEvent.Type.BEFORE));
-            Reconnecter.LOG.info("Try to reconnect...");
+            logger.info("Try to reconnect...");
             this.statemachine.setStatus(Reconnecter.RECONNECT_RUNNING);
             DownloadWatchDog.getInstance().abortAllSingleDownloadControllers();
 
@@ -211,28 +210,33 @@ public final class Reconnecter implements StateMachineInterface {
             IPController.getInstance().invalidate();
             try {
                 for (retry = 0; retry < maxretries; retry++) {
-                    ReconnectPluginController.LOG.info("Starting " + this.toString() + " #" + (retry + 1));
-
-                    ret = ReconnectPluginController.getInstance().doReconnect();
+                    logger.info("Starting " + this.toString() + " #" + (retry + 1));
+                    final RouterPlugin active = ReconnectPluginController.getInstance().getActivePlugin();
+                    if (active == DummyRouterPlugin.getInstance()) { throw new ReconnectException("Invalid Plugin"); }
+                    ret = ReconnectPluginController.getInstance().doReconnect(active, logger);
                     if (ret) {
+                        logger.info("Reconnect successful!");
+                        logger.clear();
                         reconnectCounter.incrementAndGet();
                         lastReconnect = System.currentTimeMillis();
                         break;
                     }
                 }
-
             } catch (final InterruptedException e) {
-                e.printStackTrace();
+                logger.log(e);
                 ret = false;
             } catch (final ReconnectException e) {
-                e.printStackTrace();
+                logger.log(e);
                 ret = false;
             } finally {
-
             }
         } catch (Throwable e) {
-            Log.exception(e);
-
+            logger.log(e);
+        } finally {
+            if (ret == false) {
+                logger.info("Reconnect failed!");
+            }
+            logger.close();
         }
         // reconnect takes at least 1000ms
         try {
@@ -248,9 +252,7 @@ public final class Reconnecter implements StateMachineInterface {
             counterFailed(+1);
             counterGlobalFailed(+1);
             storage.setSuccessCounter(0);
-
         } else {
-
             counterSuccess(+1);
             counterGlobalSuccess(+1);
             storage.setFailedCounter(0);
@@ -276,8 +278,7 @@ public final class Reconnecter implements StateMachineInterface {
     }
 
     /**
-     * Forces a reconnect NOW. This method will try to do a reconnect at any
-     * cost and return the success
+     * Forces a reconnect NOW. This method will try to do a reconnect at any cost and return the success
      * 
      * @return
      */
@@ -321,27 +322,14 @@ public final class Reconnecter implements StateMachineInterface {
     }
 
     /**
-     * should be called externally when a connection break is ok. this method
-     * has to block until the connection is back
+     * should be called externally when a connection break is ok. this method has to block until the connection is back
      */
     public boolean run() {
         if (!this.isReconnectAllowed()) { return false; }
         // no reconnect required
         if (!IPController.getInstance().isInvalidated()) { return false; }
-        boolean ret = false;
-        try {
+        boolean ret = this.doReconnect();
 
-            ret = this.doReconnect();
-
-            if (ret) {
-                Reconnecter.LOG.info("Reconnect successful!");
-            } else {
-                Reconnecter.LOG.info("Reconnect failed!");
-            }
-        } catch (final Exception e) {
-            Log.exception(e);
-            Reconnecter.LOG.finest("Reconnect failed.");
-        }
         if (ret == false) {
             /* reconnect failed, increase fail counter */
 
@@ -349,8 +337,7 @@ public final class Reconnecter implements StateMachineInterface {
 
             if (counter > 5) {
                 /*
-                 * more than 5 failed reconnects in row, disable autoreconnect
-                 * and show message
+                 * more than 5 failed reconnects in row, disable autoreconnect and show message
                  */
                 org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(false);
                 UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN | UserIO.DONT_SHOW_AGAIN_IGNORES_CANCEL, _JDT._.jd_controlling_reconnect_Reconnector_progress_failed2());

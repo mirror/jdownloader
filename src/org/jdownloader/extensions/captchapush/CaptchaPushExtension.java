@@ -11,6 +11,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.logging.LogController;
 
 public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, TranslateInterface> {
 
@@ -47,8 +48,8 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     }
 
     private void startService() {
-        logger.info("Start the MQTT Service ...");
-        logger.info("Broker " + config.getBrokerHost() + ":" + config.getBrokerPort() + " on Topic " + config.getBrokerTopic());
+        LogController.CL().info("Start the MQTT Service ...");
+        LogController.CL().info("Broker " + config.getBrokerHost() + ":" + config.getBrokerPort() + " on Topic " + config.getBrokerTopic());
 
         service.connect();
 
@@ -64,7 +65,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     }
 
     private void stopService() {
-        logger.info("Stop the MQTT Service ...");
+        LogController.CL().info("Stop the MQTT Service ...");
 
         service.disconnect();
 
@@ -83,7 +84,7 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
 
         service = new CaptchaPushService(this);
 
-        logger.info("CaptchaPush: OK");
+        LogController.CL().info("CaptchaPush: OK");
     }
 
     @Override

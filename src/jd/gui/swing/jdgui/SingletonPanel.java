@@ -18,21 +18,21 @@ package jd.gui.swing.jdgui;
 
 import java.lang.reflect.Constructor;
 
-import jd.controlling.JDLogger;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 
+import org.jdownloader.logging.LogController;
+
 /**
- * This class is used as a wrapper for {@link SwitchPanel}'s. It creates only
- * one instance of the desired SwitchPanel.
+ * This class is used as a wrapper for {@link SwitchPanel}'s. It creates only one instance of the desired SwitchPanel.
  * 
  * @author Coalado
  */
 public class SingletonPanel {
 
-    private SwitchPanel panel;
+    private SwitchPanel                  panel;
 
     private Class<? extends SwitchPanel> clazz;
-    private Object[] objs;
+    private Object[]                     objs;
 
     public SingletonPanel(SwitchPanel panel) {
         this.panel = panel;
@@ -55,7 +55,7 @@ public class SingletonPanel {
             try {
                 createPanel();
             } catch (Exception e) {
-                JDLogger.exception(e);
+                LogController.CL().log(e);
                 return null;
             }
         }

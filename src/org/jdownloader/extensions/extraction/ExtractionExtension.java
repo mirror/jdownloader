@@ -50,12 +50,9 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
@@ -83,6 +80,8 @@ import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -141,7 +140,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     public void setExtractor(IExtraction extractor) {
         extractors.add(extractor);
-        extractor.setLogger(getLogger());
+        extractor.setLogger(LogController.CL());
     }
 
     /**
@@ -209,7 +208,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         IExtraction extractor = archive.getExtractor();
 
         if (!archive.getFirstArchiveFile().exists()) {
-            Log.L.info("First File does not exist " + archive.getFirstArchiveFile());
+            LogController.CL().info("First File does not exist " + archive.getFirstArchiveFile());
             return null;
         }
         archives.add(archive);
@@ -218,7 +217,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
 
-        ExtractionController controller = new ExtractionController(this, archive, logger);
+        ExtractionController controller = new ExtractionController(this, archive);
 
         controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
         controller.setRemoveDownloadLinksAfterExtraction(getSettings().isDeleteArchiveDownloadlinksAfterExtraction());
@@ -281,7 +280,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         Archive archive = extrctor.buildArchive(link);
         // Log.L.info("Created Archive: " + archive);
-        Log.L.info("Files: " + archive.getArchiveFiles());
+        LogController.CL().info("Files: " + archive.getArchiveFiles());
 
         return archive;
     }
@@ -497,6 +496,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 getSettings().setPasswordList(currentList);
             }
         } catch (final Throwable e) {
+            LogController.CL().log(e);
         } finally {
             if (oldPWListImported == false) {
                 getSettings().setOldPWListImported(true);
@@ -548,7 +548,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         while (it.hasNext()) {
             IExtraction extractor = it.next();
             if (!extractor.checkCommand()) {
-                logger.severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
+                LogController.CL().severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
                 it.remove();
             }
         }
@@ -640,11 +640,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             }
                         }.start();
                     } catch (ArchiveException e1) {
-                        Log.exception(e1);
-                    } catch (DialogClosedException e1) {
-                        Log.exception(e1);
-                    } catch (DialogCanceledException e1) {
-                        Log.exception(e1);
+                        LogController.CL(ExtractionExtension.class).log(e1);
+                    } catch (DialogNoAnswerException e1) {
                     }
                 }
             }
@@ -699,54 +696,59 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-        Log.L.info("New File by " + caller);
-        if (caller instanceof SingleDownloadController) {
-            DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
+        LogSource logger = LogController.CL();
+        try {
+            logger.info("New File by " + caller);
+            if (caller instanceof SingleDownloadController) {
+                DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
 
-            Log.L.info("postprocess " + link.getFilePackage().isPostProcessing());
-            Log.L.info("link supported  " + isLinkSupported(new DownloadLinkArchiveFactory(link)));
-            if (link.getFilePackage().isPostProcessing() && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
-                Archive archive;
+                logger.info("postprocess " + link.getFilePackage().isPostProcessing());
+                logger.info("link supported  " + isLinkSupported(new DownloadLinkArchiveFactory(link)));
+                if (link.getFilePackage().isPostProcessing() && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
+                    Archive archive;
+                    try {
+                        archive = buildArchive(new DownloadLinkArchiveFactory(link));
+                        logger.info("archive active " + archive.isActive());
+                        logger.info("archive size " + archive.getArchiveFiles().size());
+                        logger.info("archive complete " + archive.isComplete());
+                        if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
+                            this.addToQueue(archive);
+                        }
+                    } catch (ArchiveException e) {
+                        logger.log(e);
+                    }
+                }
+            } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
-                    archive = buildArchive(new DownloadLinkArchiveFactory(link));
-                    Log.L.info("archive active " + archive.isActive());
-                    Log.L.info("archive size " + archive.getArchiveFiles().size());
-                    Log.L.info("archive complete " + archive.isComplete());
-                    if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
-                        this.addToQueue(archive);
-                    }
-                } catch (ArchiveException e) {
-                    Log.exception(e);
-                }
-            }
-        } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
-            try {
 
-                for (File archiveStartFile : fileList) {
-                    FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
-                    if (isLinkSupported(fac)) {
-                        Archive ar = buildArchive(fac);
-                        if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
-                        addToQueue(ar);
+                    for (File archiveStartFile : fileList) {
+                        FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                        if (isLinkSupported(fac)) {
+                            Archive ar = buildArchive(fac);
+                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                            addToQueue(ar);
+                        }
                     }
+                } catch (Exception e) {
+                    logger.log(e);
                 }
-            } catch (Exception e) {
-                Log.exception(e);
-            }
-        } else {
-            try {
+            } else {
+                try {
 
-                for (File archiveStartFile : fileList) {
-                    FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
-                    if (isLinkSupported(fac)) {
-                        Archive ar = buildArchive(fac);
-                        if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
-                        addToQueue(ar);
+                    for (File archiveStartFile : fileList) {
+                        FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
+                        if (isLinkSupported(fac)) {
+                            Archive ar = buildArchive(fac);
+                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                            addToQueue(ar);
+                        }
                     }
+                } catch (Exception e) {
+                    logger.log(e);
                 }
-            } catch (Exception e) {
-                Log.exception(e);
             }
+        } finally {
+            logger.close();
         }
     }
 
@@ -918,7 +920,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                             Dialog.getInstance().showMessageDialog(_.cannot_extract_incopmplete(archive.getName()));
                                         }
                                     } catch (final ArchiveException e) {
-                                        Log.exception(e);
+                                        LogController.CL(ExtractionExtension.class).log(e);
                                     }
                                 }
 
@@ -1071,7 +1073,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                                             addToQueue(archive);
                                         }
                                     } catch (final ArchiveException e) {
-                                        Log.exception(e);
+                                        LogController.CL(ExtractionExtension.class).log(e);
                                     }
                                 }
 

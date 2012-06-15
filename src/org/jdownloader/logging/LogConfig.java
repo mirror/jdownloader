@@ -28,7 +28,7 @@ public interface LogConfig extends ConfigInterface {
     void setMaxLogFiles(int m);
 
     @AboutConfig
-    @DefaultIntValue(5 * 60)
+    @DefaultIntValue(60)
     @SpinnerValidator(min = 30, max = Integer.MAX_VALUE)
     @Description("Timeout in secs after which the logger will be flushed/closed")
     @RequiresRestart

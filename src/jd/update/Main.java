@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -466,15 +465,8 @@ public class Main {
         scrollPane.setAutoscrolls(true);
         logWindow.setEditable(false);
         logWindow.setAutoscrolls(true);
-        JDUtilities.addToGridBag(frame, warnings, REL, REL, REM, 1, 0, 0, INSETS, BOTHRESIZE, NORTHWEST);
-
-        JDUtilities.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-
-        JDUtilities.addToGridBag(frame, new JLabel("Download: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
-        JDUtilities.addToGridBag(frame, progressload, REL, REL, REM, 1, 1, 0, INSETS, BOTHRESIZE, NORTHWEST);
         Main.log(log, "Starting...");
         logWindow.setText(log.toString());
-        JDUtilities.addToGridBag(frame, scrollPane, REL, REL, REM, 1, 1, 1, INSETS, BOTHRESIZE, NORTHWEST);
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());

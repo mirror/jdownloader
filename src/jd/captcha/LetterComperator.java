@@ -19,16 +19,15 @@ package jd.captcha;
 import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import jd.captcha.configuration.JACScript;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.Utilities;
-import jd.controlling.JDLogger;
+
+import org.jdownloader.logging.LogController;
 
 /**
- * Diese Klasse berechnet die Unterschiede zwischen zwei letter instanzen. Über
- * die getter kann nach dem ausführen von run(). Abgerufen werden welche
+ * Diese Klasse berechnet die Unterschiede zwischen zwei letter instanzen. Über die getter kann nach dem ausführen von run(). Abgerufen werden welche
  * UNterschiede sich ergeben haben.
  * 
  * @author JD-Team
@@ -41,13 +40,11 @@ public class LetterComperator {
     // Farbkonstanten für die überlagerungsbilder
     private static final int        BOTHCOLOR                   = 0x660099;
     /**
-     * Gibt an ob ein Intersectionletter( schnittbilder) erstellt werden soll.
-     * Achtung langsam!
+     * Gibt an ob ein Intersectionletter( schnittbilder) erstellt werden soll. Achtung langsam!
      */
     public static boolean           CREATEINTERSECTIONLETTER    = false;
     /**
-     * Matchtable kann als Stringarray gesetzt werden... z.b.
-     * {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
+     * Matchtable kann als Stringarray gesetzt werden... z.b. {"123","456","789"} lässt auf id platz 1 nur 1,2 oder 3 zu usw.
      */
     public static String[]          MATCH_TABLE                 = null;
     // Ids die Auskunft über die Art der ERkennung geben
@@ -102,7 +99,6 @@ public class LetterComperator {
     private JACScript               jas;
     private double                  localHeightPercent;
     private double                  localWidthPercent;
-    private Logger                  logger                      = Utilities.getLogger();
     private int                     minCleftSize;
     private int[]                   offset;
     private int                     overlayNoiseSize;
@@ -187,8 +183,7 @@ public class LetterComperator {
 
     /**
      * 
-     * @return Anzahl der Elemente aus denen die Schnitttmenge besteht. je näher
-     *         an eins desto besser
+     * @return Anzahl der Elemente aus denen die Schnitttmenge besteht. je näher an eins desto besser
      */
     public int getBothElementsNum() {
         return bothElementsNum;
@@ -286,8 +281,7 @@ public class LetterComperator {
     }
 
     /**
-     * Rekursive Funktion, Die die große eines Elements zurückgibt. in den grids
-     * werden schon vergebene pixel abgelegt
+     * Rekursive Funktion, Die die große eines Elements zurückgibt. in den grids werden schon vergebene pixel abgelegt
      * 
      * @param x
      * @param y
@@ -333,8 +327,7 @@ public class LetterComperator {
 
     /**
      * 
-     * @return Kombinierter Wert aus Valityvalue und Reliability. Kann zur
-     *         berechnung der erkennungssicherheit verwendet werden
+     * @return Kombinierter Wert aus Valityvalue und Reliability. Kann zur berechnung der erkennungssicherheit verwendet werden
      */
     public double getIdentificationReliability() {
         return getValityPercent() - getReliability();
@@ -372,7 +365,7 @@ public class LetterComperator {
             ret.clean();
             return ret;
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return getA();
         }
 
@@ -398,11 +391,8 @@ public class LetterComperator {
     }
 
     /**
-     * @return gibt einen Letterzurück, aus dem gut erkannt werden kann wie sich
-     *         das ergebniss zusammensetzt. gleiche antile werden lila gefärbt,
-     *         banteile rot und a anteile blau Um den Intersectionletter
-     *         auszugene muss zuerst setCreateIntersectionLetter(true)
-     *         ausgeführt werden
+     * @return gibt einen Letterzurück, aus dem gut erkannt werden kann wie sich das ergebniss zusammensetzt. gleiche antile werden lila gefärbt, banteile rot
+     *         und a anteile blau Um den Intersectionletter auszugene muss zuerst setCreateIntersectionLetter(true) ausgeführt werden
      */
     public Letter getIntersectionLetter() {
 
@@ -490,8 +480,7 @@ public class LetterComperator {
      * @param yy
      * @param left
      * @param top
-     * @return -2(fehler)/ 0 gemeinsammer schwarzer Pixel /1 Pixel B aber nicht
-     *         a / 2 pixel A aber nicht B/ -1 beide weiß
+     * @return -2(fehler)/ 0 gemeinsammer schwarzer Pixel /1 Pixel B aber nicht a / 2 pixel A aber nicht B/ -1 beide weiß
      */
     public int getPixelType(int x, int y, int xx, int yy, int left, int top) {
 
@@ -631,8 +620,7 @@ public class LetterComperator {
     }
 
     /**
-     * Scan ist die eigentliche vergleichsfunktion. a und b werden dabei
-     * gegeneinander verschoben.
+     * Scan ist die eigentliche vergleichsfunktion. a und b werden dabei gegeneinander verschoben.
      */
     private void scan() {
         long startTime = System.currentTimeMillis();
@@ -888,7 +876,7 @@ public class LetterComperator {
                     extensionCodeArguments[1] = tmpError / divider;
                     extensionCodeMethod.invoke(null, extensionCodeArguments);
                 } catch (Exception e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
             }
 
@@ -1108,9 +1096,8 @@ public class LetterComperator {
         if (jas.getString("comparatorExtension").length() > 0) {
             String[] ref = jas.getString("comparatorExtension").split("\\.");
             if (ref.length != 2) {
-                if (Utilities.isLoggerActive()) {
-                    logger.severe("comparatorExtension should have the format Class.Method");
-                }
+
+                LogController.CL().severe("comparatorExtension should have the format Class.Method");
 
             }
             String cl = ref[0];
@@ -1122,7 +1109,7 @@ public class LetterComperator {
                 extensionCodeMethod = newClass.getMethod(methodname, extensionCodeParameterTypes);
 
             } catch (Exception e) {
-                JDLogger.exception(e);
+                LogController.CL().log(e);
             }
         }
 
@@ -1173,9 +1160,8 @@ public class LetterComperator {
     }
 
     /**
-     * TODO: Gleiche buchtaben als nächsten nachbarn ignoriere Setzte den
-     * reliability wert. Er ist de Abstand zum nächstmöglichen Treffer. Und
-     * sagtdeshalb etwas über die ERkennungswarscheinlichkeit aus
+     * TODO: Gleiche buchtaben als nächsten nachbarn ignoriere Setzte den reliability wert. Er ist de Abstand zum nächstmöglichen Treffer. Und sagtdeshalb etwas
+     * über die ERkennungswarscheinlichkeit aus
      * 
      * @param d
      */
@@ -1185,8 +1171,7 @@ public class LetterComperator {
     }
 
     /**
-     * Setzt die zu verwendene Scanvarianz. (Anzal der pixel die über den rand
-     * gescannt werden)
+     * Setzt die zu verwendene Scanvarianz. (Anzal der pixel die über den rand gescannt werden)
      * 
      * @param x
      * @param y
@@ -1223,8 +1208,7 @@ public class LetterComperator {
     }
 
     /**
-     * Gibt einen laaaangenstring mit den meisten entscheidungsparametern
-     * aus.Kann zum verlich verwendet werden
+     * Gibt einen laaaangenstring mit den meisten entscheidungsparametern aus.Kann zum verlich verwendet werden
      * 
      * @return parameterstring
      */

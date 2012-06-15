@@ -23,7 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
-import jd.controlling.JDLogger;
+import org.jdownloader.logging.LogController;
 
 public class DynByteBuffer {
 
@@ -65,7 +65,7 @@ public class DynByteBuffer {
         try {
             return new String(this.getLast(buffer.position()), codepage);
         } catch (UnsupportedEncodingException e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return new String(this.getLast(buffer.position()));
         }
     }

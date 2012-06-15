@@ -16,7 +16,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.RouterPlugin;
@@ -67,6 +66,29 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                 run();
             }
 
+            /**
+             * get next available DummyBat for reconnect
+             * 
+             * @return
+             */
+            private File getDummyBat() {
+                int number = 0;
+                while (true) {
+                    if (number == 100) {
+                        logger.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
+                        return null;
+                    }
+                    final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
+                    if (tmp.exists()) {
+                        if (tmp.delete()) { return tmp; }
+                        tmp.deleteOnExit();
+                    } else {
+                        return tmp;
+                    }
+                    number++;
+                }
+            }
+
             @Override
             public void run() throws ReconnectException {
                 final int waitForReturn = getWaitForReturn();
@@ -82,15 +104,15 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                 final String executeIn = t.substring(0, t.indexOf(f.getName()) - 1).trim();
                 if (CrossSystem.isWindows() && isDummyBatchEnabled()) {
                     /*
-                     * for windows we create a temporary batchfile that calls
-                     * our external tool and redirect its streams to nul
+                     * for windows we create a temporary batchfile that calls our external tool and redirect its streams to nul
                      */
                     final File bat = getDummyBat();
                     if (bat == null) { throw new ReconnectException("Could not create Dummy Batch");
 
                     }
+                    BufferedWriter output = null;
                     try {
-                        final BufferedWriter output = new BufferedWriter(new FileWriter(bat));
+                        output = new BufferedWriter(new FileWriter(bat));
                         if (executeIn.contains(" ")) {
                             output.write("cd \"" + executeIn + "\"\r\n");
                         } else {
@@ -110,15 +132,19 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
                         }
                         output.close();
                     } catch (final Exception e) {
-                        JDLogger.exception(e);
+                        logger.log(e);
                         throw new ReconnectException(e);
-
+                    } finally {
+                        try {
+                            output.close();
+                        } catch (final Throwable e) {
+                        }
                     }
-                    RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
+                    logger.finer("Execute Returns: " + JDUtilities.runCommand(bat.toString(), new String[0], executeIn, waitForReturn));
                 } else {
                     /* other os, normal handling */
                     final String parameter = getParameterString();
-                    RouterPlugin.LOG.finer("Execute Returns: " + JDUtilities.runCommand(command, org.appwork.utils.Regex.getLines(parameter), executeIn, waitForReturn));
+                    logger.finer("Execute Returns: " + JDUtilities.runCommand(command, org.appwork.utils.Regex.getLines(parameter), executeIn, waitForReturn));
                 }
             }
         };
@@ -149,29 +175,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     private String getCommand() {
         // TODO Auto-generated method stub
         return this.getStorage().get(ExternReconnectPlugin.COMMAND, JDUtilities.getConfiguration().getStringProperty("InteractionExternReconnect_Command", ""));
-    }
-
-    /**
-     * get next available DummyBat for reconnect
-     * 
-     * @return
-     */
-    private File getDummyBat() {
-        int number = 0;
-        while (true) {
-            if (number == 100) {
-                RouterPlugin.LOG.severe("Cannot create dummy Bat file, please delete all recon_*.bat files in tmp folder!");
-                return null;
-            }
-            final File tmp = JDUtilities.getResourceFile("tmp/recon_" + number + ".bat", true);
-            if (tmp.exists()) {
-                if (tmp.delete()) { return tmp; }
-                tmp.deleteOnExit();
-            } else {
-                return tmp;
-            }
-            number++;
-        }
     }
 
     @Override
@@ -230,8 +233,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     /**
-     * returns how long the execution should wait for the extern process to
-     * return
+     * returns how long the execution should wait for the extern process to return
      * 
      * @return
      */
@@ -242,9 +244,8 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     /**
-     * Returns of dummy batch usage is enabled. for windows we create a
-     * temporary batchfile that calls our external tool and redirect its streams
-     * to nul. This is a workaround for many IO STream caused errors
+     * Returns of dummy batch usage is enabled. for windows we create a temporary batchfile that calls our external tool and redirect its streams to nul. This
+     * is a workaround for many IO STream caused errors
      * 
      * @return
      */

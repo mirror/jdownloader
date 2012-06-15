@@ -30,10 +30,9 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
-
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.jdownloader.logging.LogController;
 
 public final class JDIO {
     /**
@@ -81,7 +80,7 @@ public final class JDIO {
             f.close();
             return true;
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return false;
         } finally {
             try {
@@ -101,8 +100,7 @@ public final class JDIO {
      * @param objectToSave
      *            Das zu speichernde Objekt
      * @param fileOutput
-     *            Das File, in das geschrieben werden soll. Falls das File ein
-     *            Verzeichnis ist, wird darunter eine Datei erstellt
+     *            Das File, in das geschrieben werden soll. Falls das File ein Verzeichnis ist, wird darunter eine Datei erstellt
      * @param name
      *            Dateiname
      * @param extension
@@ -137,7 +135,7 @@ public final class JDIO {
             buff.close();
             fos.close();
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         } finally {
             try {
                 fos.close();
@@ -150,8 +148,7 @@ public final class JDIO {
      * Lädt ein Objekt aus einer Datei
      * 
      * @param fileInput
-     *            Falls das Objekt aus einer bekannten Datei geladen werden
-     *            soll, wird hier die Datei angegeben.
+     *            Falls das Objekt aus einer bekannten Datei geladen werden soll, wird hier die Datei angegeben.
      * @param asXML
      *            Soll das Objekt von einer XML Datei aus geladen werden?
      * @return Das geladene Objekt
@@ -182,7 +179,7 @@ public final class JDIO {
 
             return objectLoaded;
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         } finally {
             try {
                 fis.close();
@@ -194,8 +191,7 @@ public final class JDIO {
     }
 
     /**
-     * public static String getLocalFile(File file) Liest file über einen
-     * bufferdReader ein und gibt den Inhalt asl String zurück
+     * public static String getLocalFile(File file) Liest file über einen bufferdReader ein und gibt den Inhalt asl String zurück
      * 
      * @param file
      * @return File Content als String
@@ -206,7 +202,7 @@ public final class JDIO {
         try {
             return IO.readFileToString(file);
         } catch (IOException e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return "";
         }
 
@@ -243,8 +239,7 @@ public final class JDIO {
     }
 
     /**
-     * removes recursive all files and directories in parentFile if the match
-     * pattern
+     * removes recursive all files and directories in parentFile if the match pattern
      * 
      * @param parentFile
      * @param string
@@ -265,8 +260,7 @@ public final class JDIO {
     }
 
     /**
-     * Removes all files rekursivly in file, for which fileSelector.doIt returns
-     * true
+     * Removes all files rekursivly in file, for which fileSelector.doIt returns true
      * 
      * @param file
      * @param fileSelector

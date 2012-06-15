@@ -16,11 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.util.logging.Level;
+
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -48,7 +49,7 @@ public class UzManTvCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

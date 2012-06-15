@@ -19,8 +19,6 @@ package jd.utils;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
-import jd.controlling.JDLogger;
-
 import org.appwork.utils.Regex;
 
 /**
@@ -570,8 +568,7 @@ public class JDGeoCode {
     }
 
     /**
-     * pasres a lng code like de-AT and returns an array languagecode,
-     * countrycode,extension
+     * pasres a lng code like de-AT and returns an array languagecode, countrycode,extension
      * 
      * 
      * de-AT -->[de,AT,null] de-2 -->[
@@ -596,63 +593,6 @@ public class JDGeoCode {
             if (split0.trim().length() != 2) { return null; }
             if (split1.trim().length() != 2) { return null; }
             return new String[] { split0.toLowerCase(), split1.toUpperCase(), split[2] };
-        }
-    }
-
-    /**
-     * Transforms a lng-country-ext code into its longer form
-     * 
-     * @param string
-     * @return
-     */
-    public static String toLonger(final String string) {
-        final String[] p = JDGeoCode.parseLanguageCode(string);
-        if (p == null) { return null; }
-
-        final String language = JDGeoCode.LANGUAGES.get(p[0])[0];
-        final String country = JDGeoCode.COUNTRIES.get(p[1]);
-        String extension = JDGeoCode.EXTENSIONS.get(p[2]);
-        if (extension == null) {
-            extension = p[2];
-        }
-        final StringBuilder ret = new StringBuilder(language);
-        if (country != null) {
-            ret.append(" [" + country);
-            if (extension != null) {
-                ret.append(" | " + extension);
-            }
-            ret.append("]");
-        } else if (extension != null) {
-            ret.append(" [" + extension + "]");
-        }
-        return ret.toString();
-    }
-
-    public static String toLongerNative(final String string) {
-        final String[] p = JDGeoCode.parseLanguageCode(string);
-        try {
-            final String language = JDGeoCode.LANGUAGES.get(p[0])[1];
-            final String country = JDGeoCode.COUNTRIES.get(p[1]);
-            String extension = JDGeoCode.EXTENSIONS.get(p[2]);
-            if (extension == null) {
-                extension = p[2];
-            }
-
-            final StringBuilder ret = new StringBuilder(language);
-            if (country != null) {
-                ret.append(" [" + country);
-                if (extension != null) {
-                    ret.append(" | " + extension);
-                }
-                ret.append("]");
-            } else if (extension != null) {
-                ret.append(" [" + extension + "]");
-            }
-
-            return ret.toString();
-        } catch (final Exception e) {
-            JDLogger.getLogger().severe("Bad languagecode: " + string);
-            return JDGeoCode.toLongerNative("en");
         }
     }
 

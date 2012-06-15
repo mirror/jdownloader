@@ -5,16 +5,16 @@ import java.util.Collections;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
- * balanced IP check uses the jdownloader ip check servers. This type of ip
- * check is default, and fallback for all reconnect methods
+ * balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods
  * 
  * @author thomas
  * 
@@ -66,21 +66,27 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         synchronized (this.LOCK) {
             System.out.println("CHECK");
             for (int i = 0; i < (checkOnlyOnce ? 1 : this.servicesInUse.size()); i++) {
+                LogSource logger = LogController.CL();
+                logger.setAllowTimeoutFlush(false);
                 try {
-
                     final String service = this.servicesInUse.get(i);
                     /* call website and check for ip */
+                    br.setLogger(logger);
                     final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
                     if (matcher.find()) {
-                        if (matcher.groupCount() > 0) { return IP.getInstance(matcher.group(1)); }
+                        if (matcher.groupCount() > 0) {
+                            logger.clear();
+                            return IP.getInstance(matcher.group(1));
+                        }
                     }
                 } catch (final Throwable e2) {
                     try {
                         br.disconnect();
                     } catch (final Throwable e) {
                     }
-                    JDLogger.getLogger().info(e2.getMessage());
-
+                    logger.log(e2);
+                } finally {
+                    logger.close();
                 }
             }
 
@@ -102,19 +108,24 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             if (b) {
                 servicesInUse.clear();
                 for (int i = 0; i < SERVICES.size(); i++) {
+                    LogSource logger = LogController.CL();
+                    logger.setAllowTimeoutFlush(false);
                     try {
 
                         final String service = SERVICES.get(i);
                         /* call website and check for ip */
+                        br.setLogger(logger);
                         final Matcher matcher = this.pattern.matcher(this.br.getPage(service));
                         if (matcher.find()) {
                             if (matcher.groupCount() > 0) {
+                                logger.clear();
                                 servicesInUse.add(service);
                             }
                         }
                     } catch (final Throwable e2) {
-                        JDLogger.getLogger().info(e2.getMessage());
-
+                        logger.log(e2);
+                    } finally {
+                        logger.close();
                     }
                 }
                 if (servicesInUse.size() == 0) {

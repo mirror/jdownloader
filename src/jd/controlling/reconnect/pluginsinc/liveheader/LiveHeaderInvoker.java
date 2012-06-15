@@ -2,11 +2,9 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectResult;
@@ -23,7 +21,6 @@ import jd.nutils.encoding.Encoding;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.remotecall.RemoteClient;
 import org.w3c.dom.Document;
@@ -73,7 +70,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         }
 
                     } catch (Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     }
                 }
             }
@@ -86,7 +83,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     serverConnector = new RemoteClient(LiveHeaderDetectionWizard.UPDATE3_JDOWNLOADER_ORG_RECOLL).getFactory().newInstance(RecollInterface.class);
                     serverConnector.setNotWorking(rd.getScriptID(), null);
                 } catch (Throwable e1) {
-                    Log.exception(e1);
+                    logger.log(e);
                 }
             }
             throw e;
@@ -156,11 +153,14 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         this.headerProperties = new HashMap<String, String>();
 
         Browser br = new Browser();
+        br.setDebug(true);
+        br.setVerbose(true);
         /* set custom timeouts here because 10secs is a LONG time ;) */
         br.setCookiesExclusive(true);
         br.setReadTimeout(10000);
         br.setConnectTimeout(10000);
         br.setProxy(HTTPProxy.NONE);
+        br.setLogger(logger);
         if (user != null && pass != null) {
             br.setAuth(ip, user, pass);
         }
@@ -168,14 +168,14 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             xmlScript = JDUtilities.parseXmlString(script, false);
             if (xmlScript == null) {
 
-                LiveHeaderReconnect.LOG.severe("Error while parsing the xml string: " + script);
+                logger.severe("Error while parsing the xml string: " + script);
                 throw new ReconnectException("Error while parsing the xml string");
 
             }
             final Node root = xmlScript.getChildNodes().item(0);
             if (root == null || !root.getNodeName().equalsIgnoreCase("HSRC")) {
 
-                LiveHeaderReconnect.LOG.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
+                logger.severe("Root Node must be [[[HSRC]]]*[/HSRC]");
                 throw new ReconnectException("Error while parsing the xml string. Root Node must be [[[HSRC]]]*[/HSRC]");
             }
 
@@ -191,7 +191,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 }
 
                 if (!current.getNodeName().equalsIgnoreCase("STEP")) {
-                    LiveHeaderReconnect.LOG.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
+                    logger.severe("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                     throw new ReconnectException("Root Node should only contain [[[STEP]]]*[[[/STEP]]] ChildTag: " + current.getNodeName());
                 }
                 final NodeList toDos = current.getChildNodes();
@@ -213,11 +213,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                                 final StringBuilder req;
                                 if (value.startsWith(params[0])) {
                                     req = new StringBuilder();
-                                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                                    logger.finer("Variables: " + this.variables);
+                                    logger.finer("Headerproperties: " + this.headerProperties);
                                     final int tmpLength = tmp.length;
                                     for (int i = 0; i <= tmpLength; i++) {
-                                        LiveHeaderReconnect.LOG.finer("Replace variable: ********(" + params[i - 1] + ")");
+                                        logger.finer("Replace variable: ********(" + params[i - 1] + ")");
 
                                         req.append(this.getModifiedVariable(params[i - 1]));
                                         if (i < tmpLength) {
@@ -226,14 +226,14 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                                     }
                                 } else {
                                     req = new StringBuilder(tmp[0]);
-                                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                                    logger.finer("Variables: " + this.variables);
+                                    logger.finer("Headerproperties: " + this.headerProperties);
                                     final int tmpLength = tmp.length;
                                     for (int i = 1; i <= tmpLength; i++) {
                                         if (i > params.length) {
                                             continue;
                                         }
-                                        LiveHeaderReconnect.LOG.finer("Replace variable: *********(" + params[i - 1] + ")");
+                                        logger.finer("Replace variable: *********(" + params[i - 1] + ")");
                                         req.append(this.getModifiedVariable(params[i - 1]));
                                         if (i < tmpLength) {
                                             req.append(tmp[i]);
@@ -247,7 +247,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             this.variables.put(key, value);
                         }
 
-                        LiveHeaderReconnect.LOG.finer("Variables set: " + this.variables);
+                        logger.finer("Variables set: " + this.variables);
                         if (feedback != null) feedback.onVariablesUpdated(variables);
                     }
 
@@ -262,11 +262,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                                 String found = br.getRegex(pattern).getMatch(0);
                                 if (found != null) {
                                     found = found.trim();
-                                    LiveHeaderReconnect.LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
+                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
                                     this.variables.put(varname, found);
                                     if (feedback != null) feedback.onVariablesUpdated(variables);
                                 } else {
-                                    LiveHeaderReconnect.LOG.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
+                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
                                     if (feedback != null) feedback.onVariableParserFailed(pattern, br.getRequest());
                                 }
                             }
@@ -277,7 +277,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         boolean ishttps = false;
                         boolean israw = false;
                         if (toDo.getChildNodes().getLength() != 1) {
-                            LiveHeaderReconnect.LOG.severe("A REQUEST Tag is not allowed to have childTags.");
+                            logger.severe("A REQUEST Tag is not allowed to have childTags.");
                             throw new ReconnectException("A REQUEST Tag is not allowed to have childTags.");
                         }
                         final NamedNodeMap attributes = toDo.getAttributes();
@@ -297,7 +297,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         /* DDoS Schutz */
                         Thread.sleep(350);
                         if (retbr == null || !retbr.getHttpConnection().isOK()) {
-                            LiveHeaderReconnect.LOG.severe("Request error!");
+                            logger.severe("Request error!");
                             if (feedback != null && retbr != null) feedback.onRequesterror(retbr.getRequest());
                         } else {
                             if (feedback != null) feedback.onRequestOK(retbr.getRequest());
@@ -306,10 +306,10 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
-                        LiveHeaderReconnect.LOG.finer("get Response");
+                        logger.finer("get Response");
                         if (toDo.getChildNodes().getLength() != 1) {
 
-                            LiveHeaderReconnect.LOG.severe("A RESPONSE Tag is not allowed to have childTags.");
+                            logger.severe("A RESPONSE Tag is not allowed to have childTags.");
                             throw new ReconnectException("A RESPONSE Tag is not allowed to have childTags.");
 
                         }
@@ -317,7 +317,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         final NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
 
-                            LiveHeaderReconnect.LOG.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
+                            logger.severe("A RESPONSE Node needs a Keys Attribute: " + toDo);
                             throw new ReconnectException("A RESPONSE Node needs a Keys Attribute: " + toDo);
 
                         }
@@ -330,11 +330,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         final NamedNodeMap attributes = toDo.getAttributes();
                         final Node item = attributes.getNamedItem("seconds");
                         if (item == null) {
-                            LiveHeaderReconnect.LOG.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
+                            logger.severe("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
                             throw new ReconnectException("A Wait Step needs a Waittimeattribute: e.g.: <WAIT seconds=\"15\"/>");
 
                         }
-                        LiveHeaderReconnect.LOG.finer("Wait " + item.getNodeValue() + " seconds");
+                        logger.finer("Wait " + item.getNodeValue() + " seconds");
                         final int seconds = Formatter.filterInt(item.getNodeValue());
                         Thread.sleep(seconds * 1000);
                     }
@@ -343,7 +343,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         final NamedNodeMap attributes = toDo.getAttributes();
                         final Node item = attributes.getNamedItem("seconds");
                         if (item == null) {
-                            LiveHeaderReconnect.LOG.severe("A valid timeout must be set: e.g.: <TIMEOUT seconds=\"15\"/>");
+                            logger.severe("A valid timeout must be set: e.g.: <TIMEOUT seconds=\"15\"/>");
                             throw new ReconnectException("A valid timeout must be set: e.g.: <TIMEOUT seconds=\"15\"/>");
 
                         }
@@ -351,7 +351,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         if (seconds < 0) {
                             seconds = 0;
                         }
-                        LiveHeaderReconnect.LOG.finer("Timeout set to " + seconds + " seconds");
+                        logger.finer("Timeout set to " + seconds + " seconds");
                         if (br != null) {
                             br.setReadTimeout(seconds * 1000);
                             br.setConnectTimeout(seconds * 1000);
@@ -365,9 +365,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         } catch (final ReconnectException e) {
             throw e;
         } catch (final Exception e) {
-            JDLogger.exception(e);
-
-            LiveHeaderReconnect.LOG.severe(e.getCause() + " : " + e.getMessage());
+            logger.log(e);
             throw new ReconnectException(e);
         }
     }
@@ -434,11 +432,6 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             final StringBuilder post = new StringBuilder();
             String host = null;
             final String http = ishttps ? "https://" : "http://";
-            if (LiveHeaderReconnect.LOG.isLoggable(Level.FINEST)) {
-                br.forceDebug(true);
-            } else {
-                br.forceDebug(false);
-            }
             final HashMap<String, String> requestProperties = new HashMap<String, String>();
             if (israw) {
                 br.setHeaders(new RequestHeader());
@@ -449,11 +442,11 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 final StringBuilder req;
                 if (request.startsWith(params[0])) {
                     req = new StringBuilder();
-                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                    logger.finer("Variables: " + this.variables);
+                    logger.finer("Headerproperties: " + this.headerProperties);
                     final int tmpLength = tmp.length;
                     for (int i = 0; i <= tmpLength; i++) {
-                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                        logger.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
                         req.append(this.getModifiedVariable(params[i - 1]));
                         if (i < tmpLength) {
                             req.append(tmp[i]);
@@ -461,14 +454,14 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     }
                 } else {
                     req = new StringBuilder(tmp[0]);
-                    LiveHeaderReconnect.LOG.finer("Variables: " + this.variables);
-                    LiveHeaderReconnect.LOG.finer("Headerproperties: " + this.headerProperties);
+                    logger.finer("Variables: " + this.variables);
+                    logger.finer("Headerproperties: " + this.headerProperties);
                     final int tmpLength = tmp.length;
                     for (int i = 1; i <= tmpLength; i++) {
                         if (i > params.length) {
                             continue;
                         }
-                        LiveHeaderReconnect.LOG.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+                        logger.finer("Replace variable: " + this.getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
                         req.append(this.getModifiedVariable(params[i - 1]));
                         if (i < tmpLength) {
                             req.append(tmp[i]);
@@ -479,13 +472,13 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
             final String[] requestLines = splitLines(request);
             if (requestLines.length == 0) {
-                LiveHeaderReconnect.LOG.severe("Parse Fehler:" + request);
+                logger.severe("Parse Fehler:" + request);
                 return null;
             }
             // RequestType
             tmp = requestLines[0].split(" ");
             if (tmp.length < 2) {
-                LiveHeaderReconnect.LOG.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
+                logger.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
                 return null;
             }
             requestType = tmp[0];
@@ -507,7 +500,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 }
                 final String[] p = requestLines[li].split("\\:");
                 if (p.length < 2) {
-                    LiveHeaderReconnect.LOG.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
+                    logger.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
                     headersEnd = true;
                     li--;
                     continue;
@@ -520,7 +513,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
 
             if (host == null) {
-                LiveHeaderReconnect.LOG.severe("Host nicht gefunden: " + request);
+                logger.severe("Host nicht gefunden: " + request);
                 return null;
             }
             try {
@@ -533,49 +526,49 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                     final String poster = post.toString().trim();
                     br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
-                    LiveHeaderReconnect.LOG.finer("Convert AUTH->GET");
+                    logger.finer("Convert AUTH->GET");
                     br.getPage(http + host + path);
                 } else {
-                    LiveHeaderReconnect.LOG.severe("Unknown requesttyp: " + requestType);
+                    logger.severe("Unknown requesttyp: " + requestType);
                     return null;
                 }
                 return br;
             } catch (final IOException e) {
+                logger.log(e);
                 if (feedback != null) feedback.onRequestExceptionOccured(e, request);
-                LiveHeaderReconnect.LOG.severe("IO Error: " + e.getLocalizedMessage());
-                JDLogger.exception(e);
+                logger.severe("IO Error: " + e.getLocalizedMessage());
                 return null;
             }
         } catch (final Exception e) {
+            logger.log(e);
             if (e instanceof ReconnectFailedException) {
                 // feedbakc callbacks may throw these
                 throw (ReconnectException) e;
             }
-            JDLogger.exception(e);
             return null;
         }
 
     }
 
     private void getVariables(LHProcessFeedback feedback, final String patStr, final String[] keys, final Browser br) throws ReconnectFailedException {
-        LiveHeaderReconnect.LOG.info("GetVariables");
+        logger.info("GetVariables");
         if (br == null) { return; }
         // patStr="<title>(.*?)</title>";
-        LiveHeaderReconnect.LOG.finer(patStr);
+        logger.finer(patStr);
         final Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         // logger.info(requestInfo.getHtmlCode());
         final Matcher matcher = pattern.matcher(br + "");
-        LiveHeaderReconnect.LOG.info("Matches: " + matcher.groupCount());
+        logger.info("Matches: " + matcher.groupCount());
         if (matcher.find() && matcher.groupCount() > 0) {
             for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
                 this.variables.put(keys[i], matcher.group(i + 1));
 
-                LiveHeaderReconnect.LOG.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
+                logger.info("Set Variable: " + keys[i] + " = " + matcher.group(i + 1));
             }
             if (feedback != null) feedback.onVariablesUpdated(variables);
         } else {
-            LiveHeaderReconnect.LOG.severe("Regular Expression without matches: " + patStr);
+            logger.severe("Regular Expression without matches: " + patStr);
             if (feedback != null) feedback.onVariableParserFailed(patStr, br.getRequest());
         }
     }

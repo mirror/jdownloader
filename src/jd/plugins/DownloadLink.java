@@ -24,13 +24,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 
 import jd.config.Property;
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
@@ -40,11 +38,11 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
@@ -62,46 +60,43 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         TRUE;
     }
 
-    private static final String                          PROPERTY_MD5                    = "MD5";
-    private static final String                          PROPERTY_SHA1                   = "SHA1";
-    private static final String                          PROPERTY_PASS                   = "pass";
-    private static final String                          PROPERTY_FINALFILENAME          = "FINAL_FILENAME";
-    private static final String                          PROPERTY_FORCEDFILENAME         = "FORCED_FILENAME";
-    private static final String                          PROPERTY_COMMENT                = "COMMENT";
-    private static final String                          PROPERTY_PRIORITY               = "PRIORITY";
-    private static final String                          PROPERTY_FINISHTIME             = "FINISHTIME";
-    private static final String                          PROPERTY_ENABLED                = "ENABLED";
-    private static final String                          PROPERTY_PWLIST                 = "PWLIST";
-    private static final String                          PROPERTY_LINKDUPEID             = "LINKDUPEID";
-    private static final String                          PROPERTY_SPEEDLIMIT             = "SPEEDLIMIT";
-    private static final String                          PROPERTY_SUGGESTEDFINALFILENAME = "SUGGESTEDFINALFILENAME";
+    private static final String                          PROPERTY_MD5            = "MD5";
+    private static final String                          PROPERTY_SHA1           = "SHA1";
+    private static final String                          PROPERTY_PASS           = "pass";
+    private static final String                          PROPERTY_FINALFILENAME  = "FINAL_FILENAME";
+    private static final String                          PROPERTY_FORCEDFILENAME = "FORCED_FILENAME";
+    private static final String                          PROPERTY_COMMENT        = "COMMENT";
+    private static final String                          PROPERTY_PRIORITY       = "PRIORITY";
+    private static final String                          PROPERTY_FINISHTIME     = "FINISHTIME";
+    private static final String                          PROPERTY_ENABLED        = "ENABLED";
+    private static final String                          PROPERTY_PWLIST         = "PWLIST";
+    private static final String                          PROPERTY_LINKDUPEID     = "LINKDUPEID";
+    private static final String                          PROPERTY_SPEEDLIMIT     = "SPEEDLIMIT";
 
-    public static final int                              LINKTYPE_CONTAINER              = 1;
+    public static final int                              LINKTYPE_CONTAINER      = 1;
 
-    public static final int                              LINKTYPE_NORMAL                 = 0;
+    public static final int                              LINKTYPE_NORMAL         = 0;
 
-    private transient static Logger                      logger                          = JDLogger.getLogger();
+    private static final long                            serialVersionUID        = 1981079856214268373L;
 
-    private static final long                            serialVersionUID                = 1981079856214268373L;
+    public static final String                           UNKNOWN_FILE_NAME       = "unknownFileName.file";
+    private static final String                          PROPERTY_CHUNKS         = "CHUNKS";
 
-    public static final String                           UNKNOWN_FILE_NAME               = "unknownFileName.file";
-    private static final String                          PROPERTY_CHUNKS                 = "CHUNKS";
+    private transient AvailableStatus                    availableStatus         = AvailableStatus.UNCHECKED;
 
-    private transient AvailableStatus                    availableStatus                 = AvailableStatus.UNCHECKED;
-
-    private long[]                                       chunksProgress                  = null;
+    private long[]                                       chunksProgress          = null;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                         downloadCurrent                 = 0;
+    private long                                         downloadCurrent         = 0;
 
     private transient DownloadInterface                  downloadInstance;
 
     private transient SingleDownloadController           downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                         downloadMax                     = 0;
+    private long                                         downloadMax             = 0;
 
-    private String                                       browserurl                      = null;
+    private String                                       browserurl              = null;
 
     private FilePackage                                  filePackage;
 
@@ -113,7 +108,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private LinkStatus                                   linkStatus;
 
-    private int                                          linkType                        = LINKTYPE_NORMAL;
+    private int                                          linkType                = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
@@ -139,13 +134,13 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private transient PluginProgress                     pluginProgress;
 
-    private transient ImageIcon                          icon                            = null;
+    private transient ImageIcon                          icon                    = null;
 
-    private long                                         created                         = -1l;
+    private long                                         created                 = -1l;
 
-    private transient UniqueSessionID                    uniqueID                        = null;
+    private transient UniqueSessionID                    uniqueID                = null;
     transient private AbstractNodeNotifier<DownloadLink> propertyListener;
-    transient DomainInfo                                 domainInfo                      = null;
+    transient DomainInfo                                 domainInfo              = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -174,7 +169,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             try {
                 plugin.correctDownloadLink(this);
             } catch (Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
             }
         }
         if (name == null && urlDownload != null) {
@@ -544,19 +539,19 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                JDLogger.exception(e);
+                LogController.CL().log(e);
             }
             maxtries--;
             if (maxtries == 0) break;
         }
         if (finalfile && new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
-                logger.severe("Could not delete file " + this.getFileOutput());
+                LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
         if (partfile && new File(this.getFileOutput() + ".part").exists()) {
             if (!new File(this.getFileOutput() + ".part").delete()) {
-                logger.severe("Could not delete file " + this.getFileOutput());
+                LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
 
@@ -649,7 +644,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setLinkType(int linktypeContainer) {
         if (linktypeContainer == linkType) return;
         if (linkType == LINKTYPE_CONTAINER) {
-            logger.severe("You are not allowd to Change the Linktype of " + this);
+            System.out.println("You are not allowd to Change the Linktype of " + this);
             return;
         }
         linkType = linktypeContainer;
@@ -736,7 +731,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public void setFinalFileName(String newfinalFileName) {
         if (!StringUtils.isEmpty(newfinalFileName)) {
             if (new Regex(newfinalFileName, Pattern.compile("r..\\.htm.?$", Pattern.CASE_INSENSITIVE)).matches()) {
-                logger.info("Use Workaround for stupid >>rar.html<< uploaders!");
+                System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
                 newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - new Regex(newfinalFileName, Pattern.compile("r..(\\.htm.?)$", Pattern.CASE_INSENSITIVE)).getMatch(0).length());
             }
             this.setProperty(PROPERTY_FINALFILENAME, newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName));
@@ -848,7 +843,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 try {
                     icon = CrossSystem.getMime().getFileIcon(ext, 16, 16);
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    LogController.CL().log(e);
                 }
             }
             if (icon == null) icon = NewTheme.I().getIcon("url", 16);

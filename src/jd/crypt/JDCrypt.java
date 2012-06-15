@@ -16,7 +16,6 @@
 
 package jd.crypt;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 
@@ -24,13 +23,13 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import jd.controlling.JDLogger;
+import org.jdownloader.logging.LogController;
+
 import sun.security.pkcs.PKCS7;
 
 /**
- * JDCrypt class provides a few easy to use functions to encrypt or decrypt
- * data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte
- * arrays. ALog AES CBC Mode is used.
+ * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte arrays. ALog
+ * AES CBC Mode is used.
  * 
  * @author unkown
  * 
@@ -98,14 +97,13 @@ public final class JDCrypt {
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
             return cipher.doFinal(string.getBytes());
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
         return null;
     }
 
     /**
-     * Decrypt data which has been encrypted width
-     * {@link JDCrypt#encrypt(String, byte[], byte[])}
+     * Decrypt data which has been encrypted width {@link JDCrypt#encrypt(String, byte[], byte[])}
      * 
      * @param b
      *            data to decrypt
@@ -130,16 +128,14 @@ public final class JDCrypt {
                 cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
                 return new String(cipher.doFinal(b));
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
+                LogController.CL().log(e);
             }
         }
         return null;
     }
 
     /**
-     * Decrypts data which has been encrypted with
-     * {@link JDCrypt#encrypt(String, byte[])}
+     * Decrypts data which has been encrypted with {@link JDCrypt#encrypt(String, byte[])}
      * 
      * @param b
      *            data to decrypt
@@ -181,15 +177,14 @@ public final class JDCrypt {
             } finally {
                 try {
                     in.close();
-                } catch (IOException e) {
-                    // JDLogger.exception(e);
+                } catch (Throwable e) {
                 }
             }
         }
         try {
             return MessageDigest.getInstance("MD5").digest((new PKCS7(buffer)).getCertificates()[0].getSignature());
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
         return new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
     }

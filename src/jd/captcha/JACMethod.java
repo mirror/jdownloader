@@ -20,35 +20,32 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.logging.Logger;
 
-import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class JACMethod implements Comparable<JACMethod> {
 
-    private static Logger               logger  = JDLogger.getLogger();
-
     private static ArrayList<JACMethod> methods = null;
 
     public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
             if (service.equalsIgnoreCase(method.getServiceName())) {
-                logger.info("Found JAC method for the service " + service + " in directory " + method.getFileName());
+                LogController.CL().info("Found JAC method for the service " + service + " in directory " + method.getFileName());
                 return method;
             }
         }
-        logger.info("There is no JAC method for the service " + service + "!");
+        LogController.CL().info("There is no JAC method for the service " + service + "!");
         return null;
     }
 
-    public static ArrayList<JACMethod> getMethods() {
+    public static synchronized ArrayList<JACMethod> getMethods() {
         if (methods != null) return methods;
         ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
@@ -66,7 +63,7 @@ public class JACMethod implements Comparable<JACMethod> {
         File dir = JDUtilities.getResourceFile(JDUtilities.getJACMethodsDirectory());
 
         if (dir == null || !dir.exists()) {
-            logger.severe("Konnte Methodenordner nicht finden: " + dir);
+            LogController.CL().severe("Konnte Methodenordner nicht finden: " + dir);
             return new File[0];
         }
 

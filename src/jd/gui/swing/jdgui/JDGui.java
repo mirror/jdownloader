@@ -49,7 +49,6 @@ import javax.swing.WindowConstants;
 
 import jd.Launcher;
 import jd.config.ConfigContainer;
-import jd.controlling.JDLogger;
 import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
@@ -85,6 +84,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -156,10 +156,10 @@ public class JDGui extends SwingGui {
                         JDGui.this.mainFrame.setSize(new Dimension(800, 600));
                         final Rectangle abounds = JDGui.this.mainFrame.getBounds();
                         JDGui.this.mainFrame.setLocation((dim.width - abounds.width) / 2, (dim.height - abounds.height) / 2);
-                        JDLogger.getLogger().info("Center MainFrame");
+                        LogController.GL.info("Center MainFrame");
                         return true;
                     } catch (final Exception ee) {
-                        JDLogger.exception(ee);
+                        LogController.GL.log(ee);
                     }
                 }
                 return false;

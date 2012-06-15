@@ -25,11 +25,9 @@ import javax.swing.JTextPane;
 import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
 
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.nutils.encoding.Encoding;
-import jd.utils.Upload;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.os.CrossSystem;
@@ -78,7 +76,7 @@ public class LogPane extends SwitchPanel implements ActionListener {
             String question = UserIO.getInstance().requestInputDialog(UserIO.NO_COUNTDOWN, _GUI._.userio_input_title(), _GUI._.gui_logger_askQuestion(), null, null, null, null);
             if (question == null) question = "";
             append("\r\n\r\n-------------------------------------------------------------\r\n\r\n");
-            String url = Upload.toJDownloader(content, question);
+            String url = null;
             if (url != null) {
                 CrossSystem.openURLOrShowMessage(url);
                 append(_GUI._.gui_logupload_message() + "\r\n" + url);
@@ -95,7 +93,7 @@ public class LogPane extends SwitchPanel implements ActionListener {
     @Override
     public void onShow() {
         synchronized (LOCK) {
-            logField.setText(JDLogger.getLog());
+
         }
     }
 

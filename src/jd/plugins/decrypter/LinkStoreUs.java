@@ -21,12 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.http.Browser;
@@ -212,7 +212,7 @@ public class LinkStoreUs extends PluginForDecrypt {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
         if (result == null) {

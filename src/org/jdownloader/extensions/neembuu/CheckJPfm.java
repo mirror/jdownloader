@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 
 import jpfm.FormatterEvent;
 import jpfm.JPfm;
-import jpfm.MountException;
 import jpfm.MountListener;
 import jpfm.fs.SimpleReadOnlyFileSystem;
 import jpfm.mount.Mount;

@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -36,8 +35,10 @@ import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
 import jd.config.Property;
-import jd.controlling.JDLogger;
 import jd.nutils.Colors;
+
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu bearbeiten
@@ -261,8 +262,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür
-     * deutlich weniger unter Pixelfehlern
+     * Dreht das PixelGrid um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür deutlich weniger unter
+     * Pixelfehlern
      * 
      * @param angle
      * @return new letter
@@ -476,26 +477,23 @@ public class PixelGrid extends Property {
     /**
      * Internes grid
      */
-    public int[][]      grid;
+    public int[][]            grid;
 
-    private int[]       location = new int[] { 0, 0 };
-
-    /**
-     * Logger
-     */
-    public Logger       logger   = Utilities.getLogger();
+    private int[]             location = new int[] { 0, 0 };
 
     /**
      * ParameterDump
      */
-    public JAntiCaptcha owner;
+    public JAntiCaptcha       owner;
 
     /**
      * Pixel Array
      */
-    public int[]        pixel;
+    public int[]              pixel;
 
-    protected int[][]   tmpGrid;
+    protected int[][]         tmpGrid;
+
+    protected final LogSource logger;
 
     /**
      * Konstruktor
@@ -507,7 +505,7 @@ public class PixelGrid extends Property {
      */
     public PixelGrid(int width, int height) {
         grid = new int[width][height];
-
+        logger = LogController.CL();
     }
 
     /**
@@ -577,10 +575,7 @@ public class PixelGrid extends Property {
         }
 
         if (leftLines >= getWidth() || getWidth() - rightLines > getWidth()) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("cleaning failed. nothing left1");
-            }
-
+            logger.severe("cleaning failed. nothing left1");
             grid = new int[0][0];
             return false;
 
@@ -614,9 +609,7 @@ public class PixelGrid extends Property {
         }
 
         if (getWidth() - leftLines - rightLines < 0 || getHeight() - topLines - bottomLines < 0) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("cleaning failed. nothing left");
-            }
+            logger.severe("cleaning failed. nothing left");
             grid = new int[0][0];
             return false;
         }
@@ -857,8 +850,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int
-     * width,int height) der Punkt slebet nicht mitberechnet
+     * Gibt den Durschnittlichen Pixelwert im angegebenen raum zurück. Allerdings wird hier im Vergleich zu getAverage(int px,int py,int width,int height) der
+     * Punkt slebet nicht mitberechnet
      * 
      * @param px
      *            Position x
@@ -1102,9 +1095,7 @@ public class PixelGrid extends Property {
 
     public BufferedImage getFullImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Dimensionen falsch: " + getDim());
-            }
+            logger.severe("Dimensionen falsch: " + getDim());
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -1156,9 +1147,9 @@ public class PixelGrid extends Property {
      */
     public BufferedImage getImage() {
         if (getWidth() <= 0 || getHeight() <= 0) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Dimensionen falsch: " + getDim());
-            }
+
+            logger.severe("Dimensionen falsch: " + getDim());
+
             return null;
         }
         BufferedImage image = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
@@ -1228,8 +1219,8 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese rekusrive Funktion kann bei zu großen Objekten zu einem
-     * Stackoverflow führen. Man sollte sie mal umschreiben!
+     * Erstellt das Objekt, ausgehend von einem Pixel. rekursive Funktion! Diese rekusrive Funktion kann bei zu großen Objekten zu einem Stackoverflow führen.
+     * Man sollte sie mal umschreiben!
      * 
      * @param x
      * @param y
@@ -1267,9 +1258,8 @@ public class PixelGrid extends Property {
                 }
             }
         } catch (Exception e) {
-            JDLogger.exception(e);
+            logger.log(e);
         }
-
         return;
 
     }
@@ -1328,9 +1318,8 @@ public class PixelGrid extends Property {
                                 break;
                             }
                         }
-                        if (Utilities.isLoggerActive()) {
-                            logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
-                        }
+
+                        logger.finer("Verfolge weiter Letztes Object: area:" + lastObject.getArea() + " dist: " + dist);
 
                     } else {
                         object = new PixelObject(this);
@@ -1548,9 +1537,9 @@ public class PixelGrid extends Property {
         }
 
         Double faktor = (double) (max - min) / (double) getMaxPixelValue();
-        if (Utilities.isLoggerActive()) {
-            logger.fine(min + " <> " + max + " : " + faktor);
-        }
+
+        logger.fine(min + " <> " + max + " : " + faktor);
+
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
                 akt = getPixelValue(x, y);
@@ -1582,9 +1571,7 @@ public class PixelGrid extends Property {
      * Gibt ein ACSI bild des Captchas aus
      */
     public void printGrid() {
-        if (Utilities.isLoggerActive()) {
-            logger.info("\r\n" + getString());
-        }
+        // logger.info("\r\n" + getString());
     }
 
     /**
@@ -1858,7 +1845,7 @@ public class PixelGrid extends Property {
             fos = new FileOutputStream(file);
             ImageIO.write(bimg, "jpg", fos);
         } catch (Exception e) {
-            JDLogger.exception(e);
+            logger.log(e);
         } finally {
             try {
                 fos.close();
@@ -1926,8 +1913,7 @@ public class PixelGrid extends Property {
     }
 
     /**
-     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid
-     * beinhaltet roh daten
+     * Setzt den pixel value bei x,y. Umrechnungen werden dabei gemacht. deshalb kann nicht auf grid direkt zugegriffen werden. Grid beinhaltet roh daten
      * 
      * @param x
      * @param y

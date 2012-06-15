@@ -21,9 +21,9 @@ import java.net.Socket;
 import java.util.Vector;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.logging.LogController;
 
 public class ReconnectRecorder {
 
@@ -51,7 +51,7 @@ public class ReconnectRecorder {
             new JDRRServer(Server_Socket_HTTP, serverip, port, false, rawmode).start();
             new JDRRServer(Server_Socket_HTTPS, serverip, 443, true, rawmode).start();
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
     }
 
@@ -63,13 +63,15 @@ public class ReconnectRecorder {
         }
         try {
             Server_Socket_HTTP.close();
-        } catch (Exception e) {
-            JDLogger.exception(e);
+        } catch (Throwable e) {
+        } finally {
+            Server_Socket_HTTP = null;
         }
         try {
             Server_Socket_HTTPS.close();
-        } catch (Exception e) {
-            JDLogger.exception(e);
+        } catch (Throwable e) {
+        } finally {
+            Server_Socket_HTTPS = null;
         }
     }
 
@@ -90,22 +92,24 @@ public class ReconnectRecorder {
         }
 
         public void run() {
-            while (running) {
-                Socket Client_Socket = null;
-                try {
-                    Client_Socket = Server_Socket.accept();
-                } catch (Exception e) {
-                    break;
-                }
-                if (running) {
-                    (new Proxy(Client_Socket, steps, serverip, port, ishttps, israw)).start();
-                }
-            }
-            running = false;
             try {
-                Server_Socket.close();
-            } catch (Exception e) {
-                JDLogger.exception(e);
+                while (running) {
+                    Socket Client_Socket = null;
+                    try {
+                        Client_Socket = Server_Socket.accept();
+                    } catch (Exception e) {
+                        break;
+                    }
+                    if (running) {
+                        (new Proxy(Client_Socket, steps, serverip, port, ishttps, israw)).start();
+                    }
+                }
+            } finally {
+                running = false;
+                try {
+                    Server_Socket.close();
+                } catch (Throwable e) {
+                }
             }
         }
     }

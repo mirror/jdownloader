@@ -1,7 +1,6 @@
 package org.jdownloader.api.jd;
 
 import jd.Launcher;
-import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
 public class JDAPIImpl implements JDAPI {
@@ -12,10 +11,6 @@ public class JDAPIImpl implements JDAPI {
 
     public long version() {
         return JDUtilities.getRevisionNumber();
-    }
-
-    public String log() {
-        return JDLogger.getLog();
     }
 
 }

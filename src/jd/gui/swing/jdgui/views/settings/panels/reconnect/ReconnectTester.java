@@ -10,7 +10,6 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ipcheck.IP;
@@ -115,7 +114,7 @@ public class ReconnectTester extends MigPanel implements SettingsComponent, Acti
     }
 
     private void testReconnect() {
-        JDLogger.addHeader("Reconnect Testing");
+        Log.L.info("Reconnect Testing");
 
         btnTest.setEnabled(false);
         Log.L.info("Start Reconnect");

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.logging.Level;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -12,7 +13,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -151,7 +151,7 @@ public class DropboxCom extends PluginForHost {
             } catch (PluginException e) {
                 throw e;
             } catch (Exception e) {
-                JDLogger.exception(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
@@ -244,7 +244,7 @@ public class DropboxCom extends PluginForHost {
             signature = new String(Base64.encodeToString(digest, false)).trim();
 
         } catch (Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         url += "&oauth_signature=" + Encoding.urlEncode(signature);

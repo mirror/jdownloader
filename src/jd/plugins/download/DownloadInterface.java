@@ -31,14 +31,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jd.controlling.GarbageController;
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -48,14 +45,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -90,8 +86,6 @@ abstract public class DownloadInterface {
         private long                            startByte;
         private long                            bytes2Do             = -1;
 
-        private DownloadInterface               dl;
-
         private boolean                         connectionclosed     = false;
 
         private boolean                         addedtoStartedChunks = false;
@@ -113,7 +107,6 @@ abstract public class DownloadInterface {
             this.endByte = endByte;
             this.connection = connection;
             this.clonedconnection = false;
-            this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
         }
 
@@ -253,7 +246,7 @@ abstract public class DownloadInterface {
             } catch (Exception e) {
                 addException(e);
                 error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
-                JDLogger.exception(e);
+                LogSource.exception(logger, e);
             }
             return null;
         }
@@ -379,25 +372,28 @@ abstract public class DownloadInterface {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_incomplete());
                 }
             } catch (FileNotFoundException e) {
+                LogSource.exception(logger, e);
                 logger.severe("file not found. " + e.getLocalizedMessage());
                 error(LinkStatus.ERROR_FILE_NOT_FOUND, null);
             } catch (SecurityException e) {
+                LogSource.exception(logger, e);
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
                 error(LinkStatus.ERROR_LOCAL_IO, _JDT._.download_error_message_iopermissions());
             } catch (UnknownHostException e) {
+                LogSource.exception(logger, e);
                 linkStatus.setValue(10 * 60000l);
                 error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable());
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().contains("reset")) {
-                    JDLogger.getLogger().info("Connection reset: network problems!");
+                    logger.info("Connection reset: network problems!");
                     linkStatus.setValue(1000l * 60 * 5);
                     error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_networkreset());
                 } else if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
-                    JDLogger.getLogger().info("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
+                    LogSource.exception(logger, e);
+                    logger.severe("Read timeout: network problems! (too many connections?, firewall/antivirus?)");
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, _JDT._.download_error_message_networkreset());
-                    JDLogger.exception(e);
                 } else {
-                    JDLogger.exception(e);
+                    LogSource.exception(logger, e);
                     if (e.getMessage() != null && e.getMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable());
@@ -407,7 +403,7 @@ abstract public class DownloadInterface {
                     }
                 }
             } catch (Exception e) {
-                JDLogger.exception(e);
+                LogSource.exception(logger, e);
                 error(LinkStatus.ERROR_RETRY, Exceptions.getStackTrace(e));
                 addException(e);
             } finally {
@@ -516,76 +512,10 @@ abstract public class DownloadInterface {
                 try {
                     addToChunksInProgress(-1);
                 } catch (Throwable e) {
-                    JDLogger.exception(e);
+                    LogSource.exception(logger, e);
                 }
                 onChunkFinished();
             }
-        }
-
-        /**
-         * returns Long[] with Start/Stop/Size if available
-         * 
-         * @param connection
-         * @return
-         */
-        private Long[] parseContentRange(URLConnectionAdapter connection, long startByte, long endByte) {
-            String contentRange = connection.getHeaderField("Content-Range");
-            String[] range = null;
-            if (contentRange != null) {
-                if ((range = new Regex(contentRange, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0)) != null) {
-                    /* RFC-2616 */
-                    /* START-STOP/SIZE */
-                    /* Content-Range=[133333332-199999999/200000000] */
-                    long gotSB = Formatter.filterLong(range[0]);
-                    long gotEB = Formatter.filterLong(range[1]);
-                    long gotS = Formatter.filterLong(range[2]);
-                    if (gotSB != startByte) {
-                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + 0);
-                    }
-                    if (endByte <= 0) {
-                        endByte = gotS - 1;
-                    }
-                    if (gotEB == endByte) {
-                        logger.finer("ServerType: RETURN Rangeend-1");
-                    } else if (gotEB == endByte + 1) {
-                        logger.finer("ServerType: RETURN exact rangeend");
-                    } else if (gotEB < endByte) {
-                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                    } else if (gotEB > endByte + 1) {
-                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
-                    }
-                    endByte = Math.min(endByte, gotEB);
-                    return new Long[] { gotSB, endByte, gotS };
-                } else if ((range = new Regex(contentRange, ".*?(\\d+).*?-/.*?(\\d+)").getRow(0)) != null) {
-                    /* NON RFC-2616! STOP is missing */
-                    /*
-                     * this happend for some stupid servers, seems to happen when request is bytes=9500- (x till end)
-                     */
-                    /* START-/SIZE */
-                    /* content-range: bytes 1020054729-/1073741824 */
-                    long gotSB = Formatter.filterLong(range[0]);
-                    long gotS = Formatter.filterLong(range[1]);
-                    if (gotSB != startByte) {
-                        logger.severe("Range Conflict " + range[0] + "->wished start: " + 0);
-                    }
-                    if (endByte <= 0) {
-                        endByte = gotS - 1;
-                    }
-                    long guessEB = gotSB + connection.getLongContentLength();
-                    if (guessEB == endByte) {
-                        logger.finer("ServerType: RETURN Rangeend-1");
-                    } else if (guessEB == endByte + 1) {
-                        logger.finer("ServerType: RETURN exact rangeend");
-                    } else if (guessEB < endByte) {
-                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
-                    } else if (guessEB > endByte + 1) {
-                        logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + guessEB);
-                    }
-                    endByte = Math.min(endByte, guessEB);
-                    return new Long[] { gotSB, endByte, gotS };
-                }
-            }
-            return null;
         }
 
         public void run0() {
@@ -627,7 +557,7 @@ abstract public class DownloadInterface {
                         return;
                     }
                 }
-                Long[] ContentRange = parseContentRange(connection, startByte, endByte);
+                long[] ContentRange = connection.getRange();
                 if (startByte > 0) {
                     /* startByte >0, we should have a Content-Range in response! */
                     if (ContentRange != null && ContentRange.length == 3) {
@@ -1171,7 +1101,6 @@ abstract public class DownloadInterface {
                 notify();
             }
         }
-        GarbageController.requestGC();
     }
 
     /**
@@ -1332,7 +1261,8 @@ abstract public class DownloadInterface {
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
             } catch (final Throwable e) {
-                Log.L.log(Level.SEVERE, "Exception in neembuu watch as you download", e);
+                logger.severe("Exception in neembuu watch as you download");
+                LogSource.exception(logger, e);
             }
             logger.finer("Start Download");
             if (!connected) connect();
@@ -1375,7 +1305,7 @@ abstract public class DownloadInterface {
             if (e instanceof FileNotFoundException) {
                 this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.download_error_message_localio(e.getMessage()));
             } else {
-                JDLogger.exception(e);
+                LogSource.exception(logger, e);
             }
             handleErrors();
             return false;
@@ -1418,7 +1348,6 @@ abstract public class DownloadInterface {
                     if (ch.getInputStream() != null) allClosed = false;
                     ch.closeConnections();
                 } catch (final Throwable e) {
-                    e.printStackTrace();
                 }
                 ch.interrupt();
             }
@@ -1452,7 +1381,7 @@ abstract public class DownloadInterface {
             /* set the *real loaded* bytes here */
             downloadLink.setDownloadCurrent(totalLinkBytesLoaded);
         } catch (Throwable e) {
-            JDLogger.exception(e);
+            LogSource.exception(logger, e);
         }
     }
 
@@ -1497,7 +1426,7 @@ abstract public class DownloadInterface {
     /** signal that we stopped download external */
     public synchronized void stopDownload() {
         if (externalStop) return;
-        logger.severe("externalStop recieved");
+        logger.info("externalStop recieved");
         externalStop = true;
         terminate();
     }

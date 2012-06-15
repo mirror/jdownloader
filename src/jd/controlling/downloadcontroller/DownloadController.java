@@ -28,8 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 
+import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.packagecontroller.PackageController;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -52,7 +52,6 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
@@ -380,19 +379,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             /* load from new json zip */
             lpackages = load(getDownloadListFile());
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         try {
             /* try fallback to load tmp file */
             if (lpackages == null) lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".tmp"));
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         try {
             /* fallback to old hsqldb */
             if (lpackages == null) lpackages = loadDownloadLinks();
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         if (lpackages == null) lpackages = new LinkedList<FilePackage>();
         postInit(lpackages);
@@ -485,7 +484,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
                             boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
                             boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                            Log.L.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                            logger.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
                         }
                         check = null;
                     }
@@ -564,14 +563,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                 }
                             }
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            logger.log(e);
                         }
                     }
                     map = null;
                     positions = null;
                     ret = new LinkedList<FilePackage>(ret2);
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    logger.log(e);
                 } finally {
                     try {
                         zip.close();
@@ -590,7 +589,12 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @throws Exception
      */
     private LinkedList<FilePackage> loadDownloadLinks() throws Exception {
-        final Object obj = JDUtilities.getDatabaseConnector().getLinks();
+        Object obj = null;
+        try {
+            obj = JDUtilities.getDatabaseConnector().getLinks();
+        } catch (final NoOldJDDataBaseFoundException e) {
+            return null;
+        }
         if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>((ArrayList<FilePackage>) obj); }
         throw new Exception("Linklist incompatible");
     }
@@ -609,7 +613,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             while (it.hasNext()) {
                 localLink = it.next();
                 if (CleanAfterDownloadAction.CLEANUP_ONCE_AT_STARTUP.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction()) && localLink.getLinkStatus().isFinished()) {
-                    Log.L.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
+                    logger.info("Remove " + localLink.getName() + " because Finished and CleanupOnStartup!");
                     removeList.add(localLink);
                     continue;
                 }
@@ -626,7 +630,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         pluginForHost = hPlugin.getPrototype();
                     }
                 } catch (final Throwable e) {
-                    JDLogger.exception(e);
+                    logger.log(e);
                 }
                 if (pluginForHost == null) {
                     try {
@@ -637,16 +641,16 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                             }
                         }
                         if (pluginForHost != null) {
-                            Log.L.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
+                            logger.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
                         }
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     }
                 }
                 if (pluginForHost != null) {
                     localLink.setDefaultPlugin(pluginForHost);
                 } else {
-                    Log.L.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
+                    logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                 }
             }
             if (removeList.size() > 0) {
@@ -707,7 +711,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                         zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     }
                     /* close ZipIOWriter, so we can rename tmp file now */
                     try {
@@ -718,18 +722,18 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     /* try to delete destination file if it already exists */
                     if (file.exists()) {
                         if (!file.delete()) {
-                            Log.exception(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                            logger.log(new WTFException("Could not delete: " + file.getAbsolutePath()));
                             return false;
                         }
                     }
                     /* rename tmpfile to destination file */
                     if (!tmpfile.renameTo(file)) {
-                        Log.exception(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                        logger.log(new WTFException("Could not rename file: " + tmpfile + " to " + file));
                         return false;
                     }
                     return true;
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    logger.log(e);
                 } finally {
                     try {
                         zip.close();

@@ -21,15 +21,12 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.io.File;
-import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.swing.EDTHelper;
 
 /**
@@ -42,16 +39,6 @@ public final class Utilities {
      * Don't let anyone instantiate this class.
      */
     private Utilities() {
-    }
-
-    private static final Logger LOG = JDLogger.getLogger();
-
-    public static Logger getLogger() {
-        return LOG;
-    }
-
-    public static boolean isLoggerActive() {
-        return Application.isJared(Utilities.class);
     }
 
     public static boolean checkJumper(final int x, final int from, final int to) {
@@ -111,8 +98,7 @@ public final class Utilities {
     }
 
     /**
-     * Lädt file als Bildatei und wartet bis file geladen wurde. gibt file als
-     * Image zurück
+     * Lädt file als Bildatei und wartet bis file geladen wurde. gibt file als Image zurück
      * 
      * @param file
      * @return Neues Bild
@@ -159,8 +145,7 @@ public final class Utilities {
     }
 
     /**
-     * Dreht die Koordinaten x und y um den Mittelpunkt nullX und nullY umd en
-     * Winkel winkel
+     * Dreht die Koordinaten x und y um den Mittelpunkt nullX und nullY umd en Winkel winkel
      * 
      * @param x
      * @param y

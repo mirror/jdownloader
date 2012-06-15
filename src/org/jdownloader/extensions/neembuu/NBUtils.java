@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
 
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
@@ -17,6 +16,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.jdownloader.logging.LogSource;
 
 /**
  * 
@@ -28,8 +28,7 @@ public final class NBUtils {
         // String end = (endByte > 0 ? endByte + 1 : "") + "";
 
         /*
-         * if (start == 0) { di.logger.finer("Takeover 0 Connection"); return
-         * connection; }
+         * if (start == 0) { di.logger.finer("Takeover 0 Connection"); return connection; }
          */
         long oldConnectionStart = 0; // assumption :-x
         if (connection.getRange() != null) oldConnectionStart = connection.getRange()[0];
@@ -93,8 +92,8 @@ public final class NBUtils {
             }
             return con;
         } catch (Exception e) {
+            LogSource.exception(di.logger, e);
             di.logger.log(Level.SEVERE, "ERROR_RETRY", e);
-            JDLogger.exception(e);
         }
         return null;
     }

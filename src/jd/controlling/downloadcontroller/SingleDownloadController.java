@@ -139,6 +139,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         downloadLogger = LogController.getInstance().getLogger(dlink.getDefaultPlugin());
         downloadLogger.setAllowTimeoutFlush(false);
         downloadLogger.info("Start Download of " + downloadLink.getDownloadURL());
+        super.setLogger(downloadLogger);
     }
 
     @Override
@@ -637,7 +638,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     public void run() {
         try {
             stateMachine.setStatus(RUNNING_STATE);
-            super.setLogger(downloadLogger);
             linkStatus.setStatusText(null);
             linkStatus.setErrorMessage(null);
             linkStatus.resetWaitTime();

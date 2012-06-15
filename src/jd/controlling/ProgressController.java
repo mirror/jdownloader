@@ -16,6 +16,7 @@
 
 package jd.controlling;
 
+@Deprecated
 public class ProgressController {
 
     public ProgressController() {

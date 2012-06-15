@@ -20,9 +20,9 @@ import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
+import org.jdownloader.logging.LogController;
 
 public class ClipboardMonitoring {
 
@@ -49,7 +49,7 @@ public class ClipboardMonitoring {
                         }
                         if (Thread.currentThread() != monitoringThread) return;
                     } catch (InterruptedException e) {
-                        Log.L.finer("Interrupted ClipBoard Monitoring Thread");
+                        LogController.CL().finer("Interrupted ClipBoard Monitoring Thread");
                         return;
                     }
                     if (skipChangeDetection) {
@@ -218,12 +218,12 @@ public class ClipboardMonitoring {
         try {
             urlFlavor = new DataFlavor("application/x-java-url; class=java.net.URL");
         } catch (final Throwable e) {
-            Log.L.info("urlFlavor not supported");
+            LogController.CL().info("urlFlavor not supported");
         }
         try {
             uriListFlavor = new DataFlavor("text/uri-list; class=java.lang.String");
         } catch (final Throwable e) {
-            Log.L.info("uriListFlavor not supported");
+            LogController.CL().info("uriListFlavor not supported");
         }
     }
 

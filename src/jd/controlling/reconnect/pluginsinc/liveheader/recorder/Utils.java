@@ -26,11 +26,11 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.nutils.encoding.Encoding;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
+import org.jdownloader.logging.LogController;
 
 public final class Utils {
     /**
@@ -66,7 +66,7 @@ public final class Utils {
     }
 
     public static ByteBuffer readheader(final InputStream in) {
-        ByteBuffer bigbuffer = ByteBuffer.allocateDirect(4096);
+        ByteBuffer bigbuffer = ByteBuffer.wrap(new byte[4096]);
         final byte[] minibuffer = new byte[1];
         int position;
         int c;
@@ -74,7 +74,7 @@ public final class Utils {
         try {
             while ((c = in.read(minibuffer)) >= 0) {
                 if (bigbuffer.remaining() < 1) {
-                    final ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
+                    final ByteBuffer newbuffer = ByteBuffer.wrap(new byte[bigbuffer.capacity() * 2]);
                     bigbuffer.flip();
                     newbuffer.put(bigbuffer);
                     bigbuffer = newbuffer;
@@ -90,7 +90,7 @@ public final class Utils {
                 }
             }
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
         bigbuffer.flip();
         return bigbuffer;

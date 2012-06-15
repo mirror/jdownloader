@@ -9,6 +9,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.dlc.DLCFactory;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.logging.LogController;
 
 public class CreateDLCAction extends AppAction {
 
@@ -24,7 +25,9 @@ public class CreateDLCAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        new DLCFactory().createDLC(links.getSelectedChildren());
+        DLCFactory plugin = new DLCFactory();
+        plugin.setLogger(LogController.CL());
+        plugin.createDLC(links.getSelectedChildren());
 
     }
 

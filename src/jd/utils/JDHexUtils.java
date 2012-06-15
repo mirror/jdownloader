@@ -20,7 +20,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
+import org.jdownloader.logging.LogController;
 
 public final class JDHexUtils {
 
@@ -30,10 +30,10 @@ public final class JDHexUtils {
     private JDHexUtils() {
     }
 
-    static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
-    public static final String REGEX_FIND_ALL_HEX = "[[a-fA-F0-9]{2}]*?";
-    public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
-    public static final String REGEX_HTTP_NEWLINE = JDHexUtils.getHexString("\r") + "{1}" + JDHexUtils.getHexString("\n") + "{1}";
+    static final byte[]         HEX_CHAR_TABLE         = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
+    public static final String  REGEX_FIND_ALL_HEX     = "[[a-fA-F0-9]{2}]*?";
+    public static final String  REGEX_MATCH_ALL_HEX    = "([[a-fA-F0-9]{2}]*?)";
+    public static final String  REGEX_HTTP_NEWLINE     = JDHexUtils.getHexString("\r") + "{1}" + JDHexUtils.getHexString("\n") + "{1}";
     public static final Pattern PATTERN_JAVASCRIPT_HEX = Pattern.compile("\\\\x([a-f0-9]{2})", Pattern.CASE_INSENSITIVE);
 
     public static String toString(final String hexString) {
@@ -101,7 +101,7 @@ public final class JDHexUtils {
         try {
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return null;
         }
     }
@@ -121,7 +121,7 @@ public final class JDHexUtils {
 
             return new String(hex, "ASCII");
         } catch (UnsupportedEncodingException e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return null;
         }
     }

@@ -13,7 +13,6 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import jd.controlling.ClipboardMonitoring;
-import jd.controlling.JDLogger;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
@@ -27,6 +26,7 @@ import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListener {
 
@@ -202,14 +202,13 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
             return ret;
         } catch (final Throwable e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return null;
         }
     }
 
     /**
-     * update okayButton enabled status, check if host/port(valid number) or
-     * host is given
+     * update okayButton enabled status, check if host/port(valid number) or host is given
      */
     public void caretUpdate(CaretEvent e) {
         boolean enable = false;

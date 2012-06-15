@@ -19,12 +19,12 @@ package jd.config;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import jd.controlling.JDLogger;
 import jd.utils.JDUtilities;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.JsonKeyValueStorage;
 import org.appwork.storage.Storage;
+import org.jdownloader.logging.LogController;
 
 public class SubConfiguration extends Property implements Serializable {
 
@@ -44,25 +44,28 @@ public class SubConfiguration extends Property implements Serializable {
         json = JSonStorage.getStorage("subconf_" + name);
         this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
         if (json.size() == 0) {
-            final Object props = JDUtilities.getDatabaseConnector().getData(name);
-            if (props != null && props instanceof HashMap) {
-                HashMap<String, Object> tmp = (HashMap<String, Object>) props;
-                /* remove obsolet variables from old stable (09581) */
-                tmp.remove("USE_PLUGIN");
-                tmp.remove("AGB_CHECKED");
-                /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
-                ((JsonKeyValueStorage) json).getInternalStorageMap().put("addWorkaround", true);
-                this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
-                ((JsonKeyValueStorage) json).getInternalStorageMap().remove("addWorkaround");
-                getProperties().putAll(tmp);
-            } else {
-                if (props != null) {
-                    valid = false;
-                    JDLogger.getLogger().severe("Invalid Config Entry for " + name);
+            try {
+                final Object props = JDUtilities.getDatabaseConnector().getData(name);
+                if (props != null && props instanceof HashMap) {
+                    HashMap<String, Object> tmp = (HashMap<String, Object>) props;
+                    /* remove obsolet variables from old stable (09581) */
+                    tmp.remove("USE_PLUGIN");
+                    tmp.remove("AGB_CHECKED");
+                    /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
+                    ((JsonKeyValueStorage) json).getInternalStorageMap().put("addWorkaround", true);
+                    this.setProperties(((JsonKeyValueStorage) json).getInternalStorageMap());
+                    ((JsonKeyValueStorage) json).getInternalStorageMap().remove("addWorkaround");
+                    getProperties().putAll(tmp);
+                } else {
+                    if (props != null) {
+                        valid = false;
+                        LogController.CL().severe("Invalid Config Entry for " + name);
+                    }
                 }
+                /* this avoids fresh conversions on next startup as we load the JSonStorage */
+                json.put("saveWorkaround", System.currentTimeMillis());
+            } catch (final NoOldJDDataBaseFoundException e) {
             }
-            /* this avoids fresh conversions on next startup as we load the JSonStorage */
-            json.put("saveWorkaround", System.currentTimeMillis());
         }
     }
 
@@ -97,7 +100,11 @@ public class SubConfiguration extends Property implements Serializable {
         if (SUB_CONFIGS.containsKey(name)) {
             return true;
         } else {
-            return JDUtilities.getDatabaseConnector().hasData(name);
+            try {
+                return JDUtilities.getDatabaseConnector().hasData(name);
+            } catch (final NoOldJDDataBaseFoundException e) {
+                return false;
+            }
         }
     }
 
@@ -126,7 +133,10 @@ public class SubConfiguration extends Property implements Serializable {
 
     public synchronized static void removeConfig(final String name) {
         try {
-            JDUtilities.getDatabaseConnector().removeData(name);
+            try {
+                JDUtilities.getDatabaseConnector().removeData(name);
+            } catch (final NoOldJDDataBaseFoundException e) {
+            }
         } finally {
             SUB_CONFIGS.remove(name);
         }

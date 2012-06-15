@@ -1,8 +1,8 @@
 package org.jdownloader.logging;
 
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,14 +14,15 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import jd.Launcher;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
-import org.appwork.utils.logging.LogFormatter;
 
 public class LogController {
     private static final LogController INSTANCE    = new LogController();
@@ -66,7 +67,7 @@ public class LogController {
         maxSize = JsonConfig.create(LogConfig.class).getMaxLogFileSize();
         maxLogs = JsonConfig.create(LogConfig.class).getMaxLogFiles();
         logTimeout = JsonConfig.create(LogConfig.class).getLogFlushTimeout() * 1000l;
-        logFolder = Application.getResource("logs/" + Launcher.startup + "/");
+        logFolder = Application.getResource("logs/" + new SimpleDateFormat("HH:mm:ss-dd.MM").format(new Date(Launcher.startup)) + "/");
         if (!logFolder.exists()) logFolder.mkdirs();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -138,24 +139,10 @@ public class LogController {
         }
     }
 
-    public Logger createLogger(Class<?> clazz) {
-        Logger ret = Logger.getLogger(clazz.getName());
-        if (ret.getHandlers().length == 0) {
-            final ConsoleHandler cHandler = new ConsoleHandler();
-            cHandler.setLevel(Level.ALL);
-            cHandler.setFormatter(new LogFormatter());
-            ret.addHandler(cHandler);
-            try {
-                Application.getResource("logs").mkdirs();
-                Handler fileHandler = new FileHandler(Application.getResource("logs/" + ret.getName()).getAbsolutePath(), 1024 * 1024, 5, true);
-                fileHandler.setFormatter(new LogFormatter());
-                ret.addHandler(fileHandler);
-            } catch (final Exception e) {
-                Log.exception(e);
-            }
-        }
-        ret.setLevel(Level.ALL);
-        return ret;
+    public static LogSource CL(Class<?> clazz) {
+        LogSource ret = getRebirthLogger();
+        if (ret != null) return ret;
+        return getInstance().getLogger(clazz.getSimpleName());
     }
 
     /**
@@ -164,7 +151,28 @@ public class LogController {
      * @return
      */
     public static LogSource CL() {
+        LogSource ret = getRebirthLogger();
+        if (ret != null) return ret;
         return getInstance().getLogger(new Throwable().fillInStackTrace().getStackTrace()[1].getClassName());
+    }
+
+    private static LogSource getRebirthLogger() {
+        Logger logger = null;
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof LinkCrawlerThread) {
+            /* we are inside a LinkCrawlerThread, lets reuse the logger from decrypterPlugin */
+            PluginForDecrypt plugin = ((LinkCrawlerThread) currentThread).getCurrentPlugin();
+            if (plugin != null) logger = plugin.getLogger();
+        } else if (currentThread instanceof SingleDownloadController) {
+            /* we are inside a SingleDownloadController, lets reuse the logger from hosterPlugin */
+            logger = ((SingleDownloadController) currentThread).getLogger();
+        }
+        if (logger != null && logger instanceof LogSource) {
+            LogSource ret = (LogSource) logger;
+            ret.log(new Throwable("Place of rebirth!"));
+            return ret;
+        }
+        return null;
     }
 
     public LogSource getLogger(Plugin loggerForPlugin) {
@@ -198,8 +206,10 @@ public class LogController {
             }
         }
         LogSource source = new LogSource(name, -1);
-        source.setInstantFlush(true);
+        // source.setInstantFlush(true);
         sink.addLogSource(source);
+        /* add Stacktrace to the LogSource so we can see in log where it got created/requested */
+        source.log(new Throwable("Place of birth!"));
         return source;
     }
 
@@ -220,12 +230,4 @@ public class LogController {
         }
     }
 
-    public static String getStackTrace(final Throwable thrown) {
-        if (thrown == null) return null;
-        final StringWriter sw = new StringWriter();
-        final PrintWriter pw = new PrintWriter(sw);
-        thrown.printStackTrace(pw);
-        pw.close();
-        return sw.toString();
-    }
 }

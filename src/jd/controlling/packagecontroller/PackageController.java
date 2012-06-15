@@ -17,13 +17,15 @@ import jd.controlling.IOEQ;
 
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier<PackageType> {
-    private final AtomicLong structureChanged = new AtomicLong(0);
-    private final AtomicLong childrenChanged  = new AtomicLong(0);
-    private final AtomicLong contentChanged   = new AtomicLong(0);
+    private final AtomicLong  structureChanged = new AtomicLong(0);
+    private final AtomicLong  childrenChanged  = new AtomicLong(0);
+    private final AtomicLong  contentChanged   = new AtomicLong(0);
+    protected final LogSource logger           = LogController.CL();
 
     public long getPackageControllerChanges() {
         return structureChanged.get();
@@ -175,13 +177,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     ArrayList<ChildType> remove = null;
                     PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
-                        Log.exception(new Throwable("NO CONTROLLER!!!"));
+                        logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
                     if (pkg.getControlledBy() != null) {
                         if (PackageController.this != pkg.getControlledBy()) {
                             /* this should never happen */
-                            Log.exception(new Throwable("removing a package which is not controlled by this controller?!?!?"));
+                            logger.log(new Throwable("removing a package which is not controlled by this controller?!?!?"));
                         }
                         pkg.setControlledBy(null);
                         writeLock();
@@ -241,7 +243,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         PackageType cpkg = next.getKey();
                         PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
-                            Log.exception(new Throwable("NO CONTROLLER!!!"));
+                            logger.log(new Throwable("NO CONTROLLER!!!"));
                         } else {
                             controller.removeChildren(cpkg, next.getValue(), true);
                         }
@@ -395,7 +397,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                         PackageType cpkg = next.getKey();
                         PackageController<PackageType, ChildType> controller = cpkg.getControlledBy();
                         if (controller == null) {
-                            Log.exception(new Throwable("NO CONTROLLER!!!"));
+                            logger.log(new Throwable("NO CONTROLLER!!!"));
                         } else {
                             controller.removeChildren(cpkg, next.getValue(), false);
                         }
@@ -474,7 +476,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                     LinkedList<ChildType> links = new LinkedList<ChildType>(children);
                     PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
-                        Log.exception(new Throwable("NO CONTROLLER!!!"));
+                        logger.log(new Throwable("NO CONTROLLER!!!"));
                         return null;
                     }
                     writeLock();
@@ -491,7 +493,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                     if (dl.getParentNode() == pkg) {
                                         dl.setParentNode(null);
                                     } else {
-                                        Log.exception(new Throwable("removing children from wrong parent?!?!?"));
+                                        logger.log(new Throwable("removing children from wrong parent?!?!?"));
                                     }
                                 } else {
                                     /* child not part of given package */
@@ -610,7 +612,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         try {
             this.readLock.unlock();
         } catch (final IllegalMonitorStateException e) {
-            Log.exception(e);
+            logger.log(e);
         }
     }
 

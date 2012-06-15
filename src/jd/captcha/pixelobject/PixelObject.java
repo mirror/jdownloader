@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
@@ -30,11 +29,11 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.utils.Utilities;
 import jd.nutils.Colors;
 
+import org.jdownloader.logging.LogController;
+
 /**
- * Diese Klasse ist wie die Letterklasse ein PixelContainer. Allerdings werden
- * nur Pixel mit INhalt aufgenommen und intern in einem vector abgelegt. Es
- * müssen nicht so viele Pixel verarbeitet werden. Dies Klasse eignet sich also
- * um Pbjekte abzulegen um diese dann zu drehen doer zu transformieren. Für die
+ * Diese Klasse ist wie die Letterklasse ein PixelContainer. Allerdings werden nur Pixel mit INhalt aufgenommen und intern in einem vector abgelegt. Es müssen
+ * nicht so viele Pixel verarbeitet werden. Dies Klasse eignet sich also um Pbjekte abzulegen um diese dann zu drehen doer zu transformieren. Für die
  * Objektsuche eignet sich diese Klasse wegen des internen vectors besser
  * 
  * @author JD-Team
@@ -44,74 +43,66 @@ public class PixelObject implements Comparable<PixelObject> {
     /**
      * Farbdurschnitt des Onkekts
      */
-    private int avg = 0;
+    private int                                       avg           = 0;
 
     /**
-     * Anzahl der gleichbleibenden add Aufrufe bis ein durchschnitt as icher
-     * angesehen wird
+     * Anzahl der gleichbleibenden add Aufrufe bis ein durchschnitt as icher angesehen wird
      */
-    private int avgIsSaveNum = 10;
-    private boolean bordered = true;
+    private int                                       avgIsSaveNum  = 10;
+    private boolean                                   bordered      = true;
     private HashMap<Integer, HashMap<Integer, int[]>> grid;
     /**
      * key=color value=quantity
      */
-    public ArrayList<PixelObjectColor> colors = new ArrayList<PixelObjectColor>();
+    public ArrayList<PixelObjectColor>                colors        = new ArrayList<PixelObjectColor>();
     /**
      * Kontrastwert für die durchschnisserkennung
      */
-    private double contrast;
+    private double                                    contrast;
 
-    public LetterComperator detected = null;
-
-    /**
-     * Logger
-     */
-    public Logger logger = Utilities.getLogger();
+    public LetterComperator                           detected      = null;
 
     /**
-     * Interne prüfvariable die hochgezählt wird wenn dieneuen Pixel keine
-     * Durchschnissänderung hervorrufen
+     * Interne prüfvariable die hochgezählt wird wenn dieneuen Pixel keine Durchschnissänderung hervorrufen
      */
-    private int noAvgChanges = 0;
+    private int                                       noAvgChanges  = 0;
 
     /**
      * Interner Vector
      */
-    private ArrayList<int[]> object;
+    private ArrayList<int[]>                          object;
 
     /**
-     * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen
-     * werden
+     * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen werden
      */
-    public PixelGrid owner;
+    public PixelGrid                                  owner;
 
     /**
      * Als sicher angenommener Farb durchschnitt
      */
-    private int saveAvg = 0;
+    private int                                       saveAvg       = 0;
 
-    private double whiteContrast = 1;
+    private double                                    whiteContrast = 1;
 
     /**
      * Maximaler X Wert
      */
-    private int xMax = Integer.MIN_VALUE;
+    private int                                       xMax          = Integer.MIN_VALUE;
 
     /**
      * Minimaler x Wert
      */
-    private int xMin = Integer.MAX_VALUE;
+    private int                                       xMin          = Integer.MAX_VALUE;
 
     /**
      * Maximaler Y Wert
      */
-    private int yMax = Integer.MIN_VALUE;
+    private int                                       yMax          = Integer.MIN_VALUE;
 
     /**
      * Minimaler y Wert
      */
-    private int yMin = Integer.MAX_VALUE;
+    private int                                       yMin          = Integer.MAX_VALUE;
 
     public int getMostcolor() {
         Collections.sort(colors);
@@ -151,8 +142,7 @@ public class PixelObject implements Comparable<PixelObject> {
     }
 
     /**
-     * Fügt einen neuen Pixel bei x,y hinzu. mit Color wird die originalfarbe
-     * des pixels übergeben.
+     * Fügt einen neuen Pixel bei x,y hinzu. mit Color wird die originalfarbe des pixels übergeben.
      * 
      * @param x
      * @param y
@@ -308,8 +298,7 @@ public class PixelObject implements Comparable<PixelObject> {
     }
 
     /**
-     * Gibt sucht von winkael A bis Winkel B die Beste DRehposition und gibt
-     * diese zurück Langsammer, aber genauer
+     * Gibt sucht von winkael A bis Winkel B die Beste DRehposition und gibt diese zurück Langsammer, aber genauer
      * 
      * @param angleA
      * @param angleB
@@ -395,9 +384,7 @@ public class PixelObject implements Comparable<PixelObject> {
      */
     public boolean doesColorAverageFit(int color) {
         if (getSize() > 50000) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
-            }
+            LogController.CL().severe("Objekt scheint sehr groß zu werden. objectColorContrast zu hoch?");
             return false;
         }
 
@@ -442,8 +429,7 @@ public class PixelObject implements Comparable<PixelObject> {
     }
 
     /**
-     * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente
-     * des Buchstabens enthält.
+     * Diese Funktion erstellt einen Vector<[x,y,color]> der nur Randelemente des Buchstabens enthält.
      * 
      * @param letter
      * @return
@@ -520,8 +506,7 @@ public class PixelObject implements Comparable<PixelObject> {
     }
 
     /**
-     * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die
-     * Pixelkonzentration an diesem Punkt an.
+     * Gibt den Pixelmassenwert in x und y zurück. Dieser Wert zeigt die Pixelkonzentration an diesem Punkt an.
      * 
      * @param x
      * @param y

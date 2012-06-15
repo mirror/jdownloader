@@ -31,7 +31,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
 import jd.controlling.reconnect.ipcheck.IPController;
@@ -52,6 +51,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class Gui extends AbstractDialog<Object> {
 
@@ -116,14 +116,13 @@ public class Gui extends AbstractDialog<Object> {
                     if (IPController.getInstance().validate()) {
                         if (JDRRInfoPopup.this.reconnect_timer == 0) {
                             /*
-                             * Reconnect fand innerhalb des Check-Intervalls
-                             * statt
+                             * Reconnect fand innerhalb des Check-Intervalls statt
                              */
                             Gui.RECONNECT_DURATION = Gui.CHECK_INTERVAL;
                         } else {
                             Gui.RECONNECT_DURATION = System.currentTimeMillis() - JDRRInfoPopup.this.reconnect_timer;
                         }
-                        JDLogger.getLogger().info("dauer: " + Gui.RECONNECT_DURATION);
+                        LogController.CL().info("dauer: " + Gui.RECONNECT_DURATION);
                         JDRRInfoPopup.this.statusicon.setStatus(1);
                     } else {
                         JDRRInfoPopup.this.statusicon.setStatus(-1);

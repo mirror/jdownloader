@@ -10,5 +10,4 @@ public interface JDAPI extends RemoteAPIInterface {
 
     public long version();
 
-    public String log();
 }

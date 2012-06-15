@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import javax.swing.AbstractAction;
 import javax.swing.ImageIcon;
@@ -14,7 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -35,7 +33,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
@@ -45,6 +42,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.InputDialog;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventListener {
@@ -64,7 +62,6 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     protected boolean                   dosession = true;
     private LiveHeaderReconnectSettings settings;
 
-    protected static final Logger       LOG       = JDLogger.getLogger();
     public static final String          ID        = "httpliveheader";
 
     public LiveHeaderReconnect() {
@@ -302,7 +299,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         } catch (InterruptedException e) {
             throw e;
         } catch (Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
         return null;
     }
@@ -360,7 +357,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
                 settings.setAlreadySendToCollectServer(false);
             }
         } else {
-            Log.L.info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
+            LogController.CL().info("Successful reonnects in a row: " + JsonConfig.create(ReconnectConfig.class).getSuccessCounter());
             if (!settings.isAlreadySendToCollectServer() && dosession && ReconnectPluginController.getInstance().getActivePlugin() == this) {
                 if (JsonConfig.create(ReconnectConfig.class).getSuccessCounter() > 3) {
 

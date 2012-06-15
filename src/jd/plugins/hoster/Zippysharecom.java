@@ -16,13 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -51,7 +51,7 @@ public class Zippysharecom extends PluginForHost {
         try {
             result = ((Double) engine.eval(fun)).intValue();
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

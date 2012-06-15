@@ -18,7 +18,6 @@ package jd;
 
 import java.io.File;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import jd.captcha.JACController;
 import jd.controlling.linkcollector.LinkCollectingJob;
@@ -29,13 +28,10 @@ import jd.gui.UserIF;
 
 public class ParameterManager {
 
-    private static final Logger LOG = jd.controlling.JDLogger.getLogger();
-
     public static void processParameters(final String[] input) {
 
         boolean addLinksSwitch = false;
         boolean addContainersSwitch = false;
-        boolean addPasswordsSwitch = false;
 
         final Vector<String> linksToAdd = new Vector<String>();
         final Vector<String> containersToAdd = new Vector<String>();
@@ -46,7 +42,6 @@ public class ParameterManager {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
 
                 ParameterManager.showCmdHelp();
 
@@ -54,28 +49,21 @@ public class ParameterManager {
 
                 addLinksSwitch = true;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
-                ParameterManager.LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--add-containers") || currentArg.equals("--add-container") || currentArg.equals("-co")) {
 
                 addContainersSwitch = true;
                 addLinksSwitch = false;
-                addPasswordsSwitch = false;
-                ParameterManager.LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--add-passwords") || currentArg.equals("--add-password") || currentArg.equals("-p")) {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                addPasswordsSwitch = true;
-                ParameterManager.LOG.info(currentArg + " parameter");
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
 
                 JACController.showDialog(false);
 
@@ -83,7 +71,6 @@ public class ParameterManager {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
 
                 JACController.showDialog(true);
 
@@ -91,10 +78,8 @@ public class ParameterManager {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
-                UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
 
-                ParameterManager.LOG.info(currentArg + " parameter");
+                UserIF.getInstance().setFrameStatus(UIConstants.WINDOW_STATUS_MINIMIZED);
 
             } else if (currentArg.equals("--focus") || currentArg.equals("-f")) {
 
@@ -113,8 +98,6 @@ public class ParameterManager {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                addPasswordsSwitch = false;
-                ParameterManager.LOG.info(currentArg + " parameter");
                 Reconnecter.getInstance().forceReconnect();
 
             } else if (addLinksSwitch && currentArg.charAt(0) != '-') {
@@ -125,38 +108,28 @@ public class ParameterManager {
 
                 if (new File(currentArg).exists()) {
                     containersToAdd.add(currentArg);
-                } else {
-                    ParameterManager.LOG.warning("Container does not exist");
                 }
 
             } else if (currentArg.contains("http://") && !(currentArg.charAt(0) == '-')) {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                addPasswordsSwitch = false;
+
                 linksToAdd.add(currentArg);
 
             } else if (new File(currentArg).exists() && !(currentArg.charAt(0) == '-')) {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                addPasswordsSwitch = false;
+
                 containersToAdd.add(currentArg);
 
             } else {
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                addPasswordsSwitch = false;
 
             }
 
-        }
-
-        if (linksToAdd.size() > 0) {
-            ParameterManager.LOG.info("Links to add: " + linksToAdd.toString());
-        }
-        if (containersToAdd.size() > 0) {
-            ParameterManager.LOG.info("Containers to add: " + containersToAdd.toString());
         }
 
         final StringBuilder adder = new StringBuilder();

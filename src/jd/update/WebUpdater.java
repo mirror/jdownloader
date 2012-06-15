@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JProgressBar;
 
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -39,8 +38,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.Regex;
 
 /**
- * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit
- * den lokalen versionen
+ * Webupdater lädt pfad und hash infos von einem server und vergleicht sie mit den lokalen versionen
  * 
  * @author JD-Team
  */
@@ -121,8 +119,7 @@ public class WebUpdater implements Serializable {
     private String                   betaBranch;
 
     /**
-     * if this field !=null, the updater uses this branch and ignores any other
-     * branch settings
+     * if this field !=null, the updater uses this branch and ignores any other branch settings
      */
     private String                   branch;
     private static ArrayList<Server> SERVER_LIST;
@@ -275,7 +272,7 @@ public class WebUpdater implements Serializable {
                         if (this.betaBranch == null || !savedBranch.equals(this.betaBranch)) {
                             JSonWrapper.get("WEBUPDATE").setProperty(WebUpdater.PARAM_BRANCH, this.branches[0]);
                             JSonWrapper.get("WEBUPDATE").save();
-                            JDLogger.getLogger().severe("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
+                            System.out.println("RESETTED BRANCH; SINCE BETA branch " + savedBranch + " is not available any more");
                         }
 
                     }
@@ -346,9 +343,7 @@ public class WebUpdater implements Serializable {
     }
 
     /**
-     * By defauklt, the webupdater does NOT Update plugins
-     * (hoster,decrypter,...) set this flag to false if you want to do a full
-     * update
+     * By defauklt, the webupdater does NOT Update plugins (hoster,decrypter,...) set this flag to false if you want to do a full update
      * 
      * @param b
      */
@@ -477,8 +472,7 @@ public class WebUpdater implements Serializable {
     }
 
     /**
-     * sets the branch to use. This overwrites the webupdater settings. This
-     * means that the updater uses this branch and ignores anything else
+     * sets the branch to use. This overwrites the webupdater settings. This means that the updater uses this branch and ignores anything else
      * 
      * @param branchtoUse
      */
@@ -525,8 +519,7 @@ public class WebUpdater implements Serializable {
                 this.br.getPage(path + "?t=" + System.currentTimeMillis());
                 if (this.br.getRequest().getHttpConnection().getResponseCode() == 404l) {
                     /*
-                     * if branchname is not available on any server then its no
-                     * longer valid
+                     * if branchname is not available on any server then its no longer valid
                      */
                     fnf = false;
                 }

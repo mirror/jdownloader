@@ -49,6 +49,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
+import org.jdownloader.logging.LogController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
 
@@ -77,12 +78,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void closejd() {
-        logger.info("close jd");
+        LogController.CL().info("close jd");
         org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
     }
 
     private void shutdown() {
-        logger.info("shutdown");
+        LogController.CL().info("shutdown");
         int id = 0;
         switch (id = CrossSystem.getID()) {
         case CrossSystem.OS_WINDOWS_2003:
@@ -183,7 +184,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void prepareHibernateOrStandby() {
-        logger.info("Stop all running downloads");
+        LogController.CL().info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
         /* reset enabled flag */
         menuAction.setSelected(false);
@@ -219,13 +220,13 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case CrossSystem.OS_WINDOWS_OTHER:
             /* older windows versions */
-            logger.info("no hibernate support, use shutdown");
+            LogController.CL().info("no hibernate support, use shutdown");
             shutdown();
             break;
         case CrossSystem.OS_MAC_OTHER:
             /* mac os */
             prepareHibernateOrStandby();
-            logger.info("no hibernate support, use shutdown");
+            LogController.CL().info("no hibernate support, use shutdown");
             shutdown();
             break;
         default:
@@ -269,7 +270,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case CrossSystem.OS_WINDOWS_OTHER:
             /* older windows versions */
-            logger.info("no standby support, use shutdown");
+            LogController.CL().info("no standby support, use shutdown");
             shutdown();
             break;
         case CrossSystem.OS_MAC_OTHER:
@@ -333,48 +334,48 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             switch (ret) {
             case 0:
                 /* try to shutdown */
-                logger.info("ask user about shutdown");
+                LogController.CL().info("ask user about shutdown");
                 message = _.interaction_shutdown_dialog_msg_shutdown();
                 UserIO.setCountdownTime(count);
                 ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_shutdown(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
-                logger.info("Return code: " + ret2);
+                LogController.CL().info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                     shutdown();
                 }
                 break;
             case 1:
                 /* try to standby */
-                logger.info("ask user about standby");
+                LogController.CL().info("ask user about standby");
                 message = _.interaction_shutdown_dialog_msg_standby();
                 UserIO.setCountdownTime(count);
                 ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_standby(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
-                logger.info("Return code: " + ret2);
+                LogController.CL().info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                     standby();
                 }
                 break;
             case 2:
                 /* try to hibernate */
-                logger.info("ask user about hibernate");
+                LogController.CL().info("ask user about hibernate");
                 message = _.interaction_shutdown_dialog_msg_hibernate();
                 UserIO.setCountdownTime(count);
                 ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_hibernate(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
-                logger.info("Return code: " + ret2);
+                LogController.CL().info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                     hibernate();
                 }
                 break;
             case 3:
                 /* try to close */
-                logger.info("ask user about closing");
+                LogController.CL().info("ask user about closing");
                 message = _.interaction_shutdown_dialog_msg_closejd();
                 UserIO.setCountdownTime(count);
                 ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_closejd(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
                 UserIO.setCountdownTime(-1);
-                logger.info("Return code: " + ret2);
+                LogController.CL().info("Return code: " + ret2);
                 if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
                     closejd();
                 }
@@ -438,7 +439,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         };
         menuAction.setSelected(shutdownEnabled);
         DownloadWatchDog.getInstance().getStateMachine().addListener(this);
-        logger.info("Shutdown OK");
+        LogController.CL().info("Shutdown OK");
     }
 
     protected void initSettings(ConfigContainer config) {

@@ -51,7 +51,6 @@ import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.StringFormatter;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
@@ -288,13 +287,13 @@ public class Multi extends IExtraction {
             String s = System.getProperty("os.arch");
             String s1 = System.getProperty("os.name").split(" ")[0];
             libID = new StringBuilder().append(s1).append("-").append(s).toString();
-            Log.L.finer("Lib ID: " + libID);
+            logger.finer("Lib ID: " + libID);
             tmp = Application.getResource("tmp/7zip");
             try {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e) {
             }
-            Log.L.finer("Lib Path: " + tmp);
+            logger.finer("Lib Path: " + tmp);
             tmp.mkdirs();
             SevenZip.initSevenZipFromPlatformJAR(libID, tmp);
         } catch (Throwable e) {
@@ -302,7 +301,7 @@ public class Multi extends IExtraction {
                 try {
                     /* workaround for sevenzipjbinding, missing dll imports */
                     String path = new Regex(e.getMessage(), "(.:.*?\\.dll)").getMatch(0);
-                    Log.L.severe("Unsatisfied path " + path);
+                    logger.severe("Unsatisfied path " + path);
                     File root = new File(path).getParentFile();
                     System.load(new File(root, "mingwm10.dll").toString());
                     System.load(new File(root, "libgcc_s_dw2-1.dll").toString());
@@ -317,14 +316,14 @@ public class Multi extends IExtraction {
                 org.appwork.utils.Files.deleteRecursiv(tmp);
             } catch (final Throwable e1) {
             }
-            Log.exception(e);
+            logger.log(e);
             logger.warning("Could not initialize Multiunpacker #1");
             try {
                 String s2 = System.getProperty("java.io.tmpdir");
-                Log.L.finer("Lib Path: " + (tmp = new File(s2)));
+                logger.finer("Lib Path: " + (tmp = new File(s2)));
                 SevenZip.initSevenZipFromPlatformJAR(tmp);
             } catch (Throwable e2) {
-                Log.exception(e2);
+                logger.log(e2);
                 logger.warning("Could not initialize Multiunpacker #2");
                 return false;
             }
@@ -444,6 +443,7 @@ public class Multi extends IExtraction {
 
             return ret;
         } catch (Throwable e) {
+            logger.log(e);
             throw new CheckException("Cannot check Archive " + archive.getName(), e);
         }
     }
@@ -594,6 +594,7 @@ public class Multi extends IExtraction {
                         }
                         break;
                     } catch (final IOException e) {
+                        logger.log(e);
                         if (fixedFilename == null) {
                             /* first try, we try again with lastTryFilename */
                             fixedFilename = lastTryFilename;
@@ -603,7 +604,6 @@ public class Multi extends IExtraction {
                             /* second try, we try with modified filename */
                             /* Invalid Chars could have occured, try to remove them */
                             logger.severe("Invalid Chars could have occured, try to remove them");
-                            Log.exception(e);
                             File parent = extractTo.getParentFile();
                             String brokenFilename = extractTo.getName();
                             /* new String so == returns false */
@@ -686,12 +686,12 @@ public class Multi extends IExtraction {
             }
         } catch (SevenZipException e) {
             setException(e);
-            Log.exception(e);
+            logger.log(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
             return;
         } catch (IOException e) {
             setException(e);
-            Log.exception(e);
+            logger.log(e);
             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
             return;
         } finally {
@@ -848,7 +848,7 @@ public class Multi extends IExtraction {
         } catch (SevenZipException e) {
             return false;
         } catch (Throwable e) {
-            e.printStackTrace();
+            logger.log(e);
             return false;
         } finally {
             try {
@@ -1026,12 +1026,12 @@ public class Multi extends IExtraction {
                     if (item.getPath().trim().equals("") || filter(item.getPath())) continue;
                     newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
                 } catch (SevenZipException e) {
-                    Log.exception(e);
+                    logger.log(e);
                 }
             }
             archive.setContentView(newView);
         } catch (SevenZipException e) {
-            Log.exception(e);
+            logger.log(e);
         }
     }
 

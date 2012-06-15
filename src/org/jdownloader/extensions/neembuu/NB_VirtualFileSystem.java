@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import jpfm.DirectoryStream;
 import jpfm.fs.SimpleReadOnlyFileSystem;
 import jpfm.mount.Mount;

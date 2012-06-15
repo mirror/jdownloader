@@ -28,9 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.controlling.AccountController;
 import jd.controlling.IOEQ;
-import jd.controlling.IOEQAction;
 import jd.controlling.IOPermission;
-import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.proxy.ProxyController;
@@ -58,7 +56,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationListener;
@@ -66,6 +64,8 @@ import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -143,12 +143,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
     private final static DownloadWatchDog                              INSTANCE               = new DownloadWatchDog();
     private final AtomicInteger                                        shutdownRequests       = new AtomicInteger(0);
+    private final LogSource                                            logger;
 
     public static DownloadWatchDog getInstance() {
         return INSTANCE;
     }
 
     private DownloadWatchDog() {
+        logger = LogController.CL();
         config = JsonConfig.create(GeneralSettings.class);
 
         this.dsm = new DownloadSpeedManager();
@@ -567,7 +569,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 break;
             }
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         return null;
     }
@@ -703,12 +705,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
                     config.setDownloadSpeedLimit(config.getPauseSpeed());
                     config.setDownloadSpeedLimitEnabled(true);
-                    Log.L.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
+                    logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
                 } else {
                     config.setDownloadSpeedLimit(speedLimitBeforePause);
                     config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
                     speedLimitBeforePause = 0;
-                    Log.L.info("Pause disabled: Switch back to old downloadspeed");
+                    logger.info("Pause disabled: Switch back to old downloadspeed");
                 }
             }
         }, true);
@@ -843,7 +845,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                Log.exception(e);
+                logger.log(e);
                 return;
             }
         }
@@ -925,17 +927,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     switch (check) {
                     case OK:
                     case UNKNOWN:
-                        Log.L.info("Start " + dci);
+                        logger.info("Start " + dci);
                         this.activateSingleDownloadController(dci);
                         ret++;
                         break;
                     case FAILED:
-                        Log.L.info("Could not start " + dci + ": not enough diskspace free");
+                        logger.info("Could not start " + dci + ": not enough diskspace free in " + dlFolder);
                         dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
                         dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NOT_ENOUGH_HARDDISK_SPACE);
                         break;
                     case INVALIDFOLDER:
-                        Log.L.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
+                        logger.info("Could not start " + dci + ": invalid downloadfolder->" + dlFolder);
                         dci.link.getLinkStatus().setStatus(LinkStatus.TEMP_IGNORE);
                         dci.link.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_INVALID_DOWNLOAD_DESTINATION);
                         break;
@@ -1005,7 +1007,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     downloadControlHistory.clear();
                 }
                 /* throw start event */
-                Log.L.info("DownloadWatchDog: start");
+                logger.info("DownloadWatchDog: start");
                 /* start watchdogthread */
                 startWatchDogThread();
             }
@@ -1018,7 +1020,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * @param dci
      */
     private void activateSingleDownloadController(final DownloadControlInfo dci) {
-        Log.L.info("Start new Download: Host:" + dci.link.getHost() + "|:Name" + dci.link.getName() + "|Proxy:" + dci.proxy);
+        logger.info("Start new Download: Host:" + dci.link.getHost() + "|:Name" + dci.link.getName() + "|Proxy:" + dci.proxy);
         /* we enable link in case it's a forced disabled link */
         dci.link.setEnabled(true);
         final SingleDownloadController download = new SingleDownloadController(dci.link, dci.account, dci.proxy, this.dsm);
@@ -1209,7 +1211,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                  * only start countdown to stop downloads if we were allowed to start new ones
                                                  */
                                                 stopCounter--;
-                                                Log.L.info(stopCounter + "rounds left to start new downloads");
+                                                logger.info(stopCounter + "rounds left to start new downloads");
                                             }
                                             if (stopCounter == 0) {
                                                 /*
@@ -1225,7 +1227,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                         stopCounter = 2;
                                     }
                                 } catch (final Exception e) {
-                                    JDLogger.exception(e);
+                                    logger.log(e);
                                 }
                                 try {
                                     int round = 0;
@@ -1238,7 +1240,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
                             }
                             stateMachine.setStatus(STOPPING_STATE);
-                            Log.L.info("DownloadWatchDog: stopping");
+                            logger.info("DownloadWatchDog: stopping");
                             /* stop all remaining downloads */
                             abortAllSingleDownloadControllers();
                             /* clear Status */
@@ -1252,11 +1254,11 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 setStopMark(STOPMARK.NONE);
                             }
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            logger.log(e);
                             stateMachine.setStatus(STOPPING_STATE);
                         } finally {
                             /* full stop reached */
-                            Log.L.info("DownloadWatchDog: stopped");
+                            logger.info("DownloadWatchDog: stopped");
                             synchronized (DownloadWatchDog.this) {
                                 watchDogThread = null;
                             }
@@ -1339,10 +1341,12 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     }
 
     public void onShutdown(boolean silent) {
-        IOEQ.getQueue().addWait(new IOEQAction() {
+        IOEQ.getQueue().addWait(new QueueAction<Void, RuntimeException>() {
 
-            public void ioeqRun() {
+            @Override
+            protected Void run() throws RuntimeException {
                 stopDownloads();
+                return null;
             }
 
             @Override
@@ -1350,7 +1354,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 return false;
             }
         });
-
     }
 
     public synchronized boolean isCaptchaAllowed(String hoster) {

@@ -32,7 +32,6 @@ import jd.PluginWrapper;
 import jd.captcha.JACMethod;
 import jd.config.SubConfiguration;
 import jd.controlling.IOPermission;
-import jd.controlling.JDLogger;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -44,11 +43,12 @@ import jd.plugins.download.DownloadInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -268,7 +268,7 @@ public abstract class PluginForHost extends Plugin {
                     final DownloadLink link = new DownloadLink(this, null, getHost(), file, true);
                     links.add(link);
                 } catch (Throwable e) {
-                    JDLogger.exception(e);
+                    LogSource.exception(logger, e);
                 }
             }
         }
@@ -755,7 +755,7 @@ public abstract class PluginForHost extends Plugin {
             }
 
         } catch (Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
 
         return null;

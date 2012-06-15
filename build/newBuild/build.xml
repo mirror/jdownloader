@@ -330,19 +330,19 @@
 		</manifest>
 		<buildAddon package="JDChat" include="chat" />
 		<buildAddon package="infobar" include="infobar" />
-		<buildAddon package="JDScheduler" include="schedule" />
+
 		<buildAddon package="JDShutdown" include="shutdown" />
 		<buildAddon package="improveddock" include="improveddock" />
-	
+
 		<buildAddon package="JDTray" include="jdtrayicon" />
-		
+
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
-	
-	
-		<buildAddon package="AntiReconnect" include="antireconnect" />
+
+
+
 		<buildAddon package="Extraction" include="extraction" />
-		<buildAddon package="folderwatch" include="folderwatch" />
+
 		<buildAddon package="webinterface" include="webinterface" />
 		<buildAddon package="neembuu" include="neembuu" />
 		<buildAddon package="translator" include="translator" />

@@ -18,7 +18,6 @@ package jd.gui.swing.jdgui.views.settings;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.logging.Logger;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
@@ -30,7 +29,6 @@ import jd.config.ConfigEntry;
 import jd.config.ConfigEntry.PropertyType;
 import jd.config.ConfigGroup;
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.gui.swing.Factory;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
@@ -47,8 +45,6 @@ public abstract class ConfigPanel extends SwitchPanel {
     public static final int           ICON_SIZE        = 32;
 
     private ArrayList<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
-
-    protected Logger                  logger           = JDLogger.getLogger();
 
     protected JPanel                  panel;
 

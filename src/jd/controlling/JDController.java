@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.plugins.DownloadLink;
 
 import org.jdownloader.dlc.DLCFactory;
+import org.jdownloader.logging.LogController;
 
 /**
  * Im JDController wird das ganze App gesteuert. Events werden deligiert.
@@ -42,7 +43,9 @@ public class JDController {
 
     @Deprecated
     public ArrayList<DownloadLink> getContainerLinks(File file) {
-        return new DLCFactory().getContainerLinks(file);
+        DLCFactory plugin = new DLCFactory();
+        plugin.setLogger(LogController.CL());
+        return plugin.getContainerLinks(file);
 
     }
 

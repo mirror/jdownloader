@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 
 import org.tmatesoft.svn.core.SVNCancelException;
@@ -140,8 +139,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
     }
 
     /**
-     * Updates the repo to file. if there is no repo at file, a checkout is
-     * performed
+     * Updates the repo to file. if there is no repo at file, a checkout is performed
      * 
      * @param file
      * @param revision
@@ -161,7 +159,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
             System.out.println("SVN Update at " + file);
             return updateClient.doUpdate(file, revision, SVNDepth.INFINITY, false, true);
         } catch (Exception e) {
-            JDLogger.getLogger().finer(e.getMessage());
+            e.printStackTrace();
             try {
                 System.out.println("SVN Checkout at " + file);
                 return updateClient.doCheckout(svnurl, file, SVNRevision.HEAD, revision, SVNDepth.INFINITY, true);
@@ -413,8 +411,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
             return;
         } else if (action == SVNEventAction.COPY) {
             /*
-             * The item is scheduled for addition with history (copied, in other
-             * words).
+             * The item is scheduled for addition with history (copied, in other words).
              */
 
             return;
@@ -452,32 +449,26 @@ public class DeprecatedSubversion implements ISVNEventHandler {
             pathChangeType = "D";
         } else if (action == SVNEventAction.UPDATE_UPDATE) {
             /*
-             * Find out in details what state the item is (after having been
-             * updated).
+             * Find out in details what state the item is (after having been updated).
              * 
-             * Gets the status of file/directory item contents. It is
-             * SVNStatusType who contains information on the state of an item.
+             * Gets the status of file/directory item contents. It is SVNStatusType who contains information on the state of an item.
              */
             SVNStatusType contentsStatus = event.getContentsStatus();
             if (contentsStatus == SVNStatusType.CHANGED) {
                 /*
-                 * the item was modified in the repository (got the changes from
-                 * the repository
+                 * the item was modified in the repository (got the changes from the repository
                  */
                 pathChangeType = "U";
             } else if (contentsStatus == SVNStatusType.CONFLICTED) {
                 /*
-                 * The file item is in a state of Conflict. That is, changes
-                 * received from the repository during an update, overlap with
-                 * local changes the user has in his working copy.
+                 * The file item is in a state of Conflict. That is, changes received from the repository during an update, overlap with local changes the user
+                 * has in his working copy.
                  */
 
                 pathChangeType = "C";
             } else if (contentsStatus == SVNStatusType.MERGED) {
                 /*
-                 * The file item was merGed (those changes that came from the
-                 * repository did not overlap local changes and were merged into
-                 * the file).
+                 * The file item was merGed (those changes that came from the repository did not overlap local changes and were merged into the file).
                  */
                 pathChangeType = "G";
             }
@@ -495,8 +486,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
         }
 
         /*
-         * Status of properties of an item. SVNStatusType also contains
-         * information on the properties state.
+         * Status of properties of an item. SVNStatusType also contains information on the properties state.
          */
         SVNStatusType propertiesStatus = event.getPropertiesStatus();
         String propertiesChangeType = nullString;
@@ -512,8 +502,7 @@ public class DeprecatedSubversion implements ISVNEventHandler {
             propertiesChangeType = "C";
         } else if (propertiesStatus == SVNStatusType.MERGED) {
             /*
-             * Properties that came from the repository were merged with the
-             * local ones.
+             * Properties that came from the repository were merged with the local ones.
              */
             propertiesChangeType = "G";
         }

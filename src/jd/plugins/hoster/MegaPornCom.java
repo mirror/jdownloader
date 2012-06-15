@@ -24,13 +24,13 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -77,11 +77,9 @@ public class MegaPornCom extends PluginForHost {
     private static String         agent              = RandomUserAgent.generate();
 
     /*
-     * every jd session starts with 1=default, because no waittime does not work
-     * at moment
+     * every jd session starts with 1=default, because no waittime does not work at moment
      * 
-     * try to workaround the waittime, 0=no waittime, 1 = default, other = 60
-     * secs
+     * try to workaround the waittime, 0=no waittime, 1 = default, other = 60 secs
      */
     private static int            WaittimeWorkaround = 1;
 
@@ -124,8 +122,7 @@ public class MegaPornCom extends PluginForHost {
             id = "00000";
             try {
                 /*
-                 * reset status to unchecked because api sometimes returns false
-                 * results
+                 * reset status to unchecked because api sometimes returns false results
                  */
                 u.setAvailableStatus(AvailableStatus.UNCHECKABLE);
                 id = this.getDownloadID(u);
@@ -248,8 +245,7 @@ public class MegaPornCom extends PluginForHost {
                 /* remove next major update */
                 /* workaround for broken timeout in 0.9xx public */
                 /*
-                 * workaround for buggy megaporn servers that can freeze stable
-                 * 0.9xx
+                 * workaround for buggy megaporn servers that can freeze stable 0.9xx
                  */
                 br.setConnectTimeout(30000);
                 br.setReadTimeout(20000);
@@ -283,8 +279,7 @@ public class MegaPornCom extends PluginForHost {
                 /* remove next major update */
                 /* workaround for broken timeout in 0.9xx public */
                 /*
-                 * workaround for buggy megaporn servers that can freeze stable
-                 * 0.9xx
+                 * workaround for buggy megaporn servers that can freeze stable 0.9xx
                  */
                 dl.getConnection().setConnectTimeout(30000);
                 dl.getConnection().setReadTimeout(20000);
@@ -382,8 +377,7 @@ public class MegaPornCom extends PluginForHost {
         if (link.getAvailableStatus() == AvailableStatus.UNCHECKABLE) {
             if (this.onlyapi) {
                 /*
-                 * API only,no further check needed because its done on
-                 * downloadtry anyway
+                 * API only,no further check needed because its done on downloadtry anyway
                  */
                 return STATUS.API;
             } else {
@@ -417,17 +411,16 @@ public class MegaPornCom extends PluginForHost {
                     this.limitReached(downloadLink, 10 * 60, "API Limit reached!");
                 }
             } catch (final Exception e1) {
-                JDLogger.exception(e1);
+                logger.log(Level.SEVERE, e1.getMessage(), e1);
             }
             /*
-             * debug info, can be removed when we have correct error in case of
-             * pw needed
+             * debug info, can be removed when we have correct error in case of pw needed
              */
             try {
                 logger.info(this.br.getRequest().getHttpConnection().toString());
             } catch (final Throwable e2) {
             }
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             /* pw handling */
             try {
                 String passCode;
@@ -449,17 +442,16 @@ public class MegaPornCom extends PluginForHost {
                         this.limitReached(downloadLink, 10 * 60, "API Limit reached!");
                     }
                 } catch (final Exception e1) {
-                    JDLogger.exception(e1);
+                    logger.log(Level.SEVERE, e1.getMessage(), e1);
                 }
                 /*
-                 * debug info, can be removed when we have correct error in case
-                 * of pw needed
+                 * debug info, can be removed when we have correct error in case of pw needed
                  */
                 try {
                     logger.info(this.br.getRequest().getHttpConnection().toString());
                 } catch (final Throwable e3) {
                 }
-                JDLogger.exception(e2);
+                logger.log(Level.SEVERE, e2.getMessage(), e2);
                 /* pw wrong */
                 downloadLink.setProperty("pass", null);
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.errors.wrongpassword", "Password wrong"));
@@ -480,8 +472,7 @@ public class MegaPornCom extends PluginForHost {
         final String dlID = this.getDownloadID(link);
         this.br.setDebug(true);
         /*
-         * here the customized headers are needed because without api download
-         * does not work
+         * here the customized headers are needed because without api download does not work
          */
         this.br.getHeaders().clear();
         this.br.getHeaders().setDominant(true);
@@ -694,8 +685,7 @@ public class MegaPornCom extends PluginForHost {
             /* page contains captcha */
             if (WaittimeWorkaround == 0) {
                 /*
-                 * we tried to workaround the waittime, so lets try again with
-                 * normal waittime
+                 * we tried to workaround the waittime, so lets try again with normal waittime
                  */
                 WaittimeWorkaround = 1;
                 logger.info("WaittimeWorkaround failed (1)");
@@ -747,8 +737,7 @@ public class MegaPornCom extends PluginForHost {
             }
             if (url == null) {
                 /*
-                 * seems free users get directdownload too sometimes, maybe for
-                 * special links?
+                 * seems free users get directdownload too sometimes, maybe for special links?
                  */
                 url = br.getRedirectLocation();
             }
@@ -835,8 +824,7 @@ public class MegaPornCom extends PluginForHost {
         }
         if (url == null) {
             /*
-             * seems free users get directdownload too sometimes, maybe for
-             * special links?
+             * seems free users get directdownload too sometimes, maybe for special links?
              */
             url = br.getRedirectLocation();
         }
@@ -881,8 +869,7 @@ public class MegaPornCom extends PluginForHost {
     }
 
     /*
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @Override
     public boolean isPremiumDownload() {
@@ -1044,7 +1031,7 @@ public class MegaPornCom extends PluginForHost {
             if (br.containsHTML("The file has been deleted because it was violating")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Invalid link")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("The file you are trying to access is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file you are trying to access is temporarily unavailable", 10 * 60 * 1000l);
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             logger.info("megaporn blocked this IP(2): 25 mins");
             l.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         }

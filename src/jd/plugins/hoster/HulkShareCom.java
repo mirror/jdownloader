@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -30,7 +31,6 @@ import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -329,7 +329,7 @@ public class HulkShareCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

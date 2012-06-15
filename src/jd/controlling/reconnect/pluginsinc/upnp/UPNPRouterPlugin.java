@@ -11,7 +11,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -36,6 +35,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
@@ -225,7 +225,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             settings.setServiceType(null);
             settings.setWANService(null);
         } else {
-            JDLogger.getLogger().info(upnpRouterDevice + "");
+            LogController.CL().info(upnpRouterDevice + "");
 
             settings.setControlURL(upnpRouterDevice.getControlURL());
             settings.setModelName(upnpRouterDevice.getModelname());

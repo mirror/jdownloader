@@ -49,7 +49,6 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.Reconnecter;
 import jd.controlling.reconnect.ReconnecterEvent;
 import jd.controlling.reconnect.ReconnecterListener;
@@ -73,6 +72,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.chat.settings.ChatConfigPanel;
 import org.jdownloader.extensions.chat.translate.ChatTranslation;
+import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
 
 public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener {
@@ -645,12 +645,11 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                 break;
             } catch (final IOException e) {
                 this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connect Timeout. Server not reachable...");
-                JDLogger.exception(e);
+                LogController.CL().log(e);
                 try {
                     Thread.sleep(15000);
                 } catch (final InterruptedException e1) {
-
-                    JDLogger.exception(e1);
+                    LogController.CL().log(e1);
                 }
                 this.initIRC();
             }
@@ -847,7 +846,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                     return;
                 }
                 final String t;
-                t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim())).getTranslated();
+                t = JDL.translate(tofrom[0], tofrom[1], Utils.prepareMsg(rest.substring(end).trim()));
                 this.lastCommand = "/translate " + rest.substring(0, end).trim() + " ";
                 new EDTHelper<Object>() {
 
@@ -961,7 +960,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                     try {
                         Thread.sleep(10000);
                     } catch (final InterruptedException e) {
-                        JDLogger.exception(e);
+                        LogController.CL().log(e);
                         return;
                     }
                 }

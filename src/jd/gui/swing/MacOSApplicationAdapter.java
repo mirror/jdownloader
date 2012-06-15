@@ -17,12 +17,10 @@
 package jd.gui.swing;
 
 import java.io.File;
-import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 
 import jd.Launcher;
-import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
@@ -30,9 +28,9 @@ import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.update.inapp.RestartController;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.logging.LogController;
 
 import com.apple.eawt.AboutHandler;
 import com.apple.eawt.AppEvent;
@@ -64,7 +62,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
             public void run() {
                 if (adapter.openURIlinks != null) {
-                    LOG.info("Distribute links: " + adapter.openURIlinks);
+                    LogController.GL.info("Distribute links: " + adapter.openURIlinks);
                     LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks));
                     adapter.openURIlinks = null;
                 }
@@ -73,9 +71,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         });
     }
 
-    private QuitResponse        quitResponse = null;
-    private String              openURIlinks;
-    private static final Logger LOG          = JDLogger.getLogger();
+    private QuitResponse quitResponse = null;
+    private String       openURIlinks;
 
     private MacOSApplicationAdapter() {
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
@@ -85,8 +82,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
                 new Thread() {
                     public void run() {
                         /*
-                         * own thread because else it will block, performQuit
-                         * calls exit again
+                         * own thread because else it will block, performQuit calls exit again
                          */
                         if (quitResponse != null) quitResponse.performQuit();
                     };
@@ -123,7 +119,7 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void openFiles(OpenFilesEvent e) {
         appReOpened(null);
-        LOG.info("Handle open files from Dock " + e.getFiles().toString());
+        LogController.GL.info("Handle open files from Dock " + e.getFiles().toString());
         StringBuilder sb = new StringBuilder();
         for (final File file : e.getFiles()) {
             if (sb.length() > 0) {
@@ -137,10 +133,10 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
     public void openURI(AppEvent.OpenURIEvent e) {
         appReOpened(null);
-        LOG.info("Handle open uri from Dock " + e.getURI().toString());
+        LogController.GL.info("Handle open uri from Dock " + e.getURI().toString());
         String links = e.getURI().toString();
         if (Launcher.GUI_COMPLETE.isReached()) {
-            LOG.info("Distribute links: " + links);
+            LogController.GL.info("Distribute links: " + links);
             LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(links));
         } else {
             openURIlinks = links;

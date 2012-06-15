@@ -23,7 +23,6 @@ import java.io.RandomAccessFile;
 import java.util.Date;
 import java.util.logging.Level;
 
-import jd.controlling.JDLogger;
 import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -37,7 +36,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -72,8 +71,7 @@ public class RAFDownload extends DownloadInterface {
             if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
                 synchronized (HASHCHECKLOCK) {
                     /*
-                     * we only want one hashcheck running at the same time. many
-                     * finished downloads can cause heavy diskusage here
+                     * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
                      */
                     String hash = null;
                     String type = null;
@@ -152,7 +150,7 @@ public class RAFDownload extends DownloadInterface {
                     part.deleteOnExit();
                     part.delete();
                 } catch (Throwable e) {
-                    logger.log(Level.SEVERE, "Exception", e);
+                    LogSource.exception(logger, e);
                     /* error happened, lets delete complete file */
                     complete.delete();
                     complete.deleteOnExit();
@@ -175,7 +173,7 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
         } catch (Exception e) {
-            Log.exception(e);
+            logger.log(Level.SEVERE, "Exception", e);
             addException(e);
         }
     }
@@ -306,7 +304,7 @@ public class RAFDownload extends DownloadInterface {
                 return true;
             }
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogSource.exception(logger, e);
             error(LinkStatus.ERROR_LOCAL_IO, Exceptions.getStackTrace(e));
             addException(e);
             return false;
@@ -316,15 +314,13 @@ public class RAFDownload extends DownloadInterface {
     /**
      * 
      * @param downloadLink
-     *            downloadlink der geladne werden soll (wird zur darstellung
-     *            verwendet)
+     *            downloadlink der geladne werden soll (wird zur darstellung verwendet)
      * @param request
      *            Verbindung die geladen werden soll
      * @param b
      *            Resumefaehige verbindung
      * @param i
-     *            max chunks. fuer negative werte wirden die chunks aus der
-     *            config verwendet. Bsp: -3 : Min(3,Configwert);
+     *            max chunks. fuer negative werte wirden die chunks aus der config verwendet. Bsp: -3 : Min(3,Configwert);
      * @return
      * @throws IOException
      * @throws PluginException

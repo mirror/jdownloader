@@ -26,11 +26,16 @@ import java.util.Vector;
 import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.Colors;
 
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
+
 public class ColoredPixelGrid extends PixelGrid {
     private static final long serialVersionUID = 1L;
+    private final LogSource   logger;
 
     public ColoredPixelGrid(int width, int height) {
         super(width, height);
+        logger = LogController.CL();
     }
 
     @Override

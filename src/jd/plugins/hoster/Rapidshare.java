@@ -24,11 +24,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.controlling.JDLogger;
 import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
@@ -723,7 +723,7 @@ public class Rapidshare extends PluginForHost {
                         final InetAddress inetAddress = InetAddress.getByName(host);
                         host = inetAddress.getHostAddress();
                     } catch (final Throwable e) {
-                        JDLogger.exception(e);
+                        logger.log(Level.SEVERE, e.getMessage(), e);
                     }
                 }
                 String directurl = "https://" + host + "/cgi-bin/rsapi.cgi?sub=download&bin=1&noflvheader=1&fileid=" + link.getId() + "&filename=" + link.getName() + "&cookie=" + cookie;

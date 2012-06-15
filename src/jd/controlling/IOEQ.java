@@ -4,11 +4,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.appwork.utils.event.queue.Queue;
+import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging.Log;
 
 /**
- * InOrderExecutionQueue, use this Queue to enqueue Actions that should be run
- * in order as they where added
+ * InOrderExecutionQueue, use this Queue to enqueue Actions that should be run in order as they where added
  * 
  * @author daniel
  * 
@@ -25,11 +25,7 @@ public class IOEQ {
                                                                     public void killQueue() {
                                                                         Log.exception(new Throwable("YOU CANNOT KILL ME!"));
                                                                         /*
-                                                                         * this
-                                                                         * queue
-                                                                         * can't
-                                                                         * be
-                                                                         * killed
+                                                                         * this queue can't be killed
                                                                          */
                                                                     }
                                                                 };
@@ -47,10 +43,12 @@ public class IOEQ {
     }
 
     public static void add(final Runnable run, final boolean allowAsync) {
-        INSTANCE.addAsynch(new IOEQAction() {
+        INSTANCE.addAsynch(new QueueAction<Void, RuntimeException>() {
 
-            public void ioeqRun() {
+            @Override
+            protected Void run() throws RuntimeException {
                 run.run();
+                return null;
             }
 
             @Override
@@ -58,6 +56,7 @@ public class IOEQ {
                 return allowAsync;
             }
         });
+
     }
 
     public static Queue getQueue() {

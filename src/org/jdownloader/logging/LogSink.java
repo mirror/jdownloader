@@ -36,37 +36,14 @@ public class LogSink extends Logger {
     }
 
     protected void flushSources() {
-        ArrayList<LogSource> sources = new ArrayList<LogSource>();
-        synchronized (logSources) {
-            Iterator<SoftReference<LogSource>> it = logSources.iterator();
-            while (it.hasNext()) {
-                SoftReference<LogSource> next = it.next();
-                LogSource item = next.get();
-                if (item == null || item.isClosed()) {
-                    it.remove();
-                    continue;
-                } else {
-                    sources.add(item);
-                }
-            }
-        }
-        for (LogSource source : sources) {
+        for (LogSource source : getLogSources()) {
             if (source.isAllowTimeoutFlush()) source.flush();
         }
     }
 
     protected boolean hasLogSources() {
         synchronized (logSources) {
-            Iterator<SoftReference<LogSource>> it = logSources.iterator();
-            while (it.hasNext()) {
-                SoftReference<LogSource> next = it.next();
-                LogSource item = next.get();
-                if (item == null || item.isClosed()) {
-                    it.remove();
-                    continue;
-                }
-            }
-            return logSources.size() > 0;
+            return getLogSources().size() > 0;
         }
     }
 
@@ -88,20 +65,29 @@ public class LogSink extends Logger {
             close();
         } else if (consoleHandler != null && handler == consoleHandler) {
             consoleHandler = null;
-            synchronized (logSources) {
-                Iterator<SoftReference<LogSource>> it = logSources.iterator();
-                while (it.hasNext()) {
-                    SoftReference<LogSource> next = it.next();
-                    LogSource item = next.get();
-                    if (item == null || item.isClosed()) {
-                        it.remove();
-                        continue;
-                    } else {
-                        item.removeHandler(handler);
-                    }
+            ArrayList<LogSource> sources = getLogSources();
+            for (LogSource source : sources) {
+                source.removeHandler(consoleHandler);
+            }
+        }
+    }
+
+    private ArrayList<LogSource> getLogSources() {
+        ArrayList<LogSource> sources = new ArrayList<LogSource>();
+        synchronized (logSources) {
+            Iterator<SoftReference<LogSource>> it = logSources.iterator();
+            while (it.hasNext()) {
+                SoftReference<LogSource> next = it.next();
+                LogSource item = next.get();
+                if (item == null || item.isClosed()) {
+                    it.remove();
+                    continue;
+                } else {
+                    sources.add(item);
                 }
             }
         }
+        return sources;
     }
 
     @Override
@@ -111,19 +97,10 @@ public class LogSink extends Logger {
             fileHandler = (FileHandler) handler;
         } else if (consoleHandler == null && handler instanceof ConsoleHandler) {
             consoleHandler = (ConsoleHandler) handler;
-            synchronized (logSources) {
-                Iterator<SoftReference<LogSource>> it = logSources.iterator();
-                while (it.hasNext()) {
-                    SoftReference<LogSource> next = it.next();
-                    LogSource item = next.get();
-                    if (item == null || item.isClosed()) {
-                        it.remove();
-                        continue;
-                    } else {
-                        item.removeHandler(consoleHandler);
-                        item.addHandler(consoleHandler);
-                    }
-                }
+            ArrayList<LogSource> sources = getLogSources();
+            for (LogSource source : sources) {
+                source.removeHandler(consoleHandler);
+                source.addHandler(consoleHandler);
             }
         }
     }

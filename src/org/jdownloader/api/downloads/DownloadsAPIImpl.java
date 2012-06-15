@@ -5,7 +5,6 @@ import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.reconnect.ReconnectPluginController;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
@@ -43,24 +42,4 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         return true;
     }
 
-    public boolean reconnect() {
-        try {
-            ReconnectPluginController.getInstance().doReconnect();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
-
-    public boolean reconnectenabled(boolean enable) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED.setValue(enable);
-        return true;
-    }
-
-    public boolean speedlimit(boolean enable, int limit) {
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.setValue(enable);
-        org.jdownloader.settings.staticreferences.CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.setValue(limit);
-        return true;
-    }
 }

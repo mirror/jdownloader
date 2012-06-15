@@ -18,7 +18,6 @@ package org.jdownloader.extensions;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JMenuItem;
@@ -140,8 +139,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     protected abstract void start() throws StartException;
 
-    protected Logger       logger;
-
     private String         name;
 
     private int            version        = -1;
@@ -164,10 +161,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         return name;
     }
 
-    public Logger getLogger() {
-        return logger;
-    }
-
     /**
      * 
      * @param translationInterface
@@ -178,11 +171,10 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      */
     public AbstractExtension() {
         this.name = getClass().getSimpleName();
-        logger = createLogger(getClass());
         version = readVersion(getClass());
         store = buildStore();
         AdvancedConfigManager.getInstance().register(store);
-        logger.info("Loaded");
+        LogController.CL().info("Loaded");
         initTranslation();
     }
 
@@ -287,10 +279,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     public abstract ExtensionConfigPanel<?> getConfigPanel();
 
     public abstract boolean hasConfigPanel();
-
-    private Logger createLogger(Class<? extends AbstractExtension> class1) {
-        return LogController.getInstance().createLogger(class1);
-    }
 
     public abstract String getAuthor();
 

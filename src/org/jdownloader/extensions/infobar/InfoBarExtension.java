@@ -18,6 +18,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.infobar.translate.InfobarTranslation;
 import org.jdownloader.extensions.infobar.translate.T;
+import org.jdownloader.logging.LogController;
 
 public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTranslation> {
 
@@ -114,8 +115,7 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
 
     @Override
     protected void start() throws StartException {
-
-        logger.info("InfoBar: OK");
+        LogController.CL().info("InfoBar: OK");
     }
 
     protected void initSettings(ConfigContainer config) {

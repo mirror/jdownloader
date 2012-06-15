@@ -12,7 +12,6 @@ import javax.swing.filechooser.FileFilter;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -23,7 +22,6 @@ import jd.plugins.DownloadLink;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.IO;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
@@ -43,7 +41,7 @@ public class DLCFactory extends D {
 
         final String[] encrypt = encrypt(xml);
         if (encrypt == null) {
-            Log.L.severe("Container Encryption failed.");
+            logger.severe("Container Encryption failed.");
             return null;
         }
         final String key = encrypt[1];
@@ -54,16 +52,16 @@ public class DLCFactory extends D {
             if (dlcKey == null) return null;
             return xml + dlcKey;
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(e);
         }
         return null;
     }
 
     private String callService(final String service, final String key) throws Exception {
-        Log.L.finer("Call " + service);
+        logger.finer("Call " + service);
         final Browser br = new Browser();
         br.postPage(service, "jd=1&srcType=plain&data=" + key);
-        Log.L.info("Call re: " + br.toString());
+        logger.info("Call re: " + br.toString());
         if (!br.getHttpConnection().isOK() || !br.containsHTML("<rc>")) {
             return null;
         } else {
@@ -119,7 +117,7 @@ public class DLCFactory extends D {
                     return;
                 }
             }
-            Log.L.severe("Container creation failed");
+            logger.severe("Container creation failed");
 
             Dialog.getInstance().showErrorDialog("Container encryption failed");
         } catch (DialogCanceledException e) {
@@ -164,7 +162,7 @@ public class DLCFactory extends D {
                     return;
                 }
             }
-            Log.L.severe("Container creation failed");
+            logger.severe("Container creation failed");
 
             Dialog.getInstance().showErrorDialog("Container encryption failed");
         } catch (DialogCanceledException e) {
@@ -292,7 +290,7 @@ public class DLCFactory extends D {
 
             return "<dlc>" + ret + "</dlc>";
         } catch (Exception e) {
-            Log.L.log(java.util.logging.Level.SEVERE, "Exception occured", e);
+            logger.log(e);
         }
         return null;
     }

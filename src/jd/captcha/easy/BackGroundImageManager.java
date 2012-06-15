@@ -23,13 +23,12 @@ import java.util.Vector;
 
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.PixelGrid;
-import jd.captcha.utils.Utilities;
-import jd.controlling.JDLogger;
 import jd.nutils.io.JDIO;
 
+import org.jdownloader.logging.LogController;
+
 /**
- * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
- * wird
+ * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird
  * 
  * @author dwd
  * 
@@ -39,11 +38,11 @@ public class BackGroundImageManager {
      * Liste mit Hintergrundbildern
      */
     private Vector<BackGroundImage> backgroundList = null;
-    protected EasyMethodFile methode;
-    private Captcha captchaImage;
-    public int zoom;
-    protected int[][] backupGrid;
-    private String fileName = "bgimages.xml";
+    protected EasyMethodFile        methode;
+    private Captcha                 captchaImage;
+    public int                      zoom;
+    protected int[][]               backupGrid;
+    private String                  fileName       = "bgimages.xml";
 
     private void autoSetZoomFaktor() {
         if (captchaImage.getWidth() > 200 || captchaImage.getHeight() > 100)
@@ -55,8 +54,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
-     * wird bei einem randomCaptcha
+     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird bei einem randomCaptcha
      * 
      * @param originalCaptcha
      */
@@ -65,8 +63,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
-     * wird bei einem randomCaptcha
+     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird bei einem randomCaptcha
      * 
      * @param originalCaptcha
      */
@@ -75,8 +72,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt
-     * wird das übergebene Captcha wird gereinigt
+     * Verwaltet die hintergrundbilder und sorgt dafür das das richtige entfernt wird das übergebene Captcha wird gereinigt
      * 
      * @param captcha
      */
@@ -147,8 +143,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * gibt die Xmldatei zurück in der die Informationen der Huntergrundbilder
-     * gespeichert sind
+     * gibt die Xmldatei zurück in der die Informationen der Huntergrundbilder gespeichert sind
      * 
      * @return methodenpfad/bgimages.xml
      */
@@ -187,8 +182,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden
-     * ist und reinigt das Captcha damit
+     * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden ist und reinigt das Captcha damit
      */
     public void clearCaptchaAll() {
         clearCaptchaAll(backgroundList);
@@ -209,8 +203,7 @@ public class BackGroundImageManager {
     }
 
     /**
-     * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden
-     * ist und reinigt das Captcha damit
+     * Sucht das Hintergrundbild bei dem die größte Übereinstimmung vorhanden ist und reinigt das Captcha damit
      * 
      * @param preview
      */
@@ -228,9 +221,9 @@ public class BackGroundImageManager {
                         BackGroundImage bgi = preview.get(c);
                         Image bImage = bgi.getImage(methode);
                         if (bImage == null || bImage.getWidth(null) != captchaImage.getWidth() || bImage.getHeight(null) != captchaImage.getHeight()) {
-                            if (Utilities.isLoggerActive()) {
-                                JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
-                            }
+
+                            LogController.CL().severe("ERROR Maske und Bild passen nicht zusammmen");
+
                             synchronized (this) {
                                 this.notify();
                             }

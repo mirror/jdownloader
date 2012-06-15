@@ -31,13 +31,13 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.table.TableCellRenderer;
 
-import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDUnderlinedText;
 import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 
 import org.appwork.utils.event.DefaultEvent;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
 
 class JLinkButtonRenderer implements TableCellRenderer {
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -127,15 +127,13 @@ public class JLink extends JLabel {
                 try {
                     url = new URL(text);
                 } catch (MalformedURLException e1) {
-
-                    JDLogger.exception(e1);
+                    LogController.CL().log(e1);
                 }
             } else if (text.matches("www\\..*?\\..*")) {
                 try {
                     url = new URL("http://" + text);
                 } catch (MalformedURLException e1) {
-
-                    JDLogger.exception(e1);
+                    LogController.CL().log(e1);
                 }
             }
         }
@@ -154,7 +152,7 @@ public class JLink extends JLabel {
                     if (getUrl() != null) CrossSystem.openURL(getUrl());
                     getBroadcaster().fireEvent(null);
                 } catch (Exception e1) {
-                    JDLogger.exception(e1);
+                    LogController.CL().log(e1);
                 }
             }
 

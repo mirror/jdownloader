@@ -17,12 +17,12 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -64,7 +64,7 @@ public class ReverBnationComHoster extends PluginForHost {
         try {
             result = ((Double) engine.eval(fun)).longValue();
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return result.toString();

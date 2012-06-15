@@ -50,6 +50,11 @@ public class Ftp extends PluginForHost {
     public void download(String ftpurl, final DownloadLink downloadLink, boolean throwException) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
+            ftp.setLogger(logger);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 stable */
+        }
+        try {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
@@ -58,8 +63,7 @@ public class Ftp extends PluginForHost {
             ftp.connect(url);
             if (oldStyle()) {
                 /*
-                 * old style, list folder content and then change into folder to
-                 * retrieve the file
+                 * old style, list folder content and then change into folder to retrieve the file
                  */
                 if (!filePath.contains("/")) filePath = "/" + filePath;
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
@@ -82,14 +86,12 @@ public class Ftp extends PluginForHost {
                 }
             } else {
                 /*
-                 * new style, do a getSize request and then switch to binary and
-                 * retrieve file by complete path
+                 * new style, do a getSize request and then switch to binary and retrieve file by complete path
                  */
                 /* switch binary mode */
                 ftp.bin();
                 /*
-                 * some servers do not allow to list the folder, so this may
-                 * fail but file still might be online
+                 * some servers do not allow to list the folder, so this may fail but file still might be online
                  */
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
@@ -145,8 +147,7 @@ public class Ftp extends PluginForHost {
 
             File tmp = null;
             /*
-             * we need dummy browser for RAFDownload, else nullpointer will
-             * happen
+             * we need dummy browser for RAFDownload, else nullpointer will happen
              */
             br = new Browser();
             dl = new RAFDownload(this, downloadLink, null);
@@ -174,14 +175,12 @@ public class Ftp extends PluginForHost {
                 }
                 if (oldStyle()) {
                     /*
-                     * in old style we moved into the folder and only need to
-                     * retrieve the file by name
+                     * in old style we moved into the folder and only need to retrieve the file by name
                      */
                     ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));
                 } else {
                     /*
-                     * in new style we need to retrieve the file by complete
-                     * path
+                     * in new style we need to retrieve the file by complete path
                      */
                     try {
                         ftp.download(Encoding.urlDecode(filePath, false), tmp = new File(downloadLink.getFileOutput() + ".part"), downloadLink.getBooleanProperty("RESUME", true));
@@ -267,6 +266,11 @@ public class Ftp extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         SimpleFTP ftp = new SimpleFTP();
         try {
+            ftp.setLogger(logger);
+        } catch (final Throwable e) {
+            /* does not exist in 09581 stable */
+        }
+        try {
             URL url = new URL(downloadLink.getDownloadURL());
             /* cut off all ?xyz at the end */
             String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+?)(\\?|$)").getMatch(0);
@@ -292,8 +296,7 @@ public class Ftp extends PluginForHost {
                 /* switch binary mode */
                 ftp.bin();
                 /*
-                 * some servers do not allow to list the folder, so this may
-                 * fail but file still might be online
+                 * some servers do not allow to list the folder, so this may fail but file still might be online
                  */
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {

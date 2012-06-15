@@ -17,13 +17,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -63,7 +63,7 @@ public class RemixShareCom extends PluginForHost {
         try {
             result = engine.eval(fun);
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
         if (result == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -38,7 +38,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import jd.Launcher;
-import jd.controlling.JDLogger;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -52,7 +51,6 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -66,6 +64,7 @@ import org.jdownloader.extensions.jdtrayicon.translate.T;
 import org.jdownloader.extensions.jdtrayicon.translate.TrayiconTranslation;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ShutdownVetoListener {
@@ -128,12 +127,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     @Override
     protected void start() throws StartException {
         if (Application.getJavaVersion() < Application.JAVA16) {
-            logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
+            LogController.CL(TrayExtension.class).severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
             throw new StartException("Tray is supported since Java 1.6. your Version: " + Application.getJavaVersion());
         }
         if (!SystemTray.isSupported()) {
-            logger.severe("Error initializing SystemTray: Tray isn't supported jet");
-            if (CrossSystem.isLinux()) logger.severe("Make sure your Notification Area is enabled!");
+            LogController.CL(TrayExtension.class).severe("Error initializing SystemTray: Tray isn't supported jet");
+            if (CrossSystem.isLinux()) LogController.CL().severe("Make sure your Notification Area is enabled!");
             throw new StartException("Tray isn't supported!");
         }
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
@@ -148,10 +147,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                 LinkCollector.getInstance().getEventsender().addListener(highListener);
                                 ShutdownController.getInstance().addShutdownVetoListener(TrayExtension.this);
                                 initGUI(true);
-                                logger.info("Systemtray OK");
+                                LogController.CL(TrayExtension.class).info("Systemtray OK");
                             }
                         } catch (Exception e) {
-                            Log.exception(e);
+                            LogController.CL(TrayExtension.class).log(e);
                         }
 
                     }
@@ -259,7 +258,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
              * 
              * TODO: maybe add dialog to inform user
              */
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             try {
                 setEnabled(false);
             } catch (final Throwable e1) {
@@ -269,7 +268,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                logger.info("JDLightTrayIcon Init complete");
+                LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                 guiFrame = JDGui.getInstance().getMainFrame();
                 if (guiFrame != null) {
                     guiFrame.removeWindowListener(TrayExtension.this);
@@ -442,7 +441,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                         } catch (UnsupportedOperationException e) {
                                             if (reInitNeeded == false) {
                                                 reInitNeeded = true;
-                                                Log.L.severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
+                                                LogController.CL(TrayExtension.class).severe("TrayIcon gone?! WTF? We will try to restore as soon as possible");
                                             }
                                         }
                                         if (reInitTrayIcon) {
@@ -451,7 +450,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                             try {
                                                 if (SystemTray.getSystemTray().getTrayIcons().length > 0) {
                                                     reInitNeeded = false;
-                                                    Log.L.severe("TrayIcon restored!");
+                                                    LogController.CL(TrayExtension.class).severe("TrayIcon restored!");
                                                 }
                                             } catch (UnsupportedOperationException e) {
                                             }

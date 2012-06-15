@@ -22,10 +22,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.controlling.HTACCESSController;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -303,7 +303,7 @@ public class DirectHTTP extends PluginForHost {
                 }
             }
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            e.printStackTrace();
         }
         return DirectHTTP.removeDuplicates(ret);
     }
@@ -580,7 +580,7 @@ public class DirectHTTP extends PluginForHost {
                 throw e2;
             }
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         } finally {
             try {
                 urlConnection.disconnect();

@@ -27,6 +27,7 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
+import org.jdownloader.logging.LogController;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
 
@@ -74,7 +75,6 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void start() throws StartException {
-
         switch (CrossSystem.getID()) {
         case CrossSystem.OS_WINDOWS_2003:
         case CrossSystem.OS_WINDOWS_VISTA:
@@ -84,9 +84,8 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
         case CrossSystem.OS_WINDOWS_NT:
             asthread = new JDAntiStandbyThread(this);
             asthread.start();
-
         default:
-            logger.fine("JDAntiStandby: System is not supported (" + CrossSystem.getOSString() + ")");
+            LogController.CL().fine("JDAntiStandby: System is not supported (" + CrossSystem.getOSString() + ")");
         }
 
     }

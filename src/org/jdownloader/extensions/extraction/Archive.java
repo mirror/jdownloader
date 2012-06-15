@@ -19,10 +19,10 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.multi.CheckException;
+import org.jdownloader.logging.LogController;
 
 /**
  * Contains information about the archivefile.
@@ -267,7 +267,7 @@ public class Archive {
         try {
             return createDummyArchive().isComplete();
         } catch (CheckException e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
         return false;
     }

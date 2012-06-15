@@ -23,7 +23,6 @@ import jd.captcha.LetterComperator;
 import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.Utilities;
-import jd.controlling.JDLogger;
 
 /**
  * Diese Klasse beinhaltet alle Methoden für einzellne Letter.
@@ -77,9 +76,9 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das minimale Breite/Höhe Verhältniss Es wird zuerst die
-     * optimale DRehrichtung ermittelt und dann gedreht. Die Methode funktioniert nicht immer zuverlässig. align(double contrast,double
-     * objectContrast,int angleA, int angleB) braucht länger, liefert aber bessere Ergebnisse
+     * Versucht den Buchstaben automatisch auszurichten. Als kriterium dient das minimale Breite/Höhe Verhältniss Es wird zuerst die optimale DRehrichtung
+     * ermittelt und dann gedreht. Die Methode funktioniert nicht immer zuverlässig. align(double contrast,double objectContrast,int angleA, int angleB) braucht
+     * länger, liefert aber bessere Ergebnisse
      * 
      * @param objectContrast
      * @return Ausgerichteter Buchstabe
@@ -95,8 +94,8 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Gibt einen Ausgerichteten Buchstaben zurück. Es wird vom Winkel angleA bis angleB nach der Besten Ausrichtung (Breite/Höhe) gesucht.
-     * Ist zuverlässiger als align(double contrast,double objectContrast)
+     * Gibt einen Ausgerichteten Buchstaben zurück. Es wird vom Winkel angleA bis angleB nach der Besten Ausrichtung (Breite/Höhe) gesucht. Ist zuverlässiger
+     * als align(double contrast,double objectContrast)
      * 
      * @param objectContrast
      * @param angleA
@@ -115,8 +114,7 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Autoasurichtung. Diese Funktion geht nicht den Umweg über ein Pixelobject. Braucht etwas mehr zeit und liefrt dafür deutlich bessere
-     * Ergebnisse!
+     * Autoasurichtung. Diese Funktion geht nicht den Umweg über ein Pixelobject. Braucht etwas mehr zeit und liefrt dafür deutlich bessere Ergebnisse!
      * 
      * @param angleA
      * @param angleB
@@ -401,40 +399,37 @@ public class Letter extends PixelGrid {
                 int ax = border.get(i)[0];
 
                 int ay = border.get(i)[1];
-                if (Utilities.isLoggerActive()) {
-                    logger.info(ax + "/" + ay);
-                }
+
+                logger.info(ax + "/" + ay);
+
                 int[][] map = getLocalMap(grid, ax, ay);
 
                 int a = getObjectsNum(map);
                 map[1][1] = 0xff000;
 
                 int b = getObjectsNum(map);
-                if (Utilities.isLoggerActive()) {
-                    logger.info(a + " --->> " + b);
-                }
+
+                logger.info(a + " --->> " + b);
+
                 if (a == b) {
                     changed++;
                     this.setPixelValue(ax, ay, 0xff0000);
                 } else {
 
-                    if (Utilities.isLoggerActive()) {
-                        logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
-                    }
-                    if (Utilities.isLoggerActive()) {
-                        logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
-                    }
-                    if (Utilities.isLoggerActive()) {
-                        logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
-                    }
+                    logger.info(map[0][0] + "-" + map[1][0] + "-" + map[2][0]);
+
+                    logger.info(map[0][1] + "-" + map[1][1] + "-" + map[2][1]);
+
+                    logger.info(map[0][2] + "-" + map[1][2] + "-" + map[2][2]);
+
                     this.setPixelValue(ax, ay, 0);
                 }
 
             }
             BasicWindow.showImage(this.getImage(5));
-            if (Utilities.isLoggerActive()) {
-                logger.info("changed " + changed);
-            }
+
+            logger.info("changed " + changed);
+
             if (firstChange == 0) {
                 firstChange = changed;
             }
@@ -461,17 +456,16 @@ public class Letter extends PixelGrid {
     /*
      * private int[] getPartnerPixel(int x, int y, Vector<int[]> border) {
      * 
-     * int radius = 1; boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir =
-     * getBorderDir(x, y);
+     * int radius = 1; boolean[][] badgrid = new boolean[this.getWidth()][this.getHeight()]; badgrid[x][y] = true; double dir = getBorderDir(x, y);
      * 
      * return null; }
      * 
-     * private double getBorderDir(int x, int y) { int count = 0; double angle = 0; int[][] angleMap = new int[3][3]; angleMap[2][1] = 0;
-     * angleMap[2][0] = 45; angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180; angleMap[0][2] = 225; angleMap[1][2] = 270;
-     * angleMap[2][2] = 315; angleMap[1][1] = -1; for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy < 2; yy++) { try { // ((x + xx < 0
-     * || x + xx > this.getWidth() - 1 || y + yy < // 0 || y + yy > this.getHeight() - 1) || if ((grid[x + xx][y + yy] > 0) && angleMap[xx +
-     * 1][yy + 1] >= 0) { // if(Utilities.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]); angle = count angle +
-     * angleMap[xx + 1][yy + 1]; count++; angle /= count; } } catch (Exception e) { } } } return angle; }
+     * private double getBorderDir(int x, int y) { int count = 0; double angle = 0; int[][] angleMap = new int[3][3]; angleMap[2][1] = 0; angleMap[2][0] = 45;
+     * angleMap[1][0] = 90; angleMap[0][0] = 135; angleMap[0][1] = 180; angleMap[0][2] = 225; angleMap[1][2] = 270; angleMap[2][2] = 315; angleMap[1][1] = -1;
+     * for (int xx = -1; xx < 2; xx++) { for (int yy = -1; yy < 2; yy++) { try { // ((x + xx < 0 || x + xx > this.getWidth() - 1 || y + yy < // 0 || y + yy >
+     * this.getHeight() - 1) || if ((grid[x + xx][y + yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) { //
+     * if(Utilities.isLoggerActive())logger.info(xx+","+yy+" - "+angleMap[xx+1][yy+1]); angle = count angle + angleMap[xx + 1][yy + 1]; count++; angle /= count;
+     * } } catch (Exception e) { } } } return angle; }
      */
 
     public int[][] getLocalMap(int[][] grid, int x, int y) {
@@ -718,9 +712,7 @@ public class Letter extends PixelGrid {
     public void markBad() {
         badDetections++;
 
-        if (Utilities.isLoggerActive()) {
-            logger.warning("Bad detection : (" + toString() + ") ");
-        }
+        logger.warning("Bad detection : (" + toString() + ") ");
 
     }
 
@@ -729,9 +721,9 @@ public class Letter extends PixelGrid {
      */
     public void markGood() {
         goodDetections++;
-        if (Utilities.isLoggerActive()) {
-            logger.warning("GOOD detection : (" + toString() + ") ");
-        }
+
+        logger.warning("GOOD detection : (" + toString() + ") ");
+
     }
 
     /**
@@ -884,8 +876,7 @@ public class Letter extends PixelGrid {
                 try {
                     grid[x][y] = Integer.parseInt(String.valueOf(line.charAt(x))) * getMaxPixelValue();
                 } catch (Exception e) {
-
-                    JDLogger.exception(e);
+                    logger.log(e);
                     return false;
                 }
                 if (grid[x][y] == 0) {
@@ -930,9 +921,7 @@ public class Letter extends PixelGrid {
         int[][] tmp = new int[width][getHeight()];
         setLocation(new int[] { left, 0 });
         if (getWidth() < right) {
-            if (Utilities.isLoggerActive()) {
-                logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
-            }
+            logger.severe("Letter dim: " + getWidth() + " - " + getHeight() + ". Cannot trim to " + left + "-" + right);
             return false;
         }
         for (int x = 0; x < width; x++) {
@@ -945,8 +934,8 @@ public class Letter extends PixelGrid {
     }
 
     /**
-     * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür
-     * deutlich weniger unter Pixelfehlern
+     * Dreht den buchstaben um angle. Dabei wird breite und höhe angepasst. Das drehen dauert länger als über PixelObject, leidet dafür deutlich weniger unter
+     * Pixelfehlern
      * 
      * @param angle
      * @return new letter

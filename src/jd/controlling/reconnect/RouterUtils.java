@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IP;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,10 +37,11 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.InternetConnectionSettings;
 
 public class RouterUtils {
@@ -59,11 +59,9 @@ public class RouterUtils {
     private static InetAddress  ASYNCH_RETURN;
 
     private static String callArpTool(final String ipAddress) throws IOException, InterruptedException {
-
         if (CrossSystem.isWindows()) {
             return RouterUtils.callArpToolWindows(ipAddress);
         } else {
-
             return RouterUtils.callArpToolDefault(ipAddress);
         }
     }
@@ -132,9 +130,14 @@ public class RouterUtils {
 
     private static boolean checkPort(String host, int port) {
         URLConnectionAdapter con = null;
+        LogSource logger = LogController.CL();
+        logger.setAllowTimeoutFlush(false);
         try {
-            Log.L.info("Check " + host + ":" + port);
+            logger.info("Check " + host + ":" + port);
             Browser br = new Browser();
+            br.setLogger(logger);
+            br.setDebug(true);
+            br.setVerbose(true);
             br.setProxy(HTTPProxy.NONE);
             br.setConnectTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckConnectTimeout()));
             br.setReadTimeout(Math.max(10, JsonConfig.create(InternetConnectionSettings.class).getRouterIPCheckReadTimeout()));
@@ -153,8 +156,8 @@ public class RouterUtils {
 
             String redirect = br.getRedirectLocation();
             String domain = Browser.getHost(redirect);
-            Log.L.info(redirect);
-            Log.L.info(domain);
+            logger.info(redirect);
+            logger.info(domain);
             // some isps or DNS server redirect in case of no server found
             if (redirect != null && !InetAddress.getByName(domain).equals(InetAddress.getByName(host))) {
                 // if we have redirects, the new domain should be the local one,
@@ -162,12 +165,12 @@ public class RouterUtils {
 
                 return false;
             }
-
+            logger.clear();
             return true;
-
         } catch (final Exception e) {
-            Log.exception(e);
+            logger.log(e);
         } finally {
+            logger.close();
             try {
                 con.disconnect();
             } catch (Throwable e) {
@@ -302,7 +305,7 @@ public class RouterUtils {
                             /* then lets try https */
                             if (RouterUtils.checkPort(hostname)) { return ia; }
                         } catch (final Exception e) {
-                            JDLogger.exception(e);
+                            LogController.CL().log(e);
                         }
                     }
 
@@ -333,7 +336,7 @@ public class RouterUtils {
                             if (RouterUtils.checkPort(hostname)) { return ia; }
 
                         } catch (final Exception e) {
-                            JDLogger.exception(e);
+                            LogController.CL().log(e);
                         }
                     }
 
@@ -535,7 +538,7 @@ public class RouterUtils {
                 ret.remove(ia.getHostName());
                 ret.remove(ia.getHostAddress());
             } catch (final Exception exc) {
-                Log.exception(exc);
+                LogController.CL().log(exc);
             }
         }
         return ret;

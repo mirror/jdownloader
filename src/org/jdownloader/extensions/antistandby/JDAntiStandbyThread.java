@@ -16,10 +16,10 @@
 
 package org.jdownloader.extensions.antistandby;
 
-import java.util.logging.Logger;
-
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 import com.sun.jna.Native;
 
@@ -28,62 +28,65 @@ public class JDAntiStandbyThread extends Thread implements Runnable {
     private boolean                    running  = true;
     private boolean                    run      = false;
     private static final int           sleep    = 5000;
-    private final Logger               logger;
     private final AntiStandbyExtension jdAntiStandby;
 
     private Kernel32                   kernel32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
 
     public JDAntiStandbyThread(AntiStandbyExtension jdAntiStandby) {
         super();
-        this.logger = JDLogger.getLogger();
         this.jdAntiStandby = jdAntiStandby;
     }
 
     @Override
     public void run() {
-        while (running) {
-            try {
-                if (jdAntiStandby.isStatus()) {
-                    switch (jdAntiStandby.getMode()) {
-                    case 0:
-                        if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+        LogSource logger = LogController.CL(AntiStandbyExtension.class);
+        try {
+            while (running) {
+                try {
+                    if (jdAntiStandby.isStatus()) {
+                        switch (jdAntiStandby.getMode()) {
+                        case 0:
+                            if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                                if (!run) {
+                                    run = true;
+                                    logger.fine("JDAntiStandby: Start");
+                                }
+                                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
+
+                            } else {
+                                if (run) {
+                                    run = false;
+                                    logger.fine("JDAntiStandby: Stop");
+                                    kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
+                                }
+                            }
+                            break;
+                        case 1:
                             if (!run) {
                                 run = true;
                                 logger.fine("JDAntiStandby: Start");
                             }
                             kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
-
-                        } else {
-                            if (run) {
-                                run = false;
-                                logger.fine("JDAntiStandby: Stop");
-                                kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-                            }
+                            break;
+                        default:
+                            logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
                         }
-                        break;
-                    case 1:
-                        if (!run) {
-                            run = true;
-                            logger.fine("JDAntiStandby: Start");
+                    } else {
+                        if (run) {
+                            run = false;
+                            logger.fine("JDAntiStandby: Stop");
+                            kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
                         }
-                        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS | Kernel32.ES_SYSTEM_REQUIRED | Kernel32.ES_DISPLAY_REQUIRED);
-                        break;
-                    default:
-                        logger.finest("JDAntiStandby: Config error (unknown mode: " + jdAntiStandby.getMode() + ")");
                     }
-                } else {
-                    if (run) {
-                        run = false;
-                        logger.fine("JDAntiStandby: Stop");
-                        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-                    }
+                    Thread.sleep(sleep);
+                } catch (InterruptedException e) {
                 }
-                Thread.sleep(sleep);
-            } catch (InterruptedException e) {
             }
+        } finally {
+            logger.close();
+            kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
+            logger.fine("JDAntiStandby: Terminated");
         }
-        kernel32.SetThreadExecutionState(Kernel32.ES_CONTINUOUS);
-        logger.fine("JDAntiStandby: Terminated");
     }
 
     public void setRunning(boolean running) {

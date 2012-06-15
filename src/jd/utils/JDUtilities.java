@@ -16,21 +16,14 @@
 
 package jd.utils;
 
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 import java.io.File;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.URL;
-import java.text.DecimalFormat;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -38,9 +31,8 @@ import javax.xml.transform.stream.StreamResult;
 import jd.Launcher;
 import jd.config.Configuration;
 import jd.config.DatabaseConnector;
+import jd.config.NoOldJDDataBaseFoundException;
 import jd.controlling.JDController;
-import jd.controlling.JDLogger;
-import jd.gui.UserIO;
 import jd.nutils.Executer;
 import jd.nutils.Formatter;
 import jd.nutils.io.JDIO;
@@ -48,8 +40,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
-import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -66,8 +57,6 @@ import org.xml.sax.InputSource;
  */
 public class JDUtilities {
 
-    private static final Logger      LOGGER        = JDLogger.getLogger();
-
     /**
      * Die Konfiguration
      */
@@ -80,75 +69,28 @@ public class JDUtilities {
     private static String            REVISION;
 
     private static long              REVISIONINT   = -1;
+    private static Boolean           oldDBExists   = null;
 
     /**
-     * Diese Klasse fuegt eine Komponente einem Container hinzu
+     * returns old Configuration (if available) or creates dummy one (in new JD2) so we can import existing configs into current version
      * 
-     * @param cont
-     *            Der Container, dem eine Komponente hinzugefuegt werden soll
-     * @param comp
-     *            Die Komponente, die hinzugefuegt werden soll
-     * @param x
-     *            X-Position innerhalb des GriBagLayouts
-     * @param y
-     *            Y-Position innerhalb des GriBagLayouts
-     * @param width
-     *            Anzahl der Spalten, ueber die sich diese Komponente erstreckt
-     * @param height
-     *            Anzahl der Reihen, ueber die sich diese Komponente erstreckt
-     * @param weightX
-     *            Verteilung von zur Verfuegung stehendem Platz in X-Richtung
-     * @param weightY
-     *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
-     * @param insets
-     *            Abstaende der Komponente
-     * @param fill
-     *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
-     * @param anchor
-     *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
+     * @return
      */
-    public static void addToGridBag(final Container cont, final Component comp, final int x, final int y, final int width, final int height, final int weightX, final int weightY, final Insets insets, final int fill, final int anchor) {
-        final GridBagConstraints cons = new GridBagConstraints();
-        cons.gridx = x;
-        cons.gridy = y;
-        cons.gridwidth = width;
-        cons.gridheight = height;
-
-        cons.weightx = weightX;
-        cons.weighty = weightY;
-        cons.fill = fill;
-
-        cons.anchor = anchor;
-        if (insets != null) {
-            cons.insets = insets;
-        }
-        cont.add(comp, cons);
-    }
-
-    /**
-     * @return Configuration instanz
-     */
+    @Deprecated
     public static synchronized Configuration getConfiguration() {
         if (CONFIGURATION == null) {
-            final Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
-            if (obj != null) {
-                CONFIGURATION = (Configuration) obj;
-            } else {
-                CONFIGURATION = new Configuration();
+            try {
+                Object obj = JDUtilities.getDatabaseConnector().getData(Configuration.NAME);
+                if (obj != null) {
+                    CONFIGURATION = (Configuration) obj;
+                }
+            } catch (NoOldJDDataBaseFoundException e) {
+            } catch (Throwable e) {
+                LogController.CL().log(e);
             }
         }
+        if (CONFIGURATION == null) CONFIGURATION = new Configuration();
         return CONFIGURATION;
-    }
-
-    /* please keep this */
-    public static void setDB_CONNECT(DatabaseConnector dB_CONNECT) {
-        DB_CONNECT = dB_CONNECT;
-    }
-
-    /* please keep this */
-    public static void setJDHomeDirectory(File home) {
-        if (home == null) return;
-        JD_HOME = home;
     }
 
     /**
@@ -208,10 +150,6 @@ public class JDUtilities {
         return ret.toString();
     }
 
-    public static String getPercent(final long downloadCurrent, final long downloadMax) {
-        return (new DecimalFormat("0.00")).format(100.0 * downloadCurrent / downloadMax) + "%";
-    }
-
     /**
      * Sucht ein passendes Plugin fuer einen Anbieter Please dont use the returned Plugin to start any function
      * 
@@ -224,7 +162,7 @@ public class JDUtilities {
         if (l != null) try {
             return l.getPrototype();
         } catch (UpdateRequiredClassNotFoundException e) {
-            Log.exception(e);
+            LogController.CL().log(e);
             return null;
         }
         return null;
@@ -235,7 +173,7 @@ public class JDUtilities {
         if (lplugin != null) try {
             return lplugin.getPrototype();
         } catch (UpdateRequiredClassNotFoundException e) {
-            Log.exception(e);
+            LogController.CL().log(e);
             return null;
         }
         return null;
@@ -246,7 +184,7 @@ public class JDUtilities {
         if (lplugin != null) try {
             return lplugin.newInstance();
         } catch (UpdateRequiredClassNotFoundException e) {
-            Log.exception(e);
+            LogController.CL().log(e);
             return null;
         }
         return null;
@@ -320,38 +258,18 @@ public class JDUtilities {
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }
 
-    /**
-     * Setzt die Konfigurations instanz
-     * 
-     * @param CONFIGURATION
-     */
-    public static void setConfiguration(final Configuration configuration) {
-        JDUtilities.CONFIGURATION = configuration;
-    }
-
-    public synchronized static DatabaseConnector getDatabaseConnector() {
+    public synchronized static DatabaseConnector getDatabaseConnector() throws NoOldJDDataBaseFoundException {
+        if (oldDBExists == null) oldDBExists = Application.getResource("/config/database.script").exists();
+        if (Boolean.FALSE.equals(oldDBExists)) throw new NoOldJDDataBaseFoundException();
         if (DB_CONNECT != null) return DB_CONNECT;
         if (DB_CONNECT == null) {
             try {
                 DB_CONNECT = new DatabaseConnector();
-            } catch (Exception e) {
-                JDLogger.exception(e);
-                final String configpath = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/config/";
-                if (e.getMessage().equals("Database broken!")) {
-                    LOGGER.severe("Database broken! Creating fresh Database");
-                    if (!new File(configpath + "database.script").delete() || !new File(configpath + "database.properties").delete()) {
-                        LOGGER.severe("Could not delete broken Database");
-                        UserIO.getInstance().requestMessageDialog("Could not delete broken database. Please remove the JD_HOME/config directory and restart JD");
-                    }
-                }
-                try {
-                    DB_CONNECT = new DatabaseConnector();
-                } catch (Exception e1) {
-                    JDLogger.exception(e1);
-                    UserIO.getInstance().requestMessageDialog("Could not create database. Please remove the JD_HOME/config directory and restart JD");
-
-                    System.exit(1);
-                }
+            } catch (Throwable e) {
+                /* we no longer use old DataBase, so no need to retry or create fresh one */
+                LogController.CL().log(e);
+                oldDBExists = false;
+                throw new NoOldJDDataBaseFoundException();
             }
         }
         return DB_CONNECT;
@@ -371,8 +289,8 @@ public class JDUtilities {
 
             return doc;
         } catch (Exception e) {
-            LOGGER.severe(xmlString);
-            JDLogger.exception(e);
+            LogController.CL().severe(xmlString);
+            LogController.CL().log(e);
         }
         return null;
     }
@@ -389,9 +307,8 @@ public class JDUtilities {
             transformer.transform(source, result);
 
             return result.getWriter().toString();
-
-        } catch (TransformerException e) {
-            JDLogger.exception(e);
+        } catch (Throwable e) {
+            LogController.CL().log(e);
         }
         return null;
     }
@@ -407,11 +324,6 @@ public class JDUtilities {
         final NamedNodeMap att = childNode.getAttributes();
         if (att == null || att.getNamedItem(key) == null) { return null; }
         return att.getNamedItem(key).getNodeValue();
-    }
-
-    @Deprecated
-    public static void openExplorer(File file) {
-        if (CrossSystem.isOpenBrowserSupported()) CrossSystem.openFile(file);
     }
 
 }

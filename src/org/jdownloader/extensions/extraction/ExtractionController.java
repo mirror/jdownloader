@@ -20,17 +20,17 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.
@@ -45,21 +45,22 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean             removeAfterExtraction;
     private Archive             archive;
     private IExtraction         extractor;
-    private Logger              logger;
     private ScheduledFuture<?>  timer;
     private Type                latestEvent;
     private double              progress;
     private boolean             removeDownloadLinksAfterExtraction;
     private ExtractionExtension extension;
+    private final LogSource     logger;
 
-    ExtractionController(ExtractionExtension extractionExtension, Archive archiv, Logger logger) {
+    ExtractionController(ExtractionExtension extractionExtension, Archive archiv) {
         this.archive = archiv;
-
+        logger = LogController.CL();
+        logger.setAllowTimeoutFlush(false);
+        logger.info("Extraction of" + archive);
         extractor = archive.getExtractor();
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
         extension = extractionExtension;
-        this.logger = logger;
         extractor.setLogger(logger);
         passwordList = new ArrayList<String>();
     }
@@ -74,13 +75,17 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     }
 
+    public LogSource getLogger() {
+        return logger;
+    }
+
     @Override
     protected boolean allowAsync() {
         return true;
     }
 
     private boolean checkPassword(String pw, boolean optimized) {
-        Log.L.info("Check Password: " + pw);
+        logger.info("Check Password: " + pw);
         if (pw == null || "".equals(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
@@ -121,7 +126,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (extractor.prepare()) {
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
-                    System.out.println(1);
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     passwordList.add(archive.getName());
                     ArrayList<String> pwList = extractor.config.getPasswordList();
@@ -174,7 +178,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                 if (!archive.getExtractTo().exists()) {
                     if (!archive.getExtractTo().mkdirs()) {
-                        Log.L.warning("Could not create subpath");
+                        logger.warning("Could not create subpath");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     }
                 }
@@ -202,34 +206,35 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         removeArchiveFiles();
                     }
                     fireEvent(ExtractionEvent.Type.FINISHED);
+                    logger.clear();
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
-                    Log.L.warning("Archive seems to be incomplete " + archive);
+                    logger.warning("Archive seems to be incomplete " + archive);
                     fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CRC_ERROR:
-                    Log.L.warning("A CRC error occurred when unpacking " + archive);
+                    logger.warning("A CRC error occurred when unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED_CRC);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_USER_BREAK:
-                    Log.L.info("User interrupted unpacking of " + archive);
+                    logger.info("User interrupted unpacking of " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR:
-                    Log.L.warning("Could not create Outputfile for" + archive);
+                    logger.warning("Could not create Outputfile for" + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR:
-                    Log.L.warning("Unable to write unpacked data on harddisk for " + archive);
+                    logger.warning("Unable to write unpacked data on harddisk for " + archive);
                     this.exception = new ExtractionException("Write to disk error");
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR:
-                    Log.L.warning("A unknown fatal error occurred while unpacking " + archive);
+                    logger.warning("A unknown fatal error occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_WARNING:
-                    Log.L.warning("Non fatal error(s) occurred while unpacking " + archive);
+                    logger.warning("Non fatal error(s) occurred while unpacking " + archive);
                     fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                     break;
                 default:
@@ -241,8 +246,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
             }
         } catch (Exception e) {
+            logger.log(e);
             this.exception = e;
-            Log.exception(e);
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
             try {
@@ -250,6 +255,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             } catch (final Throwable e) {
             }
             fireEvent(ExtractionEvent.Type.CLEANUP);
+            logger.close();
         }
         return null;
     }
@@ -262,7 +268,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
                 if (!link.deleteFile()) {
-                    Log.L.warning("Could not delete archive: " + link);
+                    logger.warning("Could not delete archive: " + link);
                 } else {
                     removed.add(new File(link.getFilePath()));
                 }

@@ -19,19 +19,18 @@ package jd.plugins;
 import java.io.File;
 import java.lang.reflect.Field;
 
-import jd.controlling.JDLogger;
-
 import org.appwork.utils.formatter.StringFormatter;
+import org.jdownloader.logging.LogController;
 
 public class ContainerStatus {
 
-    public static final int STATUS_FAILED = 1 << 2;
+    public static final int STATUS_FAILED   = 1 << 2;
     public static final int STATUS_FINISHED = 1 << 1;
-    public static final int TODO = 1 << 0;
-    private File container;
-    private int status = TODO;
-    private String statusText;
-    private int latestStatus;
+    public static final int TODO            = 1 << 0;
+    private File            container;
+    private int             status          = TODO;
+    private String          statusText;
+    private int             latestStatus;
 
     public ContainerStatus() {
 
@@ -42,8 +41,7 @@ public class ContainerStatus {
     }
 
     /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte Status wird dabei nicht
-     * gelöscht.
+     * Fügt einen LinkStatus.* Status hinzu.Der alte Status wird dabei nicht gelöscht.
      * 
      * @param status
      */
@@ -77,8 +75,7 @@ public class ContainerStatus {
     }
 
     /**
-     * Setzt den Linkstatus. Es dürfen nur LinkStatus.*STATUS ids verwendet
-     * werden
+     * Setzt den Linkstatus. Es dürfen nur LinkStatus.*STATUS ids verwendet werden
      * 
      * @param status
      */
@@ -94,7 +91,7 @@ public class ContainerStatus {
         return statusText;
     }
 
-    //@Override
+    // @Override
     public String toString() {
         Class<? extends ContainerStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
@@ -117,9 +114,9 @@ public class ContainerStatus {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 } catch (IllegalAccessException e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
             }
         }

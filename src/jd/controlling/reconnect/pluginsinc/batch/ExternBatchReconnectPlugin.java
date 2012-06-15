@@ -77,14 +77,13 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
                     final String batch = getBatchText();
 
                     final String[] lines = org.appwork.utils.Regex.getLines(batch);
-                    RouterPlugin.LOG.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
+                    logger.info("Using Batch-Mode: using " + command + " as interpreter! (default: windows(cmd.exe) linux&mac(/bin/bash) )");
                     for (final String element : lines) {
                         cmds[cmdsLength1] = element;
                         /*
-                         * if we have multiple lines, wait for each line to
-                         * finish until starting the next one
+                         * if we have multiple lines, wait for each line to finish until starting the next one
                          */
-                        RouterPlugin.LOG.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
+                        logger.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, lines.length >= 2 ? waitForReturn : -1));
                     }
                 }
             }
@@ -174,8 +173,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     }
 
     /**
-     * returns how long the execution should wait for the extern process to
-     * return
+     * returns how long the execution should wait for the extern process to return
      * 
      * @return
      */

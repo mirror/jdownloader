@@ -19,13 +19,13 @@ package org.jdownloader.extensions.extraction;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import jd.gui.UserIO;
 
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.translate.T;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Updates the Extractionprogess for archives in the downloadlist
@@ -34,7 +34,6 @@ import org.jdownloader.extensions.extraction.translate.T;
  * 
  */
 public class ExtractionListenerList implements ExtractionListener {
-    private Logger              logger;
     private ExtractionExtension ex;
 
     ExtractionListenerList() {
@@ -43,7 +42,7 @@ public class ExtractionListenerList implements ExtractionListener {
 
     public void onExtractionEvent(ExtractionEvent event) {
         ExtractionController controller = event.getCaller();
-
+        LogSource logger = controller.getLogger();
         // if (controller.getProgressController() != null) return;
 
         // Falls der link entfernt wird während dem entpacken

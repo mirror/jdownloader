@@ -1,18 +1,17 @@
 package org.jdownloader.extensions.antistandby;
 
-import jd.controlling.JDLogger;
-
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.DBusInterfaceName;
 import org.freedesktop.dbus.UInt32;
+import org.jdownloader.logging.LogController;
 
 public class JDAntiStandbyLinux {
 
     private static JDAntiStandbyLinux INSTANCE = new JDAntiStandbyLinux();
-    private DBusConnection c = null;
-    private GnomeSessionManager sm = null;
-    private UInt32 cookie = null;
+    private DBusConnection            c        = null;
+    private GnomeSessionManager       sm       = null;
+    private UInt32                    cookie   = null;
 
     private JDAntiStandbyLinux() {
         /* TODO: change, rewrite unix-socket to use dynamic path for library */
@@ -20,7 +19,7 @@ public class JDAntiStandbyLinux {
             c = DBusConnection.getConnection(DBusConnection.SESSION);
             sm = (GnomeSessionManager) c.getRemoteObject("org.gnome.SessionManager", "/org/gnome/SessionManager", GnomeSessionManager.class);
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             if (c != null) {
                 c.disconnect();
             }

@@ -18,20 +18,16 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.StringReader;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import jd.controlling.JDLogger;
-
+import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 public class CLRConverter {
-
-    private static final Logger logger = JDLogger.getLogger();
 
     public static String[] createLiveHeader(String clr) {
         try {
@@ -65,7 +61,7 @@ public class CLRConverter {
                     } else if (method.equalsIgnoreCase("auth")) {
                         basicauth = action;
                     } else {
-                        logger.severe("UNKNOWN METHOD: " + method);
+                        LogController.CL().severe("UNKNOWN METHOD: " + method);
                     }
                     NodeList params = node.getChildNodes();
                     HashMap<String, String> p = new HashMap<String, String>();
@@ -105,14 +101,14 @@ public class CLRConverter {
                     hlh.append("        [[[/REQUEST]]]\r\n");
                     hlh.append("    [[[/STEP]]]\r\n");
                 } else {
-                    logger.info("UNKNOWN COMMAND: " + node.getNodeName());
+                    LogController.CL().info("UNKNOWN COMMAND: " + node.getNodeName());
                 }
             }
             hlh.append("[[[/HSRC]]]");
 
             return new String[] { routerName, hlh.toString() };
         } catch (Throwable e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return null;
         }
     }
@@ -122,7 +118,7 @@ public class CLRConverter {
             if (basicauth.equalsIgnoreCase("")) {
                 hlh.append("            Authorization: Basic %%%basicauth%%%\r\n");
             } else {
-                logger.severe("UNKNOWN AUTH TYPE");
+                LogController.CL().severe("UNKNOWN AUTH TYPE");
             }
         }
     }

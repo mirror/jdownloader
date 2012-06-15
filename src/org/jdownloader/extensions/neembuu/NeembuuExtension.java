@@ -30,7 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
@@ -46,6 +45,7 @@ import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTranslation> implements MenuFactoryListener {
 
@@ -99,7 +99,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
 
         boolean del = f_test.delete();
         if (!del) {
-            logger.severe("could not delete " + f_test);
+            LogController.CL().severe("could not delete " + f_test);
             java.nio.file.Files.delete(f_test.toPath());
         }
 
@@ -108,13 +108,13 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
 
     public synchronized final boolean isUsable() {
         if (number_of_retries > 10) {
-            logger.fine("Virtual File system checked more than 10 times, and it is not working");
+            LogController.CL().fine("Virtual File system checked more than 10 times, and it is not working");
             return false;
             // we just simply assume
             // that it is not going to work
         }
         if (number_of_retries != -1) {
-            if (CheckJPfm.checkVirtualFileSystemCompatibility(logger)) {
+            if (CheckJPfm.checkVirtualFileSystemCompatibility(LogController.CL())) {
                 number_of_retries = -1;
             } else {
                 number_of_retries++;
@@ -182,7 +182,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
                  * jdds.toString(), _NT._.failed_WatchAsYouDownload_Title(), JOptionPane.ERROR_MESSAGE); } });
                  */
 
-                logger.log(Level.SEVERE, "Could not start a watch as you download session", a);
+                LogController.CL().log(Level.SEVERE, "Could not start a watch as you download session", a);
                 return false;
             }
             tab.addSession(jdds);
@@ -217,7 +217,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
             while (it.hasNext()) {
                 try {
                     NB_VirtualFileSystem fs = it.next().getVirtualFileSystem();
-                    Log.L.info("unmounting " + fs.getMount());
+                    LogController.CL().info("unmounting " + fs.getMount());
                     fs.unmountAndEndSessions();
                 } catch (Exception a) {
                     // ignore
@@ -227,7 +227,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
         }
         MenuFactoryEventSender.getInstance().removeListener(this);
         tab = null;
-        Log.L.finer("Stopped " + getClass().getSimpleName());
+        LogController.CL().finer("Stopped " + getClass().getSimpleName());
     }
 
     /**
@@ -236,7 +236,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
     @Override
     protected void start() throws StartException {
         if (Application.getJavaVersion() < Application.JAVA17) throw new StartException("Java 1.7 needed!");
-        Log.L.finer("Started " + getClass().getSimpleName());
+        LogController.CL().finer("Started " + getClass().getSimpleName());
         new EDTRunner() {
 
             @Override

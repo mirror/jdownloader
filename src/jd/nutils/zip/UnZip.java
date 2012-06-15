@@ -27,27 +27,27 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jd.controlling.JDLogger;
+import org.jdownloader.logging.LogController;
 
 public class UnZip {
-    public boolean autoDelete = false;
+    public boolean              autoDelete  = false;
 
     // The buffer for reading/writing the ZipFile data //
-    protected byte[] b;
+    protected byte[]            b;
 
     protected SortedSet<String> dirsMade;
 
     // Der Zielpfad in dem entpackt werden soll
 
-    private File targetPath = null;
+    private File                targetPath  = null;
 
-    protected boolean warnedMkDir = false;
+    protected boolean           warnedMkDir = false;
 
-    protected ZipFile zipF;
+    protected ZipFile           zipF;
 
-    private File zipFile = null;
+    private File                zipFile     = null;
 
-    private boolean overwrite=true;
+    private boolean             overwrite   = true;
 
     public boolean isOverwrite() {
         return overwrite;
@@ -128,12 +128,12 @@ public class UnZip {
                 }
             }
         }
-        //System.out.println(targetPath+"Creating " + zipName);
+        // System.out.println(targetPath+"Creating " + zipName);
         File toExtract = new File(targetPath, zipName);
-        if(!overwrite&&toExtract.exists()){
+        if (!overwrite && toExtract.exists()) {
             System.out.println("Exists skip " + zipName);
             return null;
-        }else{
+        } else {
             toExtract.delete();
         }
         FileOutputStream os = new FileOutputStream(toExtract);
@@ -158,7 +158,7 @@ public class UnZip {
             return ret.toArray(new String[ret.size()]);
 
         } catch (IOException err) {
-            JDLogger.exception(err);
+            LogController.CL().log(err);
         }
         return null;
     }

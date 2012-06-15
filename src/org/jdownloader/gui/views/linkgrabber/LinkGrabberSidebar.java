@@ -10,7 +10,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.MigPanel;
-import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.Checkbox;
 import org.jdownloader.gui.views.components.Header;
@@ -19,7 +18,6 @@ import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterExceptionsTa
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterHosterTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickFilterTypeTable;
 import org.jdownloader.gui.views.linkgrabber.quickfilter.QuickSettingsHeader;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LinkGrabberSidebar extends MigPanel {
 

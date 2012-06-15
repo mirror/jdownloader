@@ -49,8 +49,8 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.rmi.ConnectException;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
-import jd.controlling.JDLogger;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
@@ -58,17 +58,17 @@ import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
- * SimpleFTP is a simple package that implements a Java FTP client. With
- * SimpleFTP, you can connect to an FTP server and upload multiple files.
+ * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple files.
  * 
  * Based on Work of Paul Mutton http://www.jibble.org/
  */
 public class SimpleFTP {
     private static final int                   TIMEOUT    = 20 * 1000;
     private boolean                            binarymode = false;
-    private static boolean                     DEBUG      = true;
     private BufferedReader                     reader     = null;
     private Socket                             socket     = null;
     private BufferedWriter                     writer     = null;
@@ -77,6 +77,7 @@ public class SimpleFTP {
     private Eventsender<FtpListener, FtpEvent> broadcaster;
     private ThrottledConnectionHandler         cmanager   = null;
     private DownloadInterface                  dl;
+    private Logger                             logger     = LogController.CL();
 
     public ThrottledConnectionHandler getCmanager() {
         return cmanager;
@@ -88,6 +89,15 @@ public class SimpleFTP {
 
     public Eventsender<FtpListener, FtpEvent> getBroadcaster() {
         return broadcaster;
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
+
+    public void setLogger(Logger logger) {
+        if (logger == null) logger = LogController.CL();
+        this.logger = logger;
     }
 
     /**
@@ -110,9 +120,8 @@ public class SimpleFTP {
     }
 
     /**
-     * Enter ASCII mode for sending text files. This is usually the default
-     * mode. Make sure you use binary mode if you are sending images or other
-     * binary data, as ASCII mode is likely to corrupt them.
+     * Enter ASCII mode for sending text files. This is usually the default mode. Make sure you use binary mode if you are sending images or other binary data,
+     * as ASCII mode is likely to corrupt them.
      */
     public synchronized boolean ascii() throws IOException {
         sendLine("TYPE A");
@@ -121,10 +130,8 @@ public class SimpleFTP {
             if (binarymode) binarymode = false;
             return true;
         } catch (IOException e) {
-            if (e.getMessage().contains("ascii")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogController.CL().log(e);
+            if (e.getMessage().contains("ascii")) { return false; }
             throw e;
         }
     }
@@ -139,17 +146,14 @@ public class SimpleFTP {
             if (!binarymode) binarymode = true;
             return true;
         } catch (IOException e) {
-            if (e.getMessage().contains("binary")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogController.CL().log(e);
+            if (e.getMessage().contains("binary")) { return false; }
             throw e;
         }
     }
 
     /**
-     * Connects to the default port of an FTP server and logs in as
-     * anonymous/anonymous.
+     * Connects to the default port of an FTP server and logs in as anonymous/anonymous.
      */
     public synchronized void connect(String host) throws IOException {
         connect(host, 21);
@@ -163,8 +167,7 @@ public class SimpleFTP {
     }
 
     /**
-     * Connects to an FTP server and logs in with the supplied username and
-     * password.
+     * Connects to an FTP server and logs in with the supplied username and password.
      */
     public synchronized void connect(String host, int port, String user, String pass) throws IOException {
         if (socket != null) { throw new IOException("SimpleFTP is already connected. Disconnect first."); }
@@ -192,8 +195,7 @@ public class SimpleFTP {
     }
 
     /**
-     * Changes the working directory (like cd). Returns true if
-     * successful.RELATIVE!!!
+     * Changes the working directory (like cd). Returns true if successful.RELATIVE!!!
      */
     public synchronized boolean cwd(String dir) throws IOException {
         dir = dir.replaceAll("[\\\\|//]+?", "/");
@@ -209,10 +211,8 @@ public class SimpleFTP {
             }
             return true;
         } catch (IOException e) {
-            if (e.getMessage().contains("was unable to change")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogController.CL().log(e);
+            if (e.getMessage().contains("was unable to change")) { return false; }
             throw e;
         }
     }
@@ -251,9 +251,7 @@ public class SimpleFTP {
 
     private String readLine() throws IOException {
         String line = reader.readLine();
-        if (DEBUG) {
-            System.out.println(host + " < " + line);
-        }
+        logger.info(host + " < " + line);
         return line;
     }
 
@@ -300,10 +298,8 @@ public class SimpleFTP {
             readLines(new int[] { 250 }, "could not remove file");
             return true;
         } catch (IOException e) {
-            if (e.getMessage().contains("could not remove file")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogController.CL().log(e);
+            if (e.getMessage().contains("could not remove file")) { return false; }
             throw e;
         }
     }
@@ -313,19 +309,15 @@ public class SimpleFTP {
         try {
             readLines(new int[] { 350 }, "RNFR failed");
         } catch (IOException e) {
-            if (e.getMessage().contains("RNFR")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogSource.exception(logger, e);
+            if (e.getMessage().contains("RNFR")) { return false; }
         }
         sendLine("RNTO " + to);
         try {
             readLines(new int[] { 250 }, "RNTO failed");
         } catch (IOException e) {
-            if (e.getMessage().contains("RNTO")) {
-                JDLogger.exception(e);
-                return false;
-            }
+            LogSource.exception(logger, e);
+            if (e.getMessage().contains("RNTO")) { return false; }
         }
         return true;
     }
@@ -336,6 +328,7 @@ public class SimpleFTP {
         try {
             Size = readLines(new int[] { 213 }, "SIZE failed");
         } catch (IOException e) {
+            LogSource.exception(logger, e);
             if (e.getMessage().contains("SIZE") || e.getMessage().contains("550")) { return -1; }
         }
         String[] split = Size.split(" ");
@@ -350,19 +343,17 @@ public class SimpleFTP {
         try {
             writer.write(line + "\r\n");
             writer.flush();
-            if (DEBUG) {
-                System.out.println(host + " > " + line);
-            }
+            logger.info(host + " > " + line);
         } catch (IOException e) {
+            LogSource.exception(logger, e);
             disconnect();
             throw e;
         }
     }
 
     /**
-     * Sends a file to be stored on the FTP server. Returns true if the file
-     * transfer was successful. The file is sent in passive mode to avoid NAT or
-     * firewall problems at the client end.
+     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
+     * problems at the client end.
      */
     public synchronized boolean stor(File file) throws IOException {
         if (file.isDirectory()) { throw new IOException("SimpleFTP cannot upload a directory."); }
@@ -371,9 +362,8 @@ public class SimpleFTP {
     }
 
     /**
-     * Sends a file to be stored on the FTP server. Returns true if the file
-     * transfer was successful. The file is sent in passive mode to avoid NAT or
-     * firewall problems at the client end.
+     * Sends a file to be stored on the FTP server. Returns true if the file transfer was successful. The file is sent in passive mode to avoid NAT or firewall
+     * problems at the client end.
      */
     public synchronized boolean stor(InputStream input, String filename) throws IOException {
         Socket dataSocket = null;
@@ -407,11 +397,11 @@ public class SimpleFTP {
             response = readLine();
             return response.startsWith("226 ");
         } catch (ConnectException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
             cancelTransfer();
             return stor(input, filename);
         } catch (SocketException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
             cancelTransfer();
             return stor(input, filename);
         } finally {
@@ -425,7 +415,7 @@ public class SimpleFTP {
             this.sendLine("ABOR");
             readLine();
         } catch (IOException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
         }
     }
 
@@ -444,6 +434,7 @@ public class SimpleFTP {
                 port = Integer.parseInt(tokenizer.nextToken()) * 256 + Integer.parseInt(tokenizer.nextToken());
                 return new InetSocketAddress(ip, port);
             } catch (Exception e) {
+                LogSource.exception(logger, e);
                 throw new IOException("SimpleFTP received bad data link information: " + response);
             }
         }
@@ -512,165 +503,9 @@ public class SimpleFTP {
         return dir;
     }
 
-    /**
-     * UPloads varios files to a single remotefolder
-     * 
-     * @param ip
-     * @param port
-     * @param user
-     * @param password
-     * @param destfolder
-     * @param src
-     * @throws IOException
-     */
-    public static void upload(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
-
-        SimpleFTP ftp = new SimpleFTP();
-        ftp.connect(ip, port, user, password);
-        ftp.bin();
-        ftp.cwd(destfolder);
-        for (File f : src) {
-            ftp.stor(f);
-        }
-
-        // Quit from the FTP server.
-        ftp.disconnect();
-
-    }
-
-    /**
-     * Uploades files to a remotefolder and downloads them again to check for
-     * transfer errors
-     * 
-     * @param ip
-     * @param port
-     * @param user
-     * @param password
-     * @param destfolder
-     * @param src
-     * @throws IOException
-     */
-    public static void uploadtoFolderSecure(String ip, int port, String user, String password, String destfolder, File... src) throws IOException {
-
-        SimpleFTP ftp = new SimpleFTP();
-        ftp.connect(ip, port, user, password);
-        ftp.bin();
-        ftp.cwd(destfolder);
-        for (File f : src) {
-            ftp.stor(f);
-
-            File dummy = File.createTempFile("simpleftp_secure", null);
-
-            ftp.download(f.getName(), dummy);
-
-            if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
-                throw new IOException("MD5 check failed for: " + f);
-            } else {
-                if (DEBUG) {
-                    System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----" + JDHash.getMD5(dummy));
-                }
-            }
-            dummy.delete();
-        }
-
-        // Quit from the FTP server.
-        ftp.disconnect();
-
-    }
-
-    public static void uploadSecure(String ip, int port, String user, String password, String destfolder, File root, File... list) throws IOException {
-        SimpleFTP ftp = new SimpleFTP();
-        ftp.connect(ip, port, user, password);
-        ftp.bin();
-        long size = 0;
-        long transfered = 0;
-        for (File f : list) {
-            size += f.length();
-
-        }
-        for (File f : list) {
-
-            if (!f.getAbsolutePath().startsWith(root.getAbsolutePath())) { throw new IOException(f + " is not part of " + root); }
-            String subfolder;
-            // f=f;
-            if (f.isDirectory()) {
-
-                subfolder = f.getAbsolutePath().substring(root.getAbsolutePath().length());
-            } else {
-                subfolder = f.getParent().substring(root.getAbsolutePath().length());
-
-            }
-
-            if (!ftp.cwd(mergeFolders(destfolder, subfolder))) {
-                ftp.mkdir(mergeFolders(destfolder, subfolder));
-                if (!ftp.cwd(mergeFolders(destfolder, subfolder))) { throw new IOException("Unexpected error"); }
-            }
-            if (f.isDirectory()) {
-
-                // ftp.mBETA_20090613_001kdir(f.getName());
-            } else {
-                File dummy = File.createTempFile("simpleftp_secure", null);
-                try {
-                    ftp.download(f.getName(), dummy);
-                    if (JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
-                        if (DEBUG) {
-                            System.out.println("---- Skip .MD5 ok: " + ftp.getDir() + "" + f.getName() + " -----" + JDHash.getMD5(dummy));
-                        }
-                        continue;
-
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                dummy.delete();
-                ftp.stor(f);
-
-                ftp.download(f.getName(), dummy);
-
-                if (!JDHash.getMD5(dummy).equalsIgnoreCase(JDHash.getMD5(f))) {
-                    throw new IOException("MD5 check failed for: " + f);
-                } else {
-                    if (DEBUG) {
-                        System.out.println("---- MD5 OK: /" + ftp.getDir() + "" + f.getName() + " -----" + JDHash.getMD5(dummy));
-                    }
-                }
-                dummy.delete();
-            }
-            transfered += f.length();
-            if (DEBUG) {
-                System.out.println(ftp.host + ": " + ((transfered * 100l) / size) + "%");
-            }
-        }
-
-        // Quit from the FTP server.
-        ftp.disconnect();
-
-    }
-
-    /**
-     * m,erges to folderparts and takes care that there is no double "/"
-     * 
-     * @param dirs
-     * @return
-     */
-    private static String mergeFolders(String... dirs) {
-        String res = dirs[0];
-
-        for (int i = 1; i < dirs.length; i++) {
-            while (res.endsWith("/") || res.endsWith("\\"))
-                res = res.substring(0, res.length() - 1);
-            while (dirs[i].startsWith("/") || dirs[i].startsWith("\\"))
-                dirs[i] = dirs[i].substring(1);
-            res += "/" + dirs[i];
-
-        }
-        return res;
-
-    }
-
     public void download(String filename, File file, boolean restart) throws IOException {
         long resumePosition = 0;
-        if (!binarymode) System.out.println("Warning: Download in ASCII mode may fail!");
+        if (!binarymode) logger.info("Warning: Download in ASCII mode may fail!");
         InetSocketAddress pasv = pasv();
         if (restart) {
             resumePosition = file.length();
@@ -719,6 +554,7 @@ public class SimpleFTP {
                     try {
                         response = readLine();
                     } catch (SocketTimeoutException e) {
+                        LogSource.exception(logger, e);
                         response = "SocketTimeout because of buggy Server";
                     }
                     this.shutDownSocket(dataSocket);
@@ -736,23 +572,24 @@ public class SimpleFTP {
             try {
                 response = readLine();
             } catch (SocketTimeoutException e) {
+                LogSource.exception(logger, e);
                 response = "SocketTimeout because of buggy Server";
             }
             if (!response.startsWith("226")) { throw new IOException("Download failed: " + response); }
         } catch (SocketTimeoutException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
             return;
         } catch (SocketException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
             return;
         } catch (ConnectException e) {
-            e.printStackTrace();
+            LogSource.exception(logger, e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
@@ -787,15 +624,6 @@ public class SimpleFTP {
             dataSocket.close();
         } catch (Throwable e) {
         }
-    }
-
-    public static void download(String ip, int port, String user, String password, String filepath, String name, File file) throws IOException {
-        SimpleFTP ftp = new SimpleFTP();
-        ftp.connect(ip, port, user, password);
-        ftp.bin();
-        ftp.cwd(filepath);
-        ftp.download(name, file);
-
     }
 
     /**

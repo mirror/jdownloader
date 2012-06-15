@@ -1,23 +1,25 @@
 package org.jdownloader.extensions.captchapush;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaResult;
+
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 import com.ibm.mqtt.MqttCallback;
 import com.ibm.mqtt.MqttClient;
 
 public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
-    private MqttClient                         mqtt = null;
+    private MqttClient                         mqtt   = null;
 
     private Thread                             reconnectThread;
 
     private final CaptchaPushExtension         extension;
-    private final Logger                       logger;
+    private LogSource                          logger = null;
 
     private final String                       clientId;
 
@@ -26,7 +28,6 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
     public CaptchaPushService(CaptchaPushExtension extension) {
         this.extension = extension;
-        this.logger = extension.getLogger();
         this.clientId = "JD_" + extension.getConfig().getBrokerTopic();
         this.currentController = new ArrayList<CaptchaController>();
     }
@@ -36,6 +37,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
     }
 
     public boolean connect() {
+        logger = LogController.CL(CaptchaPushExtension.class);
         try {
             if (mqtt == null) {
                 mqtt = new MqttClient(extension.getConfig().getBrokerHost(), extension.getConfig().getBrokerPort(), this);
@@ -49,6 +51,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
             return true;
         } catch (Exception e) {
             logger.info("ERROR: MQTT Service failed to connect to " + mqtt.getConnection());
+            logger.close();
             return false;
         }
     }
@@ -63,6 +66,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
         if (mqtt != null) mqtt.disconnect();
 
         logger.info("MQTT Service disconnected");
+        logger.close();
     }
 
     public void publish(byte[] message) {

@@ -14,24 +14,24 @@ import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
 import org.lobobrowser.html.HttpRequest;
 import org.lobobrowser.html.ReadyStateChangeListener;
 import org.w3c.dom.Document;
 
 public class ExtHTTPRequest implements HttpRequest {
 
-    private ExtBrowser browser;
+    private ExtBrowser                          browser;
 
     private ArrayList<ReadyStateChangeListener> listener;
 
-    private int readyState = NetworkRequest.STATE_UNINITIALIZED;
+    private int                                 readyState = NetworkRequest.STATE_UNINITIALIZED;
 
-    private Request request;
+    private Request                             request;
 
-    private boolean asyncFlag;
+    private boolean                             asyncFlag;
 
-    private Browser br;
+    private Browser                             br;
 
     public ExtHTTPRequest(ExtBrowser browser) {
         this.browser = browser;
@@ -40,7 +40,7 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public void abort() {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
@@ -52,7 +52,7 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public String getAllResponseHeaders() {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
@@ -90,7 +90,7 @@ public class ExtHTTPRequest implements HttpRequest {
         try {
             return request.getHtmlCode();
         } catch (CharacterCodingException e) {
-            Log.exception(e);
+            LogController.CL().log(e);
             return null;
         }
 
@@ -98,7 +98,7 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public Document getResponseXML() {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
@@ -110,21 +110,21 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public String getStatusText() {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
 
     public void open(String method, String url) throws IOException {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
 
     public void open(String method, URL url) throws IOException {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
@@ -144,7 +144,7 @@ public class ExtHTTPRequest implements HttpRequest {
 
         } else {
             RuntimeException e = new RuntimeException("Not implemented");
-            Log.exception(e);
+            LogController.CL().log(e);
             throw e;
         }
 
@@ -154,14 +154,14 @@ public class ExtHTTPRequest implements HttpRequest {
 
     public void open(String method, URL url, boolean asyncFlag, String userName) throws IOException {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
 
     public void open(String method, URL url, boolean asyncFlag, String userName, String password) throws IOException {
         RuntimeException e = new RuntimeException("Not implemented");
-        Log.exception(e);
+        LogController.CL().log(e);
         throw e;
 
     }
@@ -239,10 +239,12 @@ public class ExtHTTPRequest implements HttpRequest {
                 htmlCode.append(line + "\r\n");
             }
         } catch (EOFException e) {
-            jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+            LogController.CL().severe("Try workaround for ");
+            LogController.CL().log(e);
         } catch (IOException e) {
             if (e.toString().contains("end of ZLIB") || e.toString().contains("Premature")) {
-                jd.controlling.JDLogger.getLogger().log(java.util.logging.Level.SEVERE, "Try workaround for ", e);
+                LogController.CL().severe("Try workaround for ");
+                LogController.CL().log(e);
             } else
                 throw e;
         } finally {

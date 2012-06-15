@@ -384,12 +384,15 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, LogSource logger) {
-        if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) return;
+        if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) {
+            logger.info("Link " + link.getDownloadURL() + " is " + link.getAvailableStatus());
+            return;
+        }
         AvailableStatus availableStatus = null;
         try {
             logger.clear();
             plgToUse.reset();
-            logger.info("Check Single FileInformation: " + link.getDownloadURL());
+            logger.info("Check FileInformation: " + link.getDownloadURL());
             availableStatus = plgToUse.requestFileInformation(link);
         } catch (PluginException e) {
             logger.log(e);
@@ -404,7 +407,7 @@ public class LinkChecker<E extends CheckableLink> {
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
-            logger.info("Link is: " + availableStatus);
+            logger.info("Link " + link.getDownloadURL() + " is " + availableStatus);
             logger.clear();
             try {
                 plgToUse.getBrowser().getHttpConnection().disconnect();

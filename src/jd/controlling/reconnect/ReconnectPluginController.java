@@ -3,7 +3,6 @@ package jd.controlling.reconnect;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,12 +10,10 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.pluginsinc.batch.ExternBatchReconnectPlugin;
 import jd.controlling.reconnect.pluginsinc.extern.ExternReconnectPlugin;
@@ -34,13 +31,14 @@ import org.appwork.utils.IO;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";
@@ -54,8 +52,6 @@ public class ReconnectPluginController {
     private ArrayList<RouterPlugin> plugins;
 
     private final ReconnectConfig   storage;
-
-    protected static final Logger   LOG = JDLogger.getLogger();
 
     private ReconnectPluginController() {
         this.storage = JsonConfig.create(ReconnectConfig.class);
@@ -171,21 +167,6 @@ public class ReconnectPluginController {
     }
 
     /**
-     * Performs a reconnect
-     * 
-     * @return true if ip changed
-     * @throws InterruptedException
-     * @throws ReconnectException
-     */
-    public synchronized final boolean doReconnect() throws InterruptedException, ReconnectException {
-
-        final RouterPlugin active = this.getActivePlugin();
-        if (active == DummyRouterPlugin.getInstance()) { throw new ReconnectException("Invalid Plugin"); }
-        return this.doReconnect(this.getActivePlugin());
-
-    }
-
-    /**
      * Performs a reconnect with plugin plg.
      * 
      * @param retry
@@ -194,26 +175,24 @@ public class ReconnectPluginController {
      * @throws InterruptedException
      * @throws ReconnectException
      */
-    public final boolean doReconnect(final RouterPlugin plg) throws InterruptedException, ReconnectException {
+    public final boolean doReconnect(final RouterPlugin plg, LogSource logger) throws InterruptedException, ReconnectException {
 
         final int waittime = this.getWaittimeBeforeFirstIPCheck();
         // make sure that we have the current ip
-        System.out.println("IP Before=" + IPController.getInstance().getIP());
+        logger.info("IP Before=" + IPController.getInstance().getIP());
         try {
             ReconnectInvoker invoker = plg.getReconnectInvoker();
             if (invoker == null) { throw new ReconnectException("Reconnect Plugin  " + plg.getName() + " is not set up correctly. Invoker==null"); }
+            invoker.setLogger(logger);
             invoker.run();
-
-            ReconnectPluginController.LOG.finer("Initial Waittime: " + waittime + " seconds");
-
+            logger.finer("Initial Waittime: " + waittime + " seconds");
             Thread.sleep(waittime * 1000);
-
             return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), storage.getSecondsToWaitForOffline(), this.getIpCheckInterval());
-
         } catch (RuntimeException e) {
+            logger.log(e);
             throw new ReconnectException(e);
         } finally {
-            System.out.println("IP AFTER=" + IPController.getInstance().getIP());
+            logger.info("IP AFTER=" + IPController.getInstance().getIP());
         }
 
     }
@@ -312,7 +291,7 @@ public class ReconnectPluginController {
                         urls.add(files[i].toURI().toURL());
                         Application.addUrlToClassPath(files[i].toURI().toURL(), getClass().getClassLoader());
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        LogController.CL().log(e);
                     }
                 }
             }
@@ -362,7 +341,7 @@ public class ReconnectPluginController {
                 }
             }
         } catch (Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
 
     }
@@ -371,33 +350,26 @@ public class ReconnectPluginController {
         try {
             URL infourl = Application.getRessourceURL(JD_CONTROLLING_RECONNECT_PLUGINS + pkg + "/info.json");
             if (infourl == null) {
-                Log.L.finer("Could not load Reconnect Plugin " + pkg);
+                LogController.CL().finer("Could not load Reconnect Plugin " + pkg);
                 return;
             }
 
             ReconnectPluginInfo plgInfo = JSonStorage.restoreFromString(IO.readURLToString(infourl), new TypeRef<ReconnectPluginInfo>() {
             }, null);
             if (plgInfo == null) {
-                Log.L.finer("Could not load Reconnect Plugin (no info.json)" + pkg);
+                LogController.CL().finer("Could not load Reconnect Plugin (no info.json)" + pkg);
                 return;
             }
             Class<?> clazz = getClass().getClassLoader().loadClass(JD_CONTROLLING_RECONNECT_PLUGINS.replace("/", ".") + pkg + "." + plgInfo.getClassName());
             for (RouterPlugin plg : plugins) {
                 if (plg.getClass() == clazz) {
-                    Log.L.finer("Dupe found: " + pkg);
+                    LogController.CL().finer("Dupe found: " + pkg);
                     return;
                 }
             }
             plugins.add((RouterPlugin) clazz.newInstance());
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            LogController.CL().log(e);
         }
 
     }

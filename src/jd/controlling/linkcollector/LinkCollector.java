@@ -17,7 +17,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.linkchecker.LinkChecker;
 import jd.controlling.linkchecker.LinkCheckerHandler;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -50,7 +49,6 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -65,6 +63,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -331,11 +330,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 String newName = link.gethPlugin().autoFilenameCorrection(autoRenameCache, name, link.getDownloadLink(), dlinks);
                 if (newName != null && !newName.equals(name)) {
-                    Log.L.info("Renamed file " + name + " to " + newName);
+                    logger.info("Renamed file " + name + " to " + newName);
                 } else {
                     newName = link.gethPlugin().autoFilenameCorrection(autoRenameCache, name, link.getDownloadLink(), maybebadfilenames);
                     if (newName != null && !newName.equals(name)) {
-                        Log.L.info("Renamed file2 " + name + " to " + newName);
+                        logger.info("Renamed file2 " + name + " to " + newName);
                     }
                 }
                 if (newName != null && !name.equals(newName)) {
@@ -450,7 +449,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 try {
                                     plg2 = lazyPlg.getPrototype();
                                 } catch (UpdateRequiredClassNotFoundException e) {
-                                    Log.exception(e);
+                                    logger.log(e);
                                 }
                             }
                             if (plg2 != null) {
@@ -925,7 +924,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 for (CrawledLink link : links) {
                     CrawledPackage parent = link.getParentNode();
                     if (parent == null || parent.getControlledBy() != LinkCollector.this) {
-                        Log.exception(new Throwable("not controlled by this packagecontroller"));
+                        logger.log(new Throwable("not controlled by this packagecontroller"));
                         continue;
                     }
                     ArrayList<CrawledLink> pkg_links = map.get(parent);
@@ -986,7 +985,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             /* load from new json zip */
             lpackages = load(getLinkCollectorListFile(), restoreMap);
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         try {
             /* try fallback to load tmp file */
@@ -995,7 +994,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 lpackages = load(new File(getLinkCollectorListFile().getAbsolutePath() + ".tmp"), restoreMap);
             }
         } catch (final Throwable e) {
-            Log.exception(e);
+            logger.log(e);
         }
         if (lpackages == null) {
             restoreMap.clear();
@@ -1094,7 +1093,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         pluginForHost = hPlugin.getPrototype();
                     }
                 } catch (final Throwable e) {
-                    JDLogger.exception(e);
+                    LogController.CL().log(e);
                 }
                 if (pluginForHost == null) {
                     try {
@@ -1105,16 +1104,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         }
                         if (pluginForHost != null) {
-                            Log.L.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
+                            logger.info("Plugin " + pluginForHost.getHost() + " now handles " + localLink.getName());
                         }
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     }
                 }
                 if (pluginForHost != null) {
                     dlLink.setDefaultPlugin(pluginForHost);
                 } else {
-                    Log.L.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
+                    logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                 }
             }
         }
@@ -1172,7 +1171,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
                         boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
                         boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                        Log.L.info("LinkCollectorListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
+                        logger.info("LinkCollectorListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
                     }
                     check = null;
                 }
@@ -1252,14 +1251,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             }
                         }
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     }
                 }
                 map = null;
                 positions = null;
                 ret = new LinkedList<CrawledPackage>(ret2);
             } catch (final Throwable e) {
-                Log.exception(e);
+                logger.log(e);
             } finally {
                 try {
                     zip.close();
@@ -1332,7 +1331,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
                             zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
                         } catch (final Throwable e) {
-                            Log.exception(e);
+                            logger.log(e);
                         }
                         /* close ZipIOWriter, so we can rename tmp file now */
                         try {
@@ -1343,18 +1342,18 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         /* try to delete destination file if it already exists */
                         if (file.exists()) {
                             if (!file.delete()) {
-                                Log.exception(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                                logger.log(new WTFException("Could not delete: " + file.getAbsolutePath()));
                                 return null;
                             }
                         }
                         /* rename tmpfile to destination file */
                         if (!tmpfile.renameTo(file)) {
-                            Log.exception(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                            logger.log(new WTFException("Could not rename file: " + tmpfile + " to " + file));
                             return null;
                         }
                         return null;
                     } catch (final Throwable e) {
-                        Log.exception(e);
+                        logger.log(e);
                     } finally {
                         try {
                             zip.close();

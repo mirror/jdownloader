@@ -18,10 +18,10 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -119,7 +119,7 @@ public class AniLinkzCom extends PluginForDecrypt {
                             }
                         }
                     } catch (final Exception e) {
-                        JDLogger.exception(e);
+                        logger.log(Level.SEVERE, e.getMessage(), e);
                         continue;
                     }
                     if (mirror == null) {

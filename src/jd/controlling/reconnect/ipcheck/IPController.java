@@ -8,7 +8,8 @@ import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
 import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**
@@ -39,7 +40,6 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     private IPController() {
-
         eventSender = new IPControllEventSender();
     }
 
@@ -80,8 +80,7 @@ public class IPController extends ArrayList<IPConnectionState> {
             for (int index = this.size() - 1; index >= 0; index--) {
                 if (this.get(index) == this.invalidState) {
                     /*
-                     * we reached the element we began with, so check changed IP
-                     * and then stop
+                     * we reached the element we began with, so check changed IP and then stop
                      */
                     if (!this.invalidState.equalsLog(current)) {
 
@@ -91,8 +90,7 @@ public class IPController extends ArrayList<IPConnectionState> {
                     return false;
                 }
                 /*
-                 * we found a state that was online and had different ip that
-                 * new state, so ip changed
+                 * we found a state that was online and had different ip that new state, so ip changed
                  */
                 if (this.get(index).isOnline() && !this.get(index).equalsLog(current)) {
                     eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.IP_CHANGED, invalidState, current));
@@ -156,8 +154,7 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     /**
-     * Returns the current external IP. fetches new ip if if is marked as
-     * invalid, or is null
+     * Returns the current external IP. fetches new ip if if is marked as invalid, or is null
      * 
      * 
      * @return
@@ -242,10 +239,8 @@ public class IPController extends ArrayList<IPConnectionState> {
     }
 
     /**
-     * check for max waitForIPTime seconds in an interval of ipCheckInterval if
-     * the ip is valid.<br>
-     * Call {@link #invalidate()} to invalidate the current state. AFterwards a
-     * reconnect can get a new ip.<br>
+     * check for max waitForIPTime seconds in an interval of ipCheckInterval if the ip is valid.<br>
+     * Call {@link #invalidate()} to invalidate the current state. AFterwards a reconnect can get a new ip.<br>
      * this method gets the new connectionstate and validates it
      * 
      * 
@@ -267,40 +262,45 @@ public class IPController extends ArrayList<IPConnectionState> {
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         final long endOfflineTime = System.currentTimeMillis() + waitForOfflineTime * 1000;
         boolean hasBeenOffline = false;
-        while (true) {
-            /* ip change detected then we can stop */
-            this.validate();
-            if (!isInvalidated()) {
-                return true;
-            } else if (latestConnectionState.isOffline()) {
-                hasBeenOffline = true;
+        LogSource logger = LogController.CL();
+        try {
+            while (true) {
+                /* ip change detected then we can stop */
+                this.validate();
+                if (!isInvalidated()) {
+                    return true;
+                } else if (latestConnectionState.isOffline()) {
+                    hasBeenOffline = true;
 
-            }
-
-            if (this.latestConnectionState.getCause() != null) {
-                try {
-                    throw this.latestConnectionState.getCause();
-                } catch (final ForbiddenIPException e) {
-                    eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.FORBIDDEN_IP, getIpState()));
-                    // forbidden IP.. no need to wait
-                    this.setInvalidated(true);
-                    return false;
-
-                } catch (final Throwable e) {
-                    // nothing
                 }
-            }
-            if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
-                // break
-                Log.L.info("Not offline after " + waitForOfflineTime + " seconds");
-                break;
 
+                if (this.latestConnectionState.getCause() != null) {
+                    try {
+                        throw this.latestConnectionState.getCause();
+                    } catch (final ForbiddenIPException e) {
+                        eventSender.fireEvent(new IPControllEvent(IPControllEvent.Type.FORBIDDEN_IP, getIpState()));
+                        // forbidden IP.. no need to wait
+                        this.setInvalidated(true);
+                        return false;
+
+                    } catch (final Throwable e) {
+                        // nothing
+                    }
+                }
+                if (!hasBeenOffline && System.currentTimeMillis() >= endOfflineTime) {
+                    // break
+                    logger.info("Not offline after " + waitForOfflineTime + " seconds");
+                    break;
+
+                }
+                if (System.currentTimeMillis() >= endTime) {
+                    logger.info("Not reconnected after " + waitForIPTime + " seconds");
+                    break;
+                }
+                Thread.sleep(Math.max(250, ipCheckInterval * 1000));
             }
-            if (System.currentTimeMillis() >= endTime) {
-                Log.L.info("Not reconnected after " + waitForIPTime + " seconds");
-                break;
-            }
-            Thread.sleep(Math.max(250, ipCheckInterval * 1000));
+        } finally {
+            logger.close();
         }
         return !this.isInvalidated();
     }
@@ -311,7 +311,6 @@ public class IPController extends ArrayList<IPConnectionState> {
             IPController.getInstance().invalidate();
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             Thread.sleep(1000);
-
             IPController.getInstance().validate();
         }
     }

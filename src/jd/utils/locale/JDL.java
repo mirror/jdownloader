@@ -20,9 +20,10 @@ import java.util.HashMap;
 import java.util.Random;
 
 import jd.config.SubConfiguration;
-import jd.controlling.JDLogger;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+
+import org.jdownloader.logging.LogController;
 
 public final class JDL {
     /**
@@ -104,28 +105,24 @@ public final class JDL {
     public static String LF(final String key, final String def, final Object... args) {
         if (DEBUG) return key;
         if (args == null || args.length == 0) {
-            JDLogger.getLogger().severe("FIXME: " + key);
+            LogController.CL().severe("FIXME: " + key);
         }
         try {
             return String.format(JDL.L(key, def), args);
         } catch (Exception e) {
-            JDLogger.getLogger().severe("FIXME: " + key);
+            LogController.CL().severe("FIXME: " + key);
             return "FIXME: " + key;
         }
     }
 
-    public static Translation translate(final String from, final String to, final String msg) {
+    public static String translate(final String from, final String to, final String msg) {
         try {
-
-            Translation trans = new Translation(msg, to);
             final Browser br = new Browser();
             br.getPage("http://www.google.com/uds/Gtranslate?callback=google.language.callbacks.id101&context=22&q=" + Encoding.urlEncode(msg) + "&langpair=|en&key=notsupplied&v=1.0");
             String[] match = br.getRegex("\"translatedText\":\"(.*?)\",\"detectedSourceLanguage\":\"(.*?)\"").getRow(0);
-            trans.setTranslated(Encoding.UTF8Decode(Encoding.htmlDecode(match[0])));
-            trans.setSourceLanguage(Encoding.UTF8Decode(Encoding.htmlDecode(match[1])));
-            return trans;
+            return Encoding.UTF8Decode(Encoding.htmlDecode(match[0]));
         } catch (Exception e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
             return null;
         }
     }

@@ -19,12 +19,12 @@ package jd.plugins.decrypter;
 import java.io.CharArrayWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import jd.PluginWrapper;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -71,7 +71,7 @@ public class MtLnk extends PluginForDecrypt {
             StringReader input = new StringReader(metalink);
             saxParser.parse(new InputSource(input), handler);
         } catch (Throwable t) {
-            JDLogger.exception(t);
+            logger.log(Level.SEVERE, t.getMessage(), t);
         }
 
         if (packageName != null) {

@@ -7,11 +7,22 @@ import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.ProcessCallBackAdapter;
-import org.appwork.utils.logging.Log;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 public abstract class ReconnectInvoker {
     private static final long OFFLINE_TIMEOUT = 30000;
     private RouterPlugin      routerPlugin;
+    protected LogSource       logger          = LogController.TRASH;
+
+    public LogSource getLogger() {
+        return logger;
+    }
+
+    public void setLogger(LogSource logger) {
+        if (logger == null) logger = LogController.TRASH;
+        this.logger = logger;
+    }
 
     public ReconnectInvoker(RouterPlugin routerPlugin) {
         this.routerPlugin = routerPlugin;
@@ -32,10 +43,9 @@ public abstract class ReconnectInvoker {
         while (IPController.getInstance().getIpState().isOffline()) {
             IPController.getInstance().invalidate();
             Thread.sleep(5000);
-
             IPController.getInstance().validate();
         }
-        System.out.println("IP BEFORE=" + IPController.getInstance().getIP());
+        logger.info("IP BEFORE=" + IPController.getInstance().getIP());
 
         BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(true);
         IPController.getInstance().invalidate();
@@ -49,13 +59,13 @@ public abstract class ReconnectInvoker {
             IPController ipc = IPController.getInstance();
             if (ipc.validate()) {
                 // wow this hsa been fast
-                Log.L.info("Successful: REconnect has been very fast!");
+                logger.info("Successful: REconnect has been very fast!");
                 ret.setSuccess(true);
                 ret.setOfflineTime(System.currentTimeMillis());
                 ret.setSuccessTime(System.currentTimeMillis());
                 return ret;
             }
-            Log.L.info("Script done. Wait for offline");
+            logger.info("Script done. Wait for offline");
             do {
 
                 // wait until we are offline
@@ -63,15 +73,15 @@ public abstract class ReconnectInvoker {
 
                 if (!ipc.validate() && !ipc.getIpState().isOffline() && (System.currentTimeMillis() - ret.getStartTime()) > OFFLINE_TIMEOUT) {
                     // we are not offline after 30 seconds
-                    Log.L.info("Disconnect failed. Still online after " + OFFLINE_TIMEOUT + " ms");
+                    logger.info("Disconnect failed. Still online after " + OFFLINE_TIMEOUT + " ms");
                     return ret;
                 }
             } while (!ipc.getIpState().isOffline() && ipc.isInvalidated());
             ret.setOfflineTime(System.currentTimeMillis());
 
-            Log.L.info("Offline after " + ret.getOfflineDuration() + " ms");
+            logger.info("Offline after " + ret.getOfflineDuration() + " ms");
             if (ipc.isInvalidated()) {
-                Log.L.info("Wait for online status");
+                logger.info("Wait for online status");
                 // we have to wait LOOOONG here. reboot may take its time
                 final long endTime = System.currentTimeMillis() + 450 * 1000;
                 while (System.currentTimeMillis() < endTime) {
@@ -81,31 +91,31 @@ public abstract class ReconnectInvoker {
                     if (ipc.validate()) {
                         ret.setSuccessTime(System.currentTimeMillis());
                         ret.setSuccess(true);
-                        Log.L.info("Successful: REconnect after " + ret.getSuccessDuration() + " ms");
+                        logger.info("Successful: REconnect after " + ret.getSuccessDuration() + " ms");
 
                         return ret;
                         //
                     }
                     if (!ipc.getIpState().isOffline()) {
-                        Log.L.info("Failed. returned from offline. But no new ip");
+                        logger.info("Failed. returned from offline. But no new ip");
                         return ret;
 
                     }
 
                     Thread.sleep(Math.max(0, 1000 - (System.currentTimeMillis() - s)));
                 }
-                Log.L.info("Connect failed! Maybe router restart is required. This should NEVER happen!");
+                logger.info("Connect failed! Maybe router restart is required. This should NEVER happen!");
                 return ret;
             } else {
                 ret.setSuccessTime(System.currentTimeMillis());
                 ret.setSuccess(true);
-                Log.L.info("Successful: REconnect after " + ret.getSuccessDuration() + " ms");
+                logger.info("Successful: REconnect after " + ret.getSuccessDuration() + " ms");
                 return ret;
             }
 
         } finally {
 
-            System.out.println("IP AFTER=" + IPController.getInstance().getIP());
+            logger.info("IP AFTER=" + IPController.getInstance().getIP());
             BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(false);
         }
     }

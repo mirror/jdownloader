@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -25,7 +26,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 import jd.PluginWrapper;
 import jd.controlling.DistributeData;
-import jd.controlling.JDLogger;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Base64;
 import jd.nutils.encoding.Encoding;
@@ -83,7 +83,7 @@ public class CNL extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public static String decrypt(final byte[] b, final byte[] key) {
+    public String decrypt(final byte[] b, final byte[] key) {
         final Cipher cipher;
         try {
             final IvParameterSpec ivSpec = new IvParameterSpec(key);
@@ -92,12 +92,12 @@ public class CNL extends PluginForDecrypt {
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
             return new String(cipher.doFinal(b));
         } catch (Exception e) {
-            JDLogger.exception(e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return null;
     }
 
-    public static ArrayList<DownloadLink> decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
+    public ArrayList<DownloadLink> decrypt(final String crypted, final String jk, final String k, final String password, final String source) {
         final byte[] key;
 
         if (jk != null) {

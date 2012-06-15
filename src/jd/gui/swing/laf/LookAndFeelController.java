@@ -24,7 +24,6 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.plaf.FontUIResource;
 
 import jd.Launcher;
-import jd.controlling.JDLogger;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -32,10 +31,10 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.utils.Application;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class LookAndFeelController {
@@ -182,7 +181,7 @@ public class LookAndFeelController {
             // if (true) return;
 
             laf = getPlaf().getClassName();
-            Log.L.info("Use Look & Feel: " + laf);
+            LogController.GL.info("Use Look & Feel: " + laf);
             preSetup(laf);
             if (laf.contains("Synthetica")) {
                 try {
@@ -190,7 +189,7 @@ public class LookAndFeelController {
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
                 } catch (Throwable e) {
-                    Log.exception(e);
+                    LogController.CL().log(e);
                 }
             } else {
                 /* init for all other laf */
@@ -198,9 +197,9 @@ public class LookAndFeelController {
             }
             postSetup(laf);
         } catch (Throwable e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         } finally {
-            System.out.println("LAF init: " + (System.currentTimeMillis() - t));
+            LogController.GL.info("LAF init: " + (System.currentTimeMillis() - t));
         }
     }
 
@@ -212,13 +211,13 @@ public class LookAndFeelController {
             try {
                 if (laf != null) str = NewTheme.I().getText("lafoptions/" + laf + ".json");
             } catch (final Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
             }
             if (str != null) {
                 lafOptions = JSonStorage.restoreFromString(str, new TypeRef<LAFOptions>() {
                 }, new LAFOptions());
             } else {
-                Log.L.warning("Not LAF Options found: " + laf + ".json");
+                LogController.GL.info("Not LAF Options found: " + laf + ".json");
                 lafOptions = new LAFOptions();
             }
         }
@@ -267,7 +266,7 @@ public class LookAndFeelController {
 
                 UIManager.put("ExtTable.SuggestedFontHeight", newSize);
             } catch (final Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
             }
 
         } else if (isSubstance()) {
@@ -294,7 +293,7 @@ public class LookAndFeelController {
                     }
                 }
             } catch (Throwable e) {
-                Log.exception(e);
+                LogController.CL().log(e);
             }
         }
     }
@@ -304,7 +303,7 @@ public class LookAndFeelController {
             Class.forName("jd.gui.swing.laf.JDSubstanceFontPolicy").getMethod("invoke", new Class[] { String.class, int.class }).invoke(null, fontName, fontSize);
 
         } catch (Throwable e) {
-            Log.exception(e);
+            LogController.CL().log(e);
         }
     }
 
@@ -337,7 +336,7 @@ public class LookAndFeelController {
                 UIManager.put("Synthetica.license.key", key);
             }
         } catch (final Throwable e) {
-            JDLogger.exception(e);
+            LogController.CL().log(e);
         }
     }
 }

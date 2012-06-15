@@ -31,7 +31,6 @@ import javax.swing.JScrollPane;
 import net.miginfocom.swing.MigLayout;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.DownloadSession;
-import org.jdownloader.extensions.neembuu.NeembuuExtension;
 import org.jdownloader.extensions.neembuu.translate._NT;
 
 /**

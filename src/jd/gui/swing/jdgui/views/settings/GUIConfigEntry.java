@@ -19,7 +19,6 @@ package jd.gui.swing.jdgui.views.settings;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -43,16 +42,15 @@ import javax.swing.text.JTextComponent;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.GuiConfigListener;
-import jd.controlling.JDLogger;
 import jd.gui.swing.components.JDLabelContainer;
 import jd.gui.swing.components.JDTextArea;
 import jd.gui.swing.components.JDTextField;
 import net.miginfocom.swing.MigLayout;
 
+import org.jdownloader.logging.LogController;
+
 /**
- * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und
- * schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert
- * einfügen.
+ * Diese Klasse fasst ein label / input Paar zusammen und macht das lesen und schreiben einheitlich. Es lassen sich so Dialogelemente Automatisiert einfügen.
  */
 public class GUIConfigEntry implements GuiConfigListener, ActionListener, ChangeListener, DocumentListener {
 
@@ -64,8 +62,6 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
     private JComponent        input;
 
     private JComponent        decoration;
-
-    private Logger            logger = JDLogger.getLogger();
 
     /**
      * Erstellt einen neuen GUIConfigEntry
@@ -284,7 +280,8 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
             try {
                 ((JCheckBox) input).setSelected((Boolean) text);
             } catch (Exception e) {
-                logger.severe("Falcher Wert: " + text);
+                LogController.CL().severe("Falcher Wert: " + text);
+                LogController.CL().log(e);
                 ((JCheckBox) input).setSelected(false);
             }
             break;
@@ -306,7 +303,7 @@ public class GUIConfigEntry implements GuiConfigListener, ActionListener, Change
                 value = Math.max((Integer) ((SpinnerNumberModel) ((JSpinner) input).getModel()).getMinimum(), value);
                 ((JSpinner) input).setModel(new SpinnerNumberModel(value, configEntry.getStart(), configEntry.getEnd(), configEntry.getStep()));
             } catch (Exception e) {
-                JDLogger.exception(e);
+                LogController.CL().log(e);
             }
             break;
         case ConfigContainer.TYPE_RADIOFIELD:

@@ -17,11 +17,6 @@
 package org.jdownloader.extensions.chat;
 
 import java.util.TreeMap;
-import java.util.logging.Logger;
-
-import jd.controlling.JDLogger;
-import jd.gui.UserIO;
-import jd.utils.Upload;
 
 import org.schwering.irc.lib.IRCConstants;
 import org.schwering.irc.lib.IRCEventListener;
@@ -29,7 +24,6 @@ import org.schwering.irc.lib.IRCModeParser;
 import org.schwering.irc.lib.IRCUser;
 
 class IRCListener implements IRCEventListener {
-    public static Logger        logger = jd.controlling.JDLogger.getLogger();
     private final ChatExtension owner;
 
     public IRCListener(final ChatExtension owner) {
@@ -142,27 +136,7 @@ class IRCListener implements IRCEventListener {
         final String nickt = this.owner.getNick().toLowerCase();
         final boolean isPrivate = chan.toLowerCase().equals(nickt);
         final String msgt = msg.toLowerCase();
-        if ((user.rank == User.RANK_VOICE || user.rank == User.RANK_OP) && (msgt.matches("!getlog[\\s]+.*") && msgt.replaceFirst("!getlog[\\s]+", "").trim().equals(nickt) || isPrivate && (msgt.matches("!getlog.*") || msgt.matches("!log.*")))) {
-
-            new Thread(new Runnable() {
-
-                public void run() {
-                    if (UserIO.RETURN_OK == UserIO.getInstance().requestConfirmDialog(0, owner._.plugin_optional_jdchat_getlog(user.name))) {
-
-                        final String url = Upload.toJDownloader(JDLogger.getLog(), "JDChatuser:\r\n\r\n" + IRCListener.this.owner.getNick());
-                        if (url == null) {
-                            UserIO.getInstance().requestConfirmDialog(UserIO.DONT_SHOW_AGAIN | UserIO.NO_CANCEL_OPTION, owner._.sys_warning_loguploadfailed());
-                        } else {
-                            IRCListener.this.owner.sendMessage(user.name, url);
-                        }
-                    } else {
-                        IRCListener.this.owner.sendMessage(user.name, IRCListener.this.owner.getNick() + " gibt seine Log nicht her");
-                    }
-                }
-
-            }).start();
-
-        } else if (msg.trim().startsWith("ACTION ")) {
+        if (msg.trim().startsWith("ACTION ")) {
             this.owner.addToText(null, ChatExtension.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 
         } else if (chan.equals(this.owner.getNick())) {

@@ -1,12 +1,10 @@
 package jd.controlling.reconnect;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ipcheck.IPCheckProvider;
 
 import org.appwork.storage.config.JsonConfig;
@@ -14,11 +12,9 @@ import org.appwork.utils.event.ProcessCallBack;
 
 public abstract class RouterPlugin {
 
-    protected static final Logger LOG             = JDLogger.getLogger();
+    private long            lastDuration;
 
-    private long                  lastDuration;
-
-    private IPCheckProvider       ipCheckProvider = null;
+    private IPCheckProvider ipCheckProvider = null;
 
     public RouterPlugin() {
 
@@ -70,10 +66,8 @@ public abstract class RouterPlugin {
     public abstract String getName();
 
     /**
-     * override this method to set a special waittime. For example, if the check
-     * is local through the users router, we do not have to wait long.<br>
-     * By default, this method returns the settings form advanced reconnect
-     * panel
+     * override this method to set a special waittime. For example, if the check is local through the users router, we do not have to wait long.<br>
+     * By default, this method returns the settings form advanced reconnect panel
      */
     public int getWaittimeBeforeFirstIPCheck() {
         return JsonConfig.create(ReconnectConfig.class).getSecondsBeforeFirstIPCheck();
@@ -84,8 +78,7 @@ public abstract class RouterPlugin {
      * 
      * @param processCallBack
      * 
-     * @return returns the time the reconnect took. returns -1 if the action has
-     *         not been successful
+     * @return returns the time the reconnect took. returns -1 if the action has not been successful
      * @throws InterruptedException
      */
     public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {

@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.logging.ExceptionDefaultLogLevel;
 
 public class LogSource extends Logger {
@@ -58,6 +59,16 @@ public class LogSource extends Logger {
         this(name, -1);
     }
 
+    public static void exception(Logger logger, Throwable e) {
+        if (logger == null || e == null) return;
+        if (logger instanceof LogSource) {
+            ((LogSource) logger).log(e);
+        } else {
+            logger.severe(e.getMessage());
+            logger.severe(Exceptions.getStackTrace(e));
+        }
+    }
+
     public void log(Throwable e) {
         if (e == null) {
             e = new NullPointerException("e is null");
@@ -69,7 +80,7 @@ public class LogSource extends Logger {
         if (lvl == null) {
             lvl = Level.SEVERE;
         }
-        log(new LogRecord(lvl, LogController.getStackTrace(e)));
+        log(new LogRecord(lvl, Exceptions.getStackTrace(e)));
     }
 
     @Override
@@ -122,7 +133,10 @@ public class LogSource extends Logger {
         Logger parent = this.getParent();
         if (parent != null) {
             for (Handler handler : parent.getHandlers()) {
-                if (handler instanceof ConsoleHandler) continue;
+                if (handler instanceof ConsoleHandler) {
+                    /* we dont want logRecords to appear twice on console */
+                    continue;
+                }
                 synchronized (handler) {
                     for (LogRecord record : records) {
                         handler.publish(record);

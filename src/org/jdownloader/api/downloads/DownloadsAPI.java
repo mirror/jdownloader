@@ -14,11 +14,4 @@ public interface DownloadsAPI extends RemoteAPIInterface {
 
     public boolean start();
 
-    public boolean reconnect();
-
-    @Deprecated
-    public boolean reconnectenabled(boolean enable);
-
-    @Deprecated
-    public boolean speedlimit(boolean enable, int limit);
 }

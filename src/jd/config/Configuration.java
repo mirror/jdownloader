@@ -18,8 +18,6 @@ package jd.config;
 
 import java.io.Serializable;
 
-import jd.utils.JDUtilities;
-
 /**
  * In dieser Klasse werden die benutzerspezifischen Einstellungen festgehalten
  * 
@@ -41,15 +39,11 @@ public class Configuration extends SubConfiguration implements Serializable {
 
     public static final String NAME                        = "jdownloaderconfig";
 
-    /**
-     * Konstruktor für ein Configuration Object
-     */
     public Configuration() {
     }
 
     @Override
     public void save() {
-        JDUtilities.getDatabaseConnector().saveConfiguration(Configuration.NAME, this);
     }
 
     @Override

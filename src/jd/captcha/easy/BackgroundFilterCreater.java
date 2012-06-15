@@ -29,12 +29,12 @@ import javax.imageio.ImageIO;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.Utilities;
-import jd.controlling.JDLogger;
+
+import org.jdownloader.logging.LogController;
 
 public class BackgroundFilterCreater {
     /**
-     * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im
-     * Captchaordner der Methode
+     * Erstellt eine Backgroundimage im MethodenOrdner aus den Captchas im Captchaordner der Methode
      * 
      * @param files
      * @param methode
@@ -50,8 +50,7 @@ public class BackgroundFilterCreater {
     }
 
     /**
-     * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von
-     * Dateien
+     * Erstellt ein Hintergrundbild im MethodenOrdner aus einer Liste von Dateien
      * 
      * @param files
      * @param methode
@@ -75,9 +74,9 @@ public class BackgroundFilterCreater {
             image = Utilities.loadImage(file);
             Captcha captcha = jac.createCaptcha(image);
             if (captcha == null || captcha.getWidth() != firstCaptcha.getWidth() || captcha.getHeight() != firstCaptcha.getHeight()) {
-                if (Utilities.isLoggerActive()) {
-                    JDLogger.getLogger().info("ERROR Maske und Bild passen nicht zusammmen");
-                }
+
+                LogController.CL().info("ERROR Maske und Bild passen nicht zusammmen");
+
                 continue;
             }
             if (i++ == 100) break;
@@ -122,7 +121,7 @@ public class BackgroundFilterCreater {
         try {
             ImageIO.write(firstCaptcha.getImage(), "png", ret);
         } catch (IOException e) {
-            e.printStackTrace();
+            LogController.CL().log(e);
         }
         return ret;
     }

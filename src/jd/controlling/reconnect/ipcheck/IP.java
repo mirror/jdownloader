@@ -4,18 +4,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
-import jd.controlling.JDLogger;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.RouterUtils;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.logging.LogController;
 
 public class IP {
     public static final String IP_PATTERN = "\\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\b";
 
     /**
-     * validates the adress, and returns an IP instance or throws an exception
-     * in case of validation errors
+     * validates the adress, and returns an IP instance or throws an exception in case of validation errors
      * 
      * @param ip
      * @return
@@ -52,8 +51,7 @@ public class IP {
     }
 
     /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern kann in der
-     * config editiert werden.
+     * Überprüft ob eine IP gültig ist. das verwendete Pattern kann in der config editiert werden.
      * 
      * @param ip
      * @return
@@ -63,7 +61,8 @@ public class IP {
         try {
             return Pattern.compile(JsonConfig.create(ReconnectConfig.class).getGlobalIPCheckPattern()).matcher(ip.trim()).matches();
         } catch (final Exception e) {
-            JDLogger.getLogger().severe("Could not validate IP! " + e);
+            LogController.CL().severe("Could not validate IP!");
+            LogController.CL().log(e);
         }
         return true;
     }

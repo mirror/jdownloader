@@ -24,13 +24,14 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TreeSet;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.controlling.ClipboardMonitoring;
 import jd.controlling.IOEQ;
-import jd.controlling.JDLogger;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.linkcollector.LinkCollector;
@@ -210,7 +211,6 @@ public class Launcher {
             e.printStackTrace();
         }
         Launcher.LOG = LogController.GL;
-
         // Mac OS specific
         if (CrossSystem.isMac()) {
             // Set MacApplicationName
@@ -325,7 +325,7 @@ public class Launcher {
             Launcher.LOG.info("existing jD instance found!");
             Launcher.instanceStarted = false;
         } catch (final Exception e) {
-            JDLogger.exception(e);
+            Launcher.LOG.log(e);
             Launcher.LOG.severe("Instance Handling not possible!");
             Launcher.instanceStarted = true;
         }
@@ -409,7 +409,36 @@ public class Launcher {
 
     private static void go() {
         Launcher.LOG.info("Initialize JDownloader");
+        try {
+            Log.closeLogfile();
+        } catch (final Throwable e) {
+            Launcher.LOG.log(e);
+        }
+        try {
+            for (Handler handler : Log.L.getHandlers()) {
+                Log.L.removeHandler(handler);
+            }
+        } catch (final Throwable e) {
+        }
+        Log.L.setUseParentHandlers(true);
         Log.L.setLevel(Level.ALL);
+        Log.L.addHandler(new Handler() {
+            LogSource logger = LogController.getInstance().getLogger("OldLogL");
+
+            @Override
+            public void publish(LogRecord record) {
+                logger.log(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        });
+
         if (!PARAMETERS.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
             Launcher.LOG.info("Remove ConsoleHandler");
             LogController.getInstance().removeConsoleHandler();
@@ -438,7 +467,7 @@ public class Launcher {
                         Launcher.LOG.log(e);
                     }
                     /* set gloabel logger for browser */
-                    Browser.setGlobalLogger(JDLogger.getLogger());
+                    Browser.setGlobalLogger(LogController.getInstance().getLogger("GlobalBrowser"));
                     /* init default global Timeouts */
                     Browser.setGlobalReadTimeout(JsonConfig.create(GeneralSettings.class).getHttpReadTimeout());
                     Browser.setGlobalConnectTimeout(JsonConfig.create(GeneralSettings.class).getHttpConnectTimeout());

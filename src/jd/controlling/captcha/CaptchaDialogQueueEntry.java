@@ -15,7 +15,6 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ComboBoxDialogInterface;
@@ -25,6 +24,7 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeException> {
@@ -78,7 +78,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
                 try {
                     if (textDialog != null && textDialog.isInitialized()) textDialog.dispose();
                 } catch (final Throwable e) {
-                    Log.exception(e);
+                    LogSource.exception(getLogger(), e);
                 }
             }
         };
@@ -93,16 +93,24 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
         return ret;
     }
 
+    private Logger getLogger() {
+        Logger logger = null;
+        if (captchaController.getPlugin() instanceof PluginForHost) {
+            logger = captchaController.getPlugin().getLogger();
+        } else if (captchaController.getPlugin() instanceof PluginForDecrypt) {
+            logger = captchaController.getPlugin().getLogger();
+        }
+        if (logger == null) logger = LogController.GL;
+        return logger;
+    }
+
     private CaptchaResult viaGUI() {
         if (ioPermission != null && !ioPermission.isCaptchaAllowed(getHost().getTld())) { return null; }
-        Logger logger = LogController.GL;
         try {
             DialogType dialogType = null;
             if (captchaController.getPlugin() instanceof PluginForHost) {
-                logger = captchaController.getPlugin().getLogger();
                 dialogType = DialogType.HOSTER;
             } else if (captchaController.getPlugin() instanceof PluginForDecrypt) {
-                logger = captchaController.getPlugin().getLogger();
                 dialogType = DialogType.CRAWLER;
             }
             int f = flag;
@@ -116,7 +124,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
                 images = new Image[] { IconIO.getImage(captchaController.getCaptchafile().toURI().toURL()) };
             }
             if (images == null || images.length == 0 || images[0] == null) {
-                logger.severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
+                getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
                 return null;
             }
             this.textDialog = new CaptchaDialog(f, dialogType, captchaController.getCaptchaType(), getHost(), images, def, captchaController.getExplain());
@@ -154,12 +162,12 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
 
                     } catch (DialogNoAnswerException e1) {
                     } catch (StorageException e1) {
-                        logger.severe(LogController.getStackTrace(e1));
+                        LogSource.exception(getLogger(), e1);
                     }
                 }
             }
         } catch (Throwable e) {
-            logger.severe(LogController.getStackTrace(e));
+            LogSource.exception(getLogger(), e);
         }
         return null;
     }
