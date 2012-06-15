@@ -97,12 +97,13 @@ public abstract class IExtraction {
 
     /**
      * Checks a single password if the archive is encrypted with it.
-     * 
      * @param password
      *            The password.
+     * @param optimized TODO
+     * 
      * @return True if the password is correct.
      */
-    public abstract boolean findPassword(ExtractionController controller, String password);
+    public abstract boolean findPassword(ExtractionController controller, String password, boolean optimized);
 
     /**
      * Starts the extraction of an {@link Archive}.

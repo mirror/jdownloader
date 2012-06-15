@@ -218,7 +218,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
 
-        ExtractionController controller = new ExtractionController(archive, logger);
+        ExtractionController controller = new ExtractionController(this, archive, logger);
 
         controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
         controller.setRemoveDownloadLinksAfterExtraction(getSettings().isDeleteArchiveDownloadlinksAfterExtraction());

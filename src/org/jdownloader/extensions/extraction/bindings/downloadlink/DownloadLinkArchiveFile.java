@@ -3,11 +3,13 @@ package org.jdownloader.extensions.extraction.bindings.downloadlink;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginProgress;
 
@@ -22,13 +24,35 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     private String             name;
     private String             filePath;
     private long               size;
+    private HashSet<String>    extractPasswords;
 
     public DownloadLinkArchiveFile(DownloadLink link) {
+        extractPasswords = new HashSet<String>();
         downloadLinks = new ArrayList<DownloadLink>();
         downloadLinks.add(link);
+
+        handlePasswords(link);
         name = new File(link.getFileOutput()).getName();
         filePath = link.getFileOutput();
         size = link.getDownloadSize();
+
+    }
+
+    public HashSet<String> getExtractPasswords() {
+        return extractPasswords;
+    }
+
+    private void handlePasswords(DownloadLink link) {
+
+        FilePackage pkg = link.getFilePackage();
+        if (pkg == null) return;
+        String[] linkPasswords = pkg.getPasswordList();
+        if (linkPasswords != null) {
+            for (String s : linkPasswords) {
+                extractPasswords.add(s);
+            }
+        }
+
     }
 
     @Override
@@ -185,6 +209,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void addMirror(DownloadLink link) {
         downloadLinks.add(link);
         size = Math.max(link.getDownloadSize(), size);
+        handlePasswords(link);
     }
 
     public void setProperty(String key, Object value) {

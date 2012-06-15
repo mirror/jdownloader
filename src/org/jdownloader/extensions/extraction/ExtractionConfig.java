@@ -148,4 +148,11 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     void setBufferSize(int buffer);
 
     void setUseOriginalFileDate(boolean enabled);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @Description("This option improves password find speed a lot, but may result in finding errors.")
+    boolean isPasswordFindOptimizationEnabled();
+
+    void setPasswordFindOptimizationEnabled(boolean b);
 }

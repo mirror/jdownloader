@@ -55,7 +55,7 @@ public class HJSplit extends IExtraction {
     // }
 
     @Override
-    public boolean findPassword(ExtractionController controller, String password) {
+    public boolean findPassword(ExtractionController controller, String password, boolean optimized) {
         return true;
     }
 

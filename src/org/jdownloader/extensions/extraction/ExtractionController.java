@@ -39,25 +39,26 @@ import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private ArrayList<String>  passwordList;
-    private int                passwordListSize = 0;
-    private Exception          exception;
-    private boolean            removeAfterExtraction;
-    private Archive            archive;
-    private IExtraction        extractor;
-    private Logger             logger;
-    private ScheduledFuture<?> timer;
-    private Type               latestEvent;
-    private double             progress;
-    private boolean            removeDownloadLinksAfterExtraction;
+    private ArrayList<String>   passwordList;
+    private int                 passwordListSize = 0;
+    private Exception           exception;
+    private boolean             removeAfterExtraction;
+    private Archive             archive;
+    private IExtraction         extractor;
+    private Logger              logger;
+    private ScheduledFuture<?>  timer;
+    private Type                latestEvent;
+    private double              progress;
+    private boolean             removeDownloadLinksAfterExtraction;
+    private ExtractionExtension extension;
 
-    ExtractionController(Archive archiv, Logger logger) {
+    ExtractionController(ExtractionExtension extractionExtension, Archive archiv, Logger logger) {
         this.archive = archiv;
 
         extractor = archive.getExtractor();
         extractor.setArchiv(archiv);
         extractor.setExtractionController(this);
-
+        extension = extractionExtension;
         this.logger = logger;
         extractor.setLogger(logger);
         passwordList = new ArrayList<String>();
@@ -78,13 +79,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return true;
     }
 
-    private boolean checkPassword(String pw) {
+    private boolean checkPassword(String pw, boolean optimized) {
         Log.L.info("Check Password: " + pw);
         if (pw == null || "".equals(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
 
-        return extractor.findPassword(this, pw);
+        return extractor.findPassword(this, pw, optimized);
     }
 
     private void fireEvent(ExtractionEvent.Type event) {
@@ -120,7 +121,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (extractor.prepare()) {
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
-
+                    System.out.println(1);
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     passwordList.add(archive.getName());
                     ArrayList<String> pwList = extractor.config.getPasswordList();
@@ -133,8 +134,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     logger.info("Start password finding for " + archive);
 
                     String correctPW = null;
+
+                    // first run optimized.
+
                     for (String password : passwordList) {
-                        if (checkPassword(password)) {
+                        if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
                             correctPW = password;
                             break;
                         }
@@ -144,7 +148,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
 
-                        if (!checkPassword(archive.getPassword())) {
+                        if (!checkPassword(archive.getPassword(), false)) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
                             return null;

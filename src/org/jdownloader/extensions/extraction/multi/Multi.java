@@ -24,6 +24,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -44,6 +45,7 @@ import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
@@ -718,6 +720,7 @@ public class Multi extends IExtraction {
      * 
      * @param file
      *            The file from the harddisk.
+     * 
      * @return The ArchiveFile.
      */
     // private ArchiveFile buildArchiveFileFromFile(String file) {
@@ -729,7 +732,7 @@ public class Multi extends IExtraction {
     //
 
     @Override
-    public boolean findPassword(ExtractionController ctl, String password) {
+    public boolean findPassword(ExtractionController ctl, String password, boolean optimized) {
         crack++;
         ReusableByteArrayOutputStream buffer = null;
         try {
@@ -761,7 +764,7 @@ public class Multi extends IExtraction {
             }
 
             final BooleanHelper passwordfound = new BooleanHelper();
-
+            HashSet<String> checkedExtensions = new HashSet<String>();
             for (final ISimpleInArchiveItem item : inArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
@@ -770,65 +773,71 @@ public class Multi extends IExtraction {
                     continue;
                 }
 
-                if (!passwordfound.getBoolean()) {
-                    try {
-                        buffer.reset();
-                        final ReusableByteArrayOutputStream signatureBuffer = buffer;
-                        final long maxPWCheckSize = config.getMaxPasswordCheckSize() * 1024;
-                        final String path = item.getPath();
-                        final int signatureMinLength;
-                        if (new Regex(path, ".+\\.iso").matches()) {
-                            signatureMinLength = 37000;
-                        } else if (new Regex(path, ".+\\.mp3").matches()) {
-                            signatureMinLength = 512;
-                        } else {
-                            signatureMinLength = 32;
-                        }
-                        ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
-                            public int write(byte[] data) throws SevenZipException {
-                                int toWrite = Math.min(signatureBuffer.free(), data.length);
-                                if (toWrite > 0) {
-                                    /* we still have enough buffer left to write the data */
-                                    signatureBuffer.write(data, 0, toWrite);
-                                }
-                                if (signatureBuffer.size() >= signatureMinLength) {
-                                    /* we have enough data available for a signature check */
-                                    StringBuilder sigger = new StringBuilder();
-                                    for (int i = 0; i < signatureBuffer.size() - 1; i++) {
-                                        String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
-                                        s = (s.length() < 2 ? "0" + s : s);
-                                        s = s.substring(s.length() - 2);
-                                        sigger.append(s);
+                final String path = item.getPath();
+                String ext = Files.getExtension(path);
+                if (checkedExtensions.add(ext) || !optimized) {
+                    if (!passwordfound.getBoolean()) {
+                        try {
+                            buffer.reset();
+                            final ReusableByteArrayOutputStream signatureBuffer = buffer;
+                            final long maxPWCheckSize = config.getMaxPasswordCheckSize() * 1024;
+
+                            final int signatureMinLength;
+                            if (new Regex(path, ".+\\.iso").matches()) {
+                                signatureMinLength = 37000;
+                            } else if (new Regex(path, ".+\\.mp3").matches()) {
+                                signatureMinLength = 512;
+                            } else {
+                                signatureMinLength = 32;
+                            }
+                            logger.fine("Tray to crack " + path);
+                            ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
+                                public int write(byte[] data) throws SevenZipException {
+                                    int toWrite = Math.min(signatureBuffer.free(), data.length);
+                                    if (toWrite > 0) {
+                                        /* we still have enough buffer left to write the data */
+                                        signatureBuffer.write(data, 0, toWrite);
                                     }
-                                    Signature signature = FileSignatures.getSignature(sigger.toString());
-                                    if (signature != null) {
-                                        if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
-                                            /* signature matches, lets abort PWFinding now */
-                                            passwordfound.found();
-                                            return 0;
+                                    if (signatureBuffer.size() >= signatureMinLength) {
+                                        /* we have enough data available for a signature check */
+                                        StringBuilder sigger = new StringBuilder();
+                                        for (int i = 0; i < signatureBuffer.size() - 1; i++) {
+                                            String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
+                                            s = (s.length() < 2 ? "0" + s : s);
+                                            s = s.substring(s.length() - 2);
+                                            sigger.append(s);
+                                        }
+                                        Signature signature = FileSignatures.getSignature(sigger.toString());
+                                        if (signature != null) {
+                                            if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
+                                                /* signature matches, lets abort PWFinding now */
+                                                passwordfound.found();
+                                                return 0;
+                                            }
                                         }
                                     }
+                                    if (item.getSize() <= maxPWCheckSize) {
+                                        /* we still allow further extraction as the itemSize <= maxPWCheckSize */
+                                        return data.length;
+                                    } else {
+                                        /* this will throw SevenZipException */
+                                        return 0;
+                                    }
                                 }
-                                if (item.getSize() <= maxPWCheckSize) {
-                                    /* we still allow further extraction as the itemSize <= maxPWCheckSize */
-                                    return data.length;
-                                } else {
-                                    /* this will throw SevenZipException */
-                                    return 0;
-                                }
+                            }, password);
+                            if (ExtractOperationResult.OK.equals(result)) {
+                                passwordfound.found();
                             }
-                        }, password);
-                        if (ExtractOperationResult.OK.equals(result)) {
-                            passwordfound.found();
+                        } catch (SevenZipException e) {
+
+                            // An error will be thrown if the write method
+                            // returns
+                            // 0.
                         }
-                    } catch (SevenZipException e) {
-                        // An error will be thrown if the write method
-                        // returns
-                        // 0.
+                    } else {
+                        /* pw found */
+                        break;
                     }
-                } else {
-                    /* pw found */
-                    break;
                 }
                 // if (filter(item.getPath())) continue;
             }

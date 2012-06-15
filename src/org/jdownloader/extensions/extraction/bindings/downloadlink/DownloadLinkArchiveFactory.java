@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.appwork.exceptions.WTFException;
@@ -33,6 +32,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
+
     }
 
     public String createExtractSubPath(String path, Archive archiv) {
@@ -148,17 +148,14 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
 
     public Collection<? extends String> getPasswordList(Archive archive) {
 
-        HashSet<String> all = new HashSet<String>();
+        HashSet<String> ret = new HashSet<String>();
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
-                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
-                    all.addAll(FilePackage.getPasswordAuto(link.getFilePackage()));
-                }
+                ret.addAll(((DownloadLinkArchiveFile) af).getExtractPasswords());
             }
 
         }
-
-        return all;
+        return ret;
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {
