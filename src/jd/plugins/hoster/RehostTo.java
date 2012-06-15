@@ -134,7 +134,6 @@ public class RehostTo extends PluginForHost {
         br = newBrowser();
         showMessage(link, "Task 1: Generating Link");
         /* request Download */
-        // use post to get around any max get length issues.
         br.postPage(mProt + mName + "/process_download.php", "user=cookie&pass=" + account.getStringProperty("long_ses") + "&dl=" + Encoding.urlEncode(link.getDownloadURL()));
         handleAPIErrors(br, account, link);
         if (br.getRedirectLocation() != null) dllink = br.getRedirectLocation();
@@ -221,10 +220,9 @@ public class RehostTo extends PluginForHost {
     private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws Exception {
         String statusMessage = null;
         String error = null;
-        if (br.getRedirectLocation() != null)
-            error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
-        else
-            return;
+        // at this stage all errors are handled within redirection urls.
+        if (!br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null) return;
+        if (br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null) error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
         try {
             if (error.equals("low_prem_credits")) {
                 /*
@@ -233,7 +231,7 @@ public class RehostTo extends PluginForHost {
                  * already running this error might occur even if get_premium_credits shows otherwise.
                  */
                 statusMessage = "You are out of premium credits.";
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if (error.equals("download_failed")) {
                 /*
                  * 'download_failed': file download failed. file might not exist anymore or download failed for an unknown reason (i.e.
