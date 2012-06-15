@@ -39,8 +39,8 @@ public class KndGrlsCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        Regex rex = new Regex(parameter, "http://(www\\.)?kindgirls\\.com/gallery");
-        if (rex.matches()) {
+        String fpName = null;
+        if (parameter.contains("com/gallery")) {
             // it's a gallery
             String[] links = br.getRegex("/></a><br /><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("\"(/gal-\\d+/[a-z0-9]+_\\d+/.*?)\"").getColumn(0);
@@ -56,25 +56,25 @@ public class KndGrlsCom extends PluginForDecrypt {
                 decryptedLinks.add(dlLink);
             }
             // set the filepackage name
-            FilePackage fp = FilePackage.getInstance();
             String girlsname = br.getRegex("<h3>Photo.*<a href='.*'>([a-zA-Z0-9\\S-]+)</a>.*</h3>").getColumn(0)[0];
-            String filePackageName = "Kindgirls - " + girlsname.trim();
-            fp.setName(filePackageName);
-            fp.addLinks(decryptedLinks);
-            return decryptedLinks;
+            if (girlsname != null) fpName = "Kindgirls - " + girlsname.trim();
         } else {
             // it's a video
-            Regex videoRegex = br.getRegex("so\\.addParam\\('flashvars',.*file=(http://www\\.kindgirls\\.com//videos\\d+/[a-zA-Z0-9]+\\.m4v).*volume=.*");
-            String link = videoRegex.getColumn(0)[0];
-            DownloadLink dLink = createDownloadlink("directhttp://" + link);
-            FilePackage fp = FilePackage.getInstance();
-            Regex girlsnameregex = br.getRegex("<h3>Video\\s.\\s([a-zA-Z0-9-_]+).*");
-            String girlsname = girlsnameregex.getColumn(0)[0];
-            String filePackageName = "Kindgirls - " + girlsname.trim();
-            fp.setName(filePackageName);
-            fp.addLinks(decryptedLinks);
-            return decryptedLinks;
+            String link = br.getRegex("so\\.addParam\\('flashvars',.*file=(http://www\\.kindgirls\\.com//videos\\d+/[a-zA-Z0-9]+\\.m4v).*volume=.*").getMatch(0);
+            if (link == null || link.length() == 0) {
+                logger.warning("Variable 'link' not found, Please report issue to JDownloader Developement.");
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink("directhttp://" + link));
+            String girlsname = br.getRegex("<h3>Video\\s.\\s([a-zA-Z0-9-_]+).*").getMatch(0);
+            if (girlsname != null) fpName = "Kindgirls - " + girlsname.trim();
         }
+        if (fpName != null) {
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
     }
 
 }
