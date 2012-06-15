@@ -1,0 +1,4 @@
+interaction_batchreconnect_batch=Пакетен скрипт
+interaction_batchreconnect_executein=Стартирай в (папка на приложение)
+interaction_batchreconnect_terminal=Преводач
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Външно повторно пакетно свързване

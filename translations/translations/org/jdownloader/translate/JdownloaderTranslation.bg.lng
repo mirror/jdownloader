@@ -1,0 +1,8 @@
+basics_no=Не
+basics_yes=Да
+gui_menu_extensions=Инструменти
+gui_settings_proxy_title=Мениджър на връзки
+gui_settings_reconnect_title=Повторно свързване
+gui_settings_reconnect_title_method=Метод за повторно свързване
+gui_warning_reconnectFailed=Повторното свързване се провали!
+gui_warning_reconnectSuccess=Повторното свързване е успешно

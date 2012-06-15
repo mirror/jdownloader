@@ -1,0 +1,7 @@
+exit=Затвори
+guiless_downloadfinished=Свалянето завърши
+guiless_error_occured_start_reverting=Възникна грешка. Възстановяване на промените...
+guiless_installFinished=Инсталирането завърши
+guiless_start_install=Старт на инсталирането на %s1 файл(ове)
+guiless_update_failed_unknown=Обновяването се провали. Незнайна причина.
+start=Обновяването е стартирано

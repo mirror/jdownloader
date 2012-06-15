@@ -1,0 +1,4 @@
+interaction_externreconnect_command=Команда (използвай абсолютни пътища към директории)
+interaction_externreconnect_dummybat=Използвай външна програма за Windows
+interaction_externreconnect_parameter=Параметър (по 1 параметър на ред)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Външен инструмент за повторно свързване

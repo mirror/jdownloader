@@ -1,0 +1,10 @@
+UpdateServer_UpdaterGui_onException_error_occured=Възникна грешка: %s1
+UpdateServer_UpdaterGui_onServiceNotAvailable_bar=Моля опитайте отново по-късно.
+UpdateServer_UpdaterGui_onServiceNotAvailable_wait=Сървърза за обновяване е зает. Моля изчакайте или опитайте по-късно.
+UpdateServer_UpdaterGui_onStateChange_branchlist=Намери най-новата версия
+UpdateServer_UpdaterGui_onStateChange_directinstall=Инсталиране на ресурси
+close=Затвори
+close_timeout=Затвори (%s1 с)
+error_occured=Възникна грешка
+error_occured_detailed=Обновяването не можа да завърши.
+error_occured_start_reverting=Обновяването беше прекъснато. Възстановяване на промени...

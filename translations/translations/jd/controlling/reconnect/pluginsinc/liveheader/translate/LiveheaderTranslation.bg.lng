@@ -1,0 +1,16 @@
+AutoDetectAction_AutoDetectAction_=Автоматична Настройка
+DataCompareDialog_DataCompareDialog_=Сравняване на информацията за рутера
+DataCompareDialog_open_webinterface=Отвори уебинтерфейса
+EditScriptAction_EditScriptAction_=Редактирай скрипт
+GetIPAction_getString_progress=Сканиране на мрежата...
+LiveHeaderReconnect_onConfigValueModified_ask_msg=Вине успешно настроихте поврорното свързване. Моля споделете вашите настройки за да подобрим нашия Помощник за Повторно свързване
+LiveHeaderReconnect_onConfigValueModified_ask_title=Сподели настройките за повторно свързване.
+ReconnectRecorderAction_ReconnectRecorderAction_=Създай нов скрипт
+gui_btn_help=Помощ
+gui_btn_no=Не
+gui_btn_start=Стартирай
+gui_btn_yes=Да
+gui_config_jdrr_reconnectfaild=Повторното свързване се провали
+gui_config_jdrr_savereconnect=Повторното свързване беше успешно. Да запазя ли?
+gui_config_routeripfinder_ready=Намерено IP: %s1
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Запази
