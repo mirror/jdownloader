@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,13 +46,13 @@ public class EPornerCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -65,13 +66,16 @@ public class EPornerCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("\\'File has been removed due to copyright owner request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>EPORNER\\.COM :(.*?) \\- Free HD Porn Tube \\- Sex, Porno, Porn Tube, Free porn movies</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\"description\" content=\"Free HD Porn Tube: (.*?)\\. Eporner is the largest hd porn source").getMatch(0);
-        br.getPage("http://www.eporner.com/config/" + new Regex(downloadLink.getDownloadURL(), "eporner\\.com/hd\\-porn/(\\d+)").getMatch(0));
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- Free HD Porn Tube \\- EPORNER</title>").getMatch(0);
+        final String correctedBR = br.toString().replace("\\", "");
+        String continueLink = new Regex(correctedBR, "\"(http://(www\\.)?eporner\\.com/player\\d+/\\d+/[a-z0-9]+)\"").getMatch(0);
+        if (continueLink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(Encoding.htmlDecode(continueLink).replaceAll("/player", "/config"));
+        System.out.println(br.toString() + "\n");
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

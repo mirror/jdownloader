@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "faceporn.no" }, urls = { "http://(www\\.)?faceporn\\.no/video/[a-z0-9\\-]+" }, flags = { 0 })
 public class FacePornNo extends PluginForHost {
@@ -48,16 +49,7 @@ public class FacePornNo extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
+    private static final String NOTDOWNLOADABLE = JDL.L("hoster.facepornno.notdownloadable", "Not downloadable: You have to pay to download this video");
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -65,6 +57,15 @@ public class FacePornNo extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().equals("http://www.faceporn.no/") || br.containsHTML("(>An error occurred<|>The video you tried to watch has been deleted, and is no longer available<|<title>Faceporn \\| Adult social porn community\\. Free blowjobs for everyone\\!</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("faceporn.no/items/buy/")) {
+            String filename = br.getRegex("<div class=\"label\">Title:</div>[\t\n\r ]+<div class=\"value\">([^<>\"]*?)</div>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            filename = Encoding.htmlDecode(filename.trim() + ".mp4");
+            downloadLink.setFinalFileName(filename);
+            downloadLink.getLinkStatus().setStatusText(NOTDOWNLOADABLE);
+            return AvailableStatus.TRUE;
+        } else {
+        }
         String filename = br.getRegex("class=\"h2\"><div class=\"title\">(.*?)</div></div>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div class=\"content text\">(.*?)</div>").getMatch(0);
@@ -98,6 +99,18 @@ public class FacePornNo extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.getURL().contains("faceporn.no/items/buy/")) throw new PluginException(LinkStatus.ERROR_FATAL, NOTDOWNLOADABLE);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

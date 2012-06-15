@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,6 +42,8 @@ public class FlStbCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         FilePackage fp = FilePackage.getInstance();
         final String parameter = param.toString();
+        // Allows us to get age restricted videos
+        br.setCookie("http://filestube.com/", "adultChecked", "1");
         br.getPage(parameter);
         if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested file was not found<)")) {
             logger.info("Link offline: " + parameter);
@@ -52,7 +55,7 @@ public class FlStbCm extends PluginForDecrypt {
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("video.filestube.com/watch")) {
-            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)\\&").getMatch(1);
+            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)(\\&|\")").getMatch(1);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
                 return decryptedLinks;
@@ -60,6 +63,41 @@ public class FlStbCm extends PluginForDecrypt {
             externID = br.getRegex("dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis()));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("metacafe\\.com/fplayer/(\\d+)/").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.metacafe.com/watch/" + externID + "/" + System.currentTimeMillis()));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + externID));
+                return decryptedLinks;
+            }
+            // Filename needed for all ids below here
+            String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (filename == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            filename = Encoding.htmlDecode(filename.trim());
+            externID = br.getRegex("myspace\\.com/videos/vplayer\\.swf\" /><param name=\"flashvars\" value=\"m=(\\d+)").getMatch(0);
+            if (externID != null) {
+                br.getPage("http://mediaservices.myspace.com/services/rss.ashx?videoID=" + externID + "&type=video&el=");
+                final String finallink = br.getRegex("<media:player url=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
             if (externID == null) {
