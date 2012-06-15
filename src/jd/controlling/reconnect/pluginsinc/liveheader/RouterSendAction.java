@@ -57,6 +57,11 @@ public class RouterSendAction extends BasicAction {
             public int getProgress() {
                 return progress;
             }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
         };
         try {
             Dialog.I().showDialog(new ProgressDialog(pg, 0, T._.RouterSendAction_actionPerformed_title(), T._.RouterSendAction_actionPerformed_msg2(), NewTheme.I().getIcon("upload", 32), null, null));

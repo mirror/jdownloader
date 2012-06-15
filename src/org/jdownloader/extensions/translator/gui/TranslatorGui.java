@@ -322,6 +322,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     public int getProgress() {
                         return -1;
                     }
+
+                    @Override
+                    public String getLabelString() {
+                        return null;
+                    }
                 };
 
                 try {
@@ -384,6 +389,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                     @Override
                     public int getProgress() {
                         return -1;
+                    }
+
+                    @Override
+                    public String getLabelString() {
+                        return null;
                     }
                 };
 
@@ -607,6 +617,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
                         public int getProgress() {
                             return -1;
                         }
+
+                        @Override
+                        public String getLabelString() {
+                            return null;
+                        }
                     };
 
                     try {
@@ -777,6 +792,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             public int getProgress() {
                 return -1;
             }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
         };
 
         try {
@@ -849,6 +869,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             public int getProgress() {
                 return -1;
+            }
+
+            @Override
+            public String getLabelString() {
+                return null;
             }
         };
 

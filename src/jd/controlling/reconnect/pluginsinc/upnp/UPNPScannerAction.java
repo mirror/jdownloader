@@ -70,6 +70,11 @@ public class UPNPScannerAction extends BasicAction {
 
             }
 
+            @Override
+            public String getLabelString() {
+                return null;
+            }
+
         }, 0, "Looking for routers", "Wait while JDownloader is looking for router interfaces", null);
 
         try {

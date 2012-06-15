@@ -65,6 +65,11 @@ public class GetIPAction extends BasicAction {
             public int getProgress() {
                 return progress;
             }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
         };
 
         ProgressDialog d = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_OK, T._.GetIPAction_actionPerformed_d_title(), T._.GetIPAction_actionPerformed_d_msg(), NewTheme.I().getIcon("defaultProxy", 32), null, null);

@@ -126,6 +126,11 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             public int getProgress() {
                 return -1;
             }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
         }, 0, _GUI._.accountdialog_check(), _GUI._.accountdialog_check_msg(), DomainInfo.getInstance(ac.getHoster()).getFavIcon());
         try {
 
