@@ -90,6 +90,7 @@ gui_mainframe_title_updatemessage2=%s1 aggiornamenti disponibili
 gui_menu_extensions=Strumenti
 gui_setting_folderchooser_title=Scegli cartella
 gui_settings__gui_title=Aspetto
+gui_settings_barrierfree_description=Tutte le opzioni qui servono alle persone con tutte le abilità e i disabili a usare meglio JDownloader.
 gui_settings_basicauth_title=Autentificazione base
 gui_settings_downloadcontroll_description=Impostazioni limiti connessione, ordine download, priorità,...imposta i dettagli del controllo download..
 gui_settings_downloadcontroll_title=Gestione download
