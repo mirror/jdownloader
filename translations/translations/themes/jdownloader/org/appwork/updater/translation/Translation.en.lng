@@ -40,6 +40,7 @@ guiless_you_are_up2date=You already have the latest version
 install_updates_later=Ask me later!
 install_updates_now=Install now!
 literally_exit=Finished Updatecheck - Exit
+progress=%s1/%s2
 restart_msg=Update has to restart now.
 restart_required_msg=Updater will restart itself now
 restart_required_title=Restart Required
