@@ -40,6 +40,7 @@ guiless_you_are_up2date=Ya tienes la última versión
 install_updates_later=Preguntar más tarde
 install_updates_now=Instalar Ahora
 literally_exit=Verificación de actualizaciones finalizada - Salir
+progress=%s1/%s2
 restart_msg=La actualización debe reiniciarse
 restart_required_msg=El actualizador se reiniciará ahora
 restart_required_title=Se requiere reiniciar
