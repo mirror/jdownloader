@@ -1,0 +1,6 @@
+Layover_size=(px)W:%s1; H:%s2
+literally_byte=%s1 B
+literally_gibibyte=%s1 GB
+literally_kibibyte=%s1 KB
+literally_mebibyte=%s1 MB
+literally_tebibyte=%s1 TB
