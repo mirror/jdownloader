@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 
 import javax.swing.Box;
@@ -51,6 +52,7 @@ import jd.utils.JDUtilities;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
 import org.appwork.storage.jackson.JacksonMapper;
+import org.appwork.utils.Application;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTHelper;
 
@@ -366,8 +368,11 @@ public class EasyCaptchaTool {
         dialog.setVisible(true);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+
         Log.L.setLevel(Level.ALL);
+        Application.setApplication(".jd_home");
+
         JSonStorage.setMapper(new JacksonMapper());
         LookAndFeelController.getInstance().setUIManager();
         EDTEventQueue.initEventQueue();

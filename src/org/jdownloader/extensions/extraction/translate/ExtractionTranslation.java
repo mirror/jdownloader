@@ -250,4 +250,10 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extract Files" })
     String menu_tools_extract_files();
+
+    @Default(lngs = { "en" }, values = { "Unsupported Archive" })
+    String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title();
+
+    @Default(lngs = { "en" }, values = { "This is either no Archive or an unsupported Archive Type" })
+    String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message();
 }

@@ -161,8 +161,7 @@ public class CMS extends PluginForDecrypt {
                         }
                     }
                     /*
-                     * Bei hardcoremetal.biz wird mittlerweile der Download als
-                     * DLC-Container angeboten! Workaround für diese Seite
+                     * Bei hardcoremetal.biz wird mittlerweile der Download als DLC-Container angeboten! Workaround für diese Seite
                      */
                     if (br.containsHTML("ACTION=\"/download\\.php\"")) {
                         final Form forms2[] = br.getForms();

@@ -18,6 +18,8 @@ package jd.captcha;
 
 import java.io.File;
 
+import org.appwork.utils.Application;
+
 /**
  * Jac Training
  * 
@@ -26,11 +28,12 @@ import java.io.File;
 public class JACTestrun {
 
     public static void main(String args[]) {
+        Application.setApplication(".jd_home");
         JACTestrun main = new JACTestrun();
         main.go();
     }
 
     private void go() {
-        JAntiCaptcha.testMethod(new File("C:\\Users\\coalado\\.jd_home\\jd\\captcha\\methods\\megaupload.com/"));
+        JAntiCaptcha.testMethod(new File("C:\\Users\\Thomas\\.jd_home\\jd\\captcha\\methods\\cms/"), "ucms");
     }
 }

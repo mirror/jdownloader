@@ -71,8 +71,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung. Sie verküpft Letter und captcha Klassen. Gleichzeitig dient sie als
- * Parameter-Dump.
+ * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung. Sie verküpft Letter und captcha Klassen. Gleichzeitig dient
+ * sie als Parameter-Dump.
  * 
  * @author JD-Team
  */
@@ -82,8 +82,10 @@ public class JAntiCaptcha {
      * Testet die Angegebene Methode. Dabei werden analysebilder erstellt.
      * 
      * @param file
+     * @param methodName
+     *            TODO
      */
-    public static void testMethod(File file) {
+    public static void testMethod(File file, String methodName) {
         LogSource logger = LogController.CL();
         int checkCaptchas = 20;
         String code;
@@ -92,7 +94,9 @@ public class JAntiCaptcha {
         int correctLetters = 0;
         File captchaFile;
         Image img;
-        String methodName = file.getName();
+        if (methodName == null) {
+            methodName = file.getName();
+        }
         File captchaDir = new File(file.getAbsolutePath() + "/captchas");
 
         logger.info("Test Method: " + methodName);
@@ -152,7 +156,7 @@ public class JAntiCaptcha {
 
             w.repack();
 
-            inputCode = JOptionPane.showInputDialog("Bitte Captcha Code eingeben", code);
+            inputCode = JOptionPane.showInputDialog(w, "Bitte Captcha Code eingeben", code);
 
             w.setText(5, i, "User:" + inputCode);
             w.repack();
@@ -188,7 +192,7 @@ public class JAntiCaptcha {
      */
     public static void testMethods(File[] methods) {
         for (File element : methods) {
-            JAntiCaptcha.testMethod(element);
+            JAntiCaptcha.testMethod(element, null);
         }
 
     }
@@ -268,12 +272,13 @@ public class JAntiCaptcha {
     }
 
     /**
-     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden decoedvalue, avlityvalue
-     * und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche Methoden zur Verfügung um an bestimmte
-     * Informationen zu kommen: captcha.getDecodedLetters() gibt Die letter aus der datenbank zurück. Deren werte sind nicht fest. Auf den Wert von
-     * getvalityvalue und getValityPercent kann man sich absolut nicht verlassen. Einzig getDecodedValue() lässt sich zuverlässig auslesen captcha.getLetters()
-     * gibt die Wirklichen Letter des captchas zurück. Hier lassen sich alle wichtigen Infos abfragen. z.B. ValityValue, ValityPercent, Decodedvalue, etc. Wer
-     * immer das hier liest sollte auf keinen fall den fehler machen und sich auf Wert aus dem getdecodedLetters array verlassen
+     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden
+     * decoedvalue, avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche
+     * Methoden zur Verfügung um an bestimmte Informationen zu kommen: captcha.getDecodedLetters() gibt Die letter aus der datenbank zurück.
+     * Deren werte sind nicht fest. Auf den Wert von getvalityvalue und getValityPercent kann man sich absolut nicht verlassen. Einzig
+     * getDecodedValue() lässt sich zuverlässig auslesen captcha.getLetters() gibt die Wirklichen Letter des captchas zurück. Hier lassen
+     * sich alle wichtigen Infos abfragen. z.B. ValityValue, ValityPercent, Decodedvalue, etc. Wer immer das hier liest sollte auf keinen
+     * fall den fehler machen und sich auf Wert aus dem getdecodedLetters array verlassen
      * 
      * @param captcha
      *            Captcha instanz
@@ -785,8 +790,9 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden gegeneinander verschoben und b wird über die Parameter gedreht. Praktisch heißt
-     * das, dass derjenige Treffer als gut eingestuft wird, bei dem der Datenbank Datensatz möglichst optimal überdeckt wird.
+     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden gegeneinander verschoben und b wird über die Parameter
+     * gedreht. Praktisch heißt das, dass derjenige Treffer als gut eingestuft wird, bei dem der Datenbank Datensatz möglichst optimal
+     * überdeckt wird.
      * 
      * @param a
      *            Original Letter
@@ -1549,7 +1555,8 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter zuerst zu prüfen.
+     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter
+     * zuerst zu prüfen.
      * 
      * @TODO Sortoer ALGO ändern. zu langsam!!
      */

@@ -16,13 +16,16 @@
 
 package jd.captcha;
 
+import org.appwork.utils.Application;
+
 public class ShowLetterDB {
 
     /**
      * @param args
      */
     public static void main(String[] args) {
-        String hoster = "3dl.am";
+        Application.setApplication(".jd_home");
+        String hoster = "ucms";
         JAntiCaptcha jac = new JAntiCaptcha(hoster);
         jac.displayLibrary();
     }

@@ -71,6 +71,7 @@ import org.jdownloader.extensions.extraction.split.HJSplit;
 import org.jdownloader.extensions.extraction.split.Unix;
 import org.jdownloader.extensions.extraction.split.XtreamSplit;
 import org.jdownloader.extensions.extraction.translate.ExtractionTranslation;
+import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
@@ -279,6 +280,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
 
         Archive archive = extrctor.buildArchive(link);
+        LogSource logger = LogController.CL();
+        logger.info("Created Archive: " + archive);
         // Log.L.info("Created Archive: " + archive);
         LogController.CL().info("Files: " + archive.getArchiveFiles());
 
@@ -993,17 +996,25 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             return _.plugins_optional_extraction_filefilter_extractto();
                         }
                     };
+                    try {
+                        final Archive archive = buildArchive(dlAF);
 
-                    File extractto = getExtractToPath(dlAF, null);
-                    while (extractto != null && !extractto.isDirectory()) {
-                        extractto = extractto.getParentFile();
-                    }
-                    File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, JFileChooser.SAVE_DIALOG);
-                    if (files == null || files.length == 0) return;
-                    for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                        if (link instanceof DownloadLink) {
-                            ((DownloadLink) link).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0].getAbsolutePath());
+                        File extractto = getExtractToPath(dlAF, archive);
+                        while (extractto != null && !extractto.isDirectory()) {
+                            extractto = extractto.getParentFile();
                         }
+
+                        File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, JFileChooser.SAVE_DIALOG);
+                        if (files == null || files.length == 0) return;
+                        for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
+                            if (link instanceof DownloadLink) {
+                                ((DownloadLink) link).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0].getAbsolutePath());
+                            }
+                        }
+                    } catch (ArchiveException e1) {
+                        LogController.CL().log(e1);
+
+                        Dialog.getInstance().showMessageDialog(T._.ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title(), T._.ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message());
                     }
                 }
             });

@@ -57,6 +57,8 @@ public class BasicWindow extends JFrame {
      */
     public static BasicWindow showImage(Image img, String title) {
         BasicWindow w = new BasicWindow();
+        w.setAlwaysOnTop(true);
+
         ImageComponent ic = new ImageComponent(img);
         w.setSize(ic.getImageWidth() + 10, ic.getImageHeight() + 20);
         w.setTitle(title);
