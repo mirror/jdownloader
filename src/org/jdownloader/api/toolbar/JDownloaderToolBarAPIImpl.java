@@ -39,6 +39,8 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
 
@@ -168,6 +170,11 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
             if (chunkedDom != null) {
                 final String url = chunkedDom.URL;
                 final String dom = chunkedDom.completeDOM;
+
+                LogSource l = LogController.CL();
+                l.info(url);
+                l.info(dom);
+                l.close();
                 /*
                  * we first check if the url itself can be handled by a plugin
                  */
