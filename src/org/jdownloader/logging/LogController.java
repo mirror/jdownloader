@@ -67,7 +67,7 @@ public class LogController {
         maxSize = JsonConfig.create(LogConfig.class).getMaxLogFileSize();
         maxLogs = JsonConfig.create(LogConfig.class).getMaxLogFiles();
         logTimeout = JsonConfig.create(LogConfig.class).getLogFlushTimeout() * 1000l;
-        logFolder = Application.getResource("logs/" + new SimpleDateFormat("dd.MM.YYYY - HH.mm").format(new Date(Launcher.startup)) + "/");
+        logFolder = Application.getResource("logs/" + new SimpleDateFormat("dd.MM.yyyy - HH.mm").format(new Date(Launcher.startup)) + "/");
         if (!logFolder.exists()) logFolder.mkdirs();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
@@ -169,7 +169,7 @@ public class LogController {
         }
         if (logger != null && logger instanceof LogSource) {
             LogSource ret = (LogSource) logger;
-            ret.log(new Throwable("Place of rebirth!"));
+
             return ret;
         }
         return null;
@@ -208,8 +208,7 @@ public class LogController {
         LogSource source = new LogSource(name, -1);
         // source.setInstantFlush(true);
         sink.addLogSource(source);
-        /* add Stacktrace to the LogSource so we can see in log where it got created/requested */
-        source.log(new Throwable("Place of birth!"));
+
         return source;
     }
 
