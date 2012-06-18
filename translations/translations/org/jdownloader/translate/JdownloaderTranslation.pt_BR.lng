@@ -120,7 +120,7 @@ gui_warning_reconnect_running=Executando...
 gui_warning_reconnectunknown=Reconexão desconhecida
 jd_controlling_SingleDownloadController_askexists=O arquivo '%s1' no pacote %s2 já existe. O que deseja fazer?
 jd_controlling_SingleDownloadController_askexists_title=O arquivo existe
-jd_controlling_reconnect_Reconnector_progress_failed2=A Reconexão falhou muitas vezes! Auto Reconexão desativada! Por favor, verifique suas Configurações de Reconexão!
+jd_controlling_reconnect_Reconnector_progress_failed2=A Reconexão falhou várias vezes!\r\nAuto Reconexão desativada! \r\nPor favor, verifique suas Configurações de Reconexão!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nenhuma Reconexão selecionada</u></b><br/><p>Reconexão é uma abordagem avançada para evitar longas esperas que alguns servidores impoem para usuários free. <br>Não é útil ao usar uma conta premium.</p><p>Leia mais sobre Reconexão <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Sem Reconexão
 jd_plugins_PluginUtils_askPassword=Por favor, insira a senha para %s1
