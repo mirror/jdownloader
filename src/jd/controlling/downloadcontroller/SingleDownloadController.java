@@ -564,8 +564,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorDownloadTemporarilyUnavailable() {
         if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());
@@ -670,8 +670,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 /*
                  * handle is only called in download situation, that why we create a new browser instance here
                  */
-                Browser br;
-                livePlugin.setBrowser(br = new Browser());
+                livePlugin.setBrowser(new Browser());
                 if (originalPlugin != livePlugin) {
                     /* we have 2 different plugins -> multihoster */
                     originalPlugin.setBrowser(new Browser());

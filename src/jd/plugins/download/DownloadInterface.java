@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -66,8 +67,8 @@ abstract public class DownloadInterface {
     public class Chunk extends Thread {
 
         /**
-         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer
-         * und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
+         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben
+         * einen kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
          */
         public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
@@ -441,8 +442,8 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle BUffer schon
-         * geschrieben wurde oder nicht.
+         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle
+         * BUffer schon geschrieben wurde oder nicht.
          * 
          * @return
          */
@@ -710,6 +711,8 @@ abstract public class DownloadInterface {
 
     private final long       startTimeStamp    = System.currentTimeMillis();
 
+    private boolean          dlAlreadyFinished = false;
+
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
     }
@@ -851,6 +854,19 @@ abstract public class DownloadInterface {
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
+            }
+            if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && downloadLink.getDownloadSize() == downloadLink.getChunksProgress()[0] + 1) {
+                /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
+                /* we fake a content disposition connection so plugins work normal */
+                if (connection.isContentDisposition() == false) {
+                    List<String> list = new ArrayList<String>();
+                    list.add("fakeContent");
+                    connection.getHeaderFields().put("Content-Disposition", list);
+                }
+                List<String> list = new ArrayList<String>();
+                list.add("application/octet-stream");
+                connection.getHeaderFields().put("Content-Type", list);
+                dlAlreadyFinished = true;
             }
         } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
             this.setFilesizeCheck(true);
@@ -1059,8 +1075,8 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != fileSize && fileSize > 0)) {
             if (totalLinkBytesLoaded > fileSize) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -1092,7 +1108,8 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     private void onChunkFinished() {
         synchronized (this) {
@@ -1134,7 +1151,8 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -1222,49 +1240,57 @@ abstract public class DownloadInterface {
                 downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(connectionHandler);
             } catch (final Throwable e) {
             }
-            try {
-                boolean watchAsYouDownloadTypeLink = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false);
-                boolean initiatedByWatchAsYouDownloadAction = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
-                if (watchAsYouDownloadTypeLink && initiatedByWatchAsYouDownloadAction) {
-                    org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
-                    if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
-                        org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
-                        try {
-                            watchAsYouDownloadSession.waitForDownloadToFinish();
-                        } catch (Exception a) {
-                            logger.log(Level.SEVERE, "Exception in waiting for neembuu watch as you download", a);
-                            // if we do not return, normal download would start.
-                            return false;
+            if (this.dlAlreadyFinished == false) {
+                try {
+                    boolean watchAsYouDownloadTypeLink = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.WATCH_AS_YOU_DOWNLOAD_KEY, false);
+                    boolean initiatedByWatchAsYouDownloadAction = (Boolean) downloadLink.getFilePackage().getProperty(org.jdownloader.extensions.neembuu.NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);
+                    if (watchAsYouDownloadTypeLink && initiatedByWatchAsYouDownloadAction) {
+                        org.jdownloader.extensions.neembuu.DownloadSession downloadSession = new org.jdownloader.extensions.neembuu.DownloadSession(downloadLink, this, this.plugin, this.getConnection(), this.browser.cloneBrowser());
+                        if (org.jdownloader.extensions.neembuu.NeembuuExtension.tryHandle(downloadSession)) {
+                            org.jdownloader.extensions.neembuu.WatchAsYouDownloadSession watchAsYouDownloadSession = downloadSession.getWatchAsYouDownloadSession();
+                            try {
+                                watchAsYouDownloadSession.waitForDownloadToFinish();
+                            } catch (Exception a) {
+                                logger.log(Level.SEVERE, "Exception in waiting for neembuu watch as you download", a);
+                                // if we do not return, normal download would start.
+                                return false;
+                            }
+                            return true;
                         }
-                        return true;
+                        int o = 0;
+                        try {
+                            o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
+                        } catch (Exception a) {
+                            o = Dialog.RETURN_CANCEL;
+                        }
+                        if (o == Dialog.RETURN_CANCEL) return false;
+                        logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
+                    } else if (watchAsYouDownloadTypeLink && !initiatedByWatchAsYouDownloadAction) {
+                        // Neembuu downloads should start if and only if user clicks
+                        // watch as you download
+                        // action in the context menu. We don't want neembuu to
+                        // start when user pressed
+                        // forced download, or simple download button.
+                        // We shall skip this link and disable all in this
+                        // filepackage
+                        for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
+                            dl.setEnabled(false);
+                        }
+                        /* TODO: change me */
+                        throw new PluginException(LinkStatus.ERROR_FATAL);
                     }
-                    int o = 0;
-                    try {
-                        o = Dialog.I().showConfirmDialog(Dialog.LOGIC_COUNTDOWN, org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_title(), org.jdownloader.extensions.neembuu.translate._NT._.neembuu_could_not_handle_message());
-                    } catch (Exception a) {
-                        o = Dialog.RETURN_CANCEL;
-                    }
-                    if (o == Dialog.RETURN_CANCEL) return false;
-                    logger.severe("Neembuu could not handle this link/filehost. Using default download system.");
-                } else if (watchAsYouDownloadTypeLink && !initiatedByWatchAsYouDownloadAction) {
-                    // Neembuu downloads should start if and only if user clicks
-                    // watch as you download
-                    // action in the context menu. We don't want neembuu to
-                    // start when user pressed
-                    // forced download, or simple download button.
-                    // We shall skip this link and disable all in this
-                    // filepackage
-                    for (DownloadLink dl : downloadLink.getFilePackage().getChildren()) {
-                        dl.setEnabled(false);
-                    }
-                    /* TODO: change me */
-                    throw new PluginException(LinkStatus.ERROR_FATAL);
+                } catch (final Throwable e) {
+                    logger.severe("Exception in neembuu watch as you download");
+                    LogSource.exception(logger, e);
                 }
-            } catch (final Throwable e) {
-                logger.severe("Exception in neembuu watch as you download");
-                LogSource.exception(logger, e);
             }
             logger.finer("Start Download");
+            if (this.dlAlreadyFinished == true) {
+                downloadLink.setAvailable(true);
+                logger.finer("DownloadAlreadyFinished workaround");
+                linkStatus.setStatus(LinkStatus.FINISHED);
+                return true;
+            }
             if (!connected) connect();
             if (connection != null && connection.getHeaderField("Content-Encoding") != null && connection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
                 /* GZIP Encoding kann weder chunk noch resume */
