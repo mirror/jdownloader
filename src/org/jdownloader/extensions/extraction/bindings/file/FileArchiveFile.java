@@ -32,7 +32,7 @@ public class FileArchiveFile implements ArchiveFile {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null || !(obj instanceof File)) return false;
+        if (obj == null || !(obj instanceof FileArchiveFile)) return false;
         return file.equals(((FileArchiveFile) obj).file);
     }
 
