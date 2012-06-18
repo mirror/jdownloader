@@ -1,4 +1,4 @@
-jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
+jd_plugins_optional_jdtrayicon_jdlighttray=Área de Notificação
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Permite minimizar ou fechar o JDownloader para a área de notificação, e outros recursos como proteção com senha e mais.
 plugins_optional_JDLightTray_always=Sempre
 plugins_optional_JDLightTray_closetotray=Fechar para bandeja

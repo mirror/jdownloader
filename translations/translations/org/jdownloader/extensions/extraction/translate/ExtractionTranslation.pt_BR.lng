@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=Isto não é um Arquivo ou é um Tipo de Arquivo Não Suportado
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Arquivo Não Suportado
 ValidateArchiveAction_ValidateArchiveAction=Validar %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Validar Arquivo(s)
 ValidateArchiveAction_actionPerformed_=O arquivo possui %s1 parte(s) e está completo
