@@ -1,3 +1,9 @@
+ABSTRACTDIALOG_BUTTON_CANCEL=Batal
+ABSTRACTDIALOG_BUTTON_OK=OK
+DIALOG_ERROR_TITLE=Kesalahan muncul
+DIALOG_INPUT_TITLE=Masukkan!
+DIALOG_MESSAGE_TITLE=Pesan
+DIALOG_SLIDER_TITLE=Masukkan!
 Layover_size=(px)W:%s1; H:%s2
 literally_byte=%s1 B
 literally_gibibyte=%s1 GB

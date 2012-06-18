@@ -1,2 +1,10 @@
+UpdateServer_UpdaterGui_runInEDT_noupdates=Anda sudah punya versi terbaru
+UpdateServer_UpdaterGui_runInEDT_successful=Berhasil!
+close=Tutup
+exit=Tutup
+interrupted=Dibatalkan oleh pemakai
 start_jd=Start %s1
 start_jd__timeout=Start %s1 (%s2)
+timer=%s1 s
+userinterrupted=Pemutakhiran diinterupsi pemakai
+virtual_file_system_detected=Tak ada ijin tulis ke %s1
