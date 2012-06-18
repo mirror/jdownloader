@@ -67,7 +67,7 @@ public class LogController {
         maxSize = JsonConfig.create(LogConfig.class).getMaxLogFileSize();
         maxLogs = JsonConfig.create(LogConfig.class).getMaxLogFiles();
         logTimeout = JsonConfig.create(LogConfig.class).getLogFlushTimeout() * 1000l;
-        logFolder = Application.getResource("logs/" + new SimpleDateFormat("HH:mm:ss-dd.MM").format(new Date(Launcher.startup)) + "/");
+        logFolder = Application.getResource("logs/" + new SimpleDateFormat("dd.MM.YYYY - HH.mm").format(new Date(Launcher.startup)) + "/");
         if (!logFolder.exists()) logFolder.mkdirs();
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
