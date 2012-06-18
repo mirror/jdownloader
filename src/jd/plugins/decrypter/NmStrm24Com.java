@@ -16,21 +16,20 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?anime-stream24\\.com/\\d+/\\d+/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-stream24.com" }, urls = { "http://(www\\.)?(anime\\-stream24\\.com/\\d+/\\d+/.*?|anime\\-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+)\\.html" }, flags = { 0 })
 public class NmStrm24Com extends PluginForDecrypt {
 
     public NmStrm24Com(PluginWrapper wrapper) {
@@ -39,47 +38,75 @@ public class NmStrm24Com extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> cryptedLinks = new ArrayList<String>();
-        ArrayList<String> regexes = new ArrayList<String>();
-        regexes.add("scrolling=\"no\" src=\"(.*?)\"");
-        regexes.add("<object data=\"(.*?)\"");
-        regexes.add("style=\"display: none;\"><script src=\"(.*?)\"");
-        regexes.add("flashvars=\\'file=(http://[^<>\"\\']+)\\&image");
-        regexes.add("<iframe SRC=\"(http://[^<>\"\\']+)\"");
-        regexes.add("<iframe SRC=\\'(http://[^<>\"\\']+)\\'");
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("Seite nicht gefunden<")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
-        if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
-        String[] links = br.getRegex("id=\"fragment\\-\\d+\"><iframe (style=\\'overflow: hidden; border: 0; width: 600px; height: 480px\\' )?(src|SRC)=(\\'|\")(.*?)(\\'|\")").getColumn(3);
-        if (links != null && links.length != 0) {
-            for (String cryptedLink : links)
-                cryptedLinks.add(cryptedLink);
+        if (br.containsHTML("Seite nicht gefunden<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
-        for (String regex : regexes) {
-            String tempLinks[] = br.getRegex(Pattern.compile(regex, Pattern.CASE_INSENSITIVE)).getColumn(0);
-            if (tempLinks != null && tempLinks.length != 0) {
-                for (String tempLink : tempLinks)
-                    cryptedLinks.add(Encoding.htmlDecode(tempLink));
+        if (parameter.matches("http://(www\\.)?anime-stream24\\.info/s/[a-z0-9]+/[a-z0-9]+_\\d+\\.html")) {
+            // So far only tested with a vidbux.com link
+            final String finallink = br.getRegex("flashvars=\\'plugins=/pl/plugins/proxy\\.swf\\&proxy\\.link=(http://[^<>\"]*?)\\&stretching=").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-        }
-        final String dailyMotionUrl = br.getRegex("\"(http://dai\\.ly/[A-Za-z0-9]+)\"").getMatch(0);
-        if (dailyMotionUrl != null) {
-            br.getPage(dailyMotionUrl);
-            final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
-            if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink.replace("\\", "")));
-        }
-        if (cryptedLinks == null || cryptedLinks.size() == 0) return null;
-        for (String aLink : cryptedLinks)
-            decryptedLinks.add(createDownloadlink(aLink));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+            decryptedLinks.add(createDownloadlink(finallink));
+        } else {
+            String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
+            if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
+            String[] fragments = br.getRegex("<div id=\"fragment\\-\\d+\"(.*?)<br />").getColumn(0);
+            if (fragments == null || fragments.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String fragment : fragments) {
+                final DownloadLink dl = findLink(fragment);
+                if (dl != null) decryptedLinks.add(dl);
+            }
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(fpName.trim());
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
 
+    private DownloadLink findLink(final String fragment) throws IOException {
+        String externID = new Regex(fragment, "\"(http://dai\\.ly/[A-Za-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            final String finallink = br.getRegex("\"stream_h264_url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+            return createDownloadlink("directhttp://" + finallink.replace("\\", ""));
+        }
+        externID = new Regex(fragment, "/pl/mod\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
+        if (externID != null) { return createDownloadlink("http://www.modovideo.com/video?v=" + externID); }
+        externID = new Regex(fragment, "/pl/y\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
+        if (externID != null) { return createDownloadlink("http://yourupload.com/file/" + externID); }
+        externID = new Regex(fragment, "nowvideo\\.eu/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)\\'").getMatch(0);
+        if (externID != null) { return createDownloadlink("http://www.nowvideo.eu/video/" + externID); }
+        externID = br.getRegex("dwn\\.so/player/embed\\.php\\?v=([A-Z0-9]+)\\&width=\\d+.*?").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://dwn.so/player/embed.php?v=" + externID);
+            final String yk = br.getRegex("dwn\\.so/player/play4\\.swf\\?v=" + externID + "\\&yk=([a-z0-9]+)\'").getMatch(0);
+            if (yk != null) {
+                br.getPage("http://dwn.so/xml/videolink.php?v=" + externID + "&yk=" + yk);
+                final String finallink = br.getRegex("downloadurl=\"(http://dwn\\.so/[^<>\"]*?)\"").getMatch(0);
+                if (finallink != null) return createDownloadlink(finallink);
+            }
+        }
+        // Many directlinks or embed links are in here
+        externID = new Regex(fragment, "flashvars=\\'file=(http://[^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) { return createDownloadlink(externID); }
+        // Most links are in the iframes
+        externID = new Regex(fragment, Pattern.compile("<iframe src=(\"|\\')(http://[^<>\"]*?)(\"|\\')", Pattern.CASE_INSENSITIVE)).getMatch(1);
+        if (externID != null) { return createDownloadlink(externID); }
+        return null;
+    }
 }

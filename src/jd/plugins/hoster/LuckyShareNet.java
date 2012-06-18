@@ -87,10 +87,10 @@ public class LuckyShareNet extends PluginForHost {
         final String hash = ajax.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Waittime can still be skipped */
-        // int wait = 30;
-        // String waittime = ajax.getRegex("\"time\":(\\d+)").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
+        int wait = 30;
+        final String waittime = ajax.getRegex("\"time\":(\\d+)").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
@@ -105,6 +105,7 @@ public class LuckyShareNet extends PluginForHost {
             }
             break;
         }
+        System.out.println(ajax.toString() + "\n");
         if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

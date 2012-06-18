@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -75,7 +76,9 @@ public class SlutLoadCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.followConnection();
         if (br.getURL().equals("http://www.slutload.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.getURL().contains("slutload.com/")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);

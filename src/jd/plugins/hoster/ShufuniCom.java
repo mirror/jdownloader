@@ -50,7 +50,11 @@ public class ShufuniCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -72,7 +76,7 @@ public class ShufuniCom extends PluginForHost {
         br.followConnection();
         String filename = null;
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?shufuni\\.com/handlers/FLVStreamingv2\\.ashx\\?videoCode=[A-Z0-9\\-]+")) {
-            filename = downloadLink.getName();
+            filename = downloadLink.getFinalFileName();
             dllink = br.getRegex("CDNUrl=(http://[^<>\"]*?)\\&SeekType=").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = null;
@@ -99,19 +103,7 @@ public class ShufuniCom extends PluginForHost {
             if (ext == null || ext.length() > 5) ext = ".mp4";
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ext);
         }
-        try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        return AvailableStatus.TRUE;
     }
 
     @Override

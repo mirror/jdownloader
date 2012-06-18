@@ -50,14 +50,14 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
         }
-        externID = br.getRegex("flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externID != null) {
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
-            dl.setName(Encoding.htmlDecode(filename.trim()));
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

@@ -58,14 +58,14 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(decrypted));
             return decryptedLinks;
         }
-        externalID = br.getRegex("flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        externalID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externalID != null) {
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externalID);
-            dl.setName(Encoding.htmlDecode(filename.trim()));
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

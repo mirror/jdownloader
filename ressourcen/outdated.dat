@@ -807,5 +807,9 @@ jd/plugins/decrypter/RpdshrM.class
 jd/plugins/decrypter/RpdSprdCm.class
 jd/plugins/decrypter/HprLnkCshCm.class
 jd/plugins/decrypter/HddnPnt.class
-#jd/plugins/decrypter/BlgXXNt.class
+jd/plugins/decrypter/BlgXXNt.class
 jd/plugins/hoster/NetPornNl.class
+jd/plugins/hoster/FreeLoadTo.class
+jd/plugins/decrypter/AsapLoadCom.class
+jd/plugins/decrypter/CrptNgBz.class
+jd/plugins/decrypter/HrfRdrctr.class

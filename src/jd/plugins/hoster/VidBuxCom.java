@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "vidbux.com" }, urls = { "https?://(www\\.)?vidbux\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "vidbux.com" }, urls = { "https?://(www\\.)?vidbux\\.com/(embed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VidBuxCom extends PluginForHost {
 
     private String              correctedBR         = "";
@@ -65,7 +65,7 @@ public class VidBuxCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("/embed-", "/"));
     }
 
     @Override

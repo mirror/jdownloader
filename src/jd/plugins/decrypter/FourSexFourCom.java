@@ -68,14 +68,19 @@ public class FourSexFourCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("flashvars=\"videoCode=(.*?)\\&WID=\">").getMatch(0);
+        tempID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (tempID != null) {
+            if (filename == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + tempID);
-            dl.setName(Encoding.htmlDecode(filename.trim()));
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         tempID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("fucking8\\.com/includes/player/\\?video=xv(\\d+)\"").getMatch(0);
         if (tempID == null) tempID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));

@@ -45,16 +45,16 @@ public class FlStbCm extends PluginForDecrypt {
         // Allows us to get age restricted videos
         br.setCookie("http://filestube.com/", "adultChecked", "1");
         br.getPage(parameter);
-        if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested file was not found<)")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
         if (parameter.contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) return null;
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("video.filestube.com/watch")) {
+            if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)(\\&|\")").getMatch(1);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
@@ -80,6 +80,11 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + externID));
                 return decryptedLinks;
             }
+            externID = br.getRegex("123video\\.nl/123video_emb\\.swf\\?mediaSrc=(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.123video.nl/playvideos.asp?MovieID=" + externID));
+                return decryptedLinks;
+            }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -100,11 +105,33 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+            if (externID != null) {
+                DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+                dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("ebaumsworld\\.com/player\\.swf\" allowScriptAccess=\"always\" flashvars=\"id1=(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                br.getPage("http://www.ebaumsworld.com/video/player/" + externID + "?env=id1");
+                externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+                if (externID != null) {
+                    DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                    dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+                    decryptedLinks.add(dl);
+                    return decryptedLinks;
+                }
+            }
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
         } else {
+            if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested file was not found<)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String fpName = br.getRegex("<title>(.*?)\\- Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of
             // alternative ways to get the name
