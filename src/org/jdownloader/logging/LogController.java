@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import jd.Launcher;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -23,6 +24,8 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.jdownloader.extensions.extraction.ExtractionController;
+import org.jdownloader.extensions.extraction.ExtractionQueue;
 
 public class LogController {
     private static final LogController INSTANCE    = new LogController();
@@ -156,7 +159,7 @@ public class LogController {
         return getInstance().getLogger(new Throwable().fillInStackTrace().getStackTrace()[1].getClassName());
     }
 
-    private static LogSource getRebirthLogger() {
+    public static LogSource getRebirthLogger() {
         Logger logger = null;
         Thread currentThread = Thread.currentThread();
         if (currentThread instanceof LinkCrawlerThread) {
@@ -166,10 +169,17 @@ public class LogController {
         } else if (currentThread instanceof SingleDownloadController) {
             /* we are inside a SingleDownloadController, lets reuse the logger from hosterPlugin */
             logger = ((SingleDownloadController) currentThread).getLogger();
+        } else if (currentThread instanceof ExtractionQueue) {
+            /* we are inside an ExtractionController */
+            ExtractionController currentExtraction = ((ExtractionQueue) currentThread).getCurrentQueueEntry();
+            if (currentExtraction != null) logger = currentExtraction.getLogger();
+        } else if (currentThread instanceof LinkCheckerThread) {
+            /* we are inside a LinkCheckerThread */
+            LinkCheckerThread lc = (LinkCheckerThread) currentThread;
+            logger = lc.getLogger();
         }
         if (logger != null && logger instanceof LogSource) {
             LogSource ret = (LogSource) logger;
-
             return ret;
         }
         return null;

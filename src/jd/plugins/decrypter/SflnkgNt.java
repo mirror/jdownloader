@@ -112,7 +112,10 @@ public class SflnkgNt extends PluginForDecrypt {
         if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the safelinking.net support!"); }
         if (parameter.matches("https?://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {
             br.getPage(parameter);
-            final String finallink = br.getRedirectLocation();
+            String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                finallink = br.getRegex("location=\"(https?[^\"]+)").getMatch(0);
+            }
             if (finallink == null) {
                 logger.warning("SafeLinking: Sever issues? continuing...");
                 logger.warning("SafeLinking: Please confirm via browser, and report any bugs to JDownloader Developement Team. :" + parameter);

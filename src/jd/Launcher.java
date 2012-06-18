@@ -19,6 +19,7 @@ package jd;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -423,10 +424,12 @@ public class Launcher {
         Log.L.setUseParentHandlers(true);
         Log.L.setLevel(Level.ALL);
         Log.L.addHandler(new Handler() {
-            LogSource logger = LogController.getInstance().getLogger("OldLogL");
+            LogSource oldLogger = LogController.getInstance().getLogger("OldLogL");
 
             @Override
             public void publish(LogRecord record) {
+                LogSource logger = LogController.getRebirthLogger();
+                if (logger == null) logger = oldLogger;
                 logger.log(record);
             }
 
@@ -438,7 +441,16 @@ public class Launcher {
             public void close() throws SecurityException {
             }
         });
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler() {
 
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                LogSource logger = LogController.getInstance().getLogger("UncaughtExceptionHandler");
+                logger.severe("Uncaught Exception in: " + t.getId() + "=" + t.getName());
+                logger.log(e);
+                logger.close();
+            }
+        });
         if (!PARAMETERS.hasCommandSwitch("console") && Application.isJared(Launcher.class)) {
             Launcher.LOG.info("Remove ConsoleHandler");
             LogController.getInstance().removeConsoleHandler();

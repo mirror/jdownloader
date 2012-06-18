@@ -2,6 +2,7 @@ package org.jdownloader.extensions.translator.gui;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,10 +25,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.text.BadLocationException;
 
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
+import jd.gui.swing.laf.LookAndFeelController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.AddonPanel;
 import net.miginfocom.swing.MigLayout;
@@ -59,11 +62,10 @@ import org.jdownloader.extensions.translator.TranslatorExtensionListener;
 import org.jdownloader.extensions.translator.gui.actions.NewTranslationAction;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.tmatesoft.svn.core.SVNException;
 import org.tmatesoft.svn.core.wc.SVNCommitItem;
 import org.tmatesoft.svn.core.wc.SVNCommitPacket;
-
-import de.javasoft.plaf.synthetica.SyntheticaLookAndFeel;
 
 /**
  * Extension gui
@@ -763,8 +765,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
-     * switched form a different tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or switched form a different
+     * tab to this one
      */
     @Override
     protected void onShow() {
@@ -817,8 +819,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
-     * tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different tab/view
      */
     @Override
     protected void onHide() {
@@ -900,12 +901,18 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
             @Override
             protected void runInEDT() {
                 String desiredFont = getExtension().getFontname();
-                if (desiredFont != null && !desiredFont.equals(SyntheticaLookAndFeel.getFontName())) {
-                    // switch fontname. create ne table to use the new font
-                    SyntheticaLookAndFeel.setFont(desiredFont, SyntheticaLookAndFeel.getFontSize());
-                    initTable();
-                    sp.getViewport().setView(table);
-
+                if (LookAndFeelController.getInstance().isSynthetica()) {
+                    try {
+                        if (desiredFont != null && !desiredFont.equals(de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName())) {
+                            // switch fontname. create ne table to use the new font
+                            Font newFont = (Font) (new FontUIResource(desiredFont, 0, de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize()));
+                            de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
+                            initTable();
+                            sp.getViewport().setView(table);
+                        }
+                    } catch (final Throwable e) {
+                        LogController.CL().log(e);
+                    }
                 }
 
                 tableModel.refresh(getExtension());

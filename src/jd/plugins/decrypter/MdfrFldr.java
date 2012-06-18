@@ -48,7 +48,8 @@ public class MdfrFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("mfi.re/", "mediafire.com/");
+        String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
+        if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) return decryptedLinks;
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
         String fpName = null;
         this.setBrowserExclusive();

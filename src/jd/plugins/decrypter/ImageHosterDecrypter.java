@@ -203,13 +203,12 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (downloadLinks != null) {
                 if (downloadLinks.length == decryptedLinks.size()) {
                     /*
-                     * we have a full resolution image for each picture, so lets
-                     * only download them
+                     * we have a full resolution image for each picture, so lets only download them
                      */
                     decryptedLinks.clear();
                 }
                 for (String link : downloadLinks) {
-                    decryptedLinks.add(createDownloadlink("directhttp://http://imgur.com" + link));
+                    decryptedLinks.add(createDownloadlink("directhttp://http://imgur.com" + link.replaceAll(" ", "%20").replaceAll(";", "%27")));
                 }
             }
             if (fpName != null) {

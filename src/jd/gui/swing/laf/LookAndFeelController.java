@@ -186,6 +186,12 @@ public class LookAndFeelController {
             if (laf.contains("Synthetica")) {
                 try {
                     /* special init for Synthetica */
+                    int fontSizeScale = config.getFontScaleFactor();
+                    fontSizeScale = Math.min(200, Math.max(10, fontSizeScale));
+                    /* http://www.jyloo.com/news/?pubId=1297681728000 */
+                    /* we want our own FontScaling, not SystemDPI */
+                    UIManager.put("Synthetica.font.respectSystemDPI", Boolean.FALSE);
+                    UIManager.put("Synthetica.font.scaleFactor", Integer.valueOf(fontSizeScale));
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
                 } catch (Throwable e) {
@@ -245,14 +251,12 @@ public class LookAndFeelController {
      * @param className
      */
     private void postSetup(String className) {
-        // config.setFontScaleFactor(100);
         int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
         String fontFromTranslation = _GUI._.config_fontname();
         ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
         if (isSynthetica()) {
-            ExtPasswordField.MASK = "******";
-
+            ExtPasswordField.MASK = "*******";
             try {
                 if ("default".equalsIgnoreCase(fontName)) {
                     if ("default".equalsIgnoreCase(fontFromTranslation)) {
@@ -261,9 +265,10 @@ public class LookAndFeelController {
                         fontName = fontFromTranslation;
                     }
                 }
-                int newSize = (de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize() * fontSize) / 100;
-                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(fontName, newSize);
-
+                int size = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize();
+                Font newFont = (Font) (new FontUIResource(fontName, 0, size));
+                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
+                int newSize = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize();
                 UIManager.put("ExtTable.SuggestedFontHeight", newSize);
             } catch (final Throwable e) {
                 LogController.CL().log(e);

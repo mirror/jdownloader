@@ -2,8 +2,8 @@ package org.jdownloader.extensions.extraction;
 
 public enum CPUPriority {
     HIGH(0),
-    MIDDLE(100),
-    LOW(200);
+    MIDDLE(10),
+    LOW(100);
 
     private int time = 0;
 

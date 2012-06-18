@@ -48,7 +48,7 @@ public class UGoUploadNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+) [A-Za-z]+)\\)<br/>");
+        final Regex fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\(([0-9\\.]+ [A-Za-z]+)\\)<br/>");
         final String filename = fileInfo.getMatch(0);
         final String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

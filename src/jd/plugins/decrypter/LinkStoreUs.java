@@ -122,7 +122,7 @@ public class LinkStoreUs extends PluginForDecrypt {
                     if (dlclinks != null && dlclinks.size() != 0) {
                         if (fpName != null) {
                             FilePackage fp = FilePackage.getInstance();
-                            fp.setName(fpName.trim());
+                            fp.setName(Encoding.htmlDecode(fpName.trim()));
                             fp.addLinks(dlclinks);
                         }
                         return dlclinks;
@@ -166,7 +166,7 @@ public class LinkStoreUs extends PluginForDecrypt {
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
             }
         } else {

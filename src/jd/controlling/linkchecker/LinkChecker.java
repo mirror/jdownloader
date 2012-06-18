@@ -217,7 +217,7 @@ public class LinkChecker<E extends CheckableLink> {
     private static void startNewThread(final String threadHost) {
         synchronized (LOCK) {
             if (CHECK_THREADS.size() >= MAX_THREADS) return;
-            final BrowserSettingsThread newThread = new BrowserSettingsThread(new Runnable() {
+            final LinkCheckerThread newThread = new LinkCheckerThread(new Runnable() {
 
                 public void run() {
                     int stopDelay = 1;
