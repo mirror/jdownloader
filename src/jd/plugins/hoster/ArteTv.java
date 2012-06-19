@@ -53,26 +53,26 @@ public class ArteTv extends PluginForHost {
 
     private Document doc;
 
-    public ArteTv(final PluginWrapper wrapper) {
+    public ArteTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private boolean checkDateExpiration(final String s) {
+    private boolean checkDateExpiration(String s) {
         if (s == null) { return false; }
         EXPIRED = s;
-        final SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+        SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
         try {
-            final Date date = df.parse(s);
+            Date date = df.parse(s);
             if (date.getTime() < System.currentTimeMillis()) { return true; }
-            final SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
+            SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
             EXPIRED = dfto.format(date);
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             return false;
         }
         return false;
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(DownloadLink downloadLink) throws Exception {
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
@@ -87,7 +87,7 @@ public class ArteTv extends PluginForHost {
         return "http://www.arte.tv/de/Allgemeine-Nutzungsbedingungen/3664116.html";
     }
 
-    private String getClipData(final String tag) {
+    private String getClipData(String tag) {
         return new Regex(clipData, "<" + tag + ">(.*?)</" + tag + ">").getMatch(0);
     }
 
@@ -97,14 +97,14 @@ public class ArteTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        final String link = downloadLink.getDownloadURL();
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        String link = downloadLink.getDownloadURL();
         String lang = new Regex(link, "http://\\w+.arte.tv/(\\w+)/.+").getMatch(0);
         lang = lang != null && "de".equalsIgnoreCase(lang) ? "De" : lang;
         lang = lang != null && "fr".equalsIgnoreCase(lang) ? "Fr" : lang;
@@ -170,15 +170,15 @@ public class ArteTv extends PluginForHost {
     }
 
     private HashMap<String, String> requestLivewebArte() throws Exception {
-        final HashMap<String, String> paras = new HashMap<String, String>();
-        final String eventId = br.getRegex("eventId=(\\d+)").getMatch(0);
+        HashMap<String, String> paras = new HashMap<String, String>();
+        String eventId = br.getRegex("eventId=(\\d+)").getMatch(0);
         FLASHPLAYER = "http://liveweb.arte.tv/flash/player.swf";
 
-        final XPath xPath = xmlParser("http://arte.vo.llnwd.net/o21/liveweb/events/event-" + eventId + ".xml?" + System.currentTimeMillis());
-        final NodeList modules = (NodeList) xPath.evaluate("//event[@id=" + eventId + "]/*|//event/video[@id]/*", doc, XPathConstants.NODESET);
+        XPath xPath = xmlParser("http://arte.vo.llnwd.net/o21/liveweb/events/event-" + eventId + ".xml?" + System.currentTimeMillis());
+        NodeList modules = (NodeList) xPath.evaluate("//event[@id=" + eventId + "]/*|//event/video[@id]/*", doc, XPathConstants.NODESET);
 
         for (int i = 0; i < modules.getLength(); i++) {
-            final Node node = modules.item(i);
+            Node node = modules.item(i);
             if ("postrolls".equalsIgnoreCase(node.getNodeName()) || "categories".equalsIgnoreCase(node.getNodeName())) {
                 continue;
             }
@@ -188,16 +188,16 @@ public class ArteTv extends PluginForHost {
     }
 
     private HashMap<String, String> requestVideosArte() throws Exception {
-        final HashMap<String, String> paras = new HashMap<String, String>();
-        final String tmpUrl = br.getRegex("ajaxUrl:\'([^<>]+view,)").getMatch(0);
+        HashMap<String, String> paras = new HashMap<String, String>();
+        String tmpUrl = br.getRegex("ajaxUrl:\'([^<>]+view,)").getMatch(0);
         FLASHPLAYER = br.getRegex("<param name=\"movie\" value=\"(.*?)\\?").getMatch(0);
         if (FLASHPLAYER == null || tmpUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-        final XPath xPath = xmlParser("http://videos.arte.tv" + tmpUrl + "asPlayerXml.xml");
-        final NodeList modules = (NodeList) xPath.evaluate("/video/*|//urls/*", doc, XPathConstants.NODESET);
+        XPath xPath = xmlParser("http://videos.arte.tv" + tmpUrl + "strmVideoAsPlayerXml.xml");
+        NodeList modules = (NodeList) xPath.evaluate("/video/*|//urls/*", doc, XPathConstants.NODESET);
 
         for (int i = 0; i < modules.getLength(); i++) {
-            final Node node = modules.item(i);
+            Node node = modules.item(i);
             if (node.hasAttributes()) {
                 paras.put(node.getAttributes().item(0).getTextContent(), node.getTextContent());
             } else {
@@ -212,37 +212,36 @@ public class ArteTv extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
 
-    private void setupRTMPConnection(final DownloadInterface dl) {
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+    private void setupRTMPConnection(DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setSwfVfy(FLASHPLAYER);
         rtmp.setUrl(CLIPURL);
         rtmp.setResume(true);
     }
 
-    private XPath xmlParser(final String linkurl) throws Exception {
+    private XPath xmlParser(String linkurl) throws Exception {
+        InputStream stream = null;
         try {
-            final URL url = new URL(linkurl);
-            final InputStream stream = url.openStream();
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            final XPath xPath = XPathFactory.newInstance().newXPath();
-            try {
-                doc = parser.parse(stream);
-                return xPath;
-            } finally {
-                try {
-                    stream.close();
-                } catch (final Throwable e) {
-                }
-            }
-        } catch (final Throwable e2) {
+            URL url = new URL(linkurl);
+            stream = url.openStream();
+            DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            doc = parser.parse(stream);
+            return xPath;
+        } catch (Throwable e2) {
             return null;
+        } finally {
+            try {
+                stream.close();
+            } catch (Throwable e) {
+            }
         }
     }
 
