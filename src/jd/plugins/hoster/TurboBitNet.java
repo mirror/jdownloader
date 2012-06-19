@@ -321,8 +321,8 @@ public class TurboBitNet extends PluginForHost {
         }
 
         final Browser tOut = br.cloneBrowser();
-        final String to = br.getRegex("(?i)(/js/timeout\\.js\\?ver=[0-9A-Z]+)").getMatch(0);
-        tOut.getPage(to == null ? "/js/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
+        final String to = br.getRegex("(?i)(/\\w+/timeout\\.js\\?\\w+=[^\"\'<>]+)").getMatch(0);
+        tOut.getPage(to == null ? "/files/timeout.js?ver=" + JDHash.getMD5(String.valueOf(Math.random())).toUpperCase(Locale.ENGLISH) : to);
         final String fun = escape(tOut.toString());
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
 
