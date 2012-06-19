@@ -119,7 +119,7 @@ public class FileFactory extends PluginForHost {
                     if (size != null && !size.equals("0")) size = size.trim() + " MB";
                     // above result can return value of 0, so we look for the
                     // other field.
-                    if (size == null || size.equals("0")) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)</h1>").getMatch(0);
+                    if (size == null || size.equals("0")) size = br.getRegex("\\(([\\d\\.]+ (KB|MB|GB|TB))\\)</h1>").getMatch(0);
                     String name = br.getRegex("class=\"name\">([^\r\n\t]*?)</h1>[ \r\n\t]*?<p>" + dl.getDownloadURL() + "[^\r\n \t]*?</p").getMatch(0);
                     if (name != null) {
                         /* remove filesize at the end of filename if given */
@@ -181,16 +181,14 @@ public class FileFactory extends PluginForHost {
                 }
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.UK));
             }
-            final String loaded = this.br.getRegex("You have used (.*?)out").getMatch(0);
-            String max = this.br.getRegex("limit of(.*?\\. )").getMatch(0);
+            final String loaded = this.br.getRegex("You have used (.*?) out").getMatch(0);
+            String max = this.br.getRegex("limit of (.*?)\\. ").getMatch(0);
             if (max != null && loaded != null) {
-                max = max.replaceAll("\\.", ",");
-                max = max.replaceFirst(",", "");
-                max = max.replaceAll(",[ \t]*?$", "");
+                // you don't need to strip characters or reorder is structure. The source is fine!
                 ai.setTrafficMax(SizeFormatter.getSize(max));
                 ai.setTrafficLeft(ai.getTrafficMax() - SizeFormatter.getSize(loaded));
             } else {
-                max = this.br.getRegex("You can now download up to(.*?)in").getMatch(0);
+                max = this.br.getRegex("You can now download up to (.*?) in").getMatch(0);
                 if (max != null) {
                     ai.setTrafficLeft(SizeFormatter.getSize(max));
                 } else {
@@ -508,7 +506,7 @@ public class FileFactory extends PluginForHost {
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (this.br.containsHTML(">Sorry, this file can only be downloaded by Premium members<") || this.br.containsHTML("Currently only Premium Members can download files larger")) {
+            if (this.br.containsHTML("Sorry, this file can only be downloaded by Premium members") || this.br.containsHTML("Currently only Premium Members can download files larger")) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
                 downloadLink.getLinkStatus().setStatusText("This file is only available to Premium Members");
             } else if (this.br.containsHTML(NO_SLOT)) {
