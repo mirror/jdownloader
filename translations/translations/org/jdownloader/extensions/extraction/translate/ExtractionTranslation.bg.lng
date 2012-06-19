@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=Или няма архив или типът на архива е неподдържан
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Неподдържан архив
 ValidateArchiveAction_ValidateArchiveAction=Валидирай %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Валидирай Архив(и)
 ValidateArchiveAction_actionPerformed_=Архива има %s1 част(и) и е завършен
