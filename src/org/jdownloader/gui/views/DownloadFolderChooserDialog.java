@@ -57,7 +57,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         } else if (f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER) || (f.getPath().startsWith("\\") && f.getPath().indexOf("\\", 2) < 0)) {
             //
             return NewTheme.I().getIcon("network-idle", 18);
-        } else if (f.getPath().length() == 3 && f.getPath().charAt(1) == ':' && Character.isAlphabetic(f.getPath().charAt(0))) {
+        } else if (f.getPath().length() == 3 && f.getPath().charAt(1) == ':' && (f.getPath().charAt(0) + "").matches("[a-zA-Z]{1}")) {
             //
             return NewTheme.I().getIcon("harddisk", 16);
         } else if (f instanceof HomeFolder) {
@@ -156,7 +156,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     /**
-     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must exist
+     * checks if the given file is valid as a downloadfolder, this means it must be an existing folder or at least its parent folder must
+     * exist
      * 
      * @param file
      * @return
