@@ -200,7 +200,7 @@ public class RapidGatorNet extends PluginForHost {
                     if (captchaAdress == null || captchaType == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
                     if (!"3017".equals(captchaType)) {
-                        logger.warning("ADSCaptcha: Captcha Type not supportet!");
+                        logger.warning("ADSCaptcha: Captcha type not supported!");
                         return;
                     }
                     capt.getPage(captchaAdress);
