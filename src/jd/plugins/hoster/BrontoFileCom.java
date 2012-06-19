@@ -78,7 +78,7 @@ public class BrontoFileCom extends PluginForHost {
         final String waittime = br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, -10);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

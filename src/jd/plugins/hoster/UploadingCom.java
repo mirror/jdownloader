@@ -83,7 +83,7 @@ public class UploadingCom extends PluginForHost {
         logger.info("Checking errors");
         if (br.containsHTML("Sorry, but file you are trying to download is larger then allowed for free download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
-        if (br.containsHTML("you have reached your daily download limi")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+        if (br.containsHTML("(you have reached your daily download limi|>Ihr heutiges Download\\-Limit wurde erreicht)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
         if (br.containsHTML("Your IP address is currently downloading a file")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("Only Premium users can download files larger than")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         if (br.containsHTML("You have reached the daily downloads limit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
@@ -115,7 +115,8 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report anything else
+                     * append fake filename , because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -444,7 +445,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override

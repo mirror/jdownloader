@@ -85,21 +85,13 @@ public class FileFeltoltoHu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = downloadLink.getDownloadURL();
-        if (downloadLink.getDownloadURL().matches("http://(www\\.)?filefeltolto\\.hu/letoltes/[a-z0-9]+/[^<>\"/]+")) {
-            // Try to skip waittime
-            final String fid = br.getRegex("<input type=\"hidden\" name=\"fid\" value=\"(\\d+)\"").getMatch(0);
-            if (fid != null) {
-                dllink = "http://filefeltolto.hu/xvidplayer_gateway.php?fid=" + fid;
-            } else {
-                int wait = 10;
-                String waittime = br.getRegex("var limit=\\'0:(\\d+)\\';").getMatch(0);
-                if (waittime != null) wait = Integer.parseInt(waittime);
-                // Activate waittime
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.postPage("http://filefeltolto.hu/ajax/set.php", "hash=" + new Regex(downloadLink.getDownloadURL(), "filefeltolto\\.hu/letoltes/([a-z0-9]+)/").getMatch(0));
-                sleep(wait * 1001l, downloadLink);
-            }
-        }
+        int wait = 10;
+        String waittime = br.getRegex("var limit=\\'0:(\\d+)\\';").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        // Activate waittime
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://filefeltolto.hu/ajax/set.php", "hash=" + new Regex(downloadLink.getDownloadURL(), "filefeltolto\\.hu/letoltes/([a-z0-9]+)/").getMatch(0));
+        sleep(wait * 1001l, downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
