@@ -141,12 +141,13 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
                 } else {
                     lbl.setText(_GUI._.TestWaitDialog_runInEDT_(filtered, found.size(), ((filtered * 10000) / found.size()) / 100d));
                 }
+                // synchronized (found) {
+                model._fireTableStructureChanged(new ArrayList<CrawledLink>(found), true);
+                // }
 
             }
         };
-        synchronized (found) {
-            model._fireTableStructureChanged(new ArrayList<CrawledLink>(found), true);
-        }
+
     }
 
     public ArrayList<CrawledLink> getFound() {
