@@ -25,6 +25,7 @@ public class PluginProgress {
     private long      total;
 
     private long      current;
+    private long      ETA            = -1;
 
     private Color     color;
     private ImageIcon icon           = null;
@@ -64,6 +65,11 @@ public class PluginProgress {
         this.total = total;
     }
 
+    public void updateValues(final long current, final long total) {
+        this.current = current;
+        this.total = total;
+    }
+
     public ImageIcon getIcon() {
         return icon;
     }
@@ -78,6 +84,21 @@ public class PluginProgress {
 
     public void setProgressSource(Object progressSource) {
         this.progressSource = progressSource;
+    }
+
+    /**
+     * @return the eTA
+     */
+    public long getETA() {
+        return ETA;
+    }
+
+    /**
+     * @param eTA
+     *            the eTA to set
+     */
+    public void setETA(long eTA) {
+        ETA = eTA;
     }
 
 }

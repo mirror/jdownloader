@@ -15,6 +15,7 @@ import jd.plugins.PluginProgress;
 
 import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.images.NewTheme;
 
@@ -180,11 +181,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
             } else {
                 PluginProgress progress = downloadLink.getPluginProgress();
                 if (progress != null) {
+                    progress.updateValues(value, max);
                     progress.setCurrent(value);
-                    progress.setColor(color);
-                    progress.setTotal(max);
                 } else {
-                    progress = new PluginProgress(value, max, color);
+                    progress = new ExtractionProgress(value, max, color);
                     progress.setIcon(NewTheme.I().getIcon("unpack", 16));
                     progress.setProgressSource(this);
                     downloadLink.setPluginProgress(progress);

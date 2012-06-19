@@ -203,9 +203,26 @@ public class ExtractionListenerList implements ExtractionListener {
             ex.onFinished(controller);
             break;
         case CLEANUP:
-            controller.getArchiv().setActive(false);
-            controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
-            ex.removeArchive(controller.getArchiv());
+            try {
+                ArrayList<File> removed = new ArrayList<File>();
+                if (controller.gotKilled()) {
+                    controller.getArchiv().getFirstArchiveFile().setMessage(null);
+                    for (File f : controller.getArchiv().getExtractedFiles()) {
+                        if (f.exists()) {
+                            if (!f.delete()) {
+                                logger.warning("Could not delete file " + f.getAbsolutePath());
+                            } else {
+                                removed.add(f);
+                            }
+                        }
+                    }
+                }
+                if (removed.size() > 0) FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(controller, FileCreationEvent.Type.REMOVE_FILES, removed.toArray(new File[removed.size()])));
+            } finally {
+                controller.getArchiv().setActive(false);
+                controller.getArchiv().getFirstArchiveFile().setProgress(0, 0, null);
+                ex.removeArchive(controller.getArchiv());
+            }
             break;
         case FILE_NOT_FOUND:
             try {

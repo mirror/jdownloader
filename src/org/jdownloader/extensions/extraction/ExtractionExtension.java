@@ -694,8 +694,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @param activeValue
      */
     public void cancel(ExtractionController activeValue) {
+        boolean wasInProgress = getJobQueue().isInProgress(activeValue);
         getJobQueue().remove(activeValue);
-        fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
+        if (wasInProgress) fireEvent(new ExtractionEvent(activeValue, ExtractionEvent.Type.CLEANUP));
     }
 
     public void onNewFile(Object caller, File[] fileList) {

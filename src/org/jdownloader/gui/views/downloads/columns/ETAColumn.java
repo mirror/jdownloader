@@ -167,6 +167,8 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             PluginProgress progress = null;
             if ((progress = dlLink.getPluginProgress()) != null) {
                 icon2Use = progress.getIcon();
+                long eta = progress.getETA();
+                if (eta >= 0) return eta;
                 return Math.max(0, progress.getCurrent());
             }
         }

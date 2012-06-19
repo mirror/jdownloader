@@ -24,4 +24,10 @@ public class ExtractionQueue extends Queue {
         return ret;
     }
 
+    public boolean isInProgress(ExtractionController p) {
+        synchronized (queueLock) {
+            return this.getCurrentJob() == p;
+        }
+    }
+
 }

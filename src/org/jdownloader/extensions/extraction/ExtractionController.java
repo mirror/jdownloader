@@ -70,9 +70,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     }
 
     public void kill() {
+        logger.info("abort extraction");
         super.kill();
-        extractor.close();
-
     }
 
     public LogSource getLogger() {
@@ -122,7 +121,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
             File dl = ExtractionExtension.getIntance().getExtractToPath(archive.getFactory(), archive);
             archive.setExtractTo(dl);
-
+            if (gotKilled()) return null;
             if (extractor.prepare()) {
 
                 if (archive.isProtected() && archive.getPassword().equals("")) {
@@ -142,6 +141,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     // first run optimized.
 
                     for (String password : passwordList) {
+                        if (gotKilled()) return null;
                         if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
                             correctPW = password;
                             break;
@@ -151,7 +151,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     if (correctPW == null) {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
-
+                        if (gotKilled()) return null;
                         if (!checkPassword(archive.getPassword(), false)) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
@@ -198,6 +198,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     timer.cancel(false);
                     extractor.close();
                 }
+                if (gotKilled()) { return null; }
                 if (extractor.getException() != null) exception = extractor.getException();
                 switch (archive.getExitCode()) {
                 case ExtractionControllerConstants.EXIT_CODE_SUCCESS:
@@ -250,6 +251,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             this.exception = e;
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
+            if (gotKilled()) {
+                logger.info("ExtractionController has been killed");
+                logger.clear();
+            }
             try {
                 extractor.close();
             } catch (final Throwable e) {

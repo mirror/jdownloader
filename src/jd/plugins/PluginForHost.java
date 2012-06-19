@@ -137,6 +137,7 @@ public abstract class PluginForHost extends Plugin {
     protected String getCaptchaCode(final String method, final File file, final int flag, final DownloadLink link, final String defaultValue, final String explain) throws PluginException {
         final LinkStatus linkStatus = link.getLinkStatus();
         final String status = linkStatus.getStatusText();
+        int latest = linkStatus.getLatestStatus();
         try {
             linkStatus.addStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
@@ -154,6 +155,7 @@ public abstract class PluginForHost extends Plugin {
             return cc.getCaptchaText();
         } finally {
             linkStatus.removeStatus(LinkStatus.WAITING_USERIO);
+            linkStatus.addStatus(latest);
             linkStatus.setStatusText(status);
             linkStatus.setStatusIcon(null);
         }

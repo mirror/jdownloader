@@ -125,74 +125,79 @@ public class XtreamSplit extends IExtraction {
 
             for (int i = 0; i < files.size(); i++) {
                 File source = new File(files.get(i));
-                in = new BufferedInputStream(new FileInputStream(source));
+                try {
+                    in = new BufferedInputStream(new FileInputStream(source));
 
-                if (md5) md = MessageDigest.getInstance("md5");
+                    if (md5) md = MessageDigest.getInstance("md5");
 
-                // Skip header in case of the first file
-                // can't call in.skip(), because the header counts
-                // the towards md5 hash.
-                long length = source.length();
-                if (i == 0) {
-                    int alreadySkipped = 0;
-                    final int toBeSkipped = HEADER_SIZE;
+                    // Skip header in case of the first file
+                    // can't call in.skip(), because the header counts
+                    // the towards md5 hash.
+                    long length = source.length();
+                    if (i == 0) {
+                        int alreadySkipped = 0;
+                        final int toBeSkipped = HEADER_SIZE;
 
-                    while (alreadySkipped < toBeSkipped) {
+                        while (alreadySkipped < toBeSkipped) {
+                            // Read data
+                            int l = in.read(buffer, 0, toBeSkipped - alreadySkipped);
+
+                            alreadySkipped += l;
+
+                            // Update MD5
+                            if (md5) md.update(buffer, 0, l);
+                        }
+
+                        length = length - toBeSkipped;
+                    }
+
+                    long read = 0;
+
+                    // Skip md5 hashes at the end if it's the last file
+                    boolean isItTheLastFile = i == (files.size() - 1);
+                    if (md5 && isItTheLastFile) {
+                        length = length - 32 * files.size();
+                    }
+
+                    // Merge
+                    while (length > read) {
+                        // Calculate the read buffer for the remaining byte. Max
+                        // BUFFER
+                        int buf = ((length - read) < BUFFER_SIZE) ? (int) (length - read) : BUFFER_SIZE;
+
                         // Read data
-                        int l = in.read(buffer, 0, toBeSkipped - alreadySkipped);
+                        int l = in.read(buffer, 0, buf);
 
-                        alreadySkipped += l;
+                        // Write data
+                        out.write(buffer, 0, l);
+                        out.flush();
+                        if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
+                        // Sum up bytes for control
+                        progressInBytes += l;
+                        controller.setProgress(progressInBytes / size);
+                        read += l;
 
                         // Update MD5
                         if (md5) md.update(buffer, 0, l);
                     }
 
-                    length = length - toBeSkipped;
-                }
-
-                long read = 0;
-
-                // Skip md5 hashes at the end if it's the last file
-                boolean isItTheLastFile = i == (files.size() - 1);
-                if (md5 && isItTheLastFile) {
-                    length = length - 32 * files.size();
-                }
-
-                // Merge
-                while (length > read) {
-                    // Calculate the read buffer for the remaining byte. Max
-                    // BUFFER
-                    int buf = ((length - read) < BUFFER_SIZE) ? (int) (length - read) : BUFFER_SIZE;
-
-                    // Read data
-                    int l = in.read(buffer, 0, buf);
-
-                    // Write data
-                    out.write(buffer, 0, l);
-                    out.flush();
-
-                    // Sum up bytes for control
-                    progressInBytes += l;
-                    controller.setProgress(progressInBytes / size);
-                    read += l;
-
-                    // Update MD5
-                    if (md5) md.update(buffer, 0, l);
-                }
-
-                in.close();
-
-                // Check MD5 hashes
-                if (md5) {
-                    final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
-                    final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
-                    if (hashStoredWithinFiles != null && !hashStoredWithinFiles.equals(calculatedHash)) {
-                        for (ArchiveFile link : archive.getArchiveFiles()) {
-                            if (link.getFilePath().equals(source.getAbsolutePath())) {
-                                archive.addCrcError(link);
-                                break;
+                    // Check MD5 hashes
+                    if (md5) {
+                        final String calculatedHash = HexFormatter.byteArrayToHex(md.digest()).toUpperCase();
+                        final String hashStoredWithinFiles = hashes.get(source.getAbsolutePath());
+                        if (hashStoredWithinFiles != null && !hashStoredWithinFiles.equals(calculatedHash)) {
+                            for (ArchiveFile link : archive.getArchiveFiles()) {
+                                if (link.getFilePath().equals(source.getAbsolutePath())) {
+                                    archive.addCrcError(link);
+                                    break;
+                                }
                             }
                         }
+                    }
+                } finally {
+                    try {
+                        in.close();
+                    } catch (final Throwable e) {
                     }
                 }
             }
@@ -211,11 +216,12 @@ public class XtreamSplit extends IExtraction {
         } finally {
             controller.setProgress(100.0d);
             try {
-                if (out != null) out.close();
-                if (in != null) in.close();
-            } catch (IOException e) {
-                controller.setExeption(e);
-                archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+                out.flush();
+            } catch (Throwable e) {
+            }
+            try {
+                out.close();
+            } catch (Throwable e) {
             }
         }
 

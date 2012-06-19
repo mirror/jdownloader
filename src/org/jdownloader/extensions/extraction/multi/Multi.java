@@ -526,6 +526,7 @@ public class Multi extends IExtraction {
                 if (item == null || item.isFolder()) {
                     continue;
                 }
+                if (ctrl.gotKilled()) { throw new SevenZipException("Extraction has been aborted"); }
                 String path = item.getPath();
                 if (StringUtils.isEmpty(path)) {
                     // example: test.tar.gz contains a test.tar file, that has
@@ -629,6 +630,7 @@ public class Multi extends IExtraction {
                     @Override
                     public int write(byte[] data) throws SevenZipException {
                         try {
+                            if (ctrl.gotKilled()) throw new SevenZipException("Extraction has been aborted");
                             return super.write(data);
                         } finally {
                             progressInBytes += data.length;
@@ -772,7 +774,10 @@ public class Multi extends IExtraction {
                      */
                     continue;
                 }
-
+                if (ctl.gotKilled()) {
+                    /* extraction got aborted */
+                    break;
+                }
                 final String path = item.getPath();
                 String ext = Files.getExtension(path);
                 if (checkedExtensions.add(ext) || !optimized) {

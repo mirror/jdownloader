@@ -18,7 +18,6 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.columns.ExtComponentColumn;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
@@ -62,89 +61,88 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
             protected void initColumns() {
                 super.initColumns();
-                // extension.cancel(activeValue); crashes under windows
-                if (!CrossSystem.isWindows()) {
-                    addColumn(new ExtComponentColumn<ExtractionController>("Cancel") {
-                        /**
+
+                addColumn(new ExtComponentColumn<ExtractionController>("Cancel") {
+                    /**
 					 * 
 					 */
-                        private static final long    serialVersionUID = 261994408344732524L;
-                        private ExtButton            renderer;
-                        private ExtButton            editor;
-                        private ExtractionController activeValue;
+                    private static final long    serialVersionUID = 261994408344732524L;
+                    private ExtButton            renderer;
+                    private ExtButton            editor;
+                    private ExtractionController activeValue;
 
-                        {
-                            renderer = getButton();
-                            editor = getButton();
+                    {
+                        renderer = getButton();
+                        editor = getButton();
 
-                        }
+                    }
 
-                        @Override
-                        protected JComponent getInternalEditorComponent(ExtractionController value, boolean isSelected, int row, int column) {
-                            return editor;
-                        }
+                    @Override
+                    protected JComponent getInternalEditorComponent(ExtractionController value, boolean isSelected, int row, int column) {
+                        return editor;
+                    }
 
-                        private ExtButton getButton() {
-                            ExtButton ret = new ExtButton(new AppAction() {
-                                /**
+                    private ExtButton getButton() {
+                        ExtButton ret = new ExtButton(new AppAction() {
+                            /**
 							 * 
 							 */
-                                private static final long serialVersionUID = -2183896670625238331L;
+                            private static final long serialVersionUID = -2183896670625238331L;
 
-                                {
-                                    setSmallIcon(NewTheme.I().getIcon("cancel", 16));
-                                }
+                            {
+                                setSmallIcon(NewTheme.I().getIcon("cancel", 16));
+                            }
 
-                                public void actionPerformed(ActionEvent e) {
-                                    extension.cancel(activeValue);
-                                    pu.setVisible(false);
-                                }
-                            });
-                            ret.setRolloverEffectEnabled(true);
-                            return ret;
-                        }
+                            public void actionPerformed(ActionEvent e) {
+                                extension.cancel(activeValue);
+                                pu.setVisible(false);
+                            }
+                        });
+                        ret.setRolloverEffectEnabled(true);
+                        return ret;
+                    }
 
-                        @Override
-                        public int getDefaultWidth() {
-                            return 25;
-                        }
+                    @Override
+                    public int getDefaultWidth() {
+                        return 25;
+                    }
 
-                        protected int getMaxWidth() {
-                            return getDefaultWidth();
-                        }
+                    protected int getMaxWidth() {
+                        return getDefaultWidth();
+                    }
 
-                        /**
-                         * @return
-                         */
-                        public int getMinWidth() {
-                            return getDefaultWidth();
-                        }
+                    /**
+                     * @return
+                     */
+                    public int getMinWidth() {
+                        return getDefaultWidth();
+                    }
 
-                        @Override
-                        protected JComponent getInternalRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
-                            return renderer;
-                        }
+                    @Override
+                    protected JComponent getInternalRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
+                        return renderer;
+                    }
 
-                        @Override
-                        public void configureEditorComponent(ExtractionController value, boolean isSelected, int row, int column) {
-                            activeValue = value;
-                        }
+                    @Override
+                    public void configureEditorComponent(ExtractionController value, boolean isSelected, int row, int column) {
+                        activeValue = value;
+                    }
 
-                        @Override
-                        public void configureRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
-                        }
+                    @Override
+                    public void configureRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
+                    }
 
-                        @Override
-                        public void resetEditor() {
-                        }
+                    @Override
+                    public void resetEditor() {
+                    }
 
-                        @Override
-                        public void resetRenderer() {
-                        }
-                    });
-                }
+                    @Override
+                    public void resetRenderer() {
+                    }
+                });
             }
         };
+
         table = new ExtractionJobTable(tModel);
 
         pu.add(table);

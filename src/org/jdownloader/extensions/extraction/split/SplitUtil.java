@@ -236,7 +236,7 @@ class SplitUtil {
                         bos.write(readBuffer.getInternalBuffer(), 0, l);
                         progressInBytes += l;
                         controller.setProgress(progressInBytes / size);
-
+                        if (controller.gotKilled()) throw new IOException("Extraction has been aborted!");
                         if (priority != null && !CPUPriority.HIGH.equals(priority)) {
                             try {
                                 Thread.sleep(priority.getTime());

@@ -191,7 +191,7 @@ public class LinkStatus implements Serializable {
             if (statusText != null) return statusText;
             return null;
         }
-        switch (status) {
+        switch (lastestStatus) {
         /* first we check for LinkStatus */
         case LinkStatus.FINISHED:
         case LinkStatus.TODO:
