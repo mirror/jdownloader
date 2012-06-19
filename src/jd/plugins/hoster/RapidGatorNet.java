@@ -71,8 +71,8 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /*
-         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get removed from active
-         * downloading IP database. I assume it only happens after successful download and not failures.
+         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get
+         * removed from active downloading IP database. I assume it only happens after successful download and not failures.
          */
         if (hasDled) sleep(90 * 1001l, downloadLink);
         try {
@@ -147,51 +147,77 @@ public class RapidGatorNet extends PluginForHost {
                     if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) continue;
                     break;
                 }
-            } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+            } else {
                 Form captcha = br.getFormbyProperty("id", "captchaform");
                 if (captcha == null) {
                     logger.info(br.toString());
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
-                String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-                if (challenge == null) {
+
+                captcha.put("DownloadCaptchaForm[captcha]", "");
+                String code = null, challenge = null;
+                Browser capt = br.cloneBrowser();
+
+                if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                    final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
+                    challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                    if (challenge == null) {
+                        logger.info(br.toString());
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
+                    String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
+                    if (chid == null) { return; }
+                    code = "http://api.solvemedia.com/papi/media?c=" + chid;
+                    if (!skipcaptcha) {
+                        final File captchaFile = this.getLocalCaptchaFile();
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
+                        try {
+                            ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
+                        } catch (final Throwable e) {
+                            logger.warning("Solvemedia handling broken");
+                            return;
+                        }
+                        code = getCaptchaCode("solvemedia", captchaFile, downloadLink);
+                    } else {
+                        URLConnectionAdapter con2 = null;
+                        try {
+                            con2 = br.openGetConnection(code);
+                        } finally {
+                            try {
+                                con2.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        code = "";
+                    }
+                    captcha.put("adcopy_challenge", chid);
+                    captcha.put("adcopy_response", code);
+
+                } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
+                    String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
+                    String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)\\&").getMatch(0);
+                    if (captchaAdress == null || captchaType == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+                    if (!"3017".equals(captchaType)) {
+                        logger.warning("ADSCaptcha: Captcha Type not supportet!");
+                        return;
+                    }
+                    capt.getPage(captchaAdress);
+                    challenge = capt.getRegex("<img src=\"(http://api\\.adscaptcha\\.com//Challenge\\.aspx\\?cid=[^\"]+)").getMatch(0);
+                    code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
+
+                    if (challenge == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    challenge = getCaptchaCode("adscaptcha", challenge, downloadLink);
+                    captcha.put("adscaptcha_response_field", challenge);
+                    captcha.put("adscaptcha_challenge_field", code);
+                } else {
                     logger.info(br.toString());
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                Browser capt = br.cloneBrowser();
-                capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
-                String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
-                if (chid == null) { return; }
-                String code = "http://api.solvemedia.com/papi/media?c=" + chid;
-                if (!skipcaptcha) {
-                    final File captchaFile = this.getLocalCaptchaFile();
-                    Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
-                    try {
-                        ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
-                    } catch (final Throwable e) {
-                        logger.warning("Solvemedia handling broken");
-                        return;
-                    }
-                    code = getCaptchaCode("solvemedia", captchaFile, downloadLink);
-                } else {
-                    URLConnectionAdapter con2 = null;
-                    try {
-                        con2 = br.openGetConnection(code);
-                    } finally {
-                        try {
-                            con2.disconnect();
-                        } catch (final Throwable e) {
-                        }
-                    }
-                    code = "";
-                }
-                captcha.put("DownloadCaptchaForm[captcha]", "");
-                captcha.put("adcopy_challenge", chid);
-                captcha.put("adcopy_response", code);
                 br.submitForm(captcha);
             }
-            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML("(>Please fix the following input errors|>The verification code is incorrect|api\\.recaptcha\\.net/|google\\.com/recaptcha/api/|//api\\.solvemedia\\.com/papi|//api\\.adscaptcha\\.com)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             String dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
             if (dllink == null) {
