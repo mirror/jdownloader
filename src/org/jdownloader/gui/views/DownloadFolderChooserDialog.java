@@ -3,6 +3,7 @@ package org.jdownloader.gui.views;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -14,15 +15,19 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.ExtFileSystemView;
+import org.appwork.utils.swing.dialog.HomeFolder;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
+import org.jdownloader.images.NewTheme;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
@@ -46,6 +51,34 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
         }
     }
 
+    protected Icon getDirectoryIcon(Icon ret, File f) {
+        if (f.getName().equals("Desktop")) {
+            return NewTheme.I().getIcon("desktop", 18);
+        } else if (f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER) || (f.getPath().startsWith("\\") && f.getPath().indexOf("\\", 2) < 0)) {
+            //
+            return NewTheme.I().getIcon("network-idle", 18);
+        } else if (f.getPath().charAt(1) == ':' && Character.isAlphabetic(f.getPath().charAt(0)) && f.getPath().length() == 3) {
+            //
+            return NewTheme.I().getIcon("harddisk", 16);
+        } else if (f instanceof HomeFolder) {
+
+            if (((HomeFolder) f).getName().equals(HomeFolder.DOWNLOADS)) {
+                return NewTheme.I().getIcon("download", 18);
+            } else if (((HomeFolder) f).getName().equals(HomeFolder.MUSIC)) {
+                return NewTheme.I().getIcon("audio", 18);
+            } else if (((HomeFolder) f).getName().equals(HomeFolder.PICTURES)) {
+                return NewTheme.I().getIcon("image", 18);
+            } else if (((HomeFolder) f).getName().equals(HomeFolder.VIDEOS)) {
+                //
+                return NewTheme.I().getIcon("video", 18);
+
+            }
+
+        }
+
+        return NewTheme.I().getIcon("folder", 18);
+    }
+
     @Override
     protected File[] createReturnValue() {
         if (isMultiSelection()) {
@@ -53,9 +86,23 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             return files;
         } else {
             File f = fc.getSelectedFile();
+            if (f == null) {
+                String path = getText();
+                if (!StringUtils.isEmpty(path)) {
+                    // if (path.start)
+
+                    f = new File(path);
+
+                    if (isSambaFolder(f)) return null;
+                } else {
+                    return null;
+                }
+
+            }
             if (cbPackage != null && cbPackage.isSelected()) {
                 return new File[] { new File(f, CrawledPackage.PACKAGETAG) };
             } else {
+                if (f.exists() && !f.canWrite()) return null;
                 return new File[] { f };
             }
 
