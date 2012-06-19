@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -42,7 +43,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static final String UA               = jd.plugins.hoster.MediafireCom.stringUserAgent();
+    private static String       agent            = null;
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -179,7 +180,12 @@ public class UniBytesCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         br.setCookie(MAINPAGE, "lang", "en");
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -188,7 +194,12 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", UA);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         // Use the english language
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());

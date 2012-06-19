@@ -40,6 +40,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -48,7 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
-    private static final String agent        = jd.plugins.hoster.MediafireCom.stringUserAgent();
+    private static String       agent        = null;
     private static final String PASSWORDTEXT = "enter a password to access";
     private static final Object LOCK         = new Object();
     private static final String COOKIE_HOST  = "http://4shared.com";
@@ -69,6 +70,11 @@ public class FourSharedCom extends PluginForHost {
             boolean fixLink = true;
             try {
                 final Browser br = new Browser();
+                if (agent == null) {
+                    /* we first have to load the plugin, before we can reference it */
+                    JDUtilities.getPluginForHost("mediafire.com");
+                    agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                }
                 br.getHeaders().put("User-Agent", agent);
                 br.setFollowRedirects(false);
                 br.getPage(link.getDownloadURL());
@@ -284,6 +290,11 @@ public class FourSharedCom extends PluginForHost {
             try {
                 /** Load everything required login and fetchAccountInfo also! */
                 br.setCookiesExclusive(true);
+                if (agent == null) {
+                    /* we first have to load the plugin, before we can reference it */
+                    JDUtilities.getPluginForHost("mediafire.com");
+                    agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                }
                 br.getHeaders().put("User-Agent", agent);
                 br.setReadTimeout(3 * 60 * 1000);
                 final Object ret = account.getProperty("cookies", null);

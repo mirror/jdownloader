@@ -144,7 +144,7 @@ public class OronCom extends PluginForHost {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
-                rc.getForm().put("password", passCode);
+                rc.getForm().put("password", Encoding.urlEncode(passCode));
             }
             // Can be skipped at the moment
             // waitTime(timeBefore, downloadLink);
@@ -160,7 +160,7 @@ public class OronCom extends PluginForHost {
                     /* gespeicherten PassCode holen */
                     passCode = downloadLink.getStringProperty("pass", null);
                 }
-                dlForm.put("password", passCode);
+                dlForm.put("password", Encoding.urlEncode(passCode));
             }
             waitTime(timeBefore, downloadLink);
             br.submitForm(dlForm);
@@ -240,8 +240,7 @@ public class OronCom extends PluginForHost {
                 return ai;
             } else {
                 /*
-                 * one day more as we want the account be valid on expire day
-                 * too
+                 * one day more as we want the account be valid on expire day too
                  */
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
             }
@@ -333,7 +332,7 @@ public class OronCom extends PluginForHost {
                             /* gespeicherten PassCode holen */
                             passCode = link.getStringProperty("pass", null);
                         }
-                        DLForm.put("password", passCode);
+                        DLForm.put("password", Encoding.urlEncode(passCode));
                         logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                     }
                     br.submitForm(DLForm);

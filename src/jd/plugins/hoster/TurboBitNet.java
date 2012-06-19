@@ -386,6 +386,13 @@ public class TurboBitNet extends PluginForHost {
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.followConnection();
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, BLOCKED, 10 * 60 * 1000l);
@@ -422,9 +429,20 @@ public class TurboBitNet extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             if (dl.getConnection().getResponseCode() == 403) {
-                dl.getConnection().disconnect();
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
                 logger.info("No traffic available");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            if (dl.getConnection().getResponseCode() == 404) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                logger.info("File is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");

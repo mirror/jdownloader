@@ -444,7 +444,7 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private final static String                                    UA                 = stringUserAgent();
+    private static final String                                    agent              = stringUserAgent();
 
     static private final String                                    offlinelink        = "tos_aup_violation";
 
@@ -739,7 +739,7 @@ public class MediafireCom extends PluginForHost {
         String url = null;
         this.br.setDebug(true);
 
-        this.br.getHeaders().put("User-Agent", MediafireCom.UA);
+        this.br.getHeaders().put("User-Agent", MediafireCom.agent);
         for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
             if (url != null) {
                 break;

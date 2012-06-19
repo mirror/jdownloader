@@ -55,7 +55,7 @@ public class RapidGatorNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://rapidgator.net/";
     private static final Object LOCK     = new Object();
-    private static final String UA       = jd.plugins.hoster.MediafireCom.stringUserAgent();
+    private static String       agent    = null;
     private static boolean      hasDled  = false;
 
     @Override
@@ -71,8 +71,8 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /*
-         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get
-         * removed from active downloading IP database. I assume it only happens after successful download and not failures.
+         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get removed from active
+         * downloading IP database. I assume it only happens after successful download and not failures.
          */
         if (hasDled) sleep(90 * 1001l, downloadLink);
         try {
@@ -256,7 +256,12 @@ public class RapidGatorNet extends PluginForHost {
 
     private void prepareBrowser(Browser br) {
         if (br == null) return;
-        br.getHeaders().put("User-Agent", UA);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
         br.getHeaders().put("Cache-Control", null);

@@ -49,7 +49,7 @@ public class UploadingCom extends PluginForHost {
 
     private static int          simultanpremium = 1;
     private static final Object PREMLOCK        = new Object();
-    private static final String userAgent       = jd.plugins.hoster.MediafireCom.stringUserAgent();
+    private static String       agent           = null;
     private boolean             free            = false;
     private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
     private static final Object LOCK            = new Object();
@@ -71,7 +71,12 @@ public class UploadingCom extends PluginForHost {
         br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.getHeaders().put("User-Agent", userAgent);
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
     }
 
     public void checkErrors(Browser br) throws PluginException {

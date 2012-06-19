@@ -65,7 +65,6 @@ public class SflnkgNt extends PluginForDecrypt {
     }
 
     private static final String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
-    private static final String AGENT                 = jd.plugins.hoster.MediafireCom.stringUserAgent();
 
     public static String readInputStreamToString(final InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
@@ -90,6 +89,8 @@ public class SflnkgNt extends PluginForDecrypt {
         }
     }
 
+    private static String AGENT = null;
+
     public SflnkgNt(final PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -103,6 +104,11 @@ public class SflnkgNt extends PluginForDecrypt {
             /* not available in old stable */
             br.setAllowedResponseCodes(new int[] { 500 });
         } catch (final Throwable e) {
+        }
+        if (AGENT == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", AGENT);
         br.setFollowRedirects(false);

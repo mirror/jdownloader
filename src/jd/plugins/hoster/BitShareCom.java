@@ -55,7 +55,7 @@ public class BitShareCom extends PluginForHost {
     private static final Object  LOCK             = new Object();
     private static char[]        FILENAMEREPLACES = new char[] { '-' };
 
-    private static final String  agent            = jd.plugins.hoster.MediafireCom.stringUserAgent();
+    private static String        agent            = null;
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -296,6 +296,11 @@ public class BitShareCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                if (agent == null) {
+                    /* we first have to load the plugin, before we can reference it */
+                    JDUtilities.getPluginForHost("mediafire.com");
+                    agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+                }
                 br.getHeaders().put("User-Agent", agent);
                 br.setCookie(MAINPAGE, "language_selection", "EN");
                 final Object ret = account.getProperty("cookies", null);
@@ -341,6 +346,11 @@ public class BitShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "language_selection", "EN");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
         br.getHeaders().put("User-Agent", agent);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
