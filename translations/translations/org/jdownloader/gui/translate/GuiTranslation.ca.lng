@@ -1,3 +1,4 @@
+action_reconnect_invoke_tooltip=Reconnectar per aconseguir una nova IP dinàmica
 gui_btn_select=Seleccionar
 gui_column_host=Servidor
 gui_column_plugin=Plugin
