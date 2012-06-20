@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=Plik nie jest plikiem archiwum lub jest archiwum nieobsługiwanego typu.
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Nieobsługiwane Archiwum!
 ValidateArchiveAction_ValidateArchiveAction=Weryfikuję %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Weryfikacja archiwum(-ów)
 ValidateArchiveAction_actionPerformed_=Archiwum posiada %s1 część(-ści) i jest kompletne.
