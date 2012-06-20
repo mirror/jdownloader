@@ -7,6 +7,8 @@ import org.appwork.javaexe.SystemEventHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.logging.LogSource;
 
 /**
  * Class for javaexe launcher
@@ -31,10 +33,18 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
      * {@link #getInstance()}.
      */
     private Main_SystemEventManagement() {
+
         super();
     }
 
+    public static final LogSource LOGGER = LogController.CL(Main_SystemEventManagement.class);
+    static {
+        LOGGER.setInstantFlush(true);
+
+    }
+
     public static int notifyEvent(int msg, int val1, int val2, String val3, int[] arr1, byte[] arr2) {
+        LOGGER.info("Event: " + msg);
         return getInstance().onEvent(msg, val1, val2, val3, arr1, arr2);
     }
 
