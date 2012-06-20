@@ -177,7 +177,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     ap.setHasConfig(plg.hasConfig());
                                     l.setHasConfig(plg.hasConfig());
                                 } catch (UpdateRequiredClassNotFoundException e) {
-                                    logger.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
+                                    logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
                                     throw e;
                                 }
                                 if (existingPlugin.size() > 1) {
