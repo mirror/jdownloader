@@ -1,0 +1,11 @@
+contextmenu_main=Arxiu(s)
+contextmenu_validate_parent=Validar Arxiu
+hoster=Allotjament
+offline=Arxiu fora de línia o perdut
+online=Enllaç disponible
+packagename=Nom del paquet
+settings_extract_to_archive_folder=Extreure a la següent carpeta
+settings_extract_to_path=Extrerure a
+settings_extractto=Carpeta d'extracció
+settings_subpath_minnum2=... només si l'arxiu arrel conté >
+settings_use_subpath=Crear subcarpeta
