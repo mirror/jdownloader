@@ -97,7 +97,9 @@ public class YunFileCom extends PluginForHost {
         // br.getRegex("id=wait_span style=\"font\\-size: 28px; color: green;\">(\\d+)</span>").getMatch(0);
         // if (shortWaittime != null) wait = Integer.parseInt(shortWaittime);
         // sleep(wait * 1001l, downloadLink);
-        br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
+        final String code = getCaptchaCode("http://yunfile.com/verifyimg/getPcv.html", downloadLink);
+        br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
+        if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
         String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
         String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);

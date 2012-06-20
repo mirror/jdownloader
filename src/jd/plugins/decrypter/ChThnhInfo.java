@@ -22,12 +22,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chauthanh.info" }, urls = { "http://[\\w\\.]*?chauthanh\\.info/animeDownload/anime/.*?\\.html" }, flags = { 0 })
 public class ChThnhInfo extends PluginForDecrypt {
@@ -40,8 +38,11 @@ public class ChThnhInfo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("The series information was not found on this server")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>Download anime(.*?)- Download Anime").getMatch(0);
+        if (br.containsHTML("The series information was not found on this server")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        String fpName = br.getRegex("<title>Download anime(.*?)\\- Download Anime").getMatch(0);
         if (fpName == null) fpName = br.getRegex("class=\"bold1\">Download anime(.*?)</span>").getMatch(0);
         String[] links = br.getRegex("<tr><td><a href=\"(/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("\"(/animeDownload/download/\\d+/.*?)\"").getColumn(0);
