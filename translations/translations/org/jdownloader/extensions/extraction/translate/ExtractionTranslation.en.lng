@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=This is either no Archive or an unsupported Archive Type
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Unsupported Archive
 ValidateArchiveAction_ValidateArchiveAction=Validate %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Validate Archive(s)
 ValidateArchiveAction_actionPerformed_=Archive has %s1 part(s) and is complete
