@@ -50,6 +50,7 @@ gui_javacheck_newerjavaavailable_title=S'ha trobat una versió mes antiga de Jav
 gui_mainframe_title_updatemessage2=%s1 actualitzacions disponibles
 gui_warning_reconnect_running=executant...
 gui_warning_reconnectunknown=Reconecció desconeguda
+literally_yes=Si
 plugins_error_downloadfailed=Descarrega fallida
 plugins_errors_disconnect=Desconnectat?
 plugins_errors_error=Error:
