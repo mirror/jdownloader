@@ -1,3 +1,4 @@
 interaction_externreconnect_command=Comanda (Utilitza rutes de directori absolutes)
 interaction_externreconnect_dummybat=Usa un executador especial per windows
 interaction_externreconnect_parameter=Paràmetre (1 paràmetre cada línia)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Reconnexió amb eines externes
