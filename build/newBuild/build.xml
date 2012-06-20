@@ -93,7 +93,7 @@
 			<fileset dir="${res}/tools" includes="**/*" />
 		</copy>
 		<copy todir="${dist}">
-			<fileset dir="${res}" includes="*.txt, *.exe, *.bat" />
+			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
 		</copy>
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
