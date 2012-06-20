@@ -46,6 +46,13 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
 
     public static int notifyEvent(int msg, int val1, int val2, String val3, int[] arr1, byte[] arr2) {
         LOGGER.info("Event: " + msg);
+        while (!Launcher.GUI_COMPLETE.isReached()) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         System.out.println(1);
         return getInstance().onEvent(msg, val1, val2, val3, arr1, arr2);
     }
