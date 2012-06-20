@@ -30,10 +30,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" }, flags = { 0 })
 public class MndCm extends PluginForDecrypt {
 
-    private static String ENABLE_SUBFOLDERS = "ENABLE_SUBFOLDERS";
     private static String PREFER_WHOLEALBUM = "PREFER_WHOLEALBUM";
 
     public MndCm(PluginWrapper wrapper) {
@@ -44,21 +43,40 @@ public class MndCm extends PluginForDecrypt {
     // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (parameter.toString().contains("/album")) {
+        String url = parameter.toString();
+        if (url.contains("/album") || url.contains("list/a")) {
             /* Einzelnes Album */
-            String AlbumID = new Regex(parameter.toString(), "album/(\\d+)").getMatch(0);
+            String AlbumID = new Regex(url, "album/(\\d+)").getMatch(0);
+            if (AlbumID == null) AlbumID = new Regex(url, "list/a(\\d+)").getMatch(0);
+            br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/album/" + AlbumID);
-            String Album = br.getRegex("<div class='page_title' style=''>(.*?)</div>").getMatch(0);
-            String Artist = br.getRegex("<div class='page_title' style=''>.*?</div>.*?class=\"g_artist_name\" title=\"\" >(.*?)</a").getMatch(0);
-            String Tracks[][] = br.getRegex("<a href=\"/en/track/(\\d+)\" title=\"\" >(.*?)</a>").getMatches();
+            String Album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
+            String Artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
+            String Tracks[][] = br.getRegex("<a href='/en/track/(\\d+).*?' >(.*?)</").getMatches();
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(Artist);
-            for (String Track[] : Tracks) {
-                DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + Track[0]);
-                link.setName(Track[1]);
+            String packageName = "";
+            if (Album != null) packageName = packageName + Album;
+            if (Artist != null) {
+                if (packageName.length() > 0) {
+                    packageName = packageName + "-";
+                }
+                packageName = packageName + Artist;
+            }
+            fp.setName(packageName);
+            if (getPluginConfig().getBooleanProperty(PREFER_WHOLEALBUM, true)) {
+                DownloadLink link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + AlbumID);
+                link.setName(packageName);
                 link.setAvailable(true);
                 fp.add(link);
                 decryptedLinks.add(link);
+            } else {
+                for (String Track[] : Tracks) {
+                    DownloadLink link = createDownloadlink("http://www.jamendo.com/en/track/" + Track[0]);
+                    link.setName(Track[1] + ".mp3");
+                    link.setAvailable(true);
+                    fp.add(link);
+                    decryptedLinks.add(link);
+                }
             }
         } else {
             /* Übersicht der Alben */
@@ -68,7 +86,7 @@ public class MndCm extends PluginForDecrypt {
             DownloadLink link;
             for (String Album : Albums) {
                 if (getPluginConfig().getBooleanProperty(PREFER_WHOLEALBUM, true)) {
-                    link = createDownloadlink("http://www.jamendo.com/en/download/album/" + Album);
+                    link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + Album);
                 } else
                     link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);
                 decryptedLinks.add(link);
@@ -77,13 +95,7 @@ public class MndCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
-    /**
-     * TODO: Umbauen!
-     */
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS, JDL.L("plugins.decrypt.jamendo", "Create a subfolder for each album")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, JDL.L("plugins.decrypt.jamendoalbum", "Prefer whole Album as Zip")).setDefaultValue(true));
     }
 

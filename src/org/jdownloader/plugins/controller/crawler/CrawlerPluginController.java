@@ -22,6 +22,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
@@ -170,6 +171,14 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 if (added == false) {
                                     /* add plugin at the end of list */
                                     existingPlugin.add(ap);
+                                }
+                                try {
+                                    PluginForDecrypt plg = l.newInstance();
+                                    ap.setHasConfig(plg.hasConfig());
+                                    l.setHasConfig(plg.hasConfig());
+                                } catch (UpdateRequiredClassNotFoundException e) {
+                                    logger.finest("@HostPlugin incomplete:" + simpleName + " " + names[i] + " " + e.getMessage() + " " + revision);
+                                    throw e;
                                 }
                                 if (existingPlugin.size() > 1) {
                                     logger.finest("@CrawlerPlugin multiple crawler:" + displayName + "->" + simpleName + " " + revision);

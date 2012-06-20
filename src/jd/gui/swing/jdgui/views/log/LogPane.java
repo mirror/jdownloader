@@ -92,9 +92,6 @@ public class LogPane extends SwitchPanel implements ActionListener {
 
     @Override
     public void onShow() {
-        synchronized (LOCK) {
-
-        }
     }
 
     @Override

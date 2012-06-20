@@ -18,9 +18,6 @@ package jd.nutils;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.SimpleTimeZone;
 
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,8 +32,7 @@ public class Formatter {
     private static SimpleDateFormat DATE_FORMAT = null;
 
     /**
-     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden returns
-     * "~" vor values <0
+     * Formatiert Sekunden in das zeitformat stunden:minuten:sekunden returns "~" vor values <0
      * 
      * @param eta
      * @return formatierte Zeit
@@ -111,9 +107,7 @@ public class Formatter {
     }
 
     /**
-     * @deprecated Use
-     *             {@link StringFormatter#fillString(String,String,String,int)}
-     *             instead
+     * @deprecated Use {@link StringFormatter#fillString(String,String,String,int)} instead
      */
     public static String fillString(String binaryString, String pre, String post, int length) {
         return StringFormatter.fillString(binaryString, pre, post, length);
@@ -136,8 +130,7 @@ public class Formatter {
     }
 
     /**
-     * GIbt den Integer der sich in src befindet zurück. alle nicht
-     * integerzeichen werden ausgefiltert
+     * GIbt den Integer der sich in src befindet zurück. alle nicht integerzeichen werden ausgefiltert
      * 
      * @param src
      * @return Integer in src
@@ -156,23 +149,6 @@ public class Formatter {
         } catch (NumberFormatException e) {
             return 0;
         }
-    }
-
-    /* TODO: use correct timezone or make it customizable by user */
-    /**
-     * Returns a string containing an HTTP-formatted date.
-     * 
-     * @param time
-     *            The date to format (current time in msec).
-     * @return HTTP date string representing the given time.
-     */
-    public static String formatTime(long time) {
-        if (DATE_FORMAT == null) {
-            DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-            DATE_FORMAT.setTimeZone(new SimpleTimeZone(0, "GMT"));
-            DATE_FORMAT.setLenient(true);
-        }
-        return DATE_FORMAT.format(new Date(time)).substring(0, 29);
     }
 
     /**

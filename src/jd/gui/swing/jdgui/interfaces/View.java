@@ -40,9 +40,6 @@ public abstract class View extends SwitchPanel {
     private SwitchPanel       content;
     private JPanel            topContent;
 
-    private SwitchPanel       infoPanel;
-    private SwitchPanel       defaultInfoPanel;
-
     public View() {
 
         this.setLayout(new MigLayout("ins 0", "[grow,fill]", "[grow,fill]"));
@@ -85,10 +82,6 @@ public abstract class View extends SwitchPanel {
      * @return
      */
     abstract public String getID();
-
-    public SwitchPanel getInfoPanel() {
-        return this.infoPanel;
-    }
 
     /**
      * Returns the tab title

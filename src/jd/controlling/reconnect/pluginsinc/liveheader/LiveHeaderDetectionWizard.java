@@ -477,10 +477,11 @@ public class LiveHeaderDetectionWizard {
 
             }
 
-        } else if ("fritz.box".equalsIgnoreCase(gatewayAdressHost)) {
-            // upnp should do the job
-
         }
+        // if ("fritz.box".equalsIgnoreCase(gatewayAdressHost)) {
+        // upnp should do the job
+
+        // }
     }
 
     private void specials() {

@@ -1,5 +1,7 @@
 package org.jdownloader.dynamic;
 
+import java.util.Arrays;
+
 public class HelloWorld {
 
     public static void runStatic() {
@@ -7,7 +9,7 @@ public class HelloWorld {
     }
 
     public static void runMain(String[] args) {
-        System.out.println("First Main! " + args);
+        System.out.println("First Main! " + Arrays.toString(args));
     }
 
 }

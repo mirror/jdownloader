@@ -101,7 +101,8 @@ public class ClpfshD extends PluginForDecrypt {
                 ext = new Regex(pathToflv, "(\\w+):media/").getMatch(0);
                 ext = ext.length() > 3 ? null : ext;
             }
-            ext = ext.equals("f4v") || ext.equals("") || ext.equals(null) ? "mp4" : ext;
+
+            ext = ext == null || ext.equals("f4v") || ext.equals("") ? "mp4" : ext;
             downloadLink.setFinalFileName(name + "." + ext);
             decryptedLinks.add(downloadLink);
         }

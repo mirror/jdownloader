@@ -359,18 +359,11 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120315 Iceweasel/3.5.16 (like Firefox/3.5.16)");
         stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.1.16) Gecko/20120421 Iceweasel/3.5.16 (like Firefox/3.5.16)");
         stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.26) Gecko/20120216 Red Hat/3.6.26-1.el6_2 Firefox/3.6.26");
-        stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.229 Version/11.62");
-        stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 6.0; U; en) Presto/2.10.229 Version/11.61");
-        stringAgent.add("Opera/9.80 (Windows NT 6.0; U; en) Presto/2.10.229 Version/11.62");
-        stringAgent.add("Opera/9.80 (Windows NT 6.0; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (Windows NT 6.0; U; en) Presto/2.9.168 Version/11.50");
         stringAgent.add("Opera/9.80 (Windows NT 6.1; U; en-GB) Presto/2.10.229 Version/11.62");
         stringAgent.add("Opera/9.80 (Windows NT 6.1; U; en-GB) Presto/2.7.62 Version/11.01");
         stringAgent.add("Opera/9.80 (Windows NT 6.1; U; en) Presto/2.10.229 Version/11.62");
         stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64; U; en) Presto/2.10.229 Version/11.62");
         stringAgent.add("Opera/9.80 (Windows NT 6.1; WOW64; U; en) Presto/2.10.229 Version/11.64");
-        stringAgent.add("Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63");
     }
 
     /**
@@ -738,7 +731,7 @@ public class MediafireCom extends PluginForHost {
 
         String url = null;
         this.br.setDebug(true);
-
+        boolean captchaCorrect = false;
         this.br.getHeaders().put("User-Agent", MediafireCom.agent);
         for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
             if (url != null) {
@@ -760,17 +753,22 @@ public class MediafireCom extends PluginForHost {
                     rc.setForm(form);
                     rc.load();
                     final File cf = rc.downloadCaptcha(this.getLocalCaptchaFile());
-
+                    boolean defect = false;
                     try {
                         final String c = this.getCaptchaCode(cf, downloadLink);
                         rc.setCode(c);
                         form = this.br.getFormbyProperty("name", "form_captcha");
                         id = this.br.getRegex("e\\?k=(.+?)\"").getMatch(0);
-                        if (form != null && id != null) {
+                        if (form != null && id == null) {
+                            defect = true;
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        if (id != null) {
                             /* captcha wrong */
                             continue;
                         }
                     } catch (final PluginException e) {
+                        if (defect) throw e;
                         /**
                          * captcha input timeout run out.. try to reconnect
                          */
@@ -779,8 +777,9 @@ public class MediafireCom extends PluginForHost {
                 }
             } catch (final Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
+                if (e instanceof PluginException) throw (PluginException) e;
             }
-
+            captchaCorrect = true;
             if (downloadLink.getStringProperty("type", "").equalsIgnoreCase("direct")) {
                 logger.info("DirectDownload");
                 url = dlURL;
@@ -807,7 +806,10 @@ public class MediafireCom extends PluginForHost {
                 }
             }
         }
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (url == null) {
+            if (captchaCorrect) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         this.br.setFollowRedirects(true);
         this.br.setDebug(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);

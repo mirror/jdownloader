@@ -185,13 +185,6 @@ public class LookAndFeelController {
             preSetup(laf);
             if (laf.contains("Synthetica")) {
                 try {
-                    /* special init for Synthetica */
-                    int fontSizeScale = config.getFontScaleFactor();
-                    fontSizeScale = Math.min(200, Math.max(10, fontSizeScale));
-                    /* http://www.jyloo.com/news/?pubId=1297681728000 */
-                    /* we want our own FontScaling, not SystemDPI */
-                    UIManager.put("Synthetica.font.respectSystemDPI", Boolean.FALSE);
-                    UIManager.put("Synthetica.font.scaleFactor", Integer.valueOf(fontSizeScale));
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setLookAndFeel(laf);
                     de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setExtendedFileChooserEnabled(false);
                 } catch (Throwable e) {
@@ -251,33 +244,41 @@ public class LookAndFeelController {
      * @param className
      */
     private void postSetup(String className) {
-        int fontSize = config.getFontScaleFactor();
         String fontName = config.getFontName();
         String fontFromTranslation = _GUI._.config_fontname();
         ExtTooltip.createConfig(ExtTooltip.DEFAULT).setForegroundColor(getLAFOptions().getTooltipForegroundColor());
         if (isSynthetica()) {
             ExtPasswordField.MASK = "*******";
             try {
-                if ("default".equalsIgnoreCase(fontName)) {
-                    if ("default".equalsIgnoreCase(fontFromTranslation)) {
-                        fontName = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontName();
-                    } else {
-                        fontName = fontFromTranslation;
-                    }
+                String newFontName = null;
+                int fontSize = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFont().getSize();
+                if (fontFromTranslation != null && !"default".equalsIgnoreCase(fontFromTranslation)) {
+                    /* we have customized fontName in translation */
+                    /* lower priority than fontName in settings */
+                    newFontName = fontFromTranslation;
                 }
-                int size = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize();
-                Font newFont = (Font) (new FontUIResource(fontName, 0, size));
-                de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
-                int newSize = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFontSize();
-                UIManager.put("ExtTable.SuggestedFontHeight", newSize);
+                if (fontName != null && !"default".equalsIgnoreCase(fontName)) {
+                    /* we have customized fontName in settings, it has highest priority */
+                    newFontName = fontName;
+                }
+                if (newFontName == null) {
+                    /* default Font */
+                    /* nothing to change as fontSize got already set by Synthetica */
+                } else {
+                    /* change Font */
+                    int oldStyle = de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.getFont().getStyle();
+                    Font newFont = new Font(newFontName, oldStyle, fontSize);
+                    de.javasoft.plaf.synthetica.SyntheticaLookAndFeel.setFont(newFont, false);
+                }
+                UIManager.put("ExtTable.SuggestedFontHeight", fontSize);
             } catch (final Throwable e) {
                 LogController.CL().log(e);
             }
-
         } else if (isSubstance()) {
-            doSubstance(fontName, fontSize);
+            doSubstance(fontName, config.getFontScaleFactor());
         } else {
             try {
+                int fontSize = config.getFontScaleFactor();
                 boolean sizeSet = false;
                 Font font = Font.getFont(fontName);
                 for (Enumeration<Object> e = UIManager.getDefaults().keys(); e.hasMoreElements();) {
@@ -318,8 +319,13 @@ public class LookAndFeelController {
     private void preSetup(String className) {
         UIManager.put("Synthetica.window.decoration", false);
         UIManager.put("Synthetica.text.antialias", config.isTextAntiAliasEnabled());
+        /* http://www.jyloo.com/news/?pubId=1297681728000 */
+        /* we want our own FontScaling, not SystemDPI */
         UIManager.put("Synthetica.font.respectSystemDPI", config.isFontRespectsSystemDPI());
         UIManager.put("Synthetica.font.scaleFactor", config.getFontScaleFactor());
+        if (config.isFontRespectsSystemDPI() && config.getFontScaleFactor() != 100) {
+            LogController.CL().warning("SystemDPI might interfere with JD's FontScaling");
+        }
         UIManager.put("Synthetica.animation.enabled", config.isAnimationEnabled());
         if (CrossSystem.isWindows()) {
             /* only windows opaque works fine */

@@ -18,6 +18,7 @@ package jd.captcha.configuration;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -1164,7 +1165,7 @@ public class JACScript {
      */
     public void setGaps(int[] gaps) {
 
-        logger.finer("SET PARAMETER: [gaps] = " + gaps.toString());
+        logger.finer("SET PARAMETER: [gaps] = " + Arrays.toString(gaps));
 
         this.gaps = gaps;
     }

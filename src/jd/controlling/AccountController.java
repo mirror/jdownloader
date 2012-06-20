@@ -331,7 +331,7 @@ public class AccountController implements AccountControllerListener {
         SubConfiguration sub = SubConfiguration.getConfig("AccountController", true);
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
         Object mapRet = sub.getProperty("accountlist");
-        if (mapRet != null || mapRet instanceof Map) {
+        if (mapRet != null && mapRet instanceof Map) {
             Map<String, Object> tree = (Map<String, Object>) mapRet;
             for (Iterator<Entry<String, Object>> it = tree.entrySet().iterator(); it.hasNext();) {
                 Entry<String, Object> next = it.next();
@@ -357,7 +357,7 @@ public class AccountController implements AccountControllerListener {
                                 list.add(ac = new AccountData());
                                 ac.setUser((String) a.get("user"));
                                 ac.setPassword((String) a.get("pass"));
-                                ac.setEnabled("true".equals(a.containsKey("enabled")));
+                                ac.setEnabled(a.containsKey("enabled"));
                                 ac.setValid(ac.isEnabled());
                             }
                         }

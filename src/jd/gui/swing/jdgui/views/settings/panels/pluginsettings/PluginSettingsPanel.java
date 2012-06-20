@@ -17,6 +17,8 @@ import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -76,6 +78,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
         ArrayList<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
         if (list != null) {
             for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
+                if (plg.isHasConfig()) {
+                    list.add(plg);
+                }
+            }
+            for (LazyCrawlerPlugin plg : CrawlerPluginController.getInstance().list()) {
                 if (plg.isHasConfig()) {
                     list.add(plg);
                 }

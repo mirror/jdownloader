@@ -27,12 +27,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.]*?jamendo\\.com/.*.*/?(track|download/album)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(track/|download/album/|download/a|download/track/)\\d+" }, flags = { 0 })
 public class JamendoCom extends PluginForHost {
 
     private static String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
@@ -56,31 +55,30 @@ public class JamendoCom extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
         String dlurl = null;
-        br.setDebug(true);
+        boolean fetchNameFromURL = false;
         if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("webtrack")) {
-            String TrackID = new Regex(link.getDownloadURL(), "track/(\\d+)").getMatch(0);
-            String AlbumID = br.getRegex("Jamendo.page.play\\('(album/.*?)'\\)").getMatch(0);
-            br.setFollowRedirects(true);
-            br.getPage("http://www.jamendo.com/player/?url=" + AlbumID);
-            br.setFollowRedirects(false);
-            br.getPage("http://www.jamendo.com/en/get2/stream/track/redirect/?id=" + TrackID);
-            br.setFollowRedirects(true);
-            String FileName = Plugin.extractFileNameFromURL(br.getRedirectLocation());
-            link.setFinalFileName(FileName);
-            dlurl = br.getRedirectLocation();
+            dlurl = br.getRegex("og:audio:url\" content=\"(http.*?)\"").getMatch(0);
         } else if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("downloadalbum")) {
-            String AlbumID = br.getRegex("Jamendo.page.play\\('album/(.*?)'\\)").getMatch(0);
-            if (AlbumID == null) AlbumID = new Regex(link.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
-            dlurl = prepareDownload("album", AlbumID, link);
+            String AlbumID = new Regex(link.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
+            if (AlbumID == null) AlbumID = new Regex(link.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
+            dlurl = "http://storage-new.newjamendo.com/download/a" + AlbumID + "/";
+            fetchNameFromURL = true;
         } else if (link.getStringProperty("linktyp", "webtrack").equalsIgnoreCase("downloadTrack")) {
             String TrackID = new Regex(link.getDownloadURL(), "track/(\\d+)").getMatch(0);
-            dlurl = prepareDownload("track", TrackID, link);
+            dlurl = "http://storage-new.newjamendo.com/download/track/" + TrackID + "/";
         }
         if (dlurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlurl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            if (fetchNameFromURL) {
+                try {
+                    dl.setAllowFilenameFromURL(true);
+                } catch (final Throwable e) {
+                }
+            }
         }
         dl.startDownload();
     }
@@ -135,21 +133,23 @@ public class JamendoCom extends PluginForHost {
         this.setBrowserExclusive();
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
         if (TrackDownloadID != null) {
+            br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/track/" + TrackDownloadID);
-            String Track = br.getRegex("<div class='page_title' style=''>(.*?)</div>").getMatch(0);
-            String Artist = br.getRegex("<div class='page_title' style=''>.*?</div>.*?class=\"g_artist_name\" title=\"\" >(.*?)</a").getMatch(0);
+            String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
+            String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
             if (Track == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setName(Track);
+            parameter.setName(Track + ".mp3");
             parameter.setProperty("linktyp", "downloadTrack");
             return AvailableStatus.TRUE;
         }
         String TrackID = new Regex(parameter.getDownloadURL(), "/track/(\\d+)").getMatch(0);
         if (TrackID != null) {
+            br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/track/" + TrackID);
-            String Track = br.getRegex("<div class='page_title' style=''>(.*?)</div>").getMatch(0);
-            String Artist = br.getRegex("<div class='page_title' style=''>.*?</div>.*?class=\"g_artist_name\" title=\"\" >(.*?)</a").getMatch(0);
+            String Track = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
+            String Artist = br.getRegex("og:description\" content=\"Track by (.*?) - \\d").getMatch(0);
             if (Track == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setName(Track);
+            parameter.setName(Track + ".mp3");
             if (getPluginConfig().getBooleanProperty(PREFER_HIGHQUALITY, true)) {
                 parameter.setProperty("linktyp", "downloadTrack");
             } else
@@ -157,12 +157,22 @@ public class JamendoCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/album/(\\d+)").getMatch(0);
+        if (AlbumDownloadID == null) AlbumDownloadID = new Regex(parameter.getDownloadURL(), "/download/a(\\d+)").getMatch(0);
         if (AlbumDownloadID != null) {
+            br.setFollowRedirects(true);
             br.getPage("http://www.jamendo.com/en/album/" + AlbumDownloadID);
-            String Album = br.getRegex("<div class='page_title' style=''>(.*?)</div>").getMatch(0);
-            String Artist = br.getRegex("<div class='page_title' style=''>.*?</div>.*?class=\"g_artist_name\" title=\"\" >(.*?)</a").getMatch(0);
+            String Album = br.getRegex("og:title\" content=\"(.*?)\"").getMatch(0);
+            String Artist = br.getRegex("og:description\" content=\"Album by (.*?)\"").getMatch(0);
             if (Album == null || Artist == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            parameter.setName(Album);
+            String packageName = "";
+            if (Album != null) packageName = packageName + Album;
+            if (Artist != null) {
+                if (packageName.length() > 0) {
+                    packageName = packageName + "-";
+                }
+                packageName = packageName + Artist;
+            }
+            parameter.setName(packageName + ".zip");
             parameter.setProperty("linktyp", "downloadalbum");
             return AvailableStatus.TRUE;
         }

@@ -53,7 +53,6 @@ import jd.gui.UIConstants;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.components.StatusBarImpl;
 import jd.gui.swing.jdgui.components.toolbar.MainToolBar;
-import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.interfaces.View;
 import jd.gui.swing.jdgui.menu.JDMenuBar;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
@@ -626,8 +625,6 @@ public class JDGui extends SwingGui {
         } else if (container.getGroup() != null && container.getGroup().getIcon() != null) {
             icon = container.getGroup().getIcon();
         }
-
-        final SwitchPanel oldPanel = this.mainTabbedPane.getSelectedView().getInfoPanel();
 
         final AddonConfig addonConfig = AddonConfig.getInstance(container, "_2", false);
 

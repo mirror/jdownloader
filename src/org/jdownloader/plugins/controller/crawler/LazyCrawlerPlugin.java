@@ -12,17 +12,20 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
 
     public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1, PluginClassLoaderChild classLoader) {
         super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
+        hasConfig = ap.isHasConfig();
     }
 
-    @Override
-    public PluginForDecrypt newInstance() throws UpdateRequiredClassNotFoundException {
-        PluginForDecrypt ret = super.newInstance();
-        ret.setLazyC(this);
-        return ret;
+    private long    decrypts        = 0;
+    private long    decryptsRuntime = 0;
+    private boolean hasConfig       = false;
+
+    public boolean isHasConfig() {
+        return hasConfig;
     }
 
-    private long decrypts        = 0;
-    private long decryptsRuntime = 0;
+    protected void setHasConfig(boolean hasConfig) {
+        this.hasConfig = hasConfig;
+    }
 
     public long getAverageCrawlRuntime() {
         synchronized (this) {
@@ -38,6 +41,32 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
                 decrypts++;
                 decryptsRuntime += r;
             }
+        }
+    }
+
+    @Override
+    public PluginForDecrypt newInstance() throws UpdateRequiredClassNotFoundException {
+        PluginForDecrypt ret = null;
+        try {
+            ret = super.newInstance();
+            ret.setLazyC(this);
+            return ret;
+        } catch (UpdateRequiredClassNotFoundException e) {
+            this.setHasConfig(false);
+            throw e;
+        }
+    }
+
+    @Override
+    public PluginForDecrypt getPrototype() throws UpdateRequiredClassNotFoundException {
+        PluginForDecrypt ret = null;
+        try {
+            ret = super.getPrototype();
+            ret.setLazyC(this);
+            return ret;
+        } catch (UpdateRequiredClassNotFoundException e) {
+            this.setHasConfig(false);
+            throw e;
         }
     }
 }
