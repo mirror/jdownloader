@@ -5,6 +5,8 @@ import org.appwork.javaexe.LogOffTyp;
 import org.appwork.javaexe.PowerBroadcastEvent;
 import org.appwork.javaexe.SystemEventHandler;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 
 /**
  * Class for javaexe launcher
@@ -43,7 +45,15 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
 
     @Override
     public boolean onQueryEndSession(LogOffTyp logOffTyp) {
-        return true;
+        try {
+            Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, "Really " + logOffTyp);
+            return true;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
