@@ -57,5 +57,5 @@ update_dialog_title_updates_available=Actualizaciones disponibles
 update_dialog_yes=Sí (recomendado)
 updateloop=El actualizador no ha podido actualizarse a sí mismo. Por favor reintentelo en algunos minutos.
 updateloop_title=Repetición de actualizaciones detectada!
-updates_are_ready_for_install_now=%s1 actualizaciones estan listas para instalarse.
-updates_ready_for_install=%s1 actualizaciones estan listas para instalarse.
+updates_are_ready_for_install_now=%s1 actualizaciones listas para instalarse
+updates_ready_for_install=%s1 actualizaciones listas para instalarse
