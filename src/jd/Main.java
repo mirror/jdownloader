@@ -54,7 +54,7 @@ public class Main {
 
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
-
+            Main_SystemEventManagement.getInstance();
         } catch (Throwable e) {
             e.printStackTrace();
             try {

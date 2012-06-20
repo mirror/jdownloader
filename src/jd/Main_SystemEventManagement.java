@@ -33,8 +33,9 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
      * {@link #getInstance()}.
      */
     private Main_SystemEventManagement() {
-
         super();
+        LOGGER.info("INIT Main_SystemEventManagement");
+
     }
 
     public static final LogSource LOGGER = LogController.CL(Main_SystemEventManagement.class);
