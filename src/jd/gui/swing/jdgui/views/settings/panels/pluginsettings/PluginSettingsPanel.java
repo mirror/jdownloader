@@ -38,7 +38,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
 
     public PluginSettingsPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]15[grow,fill][]"));
-        decryterIcon = NewTheme.I().getIcon("linkgrabber", 20);
+        decryterIcon = NewTheme.I().getIcon("linkgrabber", 16);
         selector = new SearchComboBox<LazyPlugin<?>>() {
 
             /**

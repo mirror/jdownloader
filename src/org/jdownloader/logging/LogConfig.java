@@ -2,6 +2,7 @@ package org.jdownloader.logging;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.RequiresRestart;
@@ -35,4 +36,12 @@ public interface LogConfig extends ConfigInterface {
     int getLogFlushTimeout();
 
     void setLogFlushTimeout(int t);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Description("Enable debug mode, nearly everything will be logged!")
+    @RequiresRestart
+    boolean isDebugModeEnabled();
+
+    void setDebugModeEnabled(boolean b);
 }

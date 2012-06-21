@@ -43,7 +43,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN    = "vk.com";
+    private static final String DOMAIN    = "http://vk.com";
     private static final Object LOCK      = new Object();
     private static boolean      loaded    = false;
     private String              FINALLINK = null;
@@ -92,8 +92,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
+         * Chunks disabled because (till now) this plugin only exists to download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -135,8 +134,7 @@ public class VKontakteRuHoster extends PluginForHost {
         br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
         final String correctedBR = br.toString().replace("\\", "");
         /**
-         * Try to get best quality and test links till a working link is found
-         * as it can happen that the found link is offline but others are online
+         * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others are online
          */
         String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (String q : qs) {
@@ -185,6 +183,7 @@ public class VKontakteRuHoster extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -200,7 +199,6 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
                 br.getPage("http://vk.com/login.php");
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
@@ -223,6 +221,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = br.getCookies(DOMAIN);
                 for (final Cookie c : add.getCookies()) {
+                    if ("deleted".equals(c.getValue())) continue;
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));

@@ -36,6 +36,7 @@ public class LogController {
     private Thread                     flushThread = null;
     private final File                 logFolder;
     private ConsoleHandler             consoleHandler;
+    private final boolean              instantFlushDefault;
     /**
      * GL = Generic Logger, returns a shared Logger for name JDownloader
      */
@@ -70,8 +71,11 @@ public class LogController {
         maxSize = JsonConfig.create(LogConfig.class).getMaxLogFileSize();
         maxLogs = JsonConfig.create(LogConfig.class).getMaxLogFiles();
         logTimeout = JsonConfig.create(LogConfig.class).getLogFlushTimeout() * 1000l;
-        logFolder = Application.getResource("logs/" + new SimpleDateFormat("dd.MM.yyyy - HH.mm").format(new Date(Launcher.startup)) + "/");
-        if (!logFolder.exists()) logFolder.mkdirs();
+        instantFlushDefault = JsonConfig.create(LogConfig.class).isDebugModeEnabled();
+        File llogFolder = Application.getResource("logs/" + Launcher.startup + "_" + new SimpleDateFormat("HH.mm").format(new Date(Launcher.startup)) + "/");
+        if (llogFolder.exists()) llogFolder = Application.getResource("logs/" + Launcher.startup + "_" + new SimpleDateFormat("HH.mm.ss").format(new Date(Launcher.startup)) + "/");
+        if (!llogFolder.exists()) llogFolder.mkdirs();
+        logFolder = llogFolder;
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
@@ -216,9 +220,8 @@ public class LogController {
             }
         }
         LogSource source = new LogSource(name, -1);
-        // source.setInstantFlush(true);
+        source.setInstantFlush(instantFlushDefault);
         sink.addLogSource(source);
-
         return source;
     }
 

@@ -67,7 +67,8 @@ public class LinkCrawler implements IOPermission {
     private LinkCrawler                 parentCrawler               = null;
     private final long                  created;
 
-    public static final String          ALLOW_MERGE                 = "ALLOW_MERGE";
+    public static final String          PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
+    public static final String          PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
     public static final UniqueSessionID PERMANENT_OFFLINE_ID        = new UniqueSessionID();
     private boolean                     doDuplicateFinderFinalCheck = true;
     private List<LazyHostPlugin>        pHosts;
@@ -813,10 +814,13 @@ public class LinkCrawler implements IOPermission {
                 // do not set downloadfolder if it is the defaultfolder
                 fpi.setDestinationFolder(dp.getDownloadDirectory());
             }
-
             fpi.setAutoExtractionEnabled(dp.isPostProcessing());
-            fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true));
-            if (Boolean.FALSE.equals(dp.getBooleanProperty(ALLOW_MERGE, false))) {
+            if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
+                fpi.setName(dp.getName());
+            } else {
+                fpi.setName(LinknameCleaner.cleanFileName(dp.getName(), false, true));
+            }
+            if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }
             for (String s : dp.getPasswordList()) {

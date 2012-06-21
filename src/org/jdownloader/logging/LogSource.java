@@ -189,6 +189,10 @@ public class LogSource extends Logger {
      *            the instantFlush to set
      */
     public void setInstantFlush(boolean instantFlush) {
+        if (this.instantFlush == instantFlush) return;
+        if (instantFlush) {
+            flush();
+        }
         this.instantFlush = instantFlush;
     }
 
