@@ -1,3 +1,5 @@
+LinkCollector_archiv=%s1
+LinkgrabberFilterRule_duplicate=%s1 (còpia)
 controller_packages_defaultname=varis
 controller_status_connectionproblems=Connexió perduda
 controller_status_containererror=Error en el llistat
