@@ -1,8 +1,8 @@
-jd_plugins_optional_infobar_InfoDialog_help=Drag'N'Drop zona
-jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Ubaci ovamo URL-ove, hyperlinkove ili DLC datoteke!
-jd_plugins_optional_infobar_InfoDialog_hideWindow=Sakrij Info traku
-jd_plugins_optional_infobar_docking=Uključi sidrenje na rubove
+﻿jd_plugins_optional_infobar_InfoDialog_help=Drag&Drop zona
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Ovdje povucite URL-ove, hyperlinkove ili DLC datoteke!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Sakrij Info panel
+jd_plugins_optional_infobar_docking=Uključi sidrenje na rubovima
 jd_plugins_optional_infobar_dropLocation2=Uključi Drag&Drop zonu
-jd_plugins_optional_infobar_jdinfobar=Info traka
-jd_plugins_optional_infobar_jdinfobar_description=Mali plutajući panel sa informacijama o statistici preuzimanja u realnom vremenu, i Drag'N'Drop zona gdje možete ubaciti linkove, URL-ove ili DLC datoteke.
-jd_plugins_optional_infobar_opacity=GUI prozirnost [%]
+jd_plugins_optional_infobar_jdinfobar=Info panel
+jd_plugins_optional_infobar_jdinfobar_description=Mali plutajući prozor sa informacijama o statistici preuzimanja u realnom vremenu, i Drag&Drop zona kamo možete povući linkove, URL-ove ili DLC datoteke.
+jd_plugins_optional_infobar_opacity=Prozirnost panela[%]
