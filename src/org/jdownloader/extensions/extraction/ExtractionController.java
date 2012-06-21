@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
+import jd.nutils.io.FileSignatures;
 
 import org.appwork.utils.event.queue.QueueAction;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -51,6 +52,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private boolean             removeDownloadLinksAfterExtraction;
     private ExtractionExtension extension;
     private final LogSource     logger;
+    private FileSignatures      fileSignatures   = null;
+
+    public FileSignatures getFileSignatures() {
+        if (fileSignatures == null) fileSignatures = new FileSignatures();
+        return fileSignatures;
+    }
 
     ExtractionController(ExtractionExtension extractionExtension, Archive archiv) {
         this.archive = archiv;
@@ -88,7 +95,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         if (pw == null || "".equals(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
-
         return extractor.findPassword(this, pw, optimized);
     }
 

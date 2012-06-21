@@ -30,7 +30,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
@@ -734,7 +733,7 @@ public class Multi extends IExtraction {
     //
 
     @Override
-    public boolean findPassword(ExtractionController ctl, String password, boolean optimized) {
+    public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) {
         crack++;
         ReusableByteArrayOutputStream buffer = null;
         try {
@@ -812,7 +811,7 @@ public class Multi extends IExtraction {
                                             s = s.substring(s.length() - 2);
                                             sigger.append(s);
                                         }
-                                        Signature signature = FileSignatures.getSignature(sigger.toString());
+                                        Signature signature = ctl.getFileSignatures().getSignature(sigger.toString());
                                         if (signature != null) {
                                             if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
                                                 /* signature matches, lets abort PWFinding now */
