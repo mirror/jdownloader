@@ -1,4 +1,4 @@
-﻿jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
+jd_plugins_optional_jdtrayicon_jdlighttray=Light Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Omogućuje smanjivanje ili zatvaranje JDownloader-a u područje obavijesti i srodne značajke kao što su zaštita lozinkom ili drugo.
 plugins_optional_JDLightTray_always=Uvijek
 plugins_optional_JDLightTray_closetotray=Spusti u traku

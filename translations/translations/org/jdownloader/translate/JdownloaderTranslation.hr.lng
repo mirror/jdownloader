@@ -1,4 +1,4 @@
-﻿DownloadWatchDog_onShutdownRequest_=Preuzimanja su u tijeku!
+DownloadWatchDog_onShutdownRequest_=Preuzimanja su u tijeku!
 DownloadWatchDog_onShutdownRequest_msg=Želite li zaustaviti preuzimanja koja su u tijeku za izlaz iz JDownloader-a?
 DownloadWatchDog_onShutdownRequest_nonresumable=U tijeku su preuzimanja koja se ne mogu nastaviti!
 DuplicateAction_DuplicateAction_=Uvjeti duplikata
@@ -152,7 +152,7 @@ replacer_hoster=Posljednja završena datoteka: Host
 replacer_ipaddress=Trenutna IP adresa
 replacer_javaversion=Korištena Java verzija
 replacer_jdhomedirectory=jDownloader: Zadana mapa/mapa instalacije
-replacer_jdversion=jDownloader:Revizija/Verzija
+replacer_jdversion=jDownloader: Revizija/Verzija
 replacer_packagename=Posljednji završeni paket: Naziv paketa
 replacer_password=Posljednji završeni paket: Lozinka
 replacer_time=Trenutno vrijeme

@@ -1,5 +1,5 @@
 JDUpdater_start_restart_update_now_=Ažuriranje i restart sada!
-JDUpdater_start_updater_update_msg=Restart now to perform an update.
+JDUpdater_start_updater_update_msg=Restart radi provedbe ažuriranja.
 JDUpdater_start_updater_update_title=Pronađena nova verzija!
 UpdateException_socket=Nema internet veze prema poslužitelju ažuriranja: %s1
 could_not_update_updater=Updater je zastario. Updater se ne može ažurirati!

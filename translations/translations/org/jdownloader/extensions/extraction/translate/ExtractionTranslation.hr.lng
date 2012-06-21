@@ -1,4 +1,6 @@
-﻿ValidateArchiveAction_ValidateArchiveAction=Provjera %s1
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=Ovo nije arhiva ili je nepodržan format arhive
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Nepodržana arhiva
+ValidateArchiveAction_ValidateArchiveAction=Provjera %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Provjera arhive(a)
 ValidateArchiveAction_actionPerformed_=Arhiva ima %s1 dio(djelova) i kompletna je.
 ValidateArchiveAction_actionPerformed_bad=Arhiva ima %s1 dio(djelova) i nije kompletna.
