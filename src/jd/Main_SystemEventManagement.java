@@ -40,7 +40,7 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
     private Main_SystemEventManagement() {
         super();
         logger = LogController.getInstance().getLogger("WindowsSystemEventHandling");
-
+        logger.setInstantFlush(true);
     }
 
     public static int notifyEvent(int msg, int val1, int val2, String val3, int[] arr1, byte[] arr2) {
