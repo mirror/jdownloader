@@ -54,7 +54,9 @@ public class Main {
 
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
-
+            while (true) {
+                Thread.sleep(1000);
+            }
         } catch (Throwable e) {
             e.printStackTrace();
             try {
