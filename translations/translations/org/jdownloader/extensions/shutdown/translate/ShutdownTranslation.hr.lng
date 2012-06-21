@@ -17,5 +17,5 @@ interaction_shutdown_dialog_title_closejd=Zatvoriti JD?
 interaction_shutdown_dialog_title_hibernate=Hibernacija?
 interaction_shutdown_dialog_title_shutdown=Isključivanje?
 interaction_shutdown_dialog_title_standby=Stanje pripravnosti?
-jd_plugins_optional_jdshutdown=JD zatvaranje
+jd_plugins_optional_jdshutdown=JD isključivanje
 jd_plugins_optional_jdshutdown_description=Automatsko isključivanje, pripravnost, hibernacija računala ili zatvaranje JDownloader-a kada budu sva preuzimanja završena.
