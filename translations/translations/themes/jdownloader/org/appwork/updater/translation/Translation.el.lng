@@ -40,6 +40,7 @@ guiless_you_are_up2date=Έχετε ήδη την τελευταία έκδοση
 install_updates_later=Ερώτηση αργότερα!
 install_updates_now=Εγκατάσταση τώρα!
 literally_exit=Ο έλεγχος ενημερώσεων ολοκληρώθηκε - Έξοδος
+progress=%s1/%s2
 restart_msg=Η Ενημέρωση πρέπει να επανεκκινηθεί τώρα.
 restart_required_msg=Το πρόγραμμα ενημέρωσης θα επανεκκινηθεί τώρα.
 restart_required_title=Απαιτείται Επανεκκίνηση

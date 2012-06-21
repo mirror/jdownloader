@@ -1,3 +1,4 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Μη υποστηριζόμενο αρχείο συμπίεσης
 ValidateArchiveAction_ValidateArchiveAction=Επικύρωση %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Επικύρωση συμπιεσμένων αρχείων
 ValidateArchiveAction_actionPerformed_=Το συμπιεσμένο αρχείο έχει %s1 τμήματα και είναι ολοκληρωμένο.
