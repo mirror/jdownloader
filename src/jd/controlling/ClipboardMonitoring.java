@@ -77,7 +77,7 @@ public class ClipboardMonitoring {
                             }
                         } catch (final Throwable e) {
                         }
-                        if (handleThisRound == null) {
+                        if (StringUtils.isEmpty(handleThisRound)) {
                             /* change detection for String/HTML content */
                             String newStringContent = getStringTransferData(currentContent);
                             try {
@@ -339,7 +339,16 @@ public class ClipboardMonitoring {
         if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
             final List<File> list = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
             final StringBuilder sb = new StringBuilder("");
+            boolean isWindows = CrossSystem.isWindows();
             for (final File f : list) {
+                String path = f.getPath();
+                if (isWindows) {
+                    /* windows paths must start with driveLetter: */
+                    if (!path.matches("^[a-zA-Z]:.+")) continue;
+                } else {
+                    /* linux and mac must start with / */
+                    if (!path.matches("^/.+")) continue;
+                }
                 if (sb.length() > 0) sb.append("\r\n");
                 sb.append("file://" + f.getPath());
             }
