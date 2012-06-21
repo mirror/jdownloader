@@ -52,8 +52,10 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
                 e.printStackTrace();
             }
         }
-
-        return getInstance().onEvent(msg, val1, val2, val3, arr1, arr2);
+        getInstance().logger.info("Event " + msg + "," + val1 + "," + val2 + "," + val3);
+        int ret = getInstance().onEvent(msg, val1, val2, val3, arr1, arr2);
+        getInstance().logger.info("Event " + msg + " Returned " + ret);
+        return ret;
     }
 
     @Override
@@ -63,13 +65,16 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
 
     @Override
     public boolean onQueryEndSession(LogOffTyp logOffTyp) {
-
-        return ShutdownController.getInstance().requestShutdown(true);
+        logger.info("Querry End Session: " + logOffTyp);
+        return false;
     }
 
     @Override
     public void onSessionEnd(boolean queryResponse, LogOffTyp logOffTyp) {
         logger.info("SessuinEnd: REsult: " + queryResponse + " Type: " + logOffTyp);
+        if (queryResponse) {
+            ShutdownController.getInstance().requestShutdown(true);
+        }
     }
 
     @Override
