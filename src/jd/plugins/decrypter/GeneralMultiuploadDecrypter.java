@@ -42,6 +42,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
         String parameter = param.toString();
         // Only uploadmirrors.com has those "/download/" links so we need to
         // correct them
@@ -90,11 +91,12 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         }
         logger.info("Found " + redirectLinks.length + " " + host.replaceAll("www\\.", "") + " links to decrypt...");
         for (String singlelink : redirectLinks) {
+            singlelink = singlelink.replace("\"", "").trim();
             Browser brc = br.cloneBrowser();
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
-            if (singlelink.contains("/redirect/") || singlelink.contains("/rd/") || singlelink.matches("/r/.+") || singlelink.matches("/dl/.+") || singlelink.matches("/mirror/.+")) {
+            if (singlelink.contains("/redirect") || singlelink.contains("/rd/") || singlelink.matches("/r/.+") || singlelink.matches("/dl/.+") || singlelink.matches("/mirror/.+")) {
                 brc.getPage(protocol + host + singlelink);
                 dllink = decryptLink(brc, parameter);
             } else {

@@ -49,6 +49,8 @@ public class XxxMsnCamCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Oops not found|<title>Nothing found for|>Deleted due to complaint<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Maybe invalid link
+        if (!br.containsHTML("xxxmsncam\\.com/jwflvplayer/player\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("title=\"Comment on ([^<>\"/]+)\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"/]+) \\| Free Amateur WebCam Movies</title>").getMatch(0);
         DLLINK = br.getRegex("\\.addVariable\\(\"(file|link)\",\"(http://[^<>\"\\']+)\"").getMatch(1);
