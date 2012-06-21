@@ -5,6 +5,7 @@ AccountNew_AccountNew_message=Prosím, zadejte svoje přihlašovací údaje sem
 AccountNew_layoutDialogContent_accountname=Uživatelské jméno
 AccountNew_layoutDialogContent_password=Heslo
 AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
+AppWorkUtils_Graph_getSpeedString=Právě teď: %s1/s
 COMMANDLINEAPP_COMMAND=Příkaz -> -
 COPYCUTPASTE_COPY=Kopírovat
 COPYCUTPASTE_CUT=Vyjmout
