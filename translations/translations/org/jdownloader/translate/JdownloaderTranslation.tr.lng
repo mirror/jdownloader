@@ -9,6 +9,7 @@ LinkCollector_addCrawledLink_offlinepackage=Çevrimdışı Dosyalar
 LinkCollector_addCrawledLink_variouspackage=Çeşitli Dosyalar
 LinkCollector_archiv=%s1
 LinkCollector_onShutdownRequest_=Bağlantı Toplayıcısı hala devam etmekte!
+LinkCollector_onShutdownRequest_msg=Bağlantı Toplayıcısını durdurmak istiyor musunuz?
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Çevrimdışı Dosyalar
 LinkgrabberFilterRule_duplicate=%s1 (kopyala)
 Main_run_autostart_=İndirmeler başlatılıyor

@@ -194,6 +194,7 @@ JDGui_windowClosing_try_asnwer_close=JDownloader'dan Çık
 JDGui_windowClosing_try_msg_=JDownloader şimdi Sistem tepsinize kapatılacak ve arkaplanda işine devam edecek.\n\nJDownloader'ı tepsiye gizlemek, veya tamamen Uygulamadan çıkmak istiyor musunuz?
 JDGui_windowClosing_try_title_=Tepsiye Kapat
 JDUpdater_JDUpdater_object_icon=Güncellemeleri kontrol et
+JDUpdater_JDUpdater_updates_available_msg_=%s1 Güncelleme yükleme için hazır.
 JDUpdater_run_lasttry_msg_=JDownloader kurulumunuzun bozuk olduğu tespit edildi ve güncelleme yoluyla düzeltilemiyor. Lütfen buradan http://jdownloader.org/download son sürümü indirin ve yükleyin.
 JDUpdater_run_lasttryfailed_title_=Bozuk Kurulum!
 LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up=Kenar Çubuğunu Göster/Gizle
