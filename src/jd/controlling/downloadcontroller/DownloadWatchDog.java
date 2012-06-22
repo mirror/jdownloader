@@ -57,6 +57,7 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationListener;
@@ -65,7 +66,6 @@ import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 

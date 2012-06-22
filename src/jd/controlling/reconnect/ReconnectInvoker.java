@@ -7,8 +7,8 @@ import jd.controlling.reconnect.ipcheck.IPController;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.event.ProcessCallBackAdapter;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public abstract class ReconnectInvoker {
     private static final long OFFLINE_TIMEOUT = 30000;

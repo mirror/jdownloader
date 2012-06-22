@@ -22,10 +22,10 @@ import java.util.ArrayList;
 
 import jd.gui.UserIO;
 
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.translate.T;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Updates the Extractionprogess for archives in the downloadlist

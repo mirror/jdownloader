@@ -37,11 +37,11 @@ import jd.utils.JDUtilities;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.InternetConnectionSettings;
 
 public class RouterUtils {

@@ -8,8 +8,8 @@ import jd.controlling.reconnect.ipcheck.event.IPControllEvent;
 import jd.controlling.reconnect.ipcheck.event.IPControllEventSender;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public class IPController extends ArrayList<IPConnectionState> {
     /**

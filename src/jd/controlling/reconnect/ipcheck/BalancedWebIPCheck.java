@@ -9,9 +9,9 @@ import jd.controlling.reconnect.ReconnectConfig;
 import jd.http.Browser;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * balanced IP check uses the jdownloader ip check servers. This type of ip check is default, and fallback for all reconnect methods

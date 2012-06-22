@@ -37,8 +37,8 @@ import jd.captcha.utils.Utilities;
 import jd.config.Property;
 import jd.nutils.Colors;
 
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Diese Klasse behinhaltet alle wichtigen Methoden um das Image-Pixelgrid zu bearbeiten

@@ -20,8 +20,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 

@@ -30,8 +30,8 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Diese Klasse parsed das JAC Script

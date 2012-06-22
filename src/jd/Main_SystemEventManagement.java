@@ -10,8 +10,8 @@ import org.appwork.javaexe.PowerBroadcastEvent;
 import org.appwork.javaexe.SessionEvent;
 import org.appwork.javaexe.SystemEventHandler;
 import org.appwork.shutdown.ShutdownController;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Class for javaexe launcher
@@ -34,8 +34,7 @@ public class Main_SystemEventManagement extends JavaExe_SystemEventManagement im
     private LogSource logger;
 
     /**
-     * Create a new instance of Main_SystemEventManagement. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of Main_SystemEventManagement. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private Main_SystemEventManagement() {
         super();

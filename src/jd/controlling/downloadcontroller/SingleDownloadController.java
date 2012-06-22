@@ -45,6 +45,7 @@ import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -52,7 +53,6 @@ import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -564,8 +564,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorDownloadTemporarilyUnavailable() {
         if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
-         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
+         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());

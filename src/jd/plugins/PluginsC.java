@@ -31,8 +31,8 @@ import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können

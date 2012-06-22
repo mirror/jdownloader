@@ -15,6 +15,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.StorageException;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.ComboBoxDialogInterface;
@@ -24,7 +25,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeException> {

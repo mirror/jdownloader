@@ -48,11 +48,11 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
@@ -67,8 +67,8 @@ abstract public class DownloadInterface {
     public class Chunk extends Thread {
 
         /**
-         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben
-         * einen kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
+         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer
+         * und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
          */
         public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
@@ -442,8 +442,8 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle
-         * BUffer schon geschrieben wurde oder nicht.
+         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle BUffer schon
+         * geschrieben wurde oder nicht.
          * 
          * @return
          */
@@ -1075,8 +1075,8 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != fileSize && fileSize > 0)) {
             if (totalLinkBytesLoaded > fileSize) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -1108,8 +1108,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
-     * links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     private void onChunkFinished() {
         synchronized (this) {
@@ -1151,8 +1150,7 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
-     * schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;

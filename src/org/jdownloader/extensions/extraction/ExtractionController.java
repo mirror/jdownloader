@@ -27,11 +27,11 @@ import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.nutils.io.FileSignatures;
 
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.extensions.extraction.ExtractionEvent.Type;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Responsible for the correct procedure of the extraction process. Contains one IExtraction instance.

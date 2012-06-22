@@ -26,8 +26,8 @@ import org.appwork.controlling.State;
 import org.appwork.controlling.StateMachine;
 import org.appwork.controlling.StateMachineInterface;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.translate._JDT;
 
 public final class Reconnecter implements StateMachineInterface {

@@ -3,8 +3,8 @@ package jd;
 import java.awt.Component;
 
 import org.appwork.javaexe.JavaExe_I_TaskbarManagement;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public class Main_TaskbarManagement implements JavaExe_I_TaskbarManagement {
 

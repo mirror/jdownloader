@@ -329,6 +329,7 @@ public class NetUploadedCom extends PluginForHost {
         }
         if (!NOPREMIUM) {
             String expire = new Regex(BRBEFORE, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+            if (expire == null) expire = new Regex(BRBEFORE, "<td>Premium Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

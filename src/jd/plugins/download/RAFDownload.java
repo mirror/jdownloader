@@ -36,7 +36,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.logging.LogSource;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 

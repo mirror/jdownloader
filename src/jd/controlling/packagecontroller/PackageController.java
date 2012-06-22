@@ -17,9 +17,9 @@ import jd.controlling.IOEQ;
 
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.MergePosition;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public abstract class PackageController<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> implements AbstractNodeNotifier<PackageType> {
     private final AtomicLong  structureChanged = new AtomicLong(0);

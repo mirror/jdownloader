@@ -49,8 +49,8 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 

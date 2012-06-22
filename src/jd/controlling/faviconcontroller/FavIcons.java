@@ -41,9 +41,9 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public class FavIcons {
 

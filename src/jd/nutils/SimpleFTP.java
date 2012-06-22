@@ -55,11 +55,11 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 /**
  * SimpleFTP is a simple package that implements a Java FTP client. With SimpleFTP, you can connect to an FTP server and upload multiple files.

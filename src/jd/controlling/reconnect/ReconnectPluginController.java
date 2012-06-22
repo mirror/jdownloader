@@ -31,6 +31,7 @@ import org.appwork.utils.IO;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -38,7 +39,6 @@ import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public class ReconnectPluginController {
     private static final String                    JD_CONTROLLING_RECONNECT_PLUGINS = "jd/controlling/reconnect/plugins/";

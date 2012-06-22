@@ -6,8 +6,8 @@ import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaEventListener;
 import jd.controlling.captcha.CaptchaResult;
 
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 import com.ibm.mqtt.MqttCallback;
 import com.ibm.mqtt.MqttClient;

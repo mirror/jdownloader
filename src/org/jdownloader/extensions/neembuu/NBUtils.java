@@ -15,8 +15,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.jdownloader.logging.LogSource;
 
 /**
  * 

@@ -34,7 +34,7 @@ import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
-import org.jdownloader.logging.LogSource;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**

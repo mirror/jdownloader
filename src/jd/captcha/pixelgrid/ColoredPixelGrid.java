@@ -26,8 +26,8 @@ import java.util.Vector;
 import jd.captcha.pixelobject.PixelObject;
 import jd.nutils.Colors;
 
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 
 public class ColoredPixelGrid extends PixelGrid {
     private static final long serialVersionUID = 1L;

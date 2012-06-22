@@ -18,9 +18,9 @@ package org.jdownloader.extensions.extraction;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
-import org.jdownloader.logging.LogSource;
 
 /**
  * Interface for the individual extraction programs.

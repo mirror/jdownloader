@@ -16,6 +16,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogConfig;
 import org.jdownloader.api.RemoteAPIConfig;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
@@ -53,6 +54,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(PackagizerSettings.class));
         register(JsonConfig.create(WebupdateSettings.class));
         register(JsonConfig.create(StatsManagerConfig.class));
+        register(JsonConfig.create(LogConfig.class));
 
     }
 

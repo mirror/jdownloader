@@ -50,6 +50,7 @@ import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -82,7 +83,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.logging.LogSource;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
