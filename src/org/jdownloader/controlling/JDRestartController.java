@@ -14,8 +14,7 @@ public class JDRestartController extends RestartController {
     private static final JDRestartController INSTANCE = new JDRestartController();
 
     /**
-     * get the only existing instance of JDRestartController. This is a
-     * singleton
+     * get the only existing instance of JDRestartController. This is a singleton
      * 
      * @return
      */
@@ -45,8 +44,8 @@ public class JDRestartController extends RestartController {
     }
 
     /**
-     * Create a new instance of JDRestartController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of JDRestartController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private JDRestartController() {
         super();
@@ -58,7 +57,8 @@ public class JDRestartController extends RestartController {
         new Thread("Wait For Restart") {
             public void run() {
                 while (true) {
-                    if (System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getLastMouseEvent() > 20000 && silentRestartAllowed) {
+                    long sinceStartup = System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getStartupTime();
+                    if ((CopyCutPasteHandler.getInstance().getLastMouseEvent() < 0 && sinceStartup > 20000 && silentRestartAllowed) || (CopyCutPasteHandler.getInstance().getLastMouseEvent() > 0 && System.currentTimeMillis() - CopyCutPasteHandler.getInstance().getLastMouseEvent() > 20000 && silentRestartAllowed)) {
                         // wait until there is no mousevent
                         if (JDUpdater.getInstance().getBranch() != null && !JDUpdater.getInstance().isSelfUpdateRequested()) {
                             RestartViaUpdaterEvent.getInstance().setBootstrappath(JDUpdater.getInstance().getTmpUpdateDirectory().getAbsolutePath());

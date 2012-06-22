@@ -97,6 +97,7 @@ import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+import org.jdownloader.toolbar.JDToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -179,6 +180,7 @@ public class Launcher {
         org.jdownloader.controlling.JDRestartController.getInstance().setExe("JDownloader.exe");
         org.jdownloader.controlling.JDRestartController.getInstance().setJar("JDownloader.jar");
         org.jdownloader.controlling.JDRestartController.getInstance().setUpdaterJar("Updater.jar");
+
     }
 
     /**
@@ -211,6 +213,7 @@ public class Launcher {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+
         Launcher.LOG = LogController.GL;
         // Mac OS specific
         if (CrossSystem.isMac()) {
@@ -678,6 +681,10 @@ public class Launcher {
             return;
         }
         Launcher.GUI_COMPLETE.setReached();
+
+        if (CrossSystem.isWindows()) {
+            new JDToolbarOffer().run();
+        }
         Launcher.LOG.info("Initialisation finished");
         Launcher.INIT_COMPLETE.setReached();
 

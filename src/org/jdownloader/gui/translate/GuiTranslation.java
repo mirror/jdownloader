@@ -2171,4 +2171,21 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1 Update(s) are ready for installation." })
     String JDUpdater_JDUpdater_updates_available_msg_(int totalTodoCount);
 
+    @Default(lngs = { "en" }, values = { "NEW !" })
+    String JDToolbarOffer_JDToolbarOffer_title_();
+
+    @Default(lngs = { "en" }, values = { "Install the Controlbar" })
+    String JDToolbarOffer_JDToolbarOffer_install_();
+
+    @Default(lngs = { "en" }, values = { "Cancel" })
+    String JDToolbarOffer_JDToolbarOffer_nothanks_();
+
+    @Default(lngs = { "en" }, values = { "JDownloader Browser Controlbar" })
+    String JDToolbarOffer_layoutDialogContent_toolbar_();
+
+    @Default(lngs = { "en" }, values = { "Did you ever get annoyed by switching between JDownloader and your browser?\r\nNow there is a solution. Try the official JDownloader Toolbar for Windows® Internet Explorer®, Firefox® and Google Chrome™ browsers." })
+    String JDToolbarOffer_layoutDialogContent_desc_();
+
+    @Default(lngs = { "en" }, values = { "It contains the most important features to control JDownloader without leaving your browser." })
+    String JDToolbarOffer_layoutDialogContent_desc2_();
 }
