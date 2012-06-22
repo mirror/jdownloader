@@ -1,3 +1,4 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Archive non supportée
 ValidateArchiveAction_ValidateArchiveAction=Validé %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Archive(s) validée(s)
 ValidateArchiveAction_actionPerformed_=L'archive a %s1 partie(s) et est complète

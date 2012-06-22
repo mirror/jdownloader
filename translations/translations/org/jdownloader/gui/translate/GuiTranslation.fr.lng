@@ -3,6 +3,7 @@ AddContainerAction=Charger le conteneur de liens
 AddContainerAction_actionPerformed_=Charger un conteneur de liens
 AddContainerAction_actionPerformed_extensions=Conteneur de lien (%s1)
 AddLinksAction_=Ajouter un téléchargement
+AddLinksAction_actionPerformed_deep_msg=JDownloader n'a pas trouvé des liens à télécharger sur ce site. Souhaitez-vous effectuer une analyse du lien en profondeur pour afficher tous les fichiers qui peuvent être téléchargés à partir de ce lien ?
 AddLinksDialog_AddLinksDialog_=Analyser et ajouter les liens
 AddLinksDialog_AddLinksDialog_confirm=Continuer
 AddLinksDialog_ParsingClipboard=S'il vous plaît attendez : analyse du contenu de presse-papier

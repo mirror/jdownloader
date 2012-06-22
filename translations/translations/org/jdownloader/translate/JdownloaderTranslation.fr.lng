@@ -1,5 +1,5 @@
 DownloadWatchDog_onShutdownRequest_=Téléchargements en progression !
-DownloadWatchDog_onShutdownRequest_msg=Voulez vous stopper tous les téléchargements en cours et pour fermer JDownloader ?
+DownloadWatchDog_onShutdownRequest_msg=Voulez vous stopper tous les téléchargements en cours pour fermer JDownloader ?
 DownloadWatchDog_onShutdownRequest_nonresumable=Aucun téléchargement réactivable en cours !
 DuplicateAction_DuplicateAction_=Dupliquer la règle
 Extraction_onShutdownRequest_=L'extraction est encore en cours !
