@@ -19,18 +19,13 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
@@ -39,23 +34,23 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linksafe.me" }, urls = { "http://(www\\.)?linksafe\\.me/(d|p)/[a-z0-9]+" }, flags = { 0 })
 public class LnkSafeMe extends PluginForDecrypt {
 
-    private static final String PASSWORDFAILED  = ">Incorrect Password, please try again";
+    private static String PASSWORDFAILED  = ">Incorrect Password, please try again";
 
-    private static final String KEYCAPTCHA      = "<\\!\\-\\- KeyCAPTCHA code";
-    private static final String RECAPTCHAFAILED = "incorrect-captcha-sol";
-    private static final String SOLVEMEDIA      = "(//api\\.solvemedia\\.com/papi|>Invalid Captcha, please try again)";
-    private static final String LINKREGEX       = "(d/[a-z0-9]+)(/|<|\")";
-    private static final String MAINPAGE        = "http://linksafe.me/";
+    private static String KEYCAPTCHA      = "<\\!\\-\\- KeyCAPTCHA code";
+    private static String RECAPTCHAFAILED = "incorrect-captcha-sol";
+    private static String SOLVEMEDIA      = "(//api\\.solvemedia\\.com/papi|>Invalid Captcha, please try again)";
+    private static String LINKREGEX       = "(d/[a-z0-9]+)(/|<|\")";
+    private static String MAINPAGE        = "http://linksafe.me/";
 
-    public LnkSafeMe(final PluginWrapper wrapper) {
+    public LnkSafeMe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final ArrayList<String> cryptedLinks = new ArrayList<String>();
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> cryptedLinks = new ArrayList<String>();
         br.setFollowRedirects(false);
-        final String parameter = param.toString();
+        String parameter = param.toString();
         br.getPage(parameter);
         if (parameter.contains("/d/")) {
             String finallink = br.getRedirectLocation();
@@ -68,61 +63,33 @@ public class LnkSafeMe extends PluginForDecrypt {
             for (int i = 0; i <= 5; i++) {
                 String postData = "";
                 if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
-                    final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
-                    final String challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-                    if (challenge == null) {
-                        logger.info(br.toString());
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final Browser capt = br.cloneBrowser();
-                    capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
-                    final String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
-                    if (chid == null) { return null; }
-                    String code = "http://api.solvemedia.com/papi/media?c=" + chid;
-                    if (!skipcaptcha) {
-                        final File captchaFile = this.getLocalCaptchaFile();
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
-                        try {
-                            ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
-                        } catch (final Throwable e) {
-                            logger.warning("Solvemedia handling broken");
-                            return null;
-                        }
-                        code = getCaptchaCode(null, captchaFile, param);
-                    } else {
-                        URLConnectionAdapter con2 = null;
-                        try {
-                            con2 = br.openGetConnection(code);
-                        } finally {
-                            try {
-                                con2.disconnect();
-                            } catch (final Throwable e) {
-                            }
-                        }
-                        code = "";
-                    }
-                    postData = "DownloadCaptchaForm[captcha]=&adcopy_challenge=" + chid + "&adcopy_response=" + code;
+                    PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    String code = getCaptchaCode(cf, param);
+                    String chid = sm.verify(code);
+                    postData = "adcopy_challenge=" + chid + "&adcopy_response=manual_challenge";
                 } else if (br.containsHTML(KEYCAPTCHA)) {
-                    final PluginForDecrypt keyplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    final jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((LnkCrptWs) keyplug).getKeyCaptcha(br);
-                    final String result = kc.showDialog(parameter);
+                    PluginForDecrypt keyplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    jd.plugins.decrypter.LnkCrptWs.KeyCaptcha kc = ((LnkCrptWs) keyplug).getKeyCaptcha(br);
+                    String result = kc.showDialog(parameter);
                     if (result != null) {
                         if ("CANCEL".equals(result)) { return decryptedLinks; }
                         postData = "capcode=" + result;
                     }
                 } else if (br.containsHTML("api\\.recaptcha\\.net") || br.containsHTML("google\\.com/recaptcha/api/")) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                     rc.parse();
                     rc.load();
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, param);
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, param);
                     postData = "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c;
                 } else if (br.containsHTML("ajax-fc-container")) {
-                    final Browser br2 = br.cloneBrowser();
+                    Browser br2 = br.cloneBrowser();
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br2.getPage("http://linksafe.me/captcha/4/captcha.php");
-                    final String response = br2.toString();
+                    String response = br2.toString();
                     if (response.length() > 500) {
                         logger.warning("Response string is too big...");
                         return null;
@@ -130,7 +97,7 @@ public class LnkSafeMe extends PluginForDecrypt {
                     postData = "captcha=" + response.trim();
                 }
                 if (br.containsHTML("valign=\"top\">Password:")) {
-                    final String passCode = getUserInput(null, param);
+                    String passCode = getUserInput(null, param);
                     postData = postData + "&password=" + passCode;
                 }
                 if (!postData.equals("")) {
@@ -146,26 +113,26 @@ public class LnkSafeMe extends PluginForDecrypt {
             }
             if (br.containsHTML(RECAPTCHAFAILED) || br.containsHTML(KEYCAPTCHA) || br.containsHTML(SOLVEMEDIA)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             if (br.containsHTML(PASSWORDFAILED)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-            final String[] links = br.getRegex(LINKREGEX).getColumn(0);
+            String[] links = br.getRegex(LINKREGEX).getColumn(0);
             if (links == null || links.length == 0) { return null; }
             /** Remove duplicates */
-            for (final String cryptedLink : links) {
+            for (String cryptedLink : links) {
                 if (!cryptedLinks.contains(cryptedLink)) {
                     cryptedLinks.add(cryptedLink);
                 }
             }
             progress.setRange(links.length);
-            for (final String dl : cryptedLinks) {
+            for (String dl : cryptedLinks) {
                 br.getPage(MAINPAGE + dl);
                 String finallink = br.getRedirectLocation();
                 if (finallink == null) {
                     finallink = br.getRegex("window\\.location=\"(http.*?)\"").getMatch(0);
                 }
                 if (finallink == null) { return null; }
-                final DownloadLink dllink = createDownloadlink(finallink);
+                DownloadLink dllink = createDownloadlink(finallink);
                 try {
                     distribute(dllink);
-                } catch (final Throwable e) {
+                } catch (Throwable e) {
                     /* does not exist in 09581 */
                 }
                 decryptedLinks.add(dllink);

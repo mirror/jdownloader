@@ -80,6 +80,116 @@ import org.appwork.utils.swing.dialog.Dialog;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkcrypt.ws" }, urls = { "http://[\\w\\.]*?linkcrypt\\.ws/dir/[\\w]+" }, flags = { 0 })
 public class LnkCrptWs extends PluginForDecrypt {
 
+    public static class SolveMedia {
+        private final Browser br;
+        private String        challenge;
+        private String        chId;
+        private String        captchaAddress;
+        private String        server;
+        private String        path;
+        private Browser       smBr;
+        private Form          verify;
+        private boolean       secure   = false;
+        private boolean       noscript = true;
+
+        public SolveMedia(final Browser br) {
+            this.br = br;
+        }
+
+        public File downloadCaptcha(final File captchaFile) throws Exception {
+            this.load();
+            try {
+                Browser.download(captchaFile, this.smBr.openGetConnection(this.captchaAddress));
+            } catch (IOException e) {
+                captchaFile.delete();
+                throw e;
+            }
+            return captchaFile;
+        }
+
+        private void load() throws Exception {
+            this.smBr = this.br.cloneBrowser();
+            this.getChallenge();
+            this.setServer(this.secure);
+            this.setPath(noscript);
+            this.smBr.getPage(this.server + this.path + this.challenge);
+            if (this.noscript) {
+                this.verify = smBr.getForm(0);
+                this.captchaAddress = this.smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+                if (this.verify == null) { throw new Exception("SolveMedia Module fails"); }
+            } else {
+                this.chId = this.smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
+                this.captchaAddress = this.chId != null ? this.server + "/papi/media?c=" + this.chId : null;
+            }
+            if (this.captchaAddress == null) { throw new Exception("SolveMedia Module fails"); }
+        }
+
+        private void getChallenge() {
+            this.challenge = this.br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+            if (secure) this.challenge = this.br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
+        }
+
+        public String verify(String code) throws Exception {
+            if (!this.noscript) return this.chId;
+            this.verify.put("adcopy_response", code);
+
+            /*
+             * TODO: Browser Bug? Beim senden einer https postform in Verbindung mit der submitForm-Methode wird als url die currenturl vom
+             * browser genommen und nicht die, die in der form action steht (secure == true == https) ...............................
+             * Testlink mit solvedia-https(secure == true) --> https://safelinking.net/p/78a98dd2bb .................................
+             * Testlink ohne solvemedia-https(secure == false) --> http://rapidgator.net/file/13387755/HOP.DVDRip_Michel_Vai.rar.html
+             */
+            if (secure) smBr.getPage(server + "/papi");
+
+            this.smBr.submitForm(verify);
+            String verifyUrl = this.smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
+            if (verifyUrl == null) return null;
+            this.smBr.getPage(verifyUrl);
+            return this.smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
+        }
+
+        /**
+         * @default false
+         * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
+         */
+        public void setSecure(boolean secure) {
+            if (secure) this.secure = true;
+        }
+
+        /**
+         * @default true
+         * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
+         */
+        public void setNoscript(boolean noscript) {
+            if (!noscript) this.noscript = false;
+        }
+
+        private String setServer(boolean handle) {
+            this.server = "http://api.solvemedia.com";
+            if (secure) this.server = "https://api-secure.solvemedia.com";
+            return this.server;
+        }
+
+        private String setPath(boolean b) {
+            this.path = "/papi/challenge.noscript?k=";
+            if (!noscript) this.path = "/papi/_challenge.js?k=";
+            return this.path;
+        }
+
+        public String getChallengeUrl() {
+            return this.server + this.path;
+        }
+
+        public String getChallengeId() {
+            return this.challenge;
+        }
+
+        public String getCaptchaUrl() {
+            return this.captchaAddress;
+        }
+
+    }
+
     public static class KeyCaptcha {
         private static Object LOCK = new Object();
 
@@ -1192,6 +1302,11 @@ public class LnkCrptWs extends PluginForDecrypt {
     /**
      * TODO: can be removed with next major update cause of recaptcha change
      */
+
+    public SolveMedia getSolveMedia(final Browser br) {
+        return new SolveMedia(br);
+    }
+
     public KeyCaptcha getKeyCaptcha(final Browser br) {
         return new KeyCaptcha(br);
     }

@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.imageio.ImageIO;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -38,7 +36,9 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -159,40 +159,13 @@ public class RapidGatorNet extends PluginForHost {
                 Browser capt = br.cloneBrowser();
 
                 if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
-                    final boolean skipcaptcha = getPluginConfig().getBooleanProperty("SKIP_CAPTCHA", false);
-                    challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-                    if (challenge == null) {
-                        logger.info(br.toString());
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    capt.getPage("http://api.solvemedia.com/papi/_challenge.js?k=" + challenge);
-                    String chid = capt.getRegex("chid\"[\r\n\t ]+?:[\r\n\t ]+?\"([^\"]+)").getMatch(0);
-                    if (chid == null) { return; }
-                    code = "http://api.solvemedia.com/papi/media?c=" + chid;
-                    if (!skipcaptcha) {
-                        final File captchaFile = this.getLocalCaptchaFile();
-                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(code));
-                        try {
-                            ImageIO.write(ImageIO.read(captchaFile), "jpg", captchaFile);
-                        } catch (final Throwable e) {
-                            logger.warning("Solvemedia handling broken");
-                            return;
-                        }
-                        code = getCaptchaCode("solvemedia", captchaFile, downloadLink);
-                    } else {
-                        URLConnectionAdapter con2 = null;
-                        try {
-                            con2 = br.openGetConnection(code);
-                        } finally {
-                            try {
-                                con2.disconnect();
-                            } catch (final Throwable e) {
-                            }
-                        }
-                        code = "";
-                    }
+                    PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    code = getCaptchaCode(cf, downloadLink);
+                    String chid = sm.verify(code);
                     captcha.put("adcopy_challenge", chid);
-                    captcha.put("adcopy_response", code);
+                    captcha.put("adcopy_response", "manual_challenge");
 
                 } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
                     String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
