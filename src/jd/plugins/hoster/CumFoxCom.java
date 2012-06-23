@@ -48,31 +48,22 @@ public class CumFoxCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("The file you have requested was not found on this server\\.") || br.getURL().contains("/404.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1> video: (.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) at CumFox</title>").getMatch(0);
-        String configPage = br.getRegex("addParam\\(\"flashvars\",\"settings=(http://.*?\\.flv)\"\\);").getMatch(0);
+        if (br.containsHTML(">404: File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>Watch free porn ([^<>\"]*?)</h1></div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Watch free porn ([^<>\"]*?) \\- Cumfox\\.com</title>").getMatch(0);
+        final String configPage = br.getRegex("settings=(http://(www\\.)?cumfox\\.com/playerConfig\\.php\\?[^<>\"/]*?\\.(mp4|flv))\"").getMatch(0);
         if (configPage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(configPage);
-        DLLINK = br.getRegex("defaultVideo:(http://.*?\\.flv);").getMatch(0);
+        DLLINK = br.getRegex("defaultVideo:(http://.*?);").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        String ext = configPage.substring(configPage.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(filename + ext);
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
@@ -88,6 +79,17 @@ public class CumFoxCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

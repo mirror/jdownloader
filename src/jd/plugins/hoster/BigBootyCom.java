@@ -28,6 +28,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigbooty.com" }, urls = { "http://(www\\.)?bigbooty\\.com/video/\\d+" }, flags = { 0 })
 public class BigBootyCom extends PluginForHost {
@@ -48,16 +49,8 @@ public class BigBootyCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.bigbootycom", "Only downloadable for premium users");
+    private static final String PREMIUMONLYTEXT     = ">You must be premium user to view this video";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -66,14 +59,15 @@ public class BigBootyCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>This video cannot be found\\. Are you sure you typed in the correct|<h2>ERROR</h2>|<title>Big Booty</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- Full Length Video \\- Watch Free\\!</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        if (br.containsHTML(PREMIUMONLYTEXT)) {
+            downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
+            return AvailableStatus.TRUE;
+        }
         DLLINK = br.getRegex("flashvars=\"file=(http.*?)\\&image").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -91,6 +85,18 @@ public class BigBootyCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

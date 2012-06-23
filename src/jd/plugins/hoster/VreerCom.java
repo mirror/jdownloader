@@ -94,7 +94,7 @@ public class VreerCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|File is not available<)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -131,7 +131,7 @@ public class VreerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -154,6 +154,7 @@ public class VreerCom extends PluginForHost {
                 final String hash = new Regex(correctedBR, "name=\"hash\" value=\"([a-z0-9]+)\"").getMatch(0);
                 if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 waitTime(System.currentTimeMillis(), downloadLink);
+                System.out.println(correctedBR + "\n");
                 postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&hash=" + hash + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
@@ -257,6 +258,7 @@ public class VreerCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        // More are possible but will cause server errors
         return 1;
     }
 
@@ -590,8 +592,7 @@ public class VreerCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt == null) ttt = new Regex(correctedBR, "\">Wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+        String ttt = new Regex(correctedBR, "<span id=\"countdown_str\" style=\"height:20px;\">[\t\n\r]+<span style=\"color: #FFFFFF; font\\-weight:bold;\">Wait <span id=\"[a-z0-9]+\" style=\"font\\-size:22px;\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

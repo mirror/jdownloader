@@ -61,9 +61,10 @@ public class VideoLogTv extends PluginForHost {
             }
         }
         br.getPage("http://embed-video.videolog.tv/api/player/video.php?format=xml&id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
+        System.out.println(br.toString() + "\n");
         /** Prefer HD quality */
-        DLLINK = br.getRegex("<hd_720>(http://.*?)</hd_720>").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("<standard>(http://.*?)</standard>").getMatch(0);
+        DLLINK = br.getRegex("<hd_720><\\!\\[CDATA\\[(http://.*?)\\]\\]></hd_720>").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<standard><\\!\\[CDATA\\[(http://.*?)\\]\\]></standard>").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
