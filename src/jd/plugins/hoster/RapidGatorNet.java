@@ -71,8 +71,10 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /*
-         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get
-         * removed from active downloading IP database. I assume it only happens after successful download and not failures.
+         * they might have an automated download tool detection routine. If you
+         * try to download something new too soon, your IP does not get removed
+         * from active downloading IP database. I assume it only happens after
+         * successful download and not failures.
          */
         if (hasDled) sleep(90 * 1001l, downloadLink);
         try {
@@ -181,7 +183,7 @@ public class RapidGatorNet extends PluginForHost {
                     code = capt.getRegex("class=\"code\">([0-9a-f\\-]+)<").getMatch(0);
 
                     if (challenge == null || code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    challenge = getCaptchaCode("adscaptcha", challenge, downloadLink);
+                    challenge = getCaptchaCode(challenge, downloadLink);
                     captcha.put("adscaptcha_response_field", challenge);
                     captcha.put("adscaptcha_challenge_field", code);
                 } else {
