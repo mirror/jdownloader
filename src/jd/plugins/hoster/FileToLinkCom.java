@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/([a-z0-9]{8}|d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8})" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetolink.com" }, urls = { "http://(www\\.)?filetolink\\.com/([a-z0-9]+|d/\\?h=[a-z0-9]{32}\\&t=\\d{10}\\&f=[a-z0-9]{8})" }, flags = { 0 })
 public class FileToLinkCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,33 +49,40 @@ public class FileToLinkCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        System.out.println(br.toString() + "\n");
+        System.out.println(br.toString() + "\n");
+        if (br.containsHTML(">Sorry, this file does not exist\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>[a-z0-9_\\-]+/([^<>\"]*?) : File Sharing \\- Upload and Send big Files : FileToLink</title>").getMatch(0);
+        String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        finallink = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + finallink;
+        if (finallink != null) {
+            finallink = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + finallink;
+        } else {
+            // Maybe facebook login required, let's skip that shit
+            final Regex noFB = br.getRegex("\\&redirect_url=http%3A%2F%2F(www\\.)?filetolink\\.com%2Fd%2F%3Fh%3D([a-z0-9]+)%26t%3D(\\d+)%26f%3D([a-z0-9]+)\"");
+            if (noFB.getMatches().length < 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            finallink = "http://www.filetolink.com/download/?h=" + noFB.getMatch(1) + "&t=" + noFB.getMatch(2) + "&f=" + noFB.getMatch(3);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, this file does not exist\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("id=\"download\\_link\">(.*?)</a></td>").getMatch(0);
-        String filesize = br.getRegex("Size:</td><td>(.*?)</td></tr>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
-
     }
 
     @Override

@@ -127,6 +127,7 @@ public class CloudnatorCom extends PluginForHost {
                 if (downloadLink.getLinkStatus().getRetryCount() > 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             }
+            if (br.getURL().contains("p=error503")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 10 * 60 * 1000l);
             handleErrors();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

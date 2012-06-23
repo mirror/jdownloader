@@ -38,6 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -82,6 +83,7 @@ public class UpstoRe extends PluginForHost {
         if (dllink == null) {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
             br.postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
+            if (br.containsHTML(">This file is available only for Premium users<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.upstore.premiumonly", "Only downloadable for premium users"));
             // Waittime can be skipped
             // final long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);

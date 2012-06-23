@@ -44,7 +44,7 @@ public class Mv2kTo extends PluginForDecrypt {
      * ,vreer.com,uploadc.com,dragonuploadz.com,allmyvideos
      * .net,vidreel.com,putlocker
      * .com,vureel.com,vidbox.netdeditv.com,watchfreeinhd.com and many others
-     * 3=zalaa.com,sockshare.com 4=stream2k.com
+     * 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -55,22 +55,23 @@ public class Mv2kTo extends PluginForDecrypt {
         // String[] parts =
         // br.getRegex("<OPTION value=\"([^<>\"]*?\\-\\d+\\.html)\"").getColumn(0);
         Browser br2 = br.cloneBrowser();
-        final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" } };
+        final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" } };
         for (String[] regex : regexes) {
             String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
             if (finallink != null) {
-                if (finallink.contains("facebook.com/")) continue;
-                if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
+                if (finallink.contains("facebook.com/")) {
+                    continue;
+                } else if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
                     br2.getPage(finallink);
                     finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
                     if (finallink == null) finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
-                    if (finallink != null) {
-                        finallink = "directhttp://" + finallink;
-                    } else {
-                        finallink = "";
-                    }
+                    if (finallink != null) finallink = "directhttp://" + finallink;
+                } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
+                    br2.setFollowRedirects(true);
+                    br2.getPage(finallink);
+                    finallink = br2.getRegex("\"(http://flashx\\.tv/video/[A-Z0-9]+)").getMatch(0);
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
+                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
