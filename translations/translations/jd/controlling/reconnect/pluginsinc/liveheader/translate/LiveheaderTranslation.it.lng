@@ -1,4 +1,5 @@
 AutoDetectAction_AutoDetectAction_=Impostazione automatica
+AutoDetectAction_run_failed=JDownloader non ha trovato uno script LiveHeader funzionante.   Assicurati di aver inserito le informazioni corrette, e di avere una connessione con  IP dinamico.
 DataCompareDialog_DataCompareDialog_=Compara informazioni router
 DataCompareDialog_layoutDialogContent__desc=Controlla le seguenti informazioni, e prova a compilare i campi più accuratamente possibile.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/versione
@@ -42,7 +43,9 @@ LiveHeaderReconnect_onConfigValueModified_ask_title=Condividi le impostazioni di
 ReconnectRecorderAction_ReconnectRecorderAction_=Crea nuovo script
 RouterSendAction_RouterSendAction_=Impostazioni condivisione
 RouterSendAction_actionPerformed_=Condividi le impostazioni di riconnessione
+RouterSendAction_actionPerformed_msg=JDownloader ha rilevato che hai impostato correttamnte le impostazioni di riconnessione.  Segui questa procuedra guidata e condividi le tue impostazioni con gli altri utenti.  Ciò richiederà solo pochi secondi.
 RouterSendAction_actionPerformed_title=Condividi le impostazioni di riconnessione
+autodetection_success=JDownloader ha impostato correttamente lo script di riconnessione. Ottenere un nuovo IP richiederà %s1.
 gui_btn_abort=Annulla
 gui_btn_cancel=Annulla
 gui_btn_help=Aiuto
