@@ -19,6 +19,6 @@ literally_control_url=URL controllo
 literally_router=Router UPNP
 literally_service_type=Tipo servizio
 malformedservicetype=Tipo servizio non valido. Prova impostazione automatica UPNP.
-malformedurl=LA URl di controllo non è valida. Prova l'impostazione automatica UPNP.
+malformedurl=La URL di controllo non è valida. Prova l'impostazione automatica UPNP.
 servicetype_help=Inserisci tipo di servizio (es. urn:schema-upnp-org:serviio:GestoreConnesioni:1)
 try_reconnect=Prova riconnessione uPnP: %s1

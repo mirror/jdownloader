@@ -33,6 +33,7 @@ LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=L'IP '%s1' del router no
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Sembra che non via siano interfacce web in http://%s1.   L'IP del router potrebbe non essere valido.     Continuare?
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Riconnesione fallita. Puoi solo condividere le impostazioni di riconnessione funzionanti.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Grazie! Abbiamo aggiunto il tuo script al nostro database di riconnessione.
+LiveHeaderDetectionWizard_userConfirm_loginstext=Gli accessi NON verranno caricati. Iserisci comunque i dati.   E' necessario ciò per rimuovere qualsiasi informazione sensibile dalle impostazione di riconnessione prima dell'invio.  Se non li conosci lasciali vuoti o chiedi all'amministratore di rete.
 LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Inserisci l'IP dl router, o clic su [Trova IP router]
 LiveHeaderReconnect_getGUI_help_password=Inserisci password interfaccia web...
