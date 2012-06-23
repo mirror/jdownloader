@@ -4,6 +4,7 @@ UPNPReconnectInvoker_getName_=Riconnessione router UPNP
 UPNPRouterPlugin_run_error=Non trovo nessun dispositivo UPNP. Prova con Riconnessione Live Header!
 UPNPRouterPlugin_run_mesg=Scansione di tutte le schede di rete
 UPNPRouterPlugin_run_wizard_title=Procedura guida uPnP router
+UPNPScannerAction_UPNPScannerAction_tt=Tries to find all UPNP Reconnect Devices in your Network, \n\nand lets you choose which one to use for Reconnet
 auto=Impostazione automatica UPNP
 controlURLTxt_help=Inserisci la URL di controllo...
 interaction_UpnpReconnect_wanservice_ip=Protocollo internet

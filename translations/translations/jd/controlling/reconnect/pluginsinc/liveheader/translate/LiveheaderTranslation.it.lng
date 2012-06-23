@@ -26,6 +26,7 @@ GetIPAction_getString_progress=Analisi rete...
 GetIPAction_getTooltipText_tt_2=Impostazioni IP router: %s1. Fai clic qui per analizzare la rete e validare questo IP.
 LiveHeaderDetectionWizard_runOnlineScan_collect=Ricerca informazioni connessione
 LiveHeaderDetectionWizard_runOnlineScan_notalive=Servizio non disponibile. Riprova più tardi.
+LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Il servizio è attualmente non disponibile. Riprova più tradi!
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servizio non disponibile
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=L'IP '%s1' del router non è valido!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Sembra che non via siano interfacce web in http://%s1.   L'IP del router potrebbe non essere valido.     Continuare?
