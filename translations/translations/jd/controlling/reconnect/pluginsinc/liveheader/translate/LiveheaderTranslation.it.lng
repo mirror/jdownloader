@@ -15,6 +15,7 @@ DataCompareDialog_layoutDialogContent_router=Il tuo router
 DataCompareDialog_layoutDialogContent_user=Nome utente
 DataCompareDialog_layoutDialogContent_user_help=Inserisci utente interfaccia web...
 DataCompareDialog_layoutDialogContent_webinterface=Interfaccia web router
+DataCompareDialog_layoutDialogContent_webinterface_desc=To perform a reconnect, JDownloader needs the router's webinterface logins.  Very often you can find the logins at the back of your router.  If Unknown, please ask your Network admin
 DataCompareDialog_open_webinterface=Apri interfaccia web
 EditScriptAction_EditScriptAction_=Modifica script
 EditScriptAction_EditScriptAction_tt=Inserisci il tuo script di riconnessione, o modifica quello esistente.
