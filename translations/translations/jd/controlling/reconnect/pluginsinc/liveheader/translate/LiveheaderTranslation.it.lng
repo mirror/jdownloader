@@ -42,6 +42,7 @@ LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Inserisci l'IP dl router, o clic su [Trova IP router]
 LiveHeaderReconnect_getGUI_help_password=Inserisci password interfaccia web...
 LiveHeaderReconnect_getGUI_help_user=Inserisci utente interfaccia web...
+LiveHeaderReconnect_onConfigValueModified_ask_msg=Hai impostato correttamente la riconnessione. Per favore condividi le tue impostazioni per migliorare la nostra procedura guidata di riconnessione.
 LiveHeaderReconnect_onConfigValueModified_ask_title=Condividi le impostazioni di riconnessione.
 ReconnectRecorderAction_ReconnectRecorderAction_=Crea nuovo script
 ReconnectRecorderAction_ReconnectRecorderAction_tt=Il Registratore riconnessioni registra tutti le attività mentre tu esegui una riconnessione manuale selezionando il puslante 'Riavvia' o 'Disconnetti-Connetti' nell'interfaccia web del router.
