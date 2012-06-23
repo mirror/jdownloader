@@ -74,7 +74,7 @@ public class IFileIt extends PluginForHost {
             rc.load();
             for (int i = 0; i <= 5; i++) {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(null, cf, downloadLink);
+                String c = getCaptchaCode(cf, downloadLink);
                 xmlrequest(br2, "http://ifile.it/new_download-request.json", "ukey=" + ukey + "&ab=" + ab + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
                 if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
                     rc.reload();
