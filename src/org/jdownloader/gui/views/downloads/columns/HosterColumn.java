@@ -267,6 +267,7 @@ public class HosterColumn extends ExtColumn<AbstractNode> {
     public void resetRenderer() {
         for (int i = 0; i <= maxIcons; i++) {
             labels[i].setVisible(false);
+            labels[i].setText(null);
         }
         this.panel.setOpaque(false);
         this.panel.setBackground(null);
