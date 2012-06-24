@@ -1,4 +1,4 @@
-gui_config_jdshutdown_shutdown=Desligar
+﻿gui_config_jdshutdown_shutdown=Desligar
 gui_config_jdshutdown_forceshutdown=Forçar saída (Não disponível para todos os SO's)
 interaction_shutdown_dialog_title_standby=Modo de espera?
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistema será desligado</font></h2>
@@ -17,4 +17,4 @@ gui_config_jdshutdown_mode=Modo:
 addons_jdshutdown_statusmessage_enabled=O Sistema será desligado após o término dos downloads
 interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">Sistema entrará em standby</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistema será definido para modo de hibernação</font></h2>
-jd_plugins_optional_jdshutdown_description=Desliga automaticamente, suspente, hiberna seu computador ou fecha assim que os downloads terminarem.
+jd_plugins_optional_jdshutdown_description=Desliga automaticamente, suspende, hiberna seu computador ou fecha assim que os downloads terminarem.
