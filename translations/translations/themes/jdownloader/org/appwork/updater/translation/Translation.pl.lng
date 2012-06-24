@@ -40,6 +40,7 @@ guiless_you_are_up2date=Posiadasz już najnowszą wersję.
 install_updates_later=Zapytaj później!
 install_updates_now=Instaluj natychmiast!
 literally_exit=Zakończono sprawdzanie aktualizacji - wyjście
+progress=%s1/%s2
 restart_msg=Aktualizacja wymaga ponownego uruchomienia.
 restart_required_msg=Aktualizator uruchomi się teraz ponownie
 restart_required_title=Wymagane ponowne uruchomienie

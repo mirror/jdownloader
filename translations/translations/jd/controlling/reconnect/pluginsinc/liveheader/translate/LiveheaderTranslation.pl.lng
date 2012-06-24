@@ -34,6 +34,7 @@ LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=Adres IP Routera: %s1 je
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Wydaje się, że adres strony WWW konfuguracji routera (http://%s1) nie jest prawidłowy.\r\nMożliwe, że niepoprawnie podano adres IP Routera.\r\nKontynuować?
 LiveHeaderDetectionWizard_runOnlineScan_warning_logins=Nie ustawiono Nazwy Użytkownika i Hasła.\r\r\nW większości przypadków informacje te są wymagane aby poprawnie działało Ponowne Połączenie.\r\r\nKontynuować?
 LiveHeaderDetectionWizard_uploadData_sent_failed=Wykryto, że Twój skrypt znajduje się już w naszej bazie danych. Dziękujemy za pomoc!
+LiveHeaderDetectionWizard_uploadData_sent_ok=Dziękujemy! Twój skrypt Ponownego Połączenia został dodany do naszej bazy danych.
 LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Wprowadź Adres IP Routera lub naciśnij klawisz [Znajdź adres IP Routera]
 LiveHeaderReconnect_getGUI_help_password=Wprowadź Hasło dostępu do Interfejsu WWW routera
