@@ -1,5 +1,5 @@
 gui_config_antistandby_mode=Tryb:
 gui_config_antistandby_whiledl=Zapobiegaj hibernacji podczas pobierania
-jd_plugins_optional_antistandby_jdantistandby_description=Po prostu zapobiega przejściu komputera w stan wstrzymania lub jego wyłączenia, aby pozostawić pobierania aktywne.
 gui_config_antistandby_whilejd=Zapobiegaj hibernacji gdy JD jest włączony
 jd_plugins_optional_antistandby_jdantistandby=JD anty-hibernacja
+jd_plugins_optional_antistandby_jdantistandby_description=Po prostu zapobiega przejściu komputera w stan wstrzymania lub jego wyłączenia, aby pozostawić pobierania aktywne.
