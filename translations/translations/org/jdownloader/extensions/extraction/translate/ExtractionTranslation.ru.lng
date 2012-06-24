@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message=Это либо не архив, либо неподдерживаемый тип архива
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=Неподдерживаемый архив
 ValidateArchiveAction_ValidateArchiveAction=Проверка %s1
 ValidateArchiveAction_ValidateArchiveAction_object_=Проверить архив(ы)
 ValidateArchiveAction_actionPerformed_=Архив из %s1 тома(ов) завершён.
