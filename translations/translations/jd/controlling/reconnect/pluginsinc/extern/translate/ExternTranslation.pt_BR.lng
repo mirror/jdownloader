@@ -1,4 +1,4 @@
-interaction_externreconnect_command=Comando (usar caminhos absolutos de diretório)
+interaction_externreconnect_command=Comando (usar caminhos absolutos de pasta)
 interaction_externreconnect_dummybat=Use o executar do windows
 interaction_externreconnect_parameter=Parâmetros (1 parâmetro por linha)
 jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Reconexão de Ferramenta Externa
