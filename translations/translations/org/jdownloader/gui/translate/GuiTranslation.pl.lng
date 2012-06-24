@@ -239,6 +239,7 @@ LinkgrabberFilter_export_dialog_title=Eksport do pliku
 LinkgrabberFilter_import_dialog_title=Import reguł filtrowania
 LinkgrabberFilter_initComponents_exceptions_=Widoki - akceptuj wszystkie linki, które pasują do reguł.
 LinkgrabberFilter_initComponents_filter_=Lista filtrów - filtrowane są wszystkie linki, które pasują do zdefiniowanych reguł.
+LiveHeaderDetectionWizard_sendRouter_havetovalidate=Weryfikacja Twojego Skryptu Ponownego Połączenia...
 LiveHeaderDetectionWizard_testList_firstSuccess_title=Znaleziono działający Skrypt!
 LiveHeaderDetectionWizard_testList_ok=Tak, proszę go wypróbować!
 LiveaheaderDetection_find_router=Znajdź adres IP Routera
