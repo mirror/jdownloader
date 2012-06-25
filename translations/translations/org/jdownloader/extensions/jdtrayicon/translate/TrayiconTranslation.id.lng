@@ -1,5 +1,8 @@
+jd_plugins_optional_jdtrayicon_jdlighttray=Nampan ringan
 plugins_optional_JDLightTray_always=Selalu
+plugins_optional_JDLightTray_closetotray=Tutup ke nampan
 plugins_optional_JDLightTray_never=Tak pernah
+plugins_optional_JDLightTray_tooltip=Perlihatkan petunjuk
 plugins_optional_trayIcon_dl_finished=Selesai :
 plugins_optional_trayIcon_dl_running=Jalan :
 plugins_optional_trayIcon_dl_total=Jumlah :
