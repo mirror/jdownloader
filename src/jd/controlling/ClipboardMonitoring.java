@@ -75,6 +75,8 @@ public class ClipboardMonitoring {
                             } finally {
                                 if (!StringUtils.isEmpty(newListContent)) {
                                     oldListContent = newListContent;
+                                } else {
+                                    oldListContent = null;
                                 }
                             }
                         } catch (final Throwable e) {
@@ -354,6 +356,7 @@ public class ClipboardMonitoring {
                 if (sb.length() > 0) sb.append("\r\n");
                 sb.append("file://" + f.getPath());
             }
+            if (sb.length() == 0) return null;
             return sb.toString();
         } else if (uriListFlavor != null && transferable.isDataFlavorSupported(uriListFlavor)) {
             /* url-lists are defined by rfc 2483 as crlf-delimited */
@@ -368,6 +371,7 @@ public class ClipboardMonitoring {
                     sb.append(fi.getPath());
                 }
             }
+            if (sb.length() == 0) return null;
             return sb.toString();
         }
         return null;
