@@ -53,6 +53,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private ExtractionExtension extension;
     private final LogSource     logger;
     private FileSignatures      fileSignatures   = null;
+    private boolean             overwriteFiles;
 
     public FileSignatures getFileSignatures() {
         if (fileSignatures == null) fileSignatures = new FileSignatures();
@@ -130,7 +131,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (gotKilled()) return null;
             if (extractor.prepare()) {
 
-                if (archive.isProtected() && archive.getPassword().equals("")) {
+                if (archive.isProtected() && archive.getSettings().getPassword().equals("")) {
                     passwordList.addAll(archive.getFactory().getPasswordList(archive));
                     passwordList.add(archive.getName());
                     ArrayList<String> pwList = extractor.config.getPasswordList();
@@ -158,7 +159,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
                         if (gotKilled()) return null;
-                        if (!checkPassword(archive.getPassword(), false)) {
+                        if (!checkPassword(archive.getSettings().getPassword(), false)) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
                             return null;
@@ -166,10 +167,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive + "->" + archive.getPassword());
+                    logger.info("Found password for " + archive + "->" + archive.getSettings().getPassword());
                     /* avoid duplicates */
-                    pwList.remove(archive.getPassword());
-                    pwList.add(0, archive.getPassword());
+                    pwList.remove(archive.getSettings().getPassword());
+                    pwList.add(0, archive.getSettings().getPassword());
                     extractor.config.setPasswordList(pwList);
                 }
 
@@ -379,4 +380,13 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     public boolean isRemoveDownloadLinksAfterExtraction() {
         return removeDownloadLinksAfterExtraction;
     }
+
+    public void setOverwriteFiles(boolean overwriteFiles) {
+        this.overwriteFiles = overwriteFiles;
+    }
+
+    public boolean isOverwriteFiles() {
+        return overwriteFiles;
+    }
+
 }

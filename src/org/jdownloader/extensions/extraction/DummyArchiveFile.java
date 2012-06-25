@@ -61,7 +61,7 @@ public class DummyArchiveFile {
 
         if (archiveFile == null) return AvailableStatus.UNCHECKED;
         if (archiveFile instanceof CrawledLinkArchiveFile) {
-            return ((CrawledLinkArchiveFile) archiveFile).getLink().getDownloadLink().getAvailableStatus();
+            return ((CrawledLinkArchiveFile) archiveFile).getAvailableStatus();
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
             return ((DownloadLinkArchiveFile) archiveFile).getAvailableStatus();
@@ -80,7 +80,7 @@ public class DummyArchiveFile {
         if (file != null && file.exists()) return true;
         if (archiveFile == null) return false;
         if (archiveFile instanceof CrawledLinkArchiveFile) {
-            return new File(((CrawledLinkArchiveFile) archiveFile).getLink().getDownloadLink().getFileOutput()).exists();
+            return ((CrawledLinkArchiveFile) archiveFile).existsLocalFile();
         } else if (archiveFile instanceof DownloadLinkArchiveFile) {
             //
             return new File(((DownloadLinkArchiveFile) archiveFile).getFilePath()).exists();

@@ -18,7 +18,7 @@ public interface ArchiveFactory extends ArchiveFile {
     // }
     public File getFolder();
 
-    void fireExtractToChange(Archive archive);
+    // void fireExtractToChange(Archive archive);
 
     Collection<? extends String> getPasswordList(Archive archive);
 
@@ -31,12 +31,16 @@ public interface ArchiveFactory extends ArchiveFile {
      * archive.getFactory().getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH); } if (archive.getFactory() instanceof DummyDownloadLink) return new
      * File(archive.getFactory().getFileOutput()).getParentFile();
      */
-    String getExtractPath(Archive archive);
+    String createDefaultExtractToPath(Archive archive);
 
     String createExtractSubPath(String path, Archive archiv);
 
     Archive createArchive();
 
     File toFile(String path);
+
+    String getID();
+
+    void onArchiveFinished(Archive archive);
 
 }

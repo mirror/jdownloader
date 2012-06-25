@@ -19,6 +19,8 @@ package org.jdownloader.extensions.extraction;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.multi.CheckException;
@@ -31,11 +33,6 @@ import org.jdownloader.logging.LogController;
  * 
  */
 public class Archive {
-
-    /**
-     * Extractionpath
-     */
-    private File                   extractTo;
 
     /**
      * Encrypted archive
@@ -51,16 +48,6 @@ public class Archive {
      * First part of the archives.
      */
     private ArchiveFile            firstArchiveFile = null;
-
-    /**
-     * Overwrite existing files.
-     */
-    private boolean                overwriteFiles   = false;
-
-    /**
-     * Password for the archive.
-     */
-    private String                 password         = "";
 
     /**
      * Exitcode of the extrraction.
@@ -107,6 +94,8 @@ public class Archive {
 
     private ContentView            contents;
 
+    private ArchiveSettings        settings;
+
     public ArchiveFactory getFactory() {
         return factory;
     }
@@ -127,33 +116,16 @@ public class Archive {
         this.protect = b;
     }
 
-    public boolean isOverwriteFiles() {
-        return overwriteFiles;
-    }
-
-    public void setOverwriteFiles(boolean overwriteFiles) {
-        this.overwriteFiles = overwriteFiles;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        if (password == null) {
-            password = "";
-        }
-        this.password = password;
-    }
-
     public File getExtractTo() {
-        return extractTo;
+        String path = getSettings().getExtractPath();
+        if (path == null) return null;
+        return new File(path);
     }
 
     public void setExtractTo(File extractTo) {
 
-        this.extractTo = extractTo;
-        getFactory().fireExtractToChange(this);
+        getSettings().setExtractPath(extractTo.getAbsolutePath());
+
     }
 
     public String toString() {
@@ -195,8 +167,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
-     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
+     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */
@@ -282,6 +254,17 @@ public class Archive {
 
     public void setContentView(ContentView view) {
         this.contents = view;
+    }
+
+    public ArchiveSettings getSettings() {
+        if (settings != null) return settings;
+        synchronized (this) {
+            if (settings != null) return settings;
+            Application.getResource("cfg/archives/").mkdirs();
+            settings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
+
+        }
+        return settings;
     }
 
 }

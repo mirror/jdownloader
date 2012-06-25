@@ -20,12 +20,10 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.gui.DummyArchiveDialog;
-import org.jdownloader.extensions.extraction.multi.ArchiveException;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
@@ -60,14 +58,12 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
                         for (Archive a : archives) {
                             if (a.contains(clf)) continue nextLink;
                         }
-                        try {
-                            Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
-                            if (archive != null) {
-                                archives.add(archive);
-                            }
-                        } catch (ArchiveException e1) {
-                            LogController.CL().log(e1);
+
+                        Archive archive = extractor.getArchiveByFactory(clf);
+                        if (archive != null) {
+                            archives.add(archive);
                         }
+
                     }
                 }
             } else if (l instanceof DownloadLink) {
@@ -78,14 +74,12 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
                         for (Archive a : archives) {
                             if (a.contains(clf)) continue nextLink;
                         }
-                        try {
-                            Archive archive = extractor.getExtractorByFactory(clf).buildArchive(clf);
-                            if (archive != null) {
-                                archives.add(archive);
-                            }
-                        } catch (ArchiveException e1) {
-                            LogController.CL().log(e1);
+
+                        Archive archive = extractor.getArchiveByFactory(clf);
+                        if (archive != null) {
+                            archives.add(archive);
                         }
+
                     }
                 }
 

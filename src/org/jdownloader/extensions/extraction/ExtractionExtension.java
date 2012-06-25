@@ -20,18 +20,17 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.Action;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.plaf.ButtonUI;
 
 import jd.Launcher;
 import jd.config.SubConfiguration;
@@ -39,7 +38,6 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.UserIO;
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 import jd.plugins.AddonPanel;
@@ -51,9 +49,10 @@ import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.FileCreationListener;
@@ -62,7 +61,7 @@ import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkArchiveFile;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.extraction.gui.config.ExtractionConfigPanel;
@@ -108,10 +107,13 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private ShutdownVetoListener         listener          = null;
 
+    private LogSource                    logger;
+
     public ExtractionExtension() throws StartException {
         super();
         setTitle(_.name());
         INSTANCE = this;
+        logger = LogController.getInstance().getLogger("ExtractionExtension");
     }
 
     @Override
@@ -141,7 +143,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      */
     public void setExtractor(IExtraction extractor) {
         extractors.add(extractor);
-        extractor.setLogger(LogController.CL());
+        extractor.setLogger(logger);
     }
 
     /**
@@ -209,19 +211,17 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         IExtraction extractor = archive.getExtractor();
 
         if (!archive.getFirstArchiveFile().exists()) {
-            LogController.CL().info("First File does not exist " + archive.getFirstArchiveFile());
+            logger.info("First File does not exist " + archive.getFirstArchiveFile());
             return null;
         }
         archives.add(archive);
 
         archive.getFactory().fireArchiveAddedToQueue(archive);
 
-        archive.setOverwriteFiles(getSettings().isOverwriteExistingFilesEnabled());
-
         ExtractionController controller = new ExtractionController(this, archive);
-
-        controller.setRemoveAfterExtract(getSettings().isDeleteArchiveFilesAfterExtraction());
-        controller.setRemoveDownloadLinksAfterExtraction(getSettings().isDeleteArchiveDownloadlinksAfterExtraction());
+        controller.setOverwriteFiles(isOverwriteFiles(archive));
+        controller.setRemoveAfterExtract(isRemoveFilesAfterExtractEnabled(archive));
+        controller.setRemoveDownloadLinksAfterExtraction(isRemoveDownloadLinksAfterExtractEnabled(archive));
 
         archive.setActive(true);
         extractor.setConfig(getSettings());
@@ -229,6 +229,30 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         extractionQueue.addAsynch(controller);
         fireEvent(new ExtractionEvent(controller, ExtractionEvent.Type.QUEUED));
         return controller;
+    }
+
+    private boolean isRemoveDownloadLinksAfterExtractEnabled(Archive archive) {
+
+        switch (archive.getSettings().getRemoveDownloadLinksAfterExtraction()) {
+        case FALSE:
+            return false;
+        case TRUE:
+            return true;
+
+        }
+        return getSettings().isDeleteArchiveDownloadlinksAfterExtraction();
+    }
+
+    private boolean isRemoveFilesAfterExtractEnabled(Archive archive) {
+
+        switch (archive.getSettings().getRemoveFilesAfterExtraction()) {
+        case FALSE:
+            return false;
+        case TRUE:
+            return true;
+
+        }
+        return getSettings().isDeleteArchiveFilesAfterExtraction();
     }
 
     /**
@@ -243,7 +267,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
         // if extract folder is already set, use it.
         if (archive != null && archive.getExtractTo() != null) return archive.getExtractTo();
-        String path = archiveFactory.getExtractPath(archive);
+        String path = archiveFactory.createDefaultExtractToPath(archive);
         if (path == null && getSettings().isCustomExtractionPathEnabled()) {
             path = getSettings().getCustomExtractionPath();
         }
@@ -280,10 +304,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
 
         Archive archive = extrctor.buildArchive(link);
-        LogSource logger = LogController.CL();
+        link.onArchiveFinished(archive);
         logger.info("Created Archive: " + archive);
         // Log.L.info("Created Archive: " + archive);
-        LogController.CL().info("Files: " + archive.getArchiveFiles());
+        logger.info("Files: " + archive.getArchiveFiles());
 
         return archive;
     }
@@ -499,7 +523,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 getSettings().setPasswordList(currentList);
             }
         } catch (final Throwable e) {
-            LogController.CL().log(e);
+            logger.log(e);
         } finally {
             if (oldPWListImported == false) {
                 getSettings().setOldPWListImported(true);
@@ -551,7 +575,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         while (it.hasNext()) {
             IExtraction extractor = it.next();
             if (!extractor.checkCommand()) {
-                LogController.CL().severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
+                logger.severe("Extractor " + extractor.getClass().getName() + " plugin could not be initialized");
                 it.remove();
             }
         }
@@ -643,7 +667,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                             }
                         }.start();
                     } catch (ArchiveException e1) {
-                        LogController.CL(ExtractionExtension.class).log(e1);
+                        logger.log(e1);
                     } catch (DialogNoAnswerException e1) {
                     }
                 }
@@ -700,7 +724,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public void onNewFile(Object caller, File[] fileList) {
-        LogSource logger = LogController.CL();
+
         try {
             logger.info("New File by " + caller);
             if (caller instanceof SingleDownloadController) {
@@ -785,10 +809,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     private void onExtendPopupMenuLinkgrabberTable(LinkgrabberTableContext context) {
         boolean isLinkContext = context.getSelectionInfo().isLinkContext();
-        boolean isShift = context.getSelectionInfo().isShiftDown();
+
         boolean isPkgContext = context.getSelectionInfo().getRawContext() instanceof CrawledPackage;
-        CrawledLink link = isLinkContext ? (CrawledLink) context.getSelectionInfo().getRawContext() : null;
-        CrawledPackage pkg = isPkgContext ? (CrawledPackage) context.getSelectionInfo().getRawContext() : null;
+
         JMenu menu = new JMenu(_.contextmenu_main()) {
             /**
              * 
@@ -803,73 +826,93 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
         context.getMenu().add(menu);
         menu.setIcon(getIcon(18));
-        menu.setEnabled(false);
+
         ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(this, context.getSelectionInfo());
 
-        for (final Archive a : validation.getArchives()) {
-            menu.setEnabled(true);
-            JMenu parent = menu;
-            if (validation.getArchives().size() > 1) {
-                parent = new JMenu(a.getName()) {
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = -4742306843688611883L;
+        if (validation.getArchives().size() == 1) {
+            createMenu(menu, validation.getArchives().get(0), false);
 
-                    protected JMenuItem createActionComponent(Action a) {
-                        if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
-                        return super.createActionComponent(a);
-                    }
-                };
-                menu.add(parent);
+        } else if (validation.getArchives().size() > 1) {
+
+            for (Archive a : validation.getArchives()) {
+
+                JMenu validate = new JMenu(a.getName());
+                createMenu(validate, a, false);
+
+                menu.add(validate);
             }
 
-            parent.add(new AppAction() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 4876283003885620243L;
-                {
-                    setName(_.auto_extract_enabled());
-                    setSelected(((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().isAutoExtractionEnabled());
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    ((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().setAutoExtractionEnabled(isSelected());
-                }
-            });
-            parent.add(new AppAction() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = -1357609236577941787L;
-
-                {
-                    setName(_.contextmenu_set_password());
-                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("password", 12), 0, 0, 10, 10)));
-
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        HashSet<String> passwords = ((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().getExtractionPasswords();
-                        String def = null;
-                        if (passwords.size() > 0) {
-                            def = passwords.iterator().next();
-                        }
-                        String newPassword = Dialog.getInstance().showInputDialog(0, _.password(a.getName()), "", def, NewTheme.I().getIcon("password", 32), null, null);
-                        if (def != null && def.equals(newPassword)) return;
-                        passwords.clear();
-                        passwords.add(newPassword);
-                    } catch (DialogNoAnswerException e1) {
-                    }
-                }
-            });
-            parent.add(new ValidateArchiveAction(this, a));
-
+        } else {
+            menu.setEnabled(false);
         }
+
+        //
+        // for (final Archive a : validation.getArchives()) {
+        // menu.setEnabled(true);
+        // JMenu parent = menu;
+        // if (validation.getArchives().size() > 1) {
+        // parent = new JMenu(a.getName()) {
+        // /**
+        // *
+        // */
+        // private static final long serialVersionUID = -4742306843688611883L;
+        //
+        // protected JMenuItem createActionComponent(Action a) {
+        // if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+        // return super.createActionComponent(a);
+        // }
+        // };
+        // menu.add(parent);
+        // }
+
+        // parent.add(new AppAction() {
+        // /**
+        // *
+        // */
+        // private static final long serialVersionUID = 4876283003885620243L;
+        // {
+        // setName(_.auto_extract_enabled());
+        // setSelected(((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().isAutoExtractionEnabled());
+        // }
+        //
+        // @Override
+        // public void actionPerformed(ActionEvent e) {
+        // ((CrawledLinkArchiveFile) a.getArchiveFiles().get(0)).getLink().getParentNode().setAutoExtractionEnabled(isSelected());
+        // }
+        // });
+        // parent.add(new AppAction() {
+        // /**
+        // *
+        // */
+        // private static final long serialVersionUID = -1357609236577941787L;
+        // {
+        // setName(_.contextmenu_set_password());
+        // setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("password", 12), 0,
+        // 0, 10, 10)));
+        //
+        // }
+        //
+        // @Override
+        // public void actionPerformed(ActionEvent e) {
+        // try {
+        // HashSet<String> passwords = ((CrawledLinkArchiveFile)
+        // a.getArchiveFiles().get(0)).getLink().getParentNode().getExtractionPasswords();
+        // String def = null;
+        // if (passwords.size() > 0) {
+        // def = passwords.iterator().next();
+        // }
+        // String newPassword = Dialog.getInstance().showInputDialog(0, _.password(a.getName()), "", def,
+        // NewTheme.I().getIcon("password", 32), null, null);
+        // if (def != null && def.equals(newPassword)) return;
+        // passwords.clear();
+        // passwords.add(newPassword);
+        // } catch (DialogNoAnswerException e1) {
+        // }
+        // }
+        // });
+        // parent.add(new ValidateArchiveAction(this, a));
+
+        // }
 
     }
 
@@ -886,49 +929,62 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         };
 
-        if (context.getSelectionInfo().getRawContext() instanceof DownloadLink) {
-            final DownloadLink link = (DownloadLink) context.getSelectionInfo().getRawContext();
-            final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
-            final DownloadLinkArchiveFactory dlAF = new DownloadLinkArchiveFactory(link);
-            final boolean fileExists = new File(link.getFileOutput()).exists();
-            final boolean isLinkSupported = isLinkSupported(dlAF);
+        ButtonUI ui = new JCheckBoxMenuItem("").getUI();
+        final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
+        if (validateAction.getArchives().size() == 1) {
+            createMenu(menu, validateAction.getArchives().get(0), true);
+
+        } else if (validateAction.getArchives().size() > 1) {
+
+            for (Archive a : validateAction.getArchives()) {
+
+                JMenu validate = new JMenu(a.getName());
+                createMenu(validate, a, true);
+
+                menu.add(validate);
+            }
+
+        } else {
+            menu.setEnabled(false);
+        }
+
+        context.getMenu().add(menu);
+        menu.setIcon(getIcon(18));
+
+    }
+
+    private void createMenu(JMenu menu, final Archive archive, boolean startExtract) {
+
+        final ArchiveFactory dlAF = archive.getFactory();
+
+        // final boolean fileExists = new File(link.getFileOutput()).exists();
+        // final boolean isLinkSupported = isLinkSupported(dlAF);
+        if (startExtract) {
+            final boolean complete = archive.isComplete();
             menu.add(new AppAction() {
                 /**
-                 * 
-                 */
+             * 
+             */
                 private static final long serialVersionUID = 1375146705091555054L;
 
                 {
                     setName(_.contextmenu_extract());
                     Image front = NewTheme.I().getImage("media-playback-start", 20, true);
                     setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
-                    setEnabled(isLinkSupported && validateAction.getArchives().size() > 0 && fileExists);
+                    setEnabled(complete);
                 }
 
                 public void actionPerformed(ActionEvent e) {
                     Thread thread = new Thread() {
                         @Override
                         public void run() {
-                            final HashSet<Archive> archiveHistory = new HashSet<Archive>();
-                            for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                                if (link instanceof DownloadLink) {
-                                    for (Archive archive : archiveHistory) {
-                                        if (archive.getArchiveFiles().contains(link)) continue;
-                                    }
-                                    try {
-                                        final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link));
-                                        if (!archiveHistory.add(archive)) continue;
-                                        if (archive.isComplete()) {
-                                            addToQueue(archive);
-                                        } else {
-                                            Dialog.getInstance().showMessageDialog(_.cannot_extract_incopmplete(archive.getName()));
-                                        }
-                                    } catch (final ArchiveException e) {
-                                        LogController.CL(ExtractionExtension.class).log(e);
-                                    }
-                                }
 
+                            if (complete) {
+                                addToQueue(archive);
+                            } else {
+                                Dialog.getInstance().showMessageDialog(_.cannot_extract_incopmplete(archive.getName()));
                             }
+
                         }
                     };
                     thread.setName("Extract Context: extract");
@@ -936,212 +992,187 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     thread.start();
                 }
             });
-
-            if (validateAction.getArchives().size() == 1) {
-                menu.add(validateAction.toContextMenuAction());
-            } else if (validateAction.getArchives().size() > 1) {
-                JMenu validate = new JMenu(_.contextmenu_validate_parent());
-                validate.setIcon(validateAction.getSmallIcon());
-                for (Archive a : validateAction.getArchives()) {
-                    validate.add(new ValidateArchiveAction(this, a));
-                }
-                menu.add(validate);
-            } else {
-                menu.setEnabled(false);
-            }
-            menu.add(new JSeparator());
-
-            menu.add(new AppAction() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 2539573738898436840L;
-
-                {
-                    setName(_.contextmenu_autoextract());
-                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("refresh", 12), 0, 0, 10, 10)));
-                    setSelected(link.getFilePackage().isPostProcessing());
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                        if (link instanceof DownloadLink) {
-                            ((DownloadLink) link).getFilePackage().setPostProcessing(isSelected());
-                        }
-                    }
-                }
-            });
-            menu.add(new AppAction() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 3224128311203557582L;
-
-                {
-                    setName(_.contextmenu_extract_to());
-                    setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("folder", 20), NewTheme.I().getImage("edit", 12), 0, 0, 10, 10)));
-                    setEnabled(isLinkSupported);
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    if (link == null) { return; }
-                    FileFilter ff = new FileFilter() {
-                        @Override
-                        public boolean accept(File pathname) {
-                            if (pathname.isDirectory()) return true;
-                            return false;
-                        }
-
-                        @Override
-                        public String getDescription() {
-                            return _.plugins_optional_extraction_filefilter_extractto();
-                        }
-                    };
-                    try {
-                        final Archive archive = buildArchive(dlAF);
-
-                        File extractto = getExtractToPath(dlAF, archive);
-                        while (extractto != null && !extractto.isDirectory()) {
-                            extractto = extractto.getParentFile();
-                        }
-
-                        File[] files = UserIO.getInstance().requestFileChooser("_EXTRACTION_", null, UserIO.DIRECTORIES_ONLY, ff, null, extractto, JFileChooser.SAVE_DIALOG);
-                        if (files == null || files.length == 0) return;
-                        for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                            if (link instanceof DownloadLink) {
-                                ((DownloadLink) link).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH, files[0].getAbsolutePath());
-                            }
-                        }
-                    } catch (ArchiveException e1) {
-                        LogController.CL().log(e1);
-
-                        Dialog.getInstance().showMessageDialog(T._.ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title(), T._.ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message());
-                    }
-                }
-            });
-
-            menu.add(new AppAction() {
-                /**
-                 * 
-                 */
-                private static final long serialVersionUID = 4071826060416621911L;
-
-                {
-                    setName(_.contextmenu_openextract_folder());
-                    setIconKey("folder");
-                    setEnabled(isLinkSupported && CrossSystem.isOpenFileSupported() && fileExists);
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    if (link == null) { return; }
-                    /* first check for property with already extracted file */
-                    String path = link.getStringProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH);
-                    if (path == null) {
-                        /* check wished extraction destination */
-                        path = link.getStringProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTTOPATH);
-                    }
-                    if (path == null) {
-                        /* else it will be the folder where the files are in */
-                        path = link.getFilePackage().getDownloadDirectory();
-                    }
-                    File file = new File(path);
-                    if (!file.exists()) {
-                        UserIO.getInstance().requestMessageDialog(_.plugins_optional_extraction_messages(path));
-                    } else {
-                        CrossSystem.openFile(file);
-                    }
-
-                }
-            });
-        } else {
-            final FilePackage fp = (FilePackage) context.getSelectionInfo().getRawContext();
-            if (fp != null) {
-                menu.add(new AppAction() {
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = -2143313495286757118L;
-                    {
-                        setName(_.contextmenu_extract());
-                        Image front = NewTheme.I().getImage("media-playback-start", 20, true);
-                        setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
-                    }
-
-                    public void actionPerformed(ActionEvent e) {
-                        final List<DownloadLink> links = context.getSelectionInfo().getSelectedChildren();
-                        if (links.size() == 0) return;
-                        Thread thread = new Thread() {
-                            @Override
-                            public void run() {
-                                final HashSet<Archive> archiveHistory = new HashSet<Archive>();
-                                for (DownloadLink link0 : links) {
-                                    for (Archive archive : archiveHistory) {
-                                        if (archive.getArchiveFiles().contains(link0)) continue;
-                                    }
-                                    try {
-                                        final Archive archive = buildArchive(new DownloadLinkArchiveFactory((DownloadLink) link0));
-                                        if (!archiveHistory.add(archive)) continue;
-                                        if (archive.isComplete()) {
-                                            addToQueue(archive);
-                                        }
-                                    } catch (final ArchiveException e) {
-                                        LogController.CL(ExtractionExtension.class).log(e);
-                                    }
-                                }
-
-                            }
-                        };
-                        thread.setName("Extract Context: extract");
-                        thread.setDaemon(true);
-                        thread.start();
-                    };
-                });
-
-                ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
-                if (validateAction.getArchives().size() == 1) {
-                    menu.add(validateAction.toContextMenuAction());
-                } else if (validateAction.getArchives().size() > 1) {
-                    JMenu validate = new JMenu(_.contextmenu_validate_parent());
-
-                    validate.setIcon(validateAction.getSmallIcon());
-                    for (Archive a : validateAction.getArchives()) {
-                        validate.add(new ValidateArchiveAction<FilePackage, DownloadLink>(this, a));
-                    }
-                    menu.add(validate);
-
-                } else {
-                    menu.setEnabled(false);
-                }
-                menu.add(new JSeparator());
-                menu.add(new AppAction() {
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = -3673003200717488605L;
-                    {
-                        setName(_.contextmenu_auto_extract_package());
-                        setIconKey(ExtractionExtension.this.getIconKey());
-                        setSelected(fp.isPostProcessing());
-                    }
-
-                    public void actionPerformed(ActionEvent e) {
-                        for (AbstractNode link : context.getSelectionInfo().getSelectedChildren()) {
-                            if (link instanceof FilePackage) {
-                                ((FilePackage) link).setPostProcessing(isSelected());
-                            }
-                        }
-                    }
-                });
-
-            }
         }
-        context.getMenu().add(menu);
-        menu.setIcon(getIcon(18));
+        menu.add(new ValidateArchiveAction(this, archive));
+        menu.add(new JSeparator());
+
+        menu.add(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 2539573738898436840L;
+
+            {
+                setName(_.contextmenu_autoextract());
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("refresh", 12), 0, 0, 10, 10)));
+                setSelected(isAutoExtractEnabled(archive));
+            }
+
+            public void actionPerformed(ActionEvent e) {
+
+                archive.getSettings().setAutoExtract(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+
+        });
+
+        menu.add(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 3224128311203557582L;
+
+            {
+                setName(_.contextmenu_extract_to());
+                setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("folder", 20), NewTheme.I().getImage("edit", 12), 0, 0, 10, 10)));
+
+            }
+
+            public void actionPerformed(ActionEvent e) {
+
+                FileFilter ff = new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        if (pathname.isDirectory()) return true;
+                        return false;
+                    }
+
+                    @Override
+                    public String getDescription() {
+                        return _.plugins_optional_extraction_filefilter_extractto();
+                    }
+                };
+
+                File extractto = getExtractToPath(dlAF, archive);
+                while (extractto != null && !extractto.isDirectory()) {
+                    extractto = extractto.getParentFile();
+                }
+                try {
+                    File path = DownloadFolderChooserDialog.open(extractto, false, T._.extract_to(archive.getName()));
+
+                    if (path == null) return;
+
+                    archive.setExtractTo(path);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+
+            }
+        });
+
+        menu.add(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 3224128311203557582L;
+
+            {
+                setName(_.contextmenu_password());
+                setSmallIcon(NewTheme.I().getIcon("password", 20));
+
+            }
+
+            public void actionPerformed(ActionEvent e) {
+
+                try {
+                    String pw = Dialog.getInstance().showInputDialog(0, _.context_password(), _.context_password_msg(archive.getName()), archive.getSettings().getPassword(), NewTheme.getInstance().getIcon("password", 32), null, null);
+                    archive.getSettings().setPassword(pw);
+                } catch (DialogClosedException e1) {
+                    e1.printStackTrace();
+                } catch (DialogCanceledException e1) {
+                    e1.printStackTrace();
+                }
+
+            }
+        });
+        JMenu cleanup;
+        menu.add(cleanup = new JMenu(_.context_cleanup()) {
+
+            protected JMenuItem createActionComponent(Action a) {
+                if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
+                return super.createActionComponent(a);
+            }
+        });
+        cleanup.setIcon(NewTheme.I().getIcon("clear", 20));
+        cleanup.add(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 2539573738898436840L;
+
+            {
+                setName(_.contextmenu_autodeletefiles());
+                setSmallIcon(NewTheme.I().getIcon("file", 20));
+                setSelected(isRemoveFilesAfterExtractEnabled(archive));
+            }
+
+            public void actionPerformed(ActionEvent e) {
+
+                archive.getSettings().setRemoveFilesAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+
+        });
+
+        cleanup.add(new AppAction() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 2539573738898436840L;
+
+            {
+                setName(_.contextmenu_autodeletelinks());
+                setSmallIcon(NewTheme.I().getIcon("link", 20));
+                setSelected(isRemoveDownloadLinksAfterExtractEnabled(archive));
+            }
+
+            public void actionPerformed(ActionEvent e) {
+
+                archive.getSettings().setRemoveDownloadLinksAfterExtraction(isSelected() ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+            }
+
+        });
+
+    }
+
+    public boolean isAutoExtractEnabled(Archive archive) {
+        switch (archive.getSettings().getAutoExtract()) {
+        case FALSE:
+            return false;
+        case TRUE:
+            return true;
+        case UNSET:
+            return getSettings().isEnabled();
+        }
+        return false;
 
     }
 
     @Override
     public void onRemoveFile(Object caller, File[] fileList) {
+    }
+
+    public Archive getArchiveByFactory(ArchiveFactory clf) {
+
+        try {
+            return buildArchive(clf);
+        } catch (ArchiveException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    public boolean isOverwriteFiles(Archive archive) {
+        switch (archive.getSettings().getOverwriteFiles()) {
+        case FALSE:
+            return false;
+        case TRUE:
+            return true;
+        case UNSET:
+            return getSettings().isOverwriteExistingFilesEnabled();
+        }
+        return false;
     }
 
 }

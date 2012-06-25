@@ -256,4 +256,25 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "This is either no Archive or an unsupported Archive Type" })
     String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message();
+
+    @Default(lngs = { "en" }, values = { "Extract %s1 to..." })
+    String extract_to(String name);
+
+    @Default(lngs = { "en" }, values = { "Set Archive Password" })
+    String contextmenu_password();
+
+    @Default(lngs = { "en" }, values = { "'Delete Archive Files' enabled" })
+    String contextmenu_autodeletefiles();
+
+    @Default(lngs = { "en" }, values = { "'Remove Links from Downloadlist' enabled" })
+    String contextmenu_autodeletelinks();
+
+    @Default(lngs = { "en" }, values = { "Cleanup after Extraction" })
+    String context_cleanup();
+
+    @Default(lngs = { "en" }, values = { "Extraction Password" })
+    String context_password();
+
+    @Default(lngs = { "en" }, values = { "Set Password to extract %s1" })
+    String context_password_msg(String name);
 }

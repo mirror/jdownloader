@@ -188,7 +188,7 @@ class SplitUtil {
             /* read buffer, we use 64kb here which should be okay */
             readBuffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, true);
             if (file.exists()) {
-                if (archive.isOverwriteFiles()) {
+                if (controller.isOverwriteFiles()) {
                     if (!file.delete()) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return false;

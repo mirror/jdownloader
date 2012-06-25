@@ -566,7 +566,8 @@ public class Multi extends IExtraction {
                 File extractTo = new File(filename);
                 if (extractTo.exists()) {
                     /* file already exists */
-                    if (archive.isOverwriteFiles()) {
+
+                    if (controller.isOverwriteFiles()) {
                         if (!extractTo.delete()) {
                             setException(new Exception("Could not overwrite(delete) " + extractTo));
                             archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_CREATE_ERROR);
@@ -641,7 +642,7 @@ public class Multi extends IExtraction {
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {
-                        res = item.extractSlow(call, archive.getPassword());
+                        res = item.extractSlow(call, archive.getSettings().getPassword());
                     } else {
                         res = item.extractSlow(call);
                     }
@@ -846,7 +847,7 @@ public class Multi extends IExtraction {
                 // if (filter(item.getPath())) continue;
             }
             if (!passwordfound.getBoolean()) return false;
-            archive.setPassword(password);
+            archive.getSettings().setPassword(password);
             updateContentView(inArchive.getSimpleInterface());
             return true;
         } catch (SevenZipException e) {

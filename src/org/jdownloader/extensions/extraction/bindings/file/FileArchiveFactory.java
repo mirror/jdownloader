@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.extraction.Archive;
@@ -66,9 +67,6 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return new Archive(this);
     }
 
-    public void fireExtractToChange(Archive archive) {
-    }
-
     public Collection<? extends String> getPasswordList(Archive archive) {
         HashSet<String> ret = new HashSet<String>();
         // causes crashes
@@ -81,7 +79,7 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     public void fireArchiveAddedToQueue(Archive archive) {
     }
 
-    public String getExtractPath(Archive archive) {
+    public String createDefaultExtractToPath(Archive archive) {
         return getFile().getParent();
     }
 
@@ -136,6 +134,15 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     @Override
     public File getFolder() {
         return getFile().getParentFile();
+    }
+
+    @Override
+    public String getID() {
+        return Hash.getMD5(getFolder() + "/" + getName());
+    }
+
+    @Override
+    public void onArchiveFinished(Archive archive) {
     }
 
 }

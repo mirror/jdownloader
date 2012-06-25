@@ -94,7 +94,7 @@ public class XtreamSplit extends IExtraction {
 
         try {
             if (file.exists()) {
-                if (archive.isOverwriteFiles()) {
+                if (controller.isOverwriteFiles()) {
                     if (!file.delete()) {
                         archive.setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                         return;

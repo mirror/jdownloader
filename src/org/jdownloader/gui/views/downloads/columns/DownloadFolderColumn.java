@@ -8,7 +8,6 @@ import javax.swing.JTextField;
 
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import net.miginfocom.swing.MigLayout;
@@ -19,7 +18,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.context.SetDownloadFolderInDownloadTableAction;
-import org.jdownloader.images.NewTheme;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -50,7 +48,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected boolean onRenameClick(MouseEvent e, AbstractNode clicked) {
-        JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
+        // JDGui.help(_GUI._.literall_usage_tipp(), _GUI._.DownloadFolderColumn_onSingleClick_object_(), NewTheme.I().getIcon("smart", 48));
 
         new SetDownloadFolderInDownloadTableAction(new SelectionInfo<FilePackage, DownloadLink>(clicked)).actionPerformed(null);
         return true;

@@ -54,7 +54,7 @@ public class RemoveIncompleteArchives extends AppAction {
                                 List<CrawledLink> l = new ArrayList<CrawledLink>();
                                 for (ArchiveFile af : a.getArchiveFiles()) {
                                     if (af instanceof CrawledLinkArchiveFile) {
-                                        l.add(((CrawledLinkArchiveFile) af).getLink());
+                                        l.addAll(((CrawledLinkArchiveFile) af).getLinks());
                                     }
                                 }
                                 LinkCollector.getInstance().removeChildren(l);

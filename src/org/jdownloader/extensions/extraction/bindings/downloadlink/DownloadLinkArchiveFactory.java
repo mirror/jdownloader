@@ -27,8 +27,10 @@ import org.jdownloader.settings.GeneralSettings;
 
 public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implements ArchiveFactory {
 
-    public static final String DOWNLOADLINK_KEY_EXTRACTTOPATH = "EXTRAXT_TO_PATH";
     public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
+    public static final String ID                             = "ARCHIVE_ID";
+    private String             id;
+    private static long        LAST_USED_TIMESTAMP;
 
     public DownloadLinkArchiveFactory(DownloadLink link) {
         super(link);
@@ -136,15 +138,16 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return new File(path);
     }
 
-    public void fireExtractToChange(Archive archive) {
-
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                ((DownloadLinkArchiveFile) af).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH, archive.getExtractTo().getAbsolutePath());
-            }
-        }
-
-    }
+    // public void fireExtractToChange(Archive archive) {
+    //
+    // for (ArchiveFile af : archive.getArchiveFiles()) {
+    // if (af instanceof DownloadLinkArchiveFile) {
+    // ((DownloadLinkArchiveFile) af).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH,
+    // archive.getExtractTo().getAbsolutePath());
+    // }
+    // }
+    //
+    // }
 
     public Collection<? extends String> getPasswordList(Archive archive) {
 
@@ -182,35 +185,35 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         throw new WTFException("Archive should always have at least one link");
     }
 
-    public String getExtractPath(Archive archive) {
+    public String createDefaultExtractToPath(Archive archive) {
 
-        if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) {
-            try {
-                String path = (String) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-                if (path != null) { return path; }
-            } catch (Throwable e) {
-            }
-        }
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                try {
-                    String path = (String) ((DownloadLinkArchiveFile) af).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-                    if (path != null) { return path; }
-                } catch (Throwable e) {
-                }
-            }
-
-        }
+        // if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) {
+        // try {
+        // String path = (String) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+        // if (path != null) { return path; }
+        // } catch (Throwable e) {
+        // }
+        // }
+        // for (ArchiveFile af : archive.getArchiveFiles()) {
+        // if (af instanceof DownloadLinkArchiveFile) {
+        // try {
+        // String path = (String) ((DownloadLinkArchiveFile) af).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+        // if (path != null) { return path; }
+        // } catch (Throwable e) {
+        // }
+        // }
+        //
+        // }
 
         try {
             return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
         } catch (final Throwable e) {
         }
-        try {
-            String path = getDownloadLinks().get(0).getStringProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-            if (path != null) { return path; }
-        } catch (Throwable e) {
-        }
+        // try {
+        // String path = getDownloadLinks().get(0).getStringProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
+        // if (path != null) { return path; }
+        // } catch (Throwable e) {
+        // }
         return new File(getFilePath()).getParent();
     }
 
@@ -221,6 +224,58 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     @Override
     public File getFolder() {
         return new File(getFilePath()).getParentFile();
+    }
+
+    @Override
+    public String getID() {
+        if (id != null) return id;
+        synchronized (this) {
+            if (id != null) return id;
+            id = getIDFromFile(this);
+        }
+        return id;
+    }
+
+    private String getIDFromFile(DownloadLinkArchiveFile file) {
+        for (DownloadLink link : file.getDownloadLinks()) {
+            String id = link.getStringProperty(ID);
+            if (id != null) { return id; }
+        }
+        return null;
+    }
+
+    @Override
+    public void onArchiveFinished(Archive archive) {
+
+        String id = getID();
+        if (id == null) {
+            for (ArchiveFile af : archive.getArchiveFiles()) {
+                if (af instanceof DownloadLinkArchiveFactory) {
+                    id = getIDFromFile((DownloadLinkArchiveFactory) af);
+                }
+                if (id != null) break;
+            }
+        }
+        if (id == null) {
+            id = createUniqueAlltimeID();
+        }
+
+        // link
+        for (ArchiveFile af : archive.getArchiveFiles()) {
+            if (af instanceof DownloadLinkArchiveFile) {
+                for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
+                    link.setProperty(ID, id);
+                }
+            }
+        }
+
+    }
+
+    public synchronized static String createUniqueAlltimeID() {
+        long time = System.currentTimeMillis();
+        if (time == LAST_USED_TIMESTAMP) time++;
+        LAST_USED_TIMESTAMP = time;
+        return time + "";
     }
 
 }
