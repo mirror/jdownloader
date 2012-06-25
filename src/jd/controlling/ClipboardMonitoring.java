@@ -73,7 +73,9 @@ public class ClipboardMonitoring {
                                     continue;
                                 }
                             } finally {
-                                oldListContent = newListContent;
+                                if (!StringUtils.isEmpty(newListContent)) {
+                                    oldListContent = newListContent;
+                                }
                             }
                         } catch (final Throwable e) {
                         }
