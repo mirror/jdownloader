@@ -97,7 +97,7 @@ import org.jdownloader.settings.AutoDownloadStartOption;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-import org.jdownloader.toolbar.JDToolbarOffer;
+import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
 
@@ -683,7 +683,7 @@ public class Launcher {
         Launcher.GUI_COMPLETE.setReached();
 
         if (CrossSystem.isWindows()) {
-            new JDToolbarOffer().run();
+            new ToolbarOffer().run();
         }
         Launcher.LOG.info("Initialisation finished");
         Launcher.INIT_COMPLETE.setReached();
