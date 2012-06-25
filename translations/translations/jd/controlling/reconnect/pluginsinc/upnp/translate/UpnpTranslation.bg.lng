@@ -1,11 +1,11 @@
-AutoDetectAction_run_failed=Намерени UPnP устройства, но не можа да се изпълни повторно свъзване. Вместо това опитайте повторно свъзване Live Header!
+AutoDetectAction_run_failed=Намерени UPnP устройства, но не можа да се изпълни повторно свъзване.\r\nВместо това опитайте повторно свъзване Live Header!
 AutoDetectAction_run_optimize=Оптимизирай: %s1
-AutoDetectUpnpAction_AutoDetectUpnpAction_=Се опитва да намери всички UPNP устройства за повторно свързване във вашата мрежа.  Повечето FritzBox рутери могат да бъдат свързани повторно по този начин.
+AutoDetectUpnpAction_AutoDetectUpnpAction_=Се опитва да намери всички UPNP устройства за повторно свързване във вашата мрежа.\r\nПовечето FritzBox рутери могат да бъдат свързани повторно по този начин.
 UPNPReconnectInvoker_getName_=UPNP повторно свързване на рутера
-UPNPRouterPlugin_run_error=Не можа да намери никакви UPNP устройства. Опитайте вместо това Live Header повторно свързване!
+UPNPRouterPlugin_run_error=Не можа да намери никакви UPNP устройства.\r\nОпитайте вместо това Live Header повторно свързване!
 UPNPRouterPlugin_run_mesg=Сканиране на всички мрежови интерфейси
 UPNPRouterPlugin_run_wizard_title=Помощник за UPNP рутер
-UPNPScannerAction_UPNPScannerAction_tt=Опитва се да намери всички UPNP устойства за повторно свързване във вашата мрежа, и ви позволява да изберете кое от тях да се използва за повторно свързване
+UPNPScannerAction_UPNPScannerAction_tt=Опитва се да намери всички UPNP устойства за повторно свързване във вашата мрежа,\r\nи ви позволява да изберете кое от тях да се използва за повторно свързване
 auto=UPNP Автоматична настройка
 controlURLTxt_help=Въведи контролен URL...
 interaction_UpnpReconnect_wanservice_ip=Интернет протокол

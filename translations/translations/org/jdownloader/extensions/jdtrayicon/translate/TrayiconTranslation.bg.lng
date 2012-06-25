@@ -1,5 +1,5 @@
 jd_plugins_optional_jdtrayicon_jdlighttray=Системна област
-jd_plugins_optional_jdtrayicon_jdlighttray_description=Позволява минимизирането или затварянето на JDownloader към системната лента, и други свързани функции като защита на паролата и повече.
+jd_plugins_optional_jdtrayicon_jdlighttray_description=Позволява минимизирането или затварянето на JDownloader\r\nкъм системната лента, и други свързани функции като защита на паролата и повече.
 plugins_optional_JDLightTray_always=Винаги
 plugins_optional_JDLightTray_closetotray=Затвори към системната област
 plugins_optional_JDLightTray_linkgrabberresults=Изкарай главаната рамка отгоре ако са взети нови връзки
