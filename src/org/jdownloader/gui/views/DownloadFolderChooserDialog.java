@@ -54,7 +54,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     protected Icon getDirectoryIcon(Icon ret, File f) {
         if (f.getName().equals("Desktop")) {
             return NewTheme.I().getIcon("desktop", 18);
-        } else if (f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER) || (f.getPath().startsWith("\\") && f.getPath().indexOf("\\", 2) < 0)) {
+        } else if ((f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER_XP) || f.getPath().equals(ExtFileSystemView.VIRTUAL_NETWORKFOLDER)) || (f.getPath().startsWith("\\") && f.getPath().indexOf("\\", 2) < 0)) {
             //
             return NewTheme.I().getIcon("network-idle", 18);
         } else if (f.getPath().length() == 3 && f.getPath().charAt(1) == ':' && (f.getPath().charAt(0) + "").matches("[a-zA-Z]{1}")) {
