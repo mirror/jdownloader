@@ -39,6 +39,7 @@ branch_resetted2=L'édition %s1 n'éxiste pas !
 call_failed_wait=Le serveur de mise à jour est occupé. Veuillez attendre 30 secondes.
 cancel_update=Annuler la mise à jour
 cannot_selfupdate=%s1 L'outil de mise à jour n'est pas à jour. S'il vous plaît réinstallez l'application.
+clientUpdate=l'outil de mise à jour va maintenant se mettre à jour lui même.
 close=Fermer
 close_timeout=Fermer (%s1 s)
 could_not_download_file=Échec du téléchargement des mises à jour

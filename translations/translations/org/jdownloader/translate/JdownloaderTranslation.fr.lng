@@ -17,6 +17,7 @@ Main_run_autostart_msg=Les télechargements vont démarrer dans quelques seconde
 Mainstart_now=Démarrer maintenant !
 PackagizerSettings_folderbypackage_rule_name=Créer un sous-dossier pour chaque nom de paquet
 RemoveAction_actionPerformed_rly_msg=Voulez-vous supprimer toutes les règles sélectionnées ?
+SetDownloadFolderAction_actionPerformed_=Découpage du paquet %s1
 SetDownloadFolderAction_msg=Changer le dossier de téléchargement pour les paquets complétés %s1, ou seulement pour %s2 lien(s) sélectionné(s).
 SetDownloadFolderAction_no=Sélection
 SetDownloadFolderAction_yes=Paquet
@@ -116,6 +117,7 @@ gui_warning_reconnectSuccess=Reconnexion réussie
 gui_warning_reconnect_running=en cours...
 gui_warning_reconnectunknown=Reconnexion inconnue
 jd_controlling_SingleDownloadController_askexists_title=Fichier existant
+jd_controlling_reconnect_Reconnector_progress_failed2=Reconnexion échouée trop souvent! Autoreconnexion désactivée! S'il vous plaît vérifiez vos paramêtres de reconnexion!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Reconnexion non sélectionnée</u></b><br/><p>La reconnexion est un moyen avancé pour éviter les longues attentes imposées par certains hébergeurs en utilisation gratuite. <br>Ce moyen est inutile en cas d'utilisation d'un compte premium. </p><p>En savoir plus sur la reconnection : <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Aucune reconnexion
 jd_plugins_PluginUtils_askPassword=S'il vous plaît entrez le mot de passe pour %s1
