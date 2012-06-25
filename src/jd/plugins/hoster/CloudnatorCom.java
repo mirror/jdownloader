@@ -92,6 +92,8 @@ public class CloudnatorCom extends PluginForHost {
         this.br.getPage(url + "?jd=1");
         final boolean mayfail = this.br.getRegex("Download-Server ist unter").matches();
         String wait = this.br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        // Possible language bug
+        if (wait == null) wait = this.br.getRegex(Pattern.compile("Please wait (\\d+) minutes or buy a Premium account<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         wait = this.br.getRegex("var downloadWait =(.*?);").getMatch(0);
         Form form = this.br.getFormbyProperty("name", "download");

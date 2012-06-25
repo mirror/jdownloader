@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +26,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -34,33 +34,36 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
+import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4go.com" }, urls = { "http://(www\\.)?file4go\\.com/(d/|download\\.php\\?id=)[a-z0-9]+" }, flags = { 2 })
-public class File4GoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "azushare.net" }, urls = { "http://(www\\.)?azushare\\.net/[A-Za-z0-9]+/" }, flags = { 0 })
+public class AzuShareNet extends PluginForHost {
 
-    public File4GoCom(PluginWrapper wrapper) {
+    public AzuShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE);
+        this.enablePremium("http://azushare.net/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE;
+        return "http://azushare.net/premium";
     }
 
-    private static final String MAINPAGE = "http://file4go.com";
+    private static final String MAINPAGE = "http://azushare.net";
     private static final Object LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Arquivo Temporariamente Indisponivel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<b>Nome do arquivo:</b>([^<>\"]*?)</span>").getMatch(0);
-        final String filesize = br.getRegex("<b>Tamanho:</b>([^<>\"]*?)</span>").getMatch(0);
+        final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)</div>").getMatch(0);
+        final String filesize = br.getRegex("<div class=\"file\\-properties\">[\t\n\r ]+File size: ([^<>\"]*?) \\| Upload date:").getMatch(0);
+        if ("".equals(filename)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -70,19 +73,23 @@ public class File4GoCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        final Regex limit = br.getRegex(">For next free download you have to wait <strong>(\\d+):(\\d+)s</strong>");
+        if (limit.getMatches().length == 1) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limit.getMatch(0)) * 60 + Integer.parseInt(limit.getMatch(1))) * 1001l);
+        final String rcID = br.getRegex("noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        String c = getCaptchaCode(cf, downloadLink);
+        br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         br.setFollowRedirects(false);
-        // Waittime can be skipped
-        // int wait = 60;
-        // final String waittime =
-        // br.getRegex(">contador\\((\\d+)\\);").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.file4go.com/recebe_id.php", "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        String dllink = br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.azushare\\.net/dl/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.file4go.com/dll.php?id=" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -110,10 +117,11 @@ public class File4GoCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
-                // br.getPage("");
-                br.postPage("http://www.file4go.com/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "PREMIUM") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.setFollowRedirects(false);
+                br.setCookie(MAINPAGE, "lang", "en");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://azushare.net/ajax/register.php", "log=1&loginV=" + Encoding.urlEncode(account.getUser()) + "&passV=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "p") == null || !br.containsHTML("\"Login successful")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -139,13 +147,14 @@ public class File4GoCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://azushare.net/settings");
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Premium Stop: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) </b>").getMatch(0);
+        final String expire = br.getRegex("<br/> Premium: (\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm:ss", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
         }
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -158,7 +167,7 @@ public class File4GoCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://(www\\.)?([a-z0-9]+\\.)?file4go\\.com//dll\\.php\\?id=[A-Za-z0-9]+)\"").getMatch(0);
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -183,6 +192,7 @@ public class File4GoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
+        // Only had one link to test
         return -1;
     }
 

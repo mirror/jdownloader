@@ -170,8 +170,10 @@ public class File4SharingCom extends PluginForHost {
             }
         }
         /**
-         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
          */
+        if (dllink == null) dllink = getDllink();
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {

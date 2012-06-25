@@ -56,7 +56,7 @@ public class RodFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
     // mods:
-    // non account: 20 * unlimited? locked to 5
+    // non account: 10 * 1
     // free account:
     // premium account:
     // protocol: no https
@@ -139,7 +139,7 @@ public class RodFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -10, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -269,7 +269,7 @@ public class RodFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 5;
+        return 1;
     }
 
     /** Remove HTML code which could break the plugin */

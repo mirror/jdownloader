@@ -47,6 +47,23 @@ public class SugarSyncCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.setCookie("https://www.sugarsync.com/", "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("class=\"pf\\-down\\-unshared\\-main\\-message pf\\-down\\-unshared\\-unavailable\\-file\\-message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<span class=\"displayFileName\" title=\"(.*?)\"></span>").getMatch(0);
+        if (filename == null) filename = br.getRegex("name : \\'(.*?)\\'\\,").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("<span class=\"fileSize\">\\((.*?)\\)</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("size : \\'(.*?)\\'\\,").getMatch(0);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String uid = new Regex(br.getURL(), "sugarsync\\.com/pf/(D[\\d\\_]+)").getMatch(0);
@@ -58,23 +75,6 @@ public class SugarSyncCom extends PluginForHost {
         }
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCookie("https://www.sugarsync.com/", "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This file is no longer available\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<span class=\"displayFileName\" title=\"(.*?)\"></span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("name : \\'(.*?)\\'\\,").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = br.getRegex("<span class=\"fileSize\">\\((.*?)\\)</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("size : \\'(.*?)\\'\\,").getMatch(0);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override
