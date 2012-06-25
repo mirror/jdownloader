@@ -13,7 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/(media/.+|movie\\.php.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/(media/.+|movie\\.php.+|movie\\.mp4.+)" }, flags = { 2 })
 public class MetArtCom extends PluginForHost {
 
     public MetArtCom(PluginWrapper wrapper) {
@@ -33,14 +33,33 @@ public class MetArtCom extends PluginForHost {
             name = new Regex(parameter.getDownloadURL(), "/media/.*?/[A-F0-9]+/(.+)").getMatch(0);
         } else if (parameter.getDownloadURL().contains("movie.php")) {
             name = new Regex(parameter.getDownloadURL(), "movie\\.php.+?file=(.*?)($|&)").getMatch(0);
+        } else if (parameter.getDownloadURL().contains("movie.mp4")) {
+            name = new Regex(parameter.getDownloadURL(), "movie\\.mp4.+?file=(.*?)($|&)").getMatch(0);
         }
         if (name == null) name = "Unknown Filename";
+        String type = new Regex(parameter.getDownloadURL(), "movie\\.(php|mp4).*?type=(.*?)&").getMatch(1);
+        if (type != null) {
+            if ("avi".equalsIgnoreCase(type)) {
+                name = name + ".avi";
+            } else if ("wmv".equalsIgnoreCase(type)) {
+                name = name + ".wmv";
+            } else if ("mpg".equalsIgnoreCase(type)) {
+                name = name + ".mpg";
+            } else {
+                name = name + "-" + type + ".mp4";
+            }
+        }
         parameter.setName(name);
         return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
         throw new PluginException(LinkStatus.ERROR_FATAL, "Met-Art members only!");
     }
 
@@ -50,6 +69,11 @@ public class MetArtCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) return false;
+        return true;
     }
 
     @Override

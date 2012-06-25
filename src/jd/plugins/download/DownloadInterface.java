@@ -822,7 +822,7 @@ abstract public class DownloadInterface {
             /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
-                this.setVerifiedFileSize(connection.getRange()[2]);
+                this.downloadLink.setDownloadSize(connection.getRange()[2]);
             }
             if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && getFileSize() == downloadLink.getChunksProgress()[0] + 1) {
                 /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
@@ -839,28 +839,34 @@ abstract public class DownloadInterface {
             }
         } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
             this.setFilesizeCheck(true);
-            this.setVerifiedFileSize(connection.getLongContentLength());
+            this.downloadLink.setDownloadSize(connection.getLongContentLength());
         }
         return connection;
     }
 
     protected void setVerifiedFileSize(long l) {
         if (l > 0) {
+            logger.info("Set Verified Filesize to " + l + " for " + downloadLink);
             downloadLink.setDownloadSize(l);
             this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, l);
         } else {
+            logger.severe("No Valid Filesize " + l + " for " + downloadLink);
             this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, Property.NULL);
         }
     }
 
     private void connectFirstRange() throws IOException {
-        long part = getFileSize() / this.getChunkNum();
+        long fileSize = getFileSize();
+        long part = fileSize / this.getChunkNum();
         boolean verifiedSize = getVerifiedFileSize() > 0;
-        if (this.getChunkNum() == 1) {
+        boolean openRangeRequested = false;
+        if (this.getChunkNum() == 1 || fileSize <= 0) {
             /* we only request a single range */
+            openRangeRequested = true;
             request.getHeaders().put("Range", "bytes=" + (0) + "-");
         } else {
             /* we request multiple ranges */
+            openRangeRequested = false;
             request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
         }
         browser.connect(request);
@@ -879,7 +885,7 @@ abstract public class DownloadInterface {
             } else if (verifiedSize && range[1] < (part - 2)) {
                 /* response range != requested range */
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-            } else if (range[1] == range[2] - 1 && getChunkNum() > 1) {
+            } else if (!openRangeRequested && range[1] == range[2] - 1 && getChunkNum() > 1) {
                 logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
                 setChunkNum(1);
             } else if (verifiedSize && range[1] > (part - 1)) {
@@ -1318,6 +1324,16 @@ abstract public class DownloadInterface {
             if (connection.getHeaderField("Location") != null) {
                 error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
                 return false;
+            }
+            if (this.getVerifiedFileSize() < 0) {
+                /* we don't have a verified filesize yet, let's check if we have it now! */
+                if (connection.getRange() != null) {
+                    if (connection.getRange()[2] > 0) {
+                        this.setVerifiedFileSize(connection.getRange()[2]);
+                    }
+                } else if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
+                    this.setVerifiedFileSize(connection.getLongContentLength());
+                }
             }
             if (preDownloadCheckFailed(downloadLink)) return false;
             setupChunks();
