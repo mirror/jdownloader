@@ -740,6 +740,7 @@ public class MediafireCom extends PluginForHost {
             this.requestFileInformation(downloadLink);
             if (downloadLink.getBooleanProperty("privatefile") && account == null) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
             try {
+                captchaCorrect = false;
                 final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(this.br);
                 Form form = this.br.getFormbyProperty("name", "form_captcha");

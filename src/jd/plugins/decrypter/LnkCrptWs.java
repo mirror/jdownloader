@@ -98,11 +98,17 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         public File downloadCaptcha(final File captchaFile) throws Exception {
             this.load();
+            URLConnectionAdapter con = null;
             try {
-                Browser.download(captchaFile, this.smBr.openGetConnection(this.captchaAddress));
+                Browser.download(captchaFile, con = this.smBr.openGetConnection(this.captchaAddress));
             } catch (IOException e) {
                 captchaFile.delete();
                 throw e;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
             return captchaFile;
         }
@@ -133,12 +139,6 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!this.noscript) return this.chId;
             this.verify.put("adcopy_response", code);
 
-            /*
-             * TODO: Browser Bug? Beim senden einer https postform in Verbindung mit der submitForm-Methode wird als url die currenturl vom
-             * browser genommen und nicht die, die in der form action steht (secure == true == https) ...............................
-             * Testlink mit solvedia-https(secure == true) --> https://safelinking.net/p/78a98dd2bb .................................
-             * Testlink ohne solvemedia-https(secure == false) --> http://rapidgator.net/file/13387755/HOP.DVDRip_Michel_Vai.rar.html
-             */
             if (secure) smBr.getPage(server + "/papi");
 
             this.smBr.submitForm(verify);

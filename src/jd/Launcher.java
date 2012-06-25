@@ -62,7 +62,6 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
@@ -104,7 +103,6 @@ import org.jdownloader.update.JDUpdater;
 public class Launcher {
     static {
         try {
-
             statics();
         } catch (Throwable e) {
             e.printStackTrace();
@@ -114,13 +112,11 @@ public class Launcher {
     }
 
     private static LogSource           LOG;
-    private static boolean             instanceStarted            = false;
-    public static SingleAppInstance    SINGLE_INSTANCE_CONTROLLER = null;
 
-    public static SingleReachableState INIT_COMPLETE              = new SingleReachableState("INIT_COMPLETE");
-    public static SingleReachableState GUI_COMPLETE               = new SingleReachableState("GUI_COMPLETE");
+    public static SingleReachableState INIT_COMPLETE = new SingleReachableState("INIT_COMPLETE");
+    public static SingleReachableState GUI_COMPLETE  = new SingleReachableState("GUI_COMPLETE");
     public static ParameterParser      PARAMETERS;
-    public final static long           startup                    = System.currentTimeMillis();
+    public final static long           startup       = System.currentTimeMillis();
 
     // private static JSonWrapper webConfig;
 
@@ -162,18 +158,11 @@ public class Launcher {
     }
 
     public static void statics() {
-
         try {
             Dynamic.runPreStatic();
         } catch (Throwable e) {
             e.printStackTrace();
-
         }
-
-        // USe Jacksonmapper in this project
-        JSonStorage.setMapper(new JacksonMapper());
-        // do this call to keep the correct root in Application Cache
-
         NewUIO.setUserIO(new JDSwingUserIO());
         RlyExitListener.getInstance().setEnabled(true);
         org.jdownloader.controlling.JDRestartController.getInstance().setApp("JDownloader.app");
@@ -230,8 +219,6 @@ public class Launcher {
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
         // only use ipv4, because debian changed default stack to ipv6
         System.setProperty("java.net.preferIPv4Stack", "true");
-        // Disable the GUI rendering on the graphic card
-        System.setProperty("sun.java2d.d3d", "false");
         try {
             // log source revision infos
             Launcher.LOG.info(IO.readFileToString(Application.getResource("build.json")));
@@ -316,35 +303,37 @@ public class Launcher {
             JACController.showDialog(true);
             System.exit(0);
         }
+        boolean instanceStarted = false;
+        SingleAppInstance SINGLE_INSTANCE_CONTROLLER = null;
         try {
-            Launcher.SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
-            Launcher.SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
+            SINGLE_INSTANCE_CONTROLLER = new SingleAppInstance("JD", JDUtilities.getJDHomeDirectoryFromEnvironment());
+            SINGLE_INSTANCE_CONTROLLER.setInstanceMessageListener(new InstanceMessageListener() {
                 public void parseMessage(final String[] args) {
                     ParameterManager.processParameters(args);
                 }
             });
-            Launcher.SINGLE_INSTANCE_CONTROLLER.start();
-            Launcher.instanceStarted = true;
+            SINGLE_INSTANCE_CONTROLLER.start();
+            instanceStarted = true;
         } catch (final AnotherInstanceRunningException e) {
             Launcher.LOG.info("existing jD instance found!");
-            Launcher.instanceStarted = false;
+            instanceStarted = false;
         } catch (final Exception e) {
             Launcher.LOG.log(e);
             Launcher.LOG.severe("Instance Handling not possible!");
-            Launcher.instanceStarted = true;
+            instanceStarted = true;
         }
-        if (Launcher.instanceStarted) {
+        if (instanceStarted) {
             Launcher.start(args);
         } else if (PARAMETERS.hasCommandSwitch("n")) {
             Launcher.LOG.severe("Forced to start new instance!");
             Launcher.start(args);
-        } else {
+        } else if (SINGLE_INSTANCE_CONTROLLER != null) {
             if (args.length > 0) {
                 Launcher.LOG.info("Send parameters to existing jD instance and exit");
-                Launcher.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
+                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(args);
             } else {
                 Launcher.LOG.info("There is already a running jD instance");
-                Launcher.SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
+                SINGLE_INSTANCE_CONTROLLER.sendToRunningInstance(new String[] { "--focus" });
             }
             System.exit(0);
         }

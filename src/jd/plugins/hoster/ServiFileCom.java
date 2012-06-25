@@ -35,7 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -182,8 +181,7 @@ public class ServiFileCom extends PluginForHost {
         int maxChunks = -2;
         if (oldStyle()) {
             /*
-             * in old stable we have a bug with post data and range request
-             * headers
+             * in old stable we have a bug with post data and range request headers
              */
             resume = false;
             maxChunks = 1;
@@ -201,15 +199,7 @@ public class ServiFileCom extends PluginForHost {
     private boolean oldStyle() {
         String style = System.getProperty("ftpStyle", null);
         if ("new".equalsIgnoreCase(style)) return false;
-        String prev = JDUtilities.getRevision();
-        if (prev == null || prev.length() < 3) {
-            prev = "0";
-        } else {
-            prev = prev.replaceAll(",|\\.", "");
-        }
-        int rev = Integer.parseInt(prev);
-        if (rev < 10000) return true;
-        return false;
+        return true;
     }
 
     @Override

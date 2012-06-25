@@ -19,14 +19,16 @@ package jd;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.os.CrossSystem;
 
 public class Main {
 
     static {
         org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(Launcher.class);
-
+        org.appwork.utils.Application.getRoot(jd.Launcher.class);
     }
 
     public static void checkLanguageSwitch(final String[] args) {
@@ -47,16 +49,29 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            // USe Jacksonmapper in this project
+            JSonStorage.setMapper(new JacksonMapper());
             /* FAKE Commit for coalado */
             checkLanguageSwitch(args);
-
-            // workaround.. write all log to a logfile
-
+            try {
+                /* set D3D Property if not already set by user */
+                if (CrossSystem.isWindows() && System.getProperty("sun.java2d.d3d", null) == null) {
+                    if (JsonConfig.create(org.jdownloader.settings.GraphicalUserInterfaceSettings.class).isUseD3D()) {
+                        System.setProperty("sun.java2d.d3d", "true");
+                    } else {
+                        System.setProperty("sun.java2d.d3d", "false");
+                    }
+                }
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
-
-            while (true) {
-                Thread.sleep(1000);
+            if (CrossSystem.isWindows()) {
+                /* Main Thread must not die for JavaExe Extensions to work */
+                while (true) {
+                    Thread.sleep(10000);
+                }
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -65,7 +80,6 @@ public class Main {
             } catch (Throwable e2) {
             }
             try {
-
                 final org.appwork.utils.swing.dialog.ExceptionDialog dialog = new org.appwork.utils.swing.dialog.ExceptionDialog(org.appwork.utils.swing.dialog.Dialog.LOGIC_DONT_SHOW_AGAIN_DELETE_ON_EXIT | org.appwork.utils.swing.dialog.Dialog.BUTTONS_HIDE_CANCEL | org.appwork.utils.swing.dialog.Dialog.STYLE_HIDE_ICON, "Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e, null, null);
 
                 org.appwork.utils.swing.dialog.Dialog.getInstance().showDialog(dialog);
@@ -77,5 +91,4 @@ public class Main {
             }
         }
     }
-
 }

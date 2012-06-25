@@ -232,6 +232,14 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @DefaultBooleanValue(false)
     boolean isShowFullHostname();
 
+    @AboutConfig
+    @Description("If true, java will try to use D3D for graphics")
+    @DefaultBooleanValue(false)
+    @RequiresRestart
+    boolean isUseD3D();
+
+    public void setUseD3D(boolean b);
+
     public void setShowFullHostname(boolean b);
 
     // void setDownloadViewSidebarEnabled(boolean b);
