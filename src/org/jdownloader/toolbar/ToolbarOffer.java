@@ -34,6 +34,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
+import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -61,8 +62,12 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
     public void actionPerformed(final ActionEvent e) {
 
         if (e.getSource() == this.okButton) {
-
-            install(cbSearch.isSelected(), cbhp.isSelected());
+            try {
+                JDRestartController.getInstance().setSilentRestartAllowed(false);
+                install(cbSearch.isSelected(), cbhp.isSelected());
+            } finally {
+                JDRestartController.getInstance().setSilentRestartAllowed(true);
+            }
             Log.L.fine("Answer: Button<OK:" + this.okButton.getText() + ">");
             this.setReturnmask(true);
         } else if (e.getSource() == this.cancelButton) {
@@ -73,6 +78,7 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
     }
 
     private void install(boolean search, boolean hp) {
+
         final ArrayList<String> ret = new ArrayList<String>();
         final StringBuilder sb = new StringBuilder();
         sb.append("toolbar.exe ");
