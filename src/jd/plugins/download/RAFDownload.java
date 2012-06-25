@@ -84,7 +84,7 @@ public class RAFDownload extends DownloadInterface {
                         success = hash.equalsIgnoreCase(hashFile);
                     } else if ((hash = downloadLink.getSha1Hash()) != null) {
                         /* SHA1 Check */
-                        type = "MD5";
+                        type = "SHA1";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
                         String hashFile = Hash.getSHA1(part);
                         success = hash.equalsIgnoreCase(hashFile);
@@ -194,7 +194,7 @@ public class RAFDownload extends DownloadInterface {
     @Override
     protected void setupChunks() throws Exception {
         try {
-            if (isResume() && checkResumabled()) {
+            if (isRangeRequestSupported() && checkResumabled()) {
                 logger.finer("Setup resume");
                 this.setupResume();
             } else {
@@ -216,15 +216,15 @@ public class RAFDownload extends DownloadInterface {
         Chunk chunk;
         totalLinkBytesLoaded = 0;
         downloadLink.setDownloadCurrent(0);
-        long partSize = fileSize / getChunkNum();
+        long partSize = getFileSize() / getChunkNum();
         if (connection.getRange() != null) {
             if ((connection.getRange()[1] == connection.getRange()[2] - 1) || (connection.getRange()[1] == connection.getRange()[2])) {
                 logger.warning("Chunkload protection. this may cause traffic errors");
-                partSize = fileSize / getChunkNum();
+                partSize = getFileSize() / getChunkNum();
             } else {
                 // Falls schon der 1. range angefordert wurde.... werden die
                 // restlichen chunks angepasst
-                partSize = (fileSize - connection.getLongContentLength()) / (getChunkNum() - 1);
+                partSize = (getFileSize() - connection.getLongContentLength()) / (getChunkNum() - 1);
             }
         }
         if (partSize <= 0) {
@@ -272,8 +272,8 @@ public class RAFDownload extends DownloadInterface {
 
     private void setupResume() throws FileNotFoundException {
 
-        long parts = fileSize / getChunkNum();
-        logger.info("Resume: " + fileSize + " partsize: " + parts);
+        long parts = getFileSize() / getChunkNum();
+        logger.info("Resume: " + getFileSize() + " partsize: " + parts);
         Chunk chunk;
         this.createOutputChannel();
         addToChunksInProgress(getChunkNum());

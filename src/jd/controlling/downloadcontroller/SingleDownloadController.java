@@ -257,10 +257,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosteroffline());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 } catch (SocketException e) {
+                    LogSource.exception(logger, e);
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_disconnect());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getNetworkIssuesTimeout());
                 } catch (IOException e) {
+                    LogSource.exception(logger, e);
                     linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_hosterproblem());
                     linkStatus.setValue(JsonConfig.create(GeneralSettings.class).getDownloadUnknownIOExceptionWaittime());
@@ -268,6 +270,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + "Interrupted");
                 } catch (Throwable e) {
+                    LogSource.exception(logger, e);
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                     linkStatus.setErrorMessage(_JDT._.plugins_errors_error() + "Throwable");
                 } finally {

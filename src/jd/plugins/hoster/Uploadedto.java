@@ -336,7 +336,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public int getTimegapBetweenConnections() {
-        return 2000;
+        return 400;
     }
 
     @Override
@@ -481,12 +481,10 @@ public class Uploadedto extends PluginForHost {
                 logger.info("Download from:" + form.getAction());
                 form.setMethod(MethodType.GET);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
-                dl.setFileSizeVerified(true);
             } else {
                 logger.info("Direct Downloads active");
                 logger.info("Download from:" + br.getRedirectLocation());
                 dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
-                dl.setFileSizeVerified(true);
             }
             try {
                 /* remove next major update */

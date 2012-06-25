@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.HTACCESSController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -445,7 +446,6 @@ public class DirectHTTP extends PluginForHost {
         } else {
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), resume, chunks);
         }
-
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;
@@ -570,6 +570,11 @@ public class DirectHTTP extends PluginForHost {
             /* save filename in property so we can restore in reset case */
             downloadLink.setProperty("fixName", downloadLink.getFinalFileName());
             downloadLink.setDownloadSize(urlConnection.getLongContentLength());
+            if (urlConnection.getHeaderField("X-Mod-H264-Streaming") == null) {
+                downloadLink.setProperty("VERIFIEDFILESIZE", urlConnection.getLongContentLength());
+            } else {
+                downloadLink.setProperty("VERIFIEDFILESIZE", Property.NULL);
+            }
             return AvailableStatus.TRUE;
         } catch (final PluginException e2) {
             /* try referer set by flashgot and check if it works then */

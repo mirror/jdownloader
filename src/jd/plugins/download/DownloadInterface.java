@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
@@ -91,8 +92,6 @@ abstract public class DownloadInterface {
 
         private boolean                         addedtoStartedChunks = false;
 
-        private boolean                         chunkinprogress      = false;
-
         private boolean                         clonedconnection     = false;
 
         /**
@@ -125,25 +124,12 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * is this Chunk still in progress?
-         * 
-         * @return
-         */
-        public boolean inProgress() {
-            return chunkinprogress;
-        }
-
-        /**
          * is this Chunk using the root connection or a cloned one
          * 
          * @return
          */
         public boolean isClonedConnection() {
             return clonedconnection;
-        }
-
-        public void setInProgress(boolean b) {
-            chunkinprogress = b;
         }
 
         private void setChunkStartet() {
@@ -270,7 +256,6 @@ abstract public class DownloadInterface {
             /* +1 because of startByte also gets loaded (startbyte till endbyte) */
             if (endByte > 0) bytes2Do = (endByte - startByte) + 1;
             try {
-                chunkinprogress = true;
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
                 inputStream = new MeteredThrottledInputStream(connection.getInputStream(), new AverageSpeedMeter(10));
@@ -410,7 +395,6 @@ abstract public class DownloadInterface {
             } finally {
                 ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
                 buffer = null;
-                chunkinprogress = false;
                 try {
                     inputStream.close();
                 } catch (Throwable e) {
@@ -528,7 +512,7 @@ abstract public class DownloadInterface {
                     connection = copyConnection(connection);
                     if (connection == null) {
                         /* copy failed!, lets check if this is the last chunk */
-                        if (startByte >= fileSize && fileSize > 0) {
+                        if (startByte >= getFileSize() && getFileSize() > 0) {
                             downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                             logger.finer("Is no error. Last chunk is just already finished");
                             return;
@@ -540,7 +524,7 @@ abstract public class DownloadInterface {
                 } else if (startByte > 0) {
                     connection = copyConnection(connection);
                     // workaround fuer fertigen endchunk
-                    if (startByte >= fileSize && fileSize > 0) {
+                    if (startByte >= getFileSize() && getFileSize() > 0) {
                         downloadLink.getLinkStatus().removeStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
                         logger.finer("Is no error. Last chunk is just already finished");
                         return;
@@ -559,7 +543,7 @@ abstract public class DownloadInterface {
                     }
                 }
                 long[] ContentRange = connection.getRange();
-                if (startByte > 0) {
+                if (startByte >= 0) {
                     /* startByte >0, we should have a Content-Range in response! */
                     if (ContentRange != null && ContentRange.length == 3) {
                         endByte = ContentRange[1];
@@ -641,6 +625,10 @@ abstract public class DownloadInterface {
             return inputStream;
         }
 
+        @Deprecated
+        public void setInProgress(boolean b) {
+        }
+
     }
 
     public static final int                   ERROR_REDIRECTED                 = -1;
@@ -664,8 +652,6 @@ abstract public class DownloadInterface {
 
     private Vector<Exception>                 exceptions                       = null;
 
-    protected long                            fileSize                         = -1;
-
     protected LinkStatus                      linkStatus;
 
     protected PluginForHost                   plugin;
@@ -686,32 +672,29 @@ abstract public class DownloadInterface {
         return totalLinkBytesLoadedLive.get();
     }
 
-    private boolean          waitFlag          = true;
+    private boolean            waitFlag                  = true;
 
-    private boolean          fatalErrorOccured = false;
+    private boolean            fatalErrorOccured         = false;
 
-    private boolean          doFileSizeCheck   = true;
+    private Request            request                   = null;
 
-    private Request          request           = null;
+    private boolean            connected;
 
-    private boolean          fileSizeVerified  = false;
+    private int                chunksStarted             = 0;
 
-    private boolean          connected;
-
-    private boolean          firstChunkRangeless;
-
-    private int              chunksStarted     = 0;
-
-    private Browser          browser;
+    private Browser            browser;
 
     /** normal stop of download (eg manually or reconnect request) */
-    private volatile boolean externalStop      = false;
+    private volatile boolean   externalStop              = false;
 
-    private boolean          resumable         = false;
+    private boolean            resumable                 = false;
 
-    private final long       startTimeStamp    = System.currentTimeMillis();
+    private final long         startTimeStamp            = System.currentTimeMillis();
 
-    private boolean          dlAlreadyFinished = false;
+    private boolean            dlAlreadyFinished         = false;
+
+    public static final String PROPERTY_DOFILESIZECHECK  = "DOFILESIZECHECK";
+    public static final String PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -755,25 +738,8 @@ abstract public class DownloadInterface {
         this.request = request;
     }
 
-    /**
-     * Gibt zurueck ob die Dateigroesse 100% richtig ermittelt werden konnte
-     */
-    public boolean isFileSizeVerified() {
-        return fileSizeVerified;
-    }
-
-    /**
-     * darf NUR dann auf true gesetzt werden, wenn die dateigroesse 100% richtig ist!
-     * 
-     * @param fileSizeVerified
-     * @throws PluginException
-     */
-    public void setFileSizeVerified(boolean fileSizeVerified) throws PluginException {
-        this.fileSizeVerified = fileSizeVerified;
-        if (fileSize <= 0 && fileSizeVerified) {
-            logger.severe("Downloadsize==0");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-        }
+    protected long getVerifiedFileSize() {
+        return downloadLink.getLongProperty(PROPERTY_VERIFIEDFILESIZE, -1);
     }
 
     /**
@@ -781,7 +747,6 @@ abstract public class DownloadInterface {
      */
     protected boolean checkResumabled() {
         if (downloadLink.getChunksProgress() == null || downloadLink.getChunksProgress().length == 0) return false;
-
         long fileSize = getFileSize();
         int chunks = downloadLink.getChunksProgress().length;
         long part = fileSize / chunks;
@@ -828,20 +793,24 @@ abstract public class DownloadInterface {
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
         boolean resumed = false;
-        if (this.isResume() && this.checkResumabled()) {
+        if (this.isRangeRequestSupported() && this.checkResumabled()) {
+            /* we can continue to resume the download */
             resumed = connectResumable();
         } else {
-            if (this.isFileSizeVerified()) {
-                int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
-
+            long verifiedFileSize = getVerifiedFileSize();
+            if (verifiedFileSize > 0 && getChunkNum() > 1) {
+                /* check if we have to adapt the number of chunks */
+                int tmp = Math.min(Math.max(1, (int) (verifiedFileSize / Chunk.MIN_CHUNKSIZE)), getChunkNum());
                 if (tmp != getChunkNum()) {
                     logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
                     setChunkNum(tmp);
                 }
             }
-            if (this.isFileSizeVerified() && downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
+            if (this.isRangeRequestSupported()) {
+                /* range requests are supported! */
                 connectFirstRange();
             } else {
+                /* our connection happens rangeless */
                 request.getHeaders().remove("Range");
                 browser.connect(request);
             }
@@ -853,9 +822,9 @@ abstract public class DownloadInterface {
             /* we have a range response, let's use it */
             if (connection.getRange()[2] > 0) {
                 this.setFilesizeCheck(true);
-                this.downloadLink.setDownloadSize(connection.getRange()[2]);
+                this.setVerifiedFileSize(connection.getRange()[2]);
             }
-            if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && downloadLink.getDownloadSize() == downloadLink.getChunksProgress()[0] + 1) {
+            if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && getFileSize() == downloadLink.getChunksProgress()[0] + 1) {
                 /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
                 /* we fake a content disposition connection so plugins work normal */
                 if (connection.isContentDisposition() == false) {
@@ -870,16 +839,30 @@ abstract public class DownloadInterface {
             }
         } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
             this.setFilesizeCheck(true);
-            this.downloadLink.setDownloadSize(connection.getLongContentLength());
+            this.setVerifiedFileSize(connection.getLongContentLength());
         }
-        fileSize = downloadLink.getDownloadSize();
-
         return connection;
     }
 
+    protected void setVerifiedFileSize(long l) {
+        if (l > 0) {
+            downloadLink.setDownloadSize(l);
+            this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, l);
+        } else {
+            this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, Property.NULL);
+        }
+    }
+
     private void connectFirstRange() throws IOException {
-        long part = downloadLink.getDownloadSize() / this.getChunkNum();
-        request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
+        long part = getFileSize() / this.getChunkNum();
+        boolean verifiedSize = getVerifiedFileSize() > 0;
+        if (this.getChunkNum() == 1) {
+            /* we only request a single range */
+            request.getHeaders().put("Range", "bytes=" + (0) + "-");
+        } else {
+            /* we request multiple ranges */
+            request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
+        }
         browser.connect(request);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
@@ -889,11 +872,20 @@ abstract public class DownloadInterface {
             logger.warning("No Chunkload");
             setChunkNum(1);
         } else {
-            if (request.getHttpConnection().getRange()[0] != 0) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-            if (request.getHttpConnection().getRange()[1] < (part - 2)) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-            if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
+            long[] range = request.getHttpConnection().getRange();
+            if (range[0] != 0) {
+                /* first range MUST start at zero */
+                throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+            } else if (verifiedSize && range[1] < (part - 2)) {
+                /* response range != requested range */
+                throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+            } else if (range[1] == range[2] - 1 && getChunkNum() > 1) {
                 logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-            } else if (request.getHttpConnection().getRange()[1] > (part - 1)) throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+                setChunkNum(1);
+            } else if (verifiedSize && range[1] > (part - 1)) {
+                /* response range is bigger than requested range */
+                throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+            }
         }
     }
 
@@ -904,14 +896,14 @@ abstract public class DownloadInterface {
         String start, end;
         start = end = "";
         boolean rangeRequested = false;
-        if (this.isFileSizeVerified()) {
+        if (getVerifiedFileSize() > 0) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
-            end = (fileSize / chunkProgress.length) + "";
+            end = (getFileSize() / chunkProgress.length) + "";
         } else {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
         }
-        if (this.isFirstChunkRangeless() && start.equals("0")) {
+        if (getVerifiedFileSize() < 0 && start.equals("0")) {
             rangeRequested = false;
             request.getHeaders().remove("Range");
         } else {
@@ -1040,8 +1032,18 @@ abstract public class DownloadInterface {
      * Gibt eine bestmoegliche abschaetzung der Dateigroesse zurueck
      */
     protected long getFileSize() {
-        if (fileSize > 0) return fileSize;
-        if (connection != null && connection.getLongContentLength() > 0) return connection.getLongContentLength();
+        long verifiedFileSize = downloadLink.getLongProperty(PROPERTY_VERIFIEDFILESIZE, -1);
+        if (verifiedFileSize > 0) return verifiedFileSize;
+        if (connection != null) {
+            if (connection.getRange() != null) {
+                /* we have a range response, let's use it */
+                if (connection.getRange()[2] > 0) return connection.getRange()[2];
+            }
+            if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
+                /* we have no range request and connection is okay, so we can use the content-length */
+                return connection.getLongContentLength();
+            }
+        }
         if (downloadLink.getDownloadSize() > 0) return downloadLink.getDownloadSize();
         return -1;
     }
@@ -1072,19 +1074,19 @@ abstract public class DownloadInterface {
      */
     public boolean handleErrors() {
         if (externalDownloadStop()) return false;
-        if (this.doFileSizeCheck && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != fileSize && fileSize > 0)) {
-            if (totalLinkBytesLoaded > fileSize) {
+        if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
+            if (totalLinkBytesLoaded > getFileSize()) {
                 /*
                  * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
                  * is okay! WONTFIX because new downloadsystem is on its way
                  */
-                logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
+                logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
                     linkStatus.setStatus(LinkStatus.FINISHED);
                 }
                 return true;
             }
-            logger.severe("Filesize: " + fileSize + " Loaded: " + totalLinkBytesLoaded);
+            logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT._.download_error_message_incomplete());
             return false;
@@ -1103,7 +1105,7 @@ abstract public class DownloadInterface {
     /**
      * Ist resume aktiv?
      */
-    public boolean isResume() {
+    public boolean isRangeRequestSupported() {
         return resume;
     }
 
@@ -1136,13 +1138,6 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt die filesize.
-     */
-    public void setFilesize(long length) {
-        fileSize = length;
-    }
-
-    /**
      * Setzt den aktuellen readtimeout(nur vor dem dl start)
      */
     public void setReadTimeout(int readTimeout) {
@@ -1160,11 +1155,17 @@ abstract public class DownloadInterface {
      * File soll resumed werden
      */
     public void setResume(boolean value) {
-        this.resumable = value;
-        if (checkResumabled()) {
-            resume = value;
+        resume = value;
+        if (value) {
+            if (checkResumabled()) {
+                this.resumable = true;
+                resume = true;
+            } else {
+                this.resumable = false;
+                logger.warning("Resumepoint not valid");
+            }
         } else {
-            logger.warning("Resumepoint not valid");
+            this.resumable = false;
         }
     }
 
@@ -1422,7 +1423,11 @@ abstract public class DownloadInterface {
     abstract protected boolean writeChunkBytes(Chunk chunk);
 
     public void setFilesizeCheck(boolean b) {
-        this.doFileSizeCheck = b;
+        this.downloadLink.setProperty(PROPERTY_DOFILESIZECHECK, b);
+    }
+
+    protected boolean doFilesizeCheck() {
+        return this.downloadLink.getBooleanProperty(PROPERTY_DOFILESIZECHECK, true);
     }
 
     public URLConnectionAdapter getConnection() {
@@ -1431,20 +1436,6 @@ abstract public class DownloadInterface {
 
     public Request getRequest() {
         return this.request;
-    }
-
-    /**
-     * Setzt man diesen Wert auf true, so wird der erste Chunk nicht per ranges geladen. d.h. es gibt keinen 0-...range
-     * 
-     * @param b
-     */
-    public void setFirstChunkRangeless(boolean b) {
-        firstChunkRangeless = b;
-
-    }
-
-    public boolean isFirstChunkRangeless() {
-        return firstChunkRangeless;
     }
 
     /** signal that we stopped download external */
