@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,9 +49,20 @@ public class XVideoHostCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        DLLINK = br.getRegex("<td align=\"center\" valign=\"middle\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("alt=\"Download Movie\" width=\"50\" height=\"25\" border=\"0\" /></a><a href=\"javascript:abuse\\(\\'[a-z0-9]+\\'\\)\"></a><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                // Important
+                DLLINK = br.getRegex("<td valign=\"middle\"><a href=\"javascript:abuse\\(\\'[a-z0-9]+\\'\\)\"></a><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            }
+        }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("cannot open file")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 3 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -67,34 +76,9 @@ public class XVideoHostCom extends PluginForHost {
         if (br.containsHTML("(>This video is no longer available|<title>Xvideohost Play Video \\-\\- </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("bgcolor=\"#090A0E\" class=\"tbhead\"> \\&nbsp;Play Movie \\-\\- (.*?)</td>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Xvideohost Play Video \\-\\- (.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("<td align=\"center\" valign=\"middle\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\'\\)\"></a><a href=\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"(http://x\\d+\\.xvideohost\\.com/vds/.*?)\"").getMatch(0);
-            }
-        }
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override

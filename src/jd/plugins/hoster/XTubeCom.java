@@ -73,7 +73,7 @@ public class XTubeCom extends PluginForHost {
         br.setCookie(MAINPAGE, "cookie_warning", "S");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(sorry the video \"UNKNOWN\" is unavailable<|\">There was an unknown error with the video you have selected)") || br.getURL().contains("xtube.com/index.php") || br.getURL().equals("http://www.xtube.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("xtube.com/?msg=Invalid+Video+ID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"p_5px font_b_12px f_left\">(.*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("<div class=\"font_b_12px\">(.*?)</div><div").getMatch(0);
         String fileID = new Regex(downloadLink.getDownloadURL(), "xtube\\.com/watch\\.php\\?v=(.+)").getMatch(0);

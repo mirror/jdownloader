@@ -87,13 +87,9 @@ public class VideosSapo extends PluginForHost {
         br.setFollowRedirects(true);
         final String dlurl = downloadLink.getDownloadURL();
         br.getPage(dlurl);
-        String filename = br.getRegex("<div class=\"tit\">([^<>\"\\']+)</div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"\\']+) \\- SAPO V\\&iacute;deos\"").getMatch(0);
-        }
-
+        String filename = br.getRegex("<div class=\"titvideo\">([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 class=\"wid_content\\-title\">([^<>\"]*?)</h1>").getMatch(0);
         getDownloadlink(dlurl);
-
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setFinalFileName(filename.trim() + ".mp4");
         try {

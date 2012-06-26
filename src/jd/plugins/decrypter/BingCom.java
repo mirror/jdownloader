@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com" }, urls = { "http://[\\w\\.]*?bing\\.com/videos/watch/video/.*?/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bing.com" }, urls = { "http://(www\\.)?bing\\.com/videos/watch/video/.*?/[a-z0-9]+" }, flags = { 0 })
 public class BingCom extends PluginForDecrypt {
 
     public static final Pattern PATTERN_JAVASCRIPT_HEX = Pattern.compile("\\\\x([a-f0-9]{2})", Pattern.CASE_INSENSITIVE);
@@ -41,23 +41,22 @@ public class BingCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<title>(.*?) - Bing Videos</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\- Bing Videos</title>").getMatch(0);
         boolean setFilename = false;
         if (filename != null) {
             setFilename = true;
             filename = filename.replace(":", "-");
         }
-        String[] regexes = { "formatCode: 1003, url: \\'(http.*?\\.flv)'\\}", "formatCode: 1002, url: '(http.*?\\.wmv)'\\}" };
+        final String[] regexes = { "formatCode: 1003, url: \\'(http.*?\\.flv)\\'", "formatCode: 1002, url: \\'(http.*?\\.wmv)\\'", "formatCode: 101, url: \\'(http.*?\\.mp4)\\'" };
         for (String regex : regexes) {
             String finallink = br.getRegex(regex).getMatch(0);
             if (finallink != null) {
                 finallink = decodeJavascriptHex(finallink);
                 DownloadLink fnllink = createDownloadlink(finallink);
                 if (setFilename) {
-                    if (finallink.endsWith(".flv"))
-                        fnllink.setFinalFileName(filename + ".flv");
-                    else
-                        fnllink.setFinalFileName(filename + ".wmv");
+                    String ext = finallink.substring(finallink.lastIndexOf("."));
+                    if (ext == null || ext.length() > 5) ext = ".flv";
+                    fnllink.setFinalFileName(filename + ext);
                 }
                 decryptedLinks.add(fnllink);
             }

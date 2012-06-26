@@ -69,18 +69,33 @@ public class FreakMovCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">File Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dllink = br.getRegex("name=\"src\" value=\"(.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("type=\"video/divx\" src=\"(.*?)\"").getMatch(0);
+        dllink = br.getRegex("addVariable\\(\\'streamer\\',\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/1final/[a-z0-9]+\\.flv)\\'").getMatch(0);
+        // Broken stream->Offline
+        if (dllink == null && br.containsHTML("addVariable\\(\\'file\\',\\'[a-z0-9]+\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         Browser br2 = br.cloneBrowser();
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
-        if (!con.getContentType().contains("html")) {
-            downloadLink.setDownloadSize(con.getLongContentLength());
-            downloadLink.setName(getFileNameFromHeader(con));
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                downloadLink.setName(getFileNameFromHeader(con));
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
-        return AvailableStatus.TRUE;
+
     }
 
     @Override

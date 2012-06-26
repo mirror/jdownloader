@@ -63,9 +63,9 @@ public class FreeViewMoviesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("id=\"description\">hot amateur babe lays on the bed slowly stripping off her clothes")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://www.freeviewmovies.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<td width=\"80%\"><h1>(.*?)</h1></td>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Amateur porn - (.*?) - Free Porn - freeviewmovies\\.com</title>").getMatch(0);
         br.getPage("http://www.freeviewmovies.com/flv/skin/ofconfig.php?id=" + new Regex(downloadLink.getDownloadURL(), "freeviewmovies\\.com/porn/(\\d+)/").getMatch(0));

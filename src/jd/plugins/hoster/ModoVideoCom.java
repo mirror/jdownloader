@@ -40,7 +40,7 @@ public class ModoVideoCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/video.php", "/video?"));
+        link.setUrlDownload(link.getDownloadURL().replace("/video.php", "/video"));
     }
 
     @Override

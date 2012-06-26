@@ -58,7 +58,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
-        final String sendCaptcha = "kpr.php";
+        final String sendCaptcha = "kvr.php";
         final String getList = "llinks.php";
         br.postPage(MAINPAGE + getList, "LinkName=" + postvar);
         final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
