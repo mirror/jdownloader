@@ -1,0 +1,17 @@
+AutoDetectAction_run_failed=Dipositius UPNP trobats, peró no és pot fer una reconnexió. Prova de reconnectar amb Live header!
+AutoDetectAction_run_optimize=Optimitzar: %s1
+UPNPReconnectInvoker_getName_=Reconectar router UPNP
+UPNPRouterPlugin_run_mesg=Analitzant totes les interfícies de xarxa
+UPNPRouterPlugin_run_wizard_title=Assistent del router UPNP
+auto=UPNPinstal·lat autimàticament
+controlURLTxt_help=Entra la URL de control...
+interaction_UpnpReconnect_wanservice_ip=Protocol d'internet
+interaction_UpnpReconnect_wanservice_ppp=Protocol punt-a-punt
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Fallat
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JD ha instal·lat les configuracións de reconecció correctament! el seu router és: '%s1'
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Correctament
+literally_choose_router=Tria el dispositiu
+literally_control_url=URL de control
+literally_router=Router UPNP
+literally_service_type=Tipus de servei
+try_reconnect=Probar reconnexió Upnp: %s1
