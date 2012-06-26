@@ -689,8 +689,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @param value
      */
-    private int     speedLimitBeforePause   = 0;
-    private boolean speedLimitedBeforePause = false;
+    private Integer speedLimitBeforePause   = null;
+    private Boolean speedLimitedBeforePause = null;
 
     public void pauseDownloadWatchDog(final boolean value) {
         IOEQ.add(new Runnable() {
@@ -707,10 +707,14 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     config.setDownloadSpeedLimitEnabled(true);
                     logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
                 } else {
-                    config.setDownloadSpeedLimit(speedLimitBeforePause);
-                    config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
-                    speedLimitBeforePause = 0;
-                    logger.info("Pause disabled: Switch back to old downloadspeed");
+                    if (speedLimitBeforePause != null) {
+                        logger.info("Pause disabled: Switch back to old downloadspeed");
+                        config.setDownloadSpeedLimit(speedLimitBeforePause);
+                    }
+                    if (speedLimitedBeforePause != null) config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
+                    speedLimitBeforePause = null;
+                    speedLimitedBeforePause = null;
+
                 }
             }
         }, true);
