@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
@@ -672,29 +671,28 @@ abstract public class DownloadInterface {
         return totalLinkBytesLoadedLive.get();
     }
 
-    private boolean            waitFlag                  = true;
+    private boolean            waitFlag                 = true;
 
-    private boolean            fatalErrorOccured         = false;
+    private boolean            fatalErrorOccured        = false;
 
-    private Request            request                   = null;
+    private Request            request                  = null;
 
     private boolean            connected;
 
-    private int                chunksStarted             = 0;
+    private int                chunksStarted            = 0;
 
     private Browser            browser;
 
     /** normal stop of download (eg manually or reconnect request) */
-    private volatile boolean   externalStop              = false;
+    private volatile boolean   externalStop             = false;
 
-    private boolean            resumable                 = false;
+    private boolean            resumable                = false;
 
-    private final long         startTimeStamp            = System.currentTimeMillis();
+    private final long         startTimeStamp           = System.currentTimeMillis();
 
-    private boolean            dlAlreadyFinished         = false;
+    private boolean            dlAlreadyFinished        = false;
 
-    public static final String PROPERTY_DOFILESIZECHECK  = "DOFILESIZECHECK";
-    public static final String PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
+    public static final String PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
 
     public void setFilenameFix(boolean b) {
         this.fixWrongContentDispositionHeader = b;
@@ -736,10 +734,6 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-    }
-
-    protected long getVerifiedFileSize() {
-        return downloadLink.getLongProperty(PROPERTY_VERIFIEDFILESIZE, -1);
     }
 
     /**
@@ -797,7 +791,7 @@ abstract public class DownloadInterface {
             /* we can continue to resume the download */
             resumed = connectResumable();
         } else {
-            long verifiedFileSize = getVerifiedFileSize();
+            long verifiedFileSize = downloadLink.getVerifiedFileSize();
             if (verifiedFileSize > 0 && getChunkNum() > 1) {
                 /* check if we have to adapt the number of chunks */
                 int tmp = Math.min(Math.max(1, (int) (verifiedFileSize / Chunk.MIN_CHUNKSIZE)), getChunkNum());
@@ -844,21 +838,10 @@ abstract public class DownloadInterface {
         return connection;
     }
 
-    protected void setVerifiedFileSize(long l) {
-        if (l > 0) {
-            logger.info("Set Verified Filesize to " + l + " for " + downloadLink);
-            downloadLink.setDownloadSize(l);
-            this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, l);
-        } else {
-            logger.severe("No Valid Filesize " + l + " for " + downloadLink);
-            this.downloadLink.setProperty(PROPERTY_VERIFIEDFILESIZE, Property.NULL);
-        }
-    }
-
     private void connectFirstRange() throws IOException {
         long fileSize = getFileSize();
         long part = fileSize / this.getChunkNum();
-        boolean verifiedSize = getVerifiedFileSize() > 0;
+        boolean verifiedSize = downloadLink.getVerifiedFileSize() > 0;
         boolean openRangeRequested = false;
         if (this.getChunkNum() == 1 || fileSize <= 0) {
             /* we only request a single range */
@@ -902,14 +885,14 @@ abstract public class DownloadInterface {
         String start, end;
         start = end = "";
         boolean rangeRequested = false;
-        if (getVerifiedFileSize() > 0) {
+        if (downloadLink.getVerifiedFileSize() > 0) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = (getFileSize() / chunkProgress.length) + "";
         } else {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
         }
-        if (getVerifiedFileSize() < 0 && start.equals("0")) {
+        if (downloadLink.getVerifiedFileSize() < 0 && start.equals("0")) {
             rangeRequested = false;
             request.getHeaders().remove("Range");
         } else {
@@ -1038,8 +1021,8 @@ abstract public class DownloadInterface {
      * Gibt eine bestmoegliche abschaetzung der Dateigroesse zurueck
      */
     protected long getFileSize() {
-        long verifiedFileSize = downloadLink.getLongProperty(PROPERTY_VERIFIEDFILESIZE, -1);
-        if (verifiedFileSize > 0) return verifiedFileSize;
+        long verifiedFileSize = downloadLink.getVerifiedFileSize();
+        if (verifiedFileSize >= 0) return verifiedFileSize;
         if (connection != null) {
             if (connection.getRange() != null) {
                 /* we have a range response, let's use it */
@@ -1162,17 +1145,11 @@ abstract public class DownloadInterface {
      */
     public void setResume(boolean value) {
         resume = value;
-        if (value) {
-            if (checkResumabled()) {
-                this.resumable = true;
-                resume = true;
-            } else {
-                this.resumable = false;
-                logger.warning("Resumepoint not valid");
-            }
-        } else {
-            this.resumable = false;
+        resumable = value;
+        if (value && !checkResumabled()) {
+            logger.warning("Resumepoint not valid");
         }
+        downloadLink.setResumeable(value);
     }
 
     public boolean isResumable() {
@@ -1325,14 +1302,14 @@ abstract public class DownloadInterface {
                 error(LinkStatus.ERROR_PLUGIN_DEFECT, "Sent a redirect to Downloadinterface");
                 return false;
             }
-            if (this.getVerifiedFileSize() < 0) {
+            if (downloadLink.getVerifiedFileSize() < 0) {
                 /* we don't have a verified filesize yet, let's check if we have it now! */
                 if (connection.getRange() != null) {
                     if (connection.getRange()[2] > 0) {
-                        this.setVerifiedFileSize(connection.getRange()[2]);
+                        downloadLink.setVerifiedFileSize(connection.getRange()[2]);
                     }
                 } else if (connection.getRequestProperty("Range") == null && connection.getLongContentLength() > 0 && connection.isOK()) {
-                    this.setVerifiedFileSize(connection.getLongContentLength());
+                    downloadLink.setVerifiedFileSize(connection.getLongContentLength());
                 }
             }
             if (preDownloadCheckFailed(downloadLink)) return false;

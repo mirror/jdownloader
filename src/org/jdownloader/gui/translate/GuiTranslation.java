@@ -835,11 +835,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Connection" })
     String ConnectionColumn_ConnectionColumn();
 
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String ConnectionColumn_getStringValue_pluginonly(HTTPProxy currentProxy);
+    @Default(lngs = { "en" }, values = { "Connection: %s1" })
+    String ConnectionColumn_getStringValue_connection(HTTPProxy currentProxy);
 
-    @Default(lngs = { "en" }, values = { "%s2/%s3 Chunks %s1" })
-    String ConnectionColumn_getStringValue_withchunks(HTTPProxy currentProxy, int currentChunks, int maxChunks);
+    @Default(lngs = { "en" }, values = { "Downloading with %s1 chunk(s)" })
+    String ConnectionColumn_getStringValue_chunks(int currentChunks);
 
     @Default(lngs = { "en" }, values = { "%s1 download(s) running (%s2 connections)" })
     String BottomBar_actionPerformed_running_downloads(int activeDownloads, int incommingConnections);
@@ -2188,4 +2188,17 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "It contains the most important features to control JDownloader without leaving your browser." })
     String JDToolbarOffer_layoutDialogContent_desc2_();
+
+    @Default(lngs = { "en" }, values = { "Download is running" })
+    String ConnectionColumn_DownloadIsRunning();
+
+    @Default(lngs = { "en" }, values = { "Download can be resumed" })
+    String ConnectionColumn_DownloadIsResumeable();
+
+    @Default(lngs = { "en" }, values = { "Account in use: %s1" })
+    String ConnectionColumn_DownloadUsesAccount(String s);
+
+    @Default(lngs = { "en" }, values = { "Download is not running" })
+    String ConnectionColumn_DownloadIsNotRunning();
+
 }
