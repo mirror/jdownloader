@@ -2,6 +2,7 @@ DownloadWatchDog_onShutdownRequest_=Pobieranie w toku!
 DownloadWatchDog_onShutdownRequest_msg=Czy chcesz zatrzymać wszystkie działające pobierania i zamknąć JDownloadera?
 DownloadWatchDog_onShutdownRequest_nonresumable=Pobrania bez możliwości wznowienia są w toku!
 DuplicateAction_DuplicateAction_=Zdublowana Reguła
+ExportAction_ExportAction_tt=Zapisz Reguły do pliku. - Utwórz Backup - Podziel się nimi z innymi.
 Extraction_onShutdownRequest_=Wciąż trwa rozpakowywanie archiwum!
 Extraction_onShutdownRequest_msg=Przerwać proces rozpakowywania?
 ImportAction_tt=Importuj reguły z plików *.jdfilter (*.jdregexfilter)
