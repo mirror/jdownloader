@@ -81,6 +81,7 @@ public class UploadingCom extends PluginForHost {
 
     public void checkErrors(Browser br) throws PluginException {
         logger.info("Checking errors");
+        if (br.containsHTML("<h2>Daily Download Limit</h2>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 1000l);
         if (br.containsHTML("Sorry, but file you are trying to download is larger then allowed for free download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         if (br.containsHTML("(you have reached your daily download limi|>Ihr heutiges Download\\-Limit wurde erreicht)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
@@ -115,8 +116,7 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report
-                     * anything else
+                     * append fake filename , because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -214,7 +214,10 @@ public class UploadingCom extends PluginForHost {
                 }
             }
         }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) {
+            if (br.containsHTML("<h2>Daily Download Limit</h2>")) return AvailableStatus.UNCHECKABLE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         downloadLink.setName(filename.trim());
         if (filesize != null) {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
@@ -309,9 +312,7 @@ public class UploadingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        if (downloadLink.getAvailableStatus() == AvailableStatus.FALSE) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         handleFree0(downloadLink);
     }
 
@@ -445,8 +446,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override
