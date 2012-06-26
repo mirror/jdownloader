@@ -6,4 +6,8 @@ public interface LinkCrawlerHandler {
 
     void handleFilteredLink(CrawledLink link);
 
+    void handleBrokenLink(CrawledLink link);
+
+    void handleUnHandledLink(CrawledLink link);
+
 }

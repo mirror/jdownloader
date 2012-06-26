@@ -1419,4 +1419,12 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return parentNode == offlinePackage;
     }
 
+    @Override
+    public void handleBrokenLink(CrawledLink link) {
+    }
+
+    @Override
+    public void handleUnHandledLink(CrawledLink link) {
+    }
+
 }

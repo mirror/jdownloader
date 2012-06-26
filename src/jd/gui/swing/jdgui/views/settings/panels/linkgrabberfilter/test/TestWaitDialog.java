@@ -124,6 +124,14 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
                 }
                 delayer.run();
             }
+
+            @Override
+            public void handleBrokenLink(CrawledLink link) {
+            }
+
+            @Override
+            public void handleUnHandledLink(CrawledLink link) {
+            }
         });
         lc.crawl(url);
         lc.waitForCrawling();

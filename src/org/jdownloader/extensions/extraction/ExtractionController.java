@@ -258,16 +258,19 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             this.exception = e;
             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
         } finally {
-            if (gotKilled()) {
-                logger.info("ExtractionController has been killed");
-                logger.clear();
-            }
             try {
-                extractor.close();
-            } catch (final Throwable e) {
+                if (gotKilled()) {
+                    logger.info("ExtractionController has been killed");
+                    logger.clear();
+                }
+                try {
+                    extractor.close();
+                } catch (final Throwable e) {
+                }
+                fireEvent(ExtractionEvent.Type.CLEANUP);
+            } finally {
+                logger.close();
             }
-            fireEvent(ExtractionEvent.Type.CLEANUP);
-            logger.close();
         }
         return null;
     }

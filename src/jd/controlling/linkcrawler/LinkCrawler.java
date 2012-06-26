@@ -51,6 +51,10 @@ public class LinkCrawler implements IOPermission {
     private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
     private ArrayList<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
     private AtomicInteger               filteredLinksCounter        = new AtomicInteger(0);
+    private ArrayList<CrawledLink>      brokenLinks                 = new ArrayList<CrawledLink>();
+    private AtomicInteger               brokenLinksCounter          = new AtomicInteger(0);
+    private ArrayList<CrawledLink>      unhandledLinks              = new ArrayList<CrawledLink>();
+    private AtomicInteger               unhandledLinksCounter       = new AtomicInteger(0);
     private AtomicInteger               crawler                     = new AtomicInteger(0);
     private static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
     private HashSet<String>             duplicateFinderContainer    = new HashSet<String>();
@@ -643,6 +647,7 @@ public class LinkCrawler implements IOPermission {
                     /* break for mainloopretry */
                     break;
                 }
+                handleUnhandledCryptedLink(possibleCryptedLink);
             }
         } finally {
             checkFinishNotify();
@@ -1171,7 +1176,10 @@ public class LinkCrawler implements IOPermission {
             cryptedLink.setBrokenCrawlerHandler(null);
             if (decryptedPossibleLinks != null) {
                 dist.distribute(decryptedPossibleLinks.toArray(new DownloadLink[decryptedPossibleLinks.size()]));
-            } else if (brokenCrawler != null) {
+            } else {
+                this.handleBrokenCrawledLink(cryptedLink);
+            }
+            if (brokenCrawler != null) {
                 try {
                     brokenCrawler.brokenCrawler(cryptedLink, this);
                 } catch (final Throwable e) {
@@ -1191,6 +1199,24 @@ public class LinkCrawler implements IOPermission {
 
     public ArrayList<CrawledLink> getFilteredLinks() {
         return filteredLinks;
+    }
+
+    public ArrayList<CrawledLink> getBrokenLinks() {
+        return brokenLinks;
+    }
+
+    public ArrayList<CrawledLink> getUnhandledLinks() {
+        return unhandledLinks;
+    }
+
+    protected void handleBrokenCrawledLink(CrawledLink link) {
+        this.brokenLinksCounter.incrementAndGet();
+        handler.handleBrokenLink(link);
+    }
+
+    protected void handleUnhandledCryptedLink(CrawledLink link) {
+        this.unhandledLinksCounter.incrementAndGet();
+        handler.handleUnHandledLink(link);
     }
 
     protected void handleCrawledLink(CrawledLink link) {
@@ -1272,6 +1298,14 @@ public class LinkCrawler implements IOPermission {
         return filteredLinksCounter.get();
     }
 
+    public int brokenLinksFound() {
+        return brokenLinksCounter.get();
+    }
+
+    public int unhandledLinksFound() {
+        return unhandledLinksCounter.get();
+    }
+
     protected LinkCrawlerHandler defaulHandlerFactory() {
         return new LinkCrawlerHandler() {
 
@@ -1284,6 +1318,20 @@ public class LinkCrawler implements IOPermission {
             public void handleFilteredLink(CrawledLink link) {
                 synchronized (filteredLinks) {
                     filteredLinks.add(link);
+                }
+            }
+
+            @Override
+            public void handleBrokenLink(CrawledLink link) {
+                synchronized (brokenLinks) {
+                    brokenLinks.add(link);
+                }
+            }
+
+            @Override
+            public void handleUnHandledLink(CrawledLink link) {
+                synchronized (unhandledLinks) {
+                    unhandledLinks.add(link);
                 }
             }
         };

@@ -108,7 +108,7 @@ public class AddLinksProgress extends AbstractDialog<Object> {
                 if (lc != null) {
                     lc.waitForCrawling();
                     System.out.println("JOB DONE: " + lc.crawledLinksFound());
-                    if (!job.isDeepAnalyse() && lc.crawledLinksFound() == 0) {
+                    if (!job.isDeepAnalyse() && lc.crawledLinksFound() == 0 && lc.brokenLinksFound() == 0) {
                         try {
                             Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
                             job.setDeepAnalyse(true);

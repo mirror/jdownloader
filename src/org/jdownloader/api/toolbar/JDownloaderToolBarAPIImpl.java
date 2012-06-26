@@ -359,6 +359,14 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                     public void handleFilteredLink(CrawledLink link) {
                         defaultHandler.handleFilteredLink(link);
                     }
+
+                    @Override
+                    public void handleBrokenLink(CrawledLink link) {
+                    }
+
+                    @Override
+                    public void handleUnHandledLink(CrawledLink link) {
+                    }
                 });
                 if (map == false) {
                     /* we parse complete dom here and check for valid links */

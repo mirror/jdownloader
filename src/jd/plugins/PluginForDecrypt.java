@@ -178,10 +178,8 @@ public abstract class PluginForDecrypt extends Plugin {
             if (logger instanceof LogSource) {
                 /* make sure we use the right logger */
                 ((LogSource) logger).clear();
-                ((LogSource) logger).log(e);
-            } else {
-                logger.log(Level.SEVERE, "DecrypterException:" + e.getMessage(), e);
             }
+            LogSource.exception(logger, e);
         } catch (InterruptedException e) {
             /* plugin got interrupted, clear log and note what happened */
             if (logger instanceof LogSource) {
@@ -195,12 +193,7 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * damn, something must have gone really really bad, lets keep the log
              */
-            if (logger instanceof LogSource) {
-                /* make sure we use the right logger */
-                ((LogSource) logger).log(e);
-            } else {
-                logger.log(Level.SEVERE, "Exception:" + e.getMessage(), e);
-            }
+            LogSource.exception(logger, e);
         } finally {
             this.currentLink = null;
         }
@@ -209,6 +202,7 @@ public abstract class PluginForDecrypt extends Plugin {
              * null as return value? something must have happened, do not clear log
              */
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
+            logger.severe("URL was: " + source.getURL());
 
             /* lets forward the log */
             if (logger instanceof LogSource) {
