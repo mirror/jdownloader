@@ -6,6 +6,7 @@ archivename=Archivname
 auto_extract_enabled=Nach dem Download entpacken
 cannot_extract_incopmplete=%s1 kann nicht entpackt werden. Das Archiv ist nicht vollständig!
 close=Schließen
+context_cleanup=Aufräumen nach Entpacken
 contextmenu_auto_extract_package=Automatisches Entpacken aktiviert
 contextmenu_autoextract=Automatisches Entpacken aktiviert
 contextmenu_extract=Jetzt Entpacken
