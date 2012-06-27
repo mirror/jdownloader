@@ -81,7 +81,7 @@ public class UploadingCom extends PluginForHost {
 
     public void checkErrors(Browser br) throws PluginException {
         logger.info("Checking errors");
-        if (br.containsHTML("<h2>Daily Download Limit</h2>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 1000l);
+        if (br.containsHTML("<h2>Daily Download Limit</h2>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 1 * 60 * 60 * 1000l);
         if (br.containsHTML("Sorry, but file you are trying to download is larger then allowed for free download")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account");
         if (br.containsHTML("YOU REACHED YOUR COUNTRY DAY LIMIT")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, JDL.L("plugins.hoster.uploadingcom.errors.countrylimitreached", "You reached your country daily limit"), 60 * 60 * 1000l);
         if (br.containsHTML("(you have reached your daily download limi|>Ihr heutiges Download\\-Limit wurde erreicht)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
@@ -297,8 +297,8 @@ public class UploadingCom extends PluginForHost {
             if (cookie != null) error = cookie.getValue();
             if (error == null) error = br.getCookie("http://uploading.com/", "error");
             if (error != null && error.contains("wait")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1000l * 15);
-            if (error != null && error.contains("reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 1000l);
-            if (br.containsHTML("<h2>Daily Download Limit</h2>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 1000l);
+            if (error != null && error.contains("reached")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+            if (br.containsHTML("<h2>Daily Download Limit</h2>")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 1 * 60 * 60 * 1000l);
             if (br.containsHTML("The page you requested was not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             logger.warning("dl isn't ContentDisposition, plugin must be broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

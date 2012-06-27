@@ -69,6 +69,7 @@ public class MainTabbedPane extends JTabbedPane {
     }
 
     public void addTab(View view) {
+        if (this.contains(view)) return;
         if (view instanceof ClosableView) {
             addClosableTab((ClosableView) view);
         } else {

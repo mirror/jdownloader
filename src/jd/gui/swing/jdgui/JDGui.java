@@ -269,13 +269,24 @@ public class JDGui extends SwingGui {
         this.linkgrabberView = new LinkGrabberView();
         this.mainTabbedPane.addTab(downloadView);
         this.mainTabbedPane.addTab(this.linkgrabberView);
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+            @Override
+            public void run() {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
+                            mainTabbedPane.addTab(ConfigurationView.getInstance());
+                        }
+                        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
+                            // this.mainTabbedPane.addTab(LogView.getInstance());
+                        }
+                    }
 
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isConfigViewVisible()) {
-            this.mainTabbedPane.addTab(ConfigurationView.getInstance());
-        }
-        if (JsonConfig.create(GraphicalUserInterfaceSettings.class).isLogViewVisible()) {
-            // this.mainTabbedPane.addTab(LogView.getInstance());
-        }
+                };
+            }
+        });
+
         this.mainTabbedPane.setSelectedComponent(this.downloadView);
 
         if (CrossSystem.isMac()) {
