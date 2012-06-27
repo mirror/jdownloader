@@ -220,9 +220,14 @@ public class RehostTo extends PluginForHost {
     private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws Exception {
         String statusMessage = null;
         String error = null;
-        // at this stage all errors are handled within redirection urls.
-        if (!br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null) return;
-        if (br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null) error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
+        // error message usually provided by redirect url!
+        if ((br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null))
+            error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
+        // but on download we are following redirects. We need to catch them on the current browser url!
+        else if (br.getURL().contains("&error="))
+            error = new Regex(br.getURL(), "error=([^&]+)").getMatch(0);
+        else
+            return;
         try {
             if (error.equals("low_prem_credits")) {
                 /*
@@ -239,7 +244,8 @@ public class RehostTo extends PluginForHost {
                  * again. Repeat that for 3 times until download is marked as failed.
                  */
                 statusMessage = "Download Failed! Temporarily unavailable.";
-                tempUnavailableHoster(account, downloadLink, 15 * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 15 * 60 * 1000);
+                // tempUnavailableHoster(account, downloadLink, 15 * 60 * 1000);
             } else if (error.equals("no_prem_available")) {
                 /*
                  * 'no_prem_available': there is currently no premium account available in our system to process this download. Please
@@ -264,6 +270,7 @@ public class RehostTo extends PluginForHost {
             logger.info("Exception: statusCode: " + error + " statusMessage: " + statusMessage);
             throw e;
         }
+
     }
 
     @Override

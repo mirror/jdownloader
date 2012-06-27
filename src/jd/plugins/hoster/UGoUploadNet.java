@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,10 +47,14 @@ public class UGoUploadNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("ugoupload.net/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\(([0-9\\.]+ [A-Za-z]+)\\)<br/>");
-        final String filename = fileInfo.getMatch(0);
-        final String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String[][] fileInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>[\r\n\t ]+(.+)\\(([\\d\\.]+ (KB|MB|GB))\\)<br/>").getMatches();
+        if (fileInfo == null || fileInfo.length == 0) {
+            fileInfo = br.getRegex("(.*?) \\(([\\d\\.]+ (KB|MB|GB))\\)").getMatches();
+            if ((fileInfo == null || fileInfo.length == 0) || fileInfo[0][0] == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        }
+        String filename = fileInfo[0][0];
+        String filesize = null;
+        if (fileInfo[0][1] != null) filesize = fileInfo[0][1];
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -52,19 +52,19 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "netuploaded.com" }, urls = { "http://(www\\.)?netuploaded\\.com/[a-z0-9]{12}" }, flags = { 2 })
-public class NetUploadedCom extends PluginForHost {
+@HostPlugin(revision = "$Revision: 17424 $", interfaceVersion = 2, names = { "fileza.net" }, urls = { "https?://(www\\.)?fileza\\.net/[a-z0-9]{12}" }, flags = { 2 })
+public class FileZaNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://netuploaded.com";
+    private final String         COOKIE_HOST                  = "http://fileza.net";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -73,24 +73,24 @@ public class NetUploadedCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.7-raz
     // mods:
-    // non account: 1 (no resume) * unlimited?
-    // free account: same as above not tested.
+    // non account: 1 (no resume) * 1
+    // free account: same as above
     // premium account: 20 * unlimited
-    // protocol: has https but not setup correclty
-    // captchatype: 4dignum(mm)
+    // protocol: no https
+    // captchatype: recaptcha
     // other: no redirects
-
-    @Override
-    public String getAGBLink() {
-        return COOKIE_HOST + "/tos.html";
-    }
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
-    public NetUploadedCom(PluginWrapper wrapper) {
+    @Override
+    public String getAGBLink() {
+        return COOKIE_HOST + "/tos.html";
+    }
+
+    public FileZaNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -102,7 +102,7 @@ public class NetUploadedCom extends PluginForHost {
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return true;
+        return false;
     }
 
     public void prepBrowser() {
@@ -376,13 +376,14 @@ public class NetUploadedCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?action=\\'(http.*?)\\'").getMatch(1);
+                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
                         // generic fail over for COOKIE_HOST on final link format.
                         if (dllink == null) {
+                            // dllink = new Regex(correctedBR, "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             dllink = new Regex(correctedBR, "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
@@ -457,7 +458,7 @@ public class NetUploadedCom extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|We are sorry, this file is bigger than)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -550,10 +551,10 @@ public class NetUploadedCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space[][] = new Regex(correctedBR, ">Used space: <[^>]+>([0-9\\.]+) (KB|MB|GB|TB)").getMatches();
+        String space[][] = new Regex(correctedBR, ">Used space:</td>.*?<td.*?b>([0-9\\.]+) (KB|MB|GB|TB)").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic: <[^>]+>([^<>]+)").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -562,15 +563,15 @@ public class NetUploadedCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(20);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(20);
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, ">Account Type.+<b>(\\d{1,2} [A-Za-z]+ \\d{4})</b>").getMatch(0);
+            String expire = new Regex(correctedBR, ">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>").getMatch(2);
             if (expire == null) expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
@@ -620,7 +621,7 @@ public class NetUploadedCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<|>Account Type.+<b>\\d{1,2} [A-Za-z]+ \\d{4}</b>)").matches()) {
+                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

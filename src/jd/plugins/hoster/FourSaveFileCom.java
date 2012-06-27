@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -34,6 +36,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -119,47 +122,69 @@ public class FourSaveFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    // filename = new Regex(correctedBR,
-                    // "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                    // filename = new Regex(correctedBR,
-                    // "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                    // streaming support
-                    if (filename == null) {
-                        filename = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+        String[] fileInfo = new String[3];
+        // scan the first page
+        scanInfo(fileInfo);
+        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        if (fileInfo[0] == null) {
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                sendForm(download1);
+                scanInfo(fileInfo);
+            }
+        }
+        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("filename equals null, throwing \"plugin defect\"");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(fileInfo[0].trim());
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
+        return AvailableStatus.TRUE;
+    }
+
+    private String[] scanInfo(String[] fileInfo) {
+        // standard traits from base page
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "Files:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // traits from download1 page below.
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
+                            if (fileInfo[0] == null) {
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                }
             }
         }
-        if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) link.setMD5Hash(md5hash.trim());
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        return fileInfo;
     }
 
     @Override
@@ -205,7 +230,25 @@ public class FourSaveFileCom extends PluginForHost {
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
                 }
                 /* Captcha START */
-                if (correctedBR.contains("/captchas/")) {
+                if (correctedBR.contains(";background:#ccc;text-align") && correctedBR.contains("<span style='position:absolute;padding-left")) {
+                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
+                    /** Captcha method by ManiacMansion */
+                    String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    if (letters == null || letters.length == 0) {
+                        logger.warning("plaintext captchahandling broken!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    for (String[] letter : letters) {
+                        capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
+                    }
+                    StringBuilder code = new StringBuilder();
+                    for (String value : capMap.values()) {
+                        code.append(value);
+                    }
+                    dlForm.put("code", code.toString());
+                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
+                } else if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
                     String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                     String captchaurl = null;
@@ -289,19 +332,14 @@ public class FourSaveFileCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -335,7 +373,7 @@ public class FourSaveFileCom extends PluginForHost {
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
-        if (dllink == null) dllink = new Regex(correctedBR, "\\'(http://[a-z0-9]+\\.4savefile\\.com/files/\\d+/[a-z0-9]+/[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) dllink = new Regex(correctedBR, "(http://[a-z0-9]+\\.4savefile\\.com/files/\\d+/[a-z0-9]+/[^<>\"\\']+)").getMatch(0);
         if (dllink == null) {
             String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
             if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -560,7 +598,6 @@ public class FourSaveFileCom extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                // Form loginform = br.getForm(0);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
@@ -568,7 +605,6 @@ public class FourSaveFileCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
@@ -660,8 +696,7 @@ public class FourSaveFileCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -672,8 +707,14 @@ public class FourSaveFileCom extends PluginForHost {
     private Form getFormByKey(final String key, final String value) {
         Form[] workaround = br.getForms();
         if (workaround != null) {
-            for (Form f : workaround)
-                if (f.hasInputFieldByName(key) == f.getVarsMap().containsValue(value)) { return f; }
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
         }
         return null;
     }
