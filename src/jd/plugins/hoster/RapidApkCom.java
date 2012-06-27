@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "rapidapk.com" }, urls = { "https?://(www\\.)?rapidapk\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidapk.com" }, urls = { "https?://(www\\.)?rapidapk\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class RapidApkCom extends PluginForHost {
 
     private String              correctedBR         = "";

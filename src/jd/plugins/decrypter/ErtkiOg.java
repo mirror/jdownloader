@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15544 $", interfaceVersion = 2, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" }, flags = { 0 })
 public class ErtkiOg extends PluginForDecrypt {
 
     public ErtkiOg(PluginWrapper wrapper) {

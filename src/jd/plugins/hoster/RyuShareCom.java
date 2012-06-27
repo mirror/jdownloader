@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "ryushare.com" }, urls = { "https?://(www\\.)?ryushare\\.com/[a-z0-9]{10,12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ryushare.com" }, urls = { "https?://(www\\.)?ryushare\\.com/[a-z0-9]{10,12}" }, flags = { 2 })
 public class RyuShareCom extends PluginForHost {
 
     private String               correctedBR         = "";

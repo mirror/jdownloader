@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17424 $", interfaceVersion = 2, names = { "fileprohost.com" }, urls = { "https?://(www\\.)?fileprohost\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileprohost.com" }, urls = { "https?://(www\\.)?fileprohost\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class FileProHostCom extends PluginForHost {
 
     private String               correctedBR                  = "";

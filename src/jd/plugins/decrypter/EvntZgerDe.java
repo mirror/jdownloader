@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "eventzeiger.de" }, urls = { "http://[\\w\\.]*?eventzeiger.de/photogallery.php\\?album_id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eventzeiger.de" }, urls = { "http://[\\w\\.]*?eventzeiger.de/photogallery.php\\?album_id=[0-9]+" }, flags = { 0 })
 public class EvntZgerDe extends PluginForDecrypt {
 
     public EvntZgerDe(PluginWrapper wrapper) {

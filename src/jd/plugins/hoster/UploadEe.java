@@ -32,7 +32,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(www\\.)?upload\\.ee/files/\\d+/[^ ]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upload.ee" }, urls = { "https?://(www\\.)?upload\\.ee/files/\\d+/[^ ]+" }, flags = { 0 })
 public class UploadEe extends PluginForHost {
 
     // DEV NOTES:

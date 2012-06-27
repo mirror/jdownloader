@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://channel\\.pandora\\.tv/channel/video\\.ptv?.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pandora.tv" }, urls = { "http://channel\\.pandora\\.tv/channel/video\\.ptv?.+" }, flags = { 0 })
 public class PandoraTV extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.pandora.tv";

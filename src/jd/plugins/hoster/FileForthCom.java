@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16002 $", interfaceVersion = 2, names = { "fileforth.com" }, urls = { "https?://(www\\.)?fileforth\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileforth.com" }, urls = { "https?://(www\\.)?fileforth\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileForthCom extends PluginForHost {
 
     private String               correctedBR         = "";

@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
 public class RealDebridCom extends PluginForHost {
 
     // DEV NOTES

@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 11612 $", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/[\\-/\\dA-Za-c]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/[\\-/\\dA-Za-c]+_\\d+\\.html" }, flags = { 0 })
 public class Antena3Com extends PluginForHost {
 
     private static String baseLink = "http://desprogresiva.antena3.com/";

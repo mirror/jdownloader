@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/folder/[a-zA-Z0-9\\-\\.\\_]{11}B" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unibytes.com" }, urls = { "http://(www\\.)?unibytes\\.com/folder/[a-zA-Z0-9\\-\\.\\_]{11}B" }, flags = { 0 })
 public class UniBytesComFolder extends PluginForDecrypt {
 
     // https not currently available

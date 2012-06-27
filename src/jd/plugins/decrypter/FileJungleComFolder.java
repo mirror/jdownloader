@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14964 $", interfaceVersion = 2, names = { "filejungle.com" }, urls = { "http://(www\\.)?filejungle\\.com/l/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filejungle.com" }, urls = { "http://(www\\.)?filejungle\\.com/l/[A-Za-z0-9]+" }, flags = { 0 })
 public class FileJungleComFolder extends PluginForDecrypt {
 
     public FileJungleComFolder(PluginWrapper wrapper) {

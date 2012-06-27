@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15422 $", interfaceVersion = 2, names = { "shurload.es" }, urls = { "http://(www\\.)?shurload\\.es/(download|view)\\.php\\?den=[a-z0-9]{32}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shurload.es" }, urls = { "http://(www\\.)?shurload\\.es/(download|view)\\.php\\?den=[a-z0-9]{32}" }, flags = { 2 })
 public class ShurLoadEs extends PluginForHost {
 
     // DEV NOTES - by raztoki

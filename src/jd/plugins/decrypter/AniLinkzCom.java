@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13155 $", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get|img|dsa).+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get|img|dsa).+/.+" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);

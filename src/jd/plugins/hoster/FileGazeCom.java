@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16154 $", interfaceVersion = 2, names = { "filegaze.com" }, urls = { "https?://(www\\.)?filegaze\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filegaze.com" }, urls = { "https?://(www\\.)?filegaze\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class FileGazeCom extends PluginForHost {
 
     private String              correctedBR         = "";

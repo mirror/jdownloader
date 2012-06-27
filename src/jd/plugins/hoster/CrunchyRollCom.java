@@ -68,7 +68,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl&media_id=[0-9]+.*)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://www\\.crunchyroll\\.com/(xml/\\?req=RpcApiVideoPlayer_GetStandardConfig&media_id=[0-9]+.*|xml/\\?req=RpcApiSubtitle_GetXml&subtitle_script_id=[0-9]+.*|android_rpc/\\?req=RpcApiAndroid_GetVideoWithAcl&media_id=[0-9]+.*)" }, flags = { 2 })
 public class CrunchyRollCom extends PluginForHost {
 
     static private Object                                    lock                 = new Object();

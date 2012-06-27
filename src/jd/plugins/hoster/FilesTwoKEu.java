@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16456 $", interfaceVersion = 2, names = { "files2k.eu" }, urls = { "https?://(www\\.)?files2k\\.eu/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files2k.eu" }, urls = { "https?://(www\\.)?files2k\\.eu/[a-z0-9]{12}" }, flags = { 0 })
 public class FilesTwoKEu extends PluginForHost {
 
     private String              correctedBR         = "";

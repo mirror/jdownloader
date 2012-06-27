@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 15695 $", interfaceVersion = 2, names = { "dubhappy.com" }, urls = { "http://(www\\.)?dubhappy\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dubhappy.com" }, urls = { "http://(www\\.)?dubhappy\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
 public class DbHpyCm extends PluginForDecrypt {
     public DbHpyCm(PluginWrapper wrapper) {
         super(wrapper);

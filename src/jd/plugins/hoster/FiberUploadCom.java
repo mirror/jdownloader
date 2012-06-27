@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "bulletupload.com", "fiberupload.com" }, urls = { "https://(www\\.)?dgegfhet938560r0thjbo043zblablaUNUSED_REGEX", "https?://(www\\.)?(fiberupload|bulletupload)\\.com/[a-z0-9]{12}" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bulletupload.com", "fiberupload.com" }, urls = { "https://(www\\.)?dgegfhet938560r0thjbo043zblablaUNUSED_REGEX", "https?://(www\\.)?(fiberupload|bulletupload)\\.com/[a-z0-9]{12}" }, flags = { 0, 2 })
 public class FiberUploadCom extends PluginForHost {
 
     private String               correctedBR         = "";

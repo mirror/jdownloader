@@ -23,6 +23,8 @@ import java.io.RandomAccessFile;
 import java.util.Date;
 import java.util.logging.Level;
 
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.http.Request;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -30,7 +32,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
@@ -88,6 +89,10 @@ public class RAFDownload extends DownloadInterface {
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
                         String hashFile = Hash.getSHA1(part);
                         success = hash.equalsIgnoreCase(hashFile);
+                    } else if ((hash = new Regex(downloadLink.getName(), ".*?([A-Fa-f0-9]{8})").getMatch(0)) != null) {
+                        type = "CRC32";
+                        String hashFile = Long.toHexString(Hash.getCRC32(part));
+                        success = hash.equalsIgnoreCase(hashFile);
                     } else {
                         DownloadLink sfv = null;
                         synchronized (downloadLink.getFilePackage()) {
@@ -141,10 +146,8 @@ public class RAFDownload extends DownloadInterface {
                 logger.severe("Could not rename file " + part + " to " + complete);
                 logger.severe("Try copy workaround!");
                 try {
-                    if (Application.getJavaVersion() >= Application.JAVA16) {
-                        long free = 0;
-                        if ((free = part.getParentFile().getFreeSpace()) > 0 && free < part.length()) { throw new Throwable("not enough diskspace free to copy part to complete file"); }
-                    }
+                    DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(part.getParentFile(), part.length());
+                    if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
                     IO.copyFile(part, complete);
                     renameOkay = true;
                     part.deleteOnExit();
@@ -152,8 +155,10 @@ public class RAFDownload extends DownloadInterface {
                 } catch (Throwable e) {
                     LogSource.exception(logger, e);
                     /* error happened, lets delete complete file */
-                    complete.delete();
-                    complete.deleteOnExit();
+                    if (complete.exists() && complete.length() != part.length()) {
+                        complete.delete();
+                        complete.deleteOnExit();
+                    }
                 }
                 if (!renameOkay) {
                     logger.severe("Copy workaround: :(");

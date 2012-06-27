@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16650 $", interfaceVersion = 2, names = { "elitedisk.com" }, urls = { "https?://(www\\.)?elitedisk\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "elitedisk.com" }, urls = { "https?://(www\\.)?elitedisk\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class EliteDiskCom extends PluginForHost {
 
     private String               correctedBR                  = "";

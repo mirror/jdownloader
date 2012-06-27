@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 149041111 $", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://(www\\.)?unixmanga\\.com/onlinereading/[^\\?]*?/.*?(c|ch)\\d+.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "unixmanga.com" }, urls = { "http://(www\\.)?unixmanga\\.com/onlinereading/[^\\?]*?/.*?(c|ch)\\d+.*" }, flags = { 0 })
 public class UnixMangaCom extends PluginForDecrypt {
 
     public UnixMangaCom(PluginWrapper wrapper) {

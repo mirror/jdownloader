@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*

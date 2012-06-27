@@ -15,7 +15,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 12893 $", interfaceVersion = 2, names = { "rayfile.com" }, urls = { "http://[\\w]*?\\.rayfile\\.com/(.*?|zh-cn/)files/(.*?)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rayfile.com" }, urls = { "http://[\\w]*?\\.rayfile\\.com/(.*?|zh-cn/)files/(.*?)/" }, flags = { 2 })
 public class RayFileCom extends PluginForHost {
 
     public RayFileCom(final PluginWrapper wrapper) {

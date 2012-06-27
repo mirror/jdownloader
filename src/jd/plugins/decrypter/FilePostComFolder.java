@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com|fp\\.io)/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filepost.com" }, urls = { "https?://(www\\.)?(filepost\\.com|fp\\.io)/folder/[a-z0-9]+" }, flags = { 0 })
 public class FilePostComFolder extends PluginForDecrypt {
 
     public FilePostComFolder(PluginWrapper wrapper) {

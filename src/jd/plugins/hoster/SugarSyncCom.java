@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(www\\.)?sugarsync\\.com/pf/D[\\d\\_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sugarsync.com" }, urls = { "https?://(www\\.)?sugarsync\\.com/pf/D[\\d\\_]+" }, flags = { 0 })
 public class SugarSyncCom extends PluginForHost {
 
     public SugarSyncCom(PluginWrapper wrapper) {

@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15422 $", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "DEVART://.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deviantart.com" }, urls = { "DEVART://.+" }, flags = { 2 })
 public class DeviantArtCom extends PluginForHost {
 
     /**

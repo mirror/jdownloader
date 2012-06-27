@@ -42,7 +42,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16318 $", interfaceVersion = 3, names = { "filenium.com" }, urls = { "http://\\w+\\.filenium\\.com/get/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filenium.com" }, urls = { "http://\\w+\\.filenium\\.com/get/\\w+/.+" }, flags = { 2 })
 public class FileniumCom extends PluginForHost {
 
     /**

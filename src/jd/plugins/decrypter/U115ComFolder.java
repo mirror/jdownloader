@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision: 14953 $", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/folder/[a-z0-9]{1,11}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "u.115.com" }, urls = { "http://(www\\.)?(u\\.)?115\\.com/folder/[a-z0-9]{1,11}" }, flags = { 0 })
 public class U115ComFolder extends PluginForDecrypt {
 
     // DEV NOTES

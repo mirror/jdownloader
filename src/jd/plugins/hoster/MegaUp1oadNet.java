@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16510 $", interfaceVersion = 2, names = { "megaup1oad.net" }, urls = { "https?://(www\\.)?megaup1oad\\.net/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megaup1oad.net" }, urls = { "https?://(www\\.)?megaup1oad\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class MegaUp1oadNet extends PluginForHost {
 
     private String               correctedBR                  = "";

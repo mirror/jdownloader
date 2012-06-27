@@ -23,7 +23,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision: 16456 $", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com/[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "crunchyroll.com" }, urls = { "http://(www\\.)?crunchyroll\\.com/[\\w\\_\\-]+/[\\w\\_\\-]+\\-[0-9]+" }, flags = { 2 })
 public class CrhyRllCom extends PluginForDecrypt {
 
     // Define the video quality codes used for RTMP

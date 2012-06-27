@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 15969 $", interfaceVersion = 2, names = { "kupload.org" }, urls = { "https?://(www\\.)?kupload\\.org/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kupload.org" }, urls = { "https?://(www\\.)?kupload\\.org/[a-z0-9]{12}" }, flags = { 2 })
 public class KUploadOrg extends PluginForHost {
 
     private String              correctedBR         = "";

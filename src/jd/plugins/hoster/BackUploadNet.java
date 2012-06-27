@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16995 $", interfaceVersion = 2, names = { "backupload.net" }, urls = { "https?://(www\\.)?backupload\\.net/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "backupload.net" }, urls = { "https?://(www\\.)?backupload\\.net/[a-z0-9]{12}" }, flags = { 2 })
 public class BackUploadNet extends PluginForHost {
 
     private String               correctedBR                  = "";

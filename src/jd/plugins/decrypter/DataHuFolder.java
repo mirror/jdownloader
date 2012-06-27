@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 14880 $", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data\\.hu/dir/[0-9a-z]+" }, flags = { 0 })
 public class DataHuFolder extends PluginForDecrypt {
 
     public DataHuFolder(PluginWrapper wrapper) {

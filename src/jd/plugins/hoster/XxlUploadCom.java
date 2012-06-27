@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "xxlupload.com" }, urls = { "https?://(www\\.)?xxlupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxlupload.com" }, urls = { "https?://(www\\.)?xxlupload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class XxlUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";

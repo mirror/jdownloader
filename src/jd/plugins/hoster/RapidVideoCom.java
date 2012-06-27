@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 16374 $", interfaceVersion = 2, names = { "rapidvideo.com" }, urls = { "https?://(www\\.)?rapidvideo\\.com/view/[a-z0-9]{8}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.com" }, urls = { "https?://(www\\.)?rapidvideo\\.com/view/[a-z0-9]{8}" }, flags = { 0 })
 public class RapidVideoCom extends PluginForHost {
 
     public RapidVideoCom(PluginWrapper wrapper) {

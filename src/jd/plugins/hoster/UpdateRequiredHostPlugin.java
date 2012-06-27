@@ -16,7 +16,7 @@ import jd.plugins.PluginForHost;
  * @author daniel
  * 
  */
-@HostPlugin(revision = "$Revision: 16260 $", interfaceVersion = 3, names = { "UpdateRequired" }, urls = { "LXISAWESOME" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "UpdateRequired" }, urls = { "LXISAWESOME" }, flags = { 0 })
 public class UpdateRequiredHostPlugin extends PluginForHost {
 
     public UpdateRequiredHostPlugin(PluginWrapper wrapper) {

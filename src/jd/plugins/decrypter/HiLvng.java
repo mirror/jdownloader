@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 13393 $", interfaceVersion = 2, names = { "hi-living.de" }, urls = { "http://[\\w\\.]*?hi-living.de/galerie/thumbnails.php\\?album=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hi-living.de" }, urls = { "http://[\\w\\.]*?hi-living.de/galerie/thumbnails.php\\?album=[0-9]+" }, flags = { 0 })
 public class HiLvng extends PluginForDecrypt {
 
     public HiLvng(PluginWrapper wrapper) {

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 7387 $", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d+" }, flags = { 0 })
 public class UpldsCom extends PluginForDecrypt {
 
     public UpldsCom(PluginWrapper wrapper) {

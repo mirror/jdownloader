@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14953 $", interfaceVersion = 2, names = { "fileswap.com" }, urls = { "https?://(www\\.)?fileswap\\.com/folder/[a-zA-Z0-9]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileswap.com" }, urls = { "https?://(www\\.)?fileswap\\.com/folder/[a-zA-Z0-9]+/" }, flags = { 0 })
 public class FileSwapComFolder extends PluginForDecrypt {
 
     public FileSwapComFolder(PluginWrapper wrapper) {

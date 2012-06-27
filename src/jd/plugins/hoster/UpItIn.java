@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 14918 $", interfaceVersion = 2, names = { "upit.in" }, urls = { "http://(www\\.)?upit\\.in/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upit.in" }, urls = { "http://(www\\.)?upit\\.in/[a-z0-9]{12}" }, flags = { 2 })
 public class UpItIn extends PluginForHost {
 
     private String              BRBEFORE            = "";

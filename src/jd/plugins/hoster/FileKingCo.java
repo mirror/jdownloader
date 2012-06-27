@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16030 $", interfaceVersion = 2, names = { "fileking.co" }, urls = { "https?://(www\\.)?fileking\\.co/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileking.co" }, urls = { "https?://(www\\.)?fileking\\.co/[a-z0-9]{12}" }, flags = { 0 })
 public class FileKingCo extends PluginForHost {
 
     private String              correctedBR         = "";

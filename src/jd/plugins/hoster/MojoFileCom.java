@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16172 $", interfaceVersion = 2, names = { "mojofile.com" }, urls = { "https?://(www\\.)?mojofile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojofile.com" }, urls = { "https?://(www\\.)?mojofile\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class MojoFileCom extends PluginForHost {
 
     private String              correctedBR         = "";

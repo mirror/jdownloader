@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision: 12299 $", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ustream.tv" }, urls = { "http://(www\\.)?ustream.tv/recorded/\\d+(/highlight/\\d+)?" }, flags = { 0 })
 public class UstreamTv extends PluginForHost {
 
     private String  DLLINK       = null;

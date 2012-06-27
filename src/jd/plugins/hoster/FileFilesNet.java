@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flyfiles.net" }, urls = { "https?://(www\\.)?flyfiles\\.net/[a-z0-9]{10}" }, flags = { 2 })
 public class FileFilesNet extends PluginForHost {
 
     private static final String HOST = "http://flyfiles.net";

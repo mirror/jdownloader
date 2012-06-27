@@ -16,7 +16,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 10114 $", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/model/[a-zA0-9\\-\\_]+/movie/\\d+/[a-zA0-9\\-\\_]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/model/[a-zA0-9\\-\\_]+/movie/\\d+/[a-zA0-9\\-\\_]+/" }, flags = { 0 })
 public class MetArt extends PluginForDecrypt {
 
     public MetArt(PluginWrapper wrapper) {

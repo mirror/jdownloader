@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17148 $", interfaceVersion = 2, names = { "animegoon.com" }, urls = { "https?://(www\\.)?animegoon\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animegoon.com" }, urls = { "https?://(www\\.)?animegoon\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class AnimeGoonCom extends PluginForHost {
 
     private String               correctedBR                  = "";

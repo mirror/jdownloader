@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://((www\\.)?animea\\.net/download/[\\d\\-]+/[\\w\\-]+episode\\-[\\d+\\.]+\\.html|manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d+\\.]+(\\-page\\-[\\d+\\.]+)?\\.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://((www\\.)?animea\\.net/download/[\\d\\-]+/[\\w\\-]+episode\\-[\\d+\\.]+\\.html|manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d+\\.]+(\\-page\\-[\\d+\\.]+)?\\.html)" }, flags = { 0 })
 public class AneaNt extends PluginForDecrypt {
 
     /**

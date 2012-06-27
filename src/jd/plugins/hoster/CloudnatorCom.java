@@ -21,7 +21,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 16038 $", interfaceVersion = 2, names = { "shragle.com", "cloudnator.com" }, urls = { "BLABLANEVERUSEMEBLABLA", "http://[\\w\\.]*?(shragle|cloudnator)\\.(com|de)/files/[\\w]+/.*" }, flags = { 2, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com", "cloudnator.com" }, urls = { "BLABLANEVERUSEMEBLABLA", "http://[\\w\\.]*?(shragle|cloudnator)\\.(com|de)/files/[\\w]+/.*" }, flags = { 2, 2 })
 public class CloudnatorCom extends PluginForHost {
 
     static String         apikey = "078e5ca290d728fd874121030efb4a0d";

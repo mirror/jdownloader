@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 16378 $", interfaceVersion = 2, names = { "coraldrive.net" }, urls = { "https?://(www\\.)?coraldrive\\.net/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coraldrive.net" }, urls = { "https?://(www\\.)?coraldrive\\.net/[a-z0-9]{12}" }, flags = { 2 })
 public class CoralDriveNet extends PluginForHost {
 
     private String               correctedBR         = "";

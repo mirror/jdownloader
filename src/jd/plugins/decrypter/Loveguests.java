@@ -13,7 +13,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 11708 $", interfaceVersion = 2, names = { "loveguests.com" }, urls = { "http://[\\w\\.]*?loveguests\\.com(/.+/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "loveguests.com" }, urls = { "http://[\\w\\.]*?loveguests\\.com(/.+/.*)" }, flags = { 0 })
 public class Loveguests extends PluginForDecrypt {
     public Loveguests(PluginWrapper wrapper) {
         super(wrapper);

@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17298 $", interfaceVersion = 2, names = { "mummyfile.com" }, urls = { "https?://(www\\.)?mummyfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mummyfile.com" }, urls = { "https?://(www\\.)?mummyfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class MummyFileCom extends PluginForHost {
 
     private String               correctedBR                  = "";

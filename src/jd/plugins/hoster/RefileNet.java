@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "refile.net" }, urls = { "http://(www\\.)?refile\\.net/(d|f)/\\?[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "refile.net" }, urls = { "http://(www\\.)?refile\\.net/(d|f)/\\?[\\w]+" }, flags = { 0 })
 public class RefileNet extends PluginForHost {
 
     // No HTTPS

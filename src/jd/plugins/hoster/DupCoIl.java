@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "dup.co.il" }, urls = { "http://(www\\.)?dup\\.co\\.il/file\\.php\\?akey=[\\w]{14}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dup.co.il" }, urls = { "http://(www\\.)?dup\\.co\\.il/file\\.php\\?akey=[\\w]{14}" }, flags = { 0 })
 public class DupCoIl extends PluginForHost {
 
     // they have https, but not configured/setup correctly.

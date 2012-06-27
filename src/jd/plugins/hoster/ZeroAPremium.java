@@ -8,7 +8,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 15005 $", interfaceVersion = 2, names = { "0premium" }, urls = { "NOREALREGEXJUSTDUMMY" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "0premium" }, urls = { "NOREALREGEXJUSTDUMMY" }, flags = { 2 })
 public class ZeroAPremium extends PluginForHost {
 
     public ZeroAPremium(PluginWrapper wrapper) {

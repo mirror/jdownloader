@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(www\\.|w\\.)?hulkfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(www\\.|w\\.)?hulkfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class HulkFileCom extends PluginForHost {
 
     private String              correctedBR         = "";

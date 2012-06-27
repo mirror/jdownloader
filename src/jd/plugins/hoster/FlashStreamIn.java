@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 16216 $", interfaceVersion = 2, names = { "flashstream.in" }, urls = { "https?://(www\\.)?(flashstream\\.in|sharefiles4u\\.com)/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashstream.in" }, urls = { "https?://(www\\.)?(flashstream\\.in|sharefiles4u\\.com)/[a-z0-9]{12}" }, flags = { 0 })
 public class FlashStreamIn extends PluginForHost {
 
     private String               correctedBR                  = "";

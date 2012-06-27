@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 15715 $", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.[a-z]{2,3}/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiupload.com" }, urls = { "http://(www\\.)?multiupload\\.[a-z]{2,3}/([A-Z0-9]{2}_[A-Z0-9]+|[0-9A-Z]+)" }, flags = { 0 })
 public class MltpldCm extends PluginForDecrypt {
 
     public MltpldCm(PluginWrapper wrapper) {

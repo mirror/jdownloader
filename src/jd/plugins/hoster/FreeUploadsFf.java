@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 15600 $", interfaceVersion = 2, names = { "freeuploads.fr" }, urls = { "https?://(www\\.)?(freeuploads\\.fr|uploa\\.dk)/\\?(v|d)=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freeuploads.fr" }, urls = { "https?://(www\\.)?(freeuploads\\.fr|uploa\\.dk)/\\?(v|d)=\\d+" }, flags = { 0 })
 public class FreeUploadsFf extends PluginForHost {
 
     // DEV NOTES:

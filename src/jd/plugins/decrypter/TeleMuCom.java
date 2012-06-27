@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 10500 $", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://[\\w\\.]*telechargementmu\\.com/.*\\.html.*|http://feedproxy.google.com/~r/telechargementmu/.*\\.html.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://[\\w\\.]*telechargementmu\\.com/.*\\.html.*|http://feedproxy.google.com/~r/telechargementmu/.*\\.html.*" }, flags = { 0 })
 public class TeleMuCom extends PluginForDecrypt {
 
     public TeleMuCom(PluginWrapper wrapper) {

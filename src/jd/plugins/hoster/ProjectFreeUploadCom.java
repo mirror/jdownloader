@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17424 $", interfaceVersion = 2, names = { "project-free-upload.com" }, urls = { "https?://(www\\.)?project\\-free\\-upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "project-free-upload.com" }, urls = { "https?://(www\\.)?project\\-free\\-upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
 public class ProjectFreeUploadCom extends PluginForHost {
 
     private String               correctedBR                  = "";

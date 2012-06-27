@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 14951 $", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(www\\.)?manga(park|tank|window)\\.com/manga/[\\w\\-\\.\\%]+/(v\\d+/?)?(c(ex(tra)?[^/]+|[\\d\\.]+(v\\d|[^/]+)?)?|extra(\\+\\d+)?|\\+\\(Oneshot\\))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapark.com" }, urls = { "http://(www\\.)?manga(park|tank|window)\\.com/manga/[\\w\\-\\.\\%]+/(v\\d+/?)?(c(ex(tra)?[^/]+|[\\d\\.]+(v\\d|[^/]+)?)?|extra(\\+\\d+)?|\\+\\(Oneshot\\))" }, flags = { 0 })
 public class MngPrkCm extends PluginForDecrypt {
     /**
      * @author raztoki

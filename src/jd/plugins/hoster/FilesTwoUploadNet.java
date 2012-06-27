@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 17298 $", interfaceVersion = 2, names = { "files2upload.net" }, urls = { "https?://(www\\.)?files2upload\\.net/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files2upload.net" }, urls = { "https?://(www\\.)?files2upload\\.net/[a-z0-9]{12}" }, flags = { 0 })
 public class FilesTwoUploadNet extends PluginForHost {
 
     private String               correctedBR                  = "";

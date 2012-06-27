@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 11709 $", interfaceVersion = 2, names = { "hd-pornblog.org" }, urls = { "http://hd\\-pornblog\\.org/\\?p=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hd-pornblog.org" }, urls = { "http://hd\\-pornblog\\.org/\\?p=\\d+" }, flags = { 0 })
 public class HdPrnBlgOg extends PluginForDecrypt {
 
     /**

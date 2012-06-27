@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 16162 $", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?ctdisk\\.com/u/\\d{6}(/\\d{6,7})?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "https?://(www\\.)?ctdisk\\.com/u/\\d{6}(/\\d{6,7})?" }, flags = { 0 })
 public class CtDiskComFolder extends PluginForDecrypt {
 
     // DEV NOTES

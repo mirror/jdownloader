@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision: 12761 $", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobb.com" }, urls = { "http://(www\\.)?videobb\\.com/(video/|watch_video\\.php\\?v=|e/)\\w+" }, flags = { 2 })
 public class VideoBbCom extends PluginForHost {
 
     protected static class getFinallinkValue {

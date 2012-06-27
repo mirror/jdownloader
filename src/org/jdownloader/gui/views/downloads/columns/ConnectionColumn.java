@@ -227,7 +227,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     }
                 } else {
                     /* download not running */
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsRunning(), NewTheme.I().getIcon("stop", 16), JLabel.LEADING));
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsNotRunning(), NewTheme.I().getIcon("stop", 16), JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
