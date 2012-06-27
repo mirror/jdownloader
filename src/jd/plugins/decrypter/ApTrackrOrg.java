@@ -20,13 +20,15 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apptrackr.org" }, urls = { "http://(www\\.)?apptrackr\\.org/s/\\?url=[A-Za-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "apptrackr.org" }, urls = { "http://(www\\.)?apptrackr\\.(org|cd)/s/\\?url=[A-Za-z0-9_\\-]+" }, flags = { 0 })
 public class ApTrackrOrg extends PluginForDecrypt {
 
     public ApTrackrOrg(PluginWrapper wrapper) {
@@ -36,11 +38,12 @@ public class ApTrackrOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        String site = new Regex(parameter, "https?://([^/]+)").getMatch(0);
         br.setFollowRedirects(false);
         br.getPage(parameter);
         for (int i = 0; i <= 5; i++) {
-            String captchaLink = br.getRegex("\"(http://apptrackr\\.org/captcha\\.php\\?captchakey=[A-Za-z0-9_\\-]+)\"").getMatch(0);
-            if (captchaLink == null) captchaLink = br.getRegex("<img width=\"140px\" src=\"(http://apptrackr\\.org/[^<>\"\\']+)\"").getMatch(0);
+            String captchaLink = br.getRegex("\"(https?://" + site + "/captcha\\.php\\?captchakey=[A-Za-z0-9_\\-]+)\"").getMatch(0);
+            if (captchaLink == null) captchaLink = br.getRegex("<img width=\"140px\" src=\"(https?://" + site + "/[^<>\"\\']+)\"").getMatch(0);
             String captchaKey = br.getRegex("<input type=\"hidden\" value=\"([A-Za-z0-9_\\-]+)\"").getMatch(0);
             if (captchaKey == null) captchaKey = br.getRegex("captcha\\.php\\?captchakey=([A-Za-z0-9_\\-]+)\"").getMatch(0);
             if (captchaLink == null || captchaKey == null) {
@@ -53,12 +56,17 @@ public class ApTrackrOrg extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML("/captcha\\.php\\?captchakey=")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        final String finallink = br.getRedirectLocation();
+        String finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            // apptrackr.cd
+            String blah = br.getHttpConnection().getHeaderField("refresh");
+            if (blah != null) finallink = Encoding.urlDecode(new Regex(blah, "\\?url=(.+)").getMatch(0), false);
+        }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (!finallink.contains("apptrackr.org/")) decryptedLinks.add(createDownloadlink(finallink));
+        if (!finallink.contains(site)) decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 
