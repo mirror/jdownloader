@@ -56,11 +56,18 @@ public class ApTrackrOrg extends PluginForDecrypt {
             break;
         }
         if (br.containsHTML("/captcha\\.php\\?captchakey=")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String finallink = br.getRedirectLocation();
-        if (finallink == null) {
-            // apptrackr.cd
-            String blah = br.getHttpConnection().getHeaderField("refresh");
-            if (blah != null) finallink = Encoding.urlDecode(new Regex(blah, "\\?url=(.+)").getMatch(0), false);
+        String finallink = null;
+        String blah = null;
+        if (br.getRedirectLocation() != null) {
+            finallink = br.getRedirectLocation();
+            // jd2 support, as it will never enter the bottom else.
+            if (site.contains("apptrackr.cd")) blah = finallink;
+        }
+        // pre jd2, getRedirectLocation only works for 'location'.
+        else
+            blah = br.getHttpConnection().getHeaderField("refresh");
+        if (site.contains("apptrackr.cd") && blah != null) {
+            finallink = Encoding.urlDecode(new Regex(blah, "\\?url=(.+)").getMatch(0), false);
         }
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
