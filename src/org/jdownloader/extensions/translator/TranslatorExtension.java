@@ -366,7 +366,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                         }
                     } catch (SVNException e) {
                         try {
-                            Log.exception(e);
+                            logger.log(e);
                             s.cleanUp(Application.getResource("translations/custom"), true);
                             long rev = s.getRevisionNoException(Application.getResource("translations/custom"));
 
@@ -770,7 +770,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 try {
                     s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                 } catch (SVNException e) {
-                    Log.exception(e);
+                    logger.log(e);
                     s.cleanUp(Application.getResource("translations/custom"), true);
                     s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                 }
@@ -806,7 +806,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
                     s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                 } catch (SVNException e) {
-                    Log.exception(e);
+                    logger.log(e);
                     s.cleanUp(Application.getResource("translations/custom"), true);
                     s.update(Application.getResource("translations/custom"), SVNRevision.HEAD, null);
                 }
