@@ -51,7 +51,7 @@ import jd.utils.JDHexUtils;
 import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veoh.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veoh.com" }, urls = { "http://(www\\.)?veohdecrypted\\.com/(browse/videos/category/.*?/)?watch/[A-Za-z0-9]+" }, flags = { 0 })
 public class VeohCom extends PluginForHost {
 
     private static final String  APIKEY          = "NEQzRTQyRUMtRjEwQy00MTcyLUExNzYtRDMwQjQ2OEE2OTcy";
@@ -76,6 +76,10 @@ public class VeohCom extends PluginForHost {
 
     public VeohCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("veohdecrypted.com/", "veoh.com/"));
     }
 
     private byte[] AESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
@@ -237,7 +241,8 @@ public class VeohCom extends PluginForHost {
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /*
-                         * TODO: add this inputstream to this downloads ManagedThrottledConnectionManager
+                         * TODO: add this inputstream to this downloads
+                         * ManagedThrottledConnectionManager
                          */
                     } catch (final Throwable e) {
                         /* 0.95xx comp */

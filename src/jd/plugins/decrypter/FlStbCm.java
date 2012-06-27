@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search|look_for\\.html.+|sponsored_go.html.+)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback\\.html|privacy\\.html|terms\\.html|trends/)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -83,6 +83,11 @@ public class FlStbCm extends PluginForDecrypt {
             externID = br.getRegex("123video\\.nl/123video_emb\\.swf\\?mediaSrc=(\\d+)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.123video.nl/playvideos.asp?MovieID=" + externID));
+                return decryptedLinks;
+            }
+            externID = br.getRegex("veoh\\.com/static/swf/webplayer/WebPlayer\\.swf\\?version=v[0-9\\.]+\\&amp;permalinkId=v([^<>\"/]*?)\\&").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.veoh.com/watch/v" + externID));
                 return decryptedLinks;
             }
             // Filename needed for all ids below here

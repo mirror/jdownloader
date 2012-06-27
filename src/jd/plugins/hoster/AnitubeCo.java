@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.co" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br)/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anitube.co" }, urls = { "http://(www\\.)?anitube\\.(co|tv|com\\.br|jp)/video/\\d+" }, flags = { 0 })
 public class AnitubeCo extends PluginForHost {
 
     private String dllink = null;
@@ -45,18 +45,7 @@ public class AnitubeCo extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(tv|com\\.br)", ".co"));
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp)", ".jp"));
     }
 
     @Override
@@ -66,7 +55,7 @@ public class AnitubeCo extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         // provider blocks some subnets on http gateway, unknown what ranges.
         if (br.containsHTML(">403 Forbidden<") && br.containsHTML(">nginx/[\\d+\\.]+<")) throw new PluginException(LinkStatus.ERROR_FATAL, "IP Blocked: Provider prevents access based on IP address.");
-
+        if (br.containsHTML("Unfortunately it\\'s impossible to access the site from your current geographic location")) return AvailableStatus.UNCHECKABLE;
         if (br.getURL().contains("error.php?type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex match = br.getRegex("(http://(?:www\\.)?anitube\\.co/[^/]+)/config\\.php\\?key=([0-9a-f]+)'");
         if (match.count() > 0) {
@@ -94,6 +83,18 @@ public class AnitubeCo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML("Unfortunately it\\'s impossible to access the site from your current geographic location")) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked!");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     @Override

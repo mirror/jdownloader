@@ -75,7 +75,7 @@ public class CloudnatorCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     @Override
@@ -89,20 +89,18 @@ public class CloudnatorCom extends PluginForHost {
         this.br.setFollowRedirects(true);
         this.requestFileInformation(downloadLink);
         this.br.setCookie("http://www.cloudnator.com", "lang", "de_DE");
-        this.br.getPage(url + "?jd=1");
+        this.br.getPage(url);
         final boolean mayfail = this.br.getRegex("Download-Server ist unter").matches();
-        String wait = this.br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        // Possible language bug
-        if (wait == null) wait = this.br.getRegex(Pattern.compile("Please wait (\\d+) minutes or buy a Premium account<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
-        wait = this.br.getRegex("var downloadWait =(.*?);").getMatch(0);
+        handleErrors();
+        String wait = this.br.getRegex("var downloadWait = (\\d+);").getMatch(0);
         Form form = this.br.getFormbyProperty("name", "download");
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         if (wait == null) {
-            wait = "10";
+            wait = "30";
         }
         String id = this.br.getRegex("challenge\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-        long waitT = Long.parseLong(wait.trim()) * 1000l;
+        final long timeBefore = System.currentTimeMillis();
+        int waitT = Integer.parseInt(wait);
         if (id != null) {
             /* captcha available */
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -117,7 +115,9 @@ public class CloudnatorCom extends PluginForHost {
             rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
             form = rc.getForm();
         }
-        this.sleep(waitT, downloadLink);
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        waitT -= passedTime;
+        if (waitT > 0) this.sleep(waitT * 1001l, downloadLink);
         form.setAction(form.getAction());
         form.remove("submit");
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, form, true, 1);
@@ -141,6 +141,10 @@ public class CloudnatorCom extends PluginForHost {
         if (this.br.containsHTML("(Ihre Session-ID ist|tige Session-ID.)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "SESSION-ID Invalid", 10 * 60 * 1000l);
         if (this.br.containsHTML("bereits eine Datei herunter")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP is already loading, please wait!", 10 * 60 * 1000l); }
         if (this.br.containsHTML("The selected file was not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String wait = this.br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        // Possible language bug
+        if (wait == null) wait = this.br.getRegex(Pattern.compile("Please wait (\\d+) minutes or buy a Premium account<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
     }
 
     @Override

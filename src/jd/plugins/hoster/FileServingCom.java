@@ -340,10 +340,10 @@ public class FileServingCom extends PluginForHost {
                 login.put("username", Encoding.urlEncode(account.getUser()));
                 login.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(login);
-                if (br.containsHTML(">Wrong Password<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("Wrong password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.getURL().contains("/My/index")) {
                     br.getPage("http://www.fileserving.com/My/index");
-                    if (!br.getURL().contains("/My/index")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.containsHTML("Please login first")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!br.containsHTML("Expire in <b>\\d+") || !br.containsHTML("(?i)Account Type: <span>Premium</span>")) {
                     if (account.getBooleanProperty("premium", false) == true && accDebugShown) {

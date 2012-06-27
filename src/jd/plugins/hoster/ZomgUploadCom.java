@@ -46,18 +46,66 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class ZomgUploadCom extends PluginForHost {
 
     private String              BRBEFORE      = "";
-
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-
     private static final String COOKIE_HOST   = "http://zomgupload.com";
-
     public boolean              NOPREMIUM     = false;
 
     public ZomgUploadCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (BRBEFORE.contains(">404 Not Found<")) return AvailableStatus.UNCHECKABLE;
+        String filename = new Regex(BRBEFORE, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            if (filename == null) {
+                filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+            }
+        }
+        if (filename == null || filename.equals("")) {
+            if (BRBEFORE.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -165,6 +213,7 @@ public class ZomgUploadCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks) throws Exception, PluginException {
+        if (BRBEFORE.contains(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         String dllink = null;
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
@@ -484,57 +533,6 @@ public class ZomgUploadCom extends PluginForHost {
         doSomething();
         if (!BRBEFORE.contains("Premium-Account expire") && !BRBEFORE.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!BRBEFORE.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) NOPREMIUM = true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(BRBEFORE, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
-        String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-            }
-        }
-        if (filename == null || filename.equals("")) {
-            if (BRBEFORE.contains("You have reached the download-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
