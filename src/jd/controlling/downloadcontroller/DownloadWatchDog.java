@@ -701,12 +701,16 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     return;
                 }
                 if (value) {
+                    /* set pause settings */
                     speedLimitBeforePause = config.getDownloadSpeedLimit();
                     speedLimitedBeforePause = config.isDownloadSpeedLimitEnabled();
                     config.setDownloadSpeedLimit(config.getPauseSpeed());
                     config.setDownloadSpeedLimitEnabled(true);
                     logger.info("Pause enabled: Reducing downloadspeed to " + config.getPauseSpeed() + " KiB/s");
+                    /* pause downloads */
+                    DownloadWatchDog.this.getStateMachine().setStatus(PAUSE_STATE);
                 } else {
+                    /* revert pause settings if available */
                     if (speedLimitBeforePause != null) {
                         logger.info("Pause disabled: Switch back to old downloadspeed");
                         config.setDownloadSpeedLimit(speedLimitBeforePause);
@@ -714,6 +718,10 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     if (speedLimitedBeforePause != null) config.setDownloadSpeedLimitEnabled(speedLimitedBeforePause);
                     speedLimitBeforePause = null;
                     speedLimitedBeforePause = null;
+                    if (DownloadWatchDog.this.getStateMachine().isState(DownloadWatchDog.PAUSE_STATE)) {
+                        /* we revert pause to running state */
+                        DownloadWatchDog.this.getStateMachine().setStatus(RUNNING_STATE);
+                    }
 
                 }
             }
