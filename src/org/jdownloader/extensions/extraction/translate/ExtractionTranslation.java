@@ -257,8 +257,8 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This is either no Archive or an unsupported Archive Type" })
     String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message();
 
-    @Default(lngs = { "en" }, values = { "Extract %s1 to..." })
-    String extract_to(String name);
+    @Default(lngs = { "en" }, values = { "Extract Archive(s) to..." })
+    String extract_to2();
 
     @Default(lngs = { "en" }, values = { "Set Archive Password" })
     String contextmenu_password();
@@ -280,4 +280,31 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Set Password to extract %s1.\r\nSuggested password(s):\r\n%s2" })
     String context_password_msg2(String name, String passwords);
+
+    @Default(lngs = { "en" }, values = { "Set Password" })
+    String context_password_msg_multi();
+
+    @Default(lngs = { "en" }, values = { "Set Password.\r\nSuggested password(s):\r\n%s2" })
+    String context_password_msg2_multi(String passwords);
+
+    @Default(lngs = { "en" }, values = { "Validate Archives" })
+    String ValidateArchiveAction_ValidateArchiveAction_multi();
+
+    @Default(lngs = { "en" }, values = { "Auto extract is now enabled" })
+    String set_autoextract_true();
+
+    @Default(lngs = { "en" }, values = { "Auto extract is now disabled" })
+    String set_autoextract_false();
+
+    @Default(lngs = { "en" }, values = { "Auto remove Files is now enabled" })
+    String set_autoremovefiles_true();
+
+    @Default(lngs = { "en" }, values = { "Auto remove Files is now disabled" })
+    String set_autoremovefiles_false();
+
+    @Default(lngs = { "en" }, values = { "Auto remove Downloadlinks is now enabled" })
+    String set_autoremovelinks_true();
+
+    @Default(lngs = { "en" }, values = { "Auto remove Downloadlinks is now disabled" })
+    String set_autoremovelinks_false();
 }

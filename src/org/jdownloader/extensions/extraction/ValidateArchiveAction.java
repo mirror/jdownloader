@@ -31,13 +31,18 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
     private ArrayList<Archive>                       archives;
     private SelectionInfo<PackageType, ChildrenType> si;
 
-    public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive a) {
-
-        setName(T._.ValidateArchiveAction_ValidateArchiveAction(a.getName()));
+    public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
+        if (as.length > 1) {
+            setName(T._.ValidateArchiveAction_ValidateArchiveAction_multi());
+        } else {
+            setName(T._.ValidateArchiveAction_ValidateArchiveAction(as[0].getName()));
+        }
         setSmallIcon(new ImageIcon(ImageProvider.merge(NewTheme.I().getImage("unpack", 20), NewTheme.I().getImage("ok", 12), 0, 0, 10, 10)));
         extractor = extractionExtension;
         archives = new ArrayList<Archive>();
-        archives.add(a);
+        for (Archive a : as) {
+            archives.add(a);
+        }
         setEnabled(archives.size() > 0);
     }
 
