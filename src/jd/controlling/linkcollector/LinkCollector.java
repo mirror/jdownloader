@@ -63,7 +63,6 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -1090,10 +1089,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     pluginForHost = null;
                     LazyHostPlugin hPlugin = HostPluginController.getInstance().get(dlLink.getHost());
                     if (hPlugin != null) {
+                        if (hPlugin.getClassname().contains("Offline")) {
+                            /* permanent offline are offline */
+                            dlLink.setAvailable(false);
+                        }
                         pluginForHost = hPlugin.getPrototype();
                     }
                 } catch (final Throwable e) {
-                    LogController.CL().log(e);
+                    logger.log(e);
                 }
                 if (pluginForHost == null) {
                     try {

@@ -18,25 +18,8 @@ public class ArchiveInfo {
     }
 
     public Collection<String> getExtractionPasswords() {
-
         return extractionPasswords;
     }
-
-    // private String extractPath;
-    // public String getExtractPath() {
-    // return extractPath;
-    // }
-    //
-    // public void setExtractPath(String extractPath) {
-    // this.extractPath=extractPath;
-    // }
-
-    // public BooleanStatus getOverwriteFiles() {
-    // return null;
-    // }
-    //
-    // public void setOverwriteFiles(BooleanStatus overwriteFiles) {
-    // }
 
     public BooleanStatus getAutoExtract() {
         return autoExtract;
@@ -53,17 +36,4 @@ public class ArchiveInfo {
         return this;
     }
 
-    // public BooleanStatus getRemoveFilesAfterExtraction() {
-    // return null;
-    // }
-    //
-    // public void setRemoveFilesAfterExtraction(BooleanStatus overwriteFiles) {
-    // }
-    //
-    // public BooleanStatus getRemoveDownloadLinksAfterExtraction() {
-    // return null;
-    // }
-    //
-    // public void setRemoveDownloadLinksAfterExtraction(BooleanStatus overwriteFiles) {
-    // }
 }

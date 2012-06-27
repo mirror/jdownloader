@@ -1,6 +1,7 @@
 package jd.controlling.linkcollector;
 
 import jd.controlling.downloadcontroller.DownloadLinkStorable;
+import jd.controlling.linkcrawler.ArchiveInfoStorable;
 import jd.controlling.linkcrawler.CrawledLink;
 
 import org.appwork.storage.Storable;
@@ -68,6 +69,14 @@ public class CrawledLinkStorable implements Storable {
 
     public CrawledLink _getCrawledLink() {
         return link;
+    }
+
+    public ArchiveInfoStorable getArchiveInfo() {
+        return new ArchiveInfoStorable(link.getArchiveInfo());
+    }
+
+    public void setArchiveInfo(ArchiveInfoStorable info) {
+        if (info != null) link.setArchiveInfo(info._getArchiveInfo());
     }
 
 }
