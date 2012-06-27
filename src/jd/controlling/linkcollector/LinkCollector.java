@@ -1089,7 +1089,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     pluginForHost = null;
                     LazyHostPlugin hPlugin = HostPluginController.getInstance().get(dlLink.getHost());
                     if (hPlugin != null) {
-                        if (hPlugin.getClassname().contains("Offline")) {
+                        if (hPlugin.getClassname().matches("Offline")) {
                             /* permanent offline are offline */
                             dlLink.setAvailable(false);
                         }
