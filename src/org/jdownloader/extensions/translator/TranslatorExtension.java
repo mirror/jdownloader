@@ -40,7 +40,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -59,6 +59,7 @@ import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.translator.gui.TranslatorGui;
 import org.jdownloader.gui.translate.GuiTranslation;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.translate.JdownloaderTranslation;
 import org.tmatesoft.svn.core.SVNDepth;
 import org.tmatesoft.svn.core.SVNException;
@@ -92,6 +93,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     private TranslatorExtensionEventSender eventSender;
     private Thread                         timer;
     private String                         fontname;
+    private LogSource                      logger;
 
     public String getFontname() {
         return fontname;
@@ -151,6 +153,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     public TranslatorExtension() {
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
+        logger = LogController.getInstance().getLogger("TranslatorExtension");
         setTitle("Translator");
         eventSender = new TranslatorExtensionEventSender();
         // get all LanguageIDs
@@ -227,7 +230,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void stop() throws StopException {
-        Log.L.finer("Stopped " + getClass().getSimpleName());
+        logger.finer("Stopped " + getClass().getSimpleName());
         if (timer != null) {
             timer.interrupt();
             timer = null;
@@ -239,7 +242,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      */
     @Override
     protected void start() throws StartException {
-        Log.L.finer("Started " + getClass().getSimpleName());
+        logger.finer("Started " + getClass().getSimpleName());
         timer = new Thread("TranslatorSyncher") {
             public void run() {
 
@@ -425,7 +428,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     private <T extends TranslateInterface> T load(ArrayList<TranslateEntry> tmp, TLocale locale, Class<T> class1) {
-        Log.L.info("Load Translation " + locale + " " + class1);
+        logger.info("Load Translation " + locale + " " + class1);
 
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
 
@@ -515,9 +518,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 // }
                 return true;
             } catch (SVNException e) {
+                logger.log(e);
                 Dialog.getInstance().showMessageDialog("SVN Test Error", "Login failed. Username and/or password are not correct!\r\n\r\nServer: " + url);
                 doLogout();
             } catch (Throwable e) {
+                logger.log(e);
                 Dialog.getInstance().showExceptionDialog("Error occured", e.getMessage(), e);
                 doLogout();
             } finally {
@@ -736,7 +741,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 newFile.getParentFile().mkdirs();
                 IO.writeStringToFile(newFile, file);
 
-                Log.L.info("Updated " + file);
+                logger.info("Updated " + file);
 
             }
             JSonStorage.saveTo(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), getInfo());
@@ -771,7 +776,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                 }
                 s.resolveConflicts(Application.getResource("translations/custom"), new ConflictResolveHandler());
                 s.getWCClient().doAdd(Application.getResource("translations/custom"), true, false, true, SVNDepth.INFINITY, false, false);
-                Log.L.finer("Create CommitPacket");
+                logger.finer("Create CommitPacket");
                 final SVNCommitPacket packet = s.getCommitClient().doCollectCommitItems(new File[] { Application.getResource("translations/custom") }, false, false, SVNDepth.INFINITY, null);
                 for (SVNCommitItem ci : packet.getCommitItems()) {
                     if (!ci.getPath().endsWith("." + getLoadedLocale().getId() + ".lng") && !ci.getPath().endsWith(getLoadedLocale().getId() + ".json")) {
@@ -780,7 +785,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
                     }
 
                 }
-                Log.L.finer("Transfer Package");
+                logger.finer("Transfer Package");
                 s.getCommitClient().doCommit(packet, true, false, "Updated " + loaded.getLocale().getDisplayName() + " Translation", null);
 
                 return packet;
