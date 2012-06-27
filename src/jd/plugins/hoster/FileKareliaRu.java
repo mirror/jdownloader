@@ -53,7 +53,7 @@ public class FileKareliaRu extends PluginForHost {
         final String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace("Гбайта", "GB").replace("Мбайта", "MB"))));
+        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
         return AvailableStatus.TRUE;
     }
 
