@@ -23,10 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 
 import jd.config.Property;
 import jd.controlling.packagecontroller.AbstractPackageNode;
@@ -138,7 +135,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient UniqueSessionID                              uniqueID          = null;
     public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT  = "COMMENT";
-    private static final String                                    PROPERTY_EXTRACT  = "EXTRACT";
 
     /**
      * @return the uniqueID
@@ -283,28 +279,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     }
 
     /**
-     * return if this FilePackage should be post processed
-     * 
-     * @return
-     */
-    public boolean isPostProcessing() {
-        return this.getBooleanProperty(PROPERTY_EXTRACT, true);
-    }
-
-    /**
-     * set whether this FilePackage should be post processed or not
-     * 
-     * @param postProcessing
-     */
-    public void setPostProcessing(boolean postProcessing) {
-        if (postProcessing) {
-            this.setProperty(PROPERTY_EXTRACT, Property.NULL);
-        } else {
-            this.setProperty(PROPERTY_EXTRACT, false);
-        }
-    }
-
-    /**
      * return the download folder of this FilePackage
      * 
      * @return
@@ -320,29 +294,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * return a list of passwords of all DownloadLinks for post processing
-     */
-    public static Set<String> getPasswordAuto(FilePackage fp) {
-        Set<String> pwList = new HashSet<String>();
-        if (fp == null) return pwList;
-        synchronized (fp) {
-            for (DownloadLink element : fp.getChildren()) {
-                String dlPw = element.getDownloadPassword();
-                if (dlPw != null) pwList.add(dlPw);
-                List<String> pws = null;
-                if ((pws = element.getSourcePluginPasswordList()) != null) {
-
-                    for (String pw : pws) {
-                        if (pw == null) continue;
-                        pwList.add(pw);
-                    }
-                }
-            }
-        }
-        return pwList;
     }
 
     /**
@@ -448,24 +399,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     public boolean isEnabled() {
         return this.getView().isEnabled();
-    }
-
-    private ArrayList<String> passwordList = null;
-
-    public void setPasswordList(ArrayList<String> passwordList) {
-        this.passwordList = passwordList;
-    }
-
-    public String[] getPasswordList() {
-        ArrayList<String> lst = new ArrayList<String>();
-        // can be null due to old serialized versions
-        if (passwordList != null) {
-            lst.addAll(passwordList);
-        }
-        for (Iterator<String> it = getPasswordAuto(this).iterator(); it.hasNext();) {
-            lst.add(it.next());
-        }
-        return lst.toArray(new String[] {});
     }
 
     public List<DownloadLink> getChildren() {

@@ -1,5 +1,7 @@
 package jd.controlling.linkcrawler;
 
+import java.util.List;
+
 import javax.swing.ImageIcon;
 
 import jd.controlling.captcha.CaptchaController;
@@ -88,11 +90,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
-     * the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
+     * about how to prozess the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
+     * different.
      * 
      * @return
      */
@@ -162,14 +165,26 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private String      name       = null;
     private FilterRule  matchingFilter;
 
+    private ArchiveInfo archiveInfo;
+
     public CrawledLink(DownloadLink dlLink) {
         this.dlLink = dlLink;
         if (dlLink != null) dlLink.setNodeChangeListener(this);
+        passwordForward(dlLink);
+    }
+
+    private void passwordForward(DownloadLink dlLink) {
+        if (dlLink == null) return;
+        List<String> lst = dlLink.getSourcePluginPasswordList();
+        if (lst != null && lst.size() > 0) {
+            getArchiveInfo().getExtractionPasswords().addAll(lst);
+        }
     }
 
     public void setDownloadLink(DownloadLink dlLink) {
         if (this.dlLink != null) this.dlLink.setNodeChangeListener(null);
         this.dlLink = dlLink;
+        passwordForward(dlLink);
         if (dlLink != null) dlLink.setNodeChangeListener(this);
     }
 
@@ -403,7 +418,23 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return the collectingInfo
      */
     public LinkCollectingInformation getCollectingInfo() {
+
         if (collectingInfo != null || sourceLink == null) return collectingInfo;
         return sourceLink.getCollectingInfo();
     }
+
+    public ArchiveInfo getArchiveInfo() {
+        if (archiveInfo != null) return archiveInfo;
+        synchronized (this) {
+            if (archiveInfo != null) return archiveInfo;
+            archiveInfo = new ArchiveInfo();
+
+        }
+        return archiveInfo;
+    }
+
+    public void setArchiveInfo(ArchiveInfo archiveInfo) {
+        this.archiveInfo = archiveInfo;
+    }
+
 }

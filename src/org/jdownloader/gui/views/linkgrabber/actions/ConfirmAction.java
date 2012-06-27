@@ -82,6 +82,8 @@ public class ConfirmAction extends AppAction {
             public void run() {
 
                 try {
+
+                    // this validation step also copies the passwords from the CRawledlinks in the archive settings
                     for (Archive a : new ValidateArchiveAction<CrawledPackage, CrawledLink>((ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension(), si).getArchives()) {
                         final DummyArchive da = a.createDummyArchive();
                         if (!da.isComplete()) {

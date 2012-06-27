@@ -1,7 +1,5 @@
 package jd.controlling.linkcrawler;
 
-import java.util.HashSet;
-
 import jd.controlling.linkcollector.LinknameCleaner;
 
 import org.appwork.utils.StringUtils;
@@ -9,16 +7,8 @@ import org.jdownloader.controlling.UniqueSessionID;
 
 public class PackageInfo {
     private UniqueSessionID uniqueId              = null;
-    private Boolean         autoExtractionEnabled = null;
+
     private boolean         packagizerRuleMatched = false;
-
-    public Boolean isAutoExtractionEnabled() {
-        return autoExtractionEnabled;
-    }
-
-    public void setAutoExtractionEnabled(Boolean autoExtractionEnabled) {
-        this.autoExtractionEnabled = autoExtractionEnabled;
-    }
 
     public UniqueSessionID getUniqueId() {
         return uniqueId;
@@ -52,18 +42,13 @@ public class PackageInfo {
         this.comment = comment;
     }
 
-    public HashSet<String> getExtractionPasswords() {
-        return extractionPasswords;
-    }
-
-    private HashSet<String> extractionPasswords = new HashSet<String>();
-    private String          name                = null;
-    private String          destinationFolder   = null;
-    private String          comment             = null;
+    private String name              = null;
+    private String destinationFolder = null;
+    private String comment           = null;
 
     /**
-     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package, which is not part of
-     * autopackaging.
+     * Returns a packageID or null, of no id specific values are set. if this method returns a value !=null, it should get an own package,
+     * which is not part of autopackaging.
      * 
      * @return
      */
@@ -99,7 +84,6 @@ public class PackageInfo {
         }
         ret.setCreated(link.getCreated());
         ret.setComment(dpi.getComment());
-        if (dpi.isAutoExtractionEnabled() != null) ret.setAutoExtractionEnabled(dpi.isAutoExtractionEnabled());
 
         if (!StringUtils.isEmpty(dpi.getDestinationFolder())) {
             ret.setDownloadFolder(dpi.getDestinationFolder());

@@ -149,15 +149,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     //
     // }
 
-    public Collection<? extends String> getPasswordList(Archive archive) {
+    public Collection<? extends String> getGuessedPasswordList(Archive archive) {
 
         HashSet<String> ret = new HashSet<String>();
-        for (ArchiveFile af : archive.getArchiveFiles()) {
-            if (af instanceof DownloadLinkArchiveFile) {
-                ret.addAll(((DownloadLinkArchiveFile) af).getExtractPasswords());
-            }
 
-        }
         return ret;
     }
 

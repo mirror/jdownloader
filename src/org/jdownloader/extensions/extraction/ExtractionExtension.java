@@ -20,6 +20,7 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -47,6 +48,7 @@ import jd.plugins.FilePackage;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
@@ -730,12 +732,12 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             if (caller instanceof SingleDownloadController) {
                 DownloadLink link = ((SingleDownloadController) caller).getDownloadLink();
 
-                logger.info("postprocess " + link.getFilePackage().isPostProcessing());
                 logger.info("link supported  " + isLinkSupported(new DownloadLinkArchiveFactory(link)));
-                if (link.getFilePackage().isPostProcessing() && isLinkSupported(new DownloadLinkArchiveFactory(link))) {
+                if (isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     Archive archive;
                     try {
                         archive = buildArchive(new DownloadLinkArchiveFactory(link));
+                        logger.info("postprocess \r\n" + archive.getSettings());
                         logger.info("archive active " + archive.isActive());
                         logger.info("archive size " + archive.getArchiveFiles().size());
                         logger.info("archive complete " + archive.isComplete());
@@ -1076,8 +1078,21 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             public void actionPerformed(ActionEvent e) {
 
                 try {
-                    String pw = Dialog.getInstance().showInputDialog(0, _.context_password(), _.context_password_msg(archive.getName()), archive.getSettings().getPassword(), NewTheme.getInstance().getIcon("password", 32), null, null);
-                    archive.getSettings().setPassword(pw);
+                    StringBuilder sb = new StringBuilder();
+                    HashSet<String> list = archive.getSettings().getPasswords();
+                    if (list != null && list.size() > 0) {
+                        for (String s : list) {
+                            if (sb.length() > 0) sb.append("\r\n");
+                            sb.append(s);
+                        }
+                    }
+                    String pw = Dialog.getInstance().showInputDialog(0, _.context_password(), (list == null || list.size() == 0) ? _.context_password_msg(archive.getName()) : _.context_password_msg2(archive.getName(), sb.toString()), null, NewTheme.getInstance().getIcon("password", 32), null, null);
+                    if (!StringUtils.isEmpty(pw)) {
+                        if (list == null) list = new HashSet<String>();
+                        list.add(pw);
+                        archive.getSettings().setPasswords(list);
+                    }
+
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {

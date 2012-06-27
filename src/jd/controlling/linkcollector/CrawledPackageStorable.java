@@ -156,25 +156,12 @@ public class CrawledPackageStorable implements Storable {
         return pkg.getRawDownloadFolder();
     }
 
-    public ArrayList<String> getExtractionPasswords() {
-        if (pkg.getExtractionPasswords().size() == 0) return null;
-        return new ArrayList<String>(pkg.getExtractionPasswords());
-    }
-
     public ArrayList<CrawledLinkStorable> getLinks() {
         return links;
     }
 
-    public boolean isAutoExtractionEnabled() {
-        return pkg.isAutoExtractionEnabled();
-    }
-
     public boolean isExpanded() {
         return pkg.isExpanded();
-    }
-
-    public void setAutoExtractionEnabled(boolean autoExtractionEnabled) {
-        pkg.setAutoExtractionEnabled(autoExtractionEnabled);
     }
 
     public void setCreated(long created) {
@@ -187,11 +174,6 @@ public class CrawledPackageStorable implements Storable {
 
     public void setExpanded(boolean expanded) {
         this.pkg.setExpanded(expanded);
-    }
-
-    public void setExtractionPasswords(ArrayList<String> extractionPasswords) {
-        if (extractionPasswords == null) return;
-        this.pkg.getExtractionPasswords().addAll(extractionPasswords);
     }
 
     public void setLinks(ArrayList<CrawledLinkStorable> links) {

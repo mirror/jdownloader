@@ -52,15 +52,15 @@ public class ThreeDlTv extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String folder : folders)
-                decryptedLinks.add(createDownloadlink(currentdomain + folder));
+            for (String folder : folders) {
+                DownloadLink linkl = createDownloadlink(currentdomain + folder);
+                passwords.add(password);
+                if (password != null) linkl.setSourcePluginPasswordList(passwords);
+                decryptedLinks.add(linkl);
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
-                if (password != null) {
-                    passwords.add(password);
-                    fp.setPasswordList(passwords);
-                }
                 fp.addLinks(decryptedLinks);
             }
         } else {

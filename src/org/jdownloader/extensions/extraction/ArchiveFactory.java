@@ -20,7 +20,7 @@ public interface ArchiveFactory extends ArchiveFile {
 
     // void fireExtractToChange(Archive archive);
 
-    Collection<? extends String> getPasswordList(Archive archive);
+    Collection<? extends String> getGuessedPasswordList(Archive archive);
 
     // archive.getFirstDownloadLink().getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
     // archive.getFirstDownloadLink().getLinkStatus().setErrorMessage(null);

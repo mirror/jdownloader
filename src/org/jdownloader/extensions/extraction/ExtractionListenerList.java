@@ -103,7 +103,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     ex.onFinished(controller);
                     break;
                 }
-                controller.getArchiv().getSettings().setPassword(pass);
+                controller.getArchiv().setPassword(pass);
             }
             break;
         case START_CRACK_PASSWORD:

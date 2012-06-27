@@ -349,10 +349,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void moveOrAddAt(final CrawledPackage pkg, final List<CrawledLink> movechildren, final int index) {
 
         super.moveOrAddAt(pkg, movechildren, index);
-        // Forward all link passwords to the package
-        for (CrawledLink cl : movechildren) {
-            if (cl.getDesiredPackageInfo() != null) pkg.getExtractionPasswords().addAll(cl.getDesiredPackageInfo().getExtractionPasswords());
-        }
 
     }
 
@@ -657,7 +653,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             }
             if (!StringUtils.isEmpty(job.getExtractPassword())) {
                 if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                link.getDesiredPackageInfo().getExtractionPasswords().add(job.getExtractPassword());
+                link.getArchiveInfo().getExtractionPasswords().add(job.getExtractPassword());
             }
             if (job.isAutoStart()) {
                 link.setAutoConfirmEnabled(true);
@@ -764,10 +760,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         ret.setCreated(pkg.getCreated());
         ret.setExpanded(pkg.isExpanded());
         ret.setComment(pkg.getComment());
-        ret.setPostProcessing(pkg.isAutoExtractionEnabled());
 
-        HashSet<String> passwords = new HashSet<String>();
-        passwords.addAll(pkg.getExtractionPasswords());
         synchronized (pkg) {
             /* add Children from CrawledPackage to FilePackage */
             ArrayList<DownloadLink> links = new ArrayList<DownloadLink>(pkg.getChildren().size());
@@ -778,9 +771,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 DownloadLink dl = link.getDownloadLink();
 
                 if (dl != null) {
-                    if (link.getDesiredPackageInfo() != null) {
-                        passwords.addAll(link.getDesiredPackageInfo().getExtractionPasswords());
-                    }
+
                     /*
                      * change filename if it is different than original downloadlink
                      */
@@ -795,7 +786,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     dl.setParentNode(ret);
                 }
             }
-            ret.setPasswordList(new ArrayList<String>(passwords));
+
             /* add all children to FilePackage */
             ret.getChildren().addAll(links);
         }

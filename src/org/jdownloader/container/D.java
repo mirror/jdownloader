@@ -558,7 +558,8 @@ public class D extends PluginsC {
                         // + 1), pHost.getHost(), null, true);
                         nl = new CrawledLink(ls.get(lcs));
                         nl.setDesiredPackageInfo(dpi);
-                        dpi.getExtractionPasswords().addAll(pws);
+
+                        nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
                         dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
                         // Log.L.info(""+links.get(linkCounter));
@@ -634,7 +635,7 @@ public class D extends PluginsC {
 
                         nl = new CrawledLink(ls.get(lc));
                         nl.setDesiredPackageInfo(dpi);
-                        dpi.getExtractionPasswords().addAll(pws);
+                        nl.getArchiveInfo().getExtractionPasswords().addAll(pws);
                         dpi.setComment("from Container: " + d + " : " + pc);
                         cls.add(nl);
 
@@ -763,7 +764,7 @@ public class D extends PluginsC {
                         // + 1);
                         nl = new CrawledLink(ls2.get(lcs));
                         nl.setDesiredPackageInfo(dpi);
-                        dpi.getExtractionPasswords().addAll(parsePassword(oos));
+                        nl.getArchiveInfo().getExtractionPasswords().addAll(parsePassword(oos));
                         dpi.setComment("(Containerlinks) " + cs2 == null ? "" : cs2);
                         if (n5.get(lcs) != null) {
                             nl.setName(n5.get(lcs));

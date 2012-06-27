@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.extraction;
 
+import java.util.HashSet;
+
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 
@@ -10,9 +12,9 @@ public interface ArchiveSettings extends ConfigInterface {
         FALSE
     }
 
-    public String getPassword();
+    public HashSet<String> getPasswords();
 
-    public void setPassword(String password);
+    public void setPasswords(HashSet<String> passwords);
 
     public String getExtractPath();
 

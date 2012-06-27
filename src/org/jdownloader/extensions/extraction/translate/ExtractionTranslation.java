@@ -275,6 +275,9 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extraction Password" })
     String context_password();
 
-    @Default(lngs = { "en" }, values = { "Set Password to extract %s1" })
+    @Default(lngs = { "en" }, values = { "Set Password to extract %s1." })
     String context_password_msg(String name);
+
+    @Default(lngs = { "en" }, values = { "Set Password to extract %s1.\r\nSuggested password(s):\r\n%s2" })
+    String context_password_msg2(String name, String passwords);
 }

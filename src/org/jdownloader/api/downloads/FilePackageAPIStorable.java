@@ -39,18 +39,6 @@ public class FilePackageAPIStorable implements Storable {
     }
 
     /**
-     * @return the pw
-     */
-    public String[] getPassword() {
-        String[] list = pkg.getPasswordList();
-        if (list == null || list.length == 0) return null;
-        return list;
-    }
-
-    public void setPassword(String[] pw) {
-    }
-
-    /**
      * @return the added
      */
     public long getAdded() {
@@ -76,7 +64,7 @@ public class FilePackageAPIStorable implements Storable {
     }
 
     private List<DownloadLinkAPIStorable> links;
-    private FilePackage                pkg;
+    private FilePackage                   pkg;
 
     private FilePackageAPIStorable() {
     }

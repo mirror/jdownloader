@@ -20,6 +20,8 @@ package jd;
 import java.io.File;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -99,6 +101,8 @@ import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.toolbar.ToolbarOffer;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.update.JDUpdater;
+
+import sun.awt.shell.ShellFolder;
 
 public class Launcher {
     static {
@@ -679,5 +683,15 @@ public class Launcher {
 
         // init statsmanager
         StatsManager.I();
+
+        // init Filechooser. filechoosers may freeze the first time the get initialized. maybe this helps
+        long t = System.currentTimeMillis();
+        File[] baseFolders = AccessController.doPrivileged(new PrivilegedAction<File[]>() {
+            public File[] run() {
+                return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
+            }
+        });
+        LOG.info("fileChooserComboBoxFolders " + (System.currentTimeMillis() - t));
+
     }
 }

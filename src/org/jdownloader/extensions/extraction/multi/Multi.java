@@ -642,7 +642,7 @@ public class Multi extends IExtraction {
                 ExtractOperationResult res;
                 try {
                     if (item.isEncrypted()) {
-                        res = item.extractSlow(call, archive.getSettings().getPassword());
+                        res = item.extractSlow(call, archive.getPassword());
                     } else {
                         res = item.extractSlow(call);
                     }
@@ -847,7 +847,7 @@ public class Multi extends IExtraction {
                 // if (filter(item.getPath())) continue;
             }
             if (!passwordfound.getBoolean()) return false;
-            archive.getSettings().setPassword(password);
+            archive.setPassword(password);
             updateContentView(inArchive.getSimpleInterface());
             return true;
         } catch (SevenZipException e) {

@@ -37,7 +37,27 @@ public class Archive {
     /**
      * Encrypted archive
      */
-    private boolean                protect          = false;
+    private boolean protect = false;
+    private String  password;
+
+    /**
+     * returns null or the correct password
+     * 
+     * @return
+     */
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
+     * setter is used to set the CORRECT password in the password finding algorithm only
+     * 
+     * @param password
+     */
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     /**
      * ArchiveFiles of the archive.

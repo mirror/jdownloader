@@ -29,6 +29,7 @@ import org.jdownloader.controlling.FileCreationListener;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.controlling.filter.NoDownloadLinkException;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchive;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
@@ -349,10 +350,8 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         Boolean b = null;
         if ((b = lgr.getRule().isAutoExtractionEnabled()) != null) {
             /* customize auto extract */
-            if (b) {
-                dpiSet = true;
-                dpi.setAutoExtractionEnabled(b);
-            }
+            link.getArchiveInfo().setAutoExtract(b ? BooleanStatus.TRUE : BooleanStatus.FALSE);
+
         }
         if ((b = lgr.getRule().isAutoAddEnabled()) != null) {
             /* customize auto add */

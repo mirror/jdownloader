@@ -18,6 +18,7 @@ package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +27,7 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.nutils.io.FileSignatures;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.FileCreationEvent;
@@ -131,8 +133,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (gotKilled()) return null;
             if (extractor.prepare()) {
 
-                if (archive.isProtected() && archive.getSettings().getPassword().equals("")) {
-                    passwordList.addAll(archive.getFactory().getPasswordList(archive));
+                if (archive.isProtected() && !StringUtils.isEmpty(archive.getPassword())) {
+                    HashSet<String> spwList = archive.getSettings().getPasswords();
+                    if (spwList != null) {
+                        passwordList.addAll(spwList);
+                    }
+                    passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
                     passwordList.add(archive.getName());
                     ArrayList<String> pwList = extractor.config.getPasswordList();
                     if (pwList == null) pwList = new ArrayList<String>();
@@ -144,8 +150,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     logger.info("Start password finding for " + archive);
 
                     String correctPW = null;
-
-                    // first run optimized.
 
                     for (String password : passwordList) {
                         if (gotKilled()) return null;
@@ -159,7 +163,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
                         if (gotKilled()) return null;
-                        if (!checkPassword(archive.getSettings().getPassword(), false)) {
+                        if (!checkPassword(archive.getPassword(), false)) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
                             return null;
@@ -167,10 +171,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive + "->" + archive.getSettings().getPassword());
+                    logger.info("Found password for " + archive + "->" + archive.getPassword());
                     /* avoid duplicates */
-                    pwList.remove(archive.getSettings().getPassword());
-                    pwList.add(0, archive.getSettings().getPassword());
+                    pwList.remove(archive.getPassword());
+                    pwList.add(0, archive.getPassword());
                     extractor.config.setPasswordList(pwList);
                 }
 

@@ -67,11 +67,9 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         return new Archive(this);
     }
 
-    public Collection<? extends String> getPasswordList(Archive archive) {
+    public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         HashSet<String> ret = new HashSet<String>();
-        // causes crashes
-        // ret.add(new
-        // File(archive.getFirstArchiveFile().getFilePath()).getName());
+        ret.add(new File(archive.getFirstArchiveFile().getFilePath()).getName());
         return ret;
 
     }

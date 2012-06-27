@@ -83,7 +83,7 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         return ret;
     }
 
-    public Collection<? extends String> getPasswordList(Archive archive) {
+    public Collection<? extends String> getGuessedPasswordList(Archive archive) {
         return new HashSet<String>();
     }
 
@@ -151,15 +151,26 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         if (id == null) {
             id = DownloadLinkArchiveFactory.createUniqueAlltimeID();
         }
-
+        HashSet<String> pws = new HashSet<String>();
         // link
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof CrawledLinkArchiveFile) {
                 for (CrawledLink link : ((CrawledLinkArchiveFile) af).getLinks()) {
                     link.getDownloadLink().setProperty(DownloadLinkArchiveFactory.ID, id);
+                    pws.addAll(link.getArchiveInfo().getExtractionPasswords());
                 }
             }
         }
+        if (pws.size() > 0) {
+            HashSet<String> storedPws = archive.getSettings().getPasswords();
+            if (storedPws != null) {
+                pws.addAll(storedPws);
+
+            }
+            archive.getSettings().setPasswords(pws);
+
+        }
+
     }
 
 }

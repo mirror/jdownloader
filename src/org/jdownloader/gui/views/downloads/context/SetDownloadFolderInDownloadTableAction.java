@@ -1,7 +1,5 @@
 package org.jdownloader.gui.views.downloads.context;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import jd.controlling.downloadcontroller.DownloadController;
@@ -34,7 +32,6 @@ public class SetDownloadFolderInDownloadTableAction extends SetDownloadFolderAct
         pkg.setCreated(System.currentTimeMillis());
         pkg.setName(entry.getName());
         pkg.setComment(entry.getComment());
-        pkg.setPasswordList(new ArrayList<String>(Arrays.asList(entry.getPasswordList())));
         pkg.getProperties().putAll(entry.getProperties());
 
         return pkg;

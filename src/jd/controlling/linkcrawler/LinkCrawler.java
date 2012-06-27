@@ -184,7 +184,8 @@ public class LinkCrawler implements IOPermission {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
+     * child
      * 
      * @param thisGeneration
      * @return
@@ -246,8 +247,8 @@ public class LinkCrawler implements IOPermission {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideDecrypterPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
-                 * results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -439,8 +440,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -481,8 +482,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -546,7 +547,8 @@ public class LinkCrawler implements IOPermission {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
+                         * by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);
@@ -805,6 +807,13 @@ public class LinkCrawler implements IOPermission {
         dest.setMatchingFilter(source.getMatchingFilter());
         dest.setSourceJob(source.getSourceJob());
         dest.setDesiredPackageInfo(source.getDesiredPackageInfo());
+
+        ArchiveInfo d = dest.getArchiveInfo();
+        if (d == null) {
+            if (source.getArchiveInfo() != null) dest.setArchiveInfo(new ArchiveInfo().migrate(source.getArchiveInfo()));
+        } else {
+            d.migrate(source.getArchiveInfo());
+        }
         convertFilePackageInfos(dest);
         permanentOffline(dest);
     }
@@ -819,7 +828,7 @@ public class LinkCrawler implements IOPermission {
                 // do not set downloadfolder if it is the defaultfolder
                 fpi.setDestinationFolder(dp.getDownloadDirectory());
             }
-            fpi.setAutoExtractionEnabled(dp.isPostProcessing());
+
             if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_CLEANUP_NAME, true))) {
                 fpi.setName(dp.getName());
             } else {
@@ -828,9 +837,7 @@ public class LinkCrawler implements IOPermission {
             if (Boolean.FALSE.equals(dp.getBooleanProperty(PACKAGE_ALLOW_MERGE, false))) {
                 fpi.setUniqueId(dp.getUniqueID());
             }
-            for (String s : dp.getPasswordList()) {
-                fpi.getExtractionPasswords().add(s);
-            }
+
             link.setDesiredPackageInfo(fpi);
             return fpi;
         }
