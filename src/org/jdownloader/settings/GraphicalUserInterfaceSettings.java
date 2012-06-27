@@ -55,7 +55,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public long getDownloadViewRefresh();
 
     @AboutConfig
-    @Description("Font to be used. Default value is default.")
+    @Description("Font to be used. Default value is default. For foreign chars use e.g. Dialog")
     @DefaultStringValue("default")
     @RequiresRestart
     String getFontName();

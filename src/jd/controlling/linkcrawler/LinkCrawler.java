@@ -1306,6 +1306,10 @@ public class LinkCrawler implements IOPermission {
         return unhandledLinksCounter.get();
     }
 
+    public int processedLinks() {
+        return crawledLinksCounter.get() + filteredLinksCounter.get() + brokenLinksCounter.get();
+    }
+
     protected LinkCrawlerHandler defaulHandlerFactory() {
         return new LinkCrawlerHandler() {
 

@@ -706,7 +706,16 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
 
         cobOnline = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_online_is_(), _GUI._.ConditionDialog_layoutDialogContent_online_isnot() });
         cobOnlineOptions = new JComboBox(new String[] { _GUI._.ConditionDialog_layoutDialogContent_uncheckable_(), _GUI._.ConditionDialog_layoutDialogContent_online_(), _GUI._.ConditionDialog_layoutDialogContent_offline_() });
-        cbOnline = new ExtCheckBox(cobOnline, cobOnlineOptions);
+        cbOnline = new ExtCheckBox(cobOnline, cobOnlineOptions) {
+
+            @Override
+            public void updateDependencies() {
+                super.updateDependencies();
+                updateOnline();
+
+            }
+
+        };
 
         panel.add(cbOnline);
         panel.add(new JLabel(_GUI._.FilterRuleDialog_layoutDialogContent_lbl_online()));

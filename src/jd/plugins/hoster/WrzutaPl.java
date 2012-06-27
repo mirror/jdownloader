@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.Random;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
@@ -59,26 +58,23 @@ public class WrzutaPl extends PluginForHost {
         requestFileInformation(downloadLink);
         boolean addext = true;
         String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
+        String host = new Regex(downloadLink.getDownloadURL(), "https?://(.*?)/").getMatch(0);
         if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String linkurl = null;
+        br.setFollowRedirects(true);
         if (filetype.equalsIgnoreCase("audio")) {
-            String xmlAudioPage = "http://" + br.getHost() + "/xml/plik/" + fileid + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
+            String xmlAudioPage = "http://" + host + "/xml/kontent/" + fileid + "/wrzuta.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlAudioPage);
             linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             addext = false;
         } else if (filetype.equalsIgnoreCase("film")) {
-            String xmlFilmPage = "http://" + br.getHost() + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
+            String xmlFilmPage = "http://" + host + "/xml/kontent/" + fileid + "/wrztua.pl/sa/" + new Random().nextInt(100000);
             br.getPage(xmlFilmPage);
             linkurl = br.getRegex("<fileId><\\!\\[CDATA\\[(http://.*?)\\]\\]></fileId>").getMatch(0);
-            if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             addext = false;
         } else if (filetype.equalsIgnoreCase("obraz")) {
             linkurl = br.getRegex("<img id=\"image\" src=\"(.*?)\"").getMatch(0);
-            if (linkurl == null)
-                linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
-            else
-                addext = false;
+            if (linkurl == null) linkurl = downloadLink.getDownloadURL().replaceFirst("obraz", "sr/f");
         }
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setDebug(true);
@@ -92,31 +88,33 @@ public class WrzutaPl extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
-            if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {
-                downloadLink.setFinalFileName(filename.trim() + ".mp3");
-            } else if (con.getContentType().contains("flv")) {
-                downloadLink.setFinalFileName(filename.trim() + ".flv");
-            } else if (con.getContentType().contains("png")) {
-                downloadLink.setFinalFileName(filename.trim() + ".png");
-            } else if (con.getContentType().contains("gif")) {
-                downloadLink.setFinalFileName(filename.trim() + ".gif");
-            } else if (con.getContentType().contains("application/zip")) {
-                downloadLink.setFinalFileName(filename.trim() + ".zip");
-            } else if (con.getContentType().contains("audio/mid")) {
-                downloadLink.setFinalFileName(filename.trim() + ".mid");
-            } else if (con.getContentType().contains("application/pdf")) {
-                downloadLink.setFinalFileName(filename.trim() + ".pdf");
-            } else if (con.getContentType().contains("application/rtf")) {
-                downloadLink.setFinalFileName(filename.trim() + ".rtf");
-            } else if (con.getContentType().contains("application/msword")) {
-                downloadLink.setFinalFileName(filename.trim() + ".doc");
-            } else if (con.getContentType().contains("jpg") || con.getContentType().contains("jpeg")) {
-                downloadLink.setFinalFileName(filename.trim() + ".jpg");
-            } else if (con.getContentType().contains("bmp") || con.getContentType().contains("bitmap")) {
-                downloadLink.setFinalFileName(filename.trim() + ".bmp");
-            } else {
-                logger.info("Unknown filetype: " + con.getContentType() + ", cannot determine file extension...");
+        if (downloadLink.getFinalFileName() == null) {
+            if (!con.getContentType().equalsIgnoreCase("unknown") && addext != false) {
+                if (con.getContentType().contains("mpeg3") || con.getContentType().contains("audio/mpeg")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".mp3");
+                } else if (con.getContentType().contains("flv")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".flv");
+                } else if (con.getContentType().contains("png")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".png");
+                } else if (con.getContentType().contains("gif")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".gif");
+                } else if (con.getContentType().contains("application/zip")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".zip");
+                } else if (con.getContentType().contains("audio/mid")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".mid");
+                } else if (con.getContentType().contains("application/pdf")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".pdf");
+                } else if (con.getContentType().contains("application/rtf")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".rtf");
+                } else if (con.getContentType().contains("application/msword")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".doc");
+                } else if (con.getContentType().contains("jpg") || con.getContentType().contains("jpeg")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".jpg");
+                } else if (con.getContentType().contains("bmp") || con.getContentType().contains("bitmap")) {
+                    downloadLink.setFinalFileName(filename.trim() + ".bmp");
+                } else {
+                    logger.info("Unknown filetype: " + con.getContentType() + ", cannot determine file extension...");
+                }
             }
         }
         dl.startDownload();
@@ -127,13 +125,14 @@ public class WrzutaPl extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Nie odnaleziono pliku\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<h1 class=\"header\">(.*?)</h1>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("<meta name=\"title\" content=\"(.*?)\" />", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filesize == null) filesize = br.getRegex(Pattern.compile("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = (Encoding.htmlDecode(br.getRegex("<h1 class=\"header\">(.*?)</h1>").getMatch(0)));
+        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0)));
+        if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("div class=\"file-title\">.*?<h1>(.*?)</h1>").getMatch(0)));
+        String filesize = br.getRegex("Rozmiar: <strong>(.*?)</strong>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         if (downloadLink.getIntegerProperty("nameextra", -1) != -1) filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
         // Set the ending if the file doesn't have it but don't set it as a
         // final filename as it could be wrong!
