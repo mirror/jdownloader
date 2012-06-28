@@ -20,6 +20,7 @@ contextmenu_autodeletelinks=Abilitato 'Rimuovi collegamenti dall'elenco download
 contextmenu_autoextract=Estrazione automatica abilitata
 contextmenu_extract=Estrai ora
 contextmenu_extract_to=Imposta percorso di estrazione
+contextmenu_loading=%s1 (in caricamento...)
 contextmenu_main=Archivio(i)
 contextmenu_openextract_folder=Mostra percorso di estrazione
 contextmenu_password=Imposta password archivio
