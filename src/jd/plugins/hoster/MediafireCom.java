@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,10 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.ext.BasicBrowserEnviroment;
-import jd.http.ext.ExtBrowser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -53,17 +49,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.lobobrowser.html.domimpl.HTMLElementImpl;
-import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
-import org.lobobrowser.html.domimpl.HTMLScriptElementImpl;
-import org.lobobrowser.html.style.AbstractCSS2Properties;
-import org.w3c.dom.html2.HTMLCollection;
-
-//import org.lobobrowser.html.domimpl.HTMLDivElementImpl;
-//import org.lobobrowser.html.domimpl.HTMLLinkElementImpl;
-//import org.lobobrowser.html.style.AbstractCSS2Properties;
-//import org.w3c.dom.html2.HTMLCollection;
-//API:  http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n)" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
@@ -381,8 +366,12 @@ public class MediafireCom extends PluginForHost {
 
     /** end of random stringUserAgent **/
 
-    private static final String  PRIVATEFILE = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
-    private static AtomicInteger maxPrem     = new AtomicInteger(1);
+    private static final String                                    PRIVATEFILE        = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+    private static AtomicInteger                                   maxPrem            = new AtomicInteger(1);
+    /**
+     * Map to cache the configuration keys
+     */
+    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS = new HashMap<Account, HashMap<String, String>>();
 
     public static abstract class PasswordSolver {
 
@@ -437,76 +426,20 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String                                    agent              = stringUserAgent();
+    private static final String agent             = stringUserAgent();
 
-    static private final String                                    offlinelink        = "tos_aup_violation";
+    static private final String offlinelink       = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
-    private static final String                                    ERROR_PAGE         = "error.php";
+    private static final String ERROR_PAGE        = "error.php";
     /**
      * The number of retries to be performed in order to determine if a file is available
      */
-    private static final int                                       NUMBER_OF_RETRIES  = 3;
+    private static final int    NUMBER_OF_RETRIES = 3;
 
-    /**
-     * Map to cache the configuration keys
-     */
-    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS = new HashMap<Account, HashMap<String, String>>();
+    private String              fileID;
 
-    private static int covertToPixel(final String top) {
-        if (top == null) { return 0; }
-        if (top.toLowerCase().trim().endsWith("px")) { return Integer.parseInt(top.substring(0, top.length() - 2)); }
-        final String value = new Regex(top, "([\\-\\+]?\\s*\\d+)").getMatch(0);
-        if (value == null) { return 0; }
-        return Integer.parseInt(value);
-    }
-
-    private static ArrayList<HTMLElementImpl> getPath(final HTMLElementImpl impl) {
-        final ArrayList<HTMLElementImpl> styles = new ArrayList<HTMLElementImpl>();
-
-        HTMLElementImpl p = impl;
-        while (p != null) {
-            styles.add(0, p);
-            p = p.getParent("*");
-        }
-        return styles;
-    }
-
-    public static boolean isVisible(final HTMLElementImpl impl) {
-
-        final ArrayList<HTMLElementImpl> styles = MediafireCom.getPath(impl);
-        int x = 0;
-        int y = 0;
-        for (final HTMLElementImpl p : styles) {
-            final AbstractCSS2Properties style = p.getComputedStyle(null);
-
-            if ("none".equalsIgnoreCase(style.getDisplay())) {
-                //
-                System.out.println("NO DISPLAY");
-                return false;
-            }
-            if ("absolute".equalsIgnoreCase(style.getPosition())) {
-                x = y = 0;
-            }
-            if (style.getTop() != null) {
-                y += MediafireCom.covertToPixel(style.getTop());
-            }
-            if (style.getLeft() != null) {
-                x += MediafireCom.covertToPixel(style.getLeft());
-
-            }
-
-        }
-        if (y < 0) {
-            System.out.println("y<0" + " " + x + " - " + y);
-            return false;
-        }
-        return true;
-    }
-
-    private String fileID;
-
-    private String dlURL;
+    private String              dlURL;
 
     public MediafireCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -569,146 +502,6 @@ public class MediafireCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.mediafire.com/terms_of_service.php";
-    }
-
-    private String getDownloadUrl(DownloadLink downloadLink) throws Exception {
-        // if (Integer.parseInt(JDUtilities.getRevision().replace(".", "")) <
-        // 10000) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT,
-        // "Use Nightly"); }
-        String fileID = getID(downloadLink);
-        if (fileID != null) {
-            fileID = fileID.toLowerCase(Locale.ENGLISH);
-        }
-        final ExtBrowser eb = new ExtBrowser();
-        try {
-
-            //
-            // Set the browserenviroment. We blacklist a few urls here, because
-            // we do not need css, and several other sites
-            // we enable css evaluation, because we need this to find invisible
-            // links
-            // internal css is enough.
-            eb.setBrowserEnviroment(new BasicBrowserEnviroment(new String[] { ".*?googleapis.com.+", ".*?master_.+", ".*?connect.facebook.net.+", ".*?encoder.*?", ".*?google.+", ".*facebook.+", ".*pmsrvr.com.+", ".*yahoo.com.+", ".*templates/linkto.+", ".*cdn.mediafire.com/css/.+", ".*/blank.html", ".*twitter.com.+" }, null) {
-
-                @Override
-                public boolean doLoadContent(Request request) {
-                    return super.doLoadContent(request);
-                }
-
-                @Override
-                public String doScriptFilter(HTMLScriptElementImpl htmlScriptElementImpl, String text) {
-                    // if (text.startsWith("BUILD_VERSION='68578';")) { return
-                    // super.doScriptFilter(htmlScriptElementImpl, text); }
-                    // if (text.contains("google-analytics.com/ga.js")) return
-                    // "";
-                    // if
-                    // (text.contains("top.location.href=self.location.href"))
-                    // return "";
-                    // if (text.contains("FBAppId='124578887583575'")) return
-                    // "";
-                    // if (text.contains("notloggedin_wrapper")) return "";
-                    // if (text.contains("download-dark-screen")) return "";
-                    // // if
-                    // //
-                    // (text.contains("var gV=document.getElementById('pagename')"))
-                    // // return "";
-                    // if (text.contains("FB.getLoginStatus")) return "";
-                    // if (text.contains("$(document).ready(function()")) return
-                    // "";
-                    // text = text.replace("function vg()",
-                    // "function DoNotCallMe()");
-
-                    // do notexecute these scripts
-                    if (text.contains("</div>")) { return ""; }
-                    if (text.startsWith("$(document)")) { return ""; }
-                    if (text.startsWith("setTimeout(function(){$(")) { return ""; }
-                    if (text.contains("jQuery(")) { return ""; }
-                    if (text.startsWith("try{DoShow(\"notloggedin_wrapper\");")) { return ""; }
-                    if (text.startsWith("var gV=document.getElementById('pagename');")) { return ""; }
-                    if (text.contains("var templates=LoadTemplatesFromSource();")) { return ""; }
-                    if (text.startsWith("(function(p,D){")) { return ""; }
-
-                    return super.doScriptFilter(htmlScriptElementImpl, text);
-                }
-
-                @Override
-                public boolean isInternalCSSEnabled() {
-                    return true;
-                }
-
-                @Override
-                public void prepareContents(Request request) {
-
-                    super.prepareContents(request);
-                }
-
-            });
-            // Start Evaluation of br
-            String html = br.getRequest().getHtmlCode();
-
-            // replace global variables
-            String pkr = br.getRegex("pKr='(.*?)'").getMatch(0);
-            html = html.replace("'+pKr", pkr + "'");
-            br.getRequest().setHtmlCode(html);
-            eb.eval(this.br);
-            // wait for workframe2, but max 30 seconds
-            eb.waitForFrame("workframe2", 30000);
-            // dummy waittime. sometimes it seems that wiat for frame is not
-            // enough
-
-            sleep(5000, downloadLink);
-            eb.getHtmlText();
-            // get all links now
-            final HTMLCollection links = eb.getDocument().getLinks();
-
-            for (int i = 0; i < links.getLength(); i++) {
-                final HTMLLinkElementImpl l = (HTMLLinkElementImpl) links.item(i);
-                // check if the link is visible in browser
-                System.out.println(l.getOuterHTML());
-                if (l.getInnerHTML().toLowerCase().contains("download")) {
-                    System.out.println("Download start");
-                    if (MediafireCom.isVisible(l)) {
-                        System.out.println("visible");
-                        if (new Regex(l.getAbsoluteHref(), "http://.*?/[a-z0-9]+/[a-z0-9]+/.*").matches()) {
-                            // we do not know yet, why there are urls with ip
-                            // only, and urls with domain
-                            // if (new Regex(l.getAbsoluteHref(),
-                            // "http://\\d\\.\\d\\.\\d\\.\\d/[a-z0-9]+/[a-z0-9]+/.*").matches())
-                            // { throw new
-                            // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-                            // "Server error", 2 * 60000l); }
-                            System.out.println("contains mf");
-                            String url = l.getAbsoluteHref();
-                            String tmpurl = url.toLowerCase(Locale.ENGLISH);
-                            if (fileID != null) {
-                                if (tmpurl.contains(fileID + "/")) { return url; }
-                            } else {
-                                return url;
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            logger.info(eb.getHtmlText());
-            e.printStackTrace();
-        } finally {
-            try {
-                eb.getDocument().close();
-            } catch (final Throwable e) {
-            }
-            try {
-                /*
-                 * this call will stop/kill all remaining js from previous extBrowser!
-                 */
-                Browser loboCleanup = new Browser();
-                eb.eval(loboCleanup);
-            } catch (final Throwable e) {
-            }
-
-        }
-        if (br.containsHTML("No servers are currently available with the requested data on them.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No servers are currently available with the requested data on them", 30 * 60 * 1000l);
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -795,14 +588,16 @@ public class MediafireCom extends PluginForHost {
                     if (url != null) {
                         url = url.replaceAll("\\\\", "");
                     } else {
-                        logger.info("Try fallback: " + brc.toString());
+                        logger.info("Try fallback:");
+                        try {
+                            logger.info(brc.toString());
+                        } catch (final Throwable e) {
+                            logger.info(e.getMessage());
+                        }
                     }
                     if (url == null) {
                         /* pw protected files can directly redirect to download */
                         url = br.getRedirectLocation();
-                    }
-                    if (url == null) {
-                        url = this.getDownloadUrl(downloadLink);
                     }
                 }
             }
@@ -853,7 +648,7 @@ public class MediafireCom extends PluginForHost {
                     url = br.getRedirectLocation();
                     if (url == null || !url.contains("download")) {
                         this.handlePW(downloadLink);
-                        url = this.getDownloadUrl(downloadLink);
+                        url = br.getRedirectLocation();
                     }
                     if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Private file. No Download possible");
                 }
@@ -935,7 +730,6 @@ public class MediafireCom extends PluginForHost {
         if (url != null) br.getPage(url);
         this.handlePW(downloadLink);
         url = br.getRedirectLocation();
-        if (url == null) url = this.getDownloadUrl(downloadLink);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);

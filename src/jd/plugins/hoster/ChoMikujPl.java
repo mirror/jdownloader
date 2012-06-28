@@ -82,7 +82,7 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    public boolean getDllink(DownloadLink theLink, Browser br2) throws NumberFormatException, PluginException, IOException {
+    public boolean getDllink(DownloadLink theLink, Browser br) throws NumberFormatException, PluginException, IOException {
         final boolean redirectsSetting = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         final String fid = new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
@@ -90,7 +90,7 @@ public class ChoMikujPl extends PluginForHost {
         String savedLink = theLink.getStringProperty("savedlink");
         String savedPost = theLink.getStringProperty("savedpost");
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://chomikuj.pl/action/fileDetails/Index/" + fid);
         final String videoLink = br.getRegex("\"(http://chomikuj\\.pl/Video\\.ashx\\?realId=\\d+\\&amp;id=\\d+\\&amp;type=1)\"").getMatch(0);
         if (videoLink != null) {
@@ -98,10 +98,10 @@ public class ChoMikujPl extends PluginForHost {
             DLLINK = br.getRedirectLocation();
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         } else {
-            br2.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
-            if (br2.containsHTML(PREMIUMONLY)) return false;
-            DLLINK = br2.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br2.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+            br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
+            if (br.containsHTML(PREMIUMONLY)) return false;
+            DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         }
         br.setFollowRedirects(redirectsSetting);
@@ -144,15 +144,17 @@ public class ChoMikujPl extends PluginForHost {
         DLLINK = null;
         getDllink(link, brc);
         if (DLLINK == null) {
-            Regex confirmVarsRegex = new Regex(brc.toString().replace("\\", ""), "fileId=\\d+u0027,[a-z\r\n\t ]+u0027(.*?)u0027, u0027(.*?)u0027");
-            String argh1 = confirmVarsRegex.getMatch(0);
-            String argh2 = confirmVarsRegex.getMatch(1);
+            String argh1 = brc.getRegex("orgFile\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
+            String argh2 = brc.getRegex("userSelection\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // For some files they ask
             // "Do you really want to download this file", so we have to confirm
             // it with "YES" here ;)
-            br.postPage("http://chomikuj.pl/Chomik/License/acceptOwnTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2));
-            getDllink(link, brc);
+            br.postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + new Regex(link.getDownloadURL(), FILEIDREGEX).getMatch(0), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
+            DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+            if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
+            if (DLLINK == null) getDllink(link, brc);
         }
         if (DLLINK == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");

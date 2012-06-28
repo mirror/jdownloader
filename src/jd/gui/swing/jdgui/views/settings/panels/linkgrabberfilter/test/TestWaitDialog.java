@@ -143,11 +143,12 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
             @Override
             protected void runInEDT() {
-                if (lbl == null) return;
-                if (found.size() == 0) {
-                    lbl.setText(_GUI._.TestWaitDialog_runInEDTnothing_found());
-                } else {
-                    lbl.setText(_GUI._.TestWaitDialog_runInEDT_(filtered, found.size(), ((filtered * 10000) / found.size()) / 100d));
+                if (lbl != null) {
+                    if (found.size() == 0) {
+                        lbl.setText(_GUI._.TestWaitDialog_runInEDTnothing_found());
+                    } else {
+                        lbl.setText(_GUI._.TestWaitDialog_runInEDT_(filtered, found.size(), ((filtered * 10000) / found.size()) / 100d));
+                    }
                 }
                 // synchronized (found) {
                 model._fireTableStructureChanged(new ArrayList<CrawledLink>(found), true);

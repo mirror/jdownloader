@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "limelinx.com" }, urls = { "http://[\\w\\.]*?limelinx\\.com/files/[0-9a-z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "limelinx.com" }, urls = { "http://[\\w\\.]*?limelinx\\.com/(files/)?[0-9a-z]+" }, flags = { 0 })
 public class LimeLinxCom extends PluginForHost {
 
     public LimeLinxCom(PluginWrapper wrapper) {
@@ -48,7 +48,12 @@ public class LimeLinxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("DownloadLI.*?href=\"(http.*?)\"").getMatch(0);
+        String dllink = br.getRegex("DownloadLI.*?downloadFile\\('(.*?)'").getMatch(0);
+        if (dllink != null) {
+            if (!dllink.startsWith("http") && dllink.endsWith("ptth")) {
+                dllink = new StringBuilder(dllink).reverse().toString();
+            }
+        }
         if (dllink == null) dllink = br.getRegex("<a href=\"(https?://[^\"\\'<>]+)\">Download</a>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

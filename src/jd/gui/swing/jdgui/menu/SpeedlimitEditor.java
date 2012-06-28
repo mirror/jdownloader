@@ -8,6 +8,7 @@ import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.SizeSpinner;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.locale._AWU;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
@@ -33,9 +34,18 @@ public class SpeedlimitEditor extends MenuEditor {
              */
             private static final long serialVersionUID = 1L;
 
-            protected String longToText(long longValue) {
+            @Override
+            protected Object textToObject(String text) {
+                if (text != null && text.trim().matches("^[0-9]+$")) { return super.textToObject(text + " kb/s"); }
+                return super.textToObject(text);
+            }
 
-                return _GUI._.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
+            protected String longToText(long longValue) {
+                if (longValue <= 0) {
+                    return _GUI._.SpeedlimitEditor_format(_AWU.T.literally_kibibyte("0"));
+                } else {
+                    return _GUI._.SpeedlimitEditor_format(SizeFormatter.formatBytes(longValue));
+                }
             }
         };
 
@@ -44,5 +54,4 @@ public class SpeedlimitEditor extends MenuEditor {
         add(spinner, "height 22!,width 100!");
 
     }
-
 }

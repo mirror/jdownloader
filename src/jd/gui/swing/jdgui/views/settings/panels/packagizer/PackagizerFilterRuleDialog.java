@@ -53,6 +53,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.BooleanFilter;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
+import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
@@ -112,20 +113,29 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     private JComboBox      cobExtract;
     private JComboBox      cobAutostart;
     private JComboBox      cobAutoAdd;
+    private RuleMatcher    matcher = null;
 
     protected void runTest(String text) {
 
         TestWaitDialog d;
         try {
-
-            PackagizerController packagizer = PackagizerController.createEmptyTestInstance();
             final PackagizerRule rule = getCurrentCopy();
+            matcher = new RuleMatcher(rule);
+            PackagizerController packagizer = new PackagizerController(true) {
+
+                @Override
+                protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
+                    matcher.setMatches(true);
+                    super.set(link, lgr);
+                }
+
+            };
             packagizer.add(rule);
             d = new TestWaitDialog(text, _GUI._.PackagizerRuleDialog_runTest_title_(rule.toString()), null) {
 
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {
-                    return new PackagizerSingleTestTableModel(rule);
+                    return new PackagizerSingleTestTableModel(matcher);
                 }
 
             };
@@ -141,7 +151,34 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
     public PackagizerFilterRuleDialog(PackagizerRule filterRule) {
         super();
         this.rule = filterRule;
+    }
 
+    public static class RuleMatcher {
+        private Boolean        matches = null;
+        private PackagizerRule rule;
+
+        public PackagizerRule getRule() {
+            return rule;
+        }
+
+        public RuleMatcher(PackagizerRule rule) {
+            this.rule = rule;
+        }
+
+        /**
+         * @return the matches
+         */
+        public Boolean getMatches() {
+            return matches;
+        }
+
+        /**
+         * @param matches
+         *            the matches to set
+         */
+        public void setMatches(boolean matches) {
+            this.matches = matches;
+        }
     }
 
     /**

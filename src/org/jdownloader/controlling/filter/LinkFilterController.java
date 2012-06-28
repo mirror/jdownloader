@@ -18,8 +18,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private static final LinkFilterController INSTANCE = new LinkFilterController(false);
 
     /**
-     * get the only existing instance of LinkFilterController. This is a
-     * singleton
+     * get the only existing instance of LinkFilterController. This is a singleton
      * 
      * @return
      */
@@ -50,10 +49,9 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ChangeEventSender                       eventSender;
 
     /**
-     * Create a new instance of LinkFilterController. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
-    private LinkFilterController(boolean testInstance) {
+    public LinkFilterController(boolean testInstance) {
         config = JsonConfig.create(LinkFilterSettings.class);
         eventSender = new ChangeEventSender();
         if (!testInstance) {
@@ -174,8 +172,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     public boolean dropByUrl(CrawledLink link) {
         if (link.getMatchingFilter() != null) {
             /*
-             * links with set matching filtered are allowed, user wants to add
-             * them
+             * links with set matching filtered are allowed, user wants to add them
              */
             return false;
         }
@@ -255,8 +252,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
     public boolean dropByFileProperties(CrawledLink link) {
         if (link.getMatchingFilter() != null && link.getMatchingFilter() instanceof LinkgrabberFilterRule && !((LinkgrabberFilterRule) link.getMatchingFilter()).isAccept()) {
             /*
-             * links with set matching filtered are allowed, user wants to add
-             * them
+             * links with set matching filtered are allowed, user wants to add them
              */
             return false;
         }

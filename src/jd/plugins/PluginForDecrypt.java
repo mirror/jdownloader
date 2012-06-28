@@ -30,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaController;
 import jd.controlling.captcha.CaptchaResult;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawlerAbort;
 import jd.controlling.linkcrawler.LinkCrawlerDistributer;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -49,6 +50,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     private LazyCrawlerPlugin      lazyC        = null;
     private CrawledLink            currentLink  = null;
+    private LinkCrawlerAbort       linkCrawlerAbort;
 
     /**
      * @return the distributer
@@ -333,6 +335,21 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public String getCrawlerStatusString() {
         return null;
+    }
+
+    public void setLinkCrawlerAbort(LinkCrawlerAbort linkCrawlerAbort) {
+        this.linkCrawlerAbort = linkCrawlerAbort;
+    }
+
+    /**
+     * DO not use in Plugins for old 09581 Stable or try/catch
+     * 
+     * @return
+     */
+    public boolean isAbort() {
+        LinkCrawlerAbort llinkCrawlerAbort = linkCrawlerAbort;
+        if (llinkCrawlerAbort != null) return llinkCrawlerAbort.isAbort();
+        return Thread.currentThread().isInterrupted();
     }
 
 }

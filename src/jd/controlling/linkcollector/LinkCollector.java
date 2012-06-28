@@ -887,10 +887,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         if (linkChecker != null) return;
         synchronized (this) {
             if (linkChecker != null) return;
-            linkChecker = new LinkChecker<CrawledLink>();
-            linkChecker.setLinkCheckHandler(this);
             setCrawlerFilter(LinkFilterController.getInstance());
             setPackagizer(PackagizerController.getInstance());
+            linkChecker = new LinkChecker<CrawledLink>();
+            linkChecker.setLinkCheckHandler(this);
         }
     }
 

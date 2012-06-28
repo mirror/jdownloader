@@ -51,7 +51,7 @@ public class TestAction extends AppAction {
         try {
 
             if (filetypefilter == null) {
-                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), NewTheme.I().getIcon("Test", 32), null, null);
+                String input = Dialog.getInstance().showInputDialog(0, _GUI._.TestAction_actionPerformed_test_title_(name), _GUI._.TestAction_actionPerformed_msg_(filter.getPattern().pattern(), name), JSonStorage.getPlainStorage("packagizertesturls").get(name, ""), NewTheme.I().getIcon("test", 32), null, null);
                 JSonStorage.getPlainStorage("packagizertesturls").put(name, input);
                 String[] matches;
                 switch (filter.getMatchType()) {

@@ -3,14 +3,13 @@ package jd.gui.swing.jdgui.views.settings.panels.packagizer.test;
 import javax.swing.Icon;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.views.settings.panels.packagizer.PackagizerFilterRuleDialog.RuleMatcher;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtFileSizeColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Files;
-import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.controlling.packagizer.PackagizerRule;
 import org.jdownloader.controlling.packagizer.PackagizerRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -21,9 +20,9 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 	 * 
 	 */
     private static final long serialVersionUID = -2808142012367413057L;
-    private PackagizerRule    rule;
+    private RuleMatcher       rule;
 
-    public PackagizerSingleTestTableModel(PackagizerRule rule) {
+    public PackagizerSingleTestTableModel(RuleMatcher rule) {
         super("PackagizerSingleTestTableModel");
         this.rule = rule;
     }
@@ -53,14 +52,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             protected Icon getIcon(CrawledLink value) {
-
-                try {
-                    if (!((LinkgrabberFilterRule) value.getMatchingFilter()).isAccept()) { return NewTheme.I().getIcon("false", 16); }
-                } catch (Exception e) {
-
+                if (Boolean.TRUE.equals(rule.getMatches())) {
+                    return NewTheme.I().getIcon("true", 16);
+                } else {
+                    return NewTheme.I().getIcon("false", 16);
                 }
-                return NewTheme.I().getIcon("true", 16);
-
             }
 
             @Override
@@ -304,11 +300,11 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
 
             @Override
             public boolean isEnabled(CrawledLink obj) {
-                return rule.getDownloadDestination() != null;
+                return rule.getRule().getDownloadDestination() != null;
             }
 
             public boolean isVisible(boolean savedValue) {
-                return rule.getDownloadDestination() != null;
+                return rule.getRule().getDownloadDestination() != null;
             }
 
             @Override
@@ -325,7 +321,7 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             private static final long serialVersionUID = -399219090023179926L;
 
             public boolean isVisible(boolean savedValue) {
-                return rule.getPackageName() != null;
+                return rule.getRule().getPackageName() != null;
             }
 
             @Override
@@ -340,12 +336,12 @@ public class PackagizerSingleTestTableModel extends ExtTableModel<CrawledLink> {
             private static final long serialVersionUID = 5325984890669861167L;
 
             public boolean isVisible(boolean savedValue) {
-                return rule.getFilename() != null;
+                return rule.getRule().getFilename() != null;
             }
 
             @Override
             public String getStringValue(CrawledLink value) {
-                return PackagizerController.getInstance().replaceVariables(rule.getFilename(), value, new PackagizerRuleWrapper(rule)) + "(" + rule.getFilename() + ")";
+                return PackagizerController.getInstance().replaceVariables(rule.getRule().getFilename(), value, new PackagizerRuleWrapper(rule.getRule())) + "(" + rule.getRule().getFilename() + ")";
                 // return rule.getFilenameFilter().getRegex()
             }
         });

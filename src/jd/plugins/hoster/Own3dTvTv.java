@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "own3d.tv" }, urls = { "http://[\\w\\.]*?own3d\\.tv/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "own3d.tv" }, urls = { "http://[\\w\\.]*?own3d\\.tv/(.*?/)?(video|watch)/\\d+" }, flags = { 0 })
 public class Own3dTvTv extends PluginForHost {
 
     private String dllink = null;
@@ -69,12 +69,10 @@ public class Own3dTvTv extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
         }
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?) - SC2 - HD 720p Stream\"/>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>own3D - (.*?) - SC2 - HD 720p Stream</title>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("\"http://twitter\\.com/home\\?status=(.*?) \\| ").getMatch(0);
-            }
-        }
+        if (filename == null) filename = br.getRegex("<title>own3D - (.*?) - SC2 - HD 720p Stream</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>own3D.tv - (.*?) - SC2").getMatch(0);
+        if (filename == null) filename = br.getRegex("\"http://twitter\\.com/home\\?status=(.*?) \\| ").getMatch(0);
+
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String hdLink = br.getRegex("HDUrl: \\'(videos/.*?\\.mp4)\\'").getMatch(0);
         String sdLink = br.getRegex("HQUrl: \\'(videos/.*?\\.mp4)\\'").getMatch(0);

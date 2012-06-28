@@ -41,15 +41,16 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     private ArrayList<PackagizerRuleWrapper>    fileFilter;
     private ArrayList<PackagizerRuleWrapper>    urlFilter;
 
-    public static final String                  ORGFILENAME = "orgfilename";
-    public static final String                  ORGFILETYPE = "orgfiletype";
-    public static final String                  HOSTER      = "hoster";
-    public static final String                  SOURCE      = "source";
-    public static final String                  PACKAGENAME = "packagename";
-    public static final String                  SIMPLEDATE  = "simpledate";
+    public static final String                  ORGFILENAME  = "orgfilename";
+    public static final String                  ORGFILETYPE  = "orgfiletype";
+    public static final String                  HOSTER       = "hoster";
+    public static final String                  SOURCE       = "source";
+    public static final String                  PACKAGENAME  = "packagename";
+    public static final String                  SIMPLEDATE   = "simpledate";
 
-    private static final PackagizerController   INSTANCE    = new PackagizerController(false);
-    private HashMap<String, PackagizerReplacer> replacers   = new HashMap<String, PackagizerReplacer>();
+    private static final PackagizerController   INSTANCE     = new PackagizerController(false);
+    private HashMap<String, PackagizerReplacer> replacers    = new HashMap<String, PackagizerReplacer>();
+    private boolean                             testInstance = false;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -59,8 +60,9 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         return new PackagizerController(true);
     }
 
-    private PackagizerController(boolean testInstance) {
+    public PackagizerController(boolean testInstance) {
         config = JsonConfig.create(PackagizerSettings.class);
+        this.testInstance = testInstance;
         eventSender = new ChangeEventSender();
 
         if (!testInstance) {
@@ -273,7 +275,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByFile(CrawledLink link) {
-        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
+        if (testInstance == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
@@ -300,7 +302,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByUrl(CrawledLink link) {
-        if (!org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
+        if (testInstance == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {
@@ -319,7 +321,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         }
     }
 
-    private void set(CrawledLink link, PackagizerRuleWrapper lgr) {
+    protected void set(CrawledLink link, PackagizerRuleWrapper lgr) {
         PackageInfo dpi = link.getDesiredPackageInfo();
         if (dpi == null) dpi = new PackageInfo();
         boolean dpiSet = false;
