@@ -27,7 +27,6 @@ downloadedbad=Le fichier doit être téléchargé
 downloadedok=Fichier déjà existant
 dummyarchivedialog_title=Archive %s1
 exists=statut du lien
-extract_to=Extraction de %s1 vers...
 extraction_failed=L'extraction de %s1 a échoué
 file_exists=Fichier existant
 file_exists_not=Le fichier n'existe pas
