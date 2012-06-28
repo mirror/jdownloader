@@ -172,7 +172,7 @@ public class ArteTv extends PluginForHost {
     private HashMap<String, String> requestLivewebArte() throws Exception {
         HashMap<String, String> paras = new HashMap<String, String>();
         String eventId = br.getRegex("eventId=(\\d+)").getMatch(0);
-        FLASHPLAYER = "http://liveweb.arte.tv/flash/player.swf";
+        FLASHPLAYER = br.getRegex("(http://[^\\?\"]+player.swf)").getMatch(0);
 
         XPath xPath = xmlParser("http://arte.vo.llnwd.net/o21/liveweb/events/event-" + eventId + ".xml?" + System.currentTimeMillis());
         NodeList modules = (NodeList) xPath.evaluate("//event[@id=" + eventId + "]/*|//event/video[@id]/*", doc, XPathConstants.NODESET);
@@ -221,8 +221,16 @@ public class ArteTv extends PluginForHost {
 
     private void setupRTMPConnection(DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        /* liveweb */
+        String[] uri = CLIPURL.split("(?i)/MP4:liveweb");
+        if (uri != null && uri.length == 2) {
+            rtmp.setPlayPath("MP4:liveweb" + uri[1]);
+            rtmp.setUrl(uri[0]);
+            rtmp.setApp(new Regex(uri[0], "rtmp.?://[^/]+/(.*?)$").getMatch(0));
+        } else {
+            rtmp.setUrl(CLIPURL);
+        }
         rtmp.setSwfVfy(FLASHPLAYER);
-        rtmp.setUrl(CLIPURL);
         rtmp.setResume(true);
     }
 
