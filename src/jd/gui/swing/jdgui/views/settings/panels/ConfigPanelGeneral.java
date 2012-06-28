@@ -51,7 +51,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
     public ConfigPanelGeneral() {
         super();
 
-        downloadFolder = new FolderChooser("downloadfolder");
+        downloadFolder = new FolderChooser();
         simpleContainer = new Checkbox();
 
         this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));

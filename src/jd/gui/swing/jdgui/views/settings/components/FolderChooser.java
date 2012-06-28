@@ -12,11 +12,9 @@ import javax.swing.event.DocumentListener;
 
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.translate._JDT;
 
 public class FolderChooser extends JPanel implements SettingsComponent, ActionListener {
@@ -26,13 +24,13 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
     private static final long                     serialVersionUID = 1L;
     private JTextField                            txt;
     private JButton                               btn;
-    private String                                id;
+
     private StateUpdateEventSender<FolderChooser> eventSender;
     private boolean                               setting;
 
-    public FolderChooser(String id) {
+    public FolderChooser() {
         super(new MigLayout("ins 0", "[grow,fill][]", "[26!,fill]"));
-        this.id = id;
+
         txt = new JTextField();
         btn = new JButton(_JDT._.basics_browser_folder());
         btn.addActionListener(this);
@@ -54,6 +52,14 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
                 if (!setting) eventSender.fireEvent(new StateUpdateEvent<FolderChooser>(FolderChooser.this));
             }
         });
+    }
+
+    public JButton getBtn() {
+        return btn;
+    }
+
+    public JTextField getTxt() {
+        return txt;
     }
 
     @Override
@@ -82,9 +88,8 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
     public void actionPerformed(ActionEvent e) {
         try {
 
-            File[] ret = Dialog.getInstance().showFileChooser(id, _JDT._.gui_setting_folderchooser_title(), FileChooserSelectionMode.DIRECTORIES_ONLY, null, false, FileChooserType.SAVE_DIALOG, new File(txt.getText()));
-
-            txt.setText(ret[0].getAbsolutePath());
+            File ret = DownloadFolderChooserDialog.open(new File(txt.getText()), getPackageSubFolderEnabled(), _JDT._.gui_setting_folderchooser_title());
+            txt.setText(ret.getAbsolutePath());
 
         } catch (DialogCanceledException e1) {
             e1.printStackTrace();
@@ -92,6 +97,10 @@ public class FolderChooser extends JPanel implements SettingsComponent, ActionLi
             e1.printStackTrace();
         }
 
+    }
+
+    protected boolean getPackageSubFolderEnabled() {
+        return false;
     }
 
     public boolean isMultiline() {

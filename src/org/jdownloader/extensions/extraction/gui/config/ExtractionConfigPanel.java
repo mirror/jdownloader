@@ -57,7 +57,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
 
         this.addHeader(T._.settings_extractto(), NewTheme.I().getIcon("folder", 32));
         toggleCustomizedPath = this.addPair(T._.settings_extract_to_archive_folder(), null, new Checkbox());
-        customPath = this.addPair(T._.settings_extract_to_path(), null, new FolderChooser("custom_extraction_path"));
+        customPath = this.addPair(T._.settings_extract_to_path(), null, new FolderChooser());
         customPath.setConditionPair(toggleCustomizedPath);
         toggleUseSubpath = this.addPair(T._.settings_use_subpath(), null, new Checkbox());
         Spinner spinner = new Spinner(0, Integer.MAX_VALUE);

@@ -2201,4 +2201,13 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Download is not running" })
     String ConnectionColumn_DownloadIsNotRunning();
 
+    @Default(lngs = { "en" }, values = { "New Package" })
+    String NewPackageDialog_NewPackageDialog_();
+
+    @Default(lngs = { "en" }, values = { "Package Name" })
+    String NewPackageDialog_layoutDialogContent_newname_();
+
+    @Default(lngs = { "en" }, values = { "Save to" })
+    String NewPackageDialog_layoutDialogContent_saveto();
+
 }
