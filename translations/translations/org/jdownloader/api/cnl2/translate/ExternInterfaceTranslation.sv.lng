@@ -1,0 +1,4 @@
+jd_plugins_optional_interfaces_jdflashgot_security_btn_allow=Tillåt!
+jd_plugins_optional_interfaces_jdflashgot_security_btn_deny=Neka!
+jd_plugins_optional_interfaces_jdflashgot_security_message=En extern applikation försöker att lägga till länkar
+jd_plugins_optional_interfaces_jdflashgot_security_title=Extern förfrågan från %s1
