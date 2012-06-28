@@ -255,6 +255,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
             }
         });
+
     }
 
     public LinkCollectorEventSender getEventsender() {
