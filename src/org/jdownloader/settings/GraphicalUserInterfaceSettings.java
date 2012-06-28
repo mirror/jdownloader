@@ -14,6 +14,7 @@ import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.Application;
+import org.appwork.utils.swing.dialog.View;
 import org.jdownloader.gui.views.components.SearchCategory;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
@@ -351,5 +352,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isCaptchaDialogUniquePositionByHosterEnabled();
 
     void setCaptchaDialogUniquePositionByHosterEnabled(boolean b);
+
+    @DefaultEnumValue("DETAILS")
+    @AboutConfig
+    void setFileChooserView(View view);
+
+    View getFileChooserView();
 
 }

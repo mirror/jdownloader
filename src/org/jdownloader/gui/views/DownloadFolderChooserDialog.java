@@ -13,6 +13,7 @@ import javax.swing.JSeparator;
 import jd.controlling.linkcrawler.CrawledPackage;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.StringUtils;
@@ -28,6 +29,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.DownloadPath;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
@@ -49,6 +51,7 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
             subfolder = true;
             this.path = path.getParentFile();
         }
+        setView(JsonConfig.create(GraphicalUserInterfaceSettings.class).getFileChooserView());
     }
 
     protected Icon getDirectoryIcon(Icon ret, File f) {
@@ -81,6 +84,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
 
     @Override
     protected File[] createReturnValue() {
+
+        JsonConfig.create(GraphicalUserInterfaceSettings.class).setFileChooserView(getView());
         if (isMultiSelection()) {
             File[] files = fc.getSelectedFiles();
             return files;
@@ -171,7 +176,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
     }
 
     public static File open(File path, boolean packager, String title) throws DialogClosedException, DialogCanceledException {
-        if (!CrossSystem.isAbsolutePath(path.getPath())) {
+
+        if (path != null && !CrossSystem.isAbsolutePath(path.getPath())) {
             path = new File(org.jdownloader.settings.staticreferences.CFG_GENERAL.DEFAULT_DOWNLOAD_FOLDER.getValue(), path.getPath());
         }
         final File path2 = path;
