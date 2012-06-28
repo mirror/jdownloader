@@ -63,7 +63,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
     public SelectionInfo(AbstractNode contextObject, List<AbstractNode> selection, MouseEvent event, KeyEvent kEvent, PackageControllerTable<PackageType, ChildrenType> table) {
 
         this.contextObject = contextObject;
-        rawSelection = selection;
+        rawSelection = selection == null ? new ArrayList<AbstractNode>() : selection;
         selectedChildren = new ArrayList<ChildrenType>();
         allPackages = new ArrayList<PackageType>();
         fullPackages = new ArrayList<PackageType>();

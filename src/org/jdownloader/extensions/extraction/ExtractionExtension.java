@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions.extraction;
 
+import java.awt.Cursor;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -34,6 +35,7 @@ import javax.swing.filechooser.FileFilter;
 
 import jd.Launcher;
 import jd.config.SubConfiguration;
+import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -808,9 +810,9 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
     }
 
-    private void onExtendPopupMenuLinkgrabberTable(LinkgrabberTableContext context) {
+    private void onExtendPopupMenuLinkgrabberTable(final LinkgrabberTableContext context) {
 
-        JMenu menu = new JMenu(_.contextmenu_main()) {
+        final JMenu menu = new JMenu(_.contextmenu_main()) {
             /**
              * 
              */
@@ -821,61 +823,110 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 return super.createActionComponent(a);
             }
         };
-        if (context.getSelectionInfo().getSelectedChildren().size() > 1) {
 
-            ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(this, context.getSelectionInfo());
-
-            createMenu(menu, false, validation.getArchives().toArray(new Archive[] {}));
-
-        } else {
-            ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(this, context.getSelectionInfo());
-
-            if (validation.getArchives().size() == 1) {
-                createMenu(menu, false, validation.getArchives().get(0));
-            } else {
-                menu.setEnabled(false);
-            }
-        }
-
+        // menu.setEnabled(false);
         context.getMenu().add(menu);
+
         menu.setIcon(getIcon(18));
+        menu.setEnabled(false);
+        IOEQ.add(new Runnable() {
+
+            public void run() {
+
+                final String org = menu.getText();
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        menu.setText(_.contextmenu_loading(org));
+                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                    }
+
+                };
+                final ValidateArchiveAction<CrawledPackage, CrawledLink> validation = new ValidateArchiveAction<CrawledPackage, CrawledLink>(ExtractionExtension.this, context.getSelectionInfo());
+
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        if (validation.getArchives().size() > 0) {
+                            createMenu(menu, false, validation.getArchives().toArray(new Archive[] {}));
+                            menu.setEnabled(true);
+                        }
+                    }
+                };
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                        menu.setText(org);
+                    }
+                };
+
+            }
+        });
 
     }
 
     protected void onExtendPopupMenuDownloadTable(final DownloadTableContext context) {
-        JMenu menu = new JMenu(_.contextmenu_main()) {
+
+        final JMenu menu = new JMenu(_.contextmenu_main()) {
             /**
-         * 
-         */
-            private static final long serialVersionUID = -4895713293724938465L;
+             * 
+             */
+            private static final long serialVersionUID = -5156294142768994122L;
 
             protected JMenuItem createActionComponent(Action a) {
                 if (((AppAction) a).isToggle()) { return new JCheckBoxMenuItem(a); }
                 return super.createActionComponent(a);
             }
         };
-        if (context.getSelectionInfo().getSelectedChildren().size() > 1) {
-            // multilink or package selection
-            // TODO:No validation
-            final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
 
-            createMenu(menu, true, validateAction.getArchives().toArray(new Archive[] {}));
+        // menu.setEnabled(false);
+        context.getMenu().add(menu);
 
-        } else {
+        menu.setIcon(getIcon(18));
+        menu.setEnabled(false);
+        IOEQ.add(new Runnable() {
 
-            // single link selection
+            @Override
+            public void run() {
+                final String org = menu.getText();
+                new EDTRunner() {
 
-            final ValidateArchiveAction<FilePackage, DownloadLink> validateAction = new ValidateArchiveAction<FilePackage, DownloadLink>(this, context.getSelectionInfo());
-            if (validateAction.getArchives().size() == 1) {
-                createMenu(menu, true, validateAction.getArchives().get(0));
+                    @Override
+                    protected void runInEDT() {
+                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                        menu.setText(_.contextmenu_loading(org));
+                    }
 
-            } else {
-                menu.setEnabled(false);
+                };
+                final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(ExtractionExtension.this, context.getSelectionInfo());
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+
+                        if (validation.getArchives().size() > 0) {
+                            createMenu(menu, false, validation.getArchives().toArray(new Archive[] {}));
+                            menu.setEnabled(true);
+                        }
+                    }
+                };
+                new EDTRunner() {
+
+                    @Override
+                    protected void runInEDT() {
+                        menu.setText(org);
+                        menu.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    }
+                };
             }
 
-        }
-        context.getMenu().add(menu);
-        menu.setIcon(getIcon(18));
+        });
+
     }
 
     private void createMenu(JMenu menu, boolean startExtract, final Archive... archives) {

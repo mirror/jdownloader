@@ -307,4 +307,7 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Auto remove Downloadlinks is now disabled" })
     String set_autoremovelinks_false();
+
+    @Default(lngs = { "en" }, values = { "%s1 (Loading ...)" })
+    String contextmenu_loading(String org);
 }
