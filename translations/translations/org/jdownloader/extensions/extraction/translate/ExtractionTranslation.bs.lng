@@ -20,6 +20,7 @@ contextmenu_autodeletelinks=Omogućeno je 'Ukloni Linkove iz Liste Download-a'
 contextmenu_autoextract=Omogućena je Automatska Ekstrakcija
 contextmenu_extract=Ekstraktuj Sada
 contextmenu_extract_to=Postavi Putanju Za Ekstrakciju
+contextmenu_loading=%s1 (Učitavanje ...)
 contextmenu_main=Arhiva(e)
 contextmenu_openextract_folder=Prikaži Putanju Za Ekstrakciju
 contextmenu_password=Postavi Šifru Arhive
