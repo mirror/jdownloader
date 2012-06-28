@@ -59,7 +59,7 @@ public class BelgelerCom extends PluginForHost {
         if (br.containsHTML(">Bu belge sistemimizden kaldırılmıştır")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".pdf");
+        link.setName(Encoding.htmlDecode(filename.trim()));
         link.getLinkStatus().setStatusText("Only premium users can download documents!");
         return AvailableStatus.TRUE;
     }
@@ -137,6 +137,8 @@ public class BelgelerCom extends PluginForHost {
         }
         dllink = MAINPAGE + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 1);
+        final String ext = getFileNameFromHeader(dl.getConnection()).substring(getFileNameFromHeader(dl.getConnection()).lastIndexOf("."));
+        if (ext != null && ext.length() < 5 && !link.getName().endsWith(ext)) link.setFinalFileName(link.getName() + ext);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,8 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "http://(www\\.)?file\\.karelia\\.ru/[a-z0-9]+/" }, flags = { 0 })
+//Links come from a decrypter
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file.karelia.ru" }, urls = { "http://(www\\.)?file\\.kareliadecrypted\\.ru/[a-z0-9]+/\\d+" }, flags = { 0 })
 public class FileKareliaRu extends PluginForHost {
 
     public FileKareliaRu(PluginWrapper wrapper) {
@@ -41,28 +43,42 @@ public class FileKareliaRu extends PluginForHost {
         return "http://file.karelia.ru/terms";
     }
 
+    private String FID = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        // Access fixed link
+        br.getPage(link.getDownloadURL().replace("file.kareliadecrypted.ru/", "file.karelia.ru/").replaceAll("(\\d+)$", ""));
         if (br.containsHTML(">Файла не существует или он был удалён с сервера")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<a class=\"zip_button sel\" href=\"http://[^<>\"]*?/([A-Za-z0-9\\-_]+\\.zip)\"").getMatch(0);
-        // Probably a single file
-        if (filename == null) filename = br.getRegex("<span class=\"filename archive\">([^<>\"]*?)</span>").getMatch(0);
-        final String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
+        FID = new Regex(link.getDownloadURL(), "([a-z0-9]+)/\\d+$").getMatch(0);
+        if (link.getBooleanProperty("partlink")) {
+            final Regex fInfo = br.getRegex("<a  href=\"(http://[a-z0-9]+\\.file\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + link.getStringProperty("plainfilename") + ")\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>");
+            if (fInfo.getMatches().length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(link.getStringProperty("plainfilename"));
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fInfo.getMatch(1).replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
+        } else {
+            final String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
+            if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(FID + ".zip");
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<span>Скачать архивом:</span>[\t\n\r ]+<a class=\"zip_button sel\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        // Probably a single file
-        if (dllink == null) dllink = br.getRegex("<a title=\"Скачать файл\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String dllink = null;
+        if (downloadLink.getBooleanProperty("partlink")) {
+            final Regex fInfo = br.getRegex("<a  href=\"(http://[a-z0-9]+\\.file\\.karelia\\.ru/" + FID + "/[a-z0-9]+/[a-z0-9]+/" + downloadLink.getStringProperty("plainfilename") + ")\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>");
+            dllink = fInfo.getMatch(0);
+        } else {
+            dllink = br.getRegex("<span>Скачать архивом:</span>[\t\n\r ]+<a class=\"zip_button sel\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            // Probably a single file
+            if (dllink == null) dllink = br.getRegex("<a title=\"Скачать файл\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

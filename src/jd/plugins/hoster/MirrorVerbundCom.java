@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirror-verbund.com" }, urls = { "http://(www\\.)?mirror\\-verbund\\.com/\\?file=[^<>\"\\']+.otrkey" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirror-verbund.com" }, urls = { "http://(www\\.)?mirror\\-verbund\\.com/\\?file=[^<>\"\\']+\\.otrkey" }, flags = { 0 })
 public class MirrorVerbundCom extends PluginForHost {
 
     public MirrorVerbundCom(PluginWrapper wrapper) {
@@ -76,6 +76,7 @@ public class MirrorVerbundCom extends PluginForHost {
                 dllink = null;
             }
         }
+        dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/dl_g/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             /**
              * Limit erreicht? Wir müssen keine 2 Stunden warten, 30 Minuten
