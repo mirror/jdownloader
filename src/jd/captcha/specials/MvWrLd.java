@@ -16,20 +16,22 @@ public class MvWrLd {
                 if (captcha.grid[x][y] != 0xffffff) {
                     captcha.grid[x][y] = 0x000000;
                 }
-
             }
         }
     }
+
     public static Letter[] getLetters(Captcha captcha) {
         captcha.cleanBySaturation(0, 19);
-
-        List<PixelObject> ob = ColoredObject.getObjects(captcha, 16, 1, 3);
+        List<PixelObject> ob = ColoredObject.getObjects(captcha, 4, 25, 3);
         Collections.sort(ob);
         Letter[] let = new Letter[ob.size()];
         for (int i = 0; i < let.length; i++) {
-           let[i]=ob.get(i).toLetter();
-           toBlack(let[i]);
+            let[i] = ob.get(i).toLetter();
+            toBlack(let[i]);
+            let[i].reduceBlackNoise(4);
+            let[i].normalize(4);
         }
         return let;
     }
+
 }

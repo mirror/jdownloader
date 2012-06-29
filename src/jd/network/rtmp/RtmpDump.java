@@ -332,7 +332,8 @@ public class RtmpDump extends RTMPDownload {
                 this.downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
             } else {
                 this.logger.severe("cmd: " + cmd);
-                throw new Exception(error);
+                this.logger.severe(error);
+                throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
             return true;
         } finally {

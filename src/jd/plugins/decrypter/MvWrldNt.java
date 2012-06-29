@@ -90,7 +90,11 @@ public class MvWrldNt extends PluginForDecrypt {
         /* lzw Decompress */
         final String result = lzwDecompress(sb.toString());
         final String[] links = new Regex(result, "<td class=\"link\"><p><a href=\"([^<>]+)\" target=\"_blank\" title=\"[^<>]+\" class=\"(online|unknown)\"[^<>]+>\\d+</a>").getColumn(0);
-        if (links == null || links.length == 0) { return null; }
+        if (links == null || links.length == 0) {
+            logger.warning("mov-world.net: The content of this link is completly offline");
+            logger.warning("mov-world.net: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+            return decryptedLinks;
+        }
         boolean toManyLinks = false;
         if (links.length > 100) {
             toManyLinks = true;
