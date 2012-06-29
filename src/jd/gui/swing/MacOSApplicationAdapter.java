@@ -16,9 +16,7 @@
 
 package jd.gui.swing;
 
-import java.awt.Window;
 import java.io.File;
-import java.lang.reflect.Method;
 
 import javax.swing.JFrame;
 
@@ -65,12 +63,8 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
 
             public void run() {
                 try {
-                    Class util = Class.forName("com.apple.eawt.FullScreenUtilities");
-                    Class params[] = new Class[2];
-                    params[0] = Window.class;
-                    params[1] = Boolean.TYPE;
-                    Method method = util.getMethod("setWindowCanFullScreen", params);
-                    method.invoke(util, JDGui.getInstance().getMainFrame(), true);
+                    com.apple.eawt.FullScreenUtilities.setWindowCanFullScreen(JDGui.getInstance().getMainFrame(), true);
+                    LogController.GL.info("MacOS FullScreen Support activated");
                 } catch (Throwable e) {
                     LogController.GL.log(e);
                 }
