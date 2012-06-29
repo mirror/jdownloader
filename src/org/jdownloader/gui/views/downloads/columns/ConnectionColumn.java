@@ -2,6 +2,7 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.awt.event.MouseEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -17,6 +18,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
@@ -87,6 +89,13 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
         });
 
         resetRenderer();
+    }
+
+    @Override
+    protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
+
+        ToolTipController.getInstance().show(createToolTip(e.getLocationOnScreen(), obj));
+        return super.onSingleClick(e, obj);
     }
 
     private int getDownloads(AbstractNode value) {

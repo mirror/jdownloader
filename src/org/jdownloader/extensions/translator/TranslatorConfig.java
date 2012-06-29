@@ -2,14 +2,15 @@ package org.jdownloader.extensions.translator;
 
 import jd.plugins.ExtensionConfigInterface;
 
+import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.Description;
 
 /**
- * This interface defines all settings of the translation Extension. Extend it
- * if you need additional entries. Make sure that you have a valid getter AND
- * setter
+ * This interface defines all settings of the translation Extension. Extend it if you need additional entries. Make sure that you have a
+ * valid getter AND setter
  * 
  * @author thomas
  * 
@@ -35,4 +36,16 @@ public interface TranslatorConfig extends ExtensionConfigInterface {
     public void setLastLoaded(String id);
 
     public String getLastLoaded();
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    public boolean isQuickEditBarVisible();
+
+    public void setQuickEditBarVisible(boolean b);
+
+    @DefaultIntValue(200)
+    @AboutConfig
+    public int getQuickEditHeight();
+
+    public void setQuickEditHeight(int i);
 }

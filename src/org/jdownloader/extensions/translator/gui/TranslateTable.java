@@ -102,7 +102,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
                 TranslateEntry object = tableModel.getObjectbyRow(getSelectedRow());
                 tableModel.getEditColum().startEditing(object);
                 tableModel.getEditColum().getEditorField().requestFocus();
-
+                TranslateTable.this.scrollToSelection();
                 // editCellAt(index + 1, tableModel.getEditColum().getIndex());
                 // ((ExtTextColumn) getCellEditor()).
             }

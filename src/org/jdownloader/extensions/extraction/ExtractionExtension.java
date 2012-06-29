@@ -910,7 +910,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     protected void runInEDT() {
 
                         if (validation.getArchives().size() > 0) {
-                            createMenu(menu, false, validation.getArchives().toArray(new Archive[] {}));
+                            createMenu(menu, true, validation.getArchives().toArray(new Archive[] {}));
                             menu.setEnabled(true);
                         }
                     }

@@ -133,7 +133,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (gotKilled()) return null;
             if (extractor.prepare()) {
 
-                if (archive.isProtected() && !StringUtils.isEmpty(archive.getPassword())) {
+                if (archive.isProtected() && StringUtils.isEmpty(archive.getPassword())) {
                     HashSet<String> spwList = archive.getSettings().getPasswords();
                     if (spwList != null) {
                         passwordList.addAll(spwList);

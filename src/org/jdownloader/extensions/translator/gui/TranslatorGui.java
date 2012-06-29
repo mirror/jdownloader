@@ -95,11 +95,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private boolean             stopEditing;
     private boolean             isWizard;
     private MigPanel            menuPanel2;
+    private QuickEdit           qe;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
 
-        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill][grow,fill][]")) {
 
             @Override
             protected void onShow() {
@@ -122,7 +123,13 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         panel.add(menuPanel);
         panel.add(menuPanel2);
-        panel.add(sp = new JScrollPane(table));
+        sp = new JScrollPane(table);
+        qe = new QuickEdit(table);
+
+        panel.add(sp);
+        if (getExtension().getSettings().isQuickEditBarVisible() && getExtension().getSettings().getQuickEditHeight() > 24) {
+            panel.add(qe, "height " + getExtension().getSettings().getQuickEditHeight() + "!,hidemode 3");
+        }
 
     }
 
@@ -765,8 +772,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or switched form a different
-     * tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
+     * switched form a different tab to this one
      */
     @Override
     protected void onShow() {
@@ -819,7 +826,8 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
+     * tab/view
      */
     @Override
     protected void onHide() {

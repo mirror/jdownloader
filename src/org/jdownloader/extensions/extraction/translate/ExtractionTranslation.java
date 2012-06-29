@@ -284,7 +284,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Set Password" })
     String context_password_msg_multi();
 
-    @Default(lngs = { "en" }, values = { "Set Password.\r\nSuggested password(s):\r\n%s2" })
+    @Default(lngs = { "en" }, values = { "Set Password.\r\nSuggested password(s):\r\n%s1" })
     String context_password_msg2_multi(String passwords);
 
     @Default(lngs = { "en" }, values = { "Validate Archives" })

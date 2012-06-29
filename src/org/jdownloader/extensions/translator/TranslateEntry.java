@@ -7,6 +7,7 @@ import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationSource;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.swing.dialog.Dialog;
 
 /**
  * Basic Data class for each Key-value pair
@@ -64,8 +65,8 @@ public class TranslateEntry {
             description = da.value();
         }
         // validates the entry
-        translation = tinterface._getHandler().getTranslation(method);
-        directTranslation = tinterface._getHandler().getTranslation(method);
+        translation = tinterface._getHandler().getTranslation(method).replace("\r", "\\r").replace("\n", "\\n");
+        directTranslation = tinterface._getHandler().getTranslation(method).replace("\r", "\\r").replace("\n", "\\n");
         StringBuilder sb = new StringBuilder();
 
         for (Type tt : m.getParameterTypes()) {
@@ -99,7 +100,9 @@ public class TranslateEntry {
             // default check
             isDefault = !tinterface._getHandler().getID().equals("en") && translation.equals(getDefault());
             // parameter check.
-            validateParameterCount();
+            if (!validateParameterCount(getTranslation())) {
+                cntErrors++;
+            }
         }
 
     }
@@ -119,16 +122,20 @@ public class TranslateEntry {
     /**
      * Checks if the translated string has all wildcards defined by the translation interface
      */
-    private void validateParameterCount() {
+    public boolean validateParameterCount(String t) {
 
-        cntErrors = 0;
         for (int i = 0; i < getParameters().length; i++) {
-            if (!getTranslation().contains("%s" + (i + 1))) {
+            if (!t.contains("%s" + (i + 1))) {
 
-                cntErrors++;
-                return;
-            }
+            return false; }
         }
+
+        for (int i = getParameters().length; i < 20; i++) {
+            if (t.contains("%s" + (i + 1))) {
+
+            return false; }
+        }
+        return true;
     }
 
     /**
@@ -209,6 +216,11 @@ public class TranslateEntry {
      */
     public void setTranslation(String value) {
         if (translation.equals(value) && translationSet) return;
+        if (value.startsWith("Please translate:")) {
+            // this is the help text;
+            Dialog.getInstance().showErrorDialog("The translation starts with \"Please translate:\" and this is invalid. \r\nPlease Remove it from your translation.");
+            value = "";
+        }
         translation = value;
         translationSet = true;
         source = new TranslationSource(tinterface._getHandler().getID(), getMethod());
