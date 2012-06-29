@@ -17,11 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,8 +37,14 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
 public class RPNetBiz extends PluginForHost {
 
+    private static final String mName    = "rpnet.biz";
+    private static final String mProt    = "http://";
+    private static final String mPremium = "https://premium.rpnet.biz/";
+    private static final Object LOCK     = new Object();
+
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium(mProt + mName + "/");
     }
 
     @Override
@@ -43,7 +54,7 @@ public class RPNetBiz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://premium.rpnet.biz/tos.php";
+        return mPremium + "tos.php";
     }
 
     @Override
@@ -89,6 +100,24 @@ public class RPNetBiz extends PluginForHost {
     }
 
     @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate");
+        if (br.containsHTML("Invalid authentication")) {
+            account.setValid(false);
+            ai.setProperty("multiHostSupport", Property.NULL);
+            return ai;
+        }
+        account.setValid(true);
+        account.setConcurrentUsePossible(true);
+        account.setMaxSimultanDownloads(-1);
+        ai.setStatus("Premium User");
+        ArrayList<String> hosts = new ArrayList<String>(Arrays.asList("rapidshare.com", "netload.in", "hotfile.com", "megashares.com", "uploaded.to", "filefactory.com", "bitshare.com", "freakshare.com", "crocko.com", "filepost.com", "turboit.net", "extabit.com", "ifile.it", "uploading.com", "jumbofiles.com", "letitbit.net", "ryushare.com", "share-online.biz", "slingfile.com"));
+        ai.setProperty("multiHostSupport", hosts);
+        return ai;
+    }
+
+    @Override
     public void reset() {
     }
 
@@ -96,4 +125,52 @@ public class RPNetBiz extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
+    @Override
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (account == null) {
+            /* without account its not possible to download the link */
+            return false;
+        }
+        return true;
+    }
+
+    /** no override to keep plugin compatible to old stable */
+    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+        showMessage(link, "Task 1: Generating Link");
+        /* request Download */
+        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(link.getDownloadURL()));
+        String generatedLink = br.getRegex("\"generated\":\"([^\"]*?)\"").getMatch(0);
+        if (generatedLink == null || generatedLink.isEmpty()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        showMessage(link, "Task 2: Download begins!");
+        generatedLink = generatedLink.replaceAll("\\\\/", "/");
+        try {
+            handleDL(link, generatedLink);
+            return;
+        } catch (PluginException e1) {
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void handleDL(DownloadLink link, String dllink) throws Exception {
+        /* we want to follow redirects in final stage */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().isContentDisposition()) {
+            /* contentdisposition, lets download it */
+            dl.startDownload();
+            return;
+        } else {
+            /*
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
+             */
+            br.followConnection();
+        }
+
+        /* temp disabled the host */
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
+    }
 }
