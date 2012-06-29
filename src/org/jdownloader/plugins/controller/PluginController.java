@@ -15,8 +15,13 @@ public class PluginController<T extends Plugin> {
 
     @SuppressWarnings("unchecked")
     public ArrayList<PluginInfo<T>> scan(String hosterpath) {
-        LogSource logger = LogController.CL();
-        logger.setAllowTimeoutFlush(false);
+        boolean ownLogger = false;
+        LogSource logger = LogController.getRebirthLogger();
+        if (logger == null) {
+            ownLogger = true;
+            logger = LogController.CL();
+            logger.setAllowTimeoutFlush(false);
+        }
         final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         try {
             File path = null;
@@ -45,9 +50,9 @@ public class PluginController<T extends Plugin> {
                     }
                 }
             }
-            if (errorFree) logger.clear();
+            if (errorFree && ownLogger) logger.clear();
         } finally {
-            logger.close();
+            if (ownLogger) logger.close();
         }
         return ret;
 
