@@ -93,9 +93,24 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     protected boolean onSingleClick(MouseEvent e, AbstractNode obj) {
-
-        ToolTipController.getInstance().show(createToolTip(e.getLocationOnScreen(), obj));
         return super.onSingleClick(e, obj);
+    }
+
+    @Override
+    protected boolean onDoubleClick(MouseEvent e, AbstractNode obj) {
+        if (obj instanceof DownloadLink) {
+
+            ConnectionTooltip tt = new ConnectionTooltip((DownloadLink) obj) {
+                public boolean isLastHiddenEnabled() {
+                    return false;
+                }
+            };
+            ToolTipController.getInstance().show(tt);
+            return true;
+        }
+        ;
+
+        return false;
     }
 
     private int getDownloads(AbstractNode value) {
