@@ -36,6 +36,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.http.Browser;
 import jd.plugins.download.DownloadInterface;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -46,8 +47,7 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 /**
- * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
- * dargestellt
+ * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle dargestellt
  * 
  * @author astaldo
  */
@@ -74,6 +74,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                          PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
     private static final String                          PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
     public static final String                           PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
+    public static final String                           PROPERTY_FINALLOCATION    = "FINALLOCATION";
 
     public static final int                              LINKTYPE_CONTAINER        = 1;
 
@@ -320,10 +321,15 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     public String getFileOutput() {
+        String ret = this.getStringProperty(PROPERTY_FINALLOCATION, null);
+        if (!StringUtils.isEmpty(ret)) {
+            /* we have a fixed final location */
+            return ret;
+        }
         if (getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
             return new File(new File(getFilePackage().getDownloadDirectory()), getName()).getAbsolutePath();
         } else {
-            return null;
+            throw new WTFException("what the fuck just happened here?");
         }
     }
 
@@ -362,8 +368,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name
-     * zurueckgegeben
+     * Liefert den Datei Namen dieses Downloads zurueck. Wurde der Name mit setfinalFileName(String) festgelegt wird dieser Name zurueckgegeben
      * 
      * @return Name des Downloads
      */
@@ -411,8 +416,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch
-     * ermittelt.
+     * Gibt den Finalen Downloadnamen zurueck. Wird null zurueckgegeben, so wird der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
      */
@@ -455,8 +459,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new
-     * Thread for terminating of the download, so you will have to check manually when the download finally has stopped
+     * this will abort an ongoing download of this DownloadLink, the abortDownload method of the SingleDownloadController will start a new Thread for
+     * terminating of the download, so you will have to check manually when the download finally has stopped
      */
     public void abort() {
         SingleDownloadController dlc = getDownloadLinkController();
@@ -464,8 +468,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
-     * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
+     * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob schon geprueft worden
+     * ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -531,8 +535,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its
-     * emptry and NOT equal to default downloadfolder
+     * deletes the final downloaded file if finalfile is true deletes the partfile if partfile is true deletes the downloadfolder if its emptry and NOT equal to
+     * default downloadfolder
      */
     public void deleteFile(boolean partfile, boolean finalfile) {
         int maxtries = 5;
@@ -545,6 +549,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             maxtries--;
             if (maxtries == 0) break;
         }
+
         if (finalfile && new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
@@ -555,6 +560,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
                 LogController.CL().severe("Could not delete file " + this.getFileOutput());
             }
         }
+        this.setProperty(PROPERTY_FINALLOCATION, Property.NULL);
 
         /* try to delete folder (if its empty and NOT the default downloadfolder */
         File dlFolder = new File(this.getFileOutput()).getParentFile();
@@ -725,10 +731,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der
-     * dateiName im Plugin automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit
-     * nicht von Plugins verwendet werden. Sie gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen.
-     * Userinputs>Automatische Erkennung - Plugins sollten {@link #setName(String)} verwenden um den Speichernamen anzugeben.
+     * Setzt den Statischen Dateinamen. Ist dieser wert != null, so wird er zum Speichern der Datei verwendet. ist er == null, so wird der dateiName im Plugin
+     * automatisch ermittelt. ACHTUNG: Der angegebene Dateiname ist endgueltig. Diese Funktion sollte nach Moeglichkeit nicht von Plugins verwendet werden. Sie
+     * gibt der Gui die Moeglichkeit unabhaengig von den Plugins einen Downloadnamen festzulegen. Userinputs>Automatische Erkennung - Plugins sollten
+     * {@link #setName(String)} verwenden um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
         if (!StringUtils.isEmpty(newfinalFileName)) {
@@ -761,8 +767,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur
-     * Darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen ueber die File bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      */
     @Override
     public String toString() {

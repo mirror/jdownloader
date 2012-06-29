@@ -555,7 +555,7 @@ public class Multi extends IExtraction {
                     }
                     path = sb.toString();
                 }
-                String lastTryFilename = archive.getExtractTo().getAbsoluteFile() + File.separator + path;
+                String lastTryFilename = ctrl.getExtractTo().getAbsoluteFile() + File.separator + path;
                 String filename = lastTryFilename;
                 try {
                     filename = new String(filename.getBytes(), Charset.defaultCharset());

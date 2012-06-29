@@ -57,6 +57,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         LogSource logger = LogController.CL();
         logger.info("CrawlerPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
+        LogController.setRebirthLogger(logger);
         try {
             try {
                 if (noCache) {
@@ -95,6 +96,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             }
         } finally {
             logger.close();
+            LogController.setRebirthLogger(null);
         }
         list = plugins;
         System.gc();

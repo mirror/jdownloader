@@ -55,6 +55,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         LogSource logger = LogController.CL();
         logger.info("HostPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
+        LogController.setRebirthLogger(logger);
         try {
             final long t = System.currentTimeMillis();
             try {
@@ -105,6 +106,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
         } finally {
             logger.close();
+            LogController.setRebirthLogger(null);
         }
         list = plugins;
         System.gc();

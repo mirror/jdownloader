@@ -138,26 +138,12 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return new File(path);
     }
 
-    // public void fireExtractToChange(Archive archive) {
-    //
-    // for (ArchiveFile af : archive.getArchiveFiles()) {
-    // if (af instanceof DownloadLinkArchiveFile) {
-    // ((DownloadLinkArchiveFile) af).setProperty(DownloadLinkArchiveFactory.DOWNLOADLINK_KEY_EXTRACTEDPATH,
-    // archive.getExtractTo().getAbsolutePath());
-    // }
-    // }
-    //
-    // }
-
     public Collection<? extends String> getGuessedPasswordList(Archive archive) {
-
         HashSet<String> ret = new HashSet<String>();
-
         return ret;
     }
 
     public void fireArchiveAddedToQueue(Archive archive) {
-
         for (ArchiveFile af : archive.getArchiveFiles()) {
             if (af instanceof DownloadLinkArchiveFile) {
                 for (DownloadLink link : ((DownloadLinkArchiveFile) af).getDownloadLinks()) {
@@ -165,9 +151,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     link.getLinkStatus().setErrorMessage(null);
                 }
             }
-
         }
-
     }
 
     private DownloadLink getFirstLink(Archive archive) {
@@ -181,34 +165,10 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public String createDefaultExtractToPath(Archive archive) {
-
-        // if (archive.getFirstArchiveFile() instanceof DownloadLinkArchiveFile) {
-        // try {
-        // String path = (String) ((DownloadLinkArchiveFile) archive.getFirstArchiveFile()).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        // if (path != null) { return path; }
-        // } catch (Throwable e) {
-        // }
-        // }
-        // for (ArchiveFile af : archive.getArchiveFiles()) {
-        // if (af instanceof DownloadLinkArchiveFile) {
-        // try {
-        // String path = (String) ((DownloadLinkArchiveFile) af).getProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        // if (path != null) { return path; }
-        // } catch (Throwable e) {
-        // }
-        // }
-        //
-        // }
-
         try {
             return new File(archive.getFirstArchiveFile().getFilePath()).getParent();
         } catch (final Throwable e) {
         }
-        // try {
-        // String path = getDownloadLinks().get(0).getStringProperty(DOWNLOADLINK_KEY_EXTRACTTOPATH);
-        // if (path != null) { return path; }
-        // } catch (Throwable e) {
-        // }
         return new File(getFilePath()).getParent();
     }
 

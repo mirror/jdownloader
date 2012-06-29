@@ -19,7 +19,6 @@ package jd.plugins;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -189,7 +188,7 @@ public abstract class PluginForDecrypt extends Plugin {
                 ((LogSource) logger).clear();
                 ((LogSource) logger).log(e);
             } else {
-                logger.log(Level.SEVERE, "Interrupted", e);
+                LogSource.exception(logger, e);
             }
         } catch (Throwable e) {
             /*

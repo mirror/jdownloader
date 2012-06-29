@@ -50,8 +50,8 @@ public class Archive {
     }
 
     /**
-     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
-     * setter is used to set the CORRECT password in the password finding algorithm only
+     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this setter is used to set
+     * the CORRECT password in the password finding algorithm only
      * 
      * @param password
      */
@@ -137,15 +137,14 @@ public class Archive {
     }
 
     public File getExtractTo() {
+        /* return customized extract to folder for this package */
         String path = getSettings().getExtractPath();
         if (path == null) return null;
         return new File(path);
     }
 
     public void setExtractTo(File extractTo) {
-
         getSettings().setExtractPath(extractTo.getAbsolutePath());
-
     }
 
     public String toString() {
@@ -187,8 +186,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
-     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
+     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */

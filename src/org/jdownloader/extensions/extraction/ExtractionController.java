@@ -56,6 +56,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private final LogSource     logger;
     private FileSignatures      fileSignatures   = null;
     private boolean             overwriteFiles;
+    private File                extractTo        = null;
+
+    public File getExtractTo() {
+        return extractTo;
+    }
 
     public FileSignatures getFileSignatures() {
         if (fileSignatures == null) fileSignatures = new FileSignatures();
@@ -95,7 +100,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
     private boolean checkPassword(String pw, boolean optimized) {
         logger.info("Check Password: " + pw);
-        if (pw == null || "".equals(pw)) return false;
+        if (StringUtils.isEmpty(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
         return extractor.findPassword(this, pw, optimized);
@@ -128,8 +133,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 return null;
             }
 
-            File dl = ExtractionExtension.getIntance().getExtractToPath(archive.getFactory(), archive);
-            archive.setExtractTo(dl);
+            extractTo = ExtractionExtension.getIntance().getExtractToPath(archive.getFactory(), archive);
             if (gotKilled()) return null;
             if (extractor.prepare()) {
 
@@ -178,7 +182,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     extractor.config.setPasswordList(pwList);
                 }
 
-                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(archive.getExtractTo(), archive.getContentView().getTotalSize());
+                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractTo(), archive.getContentView().getTotalSize());
                 if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
                     logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
@@ -187,10 +191,11 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                 fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
 
-                if (!archive.getExtractTo().exists()) {
-                    if (!archive.getExtractTo().mkdirs()) {
+                if (!extractTo.exists()) {
+                    if (!extractTo.mkdirs()) {
                         logger.warning("Could not create subpath");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
+                        return null;
                     }
                 }
 
@@ -205,9 +210,12 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 try {
                     extractor.extract(this);
                 } finally {
-                    fireEvent(ExtractionEvent.Type.EXTRACTING);
                     timer.cancel(false);
-                    extractor.close();
+                    try {
+                        fireEvent(ExtractionEvent.Type.EXTRACTING);
+                    } finally {
+                        extractor.close();
+                    }
                 }
                 if (gotKilled()) { return null; }
                 if (extractor.getException() != null) exception = extractor.getException();

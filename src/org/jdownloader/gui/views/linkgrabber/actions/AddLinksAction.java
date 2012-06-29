@@ -41,7 +41,7 @@ public class AddLinksAction extends AppAction {
                         if (lc != null) {
                             lc.waitForCrawling();
                             System.out.println("JOB DONE: " + lc.crawledLinksFound());
-                            if (!crawljob.isDeepAnalyse() && lc.processedLinks() == 0) {
+                            if (!crawljob.isDeepAnalyse() && lc.processedLinks() == 0 && lc.unhandledLinksFound() > 0) {
                                 try {
                                     Dialog.getInstance().showConfirmDialog(0, _GUI._.AddLinksAction_actionPerformed_deep_title(), _GUI._.AddLinksAction_actionPerformed_deep_msg(), null, _GUI._.literally_yes(), _GUI._.literall_no());
                                     crawljob.setDeepAnalyse(true);

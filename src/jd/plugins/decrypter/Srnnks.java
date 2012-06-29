@@ -60,6 +60,11 @@ public class Srnnks extends PluginForDecrypt {
             // work around sj's firewall
             try {
                 Thread.sleep(Srnnks.FW_WAIT);
+                try {
+                    if (isAbort()) return;
+                } catch (final Throwable e) {
+                    /* not available in old 09581 stable */
+                }
                 this.br.getPage(this.action);
                 if (this.br.getRedirectLocation() != null) {
                     this.results.add(Srnnks.this.createDownloadlink(this.br.getRedirectLocation()));
@@ -70,6 +75,11 @@ public class Srnnks extends PluginForDecrypt {
 
                     if (link != null) {
                         Thread.sleep(Srnnks.FW_WAIT);
+                        try {
+                            if (isAbort()) return;
+                        } catch (final Throwable e) {
+                            /* not available in old 09581 stable */
+                        }
                         this.br.getPage(link);
                         final String loc = this.br.getRedirectLocation();
                         if (loc != null) {
@@ -104,6 +114,9 @@ public class Srnnks extends PluginForDecrypt {
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
+        long OldBlock = Srnnks.LATEST_BLOCK_DETECT;
+        long OldReconnect = Srnnks.LATEST_RECONNECT;
+
         if (br == null) {
             ret = UserIO.RETURN_OK;
         } else {
@@ -113,9 +126,9 @@ public class Srnnks extends PluginForDecrypt {
             }
 
             if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-
-                if (System.currentTimeMillis() - Srnnks.LATEST_BLOCK_DETECT < 60000) { return true; }
-                if (System.currentTimeMillis() - Srnnks.LATEST_RECONNECT < 15000) {
+                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
+                if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
+                if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
@@ -124,42 +137,33 @@ public class Srnnks extends PluginForDecrypt {
 
             }
             if (br.containsHTML("Download-Limit")) {
-                if (System.currentTimeMillis() - Srnnks.LATEST_BLOCK_DETECT < 60000) { return true; }
-                if (System.currentTimeMillis() - Srnnks.LATEST_RECONNECT < 15000) {
+                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
+                if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
+                if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
                     return false;
                 }
                 ret = UserIO.getInstance().requestConfirmDialog(0, "Downloadlimit", JDL.L("plugins.decrypter.srnks.DownloadLimitReached", "Das Downloadlimit wurde erreicht sie müssen entweder warten oder einen Reconnect durchführen"), null, "Reconnect", JDL.L("plugins.decrypter.srnks.canceldecrypt", "Decryptvorgang abbrechen"));
-
             }
         }
         if (ret != -100) {
             if (UserIO.isOK(ret)) {
-                try {
-                    jd.controlling.reconnect.ipcheck.IPController.getInstance().invalidate();
-                } catch (Throwable e) {
-                    /* not in 9580 stable */
-                }
 
                 if (Reconnecter.waitForNewIP(15000, false)) {
-
+                    Srnnks.LATEST_RECONNECT = System.currentTimeMillis();
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
-                    Srnnks.LATEST_RECONNECT = System.currentTimeMillis();
+
                     return false;
                 }
-            } else {
-                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
             }
             return true;
         }
         return false;
     }
 
-    private String         crawlStatus;
-
-    private static boolean CAPTCHA = false;
+    private String crawlStatus;
 
     public Srnnks(final PluginWrapper wrapper) {
         super(wrapper);
@@ -183,7 +187,6 @@ public class Srnnks extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> SjDj = new ArrayList<DownloadLink>();
 
         // crude importation method from doju -> serien
         if (parameter.getCryptedUrl().contains("dokujunkies.org")) {
@@ -217,14 +220,22 @@ public class Srnnks extends PluginForDecrypt {
 
                 for (int i = 0; i < 5; i++) {
                     progress.setRange(100);
-
+                    try {
+                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                    } catch (final Throwable e) {
+                        /* not available in old 09581 stable */
+                    }
                     try {
                         RUNNING.incrementAndGet();
                         synchronized (LOCK) {
-
                             System.out.println(parameter.getCryptedUrl());
                             synchronized (Srnnks.GLOBAL_LOCK) {
                                 Thread.sleep(Srnnks.FW_WAIT);
+                                try {
+                                    if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                } catch (final Throwable e) {
+                                    /* not available in old 09581 stable */
+                                }
                                 this.br.getPage(parameter.getCryptedUrl());
                             }
                             if (Srnnks.limitsReached(this.br)) { return new ArrayList<DownloadLink>(ret); }
@@ -233,6 +244,11 @@ public class Srnnks extends PluginForDecrypt {
                                 // progress.setStatusText("Lade Downloadseitenframe");
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     Thread.sleep(Srnnks.FW_WAIT);
+                                    try {
+                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                    } catch (final Throwable e) {
+                                        /* not available in old 09581 stable */
+                                    }
                                     this.br.getPage(this.br.getRegex("<FRAME SRC=\"(.*?)\"").getMatch(0));
                                 }
                             }
@@ -295,6 +311,11 @@ public class Srnnks extends PluginForDecrypt {
                                 // captcha laden
                                 synchronized (Srnnks.GLOBAL_LOCK) {
                                     Thread.sleep(Srnnks.FW_WAIT);
+                                    try {
+                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                    } catch (final Throwable e) {
+                                        /* not available in old 09581 stable */
+                                    }
                                     final URLConnectionAdapter urlc = this.br.cloneBrowser().openGetConnection(captchaLink);
                                     Browser.download(captcha, urlc);
                                 }
@@ -304,6 +325,11 @@ public class Srnnks extends PluginForDecrypt {
                                     // reloading
                                     logger.warning("Dummy Captcha. wait 3 seconds");
                                     Thread.sleep(3000);
+                                    try {
+                                        if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                    } catch (final Throwable e) {
+                                        /* not available in old 09581 stable */
+                                    }
                                     continue;
                                 }
                                 String code;
@@ -369,12 +395,15 @@ public class Srnnks extends PluginForDecrypt {
                         progress.setStatus(10);
                         synchronized (Srnnks.GLOBAL_LOCK) {
                             for (int d = 0; d < actions.size(); d++) {
+                                try {
+                                    if (isAbort()) return new ArrayList<DownloadLink>(ret);
+                                } catch (final Throwable e) {
+                                    /* not available in old 09581 stable */
+                                }
                                 this.new DecryptRunnable(actions.get(d), this.br.cloneBrowser(), ret).run();
                                 progress.increase(1);
                             }
-
                         }
-                        progress.doFinalize();
 
                         // wenn keine links drinnen sind ist bestimmt was mit
                         // dem
@@ -388,8 +417,10 @@ public class Srnnks extends PluginForDecrypt {
 
             } catch (final Exception e) {
                 throw e;
+            } finally {
+                progress.doFinalize();
             }
         }
-        return new ArrayList<DownloadLink>(SjDj);
+        return new ArrayList<DownloadLink>();
     }
 }

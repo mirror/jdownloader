@@ -81,16 +81,13 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         boolean ret = false;
         for (DownloadLink l : downloadLinks) {
             ret = ret || new File(l.getFileOutput()).delete();
-
         }
         return ret;
     }
 
     public boolean exists() {
         Log.L.info("Does file exist: " + getName());
-
         for (DownloadLink l : downloadLinks) {
-
             if (new File(l.getFileOutput()).exists()) return true;
         }
         return false;

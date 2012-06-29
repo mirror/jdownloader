@@ -44,7 +44,8 @@ import org.jdownloader.translate._JDT;
 public class RAFDownload extends DownloadInterface {
 
     public static final Object HASHCHECKLOCK = new Object();
-    private RandomAccessFile   outputFile;
+    private RandomAccessFile   outputPartFile;
+    private File               outputCompleteFile;
 
     public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         super(plugin, downloadLink, request);
@@ -60,14 +61,14 @@ public class RAFDownload extends DownloadInterface {
         } finally {
             logger.info("Close File. Let AV programs run");
             try {
-                outputFile.close();
+                outputPartFile.close();
             } catch (Throwable e) {
             }
         }
         downloadLink.getLinkStatus().setStatusText(null);
         if (!handleErrors()) return;
         try {
-            File part = new File(downloadLink.getFileOutput() + ".part");
+            File part = new File(outputCompleteFile.getAbsolutePath() + ".part");
             /* lets check the hash/crc/sfv */
             if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
                 synchronized (HASHCHECKLOCK) {
@@ -123,13 +124,12 @@ public class RAFDownload extends DownloadInterface {
                     }
                 }
             }
-            File complete = new File(downloadLink.getFileOutput());
             boolean renameOkay = false;
             int retry = 5;
             /* rename part file to final filename */
             while (retry > 0) {
                 /* first we try normal rename method */
-                if ((renameOkay = part.renameTo(complete)) == true) {
+                if ((renameOkay = part.renameTo(outputCompleteFile)) == true) {
                     break;
                 }
                 /* this may fail because something might lock the file */
@@ -143,21 +143,21 @@ public class RAFDownload extends DownloadInterface {
             /* Fallback */
             if (renameOkay == false) {
                 /* rename failed, lets try fallback */
-                logger.severe("Could not rename file " + part + " to " + complete);
+                logger.severe("Could not rename file " + part + " to " + outputCompleteFile);
                 logger.severe("Try copy workaround!");
                 try {
                     DISKSPACECHECK freeSpace = DownloadWatchDog.getInstance().checkFreeDiskSpace(part.getParentFile(), part.length());
                     if (DISKSPACECHECK.FAILED.equals(freeSpace)) throw new Throwable("not enough diskspace free to copy part to complete file");
-                    IO.copyFile(part, complete);
+                    IO.copyFile(part, outputCompleteFile);
                     renameOkay = true;
                     part.deleteOnExit();
                     part.delete();
                 } catch (Throwable e) {
                     LogSource.exception(logger, e);
                     /* error happened, lets delete complete file */
-                    if (complete.exists() && complete.length() != part.length()) {
-                        complete.delete();
-                        complete.deleteOnExit();
+                    if (outputCompleteFile.exists() && outputCompleteFile.length() != part.length()) {
+                        outputCompleteFile.delete();
+                        outputCompleteFile.deleteOnExit();
                     }
                 }
                 if (!renameOkay) {
@@ -168,13 +168,15 @@ public class RAFDownload extends DownloadInterface {
                 }
             }
             if (renameOkay) {
+                /* save absolutepath as final location property */
+                downloadLink.setProperty(DownloadLink.PROPERTY_FINALLOCATION, outputCompleteFile.getAbsolutePath());
                 Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));
                 if (last != null && JsonConfig.create(GeneralSettings.class).isUseOriginalLastModified()) {
                     /* set original lastModified timestamp */
-                    complete.setLastModified(last.getTime());
+                    outputCompleteFile.setLastModified(last.getTime());
                 } else {
                     /* set current timestamp as lastModified timestamp */
-                    complete.setLastModified(System.currentTimeMillis());
+                    outputCompleteFile.setLastModified(System.currentTimeMillis());
                 }
             }
         } catch (Exception e) {
@@ -209,7 +211,7 @@ public class RAFDownload extends DownloadInterface {
         } catch (Exception e) {
             try {
                 logger.info("CLOSE HD FILE");
-                outputFile.close();
+                outputPartFile.close();
             } catch (Throwable e2) {
             }
             addException(e);
@@ -269,10 +271,11 @@ public class RAFDownload extends DownloadInterface {
     }
 
     private void createOutputChannel() throws FileNotFoundException {
-        if (!new File(downloadLink.getFileOutput()).getParentFile().exists()) {
-            new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
+        outputCompleteFile = new File(downloadLink.getFileOutput());
+        if (!outputCompleteFile.getParentFile().exists()) {
+            outputCompleteFile.getParentFile().mkdirs();
         }
-        outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
+        outputPartFile = new RandomAccessFile(outputCompleteFile.getAbsolutePath() + ".part", "rw");
     }
 
     private void setupResume() throws FileNotFoundException {
@@ -300,9 +303,9 @@ public class RAFDownload extends DownloadInterface {
     @Override
     protected boolean writeChunkBytes(Chunk chunk) {
         try {
-            synchronized (outputFile) {
-                outputFile.seek(chunk.getWritePosition());
-                outputFile.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
+            synchronized (outputPartFile) {
+                outputPartFile.seek(chunk.getWritePosition());
+                outputPartFile.write(chunk.buffer.getInternalBuffer(), 0, chunk.buffer.size());
                 if (chunk.getID() >= 0) {
                     downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }
@@ -353,7 +356,7 @@ public class RAFDownload extends DownloadInterface {
     @Override
     public void cleanupDownladInterface() {
         try {
-            this.outputFile.close();
+            this.outputPartFile.close();
         } catch (Throwable e) {
         }
     }

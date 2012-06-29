@@ -268,16 +268,31 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
      * @return
      */
     File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
-        // if extract folder is already set, use it.
-        if (archive != null && archive.getExtractTo() != null) return archive.getExtractTo();
-        String path = archiveFactory.createDefaultExtractToPath(archive);
-        if (path == null && getSettings().isCustomExtractionPathEnabled()) {
-            path = getSettings().getCustomExtractionPath();
+        LogSource log = LogController.getRebirthLogger();
+        if (log == null) log = logger;
+        File extractTo = null;
+        if (archive != null && (extractTo = archive.getExtractTo()) != null) {
+            log.info("Extract to customized path: " + extractTo.getAbsolutePath());
+            /* a customized extractTo folder is set */
+            return extractTo;
         }
-        if (path == null) {
-            path = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
+        if (getSettings().isCustomExtractionPathEnabled()) {
+            String settingsPath = getSettings().getCustomExtractionPath();
+            if (!StringUtils.isEmpty(settingsPath)) {
+                /* a default extract path is set in Extension settings */
+                log.info("Extract to default extraction path: " + settingsPath);
+                return new File(settingsPath);
+            }
         }
-        return new File(path);
+        String factoryPath = archiveFactory.createDefaultExtractToPath(archive);
+        if (!StringUtils.isEmpty(factoryPath)) {
+            /* archiveFactory generated path */
+            log.info("Extract to factory path: " + factoryPath);
+            return new File(factoryPath);
+        }
+        /* fallback */
+        log.severe("Extract to fallback path!");
+        return new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
     }
 
     @Override
@@ -368,7 +383,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
             path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
             if (path != null) {
-                controller.getArchiv().setExtractTo(new File(controller.getArchiv().getExtractTo(), path));
+                controller.getArchiv().setExtractTo(new File(controller.getExtractTo(), path));
             }
         }
 
