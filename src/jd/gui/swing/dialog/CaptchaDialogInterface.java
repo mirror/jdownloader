@@ -39,4 +39,6 @@ public interface CaptchaDialogInterface extends UserIODefinition {
 
     public String getHelpText();
 
+    public void dispose();
+
 }

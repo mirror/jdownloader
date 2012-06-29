@@ -277,7 +277,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Browse" })
     String gui_btn_select();
 
-    @Default(lngs = { "en" }, values = { "Enter Captcha to continue!" })
+    @Default(lngs = { "en" }, values = { "Enter Captcha for %s1 to continue!" })
     String gui_captchaWindow_askForInput(String hoster);
 
     @Default(lngs = { "en" }, values = { "DefaultProxy" })

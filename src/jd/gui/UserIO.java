@@ -107,7 +107,8 @@ public class UserIO {
      */
     public static final int RETURN_CANCEL                  = 1 << 2;
     /**
-     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this flag latly
+     * don't show again flag has been set. the dialog may has been visible. if RETURN_SKIPPED_BY_DONT_SHOW is not set. the user set this
+     * flag latly
      */
     public static final int RETURN_DONT_SHOW_AGAIN         = 1 << 3;
     /**
@@ -269,7 +270,15 @@ public class UserIO {
             /* Crawler */
             PluginForDecrypt plugin = ((LinkCrawlerThread) currentThread).getCurrentPlugin();
             LinkCrawler linkCrawler = ((LinkCrawlerThread) currentThread).getCurrentLinkCrawler();
-            CaptchaController captchaController = new CaptchaController(linkCrawler, null, imagefile, null, explain, plugin);
+
+            String e = title;
+            if (e == null) {
+                e = explain;
+            } else if (explain != null) {
+                e = e + " - " + explain;
+            }
+
+            CaptchaController captchaController = new CaptchaController(linkCrawler, null, imagefile, null, e, plugin);
             captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);
             CaptchaResult cc = captchaController.getCode(0);
             if (cc != null && cc.getCaptchaClick() != null && cc.getCaptchaClick().length == 2) { return new Point(cc.getCaptchaClick()[0], cc.getCaptchaClick()[1]); }

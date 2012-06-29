@@ -9,6 +9,7 @@ import jd.controlling.IOPermission.CAPTCHA;
 import jd.gui.swing.dialog.CaptchaDialog;
 import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.gui.swing.dialog.CaptchaDialogInterface.DialogType;
+import jd.gui.swing.dialog.ClickCaptchaDialog;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
@@ -47,12 +48,12 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
         return captchaController;
     }
 
-    private int           flag;
-    private CaptchaResult def;
-    private CaptchaResult resp         = null;
-    private boolean       externalSet  = false;
-    private CaptchaDialog textDialog;
-    private IOPermission  ioPermission = null;
+    private int                    flag;
+    private CaptchaResult          def;
+    private CaptchaResult          resp         = null;
+    private boolean                externalSet  = false;
+    private CaptchaDialogInterface textDialog;
+    private IOPermission           ioPermission = null;
 
     public CaptchaDialogQueueEntry(CaptchaController captchaController, int flag, CaptchaResult def) {
         this.captchaController = captchaController;
@@ -76,7 +77,7 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
             @Override
             protected void runInEDT() {
                 try {
-                    if (textDialog != null && textDialog.isInitialized()) textDialog.dispose();
+                    if (textDialog != null) textDialog.dispose();
                 } catch (final Throwable e) {
                     LogSource.exception(getLogger(), e);
                 }
@@ -127,10 +128,25 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
                 getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
                 return null;
             }
-            this.textDialog = new CaptchaDialog(f, dialogType, captchaController.getCaptchaType(), getHost(), images, def, captchaController.getExplain());
-            textDialog.setPlugin(captchaController.getPlugin());
-            textDialog.setCountdownTime(CaptchaSettings.CFG.getCountdown());
-            CaptchaDialogInterface answer = NewUIO.I().show(CaptchaDialogInterface.class, textDialog);
+            CaptchaDialogInterface answer = null;
+            switch (captchaController.getCaptchaType()) {
+            case CLICK:
+                ClickCaptchaDialog dd = new ClickCaptchaDialog(f, dialogType, getHost(), images, captchaController.getExplain());
+                dd.setPlugin(captchaController.getPlugin());
+                dd.setCountdownTime(CaptchaSettings.CFG.getCountdown());
+                this.textDialog = dd;
+                answer = NewUIO.I().show(CaptchaDialogInterface.class, dd);
+                break;
+            case TEXT:
+                CaptchaDialog d = new CaptchaDialog(f, dialogType, getHost(), images, def, captchaController.getExplain());
+                d.setPlugin(captchaController.getPlugin());
+                d.setCountdownTime(CaptchaSettings.CFG.getCountdown());
+                this.textDialog = d;
+                answer = NewUIO.I().show(CaptchaDialogInterface.class, d);
+                break;
+
+            }
+
             return answer.getCaptchaResult();
         } catch (DialogNoAnswerException e) {
             if (resp == null) {

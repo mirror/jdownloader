@@ -7,6 +7,14 @@ public class CaptchaResult implements Storable {
     public CaptchaResult(/* Storable */) {
     }
 
+    public CaptchaResult(String text) {
+        this.captchaText = text;
+    }
+
+    public CaptchaResult(int x, int y) {
+        captchaClick = new int[] { x, y };
+    }
+
     private String captchaText    = null;
     private int    captchaClick[] = { 0, 0 };
 
