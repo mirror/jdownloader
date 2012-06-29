@@ -16,7 +16,9 @@
 
 package jd.gui.swing;
 
+import java.awt.Window;
 import java.io.File;
+import java.lang.reflect.Method;
 
 import javax.swing.JFrame;
 
@@ -24,6 +26,7 @@ import jd.Launcher;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.swing.dialog.AboutDialog;
+import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.components.toolbar.actions.ShowSettingsAction;
 
 import org.appwork.shutdown.ShutdownController;
@@ -61,6 +64,16 @@ public class MacOSApplicationAdapter implements QuitHandler, AboutHandler, Prefe
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
+                try {
+                    Class util = Class.forName("com.apple.eawt.FullScreenUtilities");
+                    Class params[] = new Class[2];
+                    params[0] = Window.class;
+                    params[1] = Boolean.TYPE;
+                    Method method = util.getMethod("setWindowCanFullScreen", params);
+                    method.invoke(util, JDGui.getInstance().getMainFrame(), true);
+                } catch (Throwable e) {
+                    LogController.GL.log(e);
+                }
                 if (adapter.openURIlinks != null) {
                     LogController.GL.info("Distribute links: " + adapter.openURIlinks);
                     LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(adapter.openURIlinks));
