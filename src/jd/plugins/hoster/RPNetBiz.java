@@ -19,10 +19,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -33,6 +37,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
 public class RPNetBiz extends PluginForHost {
@@ -55,6 +61,15 @@ public class RPNetBiz extends PluginForHost {
     @Override
     public String getAGBLink() {
         return mPremium + "tos.php";
+    }
+
+    public void prepBrowser() {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.setCustomCharset("utf-8");
+        br.setConnectTimeout(60 * 1000);
+        br.setReadTimeout(60 * 1000);
     }
 
     @Override
@@ -102,15 +117,22 @@ public class RPNetBiz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&action=generate");
-        if (br.containsHTML("Invalid authentication")) {
+        try {
+            login(account, true);
+        } catch (PluginException e) {
             account.setValid(false);
+
             ai.setProperty("multiHostSupport", Property.NULL);
+
             return ai;
         }
+        br.getPage(mPremium + "usercp.php");
+        String expirationDate = br.getRegex("Your premium account will expire in: <u>.*</u> \\(([^\\)]*)\\)").getMatch(0);
         account.setValid(true);
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
+        expirationDate = expirationDate.replaceFirst("1st", "1").replaceAll("nd", "").replaceAll("rd", "").replaceAll("th", "");
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expirationDate, "dd MMM, yyyy", null));
         ai.setStatus("Premium User");
         ArrayList<String> hosts = new ArrayList<String>(Arrays.asList("rapidshare.com", "netload.in", "hotfile.com", "megashares.com", "uploaded.to", "filefactory.com", "bitshare.com", "freakshare.net", "crocko.com", "filepost.com", "turboit.net", "extabit.com", "ifile.it", "uploading.com", "jumbofiles.com", "letitbit.net", "ryushare.com", "share-online.biz", "slingfile.com"));
         ai.setProperty("multiHostSupport", hosts);
@@ -172,5 +194,43 @@ public class RPNetBiz extends PluginForHost {
 
     private void showMessage(DownloadLink link, String message) {
         link.getLinkStatus().setStatusText(message);
+    }
+
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(mPremium, key, value);
+                        }
+                        return;
+                    }
+                }
+                prepBrowser();
+                URLConnectionAdapter postback = br.openPostConnection(mPremium + "login.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&login=");
+                if (postback.getResponseCode() != 302) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(mPremium);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 }
