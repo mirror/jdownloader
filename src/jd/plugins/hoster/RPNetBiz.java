@@ -112,7 +112,7 @@ public class RPNetBiz extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         ai.setStatus("Premium User");
-        ArrayList<String> hosts = new ArrayList<String>(Arrays.asList("rapidshare.com", "netload.in", "hotfile.com", "megashares.com", "uploaded.to", "filefactory.com", "bitshare.com", "freakshare.com", "crocko.com", "filepost.com", "turboit.net", "extabit.com", "ifile.it", "uploading.com", "jumbofiles.com", "letitbit.net", "ryushare.com", "share-online.biz", "slingfile.com"));
+        ArrayList<String> hosts = new ArrayList<String>(Arrays.asList("rapidshare.com", "netload.in", "hotfile.com", "megashares.com", "uploaded.to", "filefactory.com", "bitshare.com", "freakshare.net", "crocko.com", "filepost.com", "turboit.net", "extabit.com", "ifile.it", "uploading.com", "jumbofiles.com", "letitbit.net", "ryushare.com", "share-online.biz", "slingfile.com"));
         ai.setProperty("multiHostSupport", hosts);
         return ai;
     }
