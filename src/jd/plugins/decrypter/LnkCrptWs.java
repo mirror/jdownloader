@@ -138,9 +138,6 @@ public class LnkCrptWs extends PluginForDecrypt {
         public String verify(String code) throws Exception {
             if (!this.noscript) return this.chId;
             this.verify.put("adcopy_response", code);
-
-            if (secure) smBr.getPage(server + "/papi");
-
             this.smBr.submitForm(verify);
             String verifyUrl = this.smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
             if (verifyUrl == null) return null;

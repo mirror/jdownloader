@@ -32,6 +32,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -378,7 +379,11 @@ public class TriLuLiLuRo extends PluginForHost {
 
     private void localProxy(final boolean b) {
         if (getPluginConfig().getBooleanProperty("STATUS")) {
-            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy("http://" + getPluginConfig().getStringProperty("PROXYSERVER") + ":" + getPluginConfig().getIntegerProperty("PROXYPORT"));
+            String server = getPluginConfig().getStringProperty("PROXYSERVER", null);
+            int port = getPluginConfig().getIntegerProperty("PROXYPORT", -1);
+            if (isEmpty(server) || port < 0) return;
+            server = new Regex(server, "^[0-9a-zA-Z]+://").matches() ? server : "http://" + server;
+            final org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(server + ":" + port);
             if (b) {
                 if (proxy.getHost() != null || proxy.getHost() != "" && proxy.getPort() > 0) {
                     br.setProxy(proxy);
@@ -386,7 +391,11 @@ public class TriLuLiLuRo extends PluginForHost {
                 }
             }
         }
-        br.setProxy(null);
+        br.setProxy(br.getThreadProxy());
+    }
+
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     private void setConfigElements() {
