@@ -14,4 +14,6 @@ literally_choose_router=Tria el dispositiu
 literally_control_url=URL de control
 literally_router=Router UPNP
 literally_service_type=Tipus de servei
+malformedservicetype=El tipus de servei és invàlid. Prova la instal·lació automàtica de UPNP.
+malformedurl=La URL de control és inválida. Prova la instal·lació automàtica de UPNP.
 try_reconnect=Probar reconnexió Upnp: %s1
