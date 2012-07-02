@@ -10,7 +10,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?redtube\\.com/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "http://(www\\.)?redtube(\\.cn)?\\.com/\\d+" }, flags = { 0 })
 public class RedTubeCom extends PluginForHost {
     private String dlink = null;
 
@@ -42,8 +42,14 @@ public class RedTubeCom extends PluginForHost {
     }
 
     @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("redtube\\.cn\\.com", "redtube.com"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        correctDownloadLink(link);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.redtube.com", "language", "en");
         br.getPage(link.getDownloadURL());

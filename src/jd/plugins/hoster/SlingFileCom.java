@@ -52,8 +52,7 @@ public class SlingFileCom extends PluginForHost {
     }
 
     /**
-     * Important: Do NOT implement their linkchecker as it's buggy and shows
-     * wrong information: http://www.slingfile.com/check-files
+     * Important: Do NOT implement their linkchecker as it's buggy and shows wrong information: http://www.slingfile.com/check-files
      * */
     private static final Object LOCK     = new Object();
     private static final String MAINPAGE = "http://slingfile.com";
@@ -96,6 +95,7 @@ public class SlingFileCom extends PluginForHost {
                 if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
+            if (filesize == null) filesize = br.getRegex("<strong>Size:</strong>(.*?)</li").getMatch(0);
             if (filesize == null) {
                 logger.info("SlingFile: Couldn't find filesize info. Please report this bug to JDownloader Development Team!");
                 logger.info("SlingFile: Continuing...");
@@ -105,9 +105,17 @@ public class SlingFileCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else if (br.getRedirectLocation() != null) {
             downloadLink.setProperty("directlink", true);
-            URLConnectionAdapter con = br.openGetConnection(br.getRedirectLocation());
-            downloadLink.setFinalFileName(getFileNameFromHeader(con));
-            downloadLink.setDownloadSize(con.getLongContentLength());
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(br.getRedirectLocation());
+                downloadLink.setFinalFileName(getFileNameFromHeader(con));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
             return AvailableStatus.TRUE;
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -130,8 +138,7 @@ public class SlingFileCom extends PluginForHost {
             // sleep(wait * 1001l, downloadLink);
             if (br.containsHTML("Please wait until the download is complete")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
             /**
-             * TODO: Not sure if this will always work, maybe its different if
-             * captcha appears after this step
+             * TODO: Not sure if this will always work, maybe its different if captcha appears after this step
              */
             br.postPage(downloadLink.getDownloadURL(), "download=yes");
             if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) {

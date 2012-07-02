@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://[\\w\\.]*?ifolder\\.ru/f\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://[\\w\\.]*?(i|rus)folder\\.ru/f\\d+" }, flags = { 0 })
 public class IFolderFolder extends PluginForDecrypt {
 
     public IFolderFolder(PluginWrapper wrapper) {
@@ -48,7 +48,7 @@ public class IFolderFolder extends PluginForDecrypt {
         String collectedlinks1[] = getLinks();
         if (collectedlinks1 == null || collectedlinks1.length == 0) return null;
         for (String dl : collectedlinks1) {
-            decryptedLinks.add(createDownloadlink("http://ifolder.ru/" + dl));
+            decryptedLinks.add(createDownloadlink("http://rusfolder.ru/" + dl));
         }
         // Find pages if there is more than one page
         String[] pages = br.getRegex("page(=\\d+\">\\d+)</a>").getColumn(0);
@@ -60,7 +60,7 @@ public class IFolderFolder extends PluginForDecrypt {
                 String[] links = getLinks();
                 if (links == null || links.length == 0) return null;
                 for (String dl : links) {
-                    decryptedLinks.add(createDownloadlink("http://ifolder.ru" + dl));
+                    decryptedLinks.add(createDownloadlink("http://rusfolder.ru" + dl));
                 }
             }
             progress.increase(1);

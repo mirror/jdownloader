@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(ifolder\\.ru|files\\.metalarea\\.org)/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(rusfolder\\.ru|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String              ua      = RandomUserAgent.generate();
@@ -47,12 +47,13 @@ public class IfolderRu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "ifolder.ru"));
+        link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "rusfolder.ru"));
+        link.setUrlDownload(link.getDownloadURL().replace("ifolder.ru", "rusfolder.ru"));
     }
 
     @Override
     public String getAGBLink() {
-        return ("http://ifolder.ru/agreement");
+        return ("http://rusfolder.ru/agreement");
     }
 
     @Override
@@ -69,7 +70,7 @@ public class IfolderRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         String passCode = null;
-        String watchAd = br.getRegex("http://ints\\.ifolder\\.ru/ints/\\?(.*?)\"").getMatch(0);
+        String watchAd = br.getRegex("http://ints\\.(ifolder|rusfolder)\\.ru/ints/\\?(.*?)\"").getMatch(1);
         if (watchAd != null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
             watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd).replace("';", "");
@@ -121,7 +122,7 @@ public class IfolderRu extends PluginForHost {
             }
             captchaForm.put("ints_session", ints_session);
             captchaForm.setAction(br.getURL());
-            if (!captchaurl.contains(br.getHost())) captchaurl = "http://" + br.getHost() + captchaurl;
+            if (!captchaurl.contains(br.getHost())) captchaurl = "http://ints.ifolder.ru" + captchaurl;
             /* Captcha */
             String captchaCode = getCaptchaCode(captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
@@ -201,7 +202,7 @@ public class IfolderRu extends PluginForHost {
         prepareBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
-            String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(.+)").getMatch(0);
+            String fileID = new Regex(downloadLink.getDownloadURL(), "rusfolder\\.ru/(.+)").getMatch(0);
             if (!br.getRedirectLocation().contains(fileID)) {
                 logger.warning("The redirect location doesn't contain the fileID, stopping...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

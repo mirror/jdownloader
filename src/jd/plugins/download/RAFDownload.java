@@ -90,7 +90,7 @@ public class RAFDownload extends DownloadInterface {
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
                         String hashFile = Hash.getSHA1(part);
                         success = hash.equalsIgnoreCase(hashFile);
-                    } else if ((hash = new Regex(downloadLink.getName(), ".*?([A-Fa-f0-9]{8})").getMatch(0)) != null) {
+                    } else if ((hash = new Regex(downloadLink.getName(), ".*?\\[([A-Fa-f0-9]{8})\\]").getMatch(0)) != null) {
                         type = "CRC32";
                         String hashFile = Long.toHexString(Hash.getCRC32(part));
                         success = hash.equalsIgnoreCase(hashFile);

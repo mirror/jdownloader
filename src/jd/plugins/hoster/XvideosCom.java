@@ -68,7 +68,7 @@ public class XvideosCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("font\\-size: [0-9]+px;\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim() + ".flv";
-        parameter.setFinalFileName(filename);
+        parameter.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
 

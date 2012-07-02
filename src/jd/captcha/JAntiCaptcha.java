@@ -255,9 +255,11 @@ public class JAntiCaptcha {
 
     private final LogSource logger;
 
+    private final JACMethod method;
+
     public JAntiCaptcha(String methodName) {
         logger = LogController.CL();
-        JACMethod method = JACMethod.forServiceName(methodName);
+        method = JACMethod.forServiceName(methodName);
         if (method == null) {
             logger.severe("no such method found! " + methodName);
             return;
@@ -442,27 +444,28 @@ public class JAntiCaptcha {
     }
 
     private String callExtern() {
-        try {
-            File file = JDUtilities.getResourceFile(this.srcFile);
-            file.getParentFile().mkdirs();
-            String ext = CrossSystem.getFileExtension(file.getName());
-            ImageIO.write(toBufferedImage(this.sourceImage), ext, file);
-        } catch (Exception e) {
-            logger.log(e);
-            return null;
+        synchronized (method) {
+            try {
+                File file = JDUtilities.getResourceFile(this.srcFile);
+                file.getParentFile().mkdirs();
+                String ext = CrossSystem.getFileExtension(file.getName());
+                ImageIO.write(toBufferedImage(this.sourceImage), ext, file);
+            } catch (Exception e) {
+                logger.log(e);
+                return null;
+            }
+            Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
+            exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
+            exec.setWaitTimeout(30);
+            exec.start();
+            exec.waitTimeout();
+            // String ret = exec.getOutputStream() + " \r\n " +
+            // exec.getErrorStream();
+
+            String res = JDIO.readFileToString(JDUtilities.getResourceFile(this.dstFile));
+            if (res == null) return null;
+            return res.trim();
         }
-        Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
-        exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
-        exec.setWaitTimeout(30);
-        exec.start();
-        exec.waitTimeout();
-        // String ret = exec.getOutputStream() + " \r\n " +
-        // exec.getErrorStream();
-
-        String res = JDIO.readFileToString(JDUtilities.getResourceFile(this.dstFile));
-        if (res == null) return null;
-        return res.trim();
-
     }
 
     /**
