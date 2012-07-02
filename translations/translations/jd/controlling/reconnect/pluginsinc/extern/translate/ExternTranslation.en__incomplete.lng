@@ -1,4 +1,0 @@
-interaction_externreconnect_command=Komanda
-interaction_externreconnect_dummybat=Izaberi specijalnog izvršitelja za prozore
-interaction_externreconnect_parameter=Parametar (1 parametar po liniji)
-jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Alat za vanjsko spajanje
