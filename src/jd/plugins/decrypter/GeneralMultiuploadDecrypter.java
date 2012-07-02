@@ -48,7 +48,9 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         // correct them
         if (parameter.contains("go4up.com")) {
             parameter = parameter.replace("link.php?id=", "dl/");
+        } else if (parameter.contains("uploadmirrors.com/")) {
         } else {
+
             parameter = parameter.replaceAll("(/dl/|/mirror/|/download/)", "/files/").replace("flameupload.co/", "flameupload.com/");
         }
         // Links need a "/" at the end to be valid
@@ -70,6 +72,14 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 logger.warning("Couldn't find url=!! Please inform the support. : " + param.toString());
             } else
                 br.getPage(url);
+        } else if (parameter.contains("uploadmirrors.com")) {
+            br.getPage(parameter);
+            String status = br.getRegex("(/status.*?\\.php\\?uid=" + id + ")").getMatch(0);
+            if (status == null) {
+                logger.warning("Couldn't find status : " + param.toString());
+                return null;
+            }
+            br.getPage(protocol + host + status);
         } else if (parameter.matches(".+(up4vn\\.com|go4up\\.com)/.+")) {
             // use standard page, status.php doesn't exist
             br.getPage(parameter);
