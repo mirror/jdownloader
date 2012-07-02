@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitvid.com" }, urls = { "http://[\\w\\.]*?twitvid\\.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitvid.com" }, urls = { "http://(www\\.)?twitviddecrypted\\.com/[A-Z0-9]+" }, flags = { 0 })
 public class TwitVidCom extends PluginForHost {
 
     private String dllink = null;
@@ -48,15 +47,8 @@ public class TwitVidCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("twitviddecrypted.com/", "twitvid.com/"));
     }
 
     @Override
@@ -65,17 +57,11 @@ public class TwitVidCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<b>This twitvid has been deleted</b>") || downloadLink.getDownloadURL().contains("twitvid.com/videos") || downloadLink.getDownloadURL().contains("/index.php?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"title\" content=\"CBS Tweet - (.*?) - TwitVid\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div style=\"border-top:0px solid #ffffff;font-size:22px;color:#000;padding-bottom:10px;padding-top:5px;margin-left:5px;\">[\t\n\r ]+<b>(.*?)</b>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>CBS Tweet - (.*?)  - TwitVid</title>").getMatch(0);
-            }
-        }
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\" />").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String thisToken = br.getRegex("token_([a-z0-9]+)\\&amp").getMatch(0);
-        String fileID = new Regex(downloadLink.getDownloadURL(), "twitvid\\.com/(.+)").getMatch(0);
-        dllink = "http://www.twitvid.com/playVideo_" + fileID + "/token_" + thisToken;
+        final String vPath = br.getRegex("video_path=\"(/playVideo_[^<>\"]*?)\"").getMatch(0);
+        if (vPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://www.twitvid.com" + vPath;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -98,6 +84,17 @@ public class TwitVidCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

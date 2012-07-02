@@ -66,20 +66,19 @@ public class CrackedCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("<title> - Funny Videos \\| Cracked\\.com</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - Funny Videos \\| Cracked\\.com</title>").getMatch(0);
+        String filename = br.getRegex("<h1  id=\"title\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-            }
+            filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
         }
         String flashvars = br.getRegex("name=\"flashVars\" value=\"(.*?)\"").getMatch(0);
         if (flashvars == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         flashvars = Encoding.urlDecode(flashvars, false);
-        DLLINK = new Regex(flashvars, "playerskin\\.swf\\&source=(http://.*?\\.flv)\\&").getMatch(0);
+        DLLINK = new Regex(flashvars, "source=(http://[^<>\"]*?\\.(mp4|flv))\\&").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".mp4";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

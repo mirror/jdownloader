@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,33 +27,37 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "supermov.com" }, urls = { "http://[\\w\\.]*?supermov\\.com/(rc|video)/[0-9]+" }, flags = { 0 })
-public class SuperMovCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spankbang.com" }, urls = { "http://(www\\.)?spankbang\\.com/[a-z0-9]+/video/" }, flags = { 0 })
+public class SpankBangCom extends PluginForHost {
 
-    private String dllink = null;
-
-    public SuperMovCom(PluginWrapper wrapper) {
+    public SpankBangCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/rc/", "/video/"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://supermov.com/";
+        return "http://spankbang.com/info#dmca";
     }
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if ("http://spankbang.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("itemprop=\"title\">([^<>\"]*?)</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<div class=\"player\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains("supermov.com/rc/")) br.postPage(downloadLink.getDownloadURL() + "/", "submit=Yes%2C+Let+me+watch");
+        String dllink = br.getRegex("file: \"(/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://spankbang.com" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -63,24 +67,16 @@ public class SuperMovCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0) + ".mp4");
-        return AvailableStatus.TRUE;
+    public void reset() {
     }
 
     @Override
-    public void reset() {
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    @Override
-    public void resetPluginGlobals() {
-    }
 }

@@ -48,17 +48,6 @@ public class Own3dTvTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -68,10 +57,7 @@ public class Own3dTvTv extends PluginForHost {
             downloadLink.setUrlDownload(br.getRedirectLocation());
             br.getPage(downloadLink.getDownloadURL());
         }
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?) - SC2 - HD 720p Stream\"/>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>own3D - (.*?) - SC2 - HD 720p Stream</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>own3D.tv - (.*?) - SC2").getMatch(0);
-        if (filename == null) filename = br.getRegex("\"http://twitter\\.com/home\\?status=(.*?) \\| ").getMatch(0);
+        String filename = br.getRegex("class=\"chanPlayerTitle fnt20\"><span class=\"fntB\">([^<>\"]*?)</span>").getMatch(0);
 
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String hdLink = br.getRegex("HDUrl: \\'(videos/.*?\\.mp4)\\'").getMatch(0);
@@ -100,6 +86,17 @@ public class Own3dTvTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

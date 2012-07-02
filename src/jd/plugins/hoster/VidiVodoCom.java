@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,27 +28,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidivodo.com" }, urls = { "http://(www\\.)?vidivodo\\.com/(videolar/top50_\\w+/\\d+|\\d+/?([\\w- ]+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidivodo.com" }, urls = { "http://(www\\.)?(en\\.)?vidivodo\\.com/video/[a-z0-9\\-]+/\\d+" }, flags = { 0 })
 public class VidiVodoCom extends PluginForHost {
 
     private String dllink = null;
 
     public VidiVodoCom(final PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    private String createToken(final String arg0, final String arg1) {
-        if (arg1 == null || arg1.equals("") || arg1.length() != 10) { return null; }
-        final String cryptedString = Encoding.Base64Encode(arg1.substring(8, 10) + arg1.substring(0, 2) + arg0 + arg1.substring(4, 8) + arg1.substring(2, 4));
-        String result = "";
-        int i = 0;
-        while (i < cryptedString.length()) {
-            if (i % 2 == 0) {
-                result = result + Integer.toHexString(cryptedString.codePointAt(i));
-            }
-            i++;
-        }
-        return result;
     }
 
     @Override
@@ -63,22 +48,11 @@ public class VidiVodoCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Video cannot be viewed\\. Removed or processing\\.|Video görüntülenemez\\. Silinmiş veya işlemdedir\\.)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(>404\\. That\\'s an error\\.<|The video you have requested is not available<)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("target=\"_blank\" title=\"(.*?)\"").getMatch(0);
@@ -86,18 +60,11 @@ public class VidiVodoCom extends PluginForHost {
                 filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        String u = br.getRegex("u=(.*?)\\&").getMatch(0);
-        if (u == null || u.equals("")) {
-            u = "BFBNQFxDWBI=";
-        }
-        br.getHeaders().put("Referer", br.getBaseURL() + "VidiPlayer_05.swf");
-        br.getPage("http://www.vidivodo.com/playerConfig.php?var=" + (int) Math.random() * 1000);
-        final String e = br.getRegex("<opt name=\"e\" value=\"(\\d+)\"").getMatch(0);
-        final String token = createToken(u, e);
-        if (token != null) {
-            br.getPage("http://www.vidivodo.com/player_getxml.php?u=" + u + "&token=" + token);
-            dllink = br.getRegex("File=\"(http://.*?)\"").getMatch(0);
-        }
+        String encryptID = br.getRegex("encrypt_id:\"([^<>\"]*?)\"").getMatch(0);
+        if (encryptID == null) encryptID = br.getRegex("vid:\\'([^<>\"]*?)\\'").getMatch(0);
+        if (encryptID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.getPage("http://en.vidivodo.com/player/getxml?mediaid=" + encryptID);
+        dllink = br.getRegex("<url><\\!\\[CDATA\\[(http://[^<>\"]*?)\\]\\]></url>").getMatch(0);
         if (filename == null || dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
@@ -119,6 +86,17 @@ public class VidiVodoCom extends PluginForHost {
             } catch (final Throwable e1) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

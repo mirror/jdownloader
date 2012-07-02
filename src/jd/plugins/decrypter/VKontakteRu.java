@@ -370,9 +370,10 @@ public class VKontakteRu extends PluginForDecrypt {
         return dl;
     }
 
-    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntrys, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
+    private ArrayList<String> decryptMultiplePages(final String parameter, final String type, final String numberOfEntries, final String[][] regexesPageOne, final String[][] regexesAllOthers, int offset, final int increase, int alreadyOnPage, final String postPage, final String postData) throws IOException {
         ArrayList<String> decryptedData = new ArrayList<String>();
-        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntrys) - alreadyOnPage) / increase);
+        logger.info("Decrypting " + numberOfEntries + "entries for linktype: " + type);
+        int maxLoops = (int) StrictMath.ceil((Double.parseDouble(numberOfEntries) - alreadyOnPage) / increase);
         if (maxLoops < 0) maxLoops = 0;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         int addedLinks = 0;

@@ -21,36 +21,33 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "foldr.us" }, urls = { "http://(www\\.)?foldr\\.us/(foldr\\.php\\?id=|m/)[a-z0-9]+" }, flags = { 0 })
-public class FoldrUs extends PluginForDecrypt {
+//EmbedDecrypter 0.1
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitvid.com" }, urls = { "http://(www\\.)?twitvid\\.com/(?!awesome|post|best|funnyimpressions|http|https|index|javascript|redirect)[A-Z0-9]+" }, flags = { 0 })
+public class TwitVidComDecrypter extends PluginForDecrypt {
 
-    public FoldrUs(PluginWrapper wrapper) {
+    public TwitVidComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    /**
+     * Decrypts embedded videos, if no embedded video is found the link gets
+     * passed over to the hosterplugin!
+     */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter + "&hl=de");
-        if (br.containsHTML("(Nicht gefunden|Dieser Foldr exisitiert nicht oder er wurde bereits gel)") || br.getURL().contains("not_found.php")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>(.*?) \\| foldr\\.us</title>").getMatch(0);
-        String[] links = br.getRegex("\"(http://relink\\.us/view\\.php\\?id=.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
+        br.getPage(parameter);
+        String externID = br.getRegex("property=\"og:image\" content=\"http://i(\\d+)?\\.ytimg\\.com/vi/([^<>\"/]*?)/hqdefault").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
+            return decryptedLinks;
         }
+        decryptedLinks.add(createDownloadlink(parameter.replace("twitvid.com/", "twitviddecrypted.com/")));
         return decryptedLinks;
     }
 
