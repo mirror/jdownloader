@@ -1,4 +1,0 @@
-interaction_externreconnect_command=Komut (tam dizin yollarını kullan)
-interaction_externreconnect_dummybat=Windows için özel yürütücü uygulama kullan
-interaction_externreconnect_parameter=Parametre (her satıra tek parametre)
-jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Harici Araç yoluyla Yeniden Bağlanma
