@@ -59,3 +59,4 @@ updateloop=Updater failed to update himself. Please try again in a few minutes.
 updateloop_title=Update loop detected!
 updates_are_ready_for_install_now=%s1 update(s) are ready for installation.
 updates_ready_for_install=%s1 update(s) are ready for installation.
+window_title=Updater
