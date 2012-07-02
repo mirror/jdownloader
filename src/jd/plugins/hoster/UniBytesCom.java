@@ -83,10 +83,11 @@ public class UniBytesCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
+        final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         final String addedLink = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
         br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
-        br.postPage(addedLink + "/timer", "referer=" + Encoding.urlEncode(addedLink) + "&step=timer");
+        br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = null;
@@ -104,27 +105,30 @@ public class UniBytesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             sleep(iwait * 1001l, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLink);
+            br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLinkCoded);
             s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-            if (s == null) {
-                logger.warning("s2 equals null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLink);
-            if (br.containsHTML(CAPTCHATEXT)) {
-                logger.info("Captcha found");
-                for (int i = 0; i <= 5; i++) {
-                    String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
-                    String post = "s=" + s + "&referer=" + addedLink + "&step=last&captcha=" + code;
-                    br.postPage(downloadLink.getDownloadURL(), post);
-                    if (!br.containsHTML(CAPTCHATEXT)) break;
+            dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                if (s == null) {
+                    logger.warning("s2 equals null!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            } else {
-                logger.info("Captcha not found");
+                br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLinkCoded);
+                if (br.containsHTML(CAPTCHATEXT)) {
+                    logger.info("Captcha found");
+                    for (int i = 0; i <= 5; i++) {
+                        String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
+                        String post = "s=" + s + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
+                        br.postPage(downloadLink.getDownloadURL(), post);
+                        if (!br.containsHTML(CAPTCHATEXT)) break;
+                    }
+                    if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else {
+                    logger.info("Captcha not found");
+                }
+                dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
             }
-            dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
         }
         if (dllink == null) {
             logger.warning("dllink equals null!");
