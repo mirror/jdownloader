@@ -314,7 +314,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
-            protected String getString(Account ac) {
+            protected String getString(Account ac, long current, long total) {
                 AccountInfo ai = ac.getAccountInfo();
                 if (!ac.isValid()) {
                     return "";

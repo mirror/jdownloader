@@ -81,6 +81,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
         boolean ret = false;
         for (DownloadLink l : downloadLinks) {
             ret = ret || new File(l.getFileOutput()).delete();
+            l.reset();
         }
         return ret;
     }
@@ -147,6 +148,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
     public void setMessage(String text) {
         for (DownloadLink downloadLink : downloadLinks) {
             downloadLink.getLinkStatus().setStatusText(text);
+
         }
     }
 

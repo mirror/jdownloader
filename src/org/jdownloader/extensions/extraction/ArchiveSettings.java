@@ -39,4 +39,8 @@ public interface ArchiveSettings extends ConfigInterface {
     public BooleanStatus getRemoveDownloadLinksAfterExtraction();
 
     public void setRemoveDownloadLinksAfterExtraction(BooleanStatus overwriteFiles);
+
+    public void setExtractionInfo(ExtractionInfo extractionInfo);
+
+    public ExtractionInfo getExtractionInfo();
 }

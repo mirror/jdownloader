@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import jd.parser.Regex;
 import net.sf.sevenzipjbinding.IArchiveOpenCallback;
@@ -31,7 +32,6 @@ import net.sf.sevenzipjbinding.ICryptoGetTextPassword;
 import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
 import org.appwork.exceptions.WTFException;
 import org.jdownloader.extensions.extraction.Archive;
@@ -50,6 +50,8 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     private Archive                       archive;
     private HashMap<String, ArchiveFile>  map;
     private String                        firstName;
+    private Logger                        logger;
+    private ExtRandomAccessFileInStream   latestAccessedStream;
 
     RarOpener(Archive archive) {
         this.password = "";
@@ -67,11 +69,15 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
         map = new HashMap<String, ArchiveFile>();
         // support for test.part01-blabla.tat archives.
         // we have to create a rename matcher map in this case because 7zip cannot handle this type
+        if (logger != null) logger.info("Init Map:");
         if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
                 String name = archive.getName() + "." + new Regex(af.getFilePath(), ".*(part\\d+)").getMatch(0) + ".rar";
+
+                if (logger != null) logger.info(af.getFilePath() + " name: " + name);
                 if (af == archive.getFirstArchiveFile()) {
                     firstName = name;
+                    if (logger != null) logger.info(af.getFilePath() + " FIRSTNAME name: " + name);
                 }
                 if (map.put(name, af) != null) {
                     //
@@ -100,18 +106,21 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
 
     public IInStream getStream(String filename) throws SevenZipException {
         try {
-            RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
 
+            if (logger != null) logger.info("Stream request: " + filename);
+            RandomAccessFile randomAccessFile = openedRandomAccessFileList.get(filename);
+            ArchiveFile af = map.get(filename);
             if (randomAccessFile != null) {
                 randomAccessFile.seek(0);
                 name = filename;
-                return new RandomAccessFileInStream(randomAccessFile);
+                return new ExtRandomAccessFileInStream(randomAccessFile, af == null ? archive.getArchiveFileByPath(filename) : af, filename, this);
             }
-            ArchiveFile af = map.get(filename);
+
             randomAccessFile = new RandomAccessFile(af == null ? filename : af.getFilePath(), "r");
             openedRandomAccessFileList.put(filename, randomAccessFile);
+            if (logger != null) logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
             name = filename;
-            return new RandomAccessFileInStream(randomAccessFile);
+            return new ExtRandomAccessFileInStream(randomAccessFile, af == null ? archive.getArchiveFileByPath(filename) : af, filename, this);
         } catch (FileNotFoundException fileNotFoundException) {
             return null;
         } catch (Exception e) {
@@ -137,14 +146,31 @@ class RarOpener implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICr
     }
 
     public void setCompleted(Long files, Long bytes) throws SevenZipException {
+        System.out.println(1);
     }
 
     public void setTotal(Long files, Long bytes) throws SevenZipException {
+        System.out.println(2);
     }
 
     public String cryptoGetTextPassword() throws SevenZipException {
 
         return password;
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
+    public void setLatestAccessedStream(ExtRandomAccessFileInStream extRandomAccessFileInStream) {
+        if (extRandomAccessFileInStream != latestAccessedStream) {
+            logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
+            latestAccessedStream = extRandomAccessFileInStream;
+        }
+    }
+
+    public ExtRandomAccessFileInStream getLatestAccessedStream() {
+        return latestAccessedStream;
     }
 
 }

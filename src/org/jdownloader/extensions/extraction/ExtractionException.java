@@ -20,12 +20,23 @@ package org.jdownloader.extensions.extraction;
  * Exception for the ExtractionWrapper.
  * 
  * @author botzi
- *
+ * 
  */
-class ExtractionException extends Exception {
+public class ExtractionException extends Exception {
     private static final long serialVersionUID = -5064334224764462157L;
+    private ArchiveFile       latestAccessedArchiveFile;
 
     ExtractionException(String string) {
         super(string);
+    }
+
+    public ExtractionException(Throwable e, ArchiveFile archiveFile) {
+        super(archiveFile == null ? e.getMessage() : "Bad Archive: " + archiveFile.getName(), e);
+        latestAccessedArchiveFile = archiveFile;
+
+    }
+
+    public ArchiveFile getLatestAccessedArchiveFile() {
+        return latestAccessedArchiveFile;
     }
 }

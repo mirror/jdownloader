@@ -58,6 +58,7 @@ import org.jdownloader.extensions.extraction.DummyArchive;
 import org.jdownloader.extensions.extraction.DummyArchiveFile;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.IExtraction;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
@@ -555,7 +556,7 @@ public class Multi extends IExtraction {
                     }
                     path = sb.toString();
                 }
-                String lastTryFilename = ctrl.getExtractTo().getAbsoluteFile() + File.separator + path;
+                String lastTryFilename = controller.getExtractToFolder().getAbsoluteFile() + File.separator + path;
                 String filename = lastTryFilename;
                 try {
                     filename = new String(filename.getBytes(), Charset.defaultCharset());
@@ -564,6 +565,7 @@ public class Multi extends IExtraction {
                 }
 
                 File extractTo = new File(filename);
+                logger.info("Extract " + filename);
                 if (extractTo.exists()) {
                     /* file already exists */
 
@@ -734,7 +736,7 @@ public class Multi extends IExtraction {
     //
 
     @Override
-    public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) {
+    public boolean findPassword(final ExtractionController ctl, String password, boolean optimized) throws ExtractionException {
         crack++;
         ReusableByteArrayOutputStream buffer = null;
         try {
@@ -761,6 +763,7 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 raropener = new RarOpener(archive, password);
+                raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             }
@@ -851,10 +854,11 @@ public class Multi extends IExtraction {
             updateContentView(inArchive.getSimpleInterface());
             return true;
         } catch (SevenZipException e) {
-            return false;
+
+            if (e.getMessage().contains("HRESULT: 0x80004005")) { return false; }
+            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
-            logger.log(e);
-            return false;
+            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         } finally {
             try {
                 ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
@@ -956,14 +960,14 @@ public class Multi extends IExtraction {
     }
 
     @Override
-    public boolean prepare() {
+    public boolean prepare() throws ExtractionException {
         try {
             // if (archive.getFirstArchiveFile() instanceof DummyArchiveFile) {
             // Archive a = buildArchive(archive.getFirstArchiveFile());
             // archive.setArchiveFiles(a.getArchiveFiles());
             // archive.setType(a.getType());
             // }
-
+            System.out.println(1);
             String[] entries = config.getBlacklistPatterns();
             if (entries != null) {
                 for (String entry : entries) {
@@ -997,7 +1001,9 @@ public class Multi extends IExtraction {
                 inArchive = SevenZip.openInArchive(ArchiveFormat.SEVEN_ZIP, inStream);
             } else if (archive.getType() == ArchiveType.MULTI_RAR) {
                 raropener = new RarOpener(archive);
+                raropener.setLogger(logger);
                 IInStream inStream = raropener.getStream(archive.getFirstArchiveFile());
+
                 inArchive = SevenZip.openInArchive(ArchiveFormat.RAR, inStream, raropener);
             } else {
                 return false;
@@ -1013,11 +1019,20 @@ public class Multi extends IExtraction {
             }
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
-            // There are password protected multipart rar files
-            archive.setProtected(true);
-            return true;
-        } catch (Exception e) {
-            return false;
+            if (e.getMessage().contains("HRESULT: 0x80004005")) {
+
+                // file password protected: net.sf.sevenzipjbinding.SevenZipException: HRESULT: 0x80004005 (Fail). Archive file (format:
+                // Rar)
+                // can't be opened
+
+                // There are password protected multipart rar files
+                archive.setProtected(true);
+                return true;
+            } else {
+                throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
+            }
+        } catch (Throwable e) {
+            throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         }
 
         return true;

@@ -85,7 +85,6 @@ import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext
 import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTablePropertiesContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuFactoryListener {
@@ -258,43 +257,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         return getSettings().isDeleteArchiveFilesAfterExtraction();
     }
 
-    /**
-     * Bestimmt den Pfad in den das Archiv entpackt werden soll
-     * 
-     * @param archiveFactory
-     * 
-     * @param archive
-     *            .getFactory()
-     * @return
-     */
-    File getExtractToPath(ArchiveFactory archiveFactory, Archive archive) {
-        LogSource log = LogController.getRebirthLogger();
-        if (log == null) log = logger;
-        File extractTo = null;
-        if (archive != null && (extractTo = archive.getExtractTo()) != null) {
-            log.info("Extract to customized path: " + extractTo.getAbsolutePath());
-            /* a customized extractTo folder is set */
-            return extractTo;
-        }
-        if (getSettings().isCustomExtractionPathEnabled()) {
-            String settingsPath = getSettings().getCustomExtractionPath();
-            if (!StringUtils.isEmpty(settingsPath)) {
-                /* a default extract path is set in Extension settings */
-                log.info("Extract to default extraction path: " + settingsPath);
-                return new File(settingsPath);
-            }
-        }
-        String factoryPath = archiveFactory.createDefaultExtractToPath(archive);
-        if (!StringUtils.isEmpty(factoryPath)) {
-            /* archiveFactory generated path */
-            log.info("Extract to factory path: " + factoryPath);
-            return new File(factoryPath);
-        }
-        /* fallback */
-        log.severe("Extract to fallback path!");
-        return new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
-    }
-
     @Override
     public String getIconKey() {
         return "unpack";
@@ -361,33 +323,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     // }
     // return buildArchive(links.get(0));
     // }
-
-    /**
-     * Sets the extractionpath with subpahts.
-     * 
-     * @param controller
-     */
-    void assignRealDownloadDir(ExtractionController controller) {
-
-        Boolean usesub = getSettings().isSubpathEnabled();
-        if (usesub) {
-            if (getSettings().getSubPathFilesTreshhold() > controller.getArchiv().getContentView().getFileCount() + controller.getArchiv().getContentView().getDirectoryCount()) { return; }
-            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
-
-                if (controller.getArchiv().getContentView().getFileCount() == 0) { return;
-
-                }
-            }
-
-            String path = getSettings().getSubPath();
-
-            path = controller.getArchiv().getFactory().createExtractSubPath(path, controller.getArchiv());
-            if (path != null) {
-                controller.getArchiv().setExtractTo(new File(controller.getExtractTo(), path));
-            }
-        }
-
-    }
 
     /**
      * Returns the extractor for the {@link DownloadLink}.
@@ -639,10 +574,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                         if (getSettings().isCustomExtractionPathEnabled()) {
 
                             File path = DownloadFolderChooserDialog.open(new File(getSettings().getCustomExtractionPath()), false, "Extract To");
-                            archive.setExtractTo(path);
+                            archive.getSettings().setExtractPath(path.getAbsolutePath());
                         } else {
                             File path = DownloadFolderChooserDialog.open(archiveStartFile.getParentFile(), false, "Extract To");
-                            archive.setExtractTo(path);
+                            archive.getSettings().setExtractPath(path.getAbsolutePath());
                         }
 
                         new Thread() {
@@ -1034,7 +969,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     }
                 };
                 ArchiveFactory dlAF = archives[0].getFactory();
-                File extractto = getExtractToPath(dlAF, archives[0]);
+                File extractto = getFinalExtractToFolder(archives[0]);
+
                 while (extractto != null && !extractto.isDirectory()) {
                     extractto = extractto.getParentFile();
                 }
@@ -1043,7 +979,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
 
                     if (path == null) return;
                     for (Archive archive : archives) {
-                        archive.setExtractTo(path);
+                        archive.getSettings().setExtractPath(path.getAbsolutePath());
                     }
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
@@ -1199,6 +1135,37 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             return getSettings().isOverwriteExistingFilesEnabled();
         }
         return false;
+    }
+
+    public File getFinalExtractToFolder(Archive archive) {
+        if (archive.getSettings().getExtractPath() != null) { return new File(archive.getSettings().getExtractPath()); }
+        Boolean usesub = getSettings().isSubpathEnabled();
+
+        String path = archive.getFactory().createDefaultExtractToPath(archive);
+        if (getSettings().isCustomExtractionPathEnabled()) {
+            path = getSettings().getCustomExtractionPath();
+        }
+        if (StringUtils.isEmpty(path)) {
+            path = archive.getFactory().createDefaultExtractToPath(archive);
+        }
+        File ret = new File(path);
+        if (usesub) {
+            if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) { return ret; }
+            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
+
+                if (archive.getContentView().getFileCount() == 0) { return ret;
+
+                }
+            }
+
+            String sub = getSettings().getSubPath();
+            // System.out.println(1);
+            sub = archive.getFactory().createExtractSubPath(sub, archive);
+            if (sub != null) {
+
+            return new File(ret, sub); }
+        }
+        return ret;
     }
 
 }

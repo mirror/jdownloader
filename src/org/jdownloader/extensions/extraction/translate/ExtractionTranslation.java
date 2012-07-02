@@ -310,4 +310,13 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "%s1 (Loading ...)" })
     String contextmenu_loading(String org);
+
+    @Default(lngs = { "en" }, values = { "Extraction failed: %s1" })
+    String failed(String message);
+
+    @Default(lngs = { "en" }, values = { "Extraction failed" })
+    String failed_no_details();
+
+    @Default(lngs = { "en" }, values = { "Extracting... thus disabled" })
+    String extracting();
 }

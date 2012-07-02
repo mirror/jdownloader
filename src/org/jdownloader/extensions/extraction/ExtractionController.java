@@ -56,10 +56,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     private final LogSource     logger;
     private FileSignatures      fileSignatures   = null;
     private boolean             overwriteFiles;
-    private File                extractTo        = null;
+    private File                extractToFolder;
 
-    public File getExtractTo() {
-        return extractTo;
+    public File getExtractToFolder() {
+        return extractToFolder;
     }
 
     public FileSignatures getFileSignatures() {
@@ -78,6 +78,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         extension = extractionExtension;
         extractor.setLogger(logger);
         passwordList = new ArrayList<String>();
+        archive.onControllerAssigned(this);
     }
 
     public ExtractionQueue getExtractionQueue() {
@@ -98,9 +99,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
         return true;
     }
 
-    private boolean checkPassword(String pw, boolean optimized) {
+    private boolean checkPassword(String pw, boolean optimized) throws ExtractionException {
         logger.info("Check Password: " + pw);
-        if (StringUtils.isEmpty(pw)) return false;
+        if (pw == null || "".equals(pw)) return false;
 
         fireEvent(ExtractionEvent.Type.PASSWORT_CRACKING);
         return extractor.findPassword(this, pw, optimized);
@@ -119,7 +120,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
     public Void run() {
         try {
             fireEvent(ExtractionEvent.Type.START);
-
+            archive.onStartExtracting();
             logger.info("Start unpacking of " + archive.getFirstArchiveFile().getFilePath());
 
             for (ArchiveFile l : archive.getArchiveFiles()) {
@@ -132,8 +133,8 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                 return null;
             }
+            extractToFolder = extension.getFinalExtractToFolder(archive);
 
-            extractTo = ExtractionExtension.getIntance().getExtractToPath(archive.getFactory(), archive);
             if (gotKilled()) return null;
             if (extractor.prepare()) {
 
@@ -182,7 +183,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     extractor.config.setPasswordList(pwList);
                 }
 
-                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractTo(), archive.getContentView().getTotalSize());
+                DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractToFolder(), archive.getContentView().getTotalSize());
                 if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
                     logger.info("Not enough harddisk space for unpacking archive " + archive.getFirstArchiveFile().getFilePath());
@@ -191,16 +192,15 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
 
                 fireEvent(ExtractionEvent.Type.OPEN_ARCHIVE_SUCCESS);
 
-                if (!extractTo.exists()) {
-                    if (!extractTo.mkdirs()) {
+                if (!getExtractToFolder().exists()) {
+                    if (!getExtractToFolder().mkdirs()) {
                         logger.warning("Could not create subpath");
                         fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
-                        return null;
                     }
                 }
 
                 logger.info("Execute unpacking of " + archive);
-
+                logger.info("Extract to " + getExtractToFolder());
                 timer = IOEQ.TIMINGQUEUE.scheduleWithFixedDelay(new Runnable() {
                     public void run() {
                         fireEvent(ExtractionEvent.Type.EXTRACTING);
@@ -210,12 +210,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 try {
                     extractor.extract(this);
                 } finally {
+                    fireEvent(ExtractionEvent.Type.EXTRACTING);
                     timer.cancel(false);
-                    try {
-                        fireEvent(ExtractionEvent.Type.EXTRACTING);
-                    } finally {
-                        extractor.close();
-                    }
+                    extractor.close();
                 }
                 if (gotKilled()) { return null; }
                 if (extractor.getException() != null) exception = extractor.getException();
@@ -225,7 +222,9 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     if (!archive.getGotInterrupted()) {
                         removeArchiveFiles();
                     }
+                    archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
                     fireEvent(ExtractionEvent.Type.FINISHED);
+
                     logger.clear();
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:
@@ -280,6 +279,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 } catch (final Throwable e) {
                 }
                 fireEvent(ExtractionEvent.Type.CLEANUP);
+                archive.onCleanUp();
             } finally {
                 logger.close();
             }

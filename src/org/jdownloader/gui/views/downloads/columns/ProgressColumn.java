@@ -1,6 +1,7 @@
 package org.jdownloader.gui.views.downloads.columns;
 
 import java.awt.Color;
+import java.awt.FontMetrics;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -143,7 +144,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     @Override
     public int getMinWidth() {
 
-        return 30;
+        return 16;
     }
 
     public boolean isPaintWidthLockIcon() {
@@ -156,17 +157,45 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     }
 
     @Override
-    protected String getString(AbstractNode value) {
+    protected String getString(AbstractNode value, long current, long total) {
         if (value instanceof FilePackage) {
-            return null;
+            return checkWidth(getPercentString(current, total));
         } else {
             DownloadLink dLink = (DownloadLink) value;
             PluginProgress progress;
             if (dLink.getDefaultPlugin() == null) {
                 return _GUI._.gui_treetable_error_plugin();
-            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) { return (progress.getPercent() + " %"); }
+            } else if ((progress = dLink.getPluginProgress()) != null && !(progress.getProgressSource() instanceof PluginForHost)) {
+                //
+
+                // SwingUtilities2.clipStringIfNecessary(rendererField, rendererField.getFontMetrics(rendererField.getFont()), str,
+                // getTableColumn().getWidth() - rendererIcon.getPreferredSize().width - 32)
+
+                return checkWidth(progress.getPercent());
+            }
         }
-        return null;
+        return checkWidth(getPercentString(current, total));
+    }
+
+    private String checkWidth(double d) {
+        FontMetrics fm = determinatedRenderer.getFontMetrics(determinatedRenderer.getFont());
+        String ret = d + " %";
+        int w = fm.stringWidth(ret);
+
+        if (w < getWidth() - 6) {
+            return ret;
+        } else {
+            ret = (int) d + " %";
+            w = fm.stringWidth(ret);
+
+            if (w < getWidth() - 6) {
+                return ret;
+            } else {
+                return "";
+
+            }
+
+        }
     }
 
     @Override

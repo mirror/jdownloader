@@ -60,18 +60,30 @@ public class ExtractionListenerList implements ExtractionListener {
         switch (event.getType()) {
         case QUEUED:
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_queued());
+
             break;
         case EXTRACTION_FAILED:
             try {
+                ArchiveFile af = null;
+                if (controller.getException() != null) {
+                    if (controller.getException() instanceof ExtractionException) {
+                        af = ((ExtractionException) controller.getException()).getLatestAccessedArchiveFile();
+                    }
+                }
                 for (ArchiveFile link : controller.getArchiv().getArchiveFiles()) {
                     if (link == null) continue;
-                    if (controller.getException() != null) {
+                    if (af == link) {
+
+                        link.setStatus(ArchiveFile.Status.ERROR_CRC);
+                        link.setMessage(T._.failed(controller.getException().getMessage()));
+                    } else if (controller.getException() != null) {
                         link.setStatus(ArchiveFile.Status.ERROR);
-                        link.setMessage("Extract failed: " + controller.getException().getMessage());
+                        link.setMessage(T._.failed(controller.getException().getMessage()));
                     } else {
                         link.setStatus(ArchiveFile.Status.ERROR);
-                        link.setMessage("Extract failed");
+                        link.setMessage(T._.failed_no_details());
                     }
+
                 }
                 ArrayList<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -119,7 +131,7 @@ public class ExtractionListenerList implements ExtractionListener {
             // controller.getArchiv().getFirstArchiveFile().requestGuiUpdate();
             break;
         case OPEN_ARCHIVE_SUCCESS:
-            ex.assignRealDownloadDir(controller);
+
             break;
         case PASSWORD_FOUND:
             controller.getArchiv().getFirstArchiveFile().setMessage(T._.plugins_optional_extraction_status_passfound());
@@ -204,6 +216,15 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case CLEANUP:
             try {
+
+                ArchiveFile af = null;
+                if (controller.getException() != null) {
+                    if (controller.getException() instanceof ExtractionException) {
+                        af = ((ExtractionException) controller.getException()).getLatestAccessedArchiveFile();
+                        af.deleteFile();
+                    }
+                }
+
                 ArrayList<File> removed = new ArrayList<File>();
                 if (controller.gotKilled()) {
                     controller.getArchiv().getFirstArchiveFile().setMessage(null);
