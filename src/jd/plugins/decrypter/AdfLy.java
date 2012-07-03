@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs)/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adf.ly" }, urls = { "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+" }, flags = { 0 })
 public class AdfLy extends PluginForDecrypt {
 
     public AdfLy(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class AdfLy extends PluginForDecrypt {
             finallink = br.getRegex("\\.attr\\((\"|\\')href(\"|\\'), \\'(.*?)\\'\\)").getMatch(2);
         }
         if (finallink == null) {
-            finallink = br.getRegex("window\\.location = \\'(.*?)\\';").getMatch(0);
+            finallink = br.getRegex("window\\.location = ('|\")(.*?)('|\");").getMatch(1);
         }
         if (finallink == null) {
             finallink = br.getRegex("close_bar.*?self\\.location = \\'(.*?)\\';").getMatch(0);
@@ -67,7 +67,7 @@ public class AdfLy extends PluginForDecrypt {
         // Use this because they often change the page
         final String[] lol = HTMLParser.getHttpLinks(br.toString(), "");
         for (final String aLink : lol) {
-            if (!new Regex(aLink, "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs)/.+").matches() && !aLink.contains("/javascript/")) {
+            if (!new Regex(aLink, "http://(www\\.)?(adf\\.ly|9\\.bb|j\\.gs|q\\.gs|urlm\\.in)/.+").matches() && !aLink.contains("/javascript/")) {
                 decryptedLinks.add(createDownloadlink(aLink));
             }
         }
@@ -108,11 +108,12 @@ public class AdfLy extends PluginForDecrypt {
                     // link
                     finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
                 }
-
             }
             break;
         }
         if (finallink != null) {
+            /* we found the wanted link, so lets clear results of htmlparser */
+            decryptedLinks.clear();
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             logger.warning("adf.ly single regex broken for link: " + parameter);

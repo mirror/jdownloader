@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%\\/+]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%\\/+]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%/+=]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%\\/+=]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -46,12 +46,20 @@ public class DiskYandexNet extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("mail.yandex.ru/", "disk.yandex.net/").replace("#", "?hash="));
     }
 
+    private String getHashID(DownloadLink link) throws PluginException {
+        String hashID = new Regex(link.getDownloadURL(), "hash=(.+)$").getMatch(0);
+        if (hashID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        hashID = Encoding.urlDecode(hashID, false);
+        hashID = hashID.replaceAll(" ", "+");
+        return hashID;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + new Regex(link.getDownloadURL(), "hash=(.+)$").getMatch(0));
+        br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(link)));
         if (br.containsHTML(">Decryption error<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = parse("name");
         String filesize = parse("size");
@@ -64,7 +72,7 @@ public class DiskYandexNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&public_url=1&_locale=en&_page=disk-share&_service=disk&hash=" + new Regex(downloadLink.getDownloadURL(), "hash=(.+)$").getMatch(0));
+        br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&public_url=1&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(downloadLink)));
         String dllink = parse("file");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (dllink.startsWith("//")) dllink = "https:" + dllink;

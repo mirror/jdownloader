@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([\\w.-]*?\\.)?(rusfolder\\.ru|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z\\.-]*?\\.)?(rusfolder\\.(net|ru)|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String              ua      = RandomUserAgent.generate();
@@ -202,7 +202,7 @@ public class IfolderRu extends PluginForHost {
         prepareBrowser(br);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
-            String fileID = new Regex(downloadLink.getDownloadURL(), "rusfolder\\.ru/(.+)").getMatch(0);
+            String fileID = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.+)").getMatch(0);
             if (!br.getRedirectLocation().contains(fileID)) {
                 logger.warning("The redirect location doesn't contain the fileID, stopping...");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
