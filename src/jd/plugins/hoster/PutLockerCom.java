@@ -111,18 +111,15 @@ public class PutLockerCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        String hash = br.getRegex("<input type=\"hidden\" value=\"([a-z0-9]+)\" name=\"hash\">").getMatch(0);
-        if (hash == null) {
-            logger.warning("hash is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final Form freeform = br.getForm(0);
+        if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Can still be skipped */
-        // String waittime =
+        // final String waittime =
         // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
-        br.postPage(br.getURL(), "hash=" + Encoding.urlEncode(hash) + "&confirm=Continue+as+Free+User");
+        br.submitForm(freeform);
         if (br.containsHTML("This file failed to convert")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with an account", PluginException.VALUE_ID_PREMIUM_ONLY);
@@ -146,6 +143,7 @@ public class PutLockerCom extends PluginForHost {
             // My experience was that such files just don't work, i wasn't able
             // to download a link with this error in 3 days!
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
+            if (br.containsHTML(">This link has expired\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

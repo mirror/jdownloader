@@ -186,6 +186,10 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML("There are no photos in this album")) {
+            logger.info("Empty album: " + parameter);
+            return decryptedLinks;
+        }
         String numberOfEntrys = br.getRegex("\\| (\\d+) zdj&#281").getMatch(0);
         if (numberOfEntrys == null) {
             numberOfEntrys = br.getRegex("count: (\\d+),").getMatch(0);

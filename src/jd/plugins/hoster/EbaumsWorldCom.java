@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -28,38 +28,38 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veervid.com" }, urls = { "http://(www\\.)?veervid\\.com/(play|video)/\\d+/[a-z0-9]+" }, flags = { 0 })
-public class VeerVidCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ebaumsworld.com" }, urls = { "http://(www\\.)?ebaumsworld\\.com/video/watch/\\d+" }, flags = { 0 })
+public class EbaumsWorldCom extends PluginForHost {
 
-    public VeerVidCom(PluginWrapper wrapper) {
+    public EbaumsWorldCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.veervid.com/";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/play/", "/video/"));
+        return "http://www.ebaumsworld.com/pages/terms/";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://www.veervid.com/flv_player/data/playerConfig/" + new Regex(link.getDownloadURL(), "veervid\\.com/video/(\\d+)/").getMatch(0) + ".xml");
-        if (br.containsHTML("(<title></title>|>We\\'re sorry, the page you requested cannot be found\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("ebaumsworld\\.com/img/errorPage404\\.jpg\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<a class=\"pw_title\" style=\"display:none\">([^<>\"]*?)</a>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.veervid.com/files/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv", true, 0);
+        br.getPage("http://www.ebaumsworld.com/video/player/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "?env=id0");
+        final String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

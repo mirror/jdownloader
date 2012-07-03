@@ -29,10 +29,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidvideo.com" }, urls = { "https?://(www\\.)?rapidvideo\\.com/view/[a-z0-9]{8}" }, flags = { 0 })
-public class RapidVideoCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/(videos/view/|photos/view/)[A-Za-z0-9\\-]+" }, flags = { 0 })
+public class EroProfileCom extends PluginForHost {
 
-    public RapidVideoCom(PluginWrapper wrapper) {
+    public EroProfileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -40,23 +40,36 @@ public class RapidVideoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.rapidvideo.com/agb/";
+        return "http://www.eroprofile.com/p/help/termsOfUse";
     }
+
+    private static final String VIDEOLINK = "http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-]+";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://eroprofile.com/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Die angefordete Video wurde nicht gefunden\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) auf RapidVideo sehen</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div style=\"float:left; margin\\-left:10px;\">([^<>\"]*?)</div>").getMatch(0);
-        DLLINK = br.getRegex("value='file=(https?://[^\\&<>\"\\']+)").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if ((ext == null || ext.length() > 5) && DLLINK.contains("MP4")) ext = ".mp4";
-        if (ext == null || ext.length() > 5) ext = ".flv";
-        downloadLink.setFinalFileName((Encoding.htmlDecode(filename)).trim() + ext);
+        if (downloadLink.getDownloadURL().matches(VIDEOLINK)) {
+            if (br.containsHTML("(>Video not found|>The video could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = getFilename();
+            DLLINK = br.getRegex("file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = Encoding.htmlDecode(DLLINK);
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".m4v";
+            downloadLink.setFinalFileName(filename + ext);
+        } else {
+            if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            String filename = getFilename();
+            DLLINK = br.getRegex("<div class=\"photo\"><a href=\"(/[^<>\"]*?)\"").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = "http://www.eroprofile.com" + DLLINK;
+            String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+            if (ext == null || ext.length() > 5) ext = ".jpg";
+            downloadLink.setFinalFileName(filename + ext);
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -85,6 +98,13 @@ public class RapidVideoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getFilename() throws PluginException {
+        String filename = br.getRegex("<tr><th>Title:</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>EroProfile \\- ([^<>\"]*?)</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return Encoding.htmlDecode(filename.trim());
     }
 
     @Override

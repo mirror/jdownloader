@@ -59,7 +59,7 @@ public class VideoMediasetIt extends PluginForHost {
         br.getPage("http://cdnselector.xuniplay.fdnames.com/GetCDN.aspx?streamid=" + new Regex(downloadLink.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0));
         DLLINK = br.getRegex("\"(http://[a-z0-9\\.]*?/(flv2|wmv2|iPhone_SportMediaset)/[^<>\"]*?\\.(f4v|wmv|mp4))\"").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (DLLINK.contains("Error400")) throw new PluginException(LinkStatus.ERROR_FATAL, "Silverlight videos are currently not supported!");
+        if (DLLINK.contains("Error400") || br.containsHTML("/Cartello_NotAvailable\\.wmv")) throw new PluginException(LinkStatus.ERROR_FATAL, "Silverlight videos are currently not supported!");
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

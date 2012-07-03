@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobash\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobash.com" }, urls = { "http://(www\\.)?videobashdecrypted\\.com/video_show/[a-z0-9\\-]+\\-\\d+" }, flags = { 0 })
 public class VideoBashCom extends PluginForHost {
 
     public VideoBashCom(PluginWrapper wrapper) {
@@ -41,6 +41,10 @@ public class VideoBashCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.videobash.com/info#terms";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("videobashdecrypted.com/", "videobash.com/"));
     }
 
     @Override

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://[\\w\\.]*?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
 public class PrtctdScdvntCm extends PluginForDecrypt {
 
     private static String MAINPAGE = "http://protected.socadvnet.com/";

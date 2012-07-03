@@ -26,12 +26,11 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://vids\\.myspace\\.com/index\\.cfm\\?fuseaction=vids\\.individual\\&videoid=\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vids.myspace.com" }, urls = { "http://(www\\.)?myspace\\.com/video/.*?\\d+$" }, flags = { 0 })
 public class VidsMySpaceCom extends PluginForHost {
 
-    private String dllink = null;
+    private String DLLINK = null;
 
     public VidsMySpaceCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,57 +47,36 @@ public class VidsMySpaceCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String qs = br.getRegex("\"qs\":\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null || qs == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://mediaservices.myspace.com/services/rss.ashx?cb=" + System.currentTimeMillis() + "&type=video&el=http%3A%2F%2Fwww%2Emyspace%2Ecom%2Fmodules%2Fvideos%2Fpages%2Fvideodetail%2Easpx%3F" + Encoding.urlEncode(qs).replace("-", "%2D") + "&videoID=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
+        DLLINK = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
+        filename = Encoding.htmlDecode(filename.trim());
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = br.openGetConnection(DLLINK);
+        if (!con.getContentType().contains("html")) {
+            link.setDownloadSize(con.getLongContentLength());
+            link.setFinalFileName(filename + ".flv");
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (br.getRedirectLocation() != null && !br.getRedirectLocation().contains("vids.myspace")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.vidsmyspacecom.temporaryunavailable", "This link is temporary unavailable"));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("?fuseaction=vids.splash&vs=2")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            if (!br.getRedirectLocation().contains("vids.myspace")) return AvailableStatus.UNCHECKABLE;
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String filename = br.getRegex("<h1 id=\"tv_tbar_title\">(.*?)</h1>").getMatch(0);
-        if (null == filename || filename.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        StringBuilder linkSB = new StringBuilder("http://l3-hl1.videos02.");
-        Regex regexp = new Regex(Encoding.htmlDecode(br.toString()), "<link rel=\"image_src\" href=\"http://d\\d+.ac-videos.(.*?)thumb1_(.*?).jpg\" />");
-
-        String dlinkPart = regexp.getMatch(0);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        linkSB.append(dlinkPart);
-
-        dlinkPart = regexp.getMatch(1);
-        if (null == dlinkPart || dlinkPart.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        linkSB.append(dlinkPart);
-        linkSB.append("/vid.mp4");
-
-        dllink = linkSB.toString();
-        filename = filename.trim();
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openGetConnection(dllink);
-        if (con.getContentType().contains("html")) {
-            dllink = dllink.replace("/vid.mp4", "/vid.flv");
-            con = br.openGetConnection(dllink);
-        }
-        if (!con.getContentType().contains("html")) {
-            link.setDownloadSize(con.getLongContentLength());
-            link.setFinalFileName(filename + new Regex(dllink, "(\\.(flv|mp4))$").getMatch(0));
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
