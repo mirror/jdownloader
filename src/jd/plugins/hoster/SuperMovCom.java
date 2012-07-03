@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -26,11 +24,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "supermov.com" }, urls = { "http://[\\w\\.]*?supermov\\.com/(rc|video)/[0-9]+" }, flags = { 0 })
 public class SuperMovCom extends PluginForHost {
 
-    private String dllink = null;
+    private String DLLINK = null;
 
     public SuperMovCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,22 +52,52 @@ public class SuperMovCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.getURL().contains("supermov.com/rc/")) br.postPage(downloadLink.getDownloadURL() + "/", "submit=Yes%2C+Let+me+watch");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        download(downloadLink);
+    }
+
+    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath("mp4:" + stream[1]);
+        rtmp.setUrl(stream[0]);
+        rtmp.setSwfVfy(stream[2]);
+        rtmp.setPageUrl(stream[3]);
+        rtmp.setTimeOut(10);
+        rtmp.setResume(true);
+    }
+
+    private void download(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String[] stream = DLLINK.split("@");
+        if (DLLINK.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, stream[0] + stream[1]);
+            setupRTMPConnection(stream, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">File Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "(\\d+)").getMatch(0) + ".mp4");
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        if (br.containsHTML(">Video not found") || br.getURL().endsWith("404.htm")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(dllink);
+
+        String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\w+\\.swf)\',").getMatch(1);
+        String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
+        if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        flashUrl = "http://" + br.getHost() + "/" + flashUrl;
+        try {
+            DLLINK = getRtmpUrl(flashUrl);
+        } catch (Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD or JD2Beta needed!");
+        }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
+        downloadLink.setName(fileName);
         return AvailableStatus.TRUE;
     }
 
@@ -77,10 +106,24 @@ public class SuperMovCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
+
+    private String getRtmpUrl(String flashurl) throws Exception {
+        String[] args = { "-abc", flashurl };
+        // disassemble abc
+        String asasm = flash.swf.tools.SwfxPrinter.main(args);
+        String doABC = new Regex(asasm, "<doABC2>(.*)</doABC2>").getMatch(0);
+        for (String method : new Regex(doABC, "(function.+?Traits Entries)").getColumn(0)) {
+            if (method.startsWith("function com.longtailvideo.jwplayer.utils:Configger::com.longtailvideo.jwplayer.utils:Configger()")) {
+                if (method.contains("streamer")) { return new Regex(method, "\"(rtmp.*?/)\"").getMatch(0); }
+            }
+        }
+        return null;
+    }
+
 }
