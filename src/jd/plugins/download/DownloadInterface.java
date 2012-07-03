@@ -843,10 +843,10 @@ abstract public class DownloadInterface {
         long part = fileSize / this.getChunkNum();
         boolean verifiedSize = downloadLink.getVerifiedFileSize() > 0;
         boolean openRangeRequested = false;
-        if (this.getChunkNum() == 1 || fileSize <= 0) {
+        if (verifiedSize == false || this.getChunkNum() == 1) {
             /* we only request a single range */
             openRangeRequested = true;
-            request.getHeaders().put("Range", "bytes=" + (0) + "-");
+            request.getHeaders().put("Range", "bytes= " + (0) + "-");
         } else {
             /* we request multiple ranges */
             openRangeRequested = false;
@@ -865,7 +865,7 @@ abstract public class DownloadInterface {
             if (range[0] != 0) {
                 /* first range MUST start at zero */
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-            } else if (verifiedSize && range[1] < (part - 2)) {
+            } else if (verifiedSize && range[1] < (part - 1)) {
                 /* response range != requested range */
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
             } else if (!openRangeRequested && range[1] == range[2] - 1 && getChunkNum() > 1) {

@@ -271,7 +271,11 @@ public class Rapidshare extends PluginForHost {
                         doretry = true;
                         break;
                     }
-                    u.setDownloadSize(Long.parseLong(matches[i][2]));
+                    long size;
+                    u.setDownloadSize(size = Long.parseLong(matches[i][2]));
+                    if (size > 0) {
+                        u.setProperty("VERIFIEDFILESIZE", size);
+                    }
                     String suggestedName = null;
                     String finalFilename = matches[i][1];
                     /* special filename modding if we have a suggested filename */

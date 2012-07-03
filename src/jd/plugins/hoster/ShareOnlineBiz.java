@@ -103,7 +103,11 @@ public class ShareOnlineBiz extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setFinalFileName(infos[hit][2].trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][3]));
+                        long size = -1;
+                        dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][3]));
+                        if (size > 0) {
+                            dl.setProperty("VERIFIEDFILESIZE", size);
+                        }
                         if (infos[hit][1].trim().equalsIgnoreCase("OK")) {
                             dl.setAvailable(true);
                             dl.setMD5Hash(infos[hit][4].trim());
@@ -487,7 +491,11 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         String infos[] = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*?);(\\d+)").getRow(0);
         if (infos == null || !infos[1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setDownloadSize(Long.parseLong(infos[3].trim()));
+        long size = -1;
+        downloadLink.setDownloadSize(size = Long.parseLong(infos[3].trim()));
+        if (size > 0) {
+            downloadLink.setProperty("VERIFIEDFILESIZE", size);
+        }
         downloadLink.setName(infos[2].trim());
         server = Long.parseLong(infos[5].trim());
         return AvailableStatus.TRUE;

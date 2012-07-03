@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%\\/+]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%\\/+]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {

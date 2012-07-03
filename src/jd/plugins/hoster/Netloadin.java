@@ -147,7 +147,11 @@ public class Netloadin extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setFinalFileName(infos[hit][1].trim());
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
+                        long size;
+                        dl.setDownloadSize(size = SizeFormatter.getSize(infos[hit][2]));
+                        if (size > 0) {
+                            dl.setProperty("VERIFIEDFILESIZE", size);
+                        }
                         if (infos[hit][3].trim().equalsIgnoreCase("online")) {
                             dl.setAvailable(true);
                             dl.setMD5Hash(infos[hit][4].trim());

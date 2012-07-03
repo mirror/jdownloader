@@ -217,7 +217,11 @@ public class Uploadedto extends PluginForHost {
                         dl.setAvailable(false);
                     } else {
                         dl.setFinalFileName(Encoding.htmlDecode(infos[hit][4].trim()));
-                        dl.setDownloadSize(SizeFormatter.getSize(infos[hit][2]));
+                        long size = SizeFormatter.getSize(infos[hit][2]);
+                        dl.setDownloadSize(size);
+                        if (size > 0) {
+                            dl.setProperty("VERIFIEDFILESIZE", size);
+                        }
                         if ("online".equalsIgnoreCase(infos[hit][0].trim())) {
                             dl.setAvailable(true);
                             String sha1 = infos[hit][3].trim();
@@ -575,7 +579,7 @@ public class Uploadedto extends PluginForHost {
             String ret = br.getRedirectLocation();
             if (ret != null && ret.contains("/404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String name = br.getRegex("(.*?)(\r|\n)").getMatch(0);
-            String size = br.getRegex("[\r\n]([0-9\\, TBMK]+)").getMatch(0);
+            String size = br.getRegex("[\r\n]([0-9\\, TGBMK]+)").getMatch(0);
             if (name == null || size == null) return AvailableStatus.UNCHECKABLE;
             downloadLink.setFinalFileName(Encoding.htmlDecode(name.trim()));
             downloadLink.setDownloadSize(SizeFormatter.getSize(size));

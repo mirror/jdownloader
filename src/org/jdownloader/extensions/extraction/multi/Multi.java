@@ -1019,12 +1019,11 @@ public class Multi extends IExtraction {
             }
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
-            if (e.getMessage().contains("HRESULT: 0x80004005")) {
+            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("No password was provided")) {
 
                 // file password protected: net.sf.sevenzipjbinding.SevenZipException: HRESULT: 0x80004005 (Fail). Archive file (format:
                 // Rar)
                 // can't be opened
-
                 // There are password protected multipart rar files
                 archive.setProtected(true);
                 return true;

@@ -83,7 +83,6 @@ public abstract class FilterRule implements Storable {
         } else {
             if (getOnlineStatusFilter().isEnabled()) {
                 cond.add(onlineStatusFilter.toString());
-
             }
 
             if (getPluginStatusFilter().isEnabled()) {

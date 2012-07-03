@@ -240,6 +240,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                             }
                         }
                     } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
                         /* we keep the exception in case we need it later */
                         exception = e;
                         throw e;

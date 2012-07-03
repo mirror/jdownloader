@@ -408,7 +408,11 @@ public class LinkChecker<E extends CheckableLink> {
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
             logger.info("Link " + link.getDownloadURL() + " is " + availableStatus);
-            logger.clear();
+            if (availableStatus != AvailableStatus.UNCHECKABLE) {
+                logger.clear();
+            } else {
+                logger.flush();
+            }
             try {
                 plgToUse.getBrowser().getHttpConnection().disconnect();
             } catch (Throwable e) {

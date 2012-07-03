@@ -48,15 +48,48 @@ public class XvideosCom extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
+        if (dllink == null) dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         dl.startDownload();
     }
 
+    private static String decode(String encoded) {
+        if (encoded == null) return null;
+        encoded = new String(jd.crypt.Base64.decode(encoded));
+        String[] encodArr = encoded.split("-");
+        String encodedUrl = "";
+        for (String i : encodArr) {
+            int charNum = Integer.parseInt(i);
+            if (charNum != 0) {
+                encodedUrl = encodedUrl + (char) charNum;
+            }
+        }
+        return calculate(encodedUrl);
+    }
+
+    private static String calculate(String src) {
+        if (src == null) return null;
+        String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMabcdefghijklmnopqrstuvwxyzabcdefghijklm";
+        String calculated = "";
+        int i = 0;
+        while (i < src.length()) {
+            char character = src.charAt(i);
+            int pos = CHARS.indexOf(character);
+            if (pos > -1) {
+                character = CHARS.charAt(13 + pos);
+            }
+            calculated = calculated + character;
+            i++;
+        }
+        return calculated;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "gzip");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             logger.info("Setting new downloadlink: " + br.getRedirectLocation());

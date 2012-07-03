@@ -40,6 +40,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "real-debrid.com" }, urls = { "http://\\w+\\.real\\-debrid\\.com/dl/\\w+/.+" }, flags = { 2 })
@@ -149,6 +150,9 @@ public class RealDebridCom extends PluginForHost {
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
+        if (dllink.startsWith("https")) {
+            dllink = dllink.replace("https://", "http://");
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
@@ -182,7 +186,7 @@ public class RealDebridCom extends PluginForHost {
         if (dlLinks == null || dlLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         showMessage(link, "Task 2: Download begins!");
         for (String dllink : dlLinks) {
-            if (dllink == null || !dllink.startsWith("http")) continue;
+            if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) continue;
             dllink = dllink.replaceAll("\\\\/", "/");
             try {
                 handleDL(link, dllink);
