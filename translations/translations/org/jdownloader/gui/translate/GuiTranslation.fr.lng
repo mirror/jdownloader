@@ -408,7 +408,6 @@ action_open_dlfolder_mnemonic=-
 action_open_dlfolder_tooltip=Ouvrir la destination par défaut
 action_pause_accelerator=ctrl+b
 action_pause_mnemonic=b
-action_pause_tooltip=Téléchargements en pause. Limiter la vitesse globale à %s10 ko/s
 action_premium_toggle_accelerator=-
 action_premium_toggle_mnemonic=-
 action_premium_toggle_tooltip=Activer ou désactiver tous les comptes Premium
