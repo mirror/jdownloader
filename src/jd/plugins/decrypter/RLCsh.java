@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -84,7 +85,7 @@ public class RLCsh extends PluginForDecrypt {
         if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
         if (link == null) link = br.getRedirectLocation();
         if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(link));
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         return decryptedLinks;
     }
 

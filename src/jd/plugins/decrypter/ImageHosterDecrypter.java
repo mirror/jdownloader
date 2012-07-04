@@ -134,7 +134,7 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink != null) {
                 String ext = finallink.substring(finallink.lastIndexOf("."));
                 if (ext == null || ext.length() > 5) ext = ".jpg";
-                finalfilename = new Regex(parameter, "([a-z0-9]+)$") + ext;
+                finalfilename = new Regex(parameter, "([a-z0-9]+)$").getMatch(0) + ext;
             }
         } else if (parameter.contains("turboimagehost.com/")) {
             br.getPage(parameter);

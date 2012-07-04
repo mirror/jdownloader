@@ -40,22 +40,26 @@ public class RlGalleriesNt extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        String fpName = br.getRegex("border=\\'0\\' /></a></div>(.*?)</td></tr><tr>").getMatch(0);
-        String[] links = br.getRegex("\\'(/image\\.php\\?cn=\\d+\\&uid=[A-Za-z0-9]+\\&where=.*?)\\'").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
+        final String fpName = br.getRegex("border=\\'0\\' /></a></div>(.*?)</td></tr><tr>").getMatch(0);
+        final String[] links = br.getRegex("\\'(/image\\.php\\?cn=\\d+\\&uid=[A-Za-z0-9]+\\&where=.*?)\\'").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         final String host = new Regex(parameter, "(http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net)").getMatch(0);
         for (String aLink : links) {
             br.getPage(host + aLink);
             String finallink = br.getRedirectLocation();
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             // new Random().nextInt(10)
-            DownloadLink lol = createDownloadlink(finallink);
+            final DownloadLink lol = createDownloadlink(finallink);
             // Give temp name so we have no same filenames
             lol.setName(Integer.toString(new Random().nextInt(1000000000)));
             decryptedLinks.add(lol);
             logger.info(finallink);
-            progress.increase(1);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
