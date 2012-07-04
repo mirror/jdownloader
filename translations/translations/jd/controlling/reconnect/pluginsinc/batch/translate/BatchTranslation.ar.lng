@@ -1,3 +1,4 @@
 interaction_batchreconnect_batch=Batch Script
 interaction_batchreconnect_executein=بدء من  (مجلد البرنامج)
 interaction_batchreconnect_terminal=المترجم
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=اعادة اتصال الباتش الخارجى
