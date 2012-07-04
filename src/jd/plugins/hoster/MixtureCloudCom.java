@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -39,6 +40,8 @@ public class MixtureCloudCom extends PluginForHost {
     // other: Multiple domains all redirect back to 'sub.mixturecloud.com/' uids
     // are transferable between each (sub)?domain & section. All links have
     // recaptcha with this one size fits all download method.
+    private static final String PREMIUMONLY         = "File access is limited to users with unlimited or free account<";
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users");
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -90,6 +93,7 @@ public class MixtureCloudCom extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PREMIUMONLY)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
         return AvailableStatus.TRUE;
     }
 
@@ -97,6 +101,7 @@ public class MixtureCloudCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML("You have already downloaded a file over")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

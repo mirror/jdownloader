@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://[\\w\\.]*?rutube\\.ru/(tracks/\\d+\\.html|[a-z0-9]{32})" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://(www\\.)?(rutube\\.ru/tracks/\\d+\\.html|(video\\.rutube\\.ru/|rutube\\.ru/video/)[a-z0-9]{32})" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class RuTubeRu extends PluginForHost {
 
     public RuTubeRu(final PluginWrapper wrapper) {

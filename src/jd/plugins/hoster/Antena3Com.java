@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3.com/[\\-/\\dA-Za-c]+_\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "antena3.com" }, urls = { "http://(www\\.)?antena3\\.com/[\\-/\\dA-Za-c]+_\\d+\\.html" }, flags = { 0 })
 public class Antena3Com extends PluginForHost {
 
     private static String baseLink = "http://desprogresiva.antena3.com/";
@@ -47,7 +47,8 @@ public class Antena3Com extends PluginForHost {
         // link online?
         this.setBrowserExclusive();
         String html = br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<h1>¡Uy! No encontramos la página que buscas.</h1>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Also throws exception if a link doesn't lead to a video
+        if (br.containsHTML("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>") || !br.containsHTML("\"http://(www\\.)?antena3\\.com/static/swf/A3Player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         // set file and package name
         String name = new Regex(html, "<title>(.*?)</title>").getMatch(0);

@@ -90,6 +90,20 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.veoh.com/watch/v" + externID));
                 return decryptedLinks;
             }
+            externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
+            if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            if (externID != null) {
+                DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+            if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            if (externID != null) {
+                DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -164,26 +178,27 @@ public class FlStbCm extends PluginForDecrypt {
             }
             for (String data : temp)
                 decryptedLinks.add(createDownloadlink(data));
-            if (alternativeLinks != null && alternativeLinks.length != 0) {
-                Browser br2 = br.cloneBrowser();
-                progress.setRange(alternativeLinks.length);
-                for (String alternativeLinkInfo[] : alternativeLinks) {
-                    br2.getPage("http://149.13.65.144:8889/get/" + alternativeLinkInfo[0] + "/" + alternativeLinkInfo[1] + "?callback=jsonp" + System.currentTimeMillis());
-                    String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
-                    if (alts != null && alts.length != 0) {
-                        Browser br3 = br.cloneBrowser();
-                        for (String link : alts) {
-                            br3.getPage("http://www.filestube.com/" + link + "/go.html");
-                            String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
-                            if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
-                            if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+            // Disabled because server returns 503 error for alternative links,
+            // maybe this is completely broken/not available anymore
+            final boolean enableAlternatives = false;
+            if (enableAlternatives) {
+                if (alternativeLinks != null && alternativeLinks.length != 0) {
+                    Browser br2 = br.cloneBrowser();
+                    for (String alternativeLinkInfo[] : alternativeLinks) {
+                        br2.getPage("http://149.13.65.144:8889/get/" + alternativeLinkInfo[0] + "/" + alternativeLinkInfo[1] + "?callback=jsonp" + System.currentTimeMillis());
+                        String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
+                        if (alts != null && alts.length != 0) {
+                            Browser br3 = br.cloneBrowser();
+                            for (String link : alts) {
+                                br3.getPage("http://www.filestube.com/" + link + "/go.html");
+                                String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
+                                if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+                                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                            }
                         }
-                        // 30 links = increase it by one
-                        progress.increase(1);
                     }
                 }
             }
-
             if (fpName != null) {
                 fp.setName(fpName.trim());
                 fp.addLinks(decryptedLinks);

@@ -35,11 +35,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class DivxDenCom extends PluginForHost {
 
     private String              brbefore      = "";
-
     private static final String COOKIE_HOST   = "http://vidxden.com";
-
     public boolean              nopremium     = false;
-
     private static final String INMAINTENANCE = ">This server is in maintenance mode, please try again later.<";
 
     public DivxDenCom(PluginWrapper wrapper) {

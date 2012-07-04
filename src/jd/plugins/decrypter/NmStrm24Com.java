@@ -56,7 +56,11 @@ public class NmStrm24Com extends PluginForDecrypt {
         } else {
             String fpName = br.getRegex("\\'pageName\\': \\'([^<>\"\\']+)\\'").getMatch(0);
             if (fpName != null) fpName = br.getRegex("class=\\'post\\-title entry\\-title\\'>[\t\n\r ]+<a href=\\'http://[^<>\"\\']+\\'>([^<>\"\\']+)</a>").getMatch(0);
-            String[] fragments = br.getRegex("<div id=\"fragment\\-\\d+\"(.*?)<br />").getColumn(0);
+            final String[] fragments = br.getRegex("<div id=\"fragment\\-\\d+\"(.*?)<br />").getColumn(0);
+            if ((fragments == null || fragments.length == 0) && !br.containsHTML(">Mirror")) {
+                logger.warning("Link doesn't contain any downloadable links: " + parameter);
+                return decryptedLinks;
+            }
             if (fragments == null || fragments.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -86,6 +90,7 @@ public class NmStrm24Com extends PluginForDecrypt {
             return createDownloadlink("directhttp://" + finallink.replace("\\", ""));
         }
         externID = new Regex(fragment, "/pl/mod\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
+        if (externID == null) externID = new Regex(fragment, "modovideo\\.com/frame\\.php\\?v=([a-z0-9]+)\\&").getMatch(0);
         if (externID != null) { return createDownloadlink("http://www.modovideo.com/video?v=" + externID); }
         externID = new Regex(fragment, "/pl/y\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
         if (externID != null) { return createDownloadlink("http://yourupload.com/file/" + externID); }
@@ -101,11 +106,16 @@ public class NmStrm24Com extends PluginForDecrypt {
                 if (finallink != null) return createDownloadlink(finallink);
             }
         }
+        externID = new Regex(fragment, "player\\.mixturecloud\\.com/video/([A-Za-z0-9]+)\\.swf\"").getMatch(0);
+        if (externID != null) { return createDownloadlink("http://www.mixturecloud.com/media/" + externID); }
+        // For videozer.com, rutube.ru and probably more
+        externID = new Regex(fragment, "name=\"movie\" value=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) { return createDownloadlink(externID); }
         // Many directlinks or embed links are in here
         externID = new Regex(fragment, "flashvars=\\'file=(http://[^<>\"]*?)\\&").getMatch(0);
         if (externID != null) { return createDownloadlink(externID); }
         // Most links are in the iframes
-        externID = new Regex(fragment, Pattern.compile("<iframe src=(\"|\\')(http://[^<>\"]*?)(\"|\\')", Pattern.CASE_INSENSITIVE)).getMatch(1);
+        externID = new Regex(fragment, Pattern.compile("<iframe(.*?)</iframe>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (externID != null) { return createDownloadlink(externID); }
         return null;
     }

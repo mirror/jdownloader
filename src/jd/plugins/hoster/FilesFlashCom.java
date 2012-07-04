@@ -37,12 +37,24 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FilesFlashCom extends PluginForHost {
 
     private static final String IPBLOCKED = "(>Your IP address is already downloading another link|Please wait for that download to finish\\.|Free users may only download one file at a time\\.)";
-
     private static final String MAINPAGE  = "http://filesflash.com/";
 
     public FilesFlashCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filesflash.com/premium.php");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<|>That file has been banned from this website)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
+        String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -134,19 +146,6 @@ public class FilesFlashCom extends PluginForHost {
         this.setBrowserExclusive();
         br.postPage("http://filesflash.com/login.php", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&submit=Login");
         if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "password") == null || br.containsHTML(">Invalid email address or password")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>That is not a valid url\\.<|>That file is not available for download\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(">Filename: (.*?)<br").getMatch(0);
-        String filesize = br.getRegex("Size: (.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

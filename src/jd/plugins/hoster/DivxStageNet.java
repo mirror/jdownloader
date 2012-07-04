@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -26,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.net" }, urls = { "http://[\\w\\.]*?divxstage\\.(net|eu)/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxstage.net" }, urls = { "http://(www\\.)?(divxstage\\.(net|eu)/video/|embed\\.divxstage\\.(net|eu)/embed\\.php\\?v=)[a-z0-9]+" }, flags = { 0 })
 public class DivxStageNet extends PluginForHost {
 
     public String DLLINK = null;
@@ -37,7 +38,7 @@ public class DivxStageNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("divxstage.eu", "divxstage.net"));
+        link.setUrlDownload("http://divxstage.eu/video/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
