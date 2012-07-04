@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z\\.-]*?\\.)?(rusfolder\\.(net|ru)|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z\\.-]*?\\.)?(rusfolder\\.(net|ru|com)|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String              ua      = RandomUserAgent.generate();

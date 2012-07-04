@@ -100,7 +100,7 @@ public class ChoMikujPl extends PluginForHost {
             br.getPage("http://chomikuj.pl/Video.ashx?id=" + new Regex(theLink.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             DLLINK = br.getRedirectLocation();
             theLink.setFinalFileName(theLink.getName());
-        } else if (theLink.getName().endsWith(".mp3")) {
+        } else if (theLink.getName().endsWith(".mp3") || theLink.getName().endsWith(".MP3")) {
             br.getPage("http://chomikuj.pl/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
             DLLINK = br.getRedirectLocation();
             theLink.setFinalFileName(theLink.getName());

@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -58,7 +59,12 @@ public class SevenTwoDjCom extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("var thunder_url= \"\"\\+durl\\+\"([^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink);
+        br.setCookie("http://72dj.com", "uuauth", "ok");
+        Browser brc = br.cloneBrowser();
+        brc.getPage("http://data.72dj.com/getuuauthcode/");
+        String code = brc.getRegex("UUAuthCode=\"(.*?)\"").getMatch(0);
+        if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + "?" + code;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

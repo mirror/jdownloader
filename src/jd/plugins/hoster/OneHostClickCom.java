@@ -173,7 +173,7 @@ public class OneHostClickCom extends PluginForHost {
                         downloadLink.setProperty("freelink2", Property.NULL);
                     dllink = null;
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 dllink = null;
                 if (getLinkWithoutLogin)
                     downloadLink.setProperty("freelink", Property.NULL);

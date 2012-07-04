@@ -182,8 +182,7 @@ public class FileVelocityCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -354,6 +353,14 @@ public class FileVelocityCom extends PluginForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
+        if (correctedBR.contains("You must be logged in to download this file")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
+        }
         /** Waittime reconnect handling */
         if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
             String tmphrs = new Regex(correctedBR, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -457,8 +464,7 @@ public class FileVelocityCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
