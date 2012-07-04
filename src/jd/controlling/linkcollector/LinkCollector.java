@@ -56,6 +56,7 @@ import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.controlling.filter.LinkFilterController;
+import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.crawledlink.CrawledLinkFactory;
@@ -76,29 +77,29 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         return INSTANCE;
     }
 
-    private transient LinkCollectorEventSender      eventsender      = new LinkCollectorEventSender();
-    private static LinkCollector                    INSTANCE         = new LinkCollector();
+    private transient LinkCollectorEventSender      eventsender          = new LinkCollectorEventSender();
+    private static LinkCollector                    INSTANCE             = new LinkCollector();
 
-    private LinkChecker<CrawledLink>                linkChecker      = null;
+    private LinkChecker<CrawledLink>                linkChecker          = null;
     /**
      * NOTE: only access these fields inside the IOEQ
      */
-    private HashSet<String>                         dupeCheckMap     = new HashSet<String>();
-    private HashMap<String, CrawledPackage>         packageMap       = new HashMap<String, CrawledPackage>();
+    private HashSet<String>                         dupeCheckMap         = new HashSet<String>();
+    private HashMap<String, CrawledPackage>         packageMap           = new HashMap<String, CrawledPackage>();
 
     /* sync on filteredStuff itself when accessing it */
-    private ArrayList<CrawledLink>                  filteredStuff    = new ArrayList<CrawledLink>();
+    private ArrayList<CrawledLink>                  filteredStuff        = new ArrayList<CrawledLink>();
 
-    private LinkCrawlerFilter                       crawlerFilter    = null;
+    private LinkCrawlerFilter                       crawlerFilter        = null;
 
     private ExtractionExtension                     archiver;
-    private DelayedRunnable                         asyncSaving      = null;
+    private DelayedRunnable                         asyncSaving          = null;
 
-    private boolean                                 allowSave        = false;
+    private boolean                                 allowSave            = false;
 
-    private boolean                                 allowLoad        = true;
+    private boolean                                 allowLoad            = true;
 
-    private PackagizerInterface                     packagizer       = null;
+    private PackagizerInterface                     packagizer           = null;
 
     protected OfflineCrawledPackage                 offlinePackage;
 
@@ -106,13 +107,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
 
     protected PermanentOfflinePackage               permanentofflinePackage;
 
-    private HashMap<String, ArrayList<CrawledLink>> offlineMap       = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> offlineMap           = new HashMap<String, ArrayList<CrawledLink>>();
 
-    private HashMap<String, ArrayList<CrawledLink>> variousMap       = new HashMap<String, ArrayList<CrawledLink>>();
-    private HashMap<String, ArrayList<CrawledLink>> hosterMap        = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> variousMap           = new HashMap<String, ArrayList<CrawledLink>>();
+    private HashMap<String, ArrayList<CrawledLink>> hosterMap            = new HashMap<String, ArrayList<CrawledLink>>();
     private HashMap<Object, Object>                 autoRenameCache;
     private DelayedRunnable                         asyncCacheCleanup;
-    private final AtomicInteger                     shutdownRequests = new AtomicInteger(0);
+    private final AtomicInteger                     shutdownRequests     = new AtomicInteger(0);
+    private boolean                                 restoreButtonEnabled = false;
 
     private LinkCollector() {
         autoRenameCache = new HashMap<Object, Object>();
@@ -255,7 +257,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             public void onLinkCollectorDupeAdded(LinkCollectorEvent event, CrawledLink parameter) {
             }
         });
-
     }
 
     public LinkCollectorEventSender getEventsender() {
@@ -701,11 +702,14 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     private void addFilteredStuff(final CrawledLink filtered, final boolean checkDupe) {
+        filtered.setCollectingInfo(null);
+        if (restoreButtonEnabled == false) {
+            /** RestoreButton is disabled, no need to save the filtered links */
+            return;
+        }
         IOEQ.add(new Runnable() {
-
             @Override
             public void run() {
-                filtered.setCollectingInfo(null);
                 if (checkDupe && !dupeCheckMap.add(filtered.getLinkID())) {
                     eventsender.fireEvent(new LinkCollectorEvent(LinkCollector.this, LinkCollectorEvent.TYPE.DUPE_LINK, filtered, QueuePriority.NORM));
                     return;
@@ -888,9 +892,11 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         synchronized (this) {
             if (linkChecker != null) return;
             setCrawlerFilter(LinkFilterController.getInstance());
+            restoreButtonEnabled = JsonConfig.create(LinkFilterSettings.class).isRestoreButtonEnabled();
             setPackagizer(PackagizerController.getInstance());
-            linkChecker = new LinkChecker<CrawledLink>();
-            linkChecker.setLinkCheckHandler(this);
+            LinkChecker<CrawledLink> llinkChecker = new LinkChecker<CrawledLink>();
+            llinkChecker.setLinkCheckHandler(this);
+            linkChecker = llinkChecker;
         }
     }
 

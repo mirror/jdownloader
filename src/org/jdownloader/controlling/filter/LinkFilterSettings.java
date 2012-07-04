@@ -10,6 +10,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
+import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
 import org.jdownloader.translate._JDT;
 
@@ -85,5 +86,13 @@ public interface LinkFilterSettings extends ConfigInterface {
     boolean isExceptionAsQuickfilterEnabled();
 
     void setExceptionAsQuickfilterEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart
+    @org.appwork.storage.config.annotations.Description("show a restore button for filtered links")
+    boolean isRestoreButtonEnabled();
+
+    void setRestoreButtonEnabled(boolean b);
 
 }
