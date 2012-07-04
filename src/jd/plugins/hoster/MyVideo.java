@@ -96,8 +96,13 @@ public class MyVideo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
+        br.setCustomCharset("utf8");
         br.getPage(downloadLink.getDownloadURL());
+        String redirect = br.getRedirectLocation();
+        if (redirect != null && "http://www.myvideo.de/".equals(redirect.trim())) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (redirect != null) br.getPage(redirect);
+        br.setFollowRedirects(true);
 
         if (br.containsHTML("Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet")) {
             final String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
@@ -108,7 +113,12 @@ public class MyVideo extends PluginForHost {
             }
         }
 
-        String filename = Encoding.htmlDecode(br.getRegex("name=\'title\' content=\'(.*?)-? (Film|Musik|TV Serie)").getMatch(0));
+        String filename = br.getRegex("name=\'subject_title\' value=\'([^\'<]+)").getMatch(0);
+        if (filename == null) filename = br.getRegex("name=\'title\' content=\'(.*?)(Video)? -? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
+        if (filename == null) {
+            filename = br.getURL();
+            if (filename != null) filename = filename.substring(filename.lastIndexOf("/") + 1);
+        }
         // get encUrl
         final HashMap<String, String> p = new HashMap<String, String>();
         final String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
@@ -120,17 +130,17 @@ public class MyVideo extends PluginForHost {
             p.put(tmp[0], tmp[1]);
         }
         if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String bla = Encoding.htmlDecode(p.get("_encxml")) + "?";
+        String next = Encoding.htmlDecode(p.get("_encxml")) + "?";
         p.remove("_encxml");
-        for (final Entry<String, String> next : p.entrySet()) {
-            if (!bla.endsWith("?")) {
-                bla = bla + "&";
+        for (final Entry<String, String> valuePair : p.entrySet()) {
+            if (!next.endsWith("?")) {
+                next = next + "&";
             }
-            bla = bla + next.getKey() + "=" + next.getValue();
+            next = next + valuePair.getKey() + "=" + valuePair.getValue();
         }
         SWFURL = br.getRegex("SWFObject\\(\'(.*?)\',").getMatch(0);
         SWFURL = SWFURL == null ? "http://is2.myvideo.de/de/player/mingR10i/ming.swf" : SWFURL;
-        br.getPage(bla);
+        br.getPage(next);
         final String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String result;
@@ -155,11 +165,9 @@ public class MyVideo extends PluginForHost {
             }
         }
         ext = ext == null ? ".mp4" : ext;
-        if (filename == null) {
-            filename = new Regex(result, "description=\'(.*?):").getMatch(0);
-        }
+        if (filename == null) filename = "unknown_myvideo_title__ID(" + p.get("ID") + ")_" + System.currentTimeMillis();
         filename = filename.trim() + ext;
-        downloadLink.setFinalFileName(filename);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }
 
