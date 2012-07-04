@@ -93,6 +93,8 @@ abstract public class DownloadInterface {
 
         private boolean                         clonedconnection     = false;
 
+        private long                            requestedEndByte;
+
         /**
          * Die Connection wird entsprechend der start und endbytes neu aufgebaut.
          * 
@@ -104,6 +106,7 @@ abstract public class DownloadInterface {
             super("Downloadchunk " + startByte + " - " + endByte);
             this.startByte = startByte;
             this.endByte = endByte;
+            this.requestedEndByte = endByte;
             this.connection = connection;
             this.clonedconnection = false;
             setPriority(Thread.MIN_PRIORITY);
@@ -571,6 +574,15 @@ abstract public class DownloadInterface {
                 if (endByte <= 0) {
                     /* endByte not yet set!, use Content-Length */
                     endByte = connection.getLongContentLength() - 1;
+                }
+                long cRequestedEndByte = requestedEndByte + 1;
+                if (cRequestedEndByte > 0 && endByte > cRequestedEndByte) {
+                    if (this.getID() == 0) {
+                        logger.info("First Connection->Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
+                    } else {
+                        logger.info(this.getID() + ". Connection->Content-Range(" + endByte + ") is larger than requested (" + cRequestedEndByte + ")! Truncate it");
+                    }
+                    endByte = cRequestedEndByte;
                 }
                 addChunksDownloading(+1);
                 setChunkStartet();
