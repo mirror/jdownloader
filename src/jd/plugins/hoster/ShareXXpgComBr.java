@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?(sharex\\.xpg\\.com\\.br/files/[0-9]+|beta\\.sharex\\.xpg\\.com\\.br/[a-z0-9]+/[^<>\"/]*?\\.html)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharex.xpg.com.br" }, urls = { "http://(www\\.)?sharex\\.xpg\\.com\\.br/files/[0-9]+" }, flags = { 0 })
 public class ShareXXpgComBr extends PluginForHost {
 
     public ShareXXpgComBr(PluginWrapper wrapper) {
@@ -39,31 +38,20 @@ public class ShareXXpgComBr extends PluginForHost {
         return "http://sharex.xpg.com.br/contact.php";
     }
 
-    private static final String BETALINK = "http://(www\\.)?beta\\.sharex\\.xpg\\.com\\.br/[a-z0-9]+/[^<>\"/]*?\\.html";
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (downloadLink.getDownloadURL().matches(BETALINK)) {
-            final String filename = br.getRegex("<div class=\"downinfo\">([^<>\"]*?)</div>").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
-        } else {
-            if (br.containsHTML("Este arquivo foi apagado e esta URL foi desativada")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            String filename = br.getRegex("alt=\"download\".*?></a>.*?<br><b>(.*?)</b> ").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("/download/.*?/(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("/files/.*?/(.*?)\"").getMatch(0);
-                }
-            }
-            String filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(filename.trim());
-            if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.getURL().contains("/?NOT_FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<div class=\"downinfo\">([^<>\"]*?)<").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("/download/.*?/(.*?)\"").getMatch(0);
         }
+        String filesize = br.getRegex(">([0-9]+ bytes)<").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -71,14 +59,9 @@ public class ShareXXpgComBr extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = null;
-        if (link.getDownloadURL().matches(BETALINK)) {
-            dllink = link.getDownloadURL().replace("beta.sharex.xpg.com.br/", "beta.sharex.xpg.com.br/download/").replace(".html", "");
-        } else {
-            dllink = br.getRegex("<br><a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<br><a href=\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String dllink = br.getRegex("<div class=\"downbut\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

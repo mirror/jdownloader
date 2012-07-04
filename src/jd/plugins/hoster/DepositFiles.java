@@ -62,7 +62,7 @@ public class DepositFiles extends PluginForHost {
 
     public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern       FILE_INFO_SIZE           = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
+    private final Pattern       FILE_INFO_SIZE           = Pattern.compile(">Datei Grösse: <b>([^<>\"]*?)</b>");
 
     private static final Object PREMLOCK                 = new Object();
     private static final Object LOCK                     = new Object();
@@ -295,7 +295,8 @@ public class DepositFiles extends PluginForHost {
             dllink = getDllink();
             long timeBefore = System.currentTimeMillis();
             /*
-             * seems somethings wrong with waittime parsing so we do wait each time to be sure
+             * seems somethings wrong with waittime parsing so we do wait each
+             * time to be sure
              */
             if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Form dlForm = new Form();
@@ -588,7 +589,7 @@ public class DepositFiles extends PluginForHost {
         String fixedName = new Regex(fileName, "(.+)\\?").getMatch(0);
         if (fixedName != null) fileName = fixedName;
         downloadLink.setName(fileName);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSizeString));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileSizeString)));
         return AvailableStatus.TRUE;
     }
 
