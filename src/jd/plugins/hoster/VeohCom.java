@@ -90,6 +90,18 @@ public class VeohCom extends PluginForHost {
         return cipher.doFinal(plain);
     }
 
+    private byte[] BouncyCastleAESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
+        // Prepare the cipher (AES, CBC, no padding)
+        final org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.modes.CBCBlockCipher(new org.bouncycastle.crypto.engines.AESEngine()));
+        cipher.reset();
+        cipher.init(false, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(key), iv));
+        // Perform the decryption
+        final byte[] decrypted = new byte[cipher.getOutputSize(plain.length)];
+        int decLength = cipher.processBytes(plain, 0, plain.length, decrypted, 0);
+        cipher.doFinal(decrypted, decLength);
+        return decrypted;
+    }
+
     public void closeConnections() {
         CONNECTIONCLOSE = true;
         try {
@@ -110,7 +122,13 @@ public class VeohCom extends PluginForHost {
         baseUrl = baseUrl.replaceAll("\\$1", T[1]);
         baseUrl = baseUrl.replaceAll("\\$F", fHash);
         final byte[] key = JDHexUtils.getByteArray(hexTime + hexvidID + fHash.substring(0, 16) + "00000000" + hexSize + fHash.substring(24));
-        final String result = JDHexUtils.getHexString(AESdecrypt(cipher, key, IV)).toLowerCase();
+        String result = null;
+        try {
+            result = JDHexUtils.getHexString(BouncyCastleAESdecrypt(cipher, key, IV)).toLowerCase();
+        } catch (Throwable e) {
+            /* Fallback for stable version */
+            result = JDHexUtils.getHexString(AESdecrypt(cipher, key, IV)).toLowerCase();
+        }
         if (result == null || result.length() < 64) { return null; }
         baseUrl = baseUrl.replaceAll("\\$P", result.substring(0, 40));
         baseUrl = baseUrl.replaceAll("\\$3", T[3]);
@@ -241,8 +259,7 @@ public class VeohCom extends PluginForHost {
                     try {
                         INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /*
-                         * TODO: add this inputstream to this downloads
-                         * ManagedThrottledConnectionManager
+                         * TODO: add this inputstream to this downloads ManagedThrottledConnectionManager
                          */
                     } catch (final Throwable e) {
                         /* 0.95xx comp */
