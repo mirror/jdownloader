@@ -382,15 +382,15 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         ret += "<tr><td class=a>Default:</td><td>" + Encoding.cdataEncode(value.getDefault()) + "</td></tr>";
         ret += "<tr><td class=a>Translation:</td><td>" + Encoding.cdataEncode(value.getTranslation()) + "</td></tr>";
         if (value.isMissing()) {
-            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Not translated yet</font></td></tr>";
+            ret += "<tr><td class=a><span style='color:#ff0000' >Error:</span></td><td class=a><span style='color:#ff0000' >Not translated yet</span></td></tr>";
 
         }
         if (value.isDefault()) {
-            ret += "<tr><td class=a><font color='#339900' >Warning:</font></td><td class=a><font color='#339900' >The translation equals the english default language.</font></td></tr>";
+            ret += "<tr><td class=a><font color='#339900' >Warning:</span></td><td class=a><font color='#339900' >The translation equals the english default language.</span></td></tr>";
         }
 
         if (value.isParameterInvalid()) {
-            ret += "<tr><td class=a><font color='#ff0000' >Error:</font></td><td class=a><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></td></tr>";
+            ret += "<tr><td class=a><span style='color:#ff0000' >Error:</span></td><td class=a><span style='color:#ff0000' >Parameter Wildcards (%s*) do not match.</span></td></tr>";
         }
 
         Type[] parameters = value.getParameters();
@@ -408,6 +408,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             ret += "</tr>";
         }
 
+        System.out.println(ret);
         return ret + "</table></html>";
     }
 
