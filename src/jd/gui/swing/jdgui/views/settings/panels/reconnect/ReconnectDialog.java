@@ -13,6 +13,7 @@ import javax.swing.Timer;
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
 import jd.controlling.reconnect.ReconnectPluginController;
+import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.ipcheck.IPConnectionState;
 import jd.controlling.reconnect.ipcheck.IPController;
 import jd.controlling.reconnect.ipcheck.event.IPControllListener;
@@ -23,7 +24,7 @@ import org.appwork.swing.components.circlebar.CircledProgressBar;
 import org.appwork.swing.components.circlebar.ImagePainter;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -32,6 +33,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class ReconnectDialog extends AbstractDialog<Object> implements IPControllListener {
 
@@ -110,32 +112,38 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                         old.setText(IPController.getInstance().getIpState().toString());
                     }
                 };
+                LogSource logger = LogController.CL();
                 try {
+                    logger.setAllowTimeoutFlush(false);
                     ReconnectInvoker plg = ReconnectPluginController.getInstance().getActivePlugin().getReconnectInvoker();
                     if (plg == null) throw new ReconnectException(_GUI._.ReconnectDialog_run_failed_not_setup_());
-                    plg.validate();
+                    plg.setLogger(logger);
+                    ReconnectResult result = plg.validate();
+                    if (result.isSuccess()) {
+                        logger.clear();
+                    }
                     progress.setIndeterminate(false);
                     if (IPController.getInstance().isInvalidated()) {
-
                         ((ImagePainter) progress.getNonvalueClipPainter()).setBackground(Color.GRAY);
                         ((ImagePainter) progress.getNonvalueClipPainter()).setForeground(Color.RED);
                         progress.setValue(0);
                     } else {
                         progress.setValue(100);
                     }
-
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    dispose();
+                    logger.log(e);
                 } catch (ReconnectException e) {
-                    Log.exception(e);
+                    logger.log(e);
                     if (!StringUtils.isEmpty(e.getMessage())) {
                         Dialog.getInstance().showErrorDialog(e.getMessage());
                     } else {
                         Dialog.getInstance().showErrorDialog(_GUI._.ReconnectDialog_layoutDialogContent_error());
                     }
+                } catch (Throwable e) {
+                    logger.log(e);
+                } finally {
+                    logger.close();
                     dispose();
-
                 }
 
             }

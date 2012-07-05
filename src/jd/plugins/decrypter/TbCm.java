@@ -115,7 +115,7 @@ public class TbCm extends PluginForDecrypt {
     private static final String                 TEMP_EXT            = ".tmp$";
 
     ArrayList<String>                           done                = new ArrayList<String>();
-    private static boolean                      pluginloaded        = false;
+    private boolean                             pluginloaded        = false;
     private boolean                             verifyAge           = false;
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
@@ -577,7 +577,7 @@ public class TbCm extends PluginForDecrypt {
         return links;
     }
 
-    private static synchronized String unescape(final String s) {
+    private synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
         if (pluginloaded == false) {
             final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");

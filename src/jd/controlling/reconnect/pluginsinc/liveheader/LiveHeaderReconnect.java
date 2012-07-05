@@ -401,13 +401,11 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     @Override
     public ReconnectInvoker getReconnectInvoker() {
         String script;
-
         script = settings.getScript();
         if (script == null) return null;
         final String user = settings.getUserName();
         final String pass = settings.getPassword();
         final String ip = settings.getRouterIP();
-
         return new LiveHeaderInvoker(this, script, user, pass, ip, settings.getRouterData().getRouterName());
 
     }

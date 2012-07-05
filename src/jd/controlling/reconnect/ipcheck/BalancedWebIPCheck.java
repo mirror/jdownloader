@@ -51,6 +51,8 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         this.pattern = Pattern.compile("(\\d+\\.\\d+\\.\\d+\\.\\d+)");
         Collections.shuffle(this.servicesInUse);
         this.br = new Browser();
+        this.br.setDebug(true);
+        this.br.setVerbose(true);
         if (!useGlobalProxy) this.br.setProxy(HTTPProxy.NONE);
         this.br.setConnectTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckConnectTimeout());
         this.br.setReadTimeout(JsonConfig.create(ReconnectConfig.class).getIPCheckReadTimeout());
@@ -86,10 +88,11 @@ public class BalancedWebIPCheck implements IPCheckProvider {
                     }
                     logger.log(e2);
                 } finally {
+                    br.setLogger(null);
                     logger.close();
                 }
             }
-
+            LogController.CL().severe("All balanced Services failed");
             throw new OfflineException("All balanced Services failed");
 
         }

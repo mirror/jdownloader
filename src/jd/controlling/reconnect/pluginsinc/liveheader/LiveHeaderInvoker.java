@@ -132,9 +132,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         throw new ReconnectException("No LiveHeader Script found");
 
         }
-        if (script.toLowerCase().contains("%%%routerip%%%") && !IP.isValidRouterIP(ip)) { throw new ReconnectException(ip + " is no valid routerIP");
-
-        }
+        if (script.toLowerCase().contains("%%%routerip%%%") && !IP.isValidRouterIP(ip)) throw new ReconnectException(ip + " is no valid routerIP");
 
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
@@ -161,9 +159,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         br.setConnectTimeout(10000);
         br.setProxy(HTTPProxy.NONE);
         br.setLogger(logger);
-        if (user != null && pass != null) {
-            br.setAuth(ip, user, pass);
-        }
+        /* we have to handle 401 special */
+        br.setAllowedResponseCodes(new int[] { 401 });
         try {
             xmlScript = JDUtilities.parseXmlString(script, false);
             if (xmlScript == null) {
@@ -289,7 +286,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                         }
                         Browser retbr = null;
                         try {
-                            retbr = this.doRequest(feedback, toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
+                            retbr = this.doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, israw);
                         } catch (final Exception e2) {
                             if (e2 instanceof ReconnectFailedException) { throw e2; }
                             retbr = null;
@@ -300,7 +297,18 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                             logger.severe("Request error!");
                             if (feedback != null && retbr != null) feedback.onRequesterror(retbr.getRequest());
                         } else {
-                            if (feedback != null) feedback.onRequestOK(retbr.getRequest());
+                            if (retbr.getHttpConnection().getResponseCode() == 401) {
+                                /* basic auth error */
+                                if (retbr.getHttpConnection().getRequestProperty("Authorization") != null) {
+                                    /* auth was send but is wrong */
+                                    if (feedback != null) feedback.onRequesterror(retbr.getRequest());
+                                } else {
+                                    /* no auth was send */
+                                    if (feedback != null) feedback.onRequestOK(retbr.getRequest());
+                                }
+                            } else {
+                                if (feedback != null) feedback.onRequestOK(retbr.getRequest());
+                            }
                             br = retbr;
                         }
 
@@ -425,7 +433,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         return source.split("\r\n|\r|\n");
     }
 
-    private Browser doRequest(LHProcessFeedback feedback, String request, final Browser br, final boolean ishttps, final boolean israw) throws ReconnectException {
+    private Browser doRequest(String request, final Browser br, final boolean ishttps, final boolean israw) throws ReconnectException {
         try {
             final String requestType;
             final String path;
@@ -535,7 +543,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 return br;
             } catch (final IOException e) {
                 logger.log(e);
-                if (feedback != null) feedback.onRequestExceptionOccured(e, request);
+                if (feedback != null) feedback.onRequestExceptionOccured(e, br.getRequest());
                 logger.severe("IO Error: " + e.getLocalizedMessage());
                 return null;
             }
@@ -584,11 +592,9 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
                 failedRequests = 0;
             }
 
-            public void onRequestExceptionOccured(IOException e, String request) throws ReconnectFailedException {
+            public void onRequestExceptionOccured(IOException e, Request request) throws ReconnectFailedException {
                 failedRequests++;
-
                 if (failedRequests > successRequests) throw new ReconnectFailedException("Request Failed");
-
             }
 
             public void onVariablesUpdated(HashMap<String, String> variables) throws ReconnectFailedException {
@@ -599,6 +605,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
             }
 
             public void onRequesterror(Request request) throws ReconnectFailedException {
+                failedRequests++;
+                if (failedRequests > successRequests) throw new ReconnectFailedException("Request Failed");
             }
 
             public void onNewStep(String nodeName, Node toDo) throws ReconnectFailedException {

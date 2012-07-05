@@ -46,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Hash;
@@ -90,16 +91,18 @@ public class VeohCom extends PluginForHost {
         return cipher.doFinal(plain);
     }
 
-    private byte[] BouncyCastleAESdecrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
-        // Prepare the cipher (AES, CBC, no padding)
-        final org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.modes.CBCBlockCipher(new org.bouncycastle.crypto.engines.AESEngine()));
-        cipher.reset();
-        cipher.init(false, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(key), iv));
-        // Perform the decryption
-        final byte[] decrypted = new byte[cipher.getOutputSize(plain.length)];
-        int decLength = cipher.processBytes(plain, 0, plain.length, decrypted, 0);
-        cipher.doFinal(decrypted, decLength);
-        return decrypted;
+    private class BouncyCastleAESdecrypt {
+        private byte[] decrypt(final byte[] plain, final byte[] key, final byte[] iv) throws Exception {
+            // Prepare the cipher (AES, CBC, no padding)
+            final org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.modes.CBCBlockCipher(new org.bouncycastle.crypto.engines.AESEngine()));
+            cipher.reset();
+            cipher.init(false, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(key), iv));
+            // Perform the decryption
+            final byte[] decrypted = new byte[cipher.getOutputSize(plain.length)];
+            int decLength = cipher.processBytes(plain, 0, plain.length, decrypted, 0);
+            cipher.doFinal(decrypted, decLength);
+            return decrypted;
+        }
     }
 
     public void closeConnections() {
@@ -124,7 +127,7 @@ public class VeohCom extends PluginForHost {
         final byte[] key = JDHexUtils.getByteArray(hexTime + hexvidID + fHash.substring(0, 16) + "00000000" + hexSize + fHash.substring(24));
         String result = null;
         try {
-            result = JDHexUtils.getHexString(BouncyCastleAESdecrypt(cipher, key, IV)).toLowerCase();
+            result = JDHexUtils.getHexString(new BouncyCastleAESdecrypt().decrypt(cipher, key, IV)).toLowerCase();
         } catch (Throwable e) {
             /* Fallback for stable version */
             result = JDHexUtils.getHexString(AESdecrypt(cipher, key, IV)).toLowerCase();
@@ -226,6 +229,11 @@ public class VeohCom extends PluginForHost {
             /* once init the buffer is enough */
             BUFFER = new byte[256 * 1024];
             try {
+                dl = new RAFDownload(this, downloadLink, null);
+                try {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
+                } catch (final Throwable e) {
+                }
                 downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 /* we have to create folder structure */
                 tmpFile.getParentFile().mkdirs();
@@ -257,10 +265,12 @@ public class VeohCom extends PluginForHost {
                     }
                     long partSize = DL.getLongContentLength();
                     try {
-                        INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
-                        /*
-                         * TODO: add this inputstream to this downloads ManagedThrottledConnectionManager
-                         */
+                        if (INPUTSTREAM != null && INPUTSTREAM instanceof org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) {
+                            ((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM).setInputStream(DL.getInputStream());
+                        } else {
+                            INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
+                            dl.getManagedConnetionHandler().addThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
+                        }
                     } catch (final Throwable e) {
                         /* 0.95xx comp */
                     }
@@ -302,6 +312,10 @@ public class VeohCom extends PluginForHost {
                             BYTESLOADED += miniblock;
                             partEndByte += miniblock;
                             downloadLink.setDownloadCurrent(BYTESLOADED);
+                            try {
+                                dl.setTotalLinkBytesLoaded(BYTESLOADED);
+                            } catch (final Throwable e) {
+                            }
                             if (partEndByte > 0) {
                                 BYTES2DO = partEndByte + 1;
                             }
@@ -316,15 +330,17 @@ public class VeohCom extends PluginForHost {
                             resumable = dl.isResumable();
                         } catch (final Throwable e) {
                         }
-                        if (isExternalyAborted() && resumable) {
-                            downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
-                            downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                        if (isExternalyAborted()) {
+                            if (resumable) {
+                                downloadLink.setProperty("bytes_loaded", Long.valueOf(BYTESLOADED));
+                                downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                            }
                             break;
                         }
                         baseUrl = templateUrl;
                     } finally {
                         try {
-                            INPUTSTREAM.close();
+                            DL.disconnect();
                         } catch (final Throwable e) {
                         }
                     }
@@ -346,6 +362,14 @@ public class VeohCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } finally {
                 try {
+                    dl.getManagedConnetionHandler().removeThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
+                } catch (final Throwable e) {
+                }
+                try {
+                    downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
+                } catch (final Throwable e) {
+                }
+                try {
                     DL.disconnect();
                 } catch (final Throwable e) {
                 }
@@ -353,7 +377,8 @@ public class VeohCom extends PluginForHost {
                     FILEOUT.close();
                 } catch (final Throwable e) {
                 }
-
+                downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+                downloadLink.setDownloadInstance(null);
                 // System.out.println("SOLL: " + downloadLink.getDownloadSize()
                 // +
                 // " - IST: " + BYTESLOADED);
@@ -370,8 +395,7 @@ public class VeohCom extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("File(s) not found: " + FAILCOUNTER);
                 }
             }
-            downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            downloadLink.setDownloadInstance(null);
+
         } else {
             requestFileInformation(downloadLink);
             /* decrase Browserrequests */
@@ -412,7 +436,13 @@ public class VeohCom extends PluginForHost {
     }
 
     private boolean isExternalyAborted() {
-        return Thread.currentThread().isInterrupted();
+        boolean ret = Thread.currentThread().isInterrupted();
+        if (ret) return true;
+        try {
+            ret = dl.externalDownloadStop();
+        } catch (final Throwable e) {
+        }
+        return ret;
     }
 
     private void prepareBrowser(final String userAgent) {

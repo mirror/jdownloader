@@ -9,7 +9,7 @@ import org.w3c.dom.Node;
 
 public interface LHProcessFeedback {
 
-    public void onRequestExceptionOccured(IOException e, String request) throws ReconnectFailedException;
+    public void onRequestExceptionOccured(IOException e, Request request) throws ReconnectFailedException;
 
     public void onVariablesUpdated(HashMap<String, String> variables) throws ReconnectFailedException;
 

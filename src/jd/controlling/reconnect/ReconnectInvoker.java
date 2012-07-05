@@ -31,9 +31,7 @@ public abstract class ReconnectInvoker {
     public abstract void run() throws ReconnectException, InterruptedException;
 
     public ReconnectResult validate() throws InterruptedException, ReconnectException {
-
         return validate(createReconnectResult());
-
     }
 
     protected ReconnectResult validate(ReconnectResult ret) throws InterruptedException, ReconnectException {
@@ -47,14 +45,11 @@ public abstract class ReconnectInvoker {
         }
         logger.info("IP BEFORE=" + IPController.getInstance().getIP());
 
-        BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(true);
-        IPController.getInstance().invalidate();
-
         try {
-
+            BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(true);
+            IPController.getInstance().invalidate();
             ret.setStartTime(System.currentTimeMillis());
             testRun();
-
             Thread.sleep(1 * 1000);
             IPController ipc = IPController.getInstance();
             if (ipc.validate()) {
@@ -67,10 +62,8 @@ public abstract class ReconnectInvoker {
             }
             logger.info("Script done. Wait for offline");
             do {
-
                 // wait until we are offline
                 Thread.sleep(1 * 1000);
-
                 if (!ipc.validate() && !ipc.getIpState().isOffline() && (System.currentTimeMillis() - ret.getStartTime()) > OFFLINE_TIMEOUT) {
                     // we are not offline after 30 seconds
                     logger.info("Disconnect failed. Still online after " + OFFLINE_TIMEOUT + " ms");
@@ -78,7 +71,6 @@ public abstract class ReconnectInvoker {
                 }
             } while (!ipc.getIpState().isOffline() && ipc.isInvalidated());
             ret.setOfflineTime(System.currentTimeMillis());
-
             logger.info("Offline after " + ret.getOfflineDuration() + " ms");
             if (ipc.isInvalidated()) {
                 logger.info("Wait for online status");
@@ -112,9 +104,7 @@ public abstract class ReconnectInvoker {
                 logger.info("Successful: REconnect after " + ret.getSuccessDuration() + " ms");
                 return ret;
             }
-
         } finally {
-
             logger.info("IP AFTER=" + IPController.getInstance().getIP());
             BalancedWebIPCheck.getInstance().setOnlyUseWorkingServices(false);
         }
