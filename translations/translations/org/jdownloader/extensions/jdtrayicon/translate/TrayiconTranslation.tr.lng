@@ -22,5 +22,5 @@ popup_exit=JDownloader'dan çık
 popup_pause=İndirmeleri duraklat
 popup_premiumtoggle=Premium'u etkinleştir
 popup_reconnect=Hemen Yeniden Bağlan
-popup_reconnecttoggle=Otomatik Yeniden Bağlanmayı etkinleştir
+popup_reconnecttoggle=Otomatik Tekrar Bağlanmayı etkinleştir
 popup_update=Güncellemeleri kontrol et
