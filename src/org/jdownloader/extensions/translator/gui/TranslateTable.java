@@ -108,9 +108,14 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
             }
         });
     }
+
     // @Override
     // protected void onDoubleClick(MouseEvent e, TranslateEntry obj) {
     // super.onDoubleClick(e, obj);
     // }
+
+    public void updaterFilter(SearchField searchField) {
+        ((TranslateTableModel) getExtTableModel()).updateFilter(searchField);
+    }
 
 }

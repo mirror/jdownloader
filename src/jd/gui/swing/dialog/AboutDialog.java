@@ -158,6 +158,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
+
         return contentpane;
     }
 

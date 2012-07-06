@@ -6,6 +6,8 @@ import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.swing.AbstractAction;
@@ -45,11 +47,14 @@ import org.jdownloader.images.NewTheme;
 public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
     private ExtTextColumn<TranslateEntry> editColum;
+    private List<Pattern>                 filter;
+    private TranslatorExtension           extension;
 
-    public TranslateTableModel() {
+    public TranslateTableModel(TranslatorExtension translatorExtension) {
         // this is is used to store table states(sort,column positions,
         // properties)
         super("TranslateTableModel");
+        this.extension = translatorExtension;
     }
 
     @Override
@@ -263,7 +268,7 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
 
             @Override
             public String getStringValue(TranslateEntry value) {
-                return value.getDirect();
+                return value.getDefault();
             }
         });
 
@@ -423,6 +428,40 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         } else {
             clear();
         }
+    }
+
+    public void _fireTableStructureChanged(ArrayList<TranslateEntry> newtableData, final boolean refreshSort) {
+
+        ArrayList<TranslateEntry> lst = new ArrayList<TranslateEntry>();
+        for (TranslateEntry e : newtableData) {
+            if (filter == null) {
+                lst.add(e);
+                continue;
+            }
+            for (Pattern p : filter) {
+                if (e.getDefault() != null && p.matcher(e.getDefault()).find()) {
+                    lst.add(e);
+                    break;
+                }
+
+                if (p.matcher(e.getKey()).find()) {
+                    lst.add(e);
+                    break;
+                }
+                if (p.matcher(e.getTranslation()).find()) {
+                    lst.add(e);
+                    break;
+                }
+            }
+        }
+        System.out.println(lst.size());
+        super._fireTableStructureChanged(lst, refreshSort);
+
+    }
+
+    public void updateFilter(SearchField searchField) {
+        this.filter = searchField.filterPatterns;
+        _fireTableStructureChanged(extension.getTranslationEntries(), true);
     }
 
 }

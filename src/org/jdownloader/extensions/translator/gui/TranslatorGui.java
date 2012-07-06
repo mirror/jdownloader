@@ -96,11 +96,12 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     private boolean             isWizard;
     private MigPanel            menuPanel2;
     private QuickEdit           qe;
+    private SearchField         search;
 
     public TranslatorGui(TranslatorExtension plg) {
         super(plg);
 
-        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill][grow,fill][]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[]2[]2[grow,fill][][grow,fill][]")) {
 
             @Override
             protected void onShow() {
@@ -124,9 +125,11 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
         panel.add(menuPanel);
         panel.add(menuPanel2);
         sp = new JScrollPane(table);
+        search = new SearchField(table);
         qe = new QuickEdit(table);
 
         panel.add(sp);
+        panel.add(search);
         if (getExtension().getSettings().isQuickEditBarVisible() && getExtension().getSettings().getQuickEditHeight() > 24) {
             panel.add(qe, "height " + getExtension().getSettings().getQuickEditHeight() + "!,hidemode 3");
         }
@@ -140,7 +143,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
     }
 
     protected void initTable() {
-        tableModel = new TranslateTableModel();
+        tableModel = new TranslateTableModel(getExtension());
         if (table != null) table.getSelectionModel().removeListSelectionListener(this);
         table = new TranslateTable(getExtension(), tableModel) {
 

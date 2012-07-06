@@ -65,6 +65,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.txtresource.TranslationFactory;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.update.inapp.WebupdateSettings;
 import org.appwork.update.updateclient.InstallLogList;
@@ -512,7 +513,7 @@ public class Launcher {
             }
         };
         lafInit.start();
-        Locale.setDefault(Locale.ENGLISH);
+        Locale.setDefault(TranslationFactory.getDesiredLocale());
         GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
