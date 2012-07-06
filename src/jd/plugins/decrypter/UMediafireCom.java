@@ -40,6 +40,12 @@ public class UMediafireCom extends PluginForDecrypt {
         br.getPage(parameter);
         final String iFrame = br.getRegex("\"(index\\.php\\?get=\\d+)\"").getMatch(0);
         if (iFrame == null) {
+            if (br.getRedirectLocation() != null) {
+                String link = br.getRedirectLocation();
+                br.getPage(link);
+                decryptedLinks.add(createDownloadlink(link));
+                return decryptedLinks;
+            }
             logger.info("Decrypter broken for link: " + parameter);
             return null;
         }

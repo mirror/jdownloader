@@ -109,6 +109,11 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
         return explain;
     }
 
+    @Override
+    public int getCountdownTime() {
+        return JsonConfig.create(GraphicalUserInterfaceSettings.class).getCaptchaDialogTimeout();
+    }
+
     public String getFilename() {
 
         switch (type) {

@@ -155,8 +155,8 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         br.setVerbose(true);
         /* set custom timeouts here because 10secs is a LONG time ;) */
         br.setCookiesExclusive(true);
-        br.setReadTimeout(10000);
-        br.setConnectTimeout(10000);
+        br.setReadTimeout(20000);
+        br.setConnectTimeout(20000);
         br.setProxy(HTTPProxy.NONE);
         br.setLogger(logger);
         /* we have to handle 401 special */

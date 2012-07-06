@@ -91,6 +91,11 @@ public class DepositFiles extends PluginForHost {
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
         }
+        if (br.containsHTML("(Anschlusslimit|Bitte versuchen Sie in)")) {
+            String wait = br.getRegex("versuchen Sie in.*?(\\d+) minu").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait) * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+        }
         /* county slots full */
         if (br.containsHTML("but all downloading slots for your country")) {
             // String wait =
@@ -152,7 +157,9 @@ public class DepositFiles extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-            final String expire = br.getRegex("noch den Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
+            String expire = br.getRegex("Gold-Zugriff: <b>(.*?)</b></div>").getMatch(0);
+            if (expire == null) expire = br.getRegex("Gold Zugriff bis: <b>(.*?)</b></div>").getMatch(0);
+            if (expire == null) expire = br.getRegex("Gold(-| )(Zugriff|Zugang)( bis)?: <b>(.*?)</b></div>").getMatch(3);
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
             if (expire == null) {
                 ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountbad", "Account expired or not valid."));
@@ -295,8 +302,7 @@ public class DepositFiles extends PluginForHost {
             dllink = getDllink();
             long timeBefore = System.currentTimeMillis();
             /*
-             * seems somethings wrong with waittime parsing so we do wait each
-             * time to be sure
+             * seems somethings wrong with waittime parsing so we do wait each time to be sure
              */
             if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Form dlForm = new Form();
@@ -439,7 +445,7 @@ public class DepositFiles extends PluginForHost {
 
     public boolean isFreeAccount(Account acc, boolean force) throws IOException {
         synchronized (LOCK) {
-            Object premium = acc.getProperty("premium", (Boolean) null);
+            Object premium = acc.getBooleanProperty("premium", false);
             if (premium != null && premium instanceof Boolean && !force) return (Boolean) premium;
             setLangtoGer();
             br.getPage(MAINPAGE + "/de/gold/");
@@ -451,6 +457,10 @@ public class DepositFiles extends PluginForHost {
             } else if (br.containsHTML(">Goldmitgliedschaft<")) {
                 ret = false;
             } else if (br.containsHTML("noch den Gold-Zugriff")) {
+                ret = false;
+            } else if (br.containsHTML("haben noch Gold Zugang bis")) {
+                ret = false;
+            } else if (br.containsHTML("haben Gold Zugang bis")) {
                 ret = false;
             } else {
                 ret = true;
@@ -519,6 +529,7 @@ public class DepositFiles extends PluginForHost {
                     br.setFollowRedirects(true);
                     Thread.sleep(2000);
                     br.postPage("http://depositfiles.com/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    br.getPage("http://depositfiles.com/gold/");
                 }
                 br.setFollowRedirects(false);
                 if (showCaptcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {

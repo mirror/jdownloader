@@ -15,7 +15,7 @@ import org.appwork.storage.config.annotations.Description;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
-    @DefaultStringArrayValue(value = { ".idx", ".nfo" })
+    @DefaultStringArrayValue(value = {})
     @AboutConfig
     @Description("A Blacklist is a list of regular expressions. Use a blacklist to avoid extracting certain filetypes.")
     String[] getBlacklistPatterns();
