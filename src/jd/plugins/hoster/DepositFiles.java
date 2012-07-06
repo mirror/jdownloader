@@ -62,7 +62,7 @@ public class DepositFiles extends PluginForHost {
 
     public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern       FILE_INFO_SIZE           = Pattern.compile(">Datei Grösse: <b>([^<>\"]*?)</b>");
+    private final Pattern       FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
     private static final Object PREMLOCK                 = new Object();
     private static final Object LOCK                     = new Object();
