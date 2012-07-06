@@ -20,12 +20,14 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animea.net" }, urls = { "http://((www\\.)?animea\\.net/download/[\\d\\-]+/[\\w\\-]+episode\\-[\\d+\\.]+\\.html|manga\\.animea\\.net/[\\w\\-]+chapter\\-[\\d+\\.]+(\\-page\\-[\\d+\\.]+)?\\.html)" }, flags = { 0 })
 public class AneaNt extends PluginForDecrypt {
@@ -40,8 +42,15 @@ public class AneaNt extends PluginForDecrypt {
     // because jd urldecodes %23 into #. Which results in 404. Impractical to
     // use directhttp
 
+    private static String agent = null;
+
     public AneaNt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
+        this.br.setRequestIntervalLimit(this.getHost(), 1000);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -52,21 +61,30 @@ public class AneaNt extends PluginForDecrypt {
             param.setCryptedUrl(parameter);
         }
         br.setFollowRedirects(false);
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setRequestIntervalLimit("manga.animea.net", 2000);
         br.setCookie("http://animea.net", "lang", "english");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
         br.getPage(parameter);
-        if (br.containsHTML("> 404 Not Found")) {
-            logger.warning("Possible Plugin error, with finding download image: " + parameter);
-            return null;
+        if (br.containsHTML("> 404 Not Found") || (br.getRedirectLocation() != null && br.getRedirectLocation().contains("manga.animea.net/browse.html"))) {
+            logger.warning("Chapter doesn't exist, or URL doesn't exist: " + parameter);
+            return decryptedLinks;
         }
         // manga reader
         if (parameter.contains("manga.animea.net/")) {
             // We get the title
-            String[][] title = br.getRegex("(?i)<title>(.+) (chapter (\\d+)) - Page 1 of (\\d+)</title>").getMatches();
+            String[][] title = br.getRegex("(?i)<title>(.+) (chapter ([\\d\\.]+)) - Page 1 of (\\d+)</title>").getMatches();
             if (title == null || title.length == 0) {
                 logger.warning("Title not found! : " + parameter);
                 return null;
             }
-            String useTitle = title[0][0] + " – " + title[0][1];
+            String useTitle = Encoding.htmlDecode(title[0][0] + " – " + title[0][1]).trim().replaceAll("\"", "");
             // grab the total pages within viewer
             String totalPages = title[0][3];
             if (totalPages == null) totalPages = br.getRegex("(?i)\\d+</option>[\r\n\t ]+</select>[\r\n\t ]+of (\\d+)").getMatch(0);

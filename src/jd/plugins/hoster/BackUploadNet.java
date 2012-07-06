@@ -67,12 +67,11 @@ public class BackUploadNet extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static final Object  LOCK                         = new Object();
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.6.7-raz
+    // XfileSharingProBasic Version 2.5.6.8-raz
     // mods: removed top comparison of accounts.
     // non account: 2 * 1
     // free account: same as above
@@ -568,7 +567,7 @@ public class BackUploadNet extends PluginForHost {
                 maxPrem.set(1);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
-                account.setMaxSimultanDownloads(1);
+                account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -584,7 +583,7 @@ public class BackUploadNet extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
                     maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
+                    account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
