@@ -1,4 +1,3 @@
-jd_plugins_optional_jdchat_jdchat=null
 jd_plugins_optional_jdchat_newmessage=Nuovo messaggio da %s1: <hr> %s2
 plugin_optional_jdchat_getlog=%s1 necessita di un log per risolvere il tuo problema. Accetti di inviare il log?
 plugins_optional_jdchat_enternick=Quale nickname vorreste usare?

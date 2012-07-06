@@ -16,5 +16,3 @@ interaction_shutdown_dialog_title_closejd=Chiudere JD?
 interaction_shutdown_dialog_title_hibernate=Ibernare?
 interaction_shutdown_dialog_title_shutdown=Spegnere?
 interaction_shutdown_dialog_title_standby=Standby?
-jd_plugins_optional_jdshutdown=null
-jd_plugins_optional_jdshutdown_description=null
