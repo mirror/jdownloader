@@ -248,7 +248,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
                 while (true) {
                     try {
-                        Thread.sleep(1 * 60 * 1000);
+                        Thread.sleep(10 * 60 * 1000);
 
                         if (getGUI().isShown()) {
                             if (loggedIn) {
