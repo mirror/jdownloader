@@ -141,8 +141,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
             public void onLinkCrawlerEvent(LinkCrawlerEvent event) {
                 if (event.getCaller() instanceof LinkCollectorCrawler) {
                     /*
-                     * we only want to react on the LinkCrawler of the
-                     * LinkCollector
+                     * we only want to react on the LinkCrawler of the LinkCollector
                      */
                     update();
                 }
@@ -153,8 +152,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
             public void onLinkCheckerEvent(LinkCheckerEvent event) {
                 if (LinkCollector.getInstance().getLinkChecker() == event.getCaller()) {
                     /*
-                     * we only want to react on the LinkChecker of the
-                     * LinkCollector
+                     * we only want to react on the LinkChecker of the LinkCollector
                      */
                     update();
                 }
@@ -183,7 +181,9 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                                     }
                                 }
 
-                                new ConfirmAction(autoStart, new SelectionInfo<CrawledPackage, CrawledLink>(list)).actionPerformed(null);
+                                ConfirmAction ca = new ConfirmAction(autoStart, new SelectionInfo<CrawledPackage, CrawledLink>(list));
+                                ca.setAutostart(autoStart);
+                                ca.actionPerformed(null);
                             }
                         });
                     }

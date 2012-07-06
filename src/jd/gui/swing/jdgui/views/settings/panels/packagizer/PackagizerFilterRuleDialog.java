@@ -130,6 +130,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
                 }
 
             };
+            rule.setEnabled(true);
             packagizer.add(rule);
             d = new TestWaitDialog(text, _GUI._.PackagizerRuleDialog_runTest_title_(rule.toString()), null) {
 

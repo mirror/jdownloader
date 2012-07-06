@@ -60,12 +60,15 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         return new PackagizerController(true);
     }
 
+    public boolean isTestInstance() {
+        return testInstance;
+    }
+
     public PackagizerController(boolean testInstance) {
-        config = JsonConfig.create(PackagizerSettings.class);
         this.testInstance = testInstance;
         eventSender = new ChangeEventSender();
-
-        if (!testInstance) {
+        if (!isTestInstance()) {
+            config = JsonConfig.create(PackagizerSettings.class);
             try {
                 list = config.getRuleList();
             } catch (Throwable e) {
@@ -76,13 +79,13 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
         update();
 
-        if (!testInstance) {
+        if (!isTestInstance()) {
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
                 public void run() {
                     synchronized (PackagizerController.this) {
-                        config.setRuleList(list);
+                        if (config != null) config.setRuleList(list);
                     }
                 }
 
@@ -202,7 +205,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (linkFilter == null) return;
         synchronized (this) {
             list.add(linkFilter);
-            config.setRuleList(list);
+            if (config != null) config.setRuleList(list);
             update();
         }
 
@@ -212,20 +215,24 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         synchronized (this) {
             list.clear();
             list.addAll(tableData);
-            config.setRuleList(list);
+            if (config != null) config.setRuleList(list);
 
             update();
         }
     }
 
     public void update() {
-        IOEQ.add(new Runnable() {
+        if (isTestInstance()) {
+            updateInternal();
+        } else {
+            IOEQ.add(new Runnable() {
 
-            public void run() {
-                updateInternal();
-            }
+                public void run() {
+                    updateInternal();
+                }
 
-        }, true);
+            }, true);
+        }
     }
 
     private void updateInternal() {
@@ -258,7 +265,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (all == null) return;
         synchronized (this) {
             list.addAll(all);
-            config.setRuleList(list);
+            if (config != null) config.setRuleList(list);
             update();
         }
 
@@ -268,14 +275,14 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         if (lf == null) return;
         synchronized (this) {
             list.remove(lf);
-            config.setRuleList(list);
+            if (config != null) config.setRuleList(list);
             update();
         }
 
     }
 
     public void runByFile(CrawledLink link) {
-        if (testInstance == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
@@ -302,7 +309,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
     }
 
     public void runByUrl(CrawledLink link) {
-        if (testInstance == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
         ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {

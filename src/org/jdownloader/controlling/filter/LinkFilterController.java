@@ -47,23 +47,24 @@ public class LinkFilterController implements LinkCrawlerFilter {
     private ArrayList<LinkgrabberFilterRuleWrapper> acceptUrlFilter;
 
     private ChangeEventSender                       eventSender;
+    private boolean                                 testInstance = false;
 
     /**
      * Create a new instance of LinkFilterController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     public LinkFilterController(boolean testInstance) {
-        config = JsonConfig.create(LinkFilterSettings.class);
         eventSender = new ChangeEventSender();
-        if (!testInstance) {
+        this.testInstance = testInstance;
+        if (isTestInstance() == false) {
+            config = JsonConfig.create(LinkFilterSettings.class);
             filter = config.getFilterList();
-
             if (filter == null) filter = new ArrayList<LinkgrabberFilterRule>();
             ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
                 @Override
                 public void run() {
                     synchronized (LinkFilterController.this) {
-                        config.setFilterList(filter);
+                        if (config != null) config.setFilterList(filter);
                     }
                 }
 
@@ -72,7 +73,6 @@ public class LinkFilterController implements LinkCrawlerFilter {
                     return "save filters...";
                 }
             });
-
             updateInternal();
         } else {
             filter = new ArrayList<LinkgrabberFilterRule>();
@@ -127,13 +127,21 @@ public class LinkFilterController implements LinkCrawlerFilter {
     }
 
     public void update() {
-        IOEQ.add(new Runnable() {
+        if (isTestInstance()) {
+            updateInternal();
+        } else {
+            IOEQ.add(new Runnable() {
 
-            public void run() {
-                updateInternal();
-            }
+                public void run() {
+                    updateInternal();
+                }
 
-        }, true);
+            }, true);
+        }
+    }
+
+    public boolean isTestInstance() {
+        return testInstance;
     }
 
     public ArrayList<LinkgrabberFilterRule> list() {
@@ -146,7 +154,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (all == null) return;
         synchronized (this) {
             filter.addAll(all);
-            config.setFilterList(filter);
+            if (config != null) config.setFilterList(filter);
             update();
         }
     }
@@ -155,7 +163,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (linkFilter == null) return;
         synchronized (this) {
             filter.add(linkFilter);
-            config.setFilterList(filter);
+            if (config != null) config.setFilterList(filter);
             update();
         }
     }
@@ -164,7 +172,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
         if (lf == null) return;
         synchronized (this) {
             filter.remove(lf);
-            config.setFilterList(filter);
+            if (config != null) config.setFilterList(filter);
             update();
         }
     }
@@ -176,7 +184,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (!org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
         boolean matches = false;
         LinkgrabberFilterRule matchingFilter = null;
         final ArrayList<LinkgrabberFilterRuleWrapper> localdenyUrlFilter = denyUrlFilter;
@@ -256,7 +264,7 @@ public class LinkFilterController implements LinkCrawlerFilter {
              */
             return false;
         }
-        if (!org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
+        if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINK_FILTER_ENABLED.getValue()) return false;
         DownloadLink dlink = link.getDownloadLink();
         if (dlink == null) { throw new WTFException(); }
         boolean matches = false;

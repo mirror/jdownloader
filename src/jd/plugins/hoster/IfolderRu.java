@@ -70,10 +70,11 @@ public class IfolderRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         String passCode = null;
-        String watchAd = br.getRegex("http://ints\\.(ifolder|rusfolder)\\.ru/ints/\\?(.*?)\"").getMatch(1);
+        String domain = br.getRegex("href=\"(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
+        String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));
-            watchAd = "http://ints.ifolder.ru/ints/?".concat(watchAd).replace("';", "");
+            watchAd = domain + "/ints/?".concat(watchAd).replace("';", "");
             br.getPage(watchAd);
             watchAd = br.getRegex("<font size=\"\\+1\"><a href=(.*?)>").getMatch(0);
             // If they take the waittime out this part is optional
@@ -90,7 +91,7 @@ public class IfolderRu extends PluginForHost {
                     logger.warning("third watchad equals null");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!watchAd.contains("http://ints.ifolder.ru")) watchAd = "http://ints.ifolder.ru" + watchAd;
+                if (!watchAd.startsWith("http") || !watchAd.contains(domain)) watchAd = domain + watchAd;
                 br.getPage(watchAd);
                 /* Tickettime */
                 String ticketTimeS = br.getRegex("delay = (\\d+)").getMatch(0);

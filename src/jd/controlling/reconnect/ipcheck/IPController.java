@@ -271,7 +271,6 @@ public class IPController extends ArrayList<IPConnectionState> {
                     return true;
                 } else if (latestConnectionState.isOffline()) {
                     hasBeenOffline = true;
-
                 }
 
                 if (this.latestConnectionState.getCause() != null) {

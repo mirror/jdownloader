@@ -40,6 +40,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
 
             LinkFilterController lfc = LinkFilterController.createEmptyTestInstance();
             LinkgrabberFilterRule rule = getCurrentCopy();
+            rule.setEnabled(true);
             lfc.add(rule);
 
             ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
@@ -94,8 +95,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
     }
 
     /**
-     * Returns a Linkgrabberfilter representing current settings. does NOT save
-     * the original one
+     * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
      * 
      * @return
      */

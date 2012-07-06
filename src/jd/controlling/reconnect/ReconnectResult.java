@@ -61,11 +61,11 @@ public class ReconnectResult {
     }
 
     public long getOfflineDuration() {
-        return offlineTime - startTime;
+        return Math.max(200, offlineTime - startTime);
     }
 
     public long getSuccessDuration() {
-        return successTime - startTime;
+        return Math.max(0, successTime - startTime);
     }
 
     public long getAverageSuccessDuration() {

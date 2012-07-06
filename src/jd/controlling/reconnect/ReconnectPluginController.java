@@ -55,7 +55,6 @@ public class ReconnectPluginController {
 
     private ReconnectPluginController() {
         this.storage = JsonConfig.create(ReconnectConfig.class);
-
         this.scan();
     }
 
@@ -176,8 +175,7 @@ public class ReconnectPluginController {
      * @throws ReconnectException
      */
     public final boolean doReconnect(final RouterPlugin plg, LogSource logger) throws InterruptedException, ReconnectException {
-
-        final int waittime = this.getWaittimeBeforeFirstIPCheck();
+        final int waittime = Math.max(this.getWaittimeBeforeFirstIPCheck(), 0);
         // make sure that we have the current ip
         logger.info("IP Before=" + IPController.getInstance().getIP());
         try {
@@ -187,7 +185,7 @@ public class ReconnectPluginController {
             invoker.run();
             logger.finer("Initial Waittime: " + waittime + " seconds");
             Thread.sleep(waittime * 1000);
-            return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), storage.getSecondsToWaitForOffline(), this.getIpCheckInterval());
+            return IPController.getInstance().validateAndWait(this.getWaitForIPTime(), Math.max(0, storage.getSecondsToWaitForOffline()), this.getIpCheckInterval());
         } catch (RuntimeException e) {
             logger.log(e);
             throw new ReconnectException(e);
@@ -223,13 +221,18 @@ public class ReconnectPluginController {
      * @return
      */
     private int getIpCheckInterval() {
+        int ret = 0;
         if (!storage.isIPCheckGloballyDisabled()) {
             // use own ipcheck if possible
-            if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getIPCheckProvider().getIpCheckInterval(); }
-            return 5;
+            if (this.getActivePlugin().getIPCheckProvider() != null) {
+                ret = this.getActivePlugin().getIPCheckProvider().getIpCheckInterval();
+            } else {
+                ret = 5;
+            }
+
         }
         // ip check disabled
-        return 0;
+        return Math.max(ret, 0);
     }
 
     /**
@@ -253,20 +256,21 @@ public class ReconnectPluginController {
     }
 
     private int getWaitForIPTime() {
-        return storage.getSecondsToWaitForIPChange();
+        return Math.max(storage.getSecondsToWaitForIPChange(), 0);
     }
 
     private int getWaittimeBeforeFirstIPCheck() {
-
+        int ret = 0;
         if (!storage.isIPCheckGloballyDisabled()) {
-
             // use own ipcheck if possible
-            if (this.getActivePlugin().getIPCheckProvider() != null) { return this.getActivePlugin().getWaittimeBeforeFirstIPCheck(); }
-            return storage.getSecondsBeforeFirstIPCheck();
-
+            if (this.getActivePlugin().getIPCheckProvider() != null) {
+                ret = this.getActivePlugin().getWaittimeBeforeFirstIPCheck();
+            } else {
+                ret = storage.getSecondsBeforeFirstIPCheck();
+            }
         }
         // ip check disabled
-        return 0;
+        return Math.max(ret, 0);
     }
 
     /**
@@ -305,23 +309,30 @@ public class ReconnectPluginController {
                     // // jarred addon (JAR)
                     String path = url.getPath();
                     File jarFile = new File(new URL(path.substring(0, path.lastIndexOf('!'))).toURI());
-                    final JarInputStream jis = new JarInputStream(new FileInputStream(jarFile));
+                    JarInputStream jis = null;
+                    try {
+                        jis = new JarInputStream(new FileInputStream(jarFile));
+                        JarEntry e;
 
-                    JarEntry e;
+                        while ((e = jis.getNextJarEntry()) != null) {
 
-                    while ((e = jis.getNextJarEntry()) != null) {
+                            // try {
+                            Matcher matcher = pattern.matcher(e.getName());
+                            while (matcher.find()) {
+                                try {
+                                    String pkg = matcher.group(1);
+                                    load(pkg);
 
-                        // try {
-                        Matcher matcher = pattern.matcher(e.getName());
-                        while (matcher.find()) {
-                            try {
-                                String pkg = matcher.group(1);
-                                load(pkg);
-
-                                System.out.println(pkg);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
+                                    System.out.println(pkg);
+                                } catch (Exception e1) {
+                                    e1.printStackTrace();
+                                }
                             }
+                        }
+                    } finally {
+                        try {
+                            jis.close();
+                        } catch (final Throwable e) {
                         }
                     }
                 } else {

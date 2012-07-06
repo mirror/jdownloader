@@ -230,36 +230,25 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
             DownloadInterface dli = link.getDownloadInstance();
             SingleDownloadController sdc = link.getDownloadLinkController();
             {
-                if (sdc != null) {
-                    /* download running */
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsRunning(), NewTheme.I().getIcon("media-playback-start", 16), JLabel.LEADING));
-                    SwingUtils.setOpaque(lbl, false);
-                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
-                    if (sdc.getAccount() != null) {
-                        /* account in use? */
-                        panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), accountInUse, JLabel.LEADING));
-                        SwingUtils.setOpaque(lbl, false);
-                        lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
-                    }
-                    {
-                        /* connection? */
-                        HTTPProxy proxy = sdc.getCurrentProxy();
-                        if (proxy == null) proxy = HTTPProxy.NONE;
-                        panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxy), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
-                        SwingUtils.setOpaque(lbl, false);
-                        lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
-                    }
-                } else {
-                    /* download not running */
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsNotRunning(), NewTheme.I().getIcon("stop", 16), JLabel.LEADING));
+                /* is the Link resumeable */
+                if (link.isResumeable()) {
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }
             }
-            {
-                /* is the Link resumeable */
-                if (link.isResumeable()) {
-                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadIsResumeable(), resumeIndicator, JLabel.LEADING));
+            if (sdc != null) {
+                {
+                    /* connection? */
+                    HTTPProxy proxy = sdc.getCurrentProxy();
+                    if (proxy == null) proxy = HTTPProxy.NONE;
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_connection(proxy), proxy.isRemote() ? proxyConnection : directConnection, JLabel.LEADING));
+                    SwingUtils.setOpaque(lbl, false);
+                    lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                }
+                if (sdc.getAccount() != null) {
+                    /* account in use? */
+                    panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_DownloadUsesAccount(sdc.getAccount().getUser()), accountInUse, JLabel.LEADING));
                     SwingUtils.setOpaque(lbl, false);
                     lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
                 }

@@ -55,8 +55,7 @@ public class ExceptionsRuleDialog extends ConditionDialog<LinkgrabberFilterRule>
     }
 
     /**
-     * Returns a Linkgrabberfilter representing current settings. does NOT save
-     * the original one
+     * Returns a Linkgrabberfilter representing current settings. does NOT save the original one
      * 
      * @return
      */
