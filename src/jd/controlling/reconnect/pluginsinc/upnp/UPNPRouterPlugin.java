@@ -29,6 +29,7 @@ import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
@@ -66,9 +67,10 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
      */
     @Override
     public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
-
+        LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
         ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
         ArrayList<UpnpRouterDevice> devices = getDevices();
+        logger.info("Found devices: " + devices);
         for (int i = 0; i < devices.size(); i++) {
             UpnpRouterDevice device = devices.get(i);
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
@@ -76,7 +78,9 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
             ReconnectResult res;
             try {
                 processCallBack.setStatusString(this, T._.try_reconnect(device.getFriendlyname() == null ? device.getModelname() : device.getFriendlyname()));
+                logger.info("Try " + device);
                 res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
+                logger.info("REsult " + res);
                 if (res != null && res.isSuccess()) {
                     ret.add(res);
                     processCallBack.setStatus(this, ret);
