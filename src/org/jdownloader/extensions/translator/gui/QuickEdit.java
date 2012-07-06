@@ -178,7 +178,7 @@ public class QuickEdit extends MigPanel implements ListSelectionListener {
         } else if (!entry.validateParameterCount(translation.getText())) {
             problems.setText("<html><font color='#ff0000' >Error:</font><font color='#ff0000' >Parameter Wildcards (%s*) do not match.</font></html>");
 
-        } else if (entry.getDefault().equals(translation.getText())) {
+        } else if (entry.getDefault() != null && entry.getDefault().equals(translation.getText())) {
             problems.setText("<html><font color='#339900' >Warning:</font><font color='#339900' >The translation equals the english default language.</font></html>");
         } else {
             problems.setText("");
