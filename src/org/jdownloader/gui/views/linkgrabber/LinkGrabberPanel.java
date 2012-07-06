@@ -5,6 +5,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -202,7 +203,11 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
 
             @Override
             public boolean isFiltered(CrawledLink v) {
-                return !filterPattern.matcher(v.getName()).find();
+                for (Pattern filterPattern : filterPatterns) {
+                    if (filterPattern.matcher(v.getName()).find()) return false;
+                }
+                return true;
+
             }
 
         };

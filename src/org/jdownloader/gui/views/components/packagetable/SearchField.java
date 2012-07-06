@@ -13,6 +13,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -48,7 +50,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     private Image                                          img;
     private DelayedRunnable                                delayedFilter;
     private PackageControllerTable<PackageType, ChildType> table2Filter;
-    protected Pattern                                      filterPattern    = null;
+    protected List<Pattern>                                filterPatterns   = null;
     private JLabel                                         label;
     private int                                            labelWidth;
     private Color                                          bgColor;
@@ -134,8 +136,20 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
         String filterRegex = this.getText();
         boolean enabled = filterRegex.length() > 0;
         if (enabled) {
+
+            ArrayList<Pattern> list = new ArrayList<Pattern>();
             try {
-                filterPattern = LinkgrabberFilterRuleWrapper.createPattern(filterRegex, (JsonConfig.create(GeneralSettings.class).isFilterRegex()));
+                if (JsonConfig.create(GeneralSettings.class).isFilterRegex()) {
+                    list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true));
+                } else {
+                    String[] filters = filterRegex.split("\\|");
+                    for (String filter : filters) {
+                        list.add(LinkgrabberFilterRuleWrapper.createPattern(filter, false));
+                    }
+
+                }
+                filterPatterns = list;
+
                 table2Filter.getPackageControllerTableModel().addFilter(this);
 
             } catch (final Throwable e) {

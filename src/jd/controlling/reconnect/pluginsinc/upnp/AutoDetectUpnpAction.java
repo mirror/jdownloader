@@ -20,6 +20,7 @@ import org.appwork.swing.components.tooltips.BasicTooltipFactory;
 import org.appwork.utils.event.ProcessCallBack;
 import org.appwork.utils.event.ProcessCallBackAdapter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -28,6 +29,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class AutoDetectUpnpAction extends BasicAction {
     private UPNPRouterPlugin plugin;
@@ -42,7 +44,7 @@ public class AutoDetectUpnpAction extends BasicAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-
+        LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
         try {
             if (RouterUtils.isWindowsModemConnection()) {
                 modemChoose = false;
@@ -76,7 +78,7 @@ public class AutoDetectUpnpAction extends BasicAction {
         } catch (Throwable e1) {
 
         }
-
+        logger.info("RUN");
         ReconnectFindDialog d = new ReconnectFindDialog() {
 
             @Override

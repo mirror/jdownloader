@@ -58,6 +58,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         icon = NewTheme.I().getIcon("upnp", 16);
         settings = JsonConfig.create(UPUPReconnectSettings.class);
         AdvancedConfigManager.getInstance().register(settings);
+
     }
 
     /**
@@ -68,40 +69,44 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     @Override
     public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
         LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
-        ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
-        ArrayList<UpnpRouterDevice> devices = getDevices();
-        logger.info("Found devices: " + devices);
-        for (int i = 0; i < devices.size(); i++) {
-            UpnpRouterDevice device = devices.get(i);
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+        try {
+            ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
+            ArrayList<UpnpRouterDevice> devices = getDevices();
+            logger.info("Found devices: " + devices);
+            for (int i = 0; i < devices.size(); i++) {
+                UpnpRouterDevice device = devices.get(i);
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
 
-            ReconnectResult res;
-            try {
-                processCallBack.setStatusString(this, T._.try_reconnect(device.getFriendlyname() == null ? device.getModelname() : device.getFriendlyname()));
-                logger.info("Try " + device);
-                res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
-                logger.info("REsult " + res);
-                if (res != null && res.isSuccess()) {
-                    ret.add(res);
-                    processCallBack.setStatus(this, ret);
-                    if (i < devices.size() - 1) {
+                ReconnectResult res;
+                try {
+                    processCallBack.setStatusString(this, T._.try_reconnect(device.getFriendlyname() == null ? device.getModelname() : device.getFriendlyname()));
+                    logger.info("Try " + device);
+                    res = new UPNPReconnectInvoker(this, device.getServiceType(), device.getControlURL()).validate();
+                    logger.info("REsult " + res);
+                    if (res != null && res.isSuccess()) {
+                        ret.add(res);
+                        processCallBack.setStatus(this, ret);
+                        if (i < devices.size() - 1) {
 
-                        if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
+                            if (ret.size() == 1) Dialog.getInstance().showConfirmDialog(0, _GUI._.LiveHeaderDetectionWizard_testList_firstSuccess_title(), _GUI._.LiveHeaderDetectionWizard_testList_firstsuccess_msg(TimeFormatter.formatMilliSeconds(res.getSuccessDuration(), 0)), NewTheme.I().getIcon("ok", 32), _GUI._.LiveHeaderDetectionWizard_testList_ok(), _GUI._.LiveHeaderDetectionWizard_testList_use());
 
+                        }
                     }
+
+                } catch (ReconnectException e) {
+                    e.printStackTrace();
+                } catch (DialogClosedException e) {
+
+                } catch (DialogCanceledException e) {
+                    return ret;
                 }
 
-            } catch (ReconnectException e) {
-                e.printStackTrace();
-            } catch (DialogClosedException e) {
-
-            } catch (DialogCanceledException e) {
-                return ret;
             }
-
+            return ret;
+        } finally {
+            logger.close();
         }
 
-        return ret;
     }
 
     public IP getExternalIP() throws IPCheckException {

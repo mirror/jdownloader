@@ -4,6 +4,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.regex.Pattern;
 
 import javax.swing.JButton;
 
@@ -78,7 +79,14 @@ public class BottomBar extends MigPanel {
 
             @Override
             public boolean isFiltered(FilePackage e) {
-                if (SearchCategory.PACKAGE == selectedCategory) { return !filterPattern.matcher(e.getName()).find(); }
+                if (SearchCategory.PACKAGE == selectedCategory) {
+
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(e.getName()).find()) return false;
+                    }
+                    return true;
+
+                }
                 return false;
             }
 
@@ -86,9 +94,15 @@ public class BottomBar extends MigPanel {
             public boolean isFiltered(DownloadLink v) {
                 switch (selectedCategory) {
                 case FILENAME:
-                    return !filterPattern.matcher(v.getName()).find();
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(v.getName()).find()) return false;
+                    }
+                    return true;
                 case HOSTER:
-                    return !filterPattern.matcher(v.getHost()).find();
+                    for (Pattern filterPattern : filterPatterns) {
+                        if (filterPattern.matcher(v.getName()).find()) return false;
+                    }
+                    return true;
                 }
                 return false;
             }
