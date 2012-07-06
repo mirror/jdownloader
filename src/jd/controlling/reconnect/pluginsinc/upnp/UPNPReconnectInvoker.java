@@ -26,6 +26,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         super(upnpRouterPlugin);
         this.serviceType = serviceType2;
         this.controlURL = controlURL2;
+
     }
 
     public static String runCommand(final String serviceType, final String controlUrl, final String command) throws IOException {
@@ -37,13 +38,10 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
          * 
          * final String data = "<?xml version=\"1.0\"?>\n" +
          * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType +
-         * "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final URL
-         * url = new URL(controlUrl); final URLConnection conn =
-         * url.openConnection(); conn.setDoOutput(true);
-         * conn.addRequestProperty("Content-Type",
-         * "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction",
-         * serviceType + "#" + command + "\"");
+         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
+         * URL url = new URL(controlUrl); final URLConnection conn = url.openConnection(); conn.setDoOutput(true);
+         * conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction", serviceType + "#" +
+         * command + "\"");
          */
         final URL url = new URL(controlUrl);
         HTTPConnection con = new HTTPConnectionImpl(url);
@@ -116,6 +114,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
     @Override
     public void run() throws ReconnectException, InterruptedException {
         try {
+            logger.info("RUN");
             if (StringUtils.isEmpty(serviceType)) { throw new ReconnectException(T._.malformedservicetype()); }
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             runCommand(serviceType, controlURL, "ForceTermination");
