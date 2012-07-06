@@ -272,6 +272,7 @@ public class VeohCom extends PluginForHost {
                             dl.getManagedConnetionHandler().addThrottledConnection((org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream) INPUTSTREAM);
                         }
                     } catch (final Throwable e) {
+                        INPUTSTREAM = new org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream(DL.getInputStream(), new org.appwork.utils.speedmeter.AverageSpeedMeter(10));
                         /* 0.95xx comp */
                     }
                     try {
