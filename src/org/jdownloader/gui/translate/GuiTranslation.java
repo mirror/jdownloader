@@ -2210,4 +2210,25 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Save to" })
     String NewPackageDialog_layoutDialogContent_saveto();
 
+    @Default(lngs = { "en" }, values = { "Build Date:" })
+    String jd_gui_swing_components_AboutDialog_builddate();
+
+    @Default(lngs = { "en" }, values = { "Source Revisions:" })
+    String jd_gui_swing_components_AboutDialog_sourcerevisions();
+
+    @Default(lngs = { "en" }, values = { "Core:" })
+    String jd_gui_swing_components_AboutDialog_core();
+
+    @Default(lngs = { "en" }, values = { "AppWork Utilities:" })
+    String jd_gui_swing_components_AboutDialog_appworkutilities();
+
+    @Default(lngs = { "en" }, values = { "Browser:" })
+    String jd_gui_swing_components_AboutDialog_browser();
+
+    @Default(lngs = { "en" }, values = { "Updater:" })
+    String jd_gui_swing_components_AboutDialog_updater();
+
+    @Default(lngs = { "en" }, values = { "Synthetica License Registration Number %s1" })
+    String jd_gui_swing_components_AboutDialog_synthetica(String string);
+
 }

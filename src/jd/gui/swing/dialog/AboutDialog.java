@@ -132,16 +132,20 @@ public class AboutDialog extends AbstractDialog<Integer> {
             });
 
             // contentpane.add(btn, "aligny center, spany 3");
-            stats.add(new JLabel("Build Date:"));
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_builddate()));
             stats.add(disable(map.get("buildDate")));
-            stats.add(new JLabel("Source Revisions:"), "spanx");
-            stats.add(new JLabel("   Core:"), "");
+            stats.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_sourcerevisions()), "spanx");
+            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_core()), "");
             stats.add(disable("#" + map.get("JDownloaderRevision")));
-            stats.add(new JLabel("   AppWork Utilities:"), "");
+            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_appworkutilities()), "");
+
             stats.add(disable("#" + map.get("AppWorkUtilsRevision")));
-            stats.add(new JLabel("   Browser:"), "");
+
+            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_browser()), "");
+
             stats.add(disable("#" + map.get("JDBrowserRevision")));
-            stats.add(new JLabel("   Updater:"), "");
+            stats.add(new JLabel("   " + _GUI._.jd_gui_swing_components_AboutDialog_updater()), "");
+
             stats.add(disable("#" + map.get("UpdateClientRevision")));
         } catch (Throwable t) {
             Log.exception(t);
@@ -150,7 +154,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         stats.add(new JLabel("Java:"), "");
         stats.add(disable(System.getProperty("java.vendor") + " - " + System.getProperty("java.version")));
 
-        contentpane.add(new JLabel("Synthetica License Registration Number (#289416475)"), "gaptop 10, spanx");
+        contentpane.add(new JLabel(_GUI._.jd_gui_swing_components_AboutDialog_synthetica("(#289416475)")), "gaptop 10, spanx");
         contentpane.add(new JLabel("© AppWork GmbH 2007-2011"), "spanx");
         contentpane.add(links, "gaptop 15, growx, pushx, spanx");
         this.registerEscape(contentpane);
