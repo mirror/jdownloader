@@ -1,2 +1,4 @@
+interaction_batchreconnect_batch=Skrip tumpak
 interaction_batchreconnect_executein=Mulai di (folder aplikasi)
 interaction_batchreconnect_terminal=Penerjemah
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Sambung ulang tumpak luar

@@ -51,6 +51,7 @@ ShortCuts_key_button3=tombol3
 ShortCuts_key_ctrl=ctrl
 ShortCuts_key_meta=meta
 ShortCuts_key_shift=shift
+Statusbar_Statusbar_visiturl_tooltip=kunjungi laman kami
 active=Diaktifkan
 connecting=Menyambung...
 crossSystem_open_url_failed_msg=Bukalah taut ini di perambah
