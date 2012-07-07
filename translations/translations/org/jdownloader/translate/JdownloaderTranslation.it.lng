@@ -121,7 +121,7 @@ gui_warning_reconnectunknown=Riconnessione sconosciuta
 jd_controlling_SingleDownloadController_askexists=Il file '%s1' nel pacchetto '%s2' esiste già. Quale azione intraprendere?
 jd_controlling_SingleDownloadController_askexists_title=Il file esiste
 jd_controlling_reconnect_Reconnector_progress_failed2=La riconnessione fallisce spesso! Riconnessione automatica disabilitata! Verifica le impostazioni di riconnessione!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nessuna riconnesione seelzionata</u></b><br/><p>La riconnessione è in approccio avanzato per ignorare le lunghe attese che molti host impongono agli utenti gratuiti. <br>Non è molto utile quando usi un account Premium.</p><p>Per avere maggiori informazioni sulla riconnessione <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>clicca qui</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nessuna riconnesione selezionata</u></b><br/><p>La riconnessione è in approccio avanzato per ignorare le lunghe attese che molti host impongono agli utenti gratuiti. <br>Non è molto utile quando usi un account Premium.</p><p>Per avere maggiori informazioni sulla riconnessione <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>clicca qui</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nessuna riconnessione
 jd_plugins_PluginUtils_askPassword=Inserisci la password per %s1
 literally_offline=Offline
