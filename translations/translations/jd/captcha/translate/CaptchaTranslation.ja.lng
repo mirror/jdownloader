@@ -47,6 +47,7 @@ gui_column_host=ホスト
 gui_component_textarea_context_delete=削除
 gui_config_jac_column_author=作成者
 gui_menu_add=追加
+jd_plugins_optional_schedule_maingui_edit=編集
 showcaptcha_choose_file=イメージファイルを選択
 showcaptcha_chooser_title=JDownloader :: Captcha を表示
 train_choose_folder=フォルダを選択

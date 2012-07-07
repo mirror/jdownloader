@@ -1,0 +1,13 @@
+UpdateException_notavailable2=問題の詳細:  "%s1"
+UpdateServer_UpdaterGui_onStateChange_download=ダウンロード
+UpdateServer_UpdaterGui_onStateChange_successful=成功
+UpdateServer_UpdaterGui_runInEDT_successful=成功
+cancel_update=更新をキャンセル
+close=閉じる
+exit=閉じる
+guiless_downloadfinished=ダウンロード終了。
+interrupted=ユーザにキャンセルされました
+interrupted_title=キャンセルされました
+locked=更新できません。%s1 が実行中です。
+update_dialog_cancel=キャンセル
+update_dialog_yes=はい(推奨)

@@ -1,3 +1,4 @@
+DataCompareDialog_layoutDialogContent_password=パスワード
 gui_btn_abort=中止
 gui_btn_cancel=キャンセル
 gui_btn_help=ヘルプ
@@ -16,4 +17,6 @@ gui_config_reconnect_selectrouter=ルーターの型番を検索
 gui_config_reconnect_selectrouter_example=例: 3Com ADSL
 gui_config_routeripfinder_notfound=ルーターのホスト名がみつかりません！
 gui_config_routeripfinder_ready=検出されたホスト名: %s1
-gui_fengshuiconfig_routerip=ルーター IP
+gui_fengshuiconfig_routerip=ルータ IP
+jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=保存
+literally_password=パスワード

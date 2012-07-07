@@ -1,0 +1,16 @@
+ABSTRACTDIALOG_BUTTON_CANCEL=キャンセル
+AccountNew_layoutDialogContent_password=パスワード
+AccountNew_layoutDialogContent_save=記憶
+COPYCUTPASTE_COPY=コピー
+COPYCUTPASTE_DELETE=削除
+DIALOG_FILECHOOSER_cancelButtonText=キャンセル
+DIALOG_FILECHOOSER_fileNameLabelText=ファイル名
+DIALOG_FILECHOOSER_helpButtonText=ヘルプ
+DIALOG_FILECHOOSER_homeFolderAccessibleName=ホーム
+DIALOG_FILECHOOSER_homeFolderToolTipText=ホーム
+DIALOG_FILECHOOSER_saveButtonText=保存
+DIALOG_FILECHOOSER_saveDialogTitleText=保存
+LOGINDIALOG_CHECKBOX_REMEMBER=記憶
+LOGINDIALOG_LABEL_PASSWORD=パスワード
+active=有効
+download_title=ダウンロード
