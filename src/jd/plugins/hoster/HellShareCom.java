@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.gui.UserIO;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -61,9 +62,12 @@ public class HellShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+
         try {
             login(account);
         } catch (final PluginException e) {
+            ai.setStatus("Login failed");
+            UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "Login failed!\r\nPlease check your Username and Password!");
             account.setValid(false);
             return ai;
         }
@@ -71,23 +75,27 @@ public class HellShareCom extends PluginForHost {
         if (hostedFiles != null) {
             ai.setFilesNum(Long.parseLong(hostedFiles));
         }
-        // edt
-        // not used anymore
-        /*
-         * final String trafficleft = br.getRegex(
-         * "id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>"
-         * ).getMatch(0); if (trafficleft != null) {
-         * ai.setTrafficLeft(SizeFormatter.getSize(trafficleft)); }
-         */
-        // edt
-        // searching for Premium status
-        String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
-        if (premiumActive == null) {
-            premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
 
+        // edt
+        // searching for known account plans
+        // Free Registered
+
+        String premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)[\n\t\r]+<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
+
+        if (premiumActive == null) {
+            // Premium User
+            premiumActive = br.getRegex("<div class=\"icon-timecredit icon\">[\n\t\r]+<h4>Premium account</h4>[\n\t\r]+(.*)<br />[\n\t\r]+<a href=\"/credit/time\">Buy</a>").getMatch(0);
         }
 
-        if (premiumActive.contains("Inactive")) {
+        if (premiumActive == null) {
+            // User with Credits
+            premiumActive = br.getRegex("<div class=\"icon-credit icon\">[\n\t\r]+<h4>(.*)</h4>[\n\t\r]+<table>+[\n\t\r]+<tr>[\n\t\r]+<th>Current:</th>[\n\t\r]+<td>(.*?)</td>[\n\t\r]+</tr>").getMatch(0);
+        }
+
+        if (premiumActive == null) {
+            ai.setStatus("Invalid/Unknown");
+            account.setValid(false);
+        } else if (premiumActive.contains("Inactive")) {
             ai.setStatus("Free User");
             // for inactive - set traffic left to 0
             ai.setTrafficLeft(0l);
@@ -99,9 +107,13 @@ public class HellShareCom extends PluginForHost {
             ai.setStatus("Premium User");
             account.setValid(true);
 
-        } else {
-            ai.setStatus("Invalid/Unknown");
-            account.setValid(false);
+        } else if (premiumActive.contains("Download credit")) {
+            final String trafficleft = br.getRegex("id=\"info_credit\" class=\"va-middle\">[\n\t\r ]+<strong>(.*?)</strong>").getMatch(0);
+            if (trafficleft != null) {
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            }
+            ai.setStatus("User with Credits");
+            account.setValid(true);
 
         }
 
@@ -348,6 +360,7 @@ public class HellShareCom extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         br.postPage("http://www.hellshare.com/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=odeslat&DownloadRedirect=");
+
         /*
          * this will change account language to eng,needed because language is
          * saved in profile
@@ -360,7 +373,8 @@ public class HellShareCom extends PluginForHost {
         } else {
             br.getPage(changetoeng);
         }
-        if (!br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        if (br.containsHTML("Wrong user name or wrong password.") || !br.containsHTML("credit for downloads") || br.containsHTML("Špatně zadaný login nebo heslo uživatele")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+
     }
 
     @Override
