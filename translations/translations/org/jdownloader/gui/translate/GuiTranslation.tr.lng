@@ -3,6 +3,7 @@ AddContainerAction=Bağlantı Kalıbını yükle
 AddContainerAction_actionPerformed_=Bir Bağlantı Kalıbı Yükle
 AddContainerAction_actionPerformed_extensions=Bağlantı Kalıbı (%s1)
 AddLinksAction_=İndirmeleri Ekle
+AddLinksAction_actionPerformed_deep_msg=JDownloader bu web sitesinde indirebilecek bağlantı bulamadı. Derin bağlantı çözümlemesi gerçekleştirerek indirilebilecek tüm bağlantıların görüntülenmesini ister miziniz?
 AddLinksAction_actionPerformed_deep_title=Hiçbir şey bulunamadı!
 AddLinksDialog_AddLinksDialog_=Bağlantıları Çözümle ve Ekle
 AddLinksDialog_AddLinksDialog_confirm=Devam
