@@ -281,9 +281,9 @@ public class TurboBitNet extends PluginForHost {
             logger.info("Handling normal captchas");
             final String captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= 2; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 3) {
+                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");

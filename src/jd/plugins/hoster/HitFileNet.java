@@ -234,9 +234,9 @@ public class HitFileNet extends PluginForHost {
             final String captchaUrl = br.getRegex("<div><img alt=\"Captcha\" src=\"(http://hitfile\\.net/captcha/.*?)\"").getMatch(0);
             final Form captchaForm = br.getForm(2);
             if (captchaForm == null || captchaUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            for (int i = 1; i <= 3; i++) {
+            for (int i = 1; i <= 2; i++) {
                 String captchaCode;
-                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 3) {
+                if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
                     captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
