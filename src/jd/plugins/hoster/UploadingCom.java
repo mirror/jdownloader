@@ -123,8 +123,11 @@ public class UploadingCom extends PluginForHost {
                     c++;
                 }
                 prepBrowser();
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.setDebug(true);
-                br.postPage("http://uploading.com/files/checker/?ajax", sb.toString());
+                br.postPage("http://uploading.com/filechecker/?ajax", sb.toString());
                 String correctedHTML = br.toString().replaceAll("\\\\/", "/").replaceAll("\\\\(r|n|t)", "").replaceAll("\\\\\"", Encoding.htmlDecode("&#34;"));
                 for (DownloadLink dl : links) {
                     String fileid = new Regex(dl.getDownloadURL(), "uploading\\.com/files/(get/)?([a-z0-9]+)").getMatch(1);
@@ -132,10 +135,10 @@ public class UploadingCom extends PluginForHost {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/files/" + fileid + "/([^/]+)/</a><span class=\"size\">([\\d\\.]+ (B|KB|MB|GB))</span></div></div>");
+                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/files/(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B|KB|MB|GB))</span></div></div>");
                     String status = allMatches.getMatch(0);
-                    String filename = allMatches.getMatch(1);
-                    String filesize = allMatches.getMatch(2);
+                    String filename = allMatches.getMatch(2);
+                    String filesize = allMatches.getMatch(3);
                     if (filename == null || filesize == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         dl.setAvailable(false);
@@ -202,12 +205,12 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("file_size\">([\\d\\.]+ (B|KB|MB|GB|TB))</span>").getMatch(0);
-        String filename = br.getRegex(">File link</label>[\t\n\r ]+<input type=\"text\" class=\"copy_field\" value=\"http://(www\\.)?uploading\\.com/files/\\w+/([^<>\"]*?)/\"").getMatch(0);
+        String filename = br.getRegex(">File link</label>[\t\n\r ]+<input type=\"text\" class=\"copy_field\" value=\"http://(www\\.)?uploading\\.com/files/(get/)?\\w+/([^<>/\"]+)").getMatch(2);
         if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) kostenlos von Uploading\\.com herunterladen</title>").getMatch(0);
+            filename = br.getRegex("<title>Download ([^<>\"]*?) (kostenlos von Uploading\\.com herunterladen|for free on uploading\\.com)</title>").getMatch(0);
             if (filename == null) {
                 // Last try to get the filename, if this
-                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/\\w+/([a-zA-Z0-9 ._]+)").getMatch(0);
+                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/(get/)?\\w+/([a-zA-Z0-9 ._]+)").getMatch(1);
                 fname = fname.replace(" ", "_");
                 if (br.containsHTML(fname)) {
                     filename = fname;
@@ -318,22 +321,25 @@ public class UploadingCom extends PluginForHost {
 
     public void handleFree0(DownloadLink link) throws Exception {
         if (br.containsHTML("that only premium members are")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only for premium members");
+        String currenturl = br.getURL();
         String passCode = null;
         checkErrors(br);
         passCode = link.getStringProperty("pass", null);
         String fileID = new Regex(link.getDownloadURL(), CODEREGEX).getMatch(0);
+        Browser ajax = this.br.cloneBrowser();
+        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+        logger.info("Submitting first ajax request");
+        ajax.postPage("http://uploading.com/files/get/?ajax", "code=" + Encoding.urlEncode(fileID) + "&action=second_page");
         int wait = 60;
-        String waitTimer = br.getRegex("<span id=\"timer_count\">(\\d+)</span>").getMatch(0);
+        String waitTimer = ajax.getRegex("wait_time\":\"(\\d+)\"").getMatch(0);
         if (waitTimer != null) wait = Integer.parseInt(waitTimer);
         try {
             sleep(wait * 1001l, link);
         } catch (PluginException e) {
             return;
         }
-        Browser ajax = this.br.cloneBrowser();
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-        logger.info("Submitting form");
+        logger.info("Submitting second ajax request");
         try {
             String postData = "action=get_link&code=" + Encoding.urlEncode(fileID);
             // not sure about below if. (old not tested)
@@ -344,6 +350,7 @@ public class UploadingCom extends PluginForHost {
                 postData += "&pass=" + Encoding.urlEncode(passCode);
             } else
                 postData += "&pass=false";
+            ajax.getHeaders().put("Referer", currenturl);
             ajax.postPage("http://uploading.com/files/get/?ajax", postData);
         } catch (Exception e) {
             // This is the "disconnected" error...(old not tested)
