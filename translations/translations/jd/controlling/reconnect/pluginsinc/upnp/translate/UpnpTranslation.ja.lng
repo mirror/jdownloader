@@ -1,4 +1,5 @@
 AutoDetectAction_run_failed=UPNPデバイスが見つかりましたが再接続できません。LiveHeader を使用してください。
+AutoDetectAction_run_optimize=最適化: %s1
 UPNPRouterPlugin_run_wizard_title=UPNP ルータ ウィザード
 auto=UPNP 自動設定
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point プロトコル

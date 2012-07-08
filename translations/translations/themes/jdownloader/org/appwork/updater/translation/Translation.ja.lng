@@ -1,4 +1,9 @@
+JDUpdater_start_updater_update_msg=更新するために再起動します。
 exit=閉じる
+guiless_create_package=お待ちください...更新パッケージを準備中
 guiless_downloadfinished=ダウンロード終了
+restart_required_title=再起動が必要
+restart_title=再起動
 update_dialog_cancel=キャンセル
+update_dialog_news_button=変更ログを開く
 update_dialog_yes=はい(推奨)

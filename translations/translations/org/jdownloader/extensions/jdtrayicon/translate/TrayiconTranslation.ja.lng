@@ -1,1 +1,8 @@
+plugins_optional_JDLightTray_always=常に
+plugins_optional_JDLightTray_closetotray=トレイに閉じる
+plugins_optional_trayIcon_dl_running=実行中...
+plugins_optional_trayIcon_dl_total=合計:
+popup_downloadfolder=保存フォルダを開く
 popup_exit=JDownloader を終了
+popup_pause=ダウンロードを一時停止
+popup_premiumtoggle=プレミアム有効

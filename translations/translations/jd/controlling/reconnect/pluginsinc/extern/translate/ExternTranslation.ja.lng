@@ -1,3 +1,4 @@
 interaction_externreconnect_command=コマンド (絶対パスを使用)
 interaction_externreconnect_dummybat=Windows 用の特別な実行ユーティリティを使用
 interaction_externreconnect_parameter=パラメーター (一行につき一つ)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=外部ツールによる再接続
