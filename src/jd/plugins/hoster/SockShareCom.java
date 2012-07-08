@@ -35,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -43,7 +44,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sockshare.com" }, urls = { "http://(www\\.)?sockshare.com/(mobile/)?(file|embed)/[A-Z0-9]+" }, flags = { 2 })
 public class SockShareCom extends PluginForHost {
 
-    private static final String UA = "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
+    private static final String MAINPAGE          = "http://sockshare.com";
+    private static final String SERVERUNAVAILABLE = "(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)";
+    private static final Object LOCK              = new Object();
+    private static String       agent             = null;
 
     public SockShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,18 +63,22 @@ public class SockShareCom extends PluginForHost {
         return "http://www.sockshare.com/page.php?terms";
     }
 
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public void prepBrowser() {
+        br.setCookiesExclusive(true);
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
     }
-
-    private static final Object LOCK              = new Object();
-    private static final String MAINPAGE          = "http://sockshare.com";
-    private static final String SERVERUNAVAILABLE = "(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("sockshare.com/?404") || br.containsHTML("(>404 Not Found<|>This file doesn\\'t exist, or has been removed|<title>Share Files Easily on SockShare</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -124,9 +132,10 @@ public class SockShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://www.sockshare.com" + streamID);
         String dllink = br.getRegex("<media:content url=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://media\\-b\\d+\\.sockshare\\.com/download/-*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://media\\-[a-z]\\d+\\.sockshare\\.com/download/.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("&amp;", "&");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -135,12 +144,39 @@ public class SockShareCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.sockshare.com/profile.php?pro");
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("<td>Expiring </td>[\t\n\r ]+<td>([A-Za-z]+ \\d+, \\d{4} at \\d{2}:\\d{2})</td>").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replace("at ", ""), "MMMM dd, yyyy hh:mm", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
     private void login(Account account, boolean fetchInfo) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
-                br.getHeaders().put("User-Agent", UA);
-                br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+                prepBrowser();
                 br.getHeaders().put("Accept-Charset", null);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -207,29 +243,6 @@ public class SockShareCom extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        br.getPage("http://www.sockshare.com/profile.php?pro");
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<td>Expiring </td>[\t\n\r ]+<td>([A-Za-z]+ \\d+, \\d{4} at \\d{2}:\\d{2})</td>").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.replace("at ", ""), "MMMM dd, yyyy hh:mm", null));
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
     }
 
     @Override
