@@ -90,44 +90,46 @@ public class UniBytesCom extends PluginForHost {
         br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
-            dllink = null;
-            if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-            int iwait = 60;
-            String regexedTime = br.getRegex("id=\"slowRest\">(\\d+)</").getMatch(0);
-            if (regexedTime == null) regexedTime = br.getRegex("var timerRest = (\\d+);").getMatch(0);
-            if (regexedTime != null) iwait = Integer.parseInt(regexedTime);
-            String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
-            if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
-            if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
-            String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-            if (s == null) {
-                logger.warning("s1 equals null!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            sleep(iwait * 1001l, downloadLink);
-            br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLinkCoded);
-            s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-            dllink = br.getRedirectLocation();
+            dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
             if (dllink == null) {
+                if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+                int iwait = 60;
+                String regexedTime = br.getRegex("id=\"slowRest\">(\\d+)</").getMatch(0);
+                if (regexedTime == null) regexedTime = br.getRegex("var timerRest = (\\d+);").getMatch(0);
+                if (regexedTime != null) iwait = Integer.parseInt(regexedTime);
+                String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
+                if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
+                if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
+                String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
                 if (s == null) {
-                    logger.warning("s2 equals null!");
+                    logger.warning("s1 equals null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLinkCoded);
-                if (br.containsHTML(CAPTCHATEXT)) {
-                    logger.info("Captcha found");
-                    for (int i = 0; i <= 5; i++) {
-                        String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
-                        String post = "s=" + s + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
-                        br.postPage(downloadLink.getDownloadURL(), post);
-                        if (!br.containsHTML(CAPTCHATEXT)) break;
+                sleep(iwait * 1001l, downloadLink);
+                br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLinkCoded);
+                s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
+                dllink = br.getRedirectLocation();
+                if (dllink == null) {
+                    if (s == null) {
+                        logger.warning("s2 equals null!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    logger.info("Captcha not found");
+                    br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLinkCoded);
+                    if (br.containsHTML(CAPTCHATEXT)) {
+                        logger.info("Captcha found");
+                        for (int i = 0; i <= 5; i++) {
+                            String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
+                            String post = "s=" + s + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
+                            br.postPage(downloadLink.getDownloadURL(), post);
+                            if (!br.containsHTML(CAPTCHATEXT)) break;
+                        }
+                        if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    } else {
+                        logger.info("Captcha not found");
+                    }
+                    dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
+                    if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
                 }
-                dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
             }
         }
         if (dllink == null) {
