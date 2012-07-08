@@ -6,3 +6,4 @@ popup_downloadfolder=保存フォルダを開く
 popup_exit=JDownloader を終了
 popup_pause=ダウンロードを一時停止
 popup_premiumtoggle=プレミアム有効
+popup_reconnect=再接続中

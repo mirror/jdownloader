@@ -1,4 +1,5 @@
 JDUpdater_start_updater_update_msg=更新するために再起動します。
+JDUpdater_start_updater_update_title=新しいバージョンを発見
 exit=閉じる
 guiless_create_package=お待ちください...更新パッケージを準備中
 guiless_downloadfinished=ダウンロード終了
