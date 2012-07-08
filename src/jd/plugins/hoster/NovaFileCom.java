@@ -549,7 +549,7 @@ public class NovaFileCom extends PluginForHost {
         String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, ">Traffic Available</td>[\r\n\t ]+<td>([\\-\\d\\.]+ (MB|GB))</td>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, ">Traffic Available:</td>[\r\n\t ]+<td>([\\-\\d\\.]+ (MB|GB))</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -566,7 +566,7 @@ public class NovaFileCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile(">PREMIUM account</td>[\r\n\t ]+<td><span [^>]+>(\\d{1,2} [A-Za-z]+ \\d{4})</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String expire = new Regex(correctedBR, ">Premium expires:</td>.+<div>(\\d{1,2} [A-Za-z]+ \\d{4})</div>").getMatch(0);
             if (expire == null) expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
@@ -616,7 +616,7 @@ public class NovaFileCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
-                if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
+                if (!new Regex(correctedBR, "(Premium(\\-| )expires|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
