@@ -8,6 +8,7 @@ import jd.Launcher;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.http.BrowserSettingsThread;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
@@ -90,6 +91,10 @@ public class LogController extends LogSourceProvider {
                 /* we are inside a LinkCheckerThread */
                 LinkCheckerThread lc = (LinkCheckerThread) currentThread;
                 logger = lc.getLogger();
+            } else if (currentThread instanceof BrowserSettingsThread) {
+                /* we are inside a BrowserSettingsThread */
+                BrowserSettingsThread bst = (BrowserSettingsThread) currentThread;
+                logger = bst.getLogger();
             }
         }
         if (logger != null && logger instanceof LogSource) {

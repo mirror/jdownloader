@@ -1,5 +1,6 @@
 package org.jdownloader.plugins.controller;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,25 +12,34 @@ import org.appwork.exceptions.WTFException;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public abstract class LazyPlugin<T extends Plugin> {
-    private static final Object[]        EMPTY = new Object[] {};
-    private long                         version;
-    private Pattern                      pattern;
-    private String                       classname;
-    private String                       displayName;
-    protected Class<T>                   pluginClass;
-    private Constructor<T>               constructor;
-    private Object[]                     constructorParameters;
-    protected T                          prototypeInstance;
+
+    private class ConstructorInfo<T extends Plugin> {
+        protected Constructor<T> constructor;
+        protected Object[]       constructorParameters;
+    }
+
+    private static final Object[]                 EMPTY = new Object[] {};
+    private long                                  version;
+    private Pattern                               pattern;
+    private String                                classname;
+    private String                                displayName;
+    protected WeakReference<Class<T>>             pluginClass;
+
+    protected T                                   prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
-    final private PluginClassLoaderChild classLoader;
+    private WeakReference<PluginClassLoaderChild> classLoader;
 
     public LazyPlugin(String patternString, String classname, String displayName, long version, Class<T> class1, PluginClassLoaderChild classLoader) {
         pattern = Pattern.compile(patternString, Pattern.CASE_INSENSITIVE);
-        pluginClass = class1;
+        if (class1 != null) {
+            pluginClass = new WeakReference<Class<T>>(class1);
+        }
         this.classname = classname;
         this.displayName = displayName;
         this.version = version;
-        this.classLoader = classLoader;
+        if (classLoader != null) {
+            this.classLoader = new WeakReference<PluginClassLoaderChild>(classLoader);
+        }
     }
 
     public long getVersion() {
@@ -49,7 +59,11 @@ public abstract class LazyPlugin<T extends Plugin> {
     }
 
     public void setPluginClass(Class<T> pluginClass) {
-        this.pluginClass = pluginClass;
+        if (pluginClass == null) {
+            this.pluginClass = null;
+        } else {
+            this.pluginClass = new WeakReference<Class<T>>(pluginClass);
+        }
     }
 
     public boolean canHandle(String url) {
@@ -64,7 +78,7 @@ public abstract class LazyPlugin<T extends Plugin> {
 
     public T getPrototype() throws UpdateRequiredClassNotFoundException {
         ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-        if (lcl != null && (lcl != classLoader) && (lcl instanceof PluginClassLoaderChild)) {
+        if (lcl != null && (lcl != getClassLoader()) && (lcl instanceof PluginClassLoaderChild)) {
             /*
              * current Thread uses a different PluginClassLoaderChild, so lets use it to generate a new instance
              */
@@ -80,55 +94,33 @@ public abstract class LazyPlugin<T extends Plugin> {
 
     public T newInstance() throws UpdateRequiredClassNotFoundException {
         try {
-            Constructor<T> cons = getConstructor(getPluginClass());
-            return cons.newInstance(constructorParameters);
+            ConstructorInfo<T> cons = getConstructor(getPluginClass());
+            return cons.constructor.newInstance(cons.constructorParameters);
         } catch (final Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, true);
         }
         return null;
     }
 
-    private Constructor<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
-        if (clazz != pluginClass) {
-            /*
-             * a different PluginClassLoaderChild might be in use, so lets use the new clazz
-             */
+    private ConstructorInfo<T> getConstructor(Class<T> clazz) throws UpdateRequiredClassNotFoundException {
+        ConstructorInfo<T> ret = new ConstructorInfo<T>();
+        try {
+            ret.constructor = clazz.getConstructor(new Class[] {});
+            ret.constructorParameters = EMPTY;
+            return ret;
+        } catch (Throwable e) {
+            handleUpdateRequiredClassNotFoundException(e, false);
             try {
-                Constructor<T> lconstructor = clazz.getConstructor(new Class[] {});
-                constructorParameters = EMPTY;
-                return lconstructor;
-            } catch (Throwable e) {
-                handleUpdateRequiredClassNotFoundException(e, false);
-                try {
-                    Constructor<T> lconstructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
-                    constructorParameters = new Object[] { new PluginWrapper(this) {
-                        /* workaround for old plugin system */
-                    } };
-                    return lconstructor;
-                } catch (final Throwable e2) {
-                    handleUpdateRequiredClassNotFoundException(e, true);
-                }
+                ret.constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
+                ret.constructorParameters = new Object[] { new PluginWrapper(this) {
+                    /* workaround for old plugin system */
+                } };
+                return ret;
+            } catch (final Throwable e2) {
+                handleUpdateRequiredClassNotFoundException(e, true);
             }
         }
-        if (constructor != null) return constructor;
-        synchronized (this) {
-            if (constructor != null) return constructor;
-            try {
-                constructor = clazz.getConstructor(new Class[] {});
-                constructorParameters = EMPTY;
-            } catch (Throwable e) {
-                handleUpdateRequiredClassNotFoundException(e, false);
-                try {
-                    constructor = clazz.getConstructor(new Class[] { PluginWrapper.class });
-                    constructorParameters = new Object[] { new PluginWrapper(this) {
-                        /* workaround for old plugin system */
-                    } };
-                } catch (final Throwable e2) {
-                    handleUpdateRequiredClassNotFoundException(e, true);
-                }
-            }
-            return constructor;
-        }
+        return null;
     }
 
     public void handleUpdateRequiredClassNotFoundException(Throwable e, boolean ThrowWTF) throws UpdateRequiredClassNotFoundException {
@@ -137,7 +129,7 @@ public abstract class LazyPlugin<T extends Plugin> {
                 NoClassDefFoundError ncdf = (NoClassDefFoundError) e;
                 String classNotFound = ncdf.getMessage();
                 ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-                if (lcl == null || !(lcl instanceof PluginClassLoaderChild)) lcl = classLoader;
+                if (lcl == null || !(lcl instanceof PluginClassLoaderChild)) lcl = getClassLoader();
                 if (lcl != null && lcl instanceof PluginClassLoaderChild) {
                     PluginClassLoaderChild pcl = (PluginClassLoaderChild) lcl;
                     if (pcl.isUpdateRequired(classNotFound)) throw new UpdateRequiredClassNotFoundException(classNotFound);
@@ -151,7 +143,7 @@ public abstract class LazyPlugin<T extends Plugin> {
     @SuppressWarnings("unchecked")
     protected Class<T> getPluginClass() {
         ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-        if (lcl != null && (lcl != classLoader) && (lcl instanceof PluginClassLoaderChild)) {
+        if (lcl != null && (lcl != getClassLoader()) && (lcl instanceof PluginClassLoaderChild)) {
             /*
              * current Thread uses a different PluginClassLoaderChild, so lets use it to get PluginClass
              */
@@ -162,18 +154,27 @@ public abstract class LazyPlugin<T extends Plugin> {
                 throw new WTFException(e);
             }
         }
-        if (pluginClass != null) return pluginClass;
+        Class<T> ret = null;
+        if ((ret = getWeakPluginClass()) != null) return ret;
         synchronized (this) {
-            if (pluginClass != null) return pluginClass;
+            if ((ret = getWeakPluginClass()) != null) return ret;
             try {
-                pluginClass = (Class<T>) classLoader.loadClass(classname);
+                ret = (Class<T>) getClassLoader().loadClass(classname);
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new WTFException(e);
             }
-            return pluginClass;
+            setPluginClass(ret);
+            return ret;
         }
 
+    }
+
+    private Class<T> getWeakPluginClass() {
+        Class<T> ret = null;
+        if (pluginClass != null && (ret = pluginClass.get()) != null) return ret;
+        pluginClass = null;
+        return null;
     }
 
     public Pattern getPattern() {
@@ -184,6 +185,18 @@ public abstract class LazyPlugin<T extends Plugin> {
      * @return the classLoader
      */
     public PluginClassLoaderChild getClassLoader() {
-        return classLoader;
+        PluginClassLoaderChild ret = null;
+        if (classLoader != null && (ret = classLoader.get()) != null) return ret;
+        ret = PluginClassLoader.getInstance().getChild();
+        classLoader = new WeakReference<PluginClassLoader.PluginClassLoaderChild>(ret);
+        return ret;
+    }
+
+    public void setClassLoader(PluginClassLoaderChild cl) {
+        if (cl == null) {
+            classLoader = null;
+        } else {
+            classLoader = new WeakReference<PluginClassLoader.PluginClassLoaderChild>(cl);
+        }
     }
 }

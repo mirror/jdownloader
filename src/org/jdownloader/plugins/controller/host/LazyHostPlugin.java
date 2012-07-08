@@ -89,6 +89,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 /* we could not create new instance, so let us use fallback LazyHostPlugin to instance a new Plugin */
                 this.setClassname(fallBackPlugin.getClassname());
                 this.setPluginClass(fallBackPlugin.getPluginClass());
+                this.setClassLoader(fallBackPlugin.getClassLoader());
+                /* remove reference from fallBackPlugin */
+                fallBackPlugin = null;
                 /* our fallBack Plugin does not have any settings */
                 this.setHasConfig(false);
                 ret = super.newInstance();
@@ -110,6 +113,9 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
                 /* we could not create protoType, so let us use fallback LazyHostPlugin to instance a new Prototype */
                 this.setClassname(fallBackPlugin.getClassname());
                 this.setPluginClass(fallBackPlugin.getPluginClass());
+                this.setClassLoader(fallBackPlugin.getClassLoader());
+                /* remove reference from fallBackPlugin */
+                fallBackPlugin = null;
                 /* our fallBack Plugin does not have any settings */
                 this.setHasConfig(false);
                 ret = super.getPrototype();

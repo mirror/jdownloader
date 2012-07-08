@@ -140,7 +140,23 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         autoConfirm.setVisible(false);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
         addLinks = new JButton(new AddLinksAction());
-        confirmAll = new JButton(new ConfirmAllAction());
+        confirmAll = new JButton(new ConfirmAllAction() {
+            {
+                org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
+
+                    @Override
+                    public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+                        if (newValue != null) setAutoStart(newValue);
+                    }
+
+                    @Override
+                    public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+                    }
+                }, false);
+                setAutoStart(org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.isEnabled());
+            }
+
+        });
         clearAll = new JButton(new ClearAction());
         popup = new JButton(new AddOptionsAction(addLinks)) {
             /**
@@ -171,6 +187,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             public void setBounds(int x, int y, int width, int height) {
                 super.setBounds(x - 2, y, width + 2, height);
             }
+
         };
 
         showHideSidebar = new JToggleButton(new AppAction() {

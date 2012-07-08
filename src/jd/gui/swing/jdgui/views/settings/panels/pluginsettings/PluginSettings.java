@@ -17,11 +17,6 @@ public class PluginSettings extends AbstractConfigPanel {
 
     public PluginSettings() {
         super();
-        this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
-        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
-
-        add(psp = new PluginSettingsPanel());
-
     }
 
     @Override
@@ -30,12 +25,28 @@ public class PluginSettings extends AbstractConfigPanel {
     }
 
     @Override
+    protected void onShow() {
+        this.addHeader(getTitle(), NewTheme.I().getIcon("plugin", 32));
+        this.addDescriptionPlain(_JDT._.gui_settings_plugins_description(HostPluginController.getInstance().list().size()));
+        add(psp = new PluginSettingsPanel());
+        super.onShow();
+    }
+
+    @Override
     public void save() {
-        psp.setHidden();
+        PluginSettingsPanel lpsp = psp;
+        if (lpsp != null) {
+            lpsp.setHidden();
+        }
+        psp = null;
+        this.removeAll();
     }
 
     @Override
     public void updateContents() {
-        psp.setShown();
+        PluginSettingsPanel lpsp = psp;
+        if (lpsp != null) {
+            lpsp.setShown();
+        }
     }
 }
