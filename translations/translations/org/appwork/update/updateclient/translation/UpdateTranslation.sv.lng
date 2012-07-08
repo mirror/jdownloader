@@ -122,6 +122,7 @@ please_wait_until_update_finished=Vänta till updater är klar.
 readyToDownloadUpdates=%s1 uppdatering(ar) tillgängliga!
 readyToDownloadUpdatesDetailed=Ladda ner %s1 Uppdateringar nu?
 readyToInstallFiles=Installera %s1 fil(er) och katalog(er)
+redirect_error=Oväntad omstyrning till %s1
 restart_msg=Update måste starta om nu!
 restart_required_msg=Updater kommer att uppdatera sig själv nu
 restart_required_title=Omstart krävs
