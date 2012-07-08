@@ -13,6 +13,7 @@ context_cleanup=Obriši nakon raspakiranja
 context_password=Lozinka za raspakiranje
 context_password_msg=Postavite lozinku za raspakirati %s1.
 context_password_msg2=Postavite lozinku za raspakiranje %s1. Predložena(e) lozinka(e):%s2
+context_password_msg2_multi=Postavite lozinku.\r\nPredložena(e) lozinka(e):\r\n%s1
 context_password_msg_multi=Postavite lozinku
 contextmenu_auto_extract_package=Uklj. autom. raspakiranje
 contextmenu_autodeletefiles='Brisanje datoteka arhive' je uključeno
