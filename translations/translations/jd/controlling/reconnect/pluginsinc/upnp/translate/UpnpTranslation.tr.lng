@@ -1,7 +1,7 @@
 AutoDetectAction_run_failed=UPNP aygıtları bulundu fakat yeniden bağlanma işlemi gerçekleştirilemedi. Bunun yerine Live Header yeniden bağlanma yöntemini deneyin!
 AutoDetectAction_run_optimize=Uyarla: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Çalışma ağınızdaki UPNP yeniden bağlanma aygıtlarının tümünü bulmaya çalışır. FritzBox Yönlendiricilerinin birçoğu genelde bu yöntemle yeniden bağlanabilir.
-UPNPReconnectInvoker_getName_=UPNP Yönlendirici yoluyla yeniden bağlanma
+UPNPReconnectInvoker_getName_=UPNP Yönlendirici yeniden bağlanma
 UPNPRouterPlugin_run_error=UPNP aygıtı bulunamadı. Bunun yerine Live Header Tekrar Bağlanma yöntemini deneyin.
 UPNPRouterPlugin_run_mesg=Tüm çalışma ağı arayüzleri taranıyor
 UPNPRouterPlugin_run_wizard_title=UPNP Yönlendirici Sihirbazı
