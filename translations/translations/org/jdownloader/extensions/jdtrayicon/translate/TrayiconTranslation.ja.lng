@@ -1,9 +1,15 @@
 plugins_optional_JDLightTray_always=常に
 plugins_optional_JDLightTray_closetotray=トレイに閉じる
+plugins_optional_trayIcon_dl_finished=終了:
 plugins_optional_trayIcon_dl_running=実行中...
 plugins_optional_trayIcon_dl_total=合計:
+plugins_optional_trayIcon_downloads=ダウンロード:
+plugins_optional_trayIcon_eta=残時間:
+plugins_optional_trayIcon_progress=進捗:
+plugins_optional_trayIcon_speed=速度:
 popup_downloadfolder=保存フォルダを開く
 popup_exit=JDownloader を終了
 popup_pause=ダウンロードを一時停止
 popup_premiumtoggle=プレミアム有効
 popup_reconnect=再接続中
+popup_update=更新を確認
