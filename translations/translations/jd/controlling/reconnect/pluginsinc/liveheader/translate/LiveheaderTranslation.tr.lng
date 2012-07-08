@@ -16,7 +16,7 @@ DataCompareDialog_layoutDialogContent_router=Yönlendiriciniz
 DataCompareDialog_layoutDialogContent_user=Kullanıcı Adı
 DataCompareDialog_layoutDialogContent_user_help=Web Arayüzü Kullanıcı Adını girin...
 DataCompareDialog_layoutDialogContent_webinterface=Yönlendirici Web Arayüzü
-DataCompareDialog_layoutDialogContent_webinterface_desc=Yeniden bağlanma işlemi gerçekleştirebilmesi için JDownloader'ın Yönlendirici web arayüzü oturum açma bilgilerine ihtiyacı var. Bu oturum açma bilgileri genelde yönlendirici'nin kılavuzu ya da arkasında bulunmaktadır. Eğer bu bilgiler yoksa lütfen Çalışma Ağı Yöneticinize başvurun
+DataCompareDialog_layoutDialogContent_webinterface_desc=Yeniden bağlanma işlemi gerçekleştirebilmesi için JDownloader'ın Yönlendirici web arayüzü oturum açma bilgilerine ihtiyacı var.\n\nBu oturum açma bilgileri genelde yönlendiricinizin kılavuzu ya da arkasında bulunmaktadır. Eğer bu bilgiler elinizde yoksa lütfen\n\nÇalışma Ağı Yöneticinize başvurun
 DataCompareDialog_open_webinterface=Web arayüzünü aç
 EditScriptAction_EditScriptAction_=Betiği Düzenle
 EditScriptAction_EditScriptAction_tt=Kendi betiğinizi girin (yapıştırın) ya da var olan betiği düzenleyin
@@ -77,7 +77,7 @@ jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=IP Denetimini etkisizleştirdiniz. Bu yeniden bağlanma sürelerini oldukça uzatacaktır!\n\n\n\nYeniden Bağlanma Kaydedicisi gibi birkaç ileriki modül etkisiz.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP Denetimi etkisizleştirildi!
 jd_nrouter_recorder_Gui_info1=Yönlendirici IP adresini kontrol edin ve başlat butonuna tıklayın
-jd_nrouter_recorder_Gui_info3=Tekrar bağlanma işleminden sonra Durdur butonuna tıklayın ve kaydedin
+jd_nrouter_recorder_Gui_info3=Yeniden bağlanma işleminden sonra Durdur butonuna tıklayın ve kaydedin
 jd_router_reconnectrecorder_Gui_icon_bad=Tekrar bağlanma işlemi kaydedilirken hata oluştu!
 jd_router_reconnectrecorder_Gui_icon_good=Tekrar bağlanma başarıyla kaydedildi!
 jd_router_reconnectrecorder_Gui_icon_progress=Yeniden bağlanma kaydediliyor...
