@@ -204,7 +204,8 @@ public class TurboBitNet extends PluginForHost {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         prepareBrowser(UA);
-        br.getPage(downloadLink.getDownloadURL());
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String fileSize = br.getRegex("File size:</b>(.*?)</div>").getMatch(0);
         if (fileSize == null) {
@@ -221,9 +222,9 @@ public class TurboBitNet extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim().replace(",", ".").replace(" ", "")));
         }
         String downloadUrl = null, waittime = null;
-        String id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)/.*?\\.html").getMatch(0);
+        String id = new Regex(dllink, "turbobit\\.net/(.*?)/.*?\\.html").getMatch(0);
         if (id == null) {
-            id = new Regex(downloadLink.getDownloadURL(), "turbobit\\.net/(.*?)\\.html").getMatch(0);
+            id = new Regex(dllink, "turbobit\\.net/(.*?)\\.html").getMatch(0);
         }
         if (id == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("/download/free/" + id);
@@ -356,17 +357,17 @@ public class TurboBitNet extends PluginForHost {
             br.setCookie(br.getHost(), "turbobit1", Encoding.urlEncode_light(df.format(date)).replace(":", "%3A"));
 
             br.getPage(res);
-            downloadUrl = br.getRegex("<a alt=\'link\' href=\'([^\']+)").getMatch(0);
+            downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
             if (downloadUrl != null) {
-                downloadUrl = downloadUrl.replaceAll("http://(www\\.)?turbobit\\.net", "");
+                downloadUrl = downloadUrl.replaceAll(MAINPAGE, "");
                 if (downloadUrl.equals("/download/free/" + id)) {
                     downloadUrl = null;
                 }
             }
             if (downloadUrl == null) {
-                downloadUrl = br.getRegex("\\(\"href\"\\)==\"([^\"]+)").getMatch(0);
+                downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + dllink.replaceAll(MAINPAGE, "") + ")").getMatch(0);
                 if (downloadUrl == null) {
-                    downloadUrl = rhino(escape(br.toString()) + "@" + rtUpdate, 999);
+                    downloadUrl = br.getRegex("<a href=\'([^\']+ id=)").getMatch(0);
                 }
             }
         }
