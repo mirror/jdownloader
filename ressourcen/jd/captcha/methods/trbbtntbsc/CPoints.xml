@@ -970,35 +970,6 @@
         <void method="set">
          <object idref="CPoint35">
           <void property="color">
-           <int>10645886</int>
-          </void>
-          <void property="colorDistanceMode">
-           <byte>2</byte>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-         </object>
-         <int>32</int>
-        </void>
-       </void>
-      </object>
-      <int>45</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint36">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint36">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint36">
-          <void property="color">
            <int>6469325</int>
           </void>
           <void property="colorDistanceMode">
@@ -1021,15 +992,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint37">
+   <object class="jd.captcha.easy.CPoint" id="CPoint36">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint37">
+      <object idref="CPoint36">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint37">
+         <object idref="CPoint36">
           <void property="color">
            <int>5629080</int>
           </void>
@@ -1053,15 +1024,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint38">
+   <object class="jd.captcha.easy.CPoint" id="CPoint37">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint38">
+      <object idref="CPoint37">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint38">
+         <object idref="CPoint37">
           <void property="color">
            <int>4893637</int>
           </void>
@@ -1085,15 +1056,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint39">
+   <object class="jd.captcha.easy.CPoint" id="CPoint38">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint39">
+      <object idref="CPoint38">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint39">
+         <object idref="CPoint38">
           <void property="color">
            <int>9011363</int>
           </void>
@@ -1117,15 +1088,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint40">
+   <object class="jd.captcha.easy.CPoint" id="CPoint39">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint40">
+      <object idref="CPoint39">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint40">
+         <object idref="CPoint39">
           <void property="color">
            <int>8300708</int>
           </void>
@@ -1149,15 +1120,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint41">
+   <object class="jd.captcha.easy.CPoint" id="CPoint40">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint41">
+      <object idref="CPoint40">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint41">
+         <object idref="CPoint40">
           <void property="color">
            <int>14342578</int>
           </void>
@@ -1181,47 +1152,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint42">
+   <object class="jd.captcha.easy.CPoint" id="CPoint41">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint42">
+      <object idref="CPoint41">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint42">
-          <void property="color">
-           <int>8366242</int>
-          </void>
-          <void property="colorDistanceMode">
-           <byte>2</byte>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-          <void property="foreground">
-           <boolean>false</boolean>
-          </void>
-         </object>
-         <int>20</int>
-        </void>
-       </void>
-      </object>
-      <int>72</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint43">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint43">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint43">
+         <object idref="CPoint41">
           <void property="color">
            <int>8210591</int>
           </void>
@@ -1242,15 +1181,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint44">
+   <object class="jd.captcha.easy.CPoint" id="CPoint42">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint44">
+      <object idref="CPoint42">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint44">
+         <object idref="CPoint42">
           <void property="color">
            <int>12826318</int>
           </void>
@@ -1271,15 +1210,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint45">
+   <object class="jd.captcha.easy.CPoint" id="CPoint43">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint45">
+      <object idref="CPoint43">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint45">
+         <object idref="CPoint43">
           <void property="color">
            <int>13552086</int>
           </void>
@@ -1300,15 +1239,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint46">
+   <object class="jd.captcha.easy.CPoint" id="CPoint44">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint46">
+      <object idref="CPoint44">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint46">
+         <object idref="CPoint44">
           <void property="color">
            <int>11440574</int>
           </void>
@@ -1329,15 +1268,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint47">
+   <object class="jd.captcha.easy.CPoint" id="CPoint45">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint47">
+      <object idref="CPoint45">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint47">
+         <object idref="CPoint45">
           <void property="color">
            <int>9922988</int>
           </void>
@@ -1358,15 +1297,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint48">
+   <object class="jd.captcha.easy.CPoint" id="CPoint46">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint48">
+      <object idref="CPoint46">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint48">
+         <object idref="CPoint46">
           <void property="color">
            <int>8732780</int>
           </void>
@@ -1387,15 +1326,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint49">
+   <object class="jd.captcha.easy.CPoint" id="CPoint47">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint49">
+      <object idref="CPoint47">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint49">
+         <object idref="CPoint47">
           <void property="color">
            <int>7467177</int>
           </void>
@@ -1419,15 +1358,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint50">
+   <object class="jd.captcha.easy.CPoint" id="CPoint48">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint50">
+      <object idref="CPoint48">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint50">
+         <object idref="CPoint48">
           <void property="color">
            <int>11187365</int>
           </void>
@@ -1451,15 +1390,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint51">
+   <object class="jd.captcha.easy.CPoint" id="CPoint49">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint51">
+      <object idref="CPoint49">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint51">
+         <object idref="CPoint49">
           <void property="color">
            <int>10923430</int>
           </void>
@@ -1483,15 +1422,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint52">
+   <object class="jd.captcha.easy.CPoint" id="CPoint50">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint52">
+      <object idref="CPoint50">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint52">
+         <object idref="CPoint50">
           <void property="color">
            <int>10536887</int>
           </void>
@@ -1515,15 +1454,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint53">
+   <object class="jd.captcha.easy.CPoint" id="CPoint51">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint53">
+      <object idref="CPoint51">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint53">
+         <object idref="CPoint51">
           <void property="color">
            <int>8960184</int>
           </void>
@@ -1547,15 +1486,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint54">
+   <object class="jd.captcha.easy.CPoint" id="CPoint52">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint54">
+      <object idref="CPoint52">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint54">
+         <object idref="CPoint52">
           <void property="color">
            <int>8111261</int>
           </void>
@@ -1579,15 +1518,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint55">
+   <object class="jd.captcha.easy.CPoint" id="CPoint53">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint55">
+      <object idref="CPoint53">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint55">
+         <object idref="CPoint53">
           <void property="color">
            <int>9040779</int>
           </void>
@@ -1611,47 +1550,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint56">
+   <object class="jd.captcha.easy.CPoint" id="CPoint54">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint56">
+      <object idref="CPoint54">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint56">
-          <void property="color">
-           <int>6457765</int>
-          </void>
-          <void property="colorDistanceMode">
-           <byte>2</byte>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-          <void property="foreground">
-           <boolean>false</boolean>
-          </void>
-         </object>
-         <int>20</int>
-        </void>
-       </void>
-      </object>
-      <int>71</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint57">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint57">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint57">
+         <object idref="CPoint54">
           <void property="color">
            <int>15663006</int>
           </void>
@@ -1672,102 +1579,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint58">
+   <object class="jd.captcha.easy.CPoint" id="CPoint55">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint58">
+      <object idref="CPoint55">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint58">
-          <void property="color">
-           <int>6908846</int>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-          <void property="foreground">
-           <boolean>false</boolean>
-          </void>
-         </object>
-         <int>48</int>
-        </void>
-       </void>
-      </object>
-      <int>129</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint59">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint59">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint59">
-          <void property="color">
-           <int>7501964</int>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-          <void property="foreground">
-           <boolean>false</boolean>
-          </void>
-         </object>
-         <int>5</int>
-        </void>
-       </void>
-      </object>
-      <int>10</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint60">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint60">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint60">
-          <void property="color">
-           <int>12226970</int>
-          </void>
-          <void property="distance">
-           <int>25</int>
-          </void>
-          <void property="foreground">
-           <boolean>false</boolean>
-          </void>
-         </object>
-         <int>42</int>
-        </void>
-       </void>
-      </object>
-      <int>64</int>
-     </void>
-    </void>
-   </object>
-  </void>
-  <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint61">
-    <void class="java.awt.Point" method="getField">
-     <string>x</string>
-     <void method="set">
-      <object idref="CPoint61">
-       <void class="java.awt.Point" method="getField">
-        <string>y</string>
-        <void method="set">
-         <object idref="CPoint61">
+         <object idref="CPoint55">
           <void property="color">
            <int>8676337</int>
           </void>
@@ -1788,15 +1608,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint62">
+   <object class="jd.captcha.easy.CPoint" id="CPoint56">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint62">
+      <object idref="CPoint56">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint62">
+         <object idref="CPoint56">
           <void property="color">
            <int>14014191</int>
           </void>
@@ -1817,15 +1637,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint63">
+   <object class="jd.captcha.easy.CPoint" id="CPoint57">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint63">
+      <object idref="CPoint57">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint63">
+         <object idref="CPoint57">
           <void property="color">
            <int>6863092</int>
           </void>
@@ -1846,15 +1666,15 @@
    </object>
   </void>
   <void method="add">
-   <object class="jd.captcha.easy.CPoint" id="CPoint64">
+   <object class="jd.captcha.easy.CPoint" id="CPoint58">
     <void class="java.awt.Point" method="getField">
      <string>x</string>
      <void method="set">
-      <object idref="CPoint64">
+      <object idref="CPoint58">
        <void class="java.awt.Point" method="getField">
         <string>y</string>
         <void method="set">
-         <object idref="CPoint64">
+         <object idref="CPoint58">
           <void property="color">
            <int>6262513</int>
           </void>
@@ -1870,6 +1690,232 @@
        </void>
       </object>
       <int>104</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint59">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint59">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint59">
+          <void property="color">
+           <int>9571187</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+         </object>
+         <int>21</int>
+        </void>
+       </void>
+      </object>
+      <int>82</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint60">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint60">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint60">
+          <void property="color">
+           <int>1934473</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+         </object>
+         <int>24</int>
+        </void>
+       </void>
+      </object>
+      <int>82</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint61">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint61">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint61">
+          <void property="color">
+           <int>5815702</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>6</int>
+        </void>
+       </void>
+      </object>
+      <int>137</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint62">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint62">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint62">
+          <void property="color">
+           <int>10122947</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>2</int>
+        </void>
+       </void>
+      </object>
+      <int>50</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint63">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint63">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint63">
+          <void property="color">
+           <int>11896723</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>4</int>
+        </void>
+       </void>
+      </object>
+      <int>10</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint64">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint64">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint64">
+          <void property="color">
+           <int>10316934</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>22</int>
+        </void>
+       </void>
+      </object>
+      <int>103</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint65">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint65">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint65">
+          <void property="color">
+           <int>7244199</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>27</int>
+        </void>
+       </void>
+      </object>
+      <int>104</int>
+     </void>
+    </void>
+   </object>
+  </void>
+  <void method="add">
+   <object class="jd.captcha.easy.CPoint" id="CPoint66">
+    <void class="java.awt.Point" method="getField">
+     <string>x</string>
+     <void method="set">
+      <object idref="CPoint66">
+       <void class="java.awt.Point" method="getField">
+        <string>y</string>
+        <void method="set">
+         <object idref="CPoint66">
+          <void property="color">
+           <int>8888452</int>
+          </void>
+          <void property="distance">
+           <int>25</int>
+          </void>
+          <void property="foreground">
+           <boolean>false</boolean>
+          </void>
+         </object>
+         <int>48</int>
+        </void>
+       </void>
+      </object>
+      <int>9</int>
      </void>
     </void>
    </object>
