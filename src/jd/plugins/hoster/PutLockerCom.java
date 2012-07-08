@@ -34,6 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -45,7 +46,7 @@ public class PutLockerCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.putlocker.com";
     private static final Object LOCK     = new Object();
-    private static final String UA       = "User-Agent: Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
+    private static String       agent    = null;
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,13 +85,14 @@ public class PutLockerCom extends PluginForHost {
     }
 
     private String getDllink(DownloadLink downloadLink) throws IOException {
-        String dllink = br.getRegex("<a href=\"/gopro\\.php\">Tired of ads and waiting\\? Go Pro\\!</a>[\t\n\rn ]+</div>[\t\n\rn ]+<a href=\"(/.*?)\"").getMatch(0);
+        // base64 valid chars [A-Za-z0-9_\\-\\=\\+\\/]+
+        String dllink = br.getRegex("<a href=\"/gopro\\.php\">Tired of ads and waiting\\? Go Pro\\!</a>[\t\n\r ]+</div>[\t\n\rn ]+<a href=\"(/.*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(/get_file\\.php\\?download=[A-Z0-9]+\\&key=[a-z0-9]+)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(/get_file\\.php\\?download=[A-Z0-9]+\\&key=[a-z0-9]+&original=1)\"").getMatch(0);
+            dllink = br.getRegex("\"(/get_file\\.php\\?(download|id)=[A-Z0-9]+\\&key=[A-Za-z0-9_\\-\\=\\+\\/]+)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(/get_file\\.php\\?(download|id)=[A-Z0-9]+\\&key=[A-Za-z0-9_\\-\\=\\+\\/]+&original=1)\"").getMatch(0);
             if (dllink == null) {
                 // Handling for streamlinks
-                dllink = br.getRegex("playlist: \\'(/get_file\\.php\\?stream=[A-Za-z0-9=]+)\\'").getMatch(0);
+                dllink = br.getRegex("playlist: \\'(/get_file\\.php\\?stream=[A-Za-z0-9_\\-\\=\\+\\/]+)\\'").getMatch(0);
                 if (dllink != null) {
                     dllink = MAINPAGE + dllink;
                     downloadLink.setProperty("videolink", dllink);
@@ -114,8 +116,7 @@ public class PutLockerCom extends PluginForHost {
         final Form freeform = br.getForm(0);
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Can still be skipped */
-        // final String waittime =
-        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // final String waittime = br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
@@ -140,8 +141,7 @@ public class PutLockerCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            // My experience was that such files just don't work, i wasn't able
-            // to download a link with this error in 3 days!
+            // My experience was that such files just don't work, i wasn't able to download a link with this error in 3 days!
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
             if (br.containsHTML(">This link has expired\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -164,12 +164,23 @@ public class PutLockerCom extends PluginForHost {
         dl.startDownload();
     }
 
+    public void prepBrowser() {
+        br.setCookiesExclusive(true);
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+    }
+
     private void login(Account account, boolean fetchInfo) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
-                br.getHeaders().put("User-Agent", UA);
-                br.getHeaders().put("Accept-Language", "de,de-de;q=0.7,en;q=0.3");
+                prepBrowser();
                 br.getHeaders().put("Accept-Charset", null);
                 br.setCookiesExclusive(true);
                 final Object ret = account.getProperty("cookies", null);
@@ -241,8 +252,8 @@ public class PutLockerCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UA);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">This file doesn\\'t exist, or has been removed \\.<") || br.getURL().contains("?404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("hd_marker\".*?span>(.*?)<strong").getMatch(0);
@@ -250,8 +261,7 @@ public class PutLockerCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("<title>(.*?) |").getMatch(0);
         String filesize = br.getRegex("site-content.*?<h1>.*?<strong>\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // User sometimes adds random stuff to filenames when downloading so we
-        // better set the final name here
+        // User sometimes adds random stuff to filenames when downloading so we better set the final name here
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
