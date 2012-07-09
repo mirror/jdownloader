@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.translator;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -73,7 +72,7 @@ import org.tmatesoft.svn.core.wc.SVNRevision;
  * @author thomas
  * 
  */
-public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslateInterface> {
+public class TranslatorExtension extends AbstractExtension<TranslatorConfig, TranslatorTranslation> {
     /**
      * Extension GUI
      */
@@ -99,62 +98,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         return fontname;
     }
 
-    public static void main(String[] args) {
-        ArrayList<File> files = Files.getFiles(new FileFilter() {
-
-            @Override
-            public boolean accept(File pathname) {
-                if (!pathname.getName().endsWith(".lng")) return false;
-
-                if (pathname.getName().contains("es-castillian")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
-
-                }
-                if (pathname.getName().contains("zh-hans")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
-
-                }
-                if (pathname.getName().contains("zh-hant")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
-
-                }
-                if (pathname.getName().contains("sr-latin")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "__")));
-
-                }
-                if (pathname.getName().contains("pt-BR")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
-
-                }
-                if (pathname.getName().contains("bg-incomplete")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
-
-                }
-                if (pathname.getName().contains("pt-PT")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("-", "_")));
-
-                }
-                if (pathname.getName().contains("bg_incomplete")) {
-                    renameTo(pathname, new File(pathname.getParentFile(), pathname.getName().replace("_", "__")));
-
-                }
-                return false;
-            }
-
-            private void renameTo(File pathname, File file) {
-                System.out.println(pathname + "->" + file);
-                if (file.exists()) file.delete();
-                pathname.renameTo(file);
-            }
-        }, new File("c:\\workspace\\JDownloader"));
-
-    }
-
     public TranslatorExtension() {
         // Name. The translation Extension itself does not need translation. All
         // translators should be able to read english
         logger = LogController.getInstance().getLogger("TranslatorExtension");
-        setTitle("Translator");
+        setTitle(_.Translator());
         eventSender = new TranslatorExtensionEventSender();
         // get all LanguageIDs
         List<String> ids = TranslationFactory.listAvailableTranslations(JdownloaderTranslation.class, GuiTranslation.class);
@@ -320,7 +268,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     @Override
     public String getDescription() {
-        return "This Extension can be used to edit JDownloader translations. You need a developer account to use this extension";
+        return _.description();
     }
 
     /**
