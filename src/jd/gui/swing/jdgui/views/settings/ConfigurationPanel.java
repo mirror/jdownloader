@@ -1,6 +1,8 @@
 package jd.gui.swing.jdgui.views.settings;
 
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Graphics;
 
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
@@ -11,6 +13,7 @@ import jd.Launcher;
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
 import jd.gui.swing.jdgui.views.settings.sidebar.ConfigSidebar;
+import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.JsonConfig;
@@ -31,6 +34,7 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         super(new MigLayout("ins 0", "[200!,grow,fill][grow,fill]", "[grow,fill]"));
         sidebar = new ConfigSidebar();
         right = new RightPanel();
+
         add(sidebar, "");
         JScrollPane sp;
         add(sp = new JScrollPane(right));
@@ -39,13 +43,11 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         cfg = JsonConfig.create(GraphicalUserInterfaceSettings.class);
         // add(viewport);
         sidebar.addListener(this);
-        // int c =
-        // LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
-        // if (c >= 0) {
-        // setBackground(new Color(c));
-        // super.setOpaque(true);
-        // putClientProperty("Synthetica.opaque", Boolean.TRUE);
-        // }
+        int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
+        if (c >= 0) {
+            setBackground(new Color(c).brighter());
+            super.setOpaque(true);
+        }
     }
 
     public void setOpaque(boolean isOpaque) {
@@ -123,6 +125,23 @@ public class ConfigurationPanel extends SwitchPanel implements ListSelectionList
         }
         panel = selectedPanel;
         panel.setShown();
+
+    }
+
+    // public boolean isOpaque() {
+    // return true;
+    // }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+
+        super.paintComponent(g);
+    }
+
+    @Override
+    public void paint(Graphics g) {
+
+        super.paint(g);
     }
 
     public void setSelectedSubPanel(Class<?> class1) {

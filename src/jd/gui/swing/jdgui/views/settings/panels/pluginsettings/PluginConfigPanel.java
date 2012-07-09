@@ -20,6 +20,8 @@ public class PluginConfigPanel extends SwitchPanel {
 
     private PluginConfigPanel() {
         super(new MigLayout("ins 0, wrap 2", "[][grow,fill]", "[]"));
+
+        setOpaque(false);
     }
 
     @Override
@@ -69,6 +71,7 @@ public class PluginConfigPanel extends SwitchPanel {
             }
         };
         if (cp != null) {
+
             String desc = proto.getDescription();
             if (desc != null) {
                 JTextArea txt = new JTextArea();
@@ -85,7 +88,7 @@ public class PluginConfigPanel extends SwitchPanel {
             }
             ret.add(cp, "spanx,growx,pushx,growy,pushy");
         }
+
         return ret;
     }
-
 }

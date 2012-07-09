@@ -46,6 +46,8 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
     }
 
     private void layoutComponents() {
+
+        setOpaque(false);
         this.add(this.combobox, "growx, pushx,height 26!");
         this.add(autoSetupButton = new ExtButton(new AutoSetupAction()).setTooltipsEnabled(true), "height 26!");
         this.add(reconnectTestButton = new ExtButton(new ReconnectTestAction()).setTooltipsEnabled(true), "height 26!");
@@ -96,7 +98,7 @@ public class ReconnectManager extends MigPanel implements SettingsComponent, Act
         });
 
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
-
+        card.setOpaque(false);
     }
 
     public boolean isMultiline() {

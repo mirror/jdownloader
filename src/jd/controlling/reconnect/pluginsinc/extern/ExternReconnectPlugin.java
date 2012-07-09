@@ -181,6 +181,7 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     public JComponent getGUI() {
 
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
+        p.setOpaque(false);
         this.browse = new ComboBrowseFile(this.getID());
         this.browse.setEditable(true);
         this.browse.setFileSelectionMode(UserIO.FILES_ONLY);
@@ -244,8 +245,8 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     }
 
     /**
-     * Returns of dummy batch usage is enabled. for windows we create a temporary batchfile that calls our external tool and redirect its streams to nul. This
-     * is a workaround for many IO STream caused errors
+     * Returns of dummy batch usage is enabled. for windows we create a temporary batchfile that calls our external tool and redirect its
+     * streams to nul. This is a workaround for many IO STream caused errors
      * 
      * @return
      */

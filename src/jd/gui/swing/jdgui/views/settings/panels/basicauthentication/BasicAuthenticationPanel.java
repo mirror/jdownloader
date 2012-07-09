@@ -31,14 +31,15 @@ public class BasicAuthenticationPanel extends JPanel implements SettingsComponen
     private AuthTable table;
 
     /**
-     * Create a new instance of AccountManager. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
+     * .
      */
     private BasicAuthenticationPanel() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
 
         tb = new MigPanel("ins 0", "[][][grow,fill]", "");
-
+        tb.setOpaque(false);
+        setOpaque(false);
         table = new AuthTable();
         NewAction na;
         tb.add(new ExtButton(na = new NewAction(table)), "sg 1,height 26!");

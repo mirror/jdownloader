@@ -28,6 +28,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
     public PackagizerFilter() {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
         tb = new MigPanel("ins 0", "[][][grow,fill][][]", "[]");
+        tb.setOpaque(false);
         table = new PackagizerFilterTable();
         tb.add(btAdd = new JButton(new NewAction(table)), "height 26!,sg 1");
         RemoveAction ra;
@@ -45,7 +46,7 @@ public class PackagizerFilter extends JPanel implements SettingsComponent {
                 btExport.setEnabled(table.getRowCount() > 0);
             }
         });
-
+        setOpaque(false);
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
         add(new JScrollPane(table));

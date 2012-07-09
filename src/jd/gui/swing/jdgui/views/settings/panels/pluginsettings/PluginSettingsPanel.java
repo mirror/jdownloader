@@ -63,10 +63,11 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
             }
 
         };
-
+        setOpaque(false);
         add(selector);
         this.card = new MigPanel("ins 0", "[grow,fill]", "[grow,fill]");
         add(card, "growx,pushx");
+        card.setOpaque(false);
         selector.addActionListener(this);
         fill();
         if (selector.getItemCount() > 0) {

@@ -117,6 +117,7 @@ public class ExternBatchReconnectPlugin extends RouterPlugin implements ActionLi
     public JComponent getGUI() {
 
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 2", "[][grow,fill]", "[][][grow,fill][]"));
+        p.setOpaque(false);
         this.txtCommand = new JTextField();
 
         this.txtBatch = new JTextPane();

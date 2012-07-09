@@ -66,6 +66,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         JScrollPane sp = new JScrollPane(table);
         this.add(sp, "gapleft 37,growx, pushx,spanx,pushy,growy");
         MigPanel toolbar = new MigPanel("ins 0", "[][][grow,fill]", "[]");
+        toolbar.setOpaque(false);
         btnAdd = new ExtButton(new ProxyAddAction(table));
         btnAuto = new ExtButton(new ProxyAutoAction());
         ProxyDeleteAction dl;
@@ -178,7 +179,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
         toolbar.add(Box.createHorizontalGlue(), "pushx,growx");
 
         toolbar.add(btImport, "sg 1,height 26!");
-        toolbar.add(btExport, "sg 1,height 26!");
+        toolbar.add(btExport, "height 26!");
         toolbar.add(btnAuto, "height 26!");
 
         add(toolbar, "gapleft 37,growx,spanx");

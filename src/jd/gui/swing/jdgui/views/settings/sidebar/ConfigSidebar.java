@@ -27,6 +27,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -175,7 +176,8 @@ public class ConfigSidebar extends JPanel implements MouseMotionListener, MouseL
             list.setBackground(new Color(c));
             list.setOpaque(true);
         }
-        sp.setBorder(null);
+
+        sp.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderLineColor())));
         sp.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         list.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 

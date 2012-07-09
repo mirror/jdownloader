@@ -20,8 +20,8 @@ public class AccountManager extends JPanel implements SettingsComponent {
     private PremiumAccountTable table;
 
     /**
-     * Create a new instance of AccountManager. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of AccountManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}
+     * .
      * 
      * @param accountManagerSettings
      */
@@ -29,7 +29,8 @@ public class AccountManager extends JPanel implements SettingsComponent {
         super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
 
         tb = new MigPanel("ins 0", "[][][][][grow,fill]", "");
-
+        tb.setOpaque(false);
+        setOpaque(false);
         table = new PremiumAccountTable(accountManagerSettings);
 
         NewAction na;

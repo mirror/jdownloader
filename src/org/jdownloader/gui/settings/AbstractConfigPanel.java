@@ -19,6 +19,7 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.config.handler.BooleanKeyHandler;
 import org.appwork.swing.components.ExtCheckBox;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -35,6 +36,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
     public AbstractConfigPanel() {
         super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));
         pairs = new ArrayList<Pair<?>>();
+        setOpaque(false);
     }
 
     public JTextArea addDescription(String description) {
@@ -45,6 +47,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
 
     public JTextArea addDescriptionPlain(String description) {
         JTextArea txt = new JTextArea();
+        SwingUtils.setOpaque(txt, false);
         txt.setEditable(false);
         txt.setLineWrap(true);
         txt.setWrapStyleWord(true);

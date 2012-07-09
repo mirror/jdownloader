@@ -30,6 +30,7 @@ public class DummyRouterPlugin extends RouterPlugin {
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][grow,fill]"));
+        p.setOpaque(false);
         final JTextPane text = new JTextPane();
         text.setContentType("text/html");
         text.addHyperlinkListener(new HyperlinkListener() {

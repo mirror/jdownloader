@@ -74,7 +74,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         super(new MigLayout("ins 0,wrap 5", "[grow,fill][][]8[][]", "[24!][grow,fill][]"));
 
         initComponents();
-
+        setOpaque(false);
         this.add(this.combobox, "growx, pushx,height 26!");
         this.add(btImport, "height 26!,sg 1");
         this.add(btExport, "height 26!,sg 1");

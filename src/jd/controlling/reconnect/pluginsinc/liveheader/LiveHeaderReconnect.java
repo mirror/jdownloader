@@ -158,7 +158,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", ""));
-
+        p.setOpaque(false);
         // auto search is not ready yet
         // this.btnAuto.setEnabled(false);
 
