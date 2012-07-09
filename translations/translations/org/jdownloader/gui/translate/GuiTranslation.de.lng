@@ -101,7 +101,6 @@ ConnectionColumn_DownloadIsRunning=Download läuft
 ConnectionColumn_DownloadUsesAccount=Account %s1 ist in Benutzung
 ConnectionColumn_getStringValue_chunks=Läde mit %s1 Verbindung(en) herunter
 ConnectionColumn_getStringValue_connection=Verbindung: %s1
-ContextMenuFactory_createPopup_cleanup=Löschen und...
 ContextMenuFactory_createPopup_other=Mehr
 ContextMenuFactory_createPopup_properties=%s1 Eigenschaften
 ContextMenuFactory_createPopup_properties_package=Einstellungen
