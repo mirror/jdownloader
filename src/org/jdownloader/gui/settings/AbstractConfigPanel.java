@@ -52,7 +52,7 @@ public abstract class AbstractConfigPanel extends SwitchPanel {
         txt.setLineWrap(true);
         txt.setWrapStyleWord(true);
         txt.setFocusable(false);
-        txt.setEnabled(false);
+        // txt.setEnabled(false);
         txt.setText(description);
         add(txt, "gaptop 0,spanx,growx,pushx,gapleft 37,gapbottom 5,wmin 10");
 
