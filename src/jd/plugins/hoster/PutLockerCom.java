@@ -102,6 +102,7 @@ public class PutLockerCom extends PluginForHost {
                 }
             }
         }
+        if (dllink != null) dllink = dllink.replace("&amp;", "&");
         return dllink;
     }
 
