@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.-]*?\\.)?(rusfolder\\.(net|ru|com)|ifolder\\.ru|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.-]*?\\.)?((yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String              ua      = RandomUserAgent.generate();
@@ -125,7 +125,7 @@ public class IfolderRu extends PluginForHost {
             captchaForm.setAction(br.getURL());
             if (!captchaurl.contains(br.getHost())) captchaurl = "http://ints.ifolder.ru" + captchaurl;
             /* Captcha */
-            String captchaCode = getCaptchaCode(captchaurl, downloadLink);
+            String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
             /* this hoster checks content encoding */
             captchaForm.setEncoding("application/x-www-form-urlencoded");

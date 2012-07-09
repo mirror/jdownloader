@@ -235,6 +235,10 @@ public class AsFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            if (br.containsHTML("index/pay")) {
+                logger.info("Seems the account is no longer valid");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);

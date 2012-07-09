@@ -52,9 +52,11 @@ public class WarServerCz extends PluginForHost {
         if (br.containsHTML("ERROR: File not found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = parseJson("filename");
         final String filesize = parseJson("size");
+        final String md5Sum = parseJson("md5sum");
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (md5Sum != null) link.setMD5Hash(md5Sum);
         return AvailableStatus.TRUE;
     }
 

@@ -45,6 +45,8 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         wait;
     private ImageIcon         icon2Use;
 
+    private ImageIcon         ipwait;
+
     @Override
     public int getDefaultWidth() {
         return 80;
@@ -74,6 +76,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
         rendererField.setHorizontalAlignment(SwingConstants.RIGHT);
         this.download = NewTheme.I().getIcon("download", 16);
         this.wait = NewTheme.I().getIcon("wait", 16);
+        this.ipwait = NewTheme.I().getIcon("auto-reconnect", 16);
     }
 
     @Override
@@ -156,7 +159,7 @@ public class ETAColumn extends ExtTextColumn<AbstractNode> {
             if (!dlLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) && !dlLink.getLinkStatus().isFinished()) {
                 ProxyBlock timeout = null;
                 if ((timeout = ProxyController.getInstance().getHostIPBlockTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {
-                    icon2Use = wait;
+                    icon2Use = ipwait;
                     return timeout.getBlockedTimeout();
                 }
                 if ((timeout = ProxyController.getInstance().getHostBlockedTimeout(dlLink.getHost())) != null && timeout.getLink() == dlLink) {

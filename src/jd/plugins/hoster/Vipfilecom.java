@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -75,7 +74,14 @@ public class Vipfilecom extends PluginForHost {
         /* we have to wait little because server too buggy */
         sleep(2000, downloadLink);
         String link = Encoding.htmlDecode(br.getRegex(Pattern.compile(FREELINKREGEX, Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+        if (link == null) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.vipfilecom.errors.nofreedownloadlink", "No free download link for this file"));
+        }
         br.setDebug(true);
         /* SpeedHack */
         br.setFollowRedirects(false);
@@ -120,16 +126,17 @@ public class Vipfilecom extends PluginForHost {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "yyyy-MM-dd", null));
             ai.setStatus("Premium User");
             account.setAccountInfo(ai);
+            if (ai.isExpired()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
         }
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (url == null) {
-            url = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/f/[a-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+        String urls[] = br.getRegex(Pattern.compile("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        if (urls == null) {
+            urls = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/f/[a-z0-9]+/[^<>\"\\'/]+)\"").getColumn(0);
         }
-        if (url == null && br.containsHTML("(Wrong password|>This password expired<)")) {
+        if (urls == null && br.containsHTML("(Wrong password|>This password expired<)")) {
             logger.info("Downloadpassword seems to be wrong, disabeling account now!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (url == null) {
+        if (urls == null) {
             if (br.containsHTML("(Your premium access is about to be over|Amount of Your points is close to zero\\.)")) {
                 logger.info("Password is wrong!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -137,21 +144,36 @@ public class Vipfilecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* we have to wait little because server too buggy */
-        sleep(5000, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int index = 0;
+        for (String url : urls) {
+            index++;
+            sleep(2000, downloadLink);
+            dl = jd.plugins.BrowserAdapter.openDownload(br.cloneBrowser(), downloadLink, url, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    dl.getConnection().disconnect();
+                    continue;
+                }
+                if (index == urls.length) {
+                    br.followConnection();
+                    if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    continue;
+                }
+            }
+            dl.startDownload();
+            return;
         }
-        dl.startDownload();
+        logger.info("no working link found");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:13.0) Gecko/20100101 Firefox/13.0.1");
         br.setReadTimeout(2 * 60 * 1000);
         br.setCookie("http://vip-file.com/", "lang", "en");
         br.getPage(downloadURL);

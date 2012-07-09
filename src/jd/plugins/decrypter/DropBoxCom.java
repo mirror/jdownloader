@@ -64,19 +64,24 @@ public class DropBoxCom extends PluginForDecrypt {
                 fileNameMap.put(fileName[0], unescape(fileName[1]));
             }
         }
-        final String[][] fileLinks = br.getRegex("class=\"filename\"><a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\".*?id=\"emsnippet-([0-9a-zA-Z]+)\">.*?class=\"filesize\\-col\"><span class=\"size\">(\\d+[^<>\"]*?)</span>").getMatches();
+        final String[][] fileLinks = br.getRegex("class=\"filename\"><a href=\"(https?://(www\\.)?dropbox\\.com/[^<>\"]*?)\".*?id=\"emsnippet-([0-9a-zA-Z]+)\">.*?class=\"filesize\\-col\"><span class=\"size\">([^<>\"]*?)</span>").getMatches();
         String sharingModel = br.getRegex("SharingModel\\.init_folder\\(.*?'(.*?)'").getMatch(0);
         sharingModel = unescape(sharingModel);
         if (fileLinks != null && fileLinks.length != 0) {
             /* old file links */
             // Set filenames, sizes and availablestatus for super fast adding
             for (String fileInfo[] : fileLinks) {
-                final DownloadLink dl = createDownloadlink(fileInfo[0].replace("dropbox.com/", "dropboxdecrypted.com/"));
-                String name = fileNameMap.get(fileInfo[2]);
-                if (name != null) dl.setName(name);
-                dl.setDownloadSize(SizeFormatter.getSize(fileInfo[3].replace(",", ".")));
-                dl.setProperty("decrypted", true);
-                dl.setAvailable(true);
+                DownloadLink dl = null;
+                if ("--".equalsIgnoreCase(fileInfo[3])) {
+                    dl = createDownloadlink(fileInfo[0]);
+                } else {
+                    dl = createDownloadlink(fileInfo[0].replace("dropbox.com/", "dropboxdecrypted.com/"));
+                    String name = fileNameMap.get(fileInfo[2]);
+                    if (name != null) dl.setName(name);
+                    dl.setDownloadSize(SizeFormatter.getSize(fileInfo[3].replace(",", ".")));
+                    dl.setProperty("decrypted", true);
+                    dl.setAvailable(true);
+                }
                 decryptedLinks.add(dl);
             }
         }

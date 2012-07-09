@@ -178,7 +178,7 @@ public class VeohCom extends PluginForHost {
         if (fHash == null || fHash == null || sTime == null || videoId == null || fileSize == null || ext == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         boolean oldDlHandling = fHash.length() < 32;
-        String hexTime = String.format("%08x", Integer.parseInt(sTime));
+        String hexTime = String.format("%08x", Long.parseLong(sTime));
 
         if (!oldDlHandling) {
             downloadLink.setName(downloadLink.getName() + ext);
@@ -203,10 +203,10 @@ public class VeohCom extends PluginForHost {
             sTime = br.getRegex("time=\'(\\d+)\'").getMatch(0);
             if (sTime == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-            final String hexvidID = String.format("%08x", Integer.parseInt(videoId));
-            final String hexSize = String.format("%08x", Integer.parseInt(fileSize));
+            final String hexvidID = String.format("%08x", Long.parseLong(videoId));
+            final String hexSize = String.format("%08x", Long.parseLong(fileSize));
             final String templateUrl = br.getRegex("url base=\'(.*?)\'").getMatch(0);
-            hexTime = String.format("%08x", Integer.parseInt(sTime));
+            hexTime = String.format("%08x", Long.parseLong(sTime));
             String baseUrl = templateUrl;
 
             IV = fHash.substring(0, 16).getBytes();

@@ -131,8 +131,7 @@ public class CrockoCom extends PluginForHost {
             if (longwait == null) longwait = false;
             if (waittime > 90 && longwait == false) {
                 /*
-                 * only request reconnect if we dont have to wait long on every
-                 * download
+                 * only request reconnect if we dont have to wait long on every download
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
@@ -177,8 +176,7 @@ public class CrockoCom extends PluginForHost {
             }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /*
-             * another as default cause current stable has easy-captcha method
-             * that does not work
+             * another as default cause current stable has easy-captcha method that does not work
              */
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
@@ -187,6 +185,7 @@ public class CrockoCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection();
+                if (br.containsHTML("There are no more download slots available right now.")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "There are no more download slots available right now.", 10 * 60 * 1000l);
                 if (br.containsHTML("There is another download in progress from your IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
                 if (br.containsHTML("Entered code is invalid")) {
                     if (tries <= 5) {
@@ -244,8 +243,7 @@ public class CrockoCom extends PluginForHost {
         if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (acc != null && prem == null) {
             /*
-             * buggy easyshare server, login does not work always, it needs
-             * PREMIUM cookie
+             * buggy easyshare server, login does not work always, it needs PREMIUM cookie
              */
             br.setCookie(MAINPAGE, "PREMIUM", acc);
         }

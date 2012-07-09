@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://[\\w\\.]*?(i|rus)folder\\.ru/f\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifolder.ru" }, urls = { "http://[\\w\\.]*?(yapapka|rusfolder|ifolder)\\.(net|ru|com)/f\\d+" }, flags = { 0 })
 public class IFolderFolder extends PluginForDecrypt {
 
     public IFolderFolder(PluginWrapper wrapper) {

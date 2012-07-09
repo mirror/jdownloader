@@ -259,7 +259,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
                 return block.getBlockedTimeout();
             } else if (dLink.getDownloadCurrent() > 0 || dLink.getDownloadSize() > 0) { return (dLink.getDownloadCurrent()); }
         }
-        return -1;
+        return 0;
     }
 
 }

@@ -257,6 +257,7 @@ public class SockShareCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = dllink.replace("&amp;", "&");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://www.sockshare.com" + Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
