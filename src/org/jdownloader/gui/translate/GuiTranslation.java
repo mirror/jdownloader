@@ -2231,4 +2231,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Synthetica License Registration Number %s1" })
     String jd_gui_swing_components_AboutDialog_synthetica(String string);
 
+    @Default(lngs = { "en" }, values = { "Filter" })
+    String LinkgrabberFilter_initComponents_filter__title();
+
+    @Default(lngs = { "en" }, values = { "Views" })
+    String LinkgrabberFilter_initComponents_exceptions_title();
+
 }

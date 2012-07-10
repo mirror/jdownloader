@@ -40,8 +40,8 @@ public class AccountManager extends JPanel implements SettingsComponent {
         tb.add(new ExtButton(ra = new RemoveAction(table)), "sg 1,height 26!");
         table.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(table, ra, 1));
 
-        tb.add(new ExtButton(new BuyAction(table)), "sg 1,height 26!");
-        tb.add(new ExtButton(new RefreshAction()), "sg 1,height 26!");
+        tb.add(new ExtButton(new BuyAction(table)), "sg 2,height 26!");
+        tb.add(new ExtButton(new RefreshAction()), "sg 2,height 26!");
 
         add(new JScrollPane(table));
         add(tb, "");

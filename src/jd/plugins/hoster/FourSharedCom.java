@@ -49,6 +49,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
+    public static final String PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
     private static String       agent        = null;
     private static final String PASSWORDTEXT = "enter a password to access";
     private static final Object LOCK         = new Object();
@@ -162,7 +163,7 @@ public class FourSharedCom extends PluginForHost {
             }
         }
         // If file isn't available for freeusers we can still try to get the streamlink
-        if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.foursharedcom.only4premium", "Files over 500MB are only downloadable for premiumusers!"));
+        if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L(PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM, "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
             if (url == null) {

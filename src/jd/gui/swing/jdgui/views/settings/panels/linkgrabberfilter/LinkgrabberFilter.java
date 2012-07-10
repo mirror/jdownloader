@@ -2,19 +2,22 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-import javax.swing.JComboBox;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.ListCellRenderer;
+import javax.swing.JTabbedPane;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.gui.swing.jdgui.interfaces.JDMouseAdapter;
 import jd.gui.swing.jdgui.views.settings.components.SettingsComponent;
 import jd.gui.swing.jdgui.views.settings.components.StateUpdateListener;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test.TestWaitDialog;
@@ -41,8 +44,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     private ExtButton                      btImport;
     private ExtButton                      btExport;
-    private JComboBox                      combobox;
-    private JScrollPane                    card;
+
     private ExceptionsTable                exceptionsTable;
     private ExtButton                      btRemove;
 
@@ -53,6 +55,8 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     private ExtTextField                   txtTest;
 
     private ExtButton                      btTest;
+
+    private JTabbedPane                    tab;
     private static final LinkgrabberFilter INSTANCE         = new LinkgrabberFilter();
 
     public static LinkgrabberFilter getInstance() {
@@ -64,25 +68,45 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
             @Override
             protected void runInEDT() {
-                combobox.setSelectedIndex(i);
+                tab.setSelectedIndex(i);
+
             }
         };
 
     }
 
     private LinkgrabberFilter() {
-        super(new MigLayout("ins 0,wrap 5", "[grow,fill][][]8[][]", "[24!][grow,fill][]"));
+        super(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[grow,fill][]"));
 
         initComponents();
         setOpaque(false);
-        this.add(this.combobox, "growx, pushx,height 26!");
-        this.add(btImport, "height 26!,sg 1");
-        this.add(btExport, "height 26!,sg 1");
-        this.add(btadd, "height 26!,sg 1");
-        this.add(btRemove, "height 26!,sg 1");
+        this.add(this.tab, "");
 
-        add(card, "spanx,pushy,growy");
+        // this.combobox = new JComboBox(new String[] { _GUI._.LinkgrabberFilter_initComponents_filter_(),
+        // _GUI._.LinkgrabberFilter_initComponents_exceptions_() });
+        // final ListCellRenderer org = combobox.getRenderer();
+        // combobox.setRenderer(new ListCellRenderer() {
+        //
+        // public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        // JLabel ret = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        // ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? NewTheme.I().getIcon("false", 20) :
+        // NewTheme.I().getIcon("true", 20));
+        // return ret;
+        // }
+        // });
+        tab.addTab(_GUI._.LinkgrabberFilter_initComponents_filter__title(), createTab(_GUI._.LinkgrabberFilter_initComponents_filter_(), filterTable));
+        tab.addTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_title(), createTab(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), exceptionsTable));
+        tab.setTabComponentAt(0, createHeader(_GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_filter__title(), NewTheme.I().getIcon("false", 16)));
+        tab.setTabComponentAt(1, createHeader(_GUI._.LinkgrabberFilter_initComponents_exceptions_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_title(), NewTheme.I().getIcon("true", 16)));
+        tab.addChangeListener(new ChangeListener() {
 
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                view = tab.getSelectedIndex() == 0 ? filterTable : exceptionsTable;
+            }
+        });
+        view = filterTable;
+        tab.setSelectedIndex(0);
         txtTest = new ExtTextField();
         txtTest.addFocusListener(new FocusListener() {
 
@@ -108,16 +132,76 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         tb.add(txtTest, "height 24!");
         tb.add(btTest, "height 24!,width 24!");
         add(tb, "spanx, height 24!");
-        this.combobox.addActionListener(new ActionListener() {
 
-            public void actionPerformed(ActionEvent e) {
-                setView(combobox.getSelectedIndex() == 0 ? filterTable : exceptionsTable);
-            }
-        });
+        MigPanel buttonbar = new MigPanel("ins 0, wrap 5", "[][][grow,fill][][]", "[]");
+
+        add(buttonbar, "spanx, height 26!");
+        buttonbar.add(btadd, "height 26!,sg 2");
+        buttonbar.add(btRemove, "height 26!,sg 2");
+        buttonbar.add(Box.createHorizontalGlue());
+
+        buttonbar.add(btImport, "height 26!,sg 1");
+        buttonbar.add(btExport, "height 26!,sg 1");
 
         exceptionsTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(exceptionsTable, btRemove.getAction(), 1));
         filterTable.getSelectionModel().addListSelectionListener(new MinimumSelectionObserver(filterTable, btRemove.getAction(), 1));
-        setView(filterTable);
+
+    }
+
+    private Component createHeader(String tooltip, String lbl, ImageIcon icon) {
+
+        JLabel ret = new JLabel(lbl, icon, JLabel.LEFT);
+        ret.setToolTipText(tooltip);
+        ret.setOpaque(false);
+        JDMouseAdapter ma = new JDMouseAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                JDMouseAdapter.forwardEvent(e, tab);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+                JDMouseAdapter.forwardEvent(e, tab);
+
+            }
+
+        };
+        ret.addMouseMotionListener(ma);
+        ret.addMouseListener(ma);
+        return ret;
+    }
+
+    private Component createTab(String desc, AbstractFilterTable filterTable2) {
+        MigPanel ret = new MigPanel("ins 0, wrap 1", "[grow,fill]", "[grow,fill]");
+
+        ret.add(new JScrollPane(filterTable2));
+        return ret;
     }
 
     protected void startTest() {
@@ -132,18 +216,6 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
 
     }
 
-    protected void setView(final AbstractFilterTable gui) {
-        new EDTRunner() {
-
-            @Override
-            protected void runInEDT() {
-                view = gui;
-                card.getViewport().setView(gui);
-            }
-        };
-
-    }
-
     public AbstractFilterTable getView() {
         return view;
     }
@@ -153,19 +225,11 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
         exceptionsTable = new ExceptionsTable(this);
         btRemove = new ExtButton(new RemoveAction(this));
         btadd = new ExtButton(new NewAction(this));
-        this.combobox = new JComboBox(new String[] { _GUI._.LinkgrabberFilter_initComponents_filter_(), _GUI._.LinkgrabberFilter_initComponents_exceptions_() });
-        final ListCellRenderer org = combobox.getRenderer();
-        combobox.setRenderer(new ListCellRenderer() {
 
-            public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel ret = (JLabel) org.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                ret.setIcon(value == _GUI._.LinkgrabberFilter_initComponents_filter_() ? NewTheme.I().getIcon("false", 20) : NewTheme.I().getIcon("true", 20));
-                return ret;
-            }
-        });
+        tab = new JTabbedPane();
+
         btImport = new ExtButton(new ImportAction(this));
         btExport = new ExtButton(new ExportAction(this));
-        this.card = new JScrollPane();
 
     }
 

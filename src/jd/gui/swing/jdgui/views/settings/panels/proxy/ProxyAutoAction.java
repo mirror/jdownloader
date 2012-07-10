@@ -1,4 +1,4 @@
-package jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork;
+package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
 import java.awt.event.ActionEvent;
 import java.util.List;

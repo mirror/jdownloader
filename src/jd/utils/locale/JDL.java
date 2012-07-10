@@ -30,6 +30,7 @@ public final class JDL {
      * Don't let anyone instantiate this class.
      */
     private JDL() {
+
     }
 
     private static final HashMap<String, JDLocale> CACHE          = new HashMap<String, JDLocale>();
@@ -91,6 +92,7 @@ public final class JDL {
     }
 
     public static String L(final String key, final String def) {
+
         return def;
     }
 

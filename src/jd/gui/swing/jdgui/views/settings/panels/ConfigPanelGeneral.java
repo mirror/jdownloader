@@ -19,13 +19,21 @@ package jd.gui.swing.jdgui.views.settings.panels;
 import javax.swing.ImageIcon;
 
 import jd.gui.swing.jdgui.views.settings.components.Checkbox;
+import jd.gui.swing.jdgui.views.settings.components.ComboBox;
 import jd.gui.swing.jdgui.views.settings.components.FolderChooser;
+import jd.gui.swing.jdgui.views.settings.components.Spinner;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.storage.config.swing.models.ConfigIntSpinnerModel;
 import org.jdownloader.gui.settings.AbstractConfigPanel;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.AutoDownloadStartOption;
+import org.jdownloader.settings.CleanAfterDownloadAction;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
+import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
 
 public class ConfigPanelGeneral extends AbstractConfigPanel {
@@ -38,15 +46,22 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         return "settings";
     }
 
-    private static final long serialVersionUID = 3383448498625377495L;
+    private static final long                  serialVersionUID = 3383448498625377495L;
 
-    private FolderChooser     downloadFolder;
+    private FolderChooser                      downloadFolder;
+    private Spinner                            maxSimPerHost;
+    private ComboBox<CleanAfterDownloadAction> remove;
+    private ComboBox<IfFileExistsAction>       ifFileExists;
+    private Spinner                            maxSim;
+    private GeneralSettings                    config;
+    private Spinner                            maxchunks;
+    private ComboBox<AutoDownloadStartOption>  startDownloadsAfterAppStart;
+    private Spinner                            startDownloadTimeout;
+    private Checkbox                           subfolder;
 
-    private Checkbox          subfolder;
+    private Checkbox                           autoCRC;
 
-    private Checkbox          autoCRC;
-
-    private Checkbox          simpleContainer;
+    private Checkbox                           simpleContainer;
 
     public ConfigPanelGeneral() {
         super();
@@ -57,7 +72,33 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         this.addHeader(_GUI._.gui_config_general_downloaddirectory(), NewTheme.I().getIcon("downloadpath", 32));
         this.addDescription(_JDT._.gui_settings_downloadpath_description());
         this.add(downloadFolder);
+        this.addHeader(_JDT._.gui_settings_downloadcontroll_title(), NewTheme.I().getIcon("downloadmanagment", 32));
+        this.addDescription(_JDT._.gui_settings_downloadcontroll_description());
 
+        maxSimPerHost = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST));
+
+        maxSim = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS));
+
+        maxchunks = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_CHUNKS_PER_FILE));
+        startDownloadTimeout = new Spinner(new ConfigIntSpinnerModel(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_START_COUNTDOWN_SECONDS));
+        String[] removeDownloads = new String[] { _GUI._.gui_config_general_toDoWithDownloads_immediate(), _GUI._.gui_config_general_toDoWithDownloads_atstart(), _GUI._.gui_config_general_toDoWithDownloads_packageready(), _GUI._.gui_config_general_toDoWithDownloads_never() };
+
+        remove = new ComboBox<CleanAfterDownloadAction>(CleanAfterDownloadAction.values(), removeDownloads);
+        startDownloadsAfterAppStart = new ComboBox<AutoDownloadStartOption>(CFG_GENERAL.SH.getKeyHandler("AutoStartDownloadOption", KeyHandler.class), AutoDownloadStartOption.values(), new String[] { _GUI._.gui_config_general_AutoDownloadStartOption_always(), _GUI._.gui_config_general_AutoDownloadStartOption_only_if_closed_running(), _GUI._.gui_config_general_AutoDownloadStartOption_never() });
+        String[] fileExists = new String[] { _GUI._.system_download_triggerfileexists_overwrite(), _GUI._.system_download_triggerfileexists_skip(), _GUI._.system_download_triggerfileexists_rename(), _GUI._.system_download_triggerfileexists_ask(), _GUI._.system_download_triggerfileexists_ask() };
+        ifFileExists = new ComboBox<IfFileExistsAction>(IfFileExistsAction.values(), fileExists);
+        this.addPair(_GUI._.gui_config_download_simultan_downloads(), null, maxSim);
+        this.addPair(_GUI._.gui_config_download_simultan_downloads_per_host2(), org.jdownloader.settings.staticreferences.CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED, maxSimPerHost);
+        this.addPair(_GUI._.gui_config_download_max_chunks(), null, maxchunks);
+
+        this.addPair(_GUI._.gui_config_general_todowithdownloads(), null, remove);
+        this.addPair(_GUI._.system_download_triggerfileexists(), null, ifFileExists);
+
+        this.addHeader(_GUI._.gui_config_download_autostart(), NewTheme.I().getIcon("resume", 32));
+        this.addDescription(_GUI._.gui_config_download_autostart_desc());
+        addPair(_GUI._.system_download_autostart(), null, startDownloadsAfterAppStart);
+        addPair(_GUI._.system_download_autostart_countdown(), CFG_GENERAL.SHOW_COUNTDOWNON_AUTO_START_DOWNLOADS, startDownloadTimeout);
+        config = org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG;
         /* File Writing */
         autoCRC = new Checkbox();
         this.addHeader(_GUI._.gui_config_download_write(), NewTheme.I().getIcon("hashsum", 32));
@@ -79,6 +120,8 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         st.setDefaultDownloadFolder(downloadFolder.getText());
         st.setHashCheckEnabled(autoCRC.isSelected());
         st.setAutoOpenContainerAfterDownload(simpleContainer.isSelected());
+        config.setCleanupAfterDownloadAction(remove.getValue());
+        config.setIfFileExistsAction(this.ifFileExists.getValue());
     }
 
     @Override
@@ -87,5 +130,7 @@ public class ConfigPanelGeneral extends AbstractConfigPanel {
         downloadFolder.setText(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder());
         autoCRC.setSelected(st.isHashCheckEnabled());
         simpleContainer.setSelected(st.isAutoOpenContainerAfterDownload());
+        this.remove.setValue(config.getCleanupAfterDownloadAction());
+        this.ifFileExists.setValue(config.getIfFileExistsAction());
     }
 }

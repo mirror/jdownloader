@@ -6,15 +6,14 @@ import javax.swing.DefaultListModel;
 
 import jd.gui.swing.jdgui.views.settings.panels.BasicAuthentication;
 import jd.gui.swing.jdgui.views.settings.panels.ConfigPanelGeneral;
-import jd.gui.swing.jdgui.views.settings.panels.DownloadControll;
 import jd.gui.swing.jdgui.views.settings.panels.GUISettings;
 import jd.gui.swing.jdgui.views.settings.panels.ReconnectSettings;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountManagerSettings;
 import jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings;
-import jd.gui.swing.jdgui.views.settings.panels.downloadandnetwork.ProxyConfig;
 import jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.Linkgrabber;
 import jd.gui.swing.jdgui.views.settings.panels.packagizer.Packagizer;
 import jd.gui.swing.jdgui.views.settings.panels.pluginsettings.PluginSettings;
+import jd.gui.swing.jdgui.views.settings.panels.proxy.ProxyConfig;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -32,7 +31,7 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
     private static final long      serialVersionUID = -204494527404304349L;
     private Object                 LOCK             = new Object();
     private ConfigPanelGeneral     cfg;
-    private DownloadControll       dlc;
+
     private ReconnectSettings      rcs;
     private ProxyConfig            pc;
     private AccountManagerSettings ams;
@@ -73,8 +72,6 @@ public class SettingsSidebarModel extends DefaultListModel implements GenericCon
 
                     if (cfg == null) cfg = new ConfigPanelGeneral();
                     addElement(cfg);
-                    if (dlc == null) dlc = new DownloadControll();
-                    addElement(dlc);
 
                     // addElement(new ToolbarController());
                     if (rcs == null) rcs = new ReconnectSettings();
