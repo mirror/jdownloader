@@ -41,11 +41,9 @@ public class XHamsterCom extends PluginForHost {
     }
 
     public String getDllink() throws IOException, PluginException {
-        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
-        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
-        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = server + "/key=" + file;
-        return dllink;
+        final String dllink = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return Encoding.htmlDecode(dllink);
     }
 
     @Override
@@ -74,14 +72,10 @@ public class XHamsterCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dllink = getDllink();
-        String ending = br.getRegex("\\'type\\':\\'(.*?)\\'").getMatch(0);
-        if (ending == null) ending = dllink.substring(dllink.length() - 3, dllink.length());
-        filename = Encoding.htmlDecode(filename.trim());
-        if (ending != null) {
-            downloadLink.setFinalFileName(filename + "." + ending);
-        } else {
-            downloadLink.setName(filename);
-        }
+        String ext = dllink.substring(dllink.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        filename = Encoding.htmlDecode(filename.trim() + ext);
+        downloadLink.setFinalFileName(filename);
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(dllink);

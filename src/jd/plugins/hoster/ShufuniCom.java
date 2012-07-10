@@ -77,6 +77,7 @@ public class ShufuniCom extends PluginForHost {
         String filename = null;
         if (downloadLink.getDownloadURL().matches("http://(www\\.)?shufuni\\.com/handlers/FLVStreamingv2\\.ashx\\?videoCode=[A-Z0-9\\-]+")) {
             filename = downloadLink.getFinalFileName();
+            if (filename == null) filename = downloadLink.getName();
             dllink = br.getRegex("CDNUrl=(http://[^<>\"]*?)\\&SeekType=").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = null;

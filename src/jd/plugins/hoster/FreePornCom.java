@@ -64,16 +64,12 @@ public class FreePornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-
-        if (br.containsHTML("(<h1>Oooops\\.\\.\\. We can\\'t find this video or it doesn\\'t exist</h1>|\">Here is a list of recommended videos for you|<title>Free Porn, Porn Tube, Free Porn Videos, Sex Movie, Porn - FreePorn\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(unavailablevideo\\.jpg\"|<h1>Oooops\\.\\.\\. We can\\'t find this video or it doesn\\'t exist</h1>|\">Here is a list of recommended videos for you|<title>Free Porn, Porn Tube, Free Porn Videos, Sex Movie, Porn - FreePorn\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<span class=\"fleft\">(.*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- FreePorn\\.com</title>").getMatch(0);
-
         String path = br.getRegex("value=\\'file=(.*?)\\&").getMatch(0);
         if (path == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         br.postPage("http://www.freeporn.com/getcdnurl/", "cacheBuster=" + String.valueOf(System.currentTimeMillis()) + "&jsonRequest={\"returnType\":\"json\",\"request\":\"getAllData\",\"path\":\"" + path + "\"}");
-
         DLLINK = br.getRegex("file\":\"(.*?)\"").getMatch(0).replace("\\", "");
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");

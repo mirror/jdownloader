@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -49,17 +48,6 @@ public class HardSexTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -71,10 +59,7 @@ public class HardSexTubeCom extends PluginForHost {
                 filename = br.getRegex("<div id='tabdetails' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        String videoID = new Regex(downloadLink.getDownloadURL(), "hardsextube\\.com/video/(\\d+)/").getMatch(0);
-        Browser br2 = br.cloneBrowser();
-        br2.getPage("http://vidii.hardsextube.com/video/" + videoID + "/configuj.xml");
-        dllink = br2.getRegex("\"(http://vs[0-9]+\\.hardsextube\\.com/content/.*?\\.(flv|mp4))\"").getMatch(0);
+        dllink = br.getRegex("flvpathValue: \"(http://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         String ext = new Regex(dllink, ".+(\\..*?)$").getMatch(0);
@@ -94,6 +79,17 @@ public class HardSexTubeCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

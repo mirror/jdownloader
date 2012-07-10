@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -64,15 +63,17 @@ public class HardwareClipsCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://www.hardwareclips.com/", "hideBrowserLanguage", "1");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Dieses Video existiert nicht\\.|Es wurde entweder gelöscht, als ungeeignet markiert oder einfach noch nicht freigeschaltet\\.)") || br.getURL().contains("type=video_missing")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| HardwareClips - Dein Hardware Video-Portal</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\| HardwareClips \\- Dein Hardware Video\\-Portal</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        DLLINK = br.getRegex("http://(www\\.)?hardwareclips\\.com:8080/([a-z0-9]+)/\\d+").getMatch(1);
+        DLLINK = br.getRegex("\"(http://([a-z0-9]+\\.)?hardwareclips\\.com:8080/[a-z0-9]+/[a-z0-9\\-_]+\\.(flv|mp4))\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = "http://www.hardwareclips.com:8080/" + DLLINK + "/" + new Regex(downloadLink.getDownloadURL(), "hardwareclips\\.com/video/(\\d+)").getMatch(0) + ".flv";
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

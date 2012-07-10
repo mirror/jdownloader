@@ -58,7 +58,8 @@ public class DailyMotionCom extends PluginForHost {
             setupRTMPConnection(stream, dl);
             ((RTMPDownload) dl).startDownload();
         } else {
-            // They do allow resume and unlimited chunks but resuming or using more
+            // They do allow resume and unlimited chunks but resuming or using
+            // more
             // than 1 chunk causes problems, the file will then b corrupted!
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -187,7 +188,12 @@ public class DailyMotionCom extends PluginForHost {
                 getQuality("hd720URL", allLinks);
                 if (dllink == null) {
                     getQuality("hqURL", allLinks);
-                    if (dllink == null) getQuality("sdURL", allLinks);
+                    if (dllink == null) {
+                        getQuality("sdURL", allLinks);
+                        if (dllink == null) {
+                            getQuality("ldURL", allLinks);
+                        }
+                    }
                 }
             }
         }
@@ -222,7 +228,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private void getQuality(String quality, String allLinks) {
-        dllink = new Regex(allLinks, "\"" + quality + "\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+        dllink = new Regex(allLinks, "\"" + quality + "\":\"(http[^<>\"\\']+)\"").getMatch(0);
     }
 
     private boolean isRtmp() throws IOException {

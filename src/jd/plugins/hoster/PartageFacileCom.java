@@ -71,8 +71,9 @@ public class PartageFacileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>Envoyez vos fichiers maintenant<|Partage\\-Facile : H\\&eacute;bergement de fichiers, Facile, Rapide et Securis\\&eacute;\\!)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+;url=http://(www\\.)?partage\\-facile\\.com\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("<th>Taille :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
         String filename = br.getRegex("<th class=\"span4\">Nom :</th>[\t\n\r ]+<td>([^<>\"\\']+)</td>").getMatch(0);
         if (filename == null) {

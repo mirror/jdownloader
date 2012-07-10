@@ -65,6 +65,7 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("xvideos\\.com/swf/flv_player_site_v\\d+\\.swf\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"flashvars\" value=\"id_video=(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -74,9 +75,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed", "tube8.com/")));
             return decryptedLinks;
         }
-        externID = br.getRegex("drtuber\\.com/embed/(\\d+)\"").getMatch(0);
+        externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.drtuber.com/video/" + externID + "/" + System.currentTimeMillis()));
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
@@ -124,6 +125,13 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -140,6 +148,13 @@ public class VoaYeursCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

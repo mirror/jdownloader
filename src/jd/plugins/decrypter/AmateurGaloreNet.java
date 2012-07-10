@@ -74,9 +74,9 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
             return decryptedLinks;
         }
-        tempID = br.getRegex("(megaporn|cum)\\.com/e/([A-Z0-9]{8})").getMatch(1);
+        tempID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.cum.com/video/?v=" + tempID));
+            decryptedLinks.add(createDownloadlink(tempID.replace("tube8.com/embed", "tube8.com/")));
             return decryptedLinks;
         }
         if (tempID == null) {

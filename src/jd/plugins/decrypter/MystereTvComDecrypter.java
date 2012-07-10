@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mystere-tv.com" }, urls = { "http://(www\\.)?mystere\\-tv\\.com/.*?\\-v\\d+\\.html" }, flags = { 0 })
 public class MystereTvComDecrypter extends PluginForDecrypt {
@@ -42,7 +40,10 @@ public class MystereTvComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getURL().equals("http://www.mystere-tv.com/") || br.containsHTML("<title>Paranormal \\- Ovni \\- Mystere TV </title>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         // Same as in hosterplugin
         String filename = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
         if (filename == null) {

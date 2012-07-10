@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.tv" }, urls = { "http://[\\w\\.]*?letitbit\\.tv/files/\\d+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "getzilla.net", "letitbit.tv" }, urls = { "http://(www\\.)?(letitbit\\.tv|getzilla\\.net)/files/\\d+/.+", "dgbt4746iDELETEMEenth4p93vthjqd34z77brm8ounusedREGEX" }, flags = { 0, 0 })
 public class LetitbitTv extends PluginForHost {
 
     public LetitbitTv(PluginWrapper wrapper) {
@@ -44,6 +44,39 @@ public class LetitbitTv extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("letitbit.tv/", "getzilla.net/"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">Файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>[\t\n\r ]+Getzilla\\.net ([^<>\"]*?) скачать бесплатно</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1>Скачать файл\\&nbsp;<span>\\&laquo;([^<>\"]*?)\\&raquo;</span>").getMatch(0);
+        }
+        String filesize = br.getRegex("class=\"filesize archives\">([^<>\"]*?)<div").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename);
+        link.setFinalFileName(filename.trim());
+        if (filesize != null) {
+            filesize = filesize.replace("&nbsp;", "");
+            filesize = filesize.replace(",", ".");
+            filesize = filesize.replace("Г", "G");
+            filesize = filesize.replace("М", "M");
+            filesize = filesize.replace("к", "k");
+            filesize = filesize.replaceAll("(Б|б)", "");
+            filesize = filesize.replace("байт", "byte");
+            filesize = filesize + "b";
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Filesize regex could be broken!");
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -69,39 +102,6 @@ public class LetitbitTv extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Файл не найден<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"orange\">\\&laquo;(.*?)\\&raquo;</span>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"\">(.*?)</span>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"file-property\">Файл</td><td>(.*?)</td>").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex("</sub></div></div><div class=\".*?\"><div class=\".*?\"><div class=\".*?\"></div><span>(.*?)</span></div><table").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("\\&raquo;</span></div><div class=\"caption2 grey\"><span class=\"\">.*?</span>\\&nbsp;[\n\r\t ]+<sub>(.*?)</sub></div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename);
-        link.setFinalFileName(filename.trim());
-        if (filesize != null) {
-            filesize = filesize.replace("&nbsp;", "");
-            filesize = filesize.replace(",", ".");
-            filesize = filesize.replace("Г", "G");
-            filesize = filesize.replace("М", "M");
-            filesize = filesize.replace("к", "k");
-            filesize = filesize.replaceAll("(Б|б)", "");
-            filesize = filesize.replace("байт", "byte");
-            filesize = filesize + "b";
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        } else {
-            logger.warning("Filesize regex could be broken!");
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

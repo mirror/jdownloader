@@ -48,7 +48,7 @@ public class IShareMyBitchComGallery extends PluginForDecrypt {
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         br.getPage("http://www.isharemybitch.com/gallery-widget/widget.php?id=" + galleryID);
-        final String[] links = br.getRegex("\"(http://media\\.isharemybitch\\.com:\\d+/galleries/[a-z0-9]+/\\d+\\.jpg)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(http://media\\.isharemybitch\\.com:\\d+/galleries/[a-z0-9]+/[a-z0-9\\-_]+\\.jpg)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

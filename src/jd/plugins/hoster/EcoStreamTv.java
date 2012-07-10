@@ -54,21 +54,10 @@ public class EcoStreamTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage(downloadLink.getDownloadURL() + "?ss=1", "ss=1");
+        br.postPage(downloadLink.getDownloadURL() + "?ss=1", "ss=1&sss=1");
         // No way to directly find out of it's online or not so let's just try
         Regex importantVars = br.getRegex("\\(\"lc\\(\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
         String var1 = importantVars.getMatch(0);
@@ -77,7 +66,7 @@ public class EcoStreamTv extends PluginForHost {
         String var4 = importantVars.getMatch(3);
         if (var1 == null || var2 == null || var3 == null || var4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.ecostream.tv/objec.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
+        br.postPage("http://www.ecostream.tv/lc/m.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
         DLLINK = br.getRegex("flashvars=\"file=(http://[^\"\\']+)\\&image=").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -100,6 +89,17 @@ public class EcoStreamTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

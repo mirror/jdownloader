@@ -50,32 +50,24 @@ public class TuTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>El vídeo que intentas ver no existe o ha sido borrado de TU|>Afortunadamente, el sistema ha encontrado vídeos relacionados con tu petición)") || br.getURL().contains("/noExisteVideo/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>Tu\\.tv - .*? - Video: (.*?)</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) \\- Tu\\.tv</title>").getMatch(0);
         if (filename == null) {
-            //
             filename = br.getRegex("class=\"title_comentario\">Comentarios de <strong>(.*?)</strong>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
             }
         }
-        DLLINK = br.getRegex("RunPlayer\\(\\'.*?\\',\\'(.*?)\\'").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String vid = br.getRegex(">var codVideo=(\\d+);").getMatch(0);
+        if (vid == null) vid = br.getRegex("\\&xtp=(\\d+)\"").getMatch(0);
+        if (filename == null || vid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://tu.tv/flvurl.php?codVideo=" + vid + "&v=WIN%2010,3,181,34&fm=1");
+        DLLINK = br.getRegex("\\&kpt=([^<>\"]*?)\\&").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.Base64Decode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".flv");
@@ -96,6 +88,17 @@ public class TuTv extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

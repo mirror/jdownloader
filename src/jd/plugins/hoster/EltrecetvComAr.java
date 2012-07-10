@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Regex;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[\\w-]+/nota/\\d+/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+/\\d+/.+" }, flags = { 0 })
 public class EltrecetvComAr extends PluginForHost {
 
     private String clipUrl = null;
@@ -44,6 +44,24 @@ public class EltrecetvComAr extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
+        }
+        swfUrl = br.getRegex("<param name=\"movie\" value=\"(.*?)\"").getMatch(0);
+        final String id = new Regex(downloadLink.getDownloadURL(), ".*?/(\\d+)/.*?").getMatch(0);
+        br.getPage("http://www.eltrecetv.com.ar/feed/videowowza/" + id);
+        clipUrl = br.getRegex("<media:content url=\"(.*?)\"").getMatch(0);
+        if (filename == null || clipUrl == null || swfUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        swfUrl = "http://www.eltrecetv.com.ar" + swfUrl;
+        downloadLink.setFinalFileName(filename + ".flv");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -73,24 +91,6 @@ public class EltrecetvComAr extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
-        }
-        swfUrl = br.getRegex("<param name=\"movie\" value=\"(.*?)\"").getMatch(0);
-        final String id = new Regex(downloadLink.getDownloadURL(), ".*?/(\\d+)/.*?").getMatch(0);
-        br.getPage("http://www.eltrecetv.com.ar/feed/videowowza/" + id);
-        clipUrl = br.getRegex("<media:content url=\"(.*?)\"").getMatch(0);
-        if (filename == null || clipUrl == null || swfUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        swfUrl = "http://www.eltrecetv.com.ar" + swfUrl;
-        downloadLink.setFinalFileName(filename + ".flv");
-        return AvailableStatus.TRUE;
     }
 
     @Override

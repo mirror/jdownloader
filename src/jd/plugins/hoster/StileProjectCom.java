@@ -94,7 +94,7 @@ public class StileProjectCom extends PluginForHost {
     }
 
     private void getdllink() throws PluginException, IOException {
-        final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)\\&");
+        final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
         final String type = videoMETA.getMatch(0);
         final String id = videoMETA.getMatch(1);
         final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);

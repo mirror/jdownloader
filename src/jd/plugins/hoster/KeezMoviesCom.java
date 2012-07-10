@@ -140,7 +140,7 @@ public class KeezMoviesCom extends PluginForHost {
         br.setCookie("http://www.keezmovies.com/", "age_verified", "1");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<h1 class=\"title\">(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<span class=\"fn\" style=\"display:none\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?) - KeezMovies\\.com</title>").getMatch(0);
         }
