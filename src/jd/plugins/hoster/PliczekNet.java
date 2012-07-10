@@ -51,8 +51,15 @@ public class PliczekNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String linkurl = br.getRegex("<script[^>]*></script></div>\\s*<a href=\"(.*?)\"><img").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // String linkurl =
+        // br.getRegex("<script[^>]*></script></div>\\s*<a href=\"(.*?)\"><img").getMatch(0);
+        // checking if we got correct page
+        String linkurl = br.getRegex("<a href=\"download.php(.*)\"><img src=\"images/save.gif\" alt=\"\" /></a>").getMatch(0);
+        if (linkurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            linkurl = downloadLink.getDownloadURL().replace("index", "download").replace("p=", "id=");
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         dl.startDownload();
