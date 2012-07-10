@@ -74,8 +74,10 @@ import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
@@ -657,20 +659,10 @@ public class JDGui extends SwingGui {
                             /*
                              * avoid exit if trayicon addon is enabled and close to tray active
                              */
-                            try {
-                                Dialog.getInstance().showConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), _GUI._.JDGui_windowClosing_try_asnwer_close());
-                                return;
-                            } catch (DialogNoAnswerException e1) {
-                                if (e1.isCausedbyESC() || e1.isCausedByClosed()) {
-                                    /* set source to null so the trayicon extension does nothing in its windowlistener */
-                                    e.setSource(null);
-                                    return;
-                                }
-                                e1.printStackTrace();
+                            windowClosedTray(e);
+                            return;
 
-                            }
                             // NO need to ask again
-                            if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
 
                         }
                     } catch (final Throwable e2) {
@@ -692,6 +684,46 @@ public class JDGui extends SwingGui {
                 return;
             }
             org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+        }
+    }
+
+    private void windowClosedTray(final WindowEvent e) {
+        try {
+
+            final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), null);
+            d.setLeftActions(new AppAction() {
+                {
+                    setName(_GUI._.JDGui_windowClosing_try_asnwer_close());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e1) {
+                    e.setSource(null);
+                    if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
+                    d.dispose();
+                    /*
+                     * without trayicon also dont close/exit for macos
+                     */
+                    if (CrossSystem.isMac()) {
+                        new EDTHelper<Object>() {
+                            @Override
+                            public Object edtRun() {
+                                /* set visible state */
+                                JDGui.this.getMainFrame().setVisible(false);
+                                return null;
+                            }
+                        }.start();
+                        return;
+                    }
+                    org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
+                }
+            });
+            Dialog.I().showDialog(d);
+            return;
+        } catch (DialogNoAnswerException e1) {
+            e.setSource(null);
+            e1.printStackTrace();
+            return;
         }
     }
 
