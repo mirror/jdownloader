@@ -9,7 +9,6 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,17 +24,57 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
+import org.junit.runners.model.InitializationError;
 
 import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
 
-    private static ClipboardMonitoring INSTANCE            = new ClipboardMonitoring();
-    private static DataFlavor          urlFlavor           = null;
-    private static DataFlavor          uriListFlavor       = null;
-    private volatile Thread            monitoringThread    = null;
-    private Clipboard                  clipboard           = null;
-    private volatile boolean           skipChangeDetection = false;
+    private static class WindowsClipboardHack {
+        Method    openClipboard    = null;
+        Method    closeClipboard   = null;
+        Method    getClipboardData = null;
+        long      cf_html          = -1;
+        Clipboard clipboard        = null;
+
+        private WindowsClipboardHack(Clipboard clipboard) throws InitializationError {
+            try {
+                this.clipboard = clipboard;
+                cf_html = (Long) Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML").get(null);
+                openClipboard = clipboard.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
+                openClipboard.setAccessible(true);
+                closeClipboard = clipboard.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
+                closeClipboard.setAccessible(true);
+                getClipboardData = clipboard.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
+                getClipboardData.setAccessible(true);
+            } catch (final Throwable e) {
+                throw new InitializationError(e);
+            }
+        }
+
+        private String getURLFromCF_HTML() {
+            try {
+                try {
+                    openClipboard.invoke(clipboard, new Object[] { null });
+                    String sstr = new String((byte[]) getClipboardData.invoke(clipboard, new Object[] { cf_html }));
+                    return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
+                } finally {
+                    closeClipboard.invoke(clipboard, new Object[] {});
+                }
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
+            }
+            return null;
+        }
+    }
+
+    private static ClipboardMonitoring  INSTANCE            = new ClipboardMonitoring();
+    private static DataFlavor           urlFlavor           = null;
+    private static DataFlavor           uriListFlavor       = null;
+    private volatile Thread             monitoringThread    = null;
+    private Clipboard                   clipboard           = null;
+    private volatile boolean            skipChangeDetection = false;
+    private static WindowsClipboardHack clipboardHack       = null;
 
     public synchronized void startMonitoring() {
         if (isMonitoring()) return;
@@ -43,6 +82,7 @@ public class ClipboardMonitoring {
             private String oldStringContent = null;
             private String oldHTMLContent   = null;
             private String oldListContent   = null;
+            private String lastBrowserUrl   = null;
 
             @Override
             public void run() {
@@ -60,6 +100,7 @@ public class ClipboardMonitoring {
                         continue;
                     }
                     try {
+                        lastBrowserUrl = null;
                         Transferable currentContent = clipboard.getContents(null);
                         if (currentContent == null) continue;
                         if (currentContent.isDataFlavorSupported(PackageControllerTableTransferable.FLAVOR)) {
@@ -103,6 +144,7 @@ public class ClipboardMonitoring {
                                             /* remember that we had HTML content this round */
                                             oldHTMLContent = htmlContent;
                                             handleThisRound = handleThisRound + "\r\n" + htmlContent;
+                                            lastBrowserUrl = getCurrentBrowserURL(currentContent);
                                         } else {
                                             oldHTMLContent = null;
                                         }
@@ -120,6 +162,7 @@ public class ClipboardMonitoring {
                                             if (changeDetector(oldHTMLContent, htmlContent)) {
                                                 oldHTMLContent = htmlContent;
                                                 handleThisRound = newStringContent + "\r\n" + htmlContent;
+                                                lastBrowserUrl = getCurrentBrowserURL(currentContent);
                                             }
                                         } else {
                                             oldHTMLContent = null;
@@ -132,7 +175,9 @@ public class ClipboardMonitoring {
                             }
                         }
                         if (!StringUtils.isEmpty(handleThisRound)) {
-                            LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(handleThisRound));
+                            LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
+                            job.setCustomSourceUrl(lastBrowserUrl);
+                            LinkCollector.getInstance().addCrawlerJob(job);
                         }
                     } catch (final Throwable e) {
                     }
@@ -220,6 +265,13 @@ public class ClipboardMonitoring {
 
     public ClipboardMonitoring() {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        if (CrossSystem.isWindows()) {
+            try {
+                clipboardHack = new WindowsClipboardHack(clipboard);
+            } catch (final Throwable e) {
+                LogController.CL().log(e);
+            }
+        }
     }
 
     static {
@@ -241,7 +293,6 @@ public class ClipboardMonitoring {
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
-            System.out.println(flav);
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
                 /*
                  * we use first hit and search UTF-8
@@ -313,6 +364,7 @@ public class ClipboardMonitoring {
 
     public static void processSupportedTransferData(final Transferable transferable) {
         try {
+            String browserUrl = null;
             String content = getListTransferData(transferable);
             if (StringUtils.isEmpty(content)) {
                 /* no List flavor available, lets check for String flavor */
@@ -323,11 +375,14 @@ public class ClipboardMonitoring {
                     if (!StringUtils.isEmpty(htmlContent)) {
                         /* add available HTML flavor to String flavor */
                         content = content + "\r\n" + htmlContent;
+                        browserUrl = getCurrentBrowserURL(transferable);
                     }
                 }
             }
             if (!StringUtils.isEmpty(content)) {
-                LinkCollector.getInstance().addCrawlerJob(new LinkCollectingJob(content));
+                LinkCollectingJob job = new LinkCollectingJob(content);
+                job.setCustomSourceUrl(browserUrl);
+                LinkCollector.getInstance().addCrawlerJob(job);
             }
         } catch (final Throwable e) {
         }
@@ -389,29 +444,47 @@ public class ClipboardMonitoring {
         return INSTANCE;
     }
 
-    public static void main(String[] args) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException, ClassNotFoundException {
-
-        // registerClipboardFormat("HTML Format")
-
-        System.out.println(getSourceUrl());
-
-    }
-
-    private static String getSourceUrl() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
-        long cf_html = (Long) Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML").get(null);
-        final Clipboard org = Toolkit.getDefaultToolkit().getSystemClipboard();
-        try {
-            Method method = org.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
-            method.setAccessible(true);
-            method.invoke(org, new Object[] { null });
-            method = org.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
-            method.setAccessible(true);
-            String sstr = new String((byte[]) method.invoke(org, new Object[] { cf_html }));
-            return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
-        } finally {
-            Method method = org.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
-            method.setAccessible(true);
-            method.invoke(org, new Object[] {});
+    public static String getCurrentBrowserURL(final Transferable transferable) throws UnsupportedFlavorException, IOException {
+        String ret = null;
+        if (clipboardHack != null) {
+            ret = clipboardHack.getURLFromCF_HTML();
         }
+        if (!StringUtils.isEmpty(ret)) return ret;
+        String charSet = null;
+        for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
+            if (flav.getMimeType().contains("x-moz-url-priv") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
+                byte[] xmozurlprivBytes = (byte[]) transferable.getTransferData(flav);
+                if (CrossSystem.isLinux()) {
+                    /*
+                     * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
+                     */
+                    /*
+                     * discard 0 bytes if they are in intervalls
+                     */
+                    int indexOriginal = 0;
+                    for (int i = 0; i < xmozurlprivBytes.length - 1; i++) {
+                        if (xmozurlprivBytes[i] != 0) {
+                            /* copy byte */
+                            xmozurlprivBytes[indexOriginal++] = xmozurlprivBytes[i];
+                        }
+                    }
+
+                    if (charSet != null) {
+                        ret = new String(xmozurlprivBytes, 0, indexOriginal, charSet);
+                    } else {
+                        ret = new String(xmozurlprivBytes, 0, indexOriginal, "UTF-8");
+                    }
+                    break;
+                } else {
+                    /* no workaround needed */
+                    if (charSet != null) {
+                        ret = new String(xmozurlprivBytes, charSet);
+                    } else {
+                        ret = new String(xmozurlprivBytes);
+                    }
+                }
+            }
+        }
+        return ret;
     }
 }

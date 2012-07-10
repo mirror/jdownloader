@@ -116,7 +116,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.warning("Decrypter failed for link: " + parameter);
             }
         }
-        if (decryptedLinks != null && decryptedLinks.size() > 0) sleep(1500l, param);
+        if (decryptedLinks != null && decryptedLinks.size() > 0) sleep(2500l, param);
         return decryptedLinks;
 
     }

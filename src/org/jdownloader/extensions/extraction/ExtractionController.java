@@ -133,11 +133,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                 fireEvent(ExtractionEvent.Type.FILE_NOT_FOUND);
                 return null;
             }
-            extractToFolder = extension.getFinalExtractToFolder(archive);
 
             if (gotKilled()) return null;
             if (extractor.prepare()) {
-
+                extractToFolder = extension.getFinalExtractToFolder(archive);
                 if (archive.isProtected() && StringUtils.isEmpty(archive.getPassword())) {
                     HashSet<String> spwList = archive.getSettings().getPasswords();
                     if (spwList != null) {
