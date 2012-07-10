@@ -687,13 +687,13 @@ abstract public class DownloadInterface {
 
     private boolean            fatalErrorOccured        = false;
 
-    private Request            request                  = null;
+    protected Request          request                  = null;
 
     private boolean            connected;
 
     private int                chunksStarted            = 0;
 
-    private Browser            browser;
+    protected Browser          browser;
 
     /** normal stop of download (eg manually or reconnect request) */
     private volatile boolean   externalStop             = false;
@@ -850,7 +850,7 @@ abstract public class DownloadInterface {
         return connection;
     }
 
-    private void connectFirstRange() throws IOException {
+    protected void connectFirstRange() throws IOException {
         long fileSize = getFileSize();
         long part = fileSize / this.getChunkNum();
         boolean verifiedSize = downloadLink.getVerifiedFileSize() > 0;
@@ -890,7 +890,7 @@ abstract public class DownloadInterface {
         }
     }
 
-    private boolean connectResumable() throws IOException {
+    protected boolean connectResumable() throws IOException {
         // TODO: endrange pruefen
 
         long[] chunkProgress = downloadLink.getChunksProgress();

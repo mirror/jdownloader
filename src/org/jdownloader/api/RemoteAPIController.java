@@ -20,7 +20,20 @@ public class RemoteAPIController {
         return INSTANCE;
     }
 
-    private boolean                            apiEnabled;
+    private boolean apiEnabled;
+
+    public boolean isApiEnabled() {
+        return apiEnabled;
+    }
+
+    public int getApiPort() {
+        return apiPort;
+    }
+
+    public boolean isApiLocal() {
+        return apiLocal;
+    }
+
     private int                                apiPort;
     private boolean                            apiLocal;
 
