@@ -18,7 +18,6 @@ import jd.parser.Regex;
 import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 
-import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
@@ -97,7 +96,7 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
     }
 
     protected String getVLCBinary() {
-        String ret = JsonConfig.create(VLCStreamingConfig.class).getVLCCommand();
+        String ret = getSettings().getVLCCommand();
         if (!StringUtils.isEmpty(ret)) return ret;
         if (CrossSystem.isWindows()) {
             return getVLCBinaryFromWindowsRegistry();
