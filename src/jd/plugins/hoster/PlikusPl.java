@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,9 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plikus.pl" }, urls = { "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plikus.pl" }, urls = { "http://[\\w\\.]*?plikus\\.pl/plik,*.+\\.html" }, flags = { 0 })
 public class PlikusPl extends PluginForHost {
 
     public PlikusPl(PluginWrapper wrapper) {
@@ -60,10 +57,14 @@ public class PlikusPl extends PluginForHost {
     // @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        Form form = br.getForm(0);
+        // Form form = br.getForm(0);
         br.setFollowRedirects(false);
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+        // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form,
+        // true, 0);
+        String linkurl = downloadLink.getDownloadURL().replace("plik,", "pobierz,").replaceAll(",.*,", ",");
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl);
         dl.startDownload();
     }
 
@@ -71,11 +72,14 @@ public class PlikusPl extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filesize = br.getRegex("<p><b>Rozmiar pliku:</b>(.*?)</p>").getMatch(0);
-        String filename = br.getRegex("<h1><img src=.*?/>(.*?)</h1>").getMatch(0);
-        if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        // not used anymore
+        // String filesize =
+        // br.getRegex("<p><b>Rozmiar pliku:</b>(.*?)</p>").getMatch(0);
+        String filename = br.getRegex("<a class=\"btn_download\" href=\"/pobierz,(.*?)\\.html\">[\n\t\r]+<span class=\"action\">Pobierz teraz!</span>").getMatch(0);
+        // String filename =
+        // br.getRegex("<h1><img src=.*?/>(.*?)</h1>").getMatch(0);
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(downloadLink.getName().replace("plik,", "").replaceAll(",.{3}+\\.html", ""));
         return AvailableStatus.TRUE;
     }
 
