@@ -67,8 +67,8 @@ abstract public class DownloadInterface {
     public class Chunk extends Thread {
 
         /**
-         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben einen kleinen Buffer
-         * und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
+         * Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt, so wird er weggelassen. Sehr niedrig geregelte chunks haben
+         * einen kleinen Buffer und eine sehr hohe Intervalzeit. Das fuehrt zu verstaerkt intervalartigem laden und ist ungewuenscht
          */
         public static final long                MIN_CHUNKSIZE        = 1 * 1024 * 1024;
 
@@ -428,8 +428,8 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle BUffer schon
-         * geschrieben wurde oder nicht.
+         * Gibt die Aktuelle Endposition in der gesamtfile zurueck. Diese Methode gibt die Endposition unahaengig davon an Ob der aktuelle
+         * BUffer schon geschrieben wurde oder nicht.
          * 
          * @return
          */
@@ -821,7 +821,7 @@ abstract public class DownloadInterface {
                 browser.connect(request);
             }
         }
-        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+        if (this.plugin.getBrowser().isDebug()) logger.finest("\r\n" + request.printHeaders());
         connection = request.getHttpConnection();
         if (request.getLocation() != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED);
         if (connection.getRange() != null) {
@@ -867,7 +867,7 @@ abstract public class DownloadInterface {
         browser.connect(request);
         if (request.getHttpConnection().getResponseCode() == 416) {
             logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
-            if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+            if (this.plugin.getBrowser().isDebug()) logger.finest("\r\n" + request.printHeaders());
             throw new IllegalStateException("HTTP/1.1 416 Requested Range Not Satisfiable");
         } else if (request.getHttpConnection().getRange() == null) {
             logger.warning("No Chunkload");
@@ -1078,8 +1078,8 @@ abstract public class DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -1111,7 +1111,8 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     private void onChunkFinished() {
         synchronized (this) {
@@ -1146,7 +1147,8 @@ abstract public class DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
