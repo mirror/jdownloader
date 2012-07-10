@@ -98,6 +98,7 @@ public class DropBoxCom extends PluginForDecrypt {
         }
         if (decryptedLinks.size() == 0) return decryptedLinks;
         if (fpName != null) {
+            if (fpName.contains("\\")) fpName = unescape(fpName);
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
