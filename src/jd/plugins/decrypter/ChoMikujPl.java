@@ -25,6 +25,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -42,7 +43,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
-    private static final String PASSWORDTEXT  = "Ten folder jest <b>zabezpieczony oddzielnym hasłem";
+    private static final String PASSWORDTEXT  = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
     private ArrayList<Integer>  REGEXSORT     = new ArrayList<Integer>();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -57,21 +58,18 @@ public class ChoMikujPl extends PluginForDecrypt {
         parameter = parameter.replace("www.", "");
         // The message used on errors in this plugin
         String error = "Error while decrypting link: " + parameter;
-        // If a link is password protected we have to save and use those data in
-        // the hosterplugin
+        // If a link is password protected we have to save and use those data in the hosterplugin
         String savePost = null;
         String saveLink = null;
         String password = null;
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        // If we have a new link we have to use it or we'll have big problems
-        // later when POSTing things to the server
+        // If we have a new link we have to use it or we'll have big problems later when POSTing things to the server
         if (br.getRedirectLocation() != null) {
             parameter = br.getRedirectLocation();
             br.getPage(br.getRedirectLocation());
         }
-        // // Check if the link directly wants to access a specified page of the
-        // gallery, if so, remove it to avoid problems
+        // Check if the link directly wants to access a specified page of the gallery, if so remove it to avoid problems
         String checkPage = new Regex(parameter, "chomikuj\\.pl/.*?(,\\d+)$").getMatch(0);
         if (checkPage != null) {
             br.getPage(parameter.replace(checkPage, ""));
@@ -107,18 +105,25 @@ public class ChoMikujPl extends PluginForDecrypt {
         }
         fpName = fpName.trim();
         // Alle Haupt-POSTdaten
-        String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&sortType=Name&ascending=True&pageNr=%jdownloaderpage%&isGallery=True&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
-        // Passwort Handling
+        String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(requestVerificationToken);
+        // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
+            Form pass = br.getFormbyProperty("id", "LoginToFolder");
+            if (pass == null) {
+                logger.warning(error + " :: Can't find Password Form!");
+                return null;
+            }
             for (int i = 0; i <= 3; i++) {
                 password = getUserInput(null, param);
-                savePost = postdata + "&ctl00%24SM=ctl00%24CT%24FW%24FilesUpdatePanel%7Cctl00%24CT%24FW%24FolderLoginButton&ctl00%24CT%24FW%24FolderLoginButton=Wejd%C5%BA&ctl00%24CT%24FW%24FolderPass=" + Encoding.urlEncode(password);
-                br.postPage(parameter, savePost);
-                if (br.containsHTML(PASSWORDWRONG)) continue;
-                break;
+                pass.put("Password", password);
+                br.submitForm(pass);
+                if (br.containsHTML("\\{\"IsSuccess\":true"))
+                    break;
+                else
+                    continue;
             }
-            if (br.containsHTML(PASSWORDWRONG)) {
+            if (!br.containsHTML("\\{\"IsSuccess\":true")) {
                 logger.warning("Wrong password!");
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
@@ -162,8 +167,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     logger.info("The following link is offline: " + parameter);
                     return decryptedLinks;
                 }
-                // If the last page only contains a file or fileS the regexes
-                // don't work but the decrypter isn't broken so the user should
+                // If the last page only contains a file or fileS the regex's don't work but the decrypter isn't broken so the user should
                 // get the links!
                 if (br.containsHTML("\\.zip")) {
                     logger.info("Stopping at page " + i + " because there were no pictures found on the page but i did find a .zip file!");
@@ -185,8 +189,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other
-                         * downloadhandling
+                         * If the link is a video it needs other download handling
                          */
                         if (id[REGEXSORT.get(1)].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
                     } else {
@@ -253,8 +256,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (Integer.parseInt(page) > tempint) tempint = Integer.parseInt(page);
             }
             if (tempint == pageCount) break;
-            // If we find less than 8 pages there are no more so we have to
-            // stop this here before getting an error!
+            // If we find less than 8 pages there are no more so we have to stop this here before getting an error!
             if (tempint < 8) {
                 pageCount = tempint;
                 break;
@@ -266,7 +268,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private void accessPage(String postData, Browser pageBR, int pageNum) throws IOException {
-        pageBR.postPage("http://chomikuj.pl/action/Files/FilesList", postData.replace("%jdownloaderpage%", Integer.toString(pageNum)));
+        pageBR.postPage("http://chomikuj.pl/action/Files/FilesList", postData);
     }
 
     private void prepareBrowser(String parameter, Browser bro) {

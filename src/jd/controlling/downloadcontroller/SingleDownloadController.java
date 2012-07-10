@@ -384,11 +384,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
         }
         /* show last browser request headers+content in logfile */
         try {
-            downloadLogger.finest(livePlugin.getBrowser().getRequest().getHttpConnection() + "");
+            downloadLogger.finest("\r\n" + livePlugin.getBrowser().getRequest().getHttpConnection() + "");
         } catch (Throwable e2) {
         }
         try {
-            downloadLogger.finest(livePlugin.getBrowser() + "");
+            downloadLogger.finest("\r\n" + livePlugin.getBrowser() + "");
         } catch (Throwable e2) {
         }
         String orgMessage = downloadLink.getLinkStatus().getErrorMessage();
@@ -568,8 +568,8 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     protected void onErrorDownloadTemporarilyUnavailable() {
         if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
         /*
-         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
-         * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss
+         * in ms. value==0 macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (linkStatus.getValue() > 0) {
             linkStatus.setWaitTime(linkStatus.getValue());

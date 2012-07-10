@@ -31,6 +31,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
@@ -51,7 +52,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ContextFactory;
 import org.mozilla.javascript.Scriptable;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)file/[\\w]+/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filefactory.com" }, urls = { "http://[\\w\\.]*?filefactory\\.com(/|//)(file/[\\w]+/?|trafficshare/[a-z0-9]{32}/.+/?)" }, flags = { 2 })
 public class FileFactory extends PluginForHost {
 
     // DEV NOTES
@@ -149,9 +150,19 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
         link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com//", ".com/"));
         link.setUrlDownload(link.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
+        // set trafficshare links like 'normal', this allows downloads to continue living if the uploader doesn't sponsor uid as
+        // trafficshare any longer.
+        if (link.getDownloadURL().contains("filefactory.com/trafficshare/")) {
+            String[][] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)trafficshare/[a-z0-9]{32}/([^/]+)/?").getMatches();
+            if (uid != null && (uid[0][0] != null && uid[0][1] != null)) {
+                link.setUrlDownload(uid[0][0] + "file/" + uid[0][1]);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
     }
 
     @Override
