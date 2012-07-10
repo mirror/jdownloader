@@ -82,7 +82,7 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
 
     @Override
     public String getDescription() {
-        return null;
+        return "VLC Streaming";
     }
 
     @Override
