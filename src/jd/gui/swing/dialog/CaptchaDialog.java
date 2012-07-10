@@ -23,8 +23,10 @@ import java.awt.event.FocusListener;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
 import jd.Launcher;
@@ -51,7 +53,9 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         try {
             Application.setApplication(".jd_home");
             Launcher.statics();
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), getGifImages(new File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL()), null, "Enter both words...");
+            // getGifImages(new
+            // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageIO.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), null, "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();
 
@@ -61,6 +65,8 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         } catch (DialogCanceledException e) {
             e.printStackTrace();
         } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

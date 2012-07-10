@@ -1,6 +1,7 @@
 package jd.controlling.captcha;
 
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.logging.Logger;
 
@@ -122,7 +123,15 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
             if (captchaController.getCaptchafile().getName().toLowerCase().endsWith("gif")) {
                 images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
             } else {
-                images = new Image[] { IconIO.getImage(captchaController.getCaptchafile().toURI().toURL()) };
+
+                BufferedImage img = IconIO.getImage(captchaController.getCaptchafile().toURI().toURL());
+
+                if (img.getType() == BufferedImage.TYPE_BYTE_BINARY) {
+                    images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
+                } else {
+                    images = new Image[] { img };
+                }
+
             }
             if (images == null || images.length == 0 || images[0] == null) {
                 getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());

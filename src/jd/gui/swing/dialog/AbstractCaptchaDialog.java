@@ -11,10 +11,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -38,6 +43,7 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.images.Interpolation;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
@@ -84,7 +90,32 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
         } else {
             setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
         }
-        this.images = images;
+        // if we have gif images, but read them as non indexed images, we try to fix this here.
+        ArrayList<Image> ret = new ArrayList<Image>();
+        for (int i = 0; i < images.length; i++) {
+            if (images[i] instanceof BufferedImage) {
+                if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {
+                    ByteArrayOutputStream os = new ByteArrayOutputStream();
+                    try {
+                        ImageIO.write((BufferedImage) images[i], "gif", os);
+
+                        InputStream is = new ByteArrayInputStream(os.toByteArray());
+                        Image[] subImages = getGifImages(is);
+                        for (Image ii : subImages) {
+                            ret.add(ii);
+                        }
+                        continue;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+            ret.add(images[i]);
+        }
+
+        this.images = ret.toArray(new Image[] {});
         fps = 24;
         this.explain = explain;
         this.defaultValue = defaultValue2;
@@ -206,10 +237,20 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
      * @return
      */
     public static Image[] getGifImages(URL url) {
-        InputStream is = null;
+        try {
+            return getGifImages(url.openStream());
+        } catch (IOException e) {
+            Log.exception(e);
+        }
+        return null;
+    }
+
+    public static Image[] getGifImages(InputStream openStream) {
+
         try {
             GifDecoder decoder = new GifDecoder();
-            decoder.read(is = url.openStream());
+
+            decoder.read(openStream);
             BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
             for (int i = 0; i < decoder.getFrameCount(); i++) {
                 ret[i] = decoder.getFrame(i);
@@ -217,15 +258,14 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
                 // i + ".png"));
             }
             return ret;
-        } catch (IOException e) {
-            e.printStackTrace();
+
         } finally {
             try {
-                is.close();
+                openStream.close();
             } catch (final Throwable e) {
             }
         }
-        return null;
+
     }
 
     public Image[] getImages() {
