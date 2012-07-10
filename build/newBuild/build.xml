@@ -338,8 +338,8 @@
 
 		<buildAddon package="JDGrowl" include="growl" />
 		<buildAddon package="AntiShutdown" include="antistandby" />
-
-
+	
+		<buildAddon package="VLCStreaming" include="vlcstreaming" />
 
 		<buildAddon package="Extraction" include="extraction" />
 
