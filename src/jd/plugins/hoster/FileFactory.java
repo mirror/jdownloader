@@ -157,7 +157,7 @@ public class FileFactory extends PluginForHost {
         // trafficshare any longer.
         if (link.getDownloadURL().contains("filefactory.com/trafficshare/")) {
             String[][] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)trafficshare/[a-z0-9]{32}/([^/]+)/?").getMatches();
-            if (uid != null && (uid[0][0] != null && uid[0][1] != null)) {
+            if (uid != null && (uid[0][0] != null || uid[0][1] != null)) {
                 link.setUrlDownload(uid[0][0] + "file/" + uid[0][1]);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
