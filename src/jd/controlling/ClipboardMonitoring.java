@@ -9,6 +9,8 @@ import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -23,6 +25,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
+
+import sun.awt.datatransfer.SunClipboard;
 
 public class ClipboardMonitoring {
 
@@ -237,6 +241,7 @@ public class ClipboardMonitoring {
          * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
+            System.out.println(flav);
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
                 /*
                  * we use first hit and search UTF-8
@@ -384,8 +389,19 @@ public class ClipboardMonitoring {
         return INSTANCE;
     }
 
-    public static void main(String[] args) throws InterruptedException {
-        new ClipboardMonitoring().startMonitoring();
-        Thread.sleep(100000);
+    public static void main(String[] args) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+        final Clipboard org = Toolkit.getDefaultToolkit().getSystemClipboard();
+
+        Method method = org.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
+        method.setAccessible(true);
+        method.invoke(org, new Object[] { null });
+        method = org.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
+        method.setAccessible(true);
+        System.out.println(new String((byte[]) method.invoke(org, new Object[] { 49432 })));
+
+        method = org.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
+        method.setAccessible(true);
+        method.invoke(org, new Object[] {});
+
     }
 }
