@@ -263,14 +263,24 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
             Log.exception(e);
         }
         s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
-        s.setBlacklistPatterns(blacklist.getComponent().getText().split(System.getProperty("line.separator")));
-        String[] list = Regex.getLines(passwordlist.getComponent().getText());
-        ArrayList<String> passwords = new ArrayList<String>(list.length);
-        for (String ss : list) {
-            if (passwords.contains(ss)) continue;
-            passwords.add(ss);
+        {
+            String[] list = Regex.getLines(passwordlist.getComponent().getText());
+            ArrayList<String> passwords = new ArrayList<String>(list.length);
+            for (String ss : list) {
+                if (passwords.contains(ss)) continue;
+                passwords.add(ss);
+            }
+            s.setPasswordList(passwords);
         }
-        s.setPasswordList(passwords);
+        {
+            String[] list = Regex.getLines(blacklist.getComponent().getText());
+            ArrayList<String> ignoreList = new ArrayList<String>(list.length);
+            for (String ss : list) {
+                if (ignoreList.contains(ss)) continue;
+                ignoreList.add(ss);
+            }
+            s.setBlacklistPatterns(ignoreList.toArray(new String[ignoreList.size()]));
+        }
         if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_high())) {
             s.setCPUPriority(CPUPriority.HIGH);
         } else if (cpupriority.getComponent().getValue().equals(T._.settings_cpupriority_middle())) {

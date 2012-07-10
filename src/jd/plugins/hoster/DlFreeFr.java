@@ -127,6 +127,7 @@ public class DlFreeFr extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (HTML) {
+            logger.info("InDirect download");
             br.setFollowRedirects(false);
             if (br.containsHTML("Trop de slots utilis")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
             final Form captchaForm = br.getForm(1);
@@ -173,6 +174,7 @@ public class DlFreeFr extends PluginForHost {
             if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, true, 1);
         } else {
+            logger.info("Direct download");
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, 1);
         }

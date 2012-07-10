@@ -47,8 +47,8 @@ public class IfolderRu extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("files.metalarea.org", "rusfolder.ru"));
-        link.setUrlDownload(link.getDownloadURL().replace("ifolder.ru", "rusfolder.ru"));
+        String url = new Regex(link.getDownloadURL(), "https?://.*?(/.+)").getMatch(0);
+        link.setUrlDownload("http://rusfolder.ru" + url);
     }
 
     @Override
@@ -70,7 +70,7 @@ public class IfolderRu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         String passCode = null;
-        String domain = br.getRegex("href=\"(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
+        String domain = br.getRegex("(https?://ints\\..*?\\.[a-z]{2,3})/ints/").getMatch(0);
         String watchAd = br.getRegex("http://ints\\..*?\\.[a-z]{2,3}/ints/\\?(.*?)\"").getMatch(0);
         if (watchAd != null) {
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.ifolderru.errors.ticketwait", "Waiting for ticket"));

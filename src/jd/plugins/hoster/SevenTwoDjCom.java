@@ -63,8 +63,12 @@ public class SevenTwoDjCom extends PluginForHost {
         Browser brc = br.cloneBrowser();
         brc.getPage("http://data.72dj.com/getuuauthcode/");
         String code = brc.getRegex("UUAuthCode=\"(.*?)\"").getMatch(0);
-        if (code == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + "?" + code;
+        if (code != null) {
+            code = "?" + code;
+        } else {
+            code = "";
+        }
+        dllink = "http://data.72dj.com/mp3/" + Encoding.htmlDecode(dllink) + code;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

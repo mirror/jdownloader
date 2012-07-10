@@ -172,6 +172,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             } catch (Exception e) {
             }
             try {
+                JDUtilities.runCommand("poweroff", new String[] {}, null, 0);
+            } catch (Exception e) {
+            }
+            try {
                 JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
             } catch (Exception e) {
             }

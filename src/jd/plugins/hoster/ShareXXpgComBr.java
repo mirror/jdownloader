@@ -62,7 +62,11 @@ public class ShareXXpgComBr extends PluginForHost {
         String dllink = br.getRegex("<div class=\"downbut\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dllink = dllink.replaceAll("\\{", "%7B");
+        dllink = dllink.replaceAll("\\[", "%5B");
+        dllink = dllink.replaceAll("\\]", "%5D");
+        dllink = dllink.replaceAll("\\}", "%7D");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             br.followConnection();
