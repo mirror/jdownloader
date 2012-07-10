@@ -698,6 +698,7 @@ public class JDGui extends SwingGui {
 
                 @Override
                 public void actionPerformed(ActionEvent e1) {
+                    // set source to null in order to avoid further actions in - for example the Tray extension listsners
                     e.setSource(null);
                     if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
                     d.dispose();
@@ -721,6 +722,7 @@ public class JDGui extends SwingGui {
             Dialog.I().showDialog(d);
             return;
         } catch (DialogNoAnswerException e1) {
+            // set source to null in order to avoid further actions in - for example the Tray extension listsners
             e.setSource(null);
             e1.printStackTrace();
             return;
