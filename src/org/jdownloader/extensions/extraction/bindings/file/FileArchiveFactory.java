@@ -8,12 +8,18 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.settings.GeneralSettings;
 
 public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactory {
@@ -21,32 +27,6 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     public FileArchiveFactory(File archiveStartFile) {
         super(archiveStartFile);
     }
-
-    // @Override
-    // public Archive buildDummyArchive(final String file) {
-    // List<ArchiveFile> links =
-    // DownloadController.getInstance().getChildrenByFilter(new
-    // AbstractPackageChildrenNodeFilter<ArchiveFile>() {
-    //
-    // public boolean isChildrenNodeFiltered(ArchiveFile node) {
-    // if (node.getFilePath().equals(file)) {
-    // if (node.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return true;
-    // }
-    // return false;
-    // }
-    //
-    // public int returnMaxResults() {
-    // return 1;
-    // }
-    // });
-    // ArchiveFile link = null;
-    // if (links == null || links.size() == 0) {
-    // link = buildArchiveFileFromFile(file);
-    // } else {
-    // link = links.get(0);
-    // }
-    // return buildArchive(link);
-    // }
 
     public ArrayList<ArchiveFile> createPartFileList(String file, String pattern) {
         ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
@@ -82,16 +62,40 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
     }
 
     public String createExtractSubPath(String path, Archive archiv) {
-
         try {
-            path = path.replace(PACKAGENAME, ARCHIVENAME);
-            if (archiv.getName() != null) {
+            String packageName = null;
+            for (ArchiveFile file : archiv.getArchiveFiles()) {
+                if (packageName != null) break;
+                if (file instanceof DownloadLinkArchiveFile) {
+                    DownloadLinkArchiveFile daf = (DownloadLinkArchiveFile) file;
+                    if (daf.getDownloadLinks() != null) {
+                        for (DownloadLink link : daf.getDownloadLinks()) {
+                            if (!FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                                packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+                                break;
+                            } else if ((packageName = link.getStringProperty(DownloadLink.PROPERTY_LASTFPNAME, null)) != null) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (!StringUtils.isEmpty(packageName)) {
+                path = path.replace(PACKAGENAME, packageName);
+            } else {
+                path = path.replace(PACKAGENAME, "");
+                Log.L.severe("Could not set packagename for " + archiv.getFirstArchiveFile().getFilePath());
+            }
+            if (!StringUtils.isEmpty(archiv.getName())) {
                 path = path.replace(ARCHIVENAME, archiv.getName());
             } else {
                 path = path.replace(ARCHIVENAME, "");
                 Log.L.severe("Could not set archivename for " + archiv.getFirstArchiveFile().getFilePath());
             }
-
+            if (path.contains(HOSTER)) {
+                path = path.replace(HOSTER, "");
+                Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
+            }
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
                 int end = start + 6;
@@ -108,20 +112,17 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
                     Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + archiv.getFirstArchiveFile().getFilePath());
                 }
             }
-
             String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(getFile().getParent(), "");
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
             path = path.replace(SUBFOLDER, dif);
-
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");
             return path;
         } catch (Exception e) {
             Log.exception(e);
         }
-
         return null;
     }
 

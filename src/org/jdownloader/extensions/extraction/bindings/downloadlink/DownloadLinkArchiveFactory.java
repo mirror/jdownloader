@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 
 import org.appwork.exceptions.WTFException;
@@ -38,10 +39,15 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
     }
 
     public String createExtractSubPath(String path, Archive archiv) {
-
         DownloadLink link = getFirstLink(archiv);
         try {
-            String packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+            FilePackage fp = link.getFilePackage();
+            String packageName = null;
+            if (FilePackage.isDefaultFilePackage(fp)) {
+                packageName = link.getStringProperty(DownloadLink.PROPERTY_LASTFPNAME, null);
+            } else {
+                packageName = CrossSystem.alleviatePathParts(link.getFilePackage().getName());
+            }
             if (!StringUtils.isEmpty(packageName)) {
                 path = path.replace(PACKAGENAME, packageName);
             } else {
@@ -62,7 +68,6 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                 path = path.replace(HOSTER, "");
                 Log.L.severe("Could not set hoster for " + archiv.getFirstArchiveFile().getFilePath());
             }
-
             if (path.contains("$DATE:")) {
                 int start = path.indexOf("$DATE:");
                 int end = start + 6;
@@ -77,20 +82,17 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
                     Log.L.severe("Could not set extraction date. Maybe pattern is wrong. For " + archiv.getFirstArchiveFile().getFilePath());
                 }
             }
-
             String dif = new File(org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
             path = path.replace(SUBFOLDER, CrossSystem.alleviatePathParts(dif));
-
             path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");
             return path;
         } catch (Exception e) {
             Log.exception(e);
         }
-
         return null;
     }
 

@@ -219,7 +219,7 @@ public class SrnnksCategory extends PluginForDecrypt {
     }
 
     private static String removeHTMLTags(String line) {
-        return line.replace("<strong>", "").replace("</strong>", "").replace("<p>", "").replace("</p>", "").replace("<br />", "");
+        return line.replaceAll("</?strong>", "").replaceAll("</?p>", "").replace("<br />", "").replaceAll("</?div>", "");
     }
 
     private static class IdNamePair implements Comparable<IdNamePair> {

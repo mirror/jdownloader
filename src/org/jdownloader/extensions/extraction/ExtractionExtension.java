@@ -1138,32 +1138,28 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     public File getFinalExtractToFolder(Archive archive) {
-        if (archive.getSettings().getExtractPath() != null) { return new File(archive.getSettings().getExtractPath()); }
-        Boolean usesub = getSettings().isSubpathEnabled();
-
-        String path = archive.getFactory().createDefaultExtractToPath(archive);
+        String path = archive.getSettings().getExtractPath();
+        if (!StringUtils.isEmpty(path)) {
+            /* archive already has an extractpath set */
+            return new File(path);
+        }
         if (getSettings().isCustomExtractionPathEnabled()) {
+            /* customized extractpath is enabled */
             path = getSettings().getCustomExtractionPath();
         }
         if (StringUtils.isEmpty(path)) {
+            /* extractpath is still emptry, create default one */
             path = archive.getFactory().createDefaultExtractToPath(archive);
         }
         File ret = new File(path);
-        if (usesub) {
-            if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) { return ret; }
-            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder()) {
-
-                if (archive.getContentView().getFileCount() == 0) { return ret;
-
-                }
-            }
-
+        if (getSettings().isSubpathEnabled()) {
+            if (getSettings().getSubPathFilesTreshhold() > archive.getContentView().getFileCount() + archive.getContentView().getDirectoryCount()) return ret;
+            if (getSettings().isSubpathEnabledIfAllFilesAreInAFolder() && archive.getContentView().getFileCount() == 0) return ret;
             String sub = getSettings().getSubPath();
-            // System.out.println(1);
-            sub = archive.getFactory().createExtractSubPath(sub, archive);
-            if (sub != null) {
-
-            return new File(ret, sub); }
+            if (!StringUtils.isEmpty(sub)) {
+                sub = archive.getFactory().createExtractSubPath(sub, archive);
+                if (!StringUtils.isEmpty(sub)) ret = new File(ret, sub);
+            }
         }
         return ret;
     }

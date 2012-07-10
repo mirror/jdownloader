@@ -75,6 +75,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private static final String                          PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
     public static final String                           PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
     public static final String                           PROPERTY_FINALLOCATION    = "FINALLOCATION";
+    public static final String                           PROPERTY_LASTFPNAME       = "LASTFPNAME";
 
     public static final int                              LINKTYPE_CONTAINER        = 1;
 
@@ -635,19 +636,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         notifyChanges();
     }
 
-    /**
-     * set the FilePackage that contains this DownloadLink, DO NOT USE this if you want to add this DownloadLink to a FilePackage
-     * 
-     * @param filePackage
-     */
-    public synchronized void _setFilePackage(FilePackage filePackage) {
-        if (filePackage == this.filePackage) return;
-        if (this.filePackage != null && filePackage != null) {
-            this.filePackage.remove(this);
-        }
-        this.filePackage = filePackage;
-    }
-
     public void setLinkType(int linktypeContainer) {
         if (linktypeContainer == linkType) return;
         if (linkType == LINKTYPE_CONTAINER) {
@@ -924,12 +912,27 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return getFilePackage();
     }
 
-    public void setParentNode(FilePackage parent) {
-        if (parent == this.filePackage) return;
-        if (this.filePackage != null && parent != null) {
+    /**
+     * set the FilePackage that contains this DownloadLink, DO NOT USE this if you want to add this DownloadLink to a FilePackage
+     * 
+     * @param filePackage
+     */
+    public synchronized void _setFilePackage(FilePackage filePackage) {
+        if (filePackage == this.filePackage) return;
+        if (FilePackage.isDefaultFilePackage(filePackage)) filePackage = null;
+        if (this.filePackage != null && filePackage != null) {
             this.filePackage.remove(this);
         }
-        this.filePackage = (FilePackage) parent;
+        if (filePackage == null && this.filePackage != null) {
+            this.setProperty(PROPERTY_LASTFPNAME, this.filePackage.getName());
+        } else {
+            this.setProperty(PROPERTY_LASTFPNAME, Property.NULL);
+        }
+        this.filePackage = filePackage;
+    }
+
+    public void setParentNode(FilePackage parent) {
+        _setFilePackage(parent);
     }
 
     public DownloadLink getDownloadLink() {
