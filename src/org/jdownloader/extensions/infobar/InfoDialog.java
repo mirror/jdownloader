@@ -24,10 +24,12 @@ import jd.gui.swing.jdgui.components.speedmeter.SpeedMeterPanel;
 import jd.nutils.Formatter;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.swing.EDTHelper;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.infobar.translate.T;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class InfoDialog extends JWindow implements ActionListener, MouseListener, MouseMotionListener {
 
@@ -105,6 +107,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
         JPanel panel = new JPanel(new MigLayout("ins 5, wrap 1", "[grow,fill,200]"));
         panel.setBorder(BorderFactory.createLineBorder(getBackground().darker().darker()));
         panel.add(speedmeter = new SpeedMeterPanel(false, true), "h 30!");
+        speedmeter.setAntiAliasing(JsonConfig.create(GraphicalUserInterfaceSettings.class).isTextAntiAliasEnabled());
         panel.add(lblProgress, "split 2");
         panel.add(lblETA);
         panel.add(prgTotal);
@@ -220,8 +223,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             Point drag = e.getPoint();
 
             /*
-             * Convert coordinate of the component to the whole screen and
-             * translate to the dragging-start-point.
+             * Convert coordinate of the component to the whole screen and translate to the dragging-start-point.
              */
             Point point = new Point(this.point);
             System.out.println("1   " + point);
@@ -237,8 +239,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             int h = getHeight();
 
             /*
-             * If distance to the upper and left screen border is less than
-             * DOCKING_DISTANCE, then dock the InfoDialog to the border.
+             * If distance to the upper and left screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
              */
             if (x < DOCKING_DISTANCE) x = 0;
             if (y < DOCKING_DISTANCE) y = 0;
@@ -248,8 +249,7 @@ public class InfoDialog extends JWindow implements ActionListener, MouseListener
             int yMax = dm.getHeight() - h;
 
             /*
-             * If distance to the lower and right screen border is less than
-             * DOCKING_DISTANCE, then dock the InfoDialog to the border.
+             * If distance to the lower and right screen border is less than DOCKING_DISTANCE, then dock the InfoDialog to the border.
              */
             if (x > xMax - DOCKING_DISTANCE) x = xMax;
             if (y > yMax - DOCKING_DISTANCE) y = yMax;

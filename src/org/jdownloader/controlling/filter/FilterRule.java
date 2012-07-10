@@ -132,7 +132,7 @@ public abstract class FilterRule implements Storable {
                 if (i < cond.size() - 1) {
                     sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
                 } else {
-                    sb.append(_GUI._.FilterRule_toString_and(cond.get(i)));
+                    sb.append(" " + _GUI._.FilterRule_toString_and(cond.get(i)).trim());
                 }
 
             } else {

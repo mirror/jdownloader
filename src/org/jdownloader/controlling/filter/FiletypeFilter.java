@@ -49,7 +49,7 @@ public class FiletypeFilter extends Filter implements Storable {
                     if (i < cond.size() - 1) {
                         sb.append(_GUI._.FilterRule_toString_comma(cond.get(i)));
                     } else {
-                        sb.append(_GUI._.FilterRule_toString_or(cond.get(i)));
+                        sb.append(" " + _GUI._.FilterRule_toString_or(cond.get(i)).trim());
                     }
 
                 } else {
