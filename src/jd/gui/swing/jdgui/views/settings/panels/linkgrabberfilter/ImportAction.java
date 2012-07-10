@@ -12,10 +12,11 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
@@ -44,7 +45,9 @@ public class ImportAction extends AppAction {
 
             final String ext = table.getView() instanceof ExceptionsTable ? ImportAction.VIEW : ImportAction.EXT;
 
-            File[] filterFiles = Dialog.getInstance().showFileChooser(ext, _GUI._.LinkgrabberFilter_import_dialog_title(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_import_dialog_title(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
                 @Override
                 public String getDescription() {
@@ -55,11 +58,16 @@ public class ImportAction extends AppAction {
 
                 @Override
                 public boolean accept(File f) {
-
                     return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ext);
 
                 }
-            }, true, FileChooserType.OPEN_DIALOG, null);
+            });
+            d.setType(FileChooserType.OPEN_DIALOG);
+            d.setMultiSelection(true);
+            Dialog.I().showDialog(d);
+
+            File[] filterFiles = d.getSelection();
+            if (filterFiles == null) return;
             ArrayList<LinkgrabberFilterRule> all = new ArrayList<LinkgrabberFilterRule>();
             for (File f : filterFiles) {
                 ArrayList<LinkgrabberFilterRule> contents = null;

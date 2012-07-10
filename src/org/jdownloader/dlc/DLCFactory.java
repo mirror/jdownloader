@@ -23,10 +23,11 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.container.D;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.gui.translate._GUI;
@@ -86,24 +87,32 @@ public class DLCFactory extends D {
 
     public void createDLC(List<DownloadLink> links) {
 
-        File[] files;
         try {
-            files = Dialog.getInstance().showFileChooser("_LOADSAVEDLC", _GUI._.CreateDLCAction_actionPerformed_title_(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
+
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.CreateDLCAction_actionPerformed_title_(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
                 @Override
                 public String getDescription() {
+
                     return "*.dlc (DownloadLinkContainer)";
+
                 }
 
                 @Override
                 public boolean accept(File f) {
                     return f.getName().toLowerCase(Locale.ENGLISH).endsWith(".dlc");
+
                 }
-            }, false, FileChooserType.SAVE_DIALOG, null);
+            });
+            d.setType(FileChooserType.SAVE_DIALOG);
+            d.setMultiSelection(false);
+            Dialog.I().showDialog(d);
+            File file = d.getSelectedFile();
 
-            if (files == null || files.length == 0) return;
+            if (file == null) return;
 
-            File file = files[0];
             if (!file.getAbsolutePath().endsWith(".dlc")) {
                 file = new File(file.getAbsolutePath() + ".dlc");
             }
@@ -131,24 +140,33 @@ public class DLCFactory extends D {
     }
 
     public void createDLCByCrawledLinks(List<CrawledLink> links) {
-        File[] files;
+
         try {
-            files = Dialog.getInstance().showFileChooser("_LOADSAVEDLC", _GUI._.CreateDLCAction_actionPerformed_title_(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
+
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.CreateDLCAction_actionPerformed_title_(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
                 @Override
                 public String getDescription() {
+
                     return "*.dlc (DownloadLinkContainer)";
+
                 }
 
                 @Override
                 public boolean accept(File f) {
                     return f.getName().toLowerCase(Locale.ENGLISH).endsWith(".dlc");
+
                 }
-            }, false, FileChooserType.SAVE_DIALOG, null);
+            });
+            d.setType(FileChooserType.SAVE_DIALOG);
+            d.setMultiSelection(false);
+            Dialog.I().showDialog(d);
+            File file = d.getSelectedFile();
 
-            if (files == null || files.length == 0) return;
+            if (file == null) return;
 
-            File file = files[0];
             if (!file.getAbsolutePath().endsWith(".dlc")) {
                 file = new File(file.getAbsolutePath() + ".dlc");
             }

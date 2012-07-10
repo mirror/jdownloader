@@ -11,10 +11,11 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.controlling.packagizer.PackagizerRule;
@@ -47,33 +48,39 @@ public class ExportAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
         try {
-            final String extension;
+            final String ext;
 
-            extension = ImportAction.EXT;
+            ext = ImportAction.EXT;
 
-            File[] filterFiles = Dialog.getInstance().showFileChooser(ImportAction.EXT, _GUI._.LinkgrabberFilter_export_dialog_title(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_export_dialog_title(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
                 @Override
                 public String getDescription() {
 
-                    return "*" + ImportAction.EXT;
+                    return "*" + ext;
 
                 }
 
                 @Override
                 public boolean accept(File f) {
-                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), extension);
+                    return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ext);
 
                 }
-            }, true, FileChooserType.SAVE_DIALOG, null);
+            });
+            d.setType(FileChooserType.SAVE_DIALOG);
+            d.setMultiSelection(false);
+            Dialog.I().showDialog(d);
 
             if (rules == null) {
                 rules = PackagizerController.getInstance().list();
             }
             String str = JSonStorage.toString(rules);
-            File saveto = filterFiles[0];
-            if (!saveto.getName().endsWith(extension)) {
-                saveto = new File(saveto.getAbsolutePath() + extension);
+            File saveto = d.getSelectedFile();
+            if (saveto == null) return;
+            if (!saveto.getName().endsWith(ext)) {
+                saveto = new File(saveto.getAbsolutePath() + ext);
             }
             try {
                 IO.writeStringToFile(saveto, str);

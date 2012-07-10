@@ -41,6 +41,9 @@ import org.appwork.utils.swing.dialog.ComboBoxDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -369,14 +372,40 @@ public class UserIO {
      */
     public File[] requestFileChooser(final String id, final String title, final Integer fileSelectionMode, final FileFilter fileFilter, final Boolean multiSelection, final File startDirectory, final Integer dialogType) {
 
+        FileChooserSelectionMode fsm = FileChooserSelectionMode.FILES_AND_DIRECTORIES;
+
+        for (final FileChooserSelectionMode f : FileChooserSelectionMode.values()) {
+            if (f.getId() == fileSelectionMode) {
+                fsm = f;
+                break;
+            }
+        }
+        FileChooserType fct = FileChooserType.OPEN_DIALOG;
+        for (final FileChooserType f : FileChooserType.values()) {
+            if (f.getId() == dialogType) {
+                fct = f;
+                break;
+            }
+        }
+
+        ExtFileChooserDialog d = new ExtFileChooserDialog(0, title, null, null);
+        d.setStorageID(id);
+        d.setFileSelectionMode(fsm);
+        d.setFileFilter(fileFilter);
+        d.setType(fct);
+        d.setMultiSelection(multiSelection != null && multiSelection);
+        d.setPreSelection(startDirectory);
         try {
-            return Dialog.getInstance().showFileChooser(id, title, fileSelectionMode == null ? -1 : fileSelectionMode, fileFilter, multiSelection == null ? false : multiSelection, dialogType == null ? -1 : dialogType, startDirectory);
-        } catch (DialogCanceledException e) {
-            e.printStackTrace();
+            Dialog.I().showDialog(d);
         } catch (DialogClosedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return null;
+
+        return d.getSelection();
     }
 
     /**

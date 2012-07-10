@@ -8,9 +8,10 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.nutils.io.JDFileFilter;
 
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -29,15 +30,22 @@ public class AddContainerAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        File[] ret;
+
         try {
             String exts = ContainerPluginController.getInstance().getContainerExtensions(null);
-            // Dialog.getInstance().showMessageDialog(_GUI._.DLCFactory_createDLC_created_(file.getAbsolutePath()));
-            ret = Dialog.getInstance().showFileChooser("loaddlc", _GUI._.AddContainerAction_actionPerformed_(), FileChooserSelectionMode.FILES_ONLY, new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true), false, FileChooserType.OPEN_DIALOG, null);
 
-            if (ret == null) return;
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.AddContainerAction_actionPerformed_(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new JDFileFilter(_GUI._.AddContainerAction_actionPerformed_extensions(exts), exts, true));
+            d.setType(FileChooserType.OPEN_DIALOG);
+            d.setMultiSelection(true);
+            Dialog.I().showDialog(d);
+
+            File[] filterFiles = d.getSelection();
+            if (filterFiles == null) return;
+
             StringBuilder sb = new StringBuilder();
-            for (File r : ret) {
+            for (File r : filterFiles) {
                 if (sb.length() > 0) sb.append("\r\n");
                 sb.append("file://");
                 sb.append(r.getAbsolutePath());

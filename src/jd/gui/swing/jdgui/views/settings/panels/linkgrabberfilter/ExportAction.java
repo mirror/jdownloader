@@ -11,10 +11,11 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserSelectionMode;
-import org.appwork.utils.swing.dialog.Dialog.FileChooserType;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
+import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
+import org.appwork.utils.swing.dialog.FileChooserType;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRule;
 import org.jdownloader.gui.translate._GUI;
@@ -59,7 +60,10 @@ public class ExportAction extends AppAction {
             }
             if (exportList.size() == 0) return;
             final String ext = exportList.get(0).isAccept() ? ImportAction.VIEW : ImportAction.EXT;
-            File[] filterFiles = Dialog.getInstance().showFileChooser(ext, _GUI._.LinkgrabberFilter_export_dialog_title(), FileChooserSelectionMode.FILES_ONLY, new FileFilter() {
+
+            ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI._.LinkgrabberFilter_export_dialog_title(), null, null);
+            d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
+            d.setFileFilter(new FileFilter() {
 
                 @Override
                 public String getDescription() {
@@ -73,10 +77,13 @@ public class ExportAction extends AppAction {
                     return f.isDirectory() || StringUtils.endsWithCaseInsensitive(f.getName(), ext);
 
                 }
-            }, true, FileChooserType.SAVE_DIALOG, null);
+            });
+            d.setType(FileChooserType.SAVE_DIALOG);
+            d.setMultiSelection(false);
+            Dialog.I().showDialog(d);
 
             String str = JSonStorage.toString(exportList);
-            File saveto = filterFiles[0];
+            File saveto = d.getSelectedFile();
             if (!saveto.getName().endsWith(ext)) {
                 saveto = new File(saveto.getAbsolutePath() + ext);
             }
