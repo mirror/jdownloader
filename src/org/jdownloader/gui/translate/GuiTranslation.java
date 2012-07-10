@@ -2237,4 +2237,37 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Views" })
     String LinkgrabberFilter_initComponents_exceptions_title();
 
+    @Default(lngs = { "en" }, values = { "Create a Log" })
+    String LogAction();
+
+    @Default(lngs = { "en" }, values = { "Create a Log" })
+    String LogAction_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Send a Bugreport" })
+    String SendLogDialog_SendLogDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "When did the Problem occure? Please check all entries that may be worth considering!" })
+    String SendLogDialog_layoutDialogContent_desc_();
+
+    @Default(lngs = { "en" }, values = { "Check" })
+    String LogModel_initColumns_x_();
+
+    @Default(lngs = { "en" }, values = { "Time" })
+    String LogModel_initColumns_time_();
+
+    @Default(lngs = { "en" }, values = { "Between %s1 and %s2" })
+    String LogModel_getStringValue_between_(String from, String to);
+
+    @Default(lngs = { "en" }, values = { "Select" })
+    String LogTable_onContextMenu_enable_();
+
+    @Default(lngs = { "en" }, values = { "Unselect" })
+    String LogTable_onContextMenu_disable_();
+
+    @Default(lngs = { "en" }, values = { "Creating Log Package" })
+    String LogAction_actionPerformed_zip_title_();
+
+    @Default(lngs = { "en" }, values = { "Please wait..." })
+    String LogAction_actionPerformed_wait_();
+
 }

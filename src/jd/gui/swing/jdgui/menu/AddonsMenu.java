@@ -25,7 +25,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.controlling.IOEQ;
-import jd.gui.swing.jdgui.menu.actions.LogAction;
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;

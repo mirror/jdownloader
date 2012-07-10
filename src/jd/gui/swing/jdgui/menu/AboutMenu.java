@@ -22,6 +22,7 @@ import jd.Launcher;
 import jd.gui.swing.jdgui.menu.actions.AboutAction;
 import jd.gui.swing.jdgui.menu.actions.KnowledgeAction;
 import jd.gui.swing.jdgui.menu.actions.LatestChangesAction;
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
 import org.jdownloader.gui.translate._GUI;
 
@@ -38,6 +39,7 @@ public class AboutMenu extends JMenu {
 
                 add(new LatestChangesAction());
                 add(new KnowledgeAction());
+                add(new LogAction());
                 addSeparator();
                 add(new AboutAction());
             }
