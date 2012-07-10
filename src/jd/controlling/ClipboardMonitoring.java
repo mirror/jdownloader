@@ -389,19 +389,29 @@ public class ClipboardMonitoring {
         return INSTANCE;
     }
 
-    public static void main(String[] args) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+    public static void main(String[] args) throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException, ClassNotFoundException {
+
+        // registerClipboardFormat("HTML Format")
+
+        System.out.println(getSourceUrl());
+
+    }
+
+    private static String getSourceUrl() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+        long cf_html = (Long) Class.forName("sun.awt.windows.WDataTransferer").getDeclaredField("CF_HTML").get(null);
         final Clipboard org = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-        Method method = org.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
-        method.setAccessible(true);
-        method.invoke(org, new Object[] { null });
-        method = org.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
-        method.setAccessible(true);
-        System.out.println(new String((byte[]) method.invoke(org, new Object[] { 49432 })));
-
-        method = org.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
-        method.setAccessible(true);
-        method.invoke(org, new Object[] {});
-
+        try {
+            Method method = org.getClass().getDeclaredMethod("openClipboard", new Class[] { SunClipboard.class });
+            method.setAccessible(true);
+            method.invoke(org, new Object[] { null });
+            method = org.getClass().getDeclaredMethod("getClipboardData", new Class[] { long.class });
+            method.setAccessible(true);
+            String sstr = new String((byte[]) method.invoke(org, new Object[] { cf_html }));
+            return new Regex(sstr, "SourceURL:([^\r\n]*)").getMatch(0);
+        } finally {
+            Method method = org.getClass().getDeclaredMethod("closeClipboard", new Class[] {});
+            method.setAccessible(true);
+            method.invoke(org, new Object[] {});
+        }
     }
 }
