@@ -40,6 +40,7 @@ guiless_you_are_up2date=Já possui a última versão
 install_updates_later=Perguntar mais tarde
 install_updates_now=Instalar agora!
 literally_exit=Verificação de actualizações concluída - Sair
+progress=%s1/%s2
 restart_msg=Necessário reiniciar agora.
 restart_required_msg=Actualizador irá actualizar-se sozinho...
 restart_required_title=Necessário reiniciar
