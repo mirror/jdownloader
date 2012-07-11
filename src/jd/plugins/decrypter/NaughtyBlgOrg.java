@@ -57,7 +57,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         }
         String contentReleaseLinks = null;
         if (category != Category.SITERIP) {
-            contentReleaseLinks = br.getRegex("<em>Download:</em>(.*?)<span style=").getMatch(0);
+            contentReleaseLinks = br.getRegex("<em>Download:</em>(.*?)</div>").getMatch(0);
             if (contentReleaseLinks == null) {
                 logger.warning("contentReleaseLinks == null");
                 return null;
