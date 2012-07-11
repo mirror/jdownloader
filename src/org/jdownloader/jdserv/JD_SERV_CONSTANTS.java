@@ -1,8 +1,5 @@
 package org.jdownloader.jdserv;
 
-import java.util.logging.Level;
-
-import org.appwork.utils.logging.Log;
 import org.jdownloader.remotecall.RemoteClient;
 
 public class JD_SERV_CONSTANTS {
@@ -14,24 +11,8 @@ public class JD_SERV_CONSTANTS {
     public static final CounterInterface   COUNT     = CLIENT.create(CounterInterface.class);
 
     public static void main(String[] args) {
-        Log.L.setLevel(Level.ALL);
-
-        // System.out.println("\"DE\"".substring(1, 3));
-        // // CounterInterface.INST.inc("test");
-        // // System.out.println(CounterInterface.INST.getValue("test"));#
-        // String ip = null;
-        // System.out.println("IP: " + GEO.getIP());
-        // System.out.println("ASN: " + GEO.getASNByIP(ip));
-        // GEO.getCountryCode();
-        //
-        // System.out.println("Country Code: " + GEO.getCountryCodebyIP(ip));
-        // System.out.println("Country Name: " + GEO.getCountryNameByIP(ip));
-        // CLIENT.create(RedirectInterface.class).redirect("google.de?q=affenschauckel");
-        // CLIENT.create(CounterInterface.class).inc("a");
-        // System.out.println(CLIENT.create(CounterInterface.class).getValue("a"));
-        // System.out.println(CLIENT.create(BuyPremiumInterface.class).list());
-
-        System.out.println(CLIENT.create(CounterInterface.class).getValue("a"));
+        LogCollection log = new RemoteClient("update3.jdownloader.org/jdserv").create(UploadInterface.class).get("1342020707256", null);
+        System.out.println(log.getId());
 
     }
 }
