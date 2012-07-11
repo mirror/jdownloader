@@ -18,7 +18,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -44,8 +43,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private HostPluginController() {
         this.list = null;
@@ -167,15 +165,14 @@ public class HostPluginController extends PluginController<PluginForHost> {
                     }
                     if (names.length == 0) { throw new WTFException("names.length=0"); }
                     for (int i = 0; i < names.length; i++) {
-                        classLoader = PluginClassLoader.getInstance().getChild();
+                        classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                         /* during init we dont want dummy libs being created */
                         classLoader.setCreateDummyLibs(false);
                         LazyHostPlugin l = null;
                         try {
                             String displayName = new String(names[i]);
                             /*
-                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for
-                             * each downloadLink
+                             * HostPlugins: multiple use of displayName is not possible because it is used to find the correct plugin for each downloadLink
                              */
                             AbstractHostPlugin existingPlugin = ret.get(displayName);
                             if (existingPlugin != null && existingPlugin.getInterfaceVersion() > a.interfaceVersion()) {

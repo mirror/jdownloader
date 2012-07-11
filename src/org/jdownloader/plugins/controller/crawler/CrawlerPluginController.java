@@ -19,7 +19,6 @@ import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.PluginController;
 import org.jdownloader.plugins.controller.PluginInfo;
@@ -27,8 +26,10 @@ import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 
 public class CrawlerPluginController extends PluginController<PluginForDecrypt> {
 
-    private static final Object                                  LOCK     = new Object();
-    private static MinTimeWeakReference<CrawlerPluginController> INSTANCE = null;
+    private static final Object                                  INTSANCELOCK       = new Object();
+    private static final Object                                  INITLOCK           = new Object();
+    private static MinTimeWeakReference<CrawlerPluginController> INSTANCE           = null;
+    private static Boolean                                       FIRSTINIT_UNCACHED = JDInitFlags.REFRESH_CACHE;
 
     /**
      * get the only existing instance of HostPluginController. This is a singleton
@@ -38,9 +39,15 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     public static CrawlerPluginController getInstance() {
         CrawlerPluginController ret = null;
         if (INSTANCE != null && (ret = INSTANCE.get()) != null) return ret;
-        synchronized (LOCK) {
+        synchronized (INTSANCELOCK) {
             if (INSTANCE != null && (ret = INSTANCE.get()) != null) return ret;
             ret = new CrawlerPluginController();
+            if (Boolean.TRUE.equals(FIRSTINIT_UNCACHED)) {
+                ret.init(true);
+            } else {
+                ret.init(false);
+            }
+            FIRSTINIT_UNCACHED = null;
             INSTANCE = new MinTimeWeakReference<CrawlerPluginController>(ret, 30 * 1000l, "CrawlerPlugin");
         }
         return ret;
@@ -53,8 +60,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     /**
-     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using
-     * {@link #getInstance()}.
+     * Create a new instance of HostPluginController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      * 
      */
     private CrawlerPluginController() {
@@ -117,8 +123,11 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
-        ArrayList<AbstractCrawlerPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
-        }, new ArrayList<AbstractCrawlerPlugin>());
+        ArrayList<AbstractCrawlerPlugin> l = null;
+        synchronized (INITLOCK) {
+            l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
+            }, new ArrayList<AbstractCrawlerPlugin>());
+        }
         List<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>(l.size());
         /* use this classLoader for all cached plugins to load */
         for (AbstractCrawlerPlugin ap : l) {
@@ -165,7 +174,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             ap.setPattern(new String(patterns[i]));
                             ap.setVersion(revision);
                             ap.setInterfaceVersion(a.interfaceVersion());
-                            classLoader = PluginClassLoader.getInstance().getChild();
+                            classLoader = (PluginClassLoaderChild) c.getClazz().getClassLoader();
                             /* during init we dont want dummy libs being created */
                             classLoader.setCreateDummyLibs(false);
                             l = new LazyCrawlerPlugin(ap, null, classLoader);
@@ -229,7 +238,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private void save(List<AbstractCrawlerPlugin> save) {
-        JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
+        synchronized (INITLOCK) {
+            JSonStorage.saveTo(Application.getResource(getCache()), false, KEY, JSonStorage.serializeToJson(save));
+        }
     }
 
     public List<LazyCrawlerPlugin> list() {

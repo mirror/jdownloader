@@ -43,7 +43,7 @@ public class PluginController<T extends Plugin> {
                     try {
                         String classFileName = f.getName().substring(0, f.getName().length() - 6);
                         ret.add(new PluginInfo<T>(f, (Class<T>) cl.loadClass(pkg + "." + classFileName)));
-                        logger.finer("Loaded from: " + cl.getResource(hosterpath + "/" + f.getName()));
+                        logger.finer("Loaded from: " + new String("" + cl.getResource(hosterpath + "/" + f.getName())));
                     } catch (Throwable e) {
                         errorFree = false;
                         logger.log(e);
