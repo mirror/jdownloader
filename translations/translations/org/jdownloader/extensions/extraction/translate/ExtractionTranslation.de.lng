@@ -30,6 +30,7 @@ downloadedok=Datei exestiert bereits
 dummyarchivedialog_title=Archiv %s1
 exists=Link Status
 extract_to2=Entpacke Archiv(e) nach...
+extracting=Deaktiviert (Entpacker läuft)
 extraction_failed=Entpacken von %s1 fehlgeschlagen
 failed=Entpacken fehlgeschlagen: %s1
 failed_no_details=Entpacken fehlgeschlagen
