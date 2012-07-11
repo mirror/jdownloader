@@ -59,3 +59,4 @@ updateloop=Aktualizator nie mógł wykonać samo-aktualizacji. Proszę spróbowa
 updateloop_title=Wykryto zapętlenie procesu aktualizacji!
 updates_are_ready_for_install_now=%s1 aktualizacje są gotowe do instalacji.
 updates_ready_for_install=%s1 aktualizacje są gotowe do instalacji.
+window_title=Aktualizator

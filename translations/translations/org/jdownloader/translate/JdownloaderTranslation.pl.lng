@@ -123,7 +123,7 @@ jd_controlling_SingleDownloadController_askexists_title=Plik istnieje
 jd_controlling_reconnect_Reconnector_progress_failed2=Ponowne Połączenie wielokrotnie się nie powiodło! Automatyczne Ponowne Połączenie zostało wyłączone! Proszę sprawdzić ustawienia Ponownego Połączenia!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Nie wybrano metody Ponownego Połączenia</u></b><br/><p>Ponowne Połączenie to sposób skrócenie czasu długiego oczekiwania pomiędzy kolejnymi pobraniami, zazwyczaj dla użytkowników darmowych.<br>Dla użytkowników kont Premium nie ma to znaczenia.</p><p>Więcej można znaleść pod adresem: <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>tutaj</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Bez Ponownego Połączenia
-jd_plugins_PluginUtils_askPassword=Wproadź hasło dla %s1
+jd_plugins_PluginUtils_askPassword=Wprowadź hasło dla %s1
 literally_offline=Niedostępny
 literally_yes=Tak
 pluginforhost_infogenerator_title=Konto %s1@%s2
@@ -163,3 +163,4 @@ system_download_doCRC2_success=Sprawdzanie CRC udane (%s1)
 system_download_errors_couldnotoverwrite=Nie można nadpisać istniejącego pliku
 system_download_errors_couldnotrename=Nie udało się zmienić nazwy pliku części
 system_download_errors_invalidoutputfile=Nieprawidłowy plik wynikowy
+system_download_errors_linkisBlocked=Mirror %s1 jest pobierany
