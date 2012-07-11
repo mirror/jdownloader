@@ -23,14 +23,14 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.Regex;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "http://(www\\.)?eltrecetv\\.com\\.ar/[^<>\"/]+/[^<>\"/]+/\\d+/.+" }, flags = { 0 })
 public class EltrecetvComAr extends PluginForHost {
 
-    private String clipUrl = null;
-    private String swfUrl  = null;
+    private String DLLINK = null;
 
     public EltrecetvComAr(final PluginWrapper wrapper) {
         super(wrapper);
@@ -47,6 +47,36 @@ public class EltrecetvComAr extends PluginForHost {
     }
 
     @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
+    }
+
+    private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        rtmp.setPlayPath("mp4:" + stream[1]);
+        rtmp.setUrl(stream[0]);
+        rtmp.setApp(new Regex(DLLINK, "//.*?/(.*?)@").getMatch(0));
+        rtmp.setSwfVfy(stream[2]);
+        rtmp.setPageUrl(stream[3]);
+        rtmp.setFlashVer("WIN 10,1,102,64");
+        rtmp.setResume(false);
+        rtmp.setTimeOut(10);
+    }
+
+    private void download(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        String[] stream = DLLINK.split("@");
+        if (DLLINK.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, stream[0] + stream[1]);
+            setupRTMPConnection(stream, dl);
+            ((RTMPDownload) dl).startDownload();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -54,43 +84,15 @@ public class EltrecetvComAr extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
         }
-        swfUrl = br.getRegex("<param name=\"movie\" value=\"(.*?)\"").getMatch(0);
         final String id = new Regex(downloadLink.getDownloadURL(), ".*?/(\\d+)/.*?").getMatch(0);
-        br.getPage("http://www.eltrecetv.com.ar/feed/videowowza/" + id);
-        clipUrl = br.getRegex("<media:content url=\"(.*?)\"").getMatch(0);
-        if (filename == null || clipUrl == null || swfUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        swfUrl = "http://www.eltrecetv.com.ar" + swfUrl;
-        downloadLink.setFinalFileName(filename + ".flv");
+        br.getPage("http://www.eltrecetv.com.ar/playlist/" + id);
+        String streamer = br.getRegex("<jwplayer:streamer>(rtmp.*?)</jwplayer:streamer>").getMatch(0);
+        String playpath = br.getRegex("<media:content bitrate=\"\\d+\" url=\"([^\"]+)").getMatch(0);
+
+        if (filename == null || streamer == null || playpath == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        DLLINK = streamer + "@" + playpath + "@http://cdn.eltrecetv.com.ar/sites/all/libraries/jwplayer/player.swf@" + downloadLink.getDownloadURL();
+        downloadLink.setFinalFileName(filename + ".mp4");
         return AvailableStatus.TRUE;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        final String app = new Regex(clipUrl, "//.*?/(.*?),").getMatch(0);
-        final String playPath = clipUrl.substring(clipUrl.indexOf(",") + 1);
-        if (app == null || playPath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
-        final String host = clipUrl.replace("," + playPath, "");
-        final String dllink = clipUrl;
-
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            rtmp.setPlayPath(playPath);
-            rtmp.setPageUrl(downloadLink.getDownloadURL());
-            rtmp.setSwfVfy(swfUrl);
-            rtmp.setFlashVer("WIN 10,1,102,64");
-            rtmp.setApp(app);
-            rtmp.setUrl(host);
-            rtmp.setResume(true);
-            rtmp.setTimeOut(10);
-
-            ((RTMPDownload) dl).startDownload();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
     }
 
     @Override
@@ -104,4 +106,5 @@ public class EltrecetvComAr extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -60,9 +61,15 @@ public class ArteTv extends PluginForHost {
     private boolean checkDateExpiration(String s) {
         if (s == null) { return false; }
         EXPIRED = s;
-        SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z");
+        SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.getDefault());
         try {
-            Date date = df.parse(s);
+            Date date = null;
+            try {
+                date = df.parse(s);
+            } catch (Throwable e) {
+                df = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
+                date = df.parse(s);
+            }
             if (date.getTime() < System.currentTimeMillis()) { return true; }
             SimpleDateFormat dfto = new SimpleDateFormat("dd. MMM yyyy 'ab' HH:mm 'Uhr'");
             EXPIRED = dfto.format(date);
@@ -104,6 +111,7 @@ public class ArteTv extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
         String link = downloadLink.getDownloadURL();
         String lang = new Regex(link, "http://\\w+.arte.tv/(\\w+)/.+").getMatch(0);
         lang = lang != null && "de".equalsIgnoreCase(lang) ? "De" : lang;
