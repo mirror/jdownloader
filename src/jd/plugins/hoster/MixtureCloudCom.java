@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/media/(download/)?[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 0 })
 public class MixtureCloudCom extends PluginForHost {
 
     // free: 1maxdl * 1 chunk
@@ -40,7 +40,7 @@ public class MixtureCloudCom extends PluginForHost {
     // other: Multiple domains all redirect back to 'sub.mixturecloud.com/' uids
     // are transferable between each (sub)?domain & section. All links have
     // recaptcha with this one size fits all download method.
-    private static final String PREMIUMONLY         = "File access is limited to users with unlimited or free account<";
+    private static final String PREMIUMONLY         = "File access is limited to users with unlimited";
     private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users");
 
     public MixtureCloudCom(PluginWrapper wrapper) {

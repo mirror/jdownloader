@@ -51,6 +51,21 @@ public class SwoopshareCom extends PluginForHost {
         return -1;
     }
 
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
+        String name = br.getRegex("<title>(cshare\\.de|swoopshare) \\-(.*?)</title>").getMatch(1);
+        if (name == null) {
+            name = br.getRegex("<span style=\"font-size:26px; font\\-weight:bold\">(.*?)</span>").getMatch(0);
+        }
+        if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(name.trim().replace("Download ", ""));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
+        return AvailableStatus.TRUE;
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String finallink = br.getRegex("<span class=\"arrow\">\\&#187;</span> <b><a href=\"(.*?)\"").getMatch(0);
@@ -68,21 +83,6 @@ public class SwoopshareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
-        String name = br.getRegex("<title>(cshare\\.de|swoopshare) -(.*?)</title>").getMatch(1);
-        if (name == null) {
-            name = br.getRegex("<span style=\"font-size:26px; font-weight:bold\">(.*?)</span>").getMatch(0);
-        }
-        if (name == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(name.trim().replace("Download ", ""));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(size));
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {

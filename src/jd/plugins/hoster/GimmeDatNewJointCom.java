@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gimmedatnewjoint.com" }, urls = { "http://(www\\.)?gimmedatnewjoint\\.com/audios/\\d+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gimmedatnewjoint.com" }, urls = { "http://(www\\.)?gimmedatnewjoint\\.com/play/\\d+/" }, flags = { 0 })
 public class GimmeDatNewJointCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,48 +49,21 @@ public class GimmeDatNewJointCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Smarty error: unable to read resource|<b>Warning</b>:|<title>GimmeDatNewJoint</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"audio_title\" content=\"(.*?) Audio\"").getMatch(0);
+        String filename = br.getRegex("<meta name=\"audio_title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("/></div>[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("text: +\\'#nowplaying (.*?)\\'").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?) Audio \\- GimmeDatNewJoint</title>").getMatch(0);
-                }
-            }
+            filename = br.getRegex(">Downloading:</strong>([^<>\"]*?)</div>").getMatch(0);
         }
-        DLLINK = br.getRegex("\\'file\\': \\'(http://.*?)\\'").getMatch(0);
-        if (DLLINK == null) {
-            DLLINK = br.getRegex("\\.attr\\(\\'href\\',\\'(http://.*?)\\'\\)").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("<link rel=\"audio_src\" href=\"(http://.*?)\"").getMatch(0);
-                if (DLLINK == null) {
-                    DLLINK = br.getRegex("class=\"downloadlink\">[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-                }
-            }
-        }
+        DLLINK = br.getRegex("mp3: \"(http://[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<link rel=\"audio_src\" href=\"(http://.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp3";
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -108,6 +81,17 @@ public class GimmeDatNewJointCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

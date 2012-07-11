@@ -48,6 +48,32 @@ public class TuneScoopCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getContentType().contains("html")) {
+                if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML("(>The file you were looking for could not be found|>The file expired because it was not downloaded)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<b>Song Name:</b>(.*?)</font>").getMatch(0);
+        String filesize = br.getRegex("color=\"#000000\"><b>Size:</b>(.*?)</font>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(true);
@@ -65,31 +91,6 @@ public class TuneScoopCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (con.getContentType().contains("html")) {
-                if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                br.followConnection();
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        String filename = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<b>Song Name:</b>(.*?)</font>").getMatch(0);
-        String filesize = br.getRegex("color=\"#000000\"><b>Size:</b>(.*?)</font>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "(http://(www\\.)?spiegel\\.de/video/video\\-\\d+\\.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)" }, flags = { 0 })
 public class SpglD extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORTED_VIDEO      = Pattern.compile("http://[\\w\\.]*?spiegel\\.de/video/video-(\\d+).html", Pattern.CASE_INSENSITIVE);
@@ -43,8 +43,9 @@ public class SpglD extends PluginForDecrypt {
     private static final Pattern PATTERN_TEASER               = Pattern.compile("<teaser>(.+?)</teaser>");
 
     /*
-     * Type 1: h263 flv Type 2: flv mid (VP6) Type 3: h263 low Type 4: flv low (VP6) Type 5: flv high (VP6) (680544) Type 6: h263 3gp Type 7: h263 3gp low Type
-     * 8: iphone mp4 Type 9: podcast mp4 640480
+     * Type 1: h263 flv Type 2: flv mid (VP6) Type 3: h263 low Type 4: flv low
+     * (VP6) Type 5: flv high (VP6) (680544) Type 6: h263 3gp Type 7: h263 3gp
+     * low Type 8: iphone mp4 Type 9: podcast mp4 640480 Type 15 : H264
      */
 
     private static final Pattern PATTERN_FILENAME             = Pattern.compile("<filename>(.+?)</filename>");
@@ -52,6 +53,7 @@ public class SpglD extends PluginForDecrypt {
     private static final Pattern PATTERN_FILENAME_T6          = Pattern.compile("^\\s+<type6>\\s+$\\s+^\\s+" + SpglD.PATTERN_FILENAME.toString(), Pattern.MULTILINE);
     private static final Pattern PATTERN_FILENAME_T8          = Pattern.compile("^\\s+<type8>\\s+$\\s+^\\s+" + SpglD.PATTERN_FILENAME.toString(), Pattern.MULTILINE);
     private static final Pattern PATTERN_FILENAME_T9          = Pattern.compile("^\\s+<type9>\\s+$\\s+^\\s+" + SpglD.PATTERN_FILENAME.toString(), Pattern.MULTILINE);
+    private static final Pattern PATTERN_FILENAME_T15         = Pattern.compile("^\\s+<type15>\\s+$\\s+^\\s+" + SpglD.PATTERN_FILENAME.toString(), Pattern.MULTILINE);
 
     // Patterns für Fotostrecken
     private static final Pattern PATTERN_IMG_URL              = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
@@ -63,7 +65,7 @@ public class SpglD extends PluginForDecrypt {
 
     private void addLink(final ArrayList<DownloadLink> decryptedLinks, final DownloadLink downloadLink, final DestinationFormat convertTo, final String comment, final CryptedLink cryptedLink) {
         final FilePackage filePackage = FilePackage.getInstance();
-        filePackage.setName("Spielel.de" + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
+        filePackage.setName("Spiegel.de" + convertTo.getText() + "(" + convertTo.getExtFirst() + ")");
         filePackage.add(downloadLink);
         downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
         downloadLink.setProperty("convertto", convertTo.name());
@@ -109,8 +111,15 @@ public class SpglD extends PluginForDecrypt {
             downloadLink.setFinalFileName(name + ".tmp");
             this.addLink(decryptedLinks, downloadLink, DestinationFormat.UNKNOWN, comment, cryptedLink);
 
-            // }
+            fileName = new Regex(xmlEncodings, SpglD.PATTERN_FILENAME_T15).getMatch(0);
+            downloadLink = this.createDownloadlink("http://video.spiegel.de/flash/" + fileName);
+            downloadLink.setFinalFileName(name + ".mp4");
+            this.addLink(decryptedLinks, downloadLink, DestinationFormat.VIDEOMP4, comment, cryptedLink);
 
+            // }
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(name);
+            fp.addLinks(decryptedLinks);
         } else if (new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORED_FOTOSTRECKE).matches()) {
             final String group3 = new Regex(cryptedLink.getCryptedUrl(), SpglD.PATTERN_SUPPORED_FOTOSTRECKE).getMatch(0);
             if (group3 != null) {

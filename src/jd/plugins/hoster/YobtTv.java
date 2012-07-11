@@ -39,38 +39,6 @@ public class YobtTv extends PluginForHost {
         super(wrapper);
     }
 
-    private String decryptTheSecret(final String bismarkishID) {
-        int i = 0;
-        String dec = "", plain = "";
-        while (i < bismarkishID.length()) {
-            dec = bismarkishID.substring(i, i + 2);
-            plain += String.valueOf((char) ((dec.codePointAt(0) - 65) * 16 + dec.codePointAt(1) - 65));
-            i += 2;
-        }
-        return plain;
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.yobt.tv/terms.html";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
@@ -112,6 +80,38 @@ public class YobtTv extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    private String decryptTheSecret(final String bismarkishID) {
+        int i = 0;
+        String dec = "", plain = "";
+        while (i < bismarkishID.length()) {
+            dec = bismarkishID.substring(i, i + 2);
+            plain += String.valueOf((char) ((dec.codePointAt(0) - 65) * 16 + dec.codePointAt(1) - 65));
+            i += 2;
+        }
+        return plain;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.yobt.tv/terms.html";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

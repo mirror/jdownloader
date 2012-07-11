@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/\\d+/[a-z0-9_\\-]+\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
 public class PornRabbitCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,26 +49,15 @@ public class PornRabbitCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<title>Not found</title>|<meta http-equiv=\"refresh\" content=\"0;url=http://www\\.pornrabbit\\.com/\">)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 class=\"h2title\">(.*?)</h2> ").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Watch (.*?) at Pornrabbit</title>").getMatch(0);
-        DLLINK = br.getRegex("<span class=\"download\"><a href=\"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornrabbit\\.com/.*?)\"").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) : pornrabbit\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">Report this video!</a></div>[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        DLLINK = br.getRegex("class=\"download\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.media\\.pornrabbit\\.com/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
@@ -92,6 +81,17 @@ public class PornRabbitCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

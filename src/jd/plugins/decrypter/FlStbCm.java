@@ -104,6 +104,15 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("tnaflix.com/embedding_player/player_[^<>\"]+\\.swf\" /><param name=\"FlashVars\" value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+            if (externID != null) {
+                br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+                externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+                if (externID != null) {
+                    decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                    return decryptedLinks;
+                }
+            }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {

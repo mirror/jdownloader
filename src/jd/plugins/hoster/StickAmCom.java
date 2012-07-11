@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -50,26 +49,22 @@ public class StickAmCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -15);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">The media does not exist\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = br.getRegex("\\'movieName=(%2Fmedia%2Fvideo%2Fconverted%2.*?\\.flv)\\&").getMatch(0);
+        final String vid = new Regex(downloadLink.getDownloadURL(), "stickam\\.com/viewMedia\\.do\\?mId=(\\d+)").getMatch(0);
+        DLLINK = br.getRegex("\"(http://static\\.stickam\\.com/media/image/converted/original/[^<>\"]*?)\"").getMatch(0);
+        // Probably it's a video
+        if (DLLINK == null) {
+            br.getPage("http://www.stickam.com/servlet/flash/getVideo?videoId=" + vid);
+            DLLINK = br.getRegex("<url>(http://[^<>\"]*?)</url>").getMatch(0);
+        }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = "http://static.videos.stickam.com" + Encoding.urlDecode(DLLINK, true).trim();
-        downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "stickam\\.com/viewMedia\\.do\\?mId=(\\d+)").getMatch(0) + ".flv");
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".flv";
+        downloadLink.setFinalFileName(vid + ext);
         Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
@@ -87,6 +82,17 @@ public class StickAmCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, -15);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
