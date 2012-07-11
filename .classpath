@@ -93,5 +93,7 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/platform.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/vlcj.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -12,22 +12,20 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
-import jd.Launcher;
-import jd.nutils.Executer;
 import jd.parser.Regex;
-import jd.plugins.AddonPanel;
 import jd.plugins.DownloadLink;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.vlcstreaming.gui.VLCGui;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
@@ -39,6 +37,7 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
 
     private VLCStreamingAPIImpl vlcstreamingAPI;
     private String              vlcBinary;
+    protected VLCGui            tab;
 
     @Override
     protected void stop() throws StopException {
@@ -57,6 +56,13 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
         vlcstreamingAPI = new VLCStreamingAPIImpl();
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                tab = new VLCGui(VLCStreamingExtension.this);
+            }
+        }.waitForEDT();
     }
 
     @Override
@@ -91,11 +97,11 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
     }
 
     @Override
-    public AddonPanel<? extends AbstractExtension<VLCStreamingConfig, VLCStreamingTranslation>> getGUI() {
-        return null;
+    public VLCGui getGUI() {
+        return tab;
     }
 
-    protected String getVLCBinary() {
+    public String getVLCBinary() {
         String ret = getSettings().getVLCCommand();
         if (!StringUtils.isEmpty(ret)) return ret;
         if (CrossSystem.isWindows()) {
@@ -147,12 +153,15 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    Executer exec = new Executer(getVLCBinary());
-                    exec.setLogger(LogController.CL());
-                    exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID() });
-                    exec.setRunin(Application.getRoot(Launcher.class));
-                    exec.setWaitTimeout(0);
-                    exec.start();
+                    // Executer exec = new Executer(getVLCBinary());
+                    // exec.setLogger(LogController.CL());
+                    // exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() +
+                    // "/vlcstreaming/play?id=" + link.getUniqueID() });
+                    // exec.setRunin(Application.getRoot(Launcher.class));
+                    // exec.setWaitTimeout(0);
+                    // exec.start();
+
+                    tab.playMedia("http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID());
                 }
             });
 
@@ -161,10 +170,20 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
 
     private String getVLCBinaryFromWindowsRegistry() {
         // Retrieve a reference to the root of the user preferences tree
+
+        String ret = getCommand(Preferences.userRoot());
+        if (ret == null) {
+            ret = getCommand(Preferences.systemRoot());
+        }
+
+        return ret;
+    }
+
+    private String getCommand(Preferences systemRoot) {
+
         Method closeKey = null;
         int hKey = -1;
         try {
-            final Preferences systemRoot = Preferences.systemRoot();
             final Class clz = systemRoot.getClass();
             final int KEY_READ = 0x20019;
             Class[] params1 = { byte[].class, int.class, int.class };
@@ -177,10 +196,10 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
             winRegQueryValue.setAccessible(true);
 
             String key = "SOFTWARE\\Classes\\Applications\\vlc.exe\\shell\\Open\\command";
+
             hKey = (Integer) openKey.invoke(systemRoot, toByteEncodedString(key), KEY_READ, KEY_READ);
 
             byte[] valb = (byte[]) winRegQueryValue.invoke(systemRoot, hKey, toByteEncodedString(""));
-
             String vals = (valb != null ? new String(valb).trim() : null);
             return new Regex(vals, "\"(.*?\\.exe)\"").getMatch(0);
         } catch (Throwable e) {

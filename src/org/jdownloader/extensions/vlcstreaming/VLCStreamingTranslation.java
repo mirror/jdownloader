@@ -8,6 +8,12 @@ public interface VLCStreamingTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Streaming" })
     String popup_streaming();
 
-    @Default(lngs = { "en" }, values = { "Play with VLC" })
+    @Default(lngs = { "en" }, values = { "Play" })
     String popup_streaming_playvlc();
+
+    @Default(lngs = { "en" }, values = { "Streaming" })
+    String gui_title();
+
+    @Default(lngs = { "en" }, values = { "Manage all your Streaming Links" })
+    String gui_tooltip();
 }
