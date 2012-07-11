@@ -2270,4 +2270,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please wait..." })
     String LogAction_actionPerformed_wait_();
 
+    @Default(lngs = { "en" }, values = { "Uploading your logs" })
+    String LogAction_getString_uploading_();
+
+    @Default(lngs = { "en" }, values = { "Please send this log ID to your supporter!" })
+    String LogAction_actionPerformed_givelogid_();
+
 }

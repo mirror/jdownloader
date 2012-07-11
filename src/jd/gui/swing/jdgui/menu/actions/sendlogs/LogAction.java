@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.menu.actions.sendlogs;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +28,9 @@ import jd.parser.Regex;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -38,8 +40,12 @@ import org.appwork.utils.zip.ZipIOException;
 import org.appwork.utils.zip.ZipIOWriter;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
+import org.jdownloader.jdserv.UploadInterface;
 
 public class LogAction extends AppAction {
+
+    protected String id;
 
     public LogAction() {
         super();
@@ -61,7 +67,17 @@ public class LogAction extends AppAction {
                 if (timestampString != null) {
                     long timestamp = Long.parseLong(timestampString);
                     LogFolder lf;
-                    folders.add(lf = new LogFolder(f, timestamp));
+                    lf = new LogFolder(f, timestamp);
+
+                    if (Files.getFiles(new FileFilter() {
+
+                        @Override
+                        public boolean accept(File pathname) {
+                            return pathname.isFile() && pathname.length() > 0;
+                        }
+                    }, f).size() == 0) continue;
+
+                    folders.add(lf);
                     if (latest == null || lf.getCreated() > latest.getCreated()) {
                         latest = lf;
                     }
@@ -81,38 +97,55 @@ public class LogAction extends AppAction {
             Dialog.getInstance().showDialog(d);
 
             final ArrayList<LogFolder> selection = d.getSelectedFolders();
-            final File zip = Application.getResource("tmp/logs/" + System.currentTimeMillis() + "/bugreport_" + System.currentTimeMillis() + ".zip");
-            zip.getParentFile().mkdirs();
 
             final ProgressDialog p = new ProgressDialog(new ProgressGetter() {
+                private int total;
+                private int current;
+
+                {
+                    total = selection.size();
+                    current = 0;
+                }
 
                 @Override
                 public int getProgress() {
-
-                    return -1;
+                    if (current == 0) return -1;
+                    return current * 100 / total;
                 }
 
                 @Override
                 public String getString() {
-                    return "";
+                    return _GUI._.LogAction_getString_uploading_();
                 }
 
                 @Override
                 public void run() throws Exception {
-                    ZipIOWriter writer = new ZipIOWriter(zip) {
-                        public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
-                            if (addFile.getName().endsWith(".lck") || (addFile.isFile() && addFile.length() == 0)) return;
-                            super.addFile(addFile, compress, fullPath);
+                    id = null;
+                    try {
+                        for (LogFolder lf : selection) {
+                            final File zip = Application.getResource("tmp/logs/logPackage.zip");
+                            zip.delete();
+                            zip.getParentFile().mkdirs();
+                            ZipIOWriter writer = new ZipIOWriter(zip) {
+                                public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
+                                    if (addFile.getName().endsWith(".lck") || (addFile.isFile() && addFile.length() == 0)) return;
+                                    if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                                    super.addFile(addFile, compress, fullPath);
+                                }
+
+                            };
+
+                            writer.addDirectory(lf.getFolder(), true, null);
+
+                            writer.close();
+                            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                            id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
+                            if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                            current++;
                         }
-
-                    };
-
-                    for (LogFolder lf : selection) {
-                        writer.addDirectory(lf.getFolder(), true, null);
+                    } catch (WTFException e) {
+                        throw new InterruptedException();
                     }
-                    writer.close();
-
-                    CrossSystem.openFile(zip.getParentFile());
 
                 }
 
@@ -125,6 +158,7 @@ public class LogAction extends AppAction {
             try {
                 Dialog.getInstance().showDialog(p);
 
+                Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), id);
             } catch (final DialogClosedException e1) {
                 Log.exception(Level.WARNING, e1);
 
