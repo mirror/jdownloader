@@ -59,3 +59,4 @@ updateloop=L'aggiornamento ha fallito l'aggiornamento di sè stesso.- Riprova pi
 updateloop_title=Rilevato loop aggiornamenti!
 updates_are_ready_for_install_now=%s1 aggiornamenti pronti per l'installazione.
 updates_ready_for_install=%s1 aggiornamenti pronti per l'installazione.
+window_title=Aggiornamento
