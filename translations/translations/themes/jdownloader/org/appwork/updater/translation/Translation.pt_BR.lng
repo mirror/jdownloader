@@ -59,3 +59,4 @@ updateloop=O Atualizador falhou ao se atualizar. Por favor, tente novamente em a
 updateloop_title=Loop de atualização detectado!
 updates_are_ready_for_install_now=%s1 atualização(ões) pronta(s) para instalação.
 updates_ready_for_install=%s1 atualização(ões) pronta(s) para instalação.
+window_title=Atualizador
