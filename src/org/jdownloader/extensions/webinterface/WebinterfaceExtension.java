@@ -50,11 +50,6 @@ public class WebinterfaceExtension extends AbstractExtension<WebinterfaceConfig,
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return "webinterface";
     }

@@ -56,7 +56,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         ret.classname = cls.getName();
         ret.extension = plg;
         ret.configInterface = plg.getConfigClass().getName();
-        ret.author = plg.getAuthor();
         ret.quickToggleEnabled = plg.isQuickToggleEnabled();
         plg.init();
 
@@ -89,8 +88,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
     public void setSettings(boolean settings) {
         this.settings = settings;
     }
-
-    private String                  author;
 
     private String                  description;
     private AbstractExtension<?, ?> extension = null;
@@ -156,10 +153,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         }
     }
 
-    public String getAuthor() {
-        return extension == null ? author : extension.getAuthor();
-    }
-
     public String getDescription() {
         return extension == null ? description : extension.getDescription();
     }
@@ -187,10 +180,6 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
 
     public boolean isWindowsRunnable() {
         return extension == null ? windowsRunnable : extension.isWindowsRunnable();
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 
     public void setDescription(String description) {

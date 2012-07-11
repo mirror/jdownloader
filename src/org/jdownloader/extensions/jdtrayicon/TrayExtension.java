@@ -165,11 +165,6 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return T._.jd_plugins_optional_jdtrayicon_jdlighttray_description();
     }

@@ -262,11 +262,6 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     }
 
     @Override
-    public String getAuthor() {
-        return "Coalado";
-    }
-
-    @Override
     public String getDescription() {
         return _.description();
     }

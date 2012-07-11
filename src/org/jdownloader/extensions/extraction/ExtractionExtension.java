@@ -635,11 +635,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return _.description();
     }

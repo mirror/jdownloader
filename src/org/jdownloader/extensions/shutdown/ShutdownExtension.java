@@ -481,11 +481,6 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return _.jd_plugins_optional_jdshutdown_description();
     }

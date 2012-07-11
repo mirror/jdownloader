@@ -157,11 +157,6 @@ public class InfoBarExtension extends AbstractExtension<InfoBarConfig, InfobarTr
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return T._.jd_plugins_optional_infobar_jdinfobar_description();
     }

@@ -74,11 +74,6 @@ public class GrowlExtension extends AbstractExtension<GrowlConfig, GrowlTranslat
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return T._.jd_plugins_optional_jdgrowlnotification_description();
     }

@@ -237,12 +237,14 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    @RequiresRestart
     @Description("If true, JDownloader performs updates automatically without user interaction")
     boolean isSilentUpdateEnabled();
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @Description("If false, JDownloader will autorestart to finish a update silently")
+    @RequiresRestart
+    @Description("If false, JDownloader will autorestart to finish a update silently. Warning: only disable when really needed!")
     boolean isSilentUpdateWithRestartEnabled();
 
     @AboutConfig

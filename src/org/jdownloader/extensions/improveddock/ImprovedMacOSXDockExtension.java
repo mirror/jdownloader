@@ -77,11 +77,6 @@ public class ImprovedMacOSXDockExtension extends AbstractExtension<ImprovedMacOS
     }
 
     @Override
-    public String getAuthor() {
-        return null;
-    }
-
-    @Override
     public String getDescription() {
         return null;
     }

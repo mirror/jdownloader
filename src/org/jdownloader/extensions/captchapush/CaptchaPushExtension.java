@@ -107,11 +107,6 @@ public class CaptchaPushExtension extends AbstractExtension<CaptchaPushConfig, T
     }
 
     @Override
-    public String getAuthor() {
-        return "Greeny";
-    }
-
-    @Override
     public String getDescription() {
         return "This plugin can push any Captcha request to your Android or WebOS Smartphone";
     }

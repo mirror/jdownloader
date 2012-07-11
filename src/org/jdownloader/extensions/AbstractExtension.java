@@ -280,8 +280,6 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
 
     public abstract boolean hasConfigPanel();
 
-    public abstract String getAuthor();
-
     public abstract String getDescription();
 
     public boolean isLinuxRunnable() {

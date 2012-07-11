@@ -291,11 +291,6 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
     }
 
     @Override
-    public String getAuthor() {
-        return "Shashank Tulsyan";
-    }
-
-    @Override
     public String getDescription() {
         return _NT._.description();
     }
