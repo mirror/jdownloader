@@ -509,6 +509,7 @@ public class FileMazeWs extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);
+            br.setCookie(COOKIE_HOST, "lang", "english");
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -523,7 +524,6 @@ public class FileMazeWs extends PluginForHost {
                     return;
                 }
             }
-            br.setCookie(COOKIE_HOST, "lang", "english");
             br.getPage(COOKIE_HOST + "/login.html");
             Form loginform = br.getForm(0);
             if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -534,7 +534,11 @@ public class FileMazeWs extends PluginForHost {
             br.getPage(COOKIE_HOST + "/?op=my_account");
             doSomething();
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                account.setProperty("nopremium", true);
+            } else {
+                account.setProperty("nopremium", false);
+            }
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(COOKIE_HOST);

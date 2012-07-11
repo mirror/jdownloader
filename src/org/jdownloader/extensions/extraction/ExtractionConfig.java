@@ -89,7 +89,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     boolean isDeleteInfoFilesAfterExtraction();
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     boolean isOverwriteExistingFilesEnabled();
 
     @AboutConfig

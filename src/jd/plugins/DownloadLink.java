@@ -884,9 +884,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return icon;
     }
 
-    public DomainInfo getDomainInfo() {
+    public DomainInfo getDomainInfo(boolean preferOriginalDomainInfo) {
         PluginForHost plugin = this.liveplugin;
-        if (plugin != null) {
+        if (plugin != null && preferOriginalDomainInfo == false) {
             /* live plugin available, lets use it */
             return plugin.getDomainInfo();
         } else {
@@ -906,6 +906,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             }
         }
         return domainInfo;
+    }
+
+    public DomainInfo getDomainInfo() {
+        return getDomainInfo(false);
     }
 
     public FilePackage getParentNode() {

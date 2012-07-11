@@ -103,6 +103,7 @@ public class ScribdCom extends PluginForHost {
         // Pretend we're using an iphone^^
         br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
         br.getPage("http://www.scribd.com/mobile/documents/" + new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0));
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         final String dllink = br.getRegex("\"(/mobile/doc/\\d+/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);

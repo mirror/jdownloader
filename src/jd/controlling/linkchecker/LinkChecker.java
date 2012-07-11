@@ -397,7 +397,7 @@ public class LinkChecker<E extends CheckableLink> {
         } catch (PluginException e) {
             logger.log(e);
             e.fillLinkStatus(link.getLinkStatus());
-            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT) || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+            if (!link.getLinkStatus().hasStatus(LinkStatus.ERROR_FILE_NOT_FOUND) && link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT) || link.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE) || link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                 availableStatus = AvailableStatus.UNCHECKABLE;
             } else {
                 availableStatus = AvailableStatus.FALSE;

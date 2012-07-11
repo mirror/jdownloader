@@ -75,11 +75,10 @@ public class FileHippoCom extends PluginForHost {
             br.getPage(link.getDownloadURL());
             if (br.containsHTML(FILENOTFOUND) || link.getDownloadURL().contains("/history")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h1><span itemprop=\"name\">([^<>\"]*?)</span></h1>").getMatch(0);
-        }
+        String filename = br.getRegex("<b>Filename:</b></td><td>(.*?)</td>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download (.*?) \\- Technical Details \\- FileHippo\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("title: \\'Download (.*?) \\- Technical Details \\- FileHippo\\.com\\'").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1><span itemprop=\"name\">([^<>\"]*?)</span></h1>").getMatch(0);
         String filesize = br.getRegex("\\(([0-9,]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = br.getRegex("<b>Download<br/>This Version</b></a><br/><b>(.*?)</b><div").getMatch(0);
@@ -96,29 +95,33 @@ public class FileHippoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String nextPage = br.getRegex("<div id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
-        if (nextPage == null) nextPage = br.getRegex("\"(/download_.*?/download/[a-z0-9]+(/)?)\"").getMatch(0);
-        if (nextPage != null) {
-            nextPage = MAINPAGE + nextPage;
-            br.getPage(nextPage);
-        }
-        String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"1; url=(/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(/download/file/[a-z0-9]+(/)?)\"").getMatch(0);
+        String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
+        String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
+        String pages[] = new String[] { mirrorPage, normalPage };
+        for (String page : pages) {
+            if (page != null) {
+                page = MAINPAGE + page;
+                br.getPage(page);
             }
+            String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"1; url=(/.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("(/download/file/[a-z0-9]+(/)?)\"").getMatch(0);
+                }
+            }
+            if (dllink == null) continue;
+            dllink = MAINPAGE + dllink;
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                continue;
+            }
+            downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            dl.startDownload();
+            return;
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = MAINPAGE + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

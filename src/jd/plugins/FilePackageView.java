@@ -61,7 +61,7 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
             HashSet<DomainInfo> infos = new HashSet<DomainInfo>();
             synchronized (fp) {
                 for (DownloadLink link : fp.getChildren()) {
-                    infos.add(link.getDomainInfo());
+                    infos.add(link.getDomainInfo(true));
                 }
             }
             DomainInfo[] newinfos = new DomainInfo[infos.size()];

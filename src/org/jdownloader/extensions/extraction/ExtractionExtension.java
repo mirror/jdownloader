@@ -681,27 +681,21 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 logger.info("link supported  " + isLinkSupported(new DownloadLinkArchiveFactory(link)));
                 if (isLinkSupported(new DownloadLinkArchiveFactory(link))) {
                     Archive archive;
-                    try {
-                        archive = buildArchive(new DownloadLinkArchiveFactory(link));
-                        logger.info("postprocess \r\n" + archive.getSettings());
-                        logger.info("archive active " + archive.isActive());
-                        logger.info("archive size " + archive.getArchiveFiles().size());
-                        logger.info("archive complete " + archive.isComplete());
-                        if (!archive.isActive() && archive.getArchiveFiles().size() > 0 && archive.isComplete()) {
-                            this.addToQueue(archive);
-                        }
-                    } catch (ArchiveException e) {
-                        logger.log(e);
-                    }
+                    archive = buildArchive(new DownloadLinkArchiveFactory(link));
+                    logger.info("postprocess \r\n" + archive.getSettings());
+                    logger.info("archive active " + archive.isActive());
+                    logger.info("archive size " + archive.getArchiveFiles().size());
+                    logger.info("archive complete " + archive.isComplete());
+                    if (archive.isActive() || archive.getArchiveFiles().size() < 1 || !archive.isComplete() || !isAutoExtractEnabled(archive)) return;
+                    this.addToQueue(archive);
                 }
             } else if (caller instanceof ExtractionController && getSettings().isDeepExtractionEnabled()) {
                 try {
-
                     for (File archiveStartFile : fileList) {
                         FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
                         if (isLinkSupported(fac)) {
                             Archive ar = buildArchive(fac);
-                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete() || !isAutoExtractEnabled(ar)) continue;
                             addToQueue(ar);
                         }
                     }
@@ -710,12 +704,11 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                 }
             } else {
                 try {
-
                     for (File archiveStartFile : fileList) {
                         FileArchiveFactory fac = new FileArchiveFactory(archiveStartFile);
                         if (isLinkSupported(fac)) {
                             Archive ar = buildArchive(fac);
-                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete()) continue;
+                            if (ar.isActive() || ar.getArchiveFiles().size() < 1 || !ar.isComplete() || !isAutoExtractEnabled(ar)) continue;
                             addToQueue(ar);
                         }
                     }
@@ -723,6 +716,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
                     logger.log(e);
                 }
             }
+        } catch (Exception e) {
+            logger.log(e);
         } finally {
             logger.close();
         }

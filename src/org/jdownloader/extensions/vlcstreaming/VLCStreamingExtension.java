@@ -154,7 +154,7 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
             menu.setIcon(getIcon(18));
             menu.setEnabled(((DownloadTableContext) context).getSelectionInfo().isLinkContext());
             menu.add(new AppAction() {
-                DownloadLink              link             = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
+                DownloadLink              link             = null;
 
                 private static final long serialVersionUID = 1375146705091555054L;
 
@@ -162,10 +162,12 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                     setName(T._.popup_streaming_playvlc());
                     Image front = NewTheme.I().getImage("media-playback-start", 20, true);
                     setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
+                    if (((DownloadTableContext) context).getSelectionInfo().isLinkContext()) link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
                     setEnabled(isDirectPlaySupported(link));
                 }
 
                 public boolean isDirectPlaySupported(DownloadLink link) {
+                    if (link == null) return false;
                     String filename = link.getName().toLowerCase(Locale.ENGLISH);
                     if (filename.endsWith("mkv")) return true;
                     if (filename.endsWith("mov")) return true;
