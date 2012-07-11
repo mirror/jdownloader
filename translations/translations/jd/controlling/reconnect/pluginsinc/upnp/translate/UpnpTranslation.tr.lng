@@ -1,8 +1,8 @@
 AutoDetectAction_run_failed=UPNP aygıtları bulundu fakat yeniden bağlanma işlemi gerçekleştirilemedi. Bunun yerine Live Header yeniden bağlanma yöntemini deneyin!
-AutoDetectAction_run_optimize=Uyarla: %s1
-AutoDetectUpnpAction_AutoDetectUpnpAction_=Çalışma ağınızdaki UPNP yeniden bağlanma aygıtlarının tümünü bulmaya çalışır. FritzBox Yönlendiricilerinin birçoğu genelde bu yöntemle yeniden bağlanabilir.
+AutoDetectAction_run_optimize=Eniyile: %s1
+AutoDetectUpnpAction_AutoDetectUpnpAction_=Çalışma ağınızdaki UPNP yeniden bağlanma aygıtlarının tümünü bulmaya çalışır.\r\nFritzBox Yönlendiricilerinin birçoğu genelde bu yöntemle yeniden bağlanabilir.
 UPNPReconnectInvoker_getName_=UPNP Yönlendirici yeniden bağlanma
-UPNPRouterPlugin_run_error=UPNP aygıtı bulunamadı. Bunun yerine Live Header Tekrar Bağlanma yöntemini deneyin.
+UPNPRouterPlugin_run_error=UPNP aygıtı bulunamadı. Bunun yerine Live Header Yeniden Bağlanma yöntemini deneyin.
 UPNPRouterPlugin_run_mesg=Tüm çalışma ağı arayüzleri taranıyor
 UPNPRouterPlugin_run_wizard_title=UPNP Yönlendirici Sihirbazı
 UPNPScannerAction_UPNPScannerAction_tt=Çalışma ağınızdaki UPNP yeniden bağlanma aygıtlarının tümünü bulmaya çalışır ve yeniden bağlanma için istediğinizi seçmenize izin verir.
@@ -20,4 +20,5 @@ literally_router=UPNP (ETVÇ) Yönlendirici
 literally_service_type=Hizmet Türü
 malformedservicetype=Hizmet türü geçersiz. UPNP Otomatik Ayarlama'yı deneyin.
 malformedurl=Denetleme URL'si geçersiz. UPNP Otomatik Ayarlama'yı deneyin.
+servicetype_help=Hizmet türünü girin (Örn: urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=UPNP yeniden bağlanma yöntemini dene: %s1
