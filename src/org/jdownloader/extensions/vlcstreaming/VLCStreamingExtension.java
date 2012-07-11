@@ -12,9 +12,12 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
+import jd.Launcher;
+import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.os.CrossSystem;
@@ -88,12 +91,12 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
 
     @Override
     public String getDescription() {
-        return "VLC Streaming";
+        return "Audio & Video Streaming";
     }
 
     @Override
     public ImageIcon getIcon(int size) {
-        return NewTheme.I().getIcon("vlc-ico", size);
+        return NewTheme.I().getIcon("video", size);
     }
 
     @Override
@@ -153,15 +156,13 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    // Executer exec = new Executer(getVLCBinary());
-                    // exec.setLogger(LogController.CL());
-                    // exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() +
-                    // "/vlcstreaming/play?id=" + link.getUniqueID() });
-                    // exec.setRunin(Application.getRoot(Launcher.class));
-                    // exec.setWaitTimeout(0);
-                    // exec.start();
+                    Executer exec = new Executer(getVLCBinary());
+                    exec.setLogger(LogController.CL());
+                    exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID() });
+                    exec.setRunin(Application.getRoot(Launcher.class));
+                    exec.setWaitTimeout(0);
+                    exec.start();
 
-                    tab.playMedia("http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID());
                 }
             });
 
