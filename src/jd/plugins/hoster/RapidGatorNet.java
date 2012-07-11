@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -63,20 +63,67 @@ public class RapidGatorNet extends PluginForHost {
         return "http://rapidgator.net/article/terms";
     }
 
+    public static Browser prepareBrowser(Browser prepBr) {
+        if (prepBr == null) return prepBr;
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        prepBr.setRequestIntervalLimit("http://rapidgator.net/", 319 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
+        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
+        prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
+        prepBr.getHeaders().put("Cache-Control", null);
+        prepBr.getHeaders().put("Pragma", null);
+        prepBr.setCookie("http://rapidgator.net/", "lang", "en");
+        prepBr.setCustomCharset("UTF-8");
+        try {
+            prepBr.setConnectTimeout(1 * 60 * 1000);
+        } catch (final Throwable e) {
+        }
+        try {
+            prepBr.setReadTimeout(3 * 60 * 1000);
+        } catch (final Throwable e) {
+        }
+        prepBr.setConnectTimeout(3 * 60 * 1000);
+        return prepBr;
+    }
+
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        prepareBrowser(br);
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
+            link.setUrlDownload(link.getDownloadURL().replace("%", ""));
+            br.getPage(link.getDownloadURL());
+        }
+        if (br.containsHTML("File not found")) {
+            String filenameFromURL = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
+            if (filenameFromURL != null) link.setName(filenameFromURL);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
+        if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
+        String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
+        String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        br.setFollowRedirects(false);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         /*
-         * they might have an automated download tool detection routine. If you
-         * try to download something new too soon, your IP does not get removed
-         * from active downloading IP database. I assume it only happens after
-         * successful download and not failures.
+         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get
+         * removed from active downloading IP database. I assume it only happens after successful download and not failures.
          */
-        if (hasDled) sleep(90 * 1001l, downloadLink);
+        if (hasDled) sleep(90 * 1037l, downloadLink);
         try {
             requestFileInformation(downloadLink);
             if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
@@ -134,7 +181,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerIssue", 2 * 60 * 1000l);
             }
-            // wasnt needed for raz, but psp said something about a redirect)
+            // wasn't needed for raz, but psp said something about a redirect)
             br.followConnection();
             if (br.containsHTML("(api\\.recaptcha\\.net/|google\\.com/recaptcha/api/)")) {
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -218,66 +265,30 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
-            link.setUrlDownload(link.getDownloadURL().replace("%", ""));
-            br.getPage(link.getDownloadURL());
-        }
-        if (br.containsHTML("File not found")) {
-            String filenameFromURL = new Regex(link.getDownloadURL(), ".+/(.+)\\.html").getMatch(0);
-            if (filenameFromURL != null) link.setName(filenameFromURL);
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
-        if (freedlsizelimit != null) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.rapidgatornet.only4premium", "This file is restricted to Premium users only"));
-        String filename = br.getRegex("Downloading:[\t\n\r ]+</strong>([^<>\"]+)</p>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
-        String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        br.setFollowRedirects(false);
-        return AvailableStatus.TRUE;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
-    private void simulateLoad(Browser br, String url) {
-        if (br == null || url == null) return;
-        URLConnectionAdapter con = null;
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
         try {
-            con = br.openGetConnection(url);
-        } catch (final Throwable e) {
-        } finally {
-            con.disconnect();
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
-    }
-
-    private void prepareBrowser(Browser br) {
-        if (br == null) return;
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        ai.setUnlimitedTraffic();
+        String expire = br.getRegex("Premium till (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
         }
-        br.getHeaders().put("User-Agent", agent);
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Pragma", null);
-        br.setCookie("http://rapidgator.net/", "lang", "en");
-        br.setCustomCharset("UTF-8");
-        try {
-            br.setConnectTimeout(1 * 60 * 1000);
-        } catch (final Throwable e) {
-        }
-        try {
-            br.setReadTimeout(3 * 60 * 1000);
-        } catch (final Throwable e) {
-        }
-        br.setConnectTimeout(3 * 60 * 1000);
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
     }
 
     @SuppressWarnings("unchecked")
@@ -318,28 +329,6 @@ public class RapidGatorNet extends PluginForHost {
                 throw e;
             }
         }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("Premium till (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
-        }
-        account.setValid(true);
-        ai.setStatus("Premium User");
-        return ai;
     }
 
     @Override
