@@ -59,3 +59,4 @@ updateloop=Updater se nije uspio ažurirati. Molimo pokušajte ponovno za par mi
 updateloop_title=Otkrivena petlja ažuriranja!
 updates_are_ready_for_install_now=%s1 ažuriranje(a) su sada spremna za instalaciju.
 updates_ready_for_install=%s1 ažuriranje(a) su spremna za instalaciju.
+window_title=Updater
