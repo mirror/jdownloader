@@ -7,11 +7,6 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 
 public interface TrayConfig extends ExtensionConfigInterface {
-    @DefaultBooleanValue(true)
-    @AboutConfig
-    public boolean isCloseToTrayEnabled();
-
-    public void setCloseToTrayEnabled(boolean b);
 
     @DefaultBooleanValue(false)
     @AboutConfig
@@ -36,5 +31,17 @@ public interface TrayConfig extends ExtensionConfigInterface {
     public LinkgrabberResultsOption getShowLinkgrabbingResultsOption();
 
     public void setShowLinkgrabbingResultsOption(LinkgrabberResultsOption option);
+
+    @AboutConfig
+    @DefaultEnumValue("ASK")
+    public OnCloseAction getOnCloseAction();
+
+    public void setOnCloseAction(OnCloseAction action);
+
+    @AboutConfig
+    @DefaultEnumValue("TO_TASKBAR")
+    public OnMinimizeAction getOnMinimizeAction();
+
+    public void setOnMinimizeAction(OnMinimizeAction action);
 
 }

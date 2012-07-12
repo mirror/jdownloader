@@ -46,9 +46,6 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Allows minimizing or closing JDownloader to the notification area, and other related features like password protection and more." })
     String jd_plugins_optional_jdtrayicon_jdlighttray_description();
 
-    @Default(lngs = { "en" }, values = { "Close to tray" })
-    String plugins_optional_JDLightTray_closetotray();
-
     @Default(lngs = { "en" }, values = { "Only when Mainframe is minimized" })
     String plugins_optional_JDLightTray_minimized();
 
@@ -85,4 +82,48 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Exit JDownloader" })
     String popup_exit();
 
+    @Default(lngs = { "en" }, values = { "Close to Tray" })
+    String OnCloseAction_totray();
+
+    @Default(lngs = { "en" }, values = { "Minimize to Taskbar" })
+    String OnCloseAction_totaskbar();
+
+    @Default(lngs = { "en" }, values = { "Exit Application" })
+    String OnCloseAction_exit();
+
+    @Default(lngs = { "en" }, values = { "Close to Tray" })
+    String OnMinimizeAction_totray();
+
+    @Default(lngs = { "en" }, values = { "Minimize to Taskbar" })
+    String OnMinimizeAction_totaskbar();
+
+    @Default(lngs = { "en" }, values = { "Click on 'Minimize <_>' Action" })
+    String plugins_optional_JDLightTray_minimizetotray();
+
+    @Default(lngs = { "en" }, values = { "Click on 'Close <X>' Action" })
+    String plugins_optional_JDLightTray_closetotray2();
+
+    @Default(lngs = { "en" }, values = { "Ask me" })
+    String OnMinimizeAction_ask();
+
+    @Default(lngs = { "en" }, values = { "Close to Tray" })
+    String JDGui_windowClosing_try_title_();
+
+    @Default(lngs = { "en" }, values = { "Please choose between \r\n   - Exit JDownloader (Cancel all running processes)\r\n   - Minimize to Taskbar (Downloads will continue)\r\n   - Hide in System Tray (Downloads will continue in the background)" })
+    String JDGui_windowClosing_try_msg_2();
+
+    @Default(lngs = { "en" }, values = { "Hide to Tray" })
+    String JDGui_windowClosing_try_answer_tray();
+
+    @Default(lngs = { "en" }, values = { "Exit JDownloader" })
+    String JDGui_windowClosing_try_asnwer_close();
+
+    @Default(lngs = { "en" }, values = { "Minimize to Taskbar" })
+    String JDGui_windowClosing_try_answer_totaskbar();
+
+    @Default(lngs = { "en" }, values = { "Minimize JDownloader!" })
+    String minimized_ask();
+
+    @Default(lngs = { "en" }, values = { "Please choose between \r\n   - Minimize to Taskbar \r\n   - Hide in System Tray " })
+    String minimize_options();
 }

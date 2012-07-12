@@ -28,7 +28,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
 
@@ -43,21 +42,27 @@ import jd.controlling.linkcollector.LinkCollectorHighlightListener;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.MainFrameClosingHandler;
 import jd.plugins.AddonPanel;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.images.IconIO;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.jdtrayicon.translate.T;
@@ -67,7 +72,7 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowListener, WindowStateListener, ActionListener, ShutdownVetoListener {
+public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTranslation> implements MouseListener, MouseMotionListener, WindowStateListener, ActionListener, ShutdownVetoListener, MainFrameClosingHandler {
 
     private LinkCollectorHighlightListener highListener = new LinkCollectorHighlightListener() {
 
@@ -114,7 +119,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     protected void stop() throws StopException {
         removeTrayIcon();
         if (guiFrame != null) {
-            guiFrame.removeWindowListener(this);
+            JDGui.getInstance().setClosingHandler(null);
             guiFrame.removeWindowStateListener(this);
             miniIt(false);
             guiFrame.setAlwaysOnTop(false);
@@ -266,8 +271,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                 LogController.CL(TrayExtension.class).info("JDLightTrayIcon Init complete");
                 guiFrame = JDGui.getInstance().getMainFrame();
                 if (guiFrame != null) {
-                    guiFrame.removeWindowListener(TrayExtension.this);
-                    guiFrame.addWindowListener(TrayExtension.this);
+
+                    JDGui.getInstance().setClosingHandler(TrayExtension.this);
                     guiFrame.removeWindowStateListener(TrayExtension.this);
                     guiFrame.addWindowStateListener(TrayExtension.this);
                     if (startup && getSettings().isStartMinimizedEnabled()) {
@@ -397,7 +402,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         }.waitForEDT();
     }
 
-    private void miniIt(final boolean minimize) {
+    public void miniIt(final boolean minimize) {
         new EDTHelper<Object>() {
             @Override
             public Object edtRun() {
@@ -497,28 +502,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void windowActivated(WindowEvent e) {
     }
 
-    public void windowClosed(WindowEvent e) {
-    }
-
-    public void windowClosing(WindowEvent e) {
-        if (e.getSource() == null) {
-            /* source got removed by jdgui, user aborted close */
-            return;
-        }
-        if (getSettings().isCloseToTrayEnabled()) {
-            miniIt(true);
-        }
-    }
-
     public void windowDeactivated(WindowEvent e) {
         /* workaround for : toFront() */
         if (guiFrame != null) guiFrame.setAlwaysOnTop(false);
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-    }
-
-    public void windowIconified(WindowEvent e) {
     }
 
     public void windowOpened(WindowEvent e) {
@@ -530,6 +516,70 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
             iconified = true;
+
+            switch (getSettings().getOnMinimizeAction()) {
+            case ASK:
+                final OnMinimizeAction[] ret = new OnMinimizeAction[1];
+                ret[0] = null;
+                final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.BUTTONS_HIDE_OK, _.minimized_ask(), _.minimize_options(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+
+                try {
+
+                    d.setLeftActions(new AppAction() {
+                        {
+                            setName(_.JDGui_windowClosing_try_answer_totaskbar());
+                        }
+
+                        @Override
+                        public void actionPerformed(ActionEvent e1) {
+                            ret[0] = OnMinimizeAction.TO_TASKBAR;
+                            d.dispose();
+
+                        }
+                    }, new AppAction() {
+                        {
+                            setName(_.JDGui_windowClosing_try_answer_tray());
+                            setEnabled(SystemTray.isSupported());
+                        }
+
+                        @Override
+                        public void actionPerformed(ActionEvent e1) {
+
+                            ret[0] = OnMinimizeAction.TO_TRAY;
+                            d.dispose();
+                        }
+                    });
+                    Dialog.I().showDialog(d);
+
+                } catch (DialogNoAnswerException e1) {
+                    Log.exception(e1);
+                }
+                if (d.isDontShowAgainSelected() && ret[0] != null) {
+                    getSettings().setOnMinimizeAction(ret[0]);
+                }
+                if (ret[0] != null) {
+                    switch (ret[0]) {
+                    case TO_TASKBAR:
+                        return;
+                    case TO_TRAY:
+                        // let's hope that this does not flicker. works fine for win7
+
+                        miniIt(true);
+                        JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
+                    }
+                } else {
+                    JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
+
+                }
+            case TO_TASKBAR:
+                return;
+            case TO_TRAY:
+                // let's hope that this does not flicker. works fine for win7
+
+                miniIt(true);
+                JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
+
+            }
             // Frame was not iconified
         } else if ((oldState & JFrame.ICONIFIED) != 0 && (newState & JFrame.ICONIFIED) == 0) {
             iconified = false;
@@ -557,6 +607,124 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     @Override
     public void onSilentShutdownVetoRequest(ShutdownVetoException[] shutdownVetoExceptions) throws ShutdownVetoException {
+    }
+
+    private OnCloseAction windowClosedTray(final WindowEvent e) {
+        final OnCloseAction[] ret = new OnCloseAction[1];
+        ret[0] = null;
+        final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK, _.JDGui_windowClosing_try_title_(), _.JDGui_windowClosing_try_msg_2(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
+
+        try {
+
+            d.setLeftActions(new AppAction() {
+                {
+                    setName(_.JDGui_windowClosing_try_answer_totaskbar());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e1) {
+                    ret[0] = OnCloseAction.TO_TASKBAR;
+                    d.dispose();
+
+                }
+            }, new AppAction() {
+                {
+                    setName(_.JDGui_windowClosing_try_answer_tray());
+                    setEnabled(SystemTray.isSupported());
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e1) {
+
+                    ret[0] = OnCloseAction.TO_TRAY;
+                    d.dispose();
+                }
+            });
+            Dialog.I().showDialog(d);
+            // to tray
+            if (ret[0] == null) ret[0] = OnCloseAction.EXIT;
+
+        } catch (DialogNoAnswerException e1) {
+            // set source to null in order to avoid further actions in - for example the Tray extension listsners
+            e.setSource(null);
+            e1.printStackTrace();
+            ret[0] = OnCloseAction.ASK;
+        }
+        if (d.isDontShowAgainSelected()) {
+            getSettings().setOnCloseAction(ret[0]);
+        }
+        return ret[0];
+    }
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+
+        LazyExtension tray = null;
+        try {
+
+            main: if (isEnabled()) {
+
+                switch (getSettings().getOnCloseAction()) {
+                case ASK:
+                    switch (windowClosedTray(e)) {
+                    case ASK:
+                        // cancel clicked
+
+                        return;
+                    case EXIT:
+                        // exit clicked
+
+                        // set source to null in order to avoid further actions in - for example the Tray extension listsners
+
+                        if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
+
+                        break main;
+
+                    case TO_TASKBAR:
+                        JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
+                        return;
+                    case TO_TRAY:
+                        if (SystemTray.isSupported()) {
+                            miniIt(true);
+                            return;
+
+                        }
+                    }
+                case EXIT:
+
+                case TO_TASKBAR:
+                    JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
+                    return;
+
+                case TO_TRAY:
+                    if (SystemTray.isSupported()) {
+                        miniIt(true);
+                        return;
+
+                    }
+
+                }
+            }
+
+        } catch (final Throwable e1) {
+            /* plugin not loaded yet */
+            Log.exception(e1);
+        }
+        /*
+         * without trayicon also dont close/exit for macos
+         */
+        if (CrossSystem.isMac()) {
+            new EDTHelper<Object>() {
+                @Override
+                public Object edtRun() {
+                    /* set visible state */
+                    JDGui.getInstance().getMainFrame().setVisible(false);
+                    return null;
+                }
+            }.start();
+            return;
+        }
+        org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
     }
 
 }

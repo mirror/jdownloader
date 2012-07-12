@@ -26,7 +26,6 @@ import java.awt.KeyEventPostProcessor;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -67,21 +66,14 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogNoAnswerException;
-import org.jdownloader.actions.AppAction;
-import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
-import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
@@ -117,15 +109,25 @@ public class JDGui extends SwingGui {
         return JDGui.INSTANCE;
     }
 
-    private JDMenuBar       menuBar;
+    private JDMenuBar               menuBar;
 
-    private StatusBarImpl   statusBar;
-    private MainTabbedPane  mainTabbedPane;
-    private DownloadsView   downloadView;
+    private StatusBarImpl           statusBar;
+    private MainTabbedPane          mainTabbedPane;
+    private DownloadsView           downloadView;
 
-    private LinkGrabberView linkgrabberView;
-    private MainToolBar     toolBar;
-    private JPanel          waitingPane;
+    private LinkGrabberView         linkgrabberView;
+    private MainToolBar             toolBar;
+    private JPanel                  waitingPane;
+
+    private MainFrameClosingHandler closingHandler;
+
+    public MainFrameClosingHandler getClosingHandler() {
+        return closingHandler;
+    }
+
+    public void setClosingHandler(MainFrameClosingHandler closingHandler) {
+        this.closingHandler = closingHandler;
+    }
 
     private JDGui() {
         super("JDownloader");
@@ -651,24 +653,12 @@ public class JDGui extends SwingGui {
     @Override
     public void windowClosing(final WindowEvent e) {
         if (e.getComponent() == this.getMainFrame()) {
-            ArrayList<AbstractExtension<?, ?>> allExt = ExtensionController.getInstance().getEnabledExtensions();
-            for (AbstractExtension<?, ?> ext : allExt) {
-                if (ext.getClass().getName().contains("TrayExtension")) {
-                    try {
-                        if (SystemTray.isSupported() && ((org.jdownloader.extensions.jdtrayicon.TrayConfig) ext.getSettings()).isCloseToTrayEnabled()) {
-                            /*
-                             * avoid exit if trayicon addon is enabled and close to tray active
-                             */
-                            windowClosedTray(e);
-                            return;
 
-                            // NO need to ask again
-
-                        }
-                    } catch (final Throwable e2) {
-                    }
-                }
+            if (closingHandler != null) {
+                closingHandler.windowClosing(e);
+                return;
             }
+
             /*
              * without trayicon also dont close/exit for macos
              */
@@ -685,48 +675,7 @@ public class JDGui extends SwingGui {
             }
             org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
         }
-    }
 
-    private void windowClosedTray(final WindowEvent e) {
-        try {
-
-            final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, _GUI._.JDGui_windowClosing_try_title_(), _GUI._.JDGui_windowClosing_try_msg_(), null, _GUI._.JDGui_windowClosing_try_answer_tray(), null);
-            d.setLeftActions(new AppAction() {
-                {
-                    setName(_GUI._.JDGui_windowClosing_try_asnwer_close());
-                }
-
-                @Override
-                public void actionPerformed(ActionEvent e1) {
-                    // set source to null in order to avoid further actions in - for example the Tray extension listsners
-                    e.setSource(null);
-                    if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
-                    d.dispose();
-                    /*
-                     * without trayicon also dont close/exit for macos
-                     */
-                    if (CrossSystem.isMac()) {
-                        new EDTHelper<Object>() {
-                            @Override
-                            public Object edtRun() {
-                                /* set visible state */
-                                JDGui.this.getMainFrame().setVisible(false);
-                                return null;
-                            }
-                        }.start();
-                        return;
-                    }
-                    org.jdownloader.controlling.JDRestartController.getInstance().exit(true);
-                }
-            });
-            Dialog.I().showDialog(d);
-            return;
-        } catch (DialogNoAnswerException e1) {
-            // set source to null in order to avoid further actions in - for example the Tray extension listsners
-            e.setSource(null);
-            e1.printStackTrace();
-            return;
-        }
     }
 
     public static void help(final String title, final String msg, final ImageIcon icon) {

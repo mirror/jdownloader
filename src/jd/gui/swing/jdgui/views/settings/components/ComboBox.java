@@ -8,9 +8,11 @@ import javax.swing.JComboBox;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 
-public class ComboBox<ContentType> extends JComboBox implements SettingsComponent {
+public class ComboBox<ContentType> extends JComboBox implements SettingsComponent, GenericConfigEventListener<ContentType> {
 
     private static final long                             serialVersionUID = -1580999899097054630L;
     private ListCellRenderer                              orgRenderer;
@@ -81,6 +83,7 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     public ComboBox(org.appwork.storage.config.handler.KeyHandler<ContentType> keyHandler, ContentType[] values, String[] strings) {
         this(values, strings);
         this.keyHandler = keyHandler;
+        keyHandler.getEventSender().addListener(this, true);
         setSelectedItem(keyHandler.getValue());
 
     }
@@ -96,5 +99,14 @@ public class ComboBox<ContentType> extends JComboBox implements SettingsComponen
     public void addStateUpdateListener(StateUpdateListener listener) {
         eventSender.addListener(listener);
 
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<ContentType> keyHandler, ContentType invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<ContentType> keyHandler, ContentType newValue) {
+        setSelectedItem(keyHandler.getValue());
     }
 }

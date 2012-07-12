@@ -1933,18 +1933,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Choose if, and when JDownloader should start pending downloads without user interaction..." })
     String gui_config_download_autostart_desc();
 
-    @Default(lngs = { "en" }, values = { "Close to Tray" })
-    String JDGui_windowClosing_try_title_();
-
-    @Default(lngs = { "en" }, values = { "JDownloader will be closed to your System tray now and will continue it's job in the background.\r\nDo you want to hide JDownloader in the tray, or exit the Application completely?" })
-    String JDGui_windowClosing_try_msg_();
-
-    @Default(lngs = { "en" }, values = { "Hide to Tray" })
-    String JDGui_windowClosing_try_answer_tray();
-
-    @Default(lngs = { "en" }, values = { "Exit JDownloader" })
-    String JDGui_windowClosing_try_asnwer_close();
-
     @Default(lngs = { "en" }, values = { "Checking for Updates" })
     String JDUpdater_JDUpdater_object_icon();
 
