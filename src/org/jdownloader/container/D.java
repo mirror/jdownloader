@@ -59,7 +59,7 @@ public class D extends PluginsC {
 
     private byte[]                  b3;
     private byte[]                  d;
-    private byte[]                  kk;
+
     private HashMap<String, String> header;
 
     public D() {
@@ -874,7 +874,6 @@ public class D extends PluginsC {
     }
 
     private byte[] gjdk() {
-        kk = (byte[]) SubConfiguration.getConfig(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 })).getProperty(new String(new byte[] { 97, 112, 99, 107, 97, 103, 101 }), new byte[] { 97, 112, 99, 107, 97, 103, 101 });
 
         byte[] k = gk();
         @SuppressWarnings("unused")
