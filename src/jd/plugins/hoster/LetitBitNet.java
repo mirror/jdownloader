@@ -507,65 +507,71 @@ public class LetitBitNet extends PluginForHost {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
-                try {
-                    jd.config.GuiConfigListener listener = configEntry.getGuiListener();
-                    if (listener != null) {
-                        email = (String) listener.getText();
-                    }
-                } catch (Throwable e2) {
-                    /* does not exist in 09581 */
-                }
-                String emailChanged = getPluginConfig().getStringProperty("SKYMONKEMAILCHANGED", null);
-                if (!email.equalsIgnoreCase(emailChanged)) {
-                    getPluginConfig().setProperty("APPID", null);
-                    getPluginConfig().setProperty("SKYMONKVALIDATE", null);
-                    getPluginConfig().setProperty("APPIDVALIDATE", false);
-                }
-                String appId = getPluginConfig().getStringProperty("APPID", null);
-                appId = appId == null ? JDHash.getMD5(String.valueOf(Math.random())) : appId;
-                boolean validate = getPluginConfig().getBooleanProperty("SKYMONKVALIDATE", false);
-
-                if (email == null || email.length() == 0) {
-                    UserIO.getInstance().requestMessageDialog("E-Mail is empty!");
-                    return;
-                }
-                if (!validateEmail(email)) {
-                    logger.warning("E-Mail is no valid --> " + email);
-                    UserIO.getInstance().requestMessageDialog("E-Mail is not valid!");
-                    return;
-                }
-                if (!validate) {
-                    Browser skymonk = new Browser();
-                    try {
-                        skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=1.76");
-                    } catch (Throwable e1) {
-                    }
-                    String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
-                    if (skymonk.containsHTML("status:\'error\'")) {
-                        msg = msg == null ? "Error occured!" : msg;
-                        UserIO.getInstance().requestMessageDialog("Error occured", msg);
-                        return;
-                    } else if (skymonk.containsHTML("status:\'ok\'")) {
-                        if (skymonk.containsHTML("activation code has been sent to your e\\-mail")) {
-                            getPluginConfig().setProperty("APPID", appId);
-                            getPluginConfig().setProperty("APPIDVALIDATE", true);
-                            getPluginConfig().setProperty("SKYMONKEMAIL", email);
-                            getPluginConfig().setProperty("SKYMONKEMAILCHANGED", email);
-                            getPluginConfig().setProperty("SKYMONKVALIDATE", true);
-                            UserIO.getInstance().requestMessageDialog("Activation succesfully!");
-                        } else {
-                            msg = msg == null ? "OK!" : msg;
-                            UserIO.getInstance().requestMessageDialog("SkyMonk server answer", msg);
+                new Thread() {
+                    public void run() {
+                        String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
+                        try {
+                            jd.config.GuiConfigListener listener = configEntry.getGuiListener();
+                            if (listener != null) {
+                                email = (String) listener.getText();
+                            }
+                        } catch (Throwable e2) {
+                            /* does not exist in 09581 */
                         }
-                    } else {
-                        logger.warning("SkyMonk debug output: " + skymonk.toString());
-                        UserIO.getInstance().requestMessageDialog("SkyMonk: Unknown error occured", "Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                    }
-                    getPluginConfig().save();
-                } else {
-                    UserIO.getInstance().requestMessageDialog("SkyMonk is already activated!");
-                }
+                        String emailChanged = getPluginConfig().getStringProperty("SKYMONKEMAILCHANGED", null);
+                        if (!email.equalsIgnoreCase(emailChanged)) {
+                            getPluginConfig().setProperty("APPID", null);
+                            getPluginConfig().setProperty("SKYMONKVALIDATE", null);
+                            getPluginConfig().setProperty("APPIDVALIDATE", false);
+                        }
+                        String appId = getPluginConfig().getStringProperty("APPID", null);
+                        appId = appId == null ? JDHash.getMD5(String.valueOf(Math.random())) : appId;
+                        boolean validate = getPluginConfig().getBooleanProperty("SKYMONKVALIDATE", false);
+
+                        if (email == null || email.length() == 0) {
+                            UserIO.getInstance().requestMessageDialog("E-Mail is empty!");
+                            return;
+                        }
+                        if (!validateEmail(email)) {
+                            logger.warning("E-Mail is no valid --> " + email);
+                            UserIO.getInstance().requestMessageDialog("E-Mail is not valid!");
+                            return;
+                        }
+                        if (!validate) {
+                            Browser skymonk = new Browser();
+                            skymonk.setCookie("http://letitbit.net/", "lang", "en");
+                            try {
+                                skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=1.76");
+                            } catch (Throwable e1) {
+                            }
+                            String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
+                            if (skymonk.containsHTML("status:\'error\'")) {
+                                msg = msg == null ? "Error occured!" : msg;
+                                UserIO.getInstance().requestMessageDialog("Error occured", msg);
+                                return;
+                            } else if (skymonk.containsHTML("status:\'ok\'")) {
+                                if (skymonk.containsHTML("activation code has been sent to your e\\-mail")) {
+                                    getPluginConfig().setProperty("APPID", appId);
+                                    getPluginConfig().setProperty("APPIDVALIDATE", true);
+                                    getPluginConfig().setProperty("SKYMONKEMAIL", email);
+                                    getPluginConfig().setProperty("SKYMONKEMAILCHANGED", email);
+                                    getPluginConfig().setProperty("SKYMONKVALIDATE", true);
+                                    UserIO.getInstance().requestMessageDialog("Activation succesfully!");
+                                } else {
+                                    msg = msg == null ? "OK!" : msg;
+                                    UserIO.getInstance().requestMessageDialog("SkyMonk server answer", msg);
+                                }
+                            } else {
+                                logger.warning("SkyMonk debug output: " + skymonk.toString());
+                                UserIO.getInstance().requestMessageDialog("SkyMonk: Unknown error occured", "Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                            }
+                            getPluginConfig().save();
+                        } else {
+                            UserIO.getInstance().requestMessageDialog("SkyMonk is already activated!");
+                        }
+                    };
+                }.start();
+
             }
         }, "Activation", null, null));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));

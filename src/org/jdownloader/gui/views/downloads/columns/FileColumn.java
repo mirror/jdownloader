@@ -14,6 +14,7 @@ import jd.controlling.linkcrawler.ArchiveCrawledPackage;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledPackage;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
@@ -30,6 +31,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.gui.views.downloads.context.OpenFileAction;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import sun.swing.SwingUtilities2;
 
@@ -184,7 +186,11 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof AbstractPackageNode) {
             renderer.setBorder(normalBorder);
         } else {
-            renderer.setBorder(leftGapBorder);
+            if (((AbstractPackageNode) ((AbstractPackageChildrenNode) value).getParentNode()).getChildren().size() == 1 && CFG_GUI.HIDE_SINGLECHILD_PACKAGES.isEnabled()) {
+                renderer.setBorder(normalBorder);
+            } else {
+                renderer.setBorder(leftGapBorder);
+            }
         }
 
     }

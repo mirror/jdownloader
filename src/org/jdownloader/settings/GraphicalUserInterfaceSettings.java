@@ -365,4 +365,11 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     View getFileChooserView();
 
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @Description("Hide the package in case it only contains one child")
+    boolean isHideSingleChildPackages();
+
+    void setHideSingleChildPackages(boolean b);
+
 }

@@ -213,7 +213,10 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public ExtTooltip createToolTip(Point position, AbstractNode obj) {
-        if (obj instanceof DownloadLink) { return new ConnectionTooltip((DownloadLink) obj); }
+        if (obj instanceof DownloadLink) {
+            ConnectionTooltip ret = new ConnectionTooltip((DownloadLink) obj);
+            if (ret.getComponentCount() > 0) return ret;
+        }
         return null;
     }
 
@@ -259,7 +262,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             }
             this.panel.setOpaque(false);
-            add(panel);
+            if (panel.getComponentCount() > 0) add(panel);
         }
 
         @Override

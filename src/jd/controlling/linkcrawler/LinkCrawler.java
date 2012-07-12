@@ -311,8 +311,15 @@ public class LinkCrawler implements IOPermission {
             }
         }
         if (stopped) {
+            crawlerStopped();
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
         }
+    }
+
+    protected void crawlerStopped() {
+    }
+
+    protected void crawlerStarted() {
     }
 
     private boolean checkStartNotify() {
@@ -329,6 +336,7 @@ public class LinkCrawler implements IOPermission {
             crawler.incrementAndGet();
         }
         if (started) {
+            crawlerStarted();
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
         }
         return true;

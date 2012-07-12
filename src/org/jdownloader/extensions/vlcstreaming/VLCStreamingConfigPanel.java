@@ -5,6 +5,7 @@ import javax.swing.JTextArea;
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 
@@ -24,7 +25,7 @@ public class VLCStreamingConfigPanel extends ExtensionConfigPanel<VLCStreamingEx
     private TextInput                vlcPath;
     private TextInput                brokerTopic;
 
-    private JTextArea                revision;
+    private JTextArea                revision         = null;
     private String                   vlcRevision      = null;
 
     private void initComponents() {
@@ -32,7 +33,9 @@ public class VLCStreamingConfigPanel extends ExtensionConfigPanel<VLCStreamingEx
     }
 
     protected void layoutPanel() {
-        revision = addDescription("VLC Revision: unknown");
+        if (!CrossSystem.isWindows()) {
+            revision = addDescription("VLC Revision: unknown");
+        }
         addPair("Customized path to VLC:", null, vlcPath);
 
     }
@@ -52,7 +55,7 @@ public class VLCStreamingConfigPanel extends ExtensionConfigPanel<VLCStreamingEx
     }
 
     private void updateVLCRevision() {
-        if (vlcRevision == null) {
+        if (vlcRevision == null && revision != null) {
             new Thread() {
 
                 @Override

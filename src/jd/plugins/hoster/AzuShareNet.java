@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,7 +56,7 @@ public class AzuShareNet extends PluginForHost {
     private static final Object LOCK     = new Object();
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
@@ -71,7 +70,7 @@ public class AzuShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final Regex limit = br.getRegex(">For next free download you have to wait <strong>(\\d+):(\\d+)s</strong>");
         if (limit.getMatches().length == 1) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limit.getMatch(0)) * 60 + Integer.parseInt(limit.getMatch(1))) * 1001l);

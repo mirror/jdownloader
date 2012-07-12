@@ -87,10 +87,8 @@ public class LogAction extends AppAction {
         if (latest != null) latest.setSelected(true);
 
         if (folders.size() == 0) {
-
             Dialog.getInstance().showExceptionDialog("WTF!", "At Least the current Log should be available", new WTFException());
             return;
-
         }
         SendLogDialog d = new SendLogDialog(folders);
         try {

@@ -21,6 +21,7 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public abstract class PackageControllerTableModel<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends ExtTableModel<AbstractNode> {
     /**
@@ -229,11 +230,11 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
-     * the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
      */
     @Override
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
+        boolean hideSingleChildPackages = CFG_GUI.HIDE_SINGLECHILD_PACKAGES.isEnabled();
         if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {
             /* RESET sorting to nothing,tri-state */
             this.sortColumn = column = null;
@@ -304,21 +305,25 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             if (node.getView() != null) {
                 node.getView().update(files);
             }
-            boolean expanded = ((PackageType) node).isExpanded();
-            if (column != null && expanded) {
-                /* we only have to sort children if the package is expanded */
-                Collections.sort(files, column.getRowSorter());
-            }
-            if (files.size() > 0) {
-                /* only add package node if it contains children */
-                newData.add(node);
-            }
-            if (!expanded) {
-                /* not expanded */
-                continue;
-            } else {
-                /* expanded, add its children */
+            if (files.size() == 1 && hideSingleChildPackages) {
                 newData.addAll(files);
+            } else {
+                boolean expanded = ((PackageType) node).isExpanded();
+                if (column != null && expanded && files.size() > 0) {
+                    /* we only have to sort children if the package is expanded */
+                    Collections.sort(files, column.getRowSorter());
+                }
+                if (files.size() > 0) {
+                    /* only add package node if it contains children */
+                    newData.add(node);
+                }
+                if (!expanded) {
+                    /* not expanded */
+                    continue;
+                } else {
+                    /* expanded, add its children */
+                    newData.addAll(files);
+                }
             }
         }
         return newData;

@@ -11,7 +11,8 @@ public class JD_SERV_CONSTANTS {
     public static final CounterInterface   COUNT     = CLIENT.create(CounterInterface.class);
 
     public static void main(String[] args) {
-        LogCollection log = new RemoteClient("update3.jdownloader.org/jdserv").create(UploadInterface.class).get("1342020707256", null);
+
+        LogCollection log = new RemoteClient("update3.jdownloader.org/jdserv").create(UploadInterface.class).get("1342021886903", null);
         System.out.println(log.getId());
 
     }

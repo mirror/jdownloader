@@ -621,8 +621,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 protected void generalCrawledLinkModifier(CrawledLink link) {
                     crawledLinkModifier(link, link.getSourceJob());
                 }
+
+                @Override
+                protected void crawlerStopped() {
+                    eventsender.removeListener(this);
+                    super.crawlerStopped();
+                }
+
+                @Override
+                protected void crawlerStarted() {
+                    eventsender.addListener(this, true);
+                    super.crawlerStarted();
+                }
             };
-            eventsender.addListener(lc, true);
             lc.setFilter(crawlerFilter);
             lc.setHandler(this);
             LinkCollectingInformation collectingInfo = new LinkCollectingInformation(lc, linkChecker);
@@ -687,8 +698,19 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     crawledLinkModifier(link, job);
                 }
 
+                @Override
+                protected void crawlerStopped() {
+                    eventsender.removeListener(this);
+                    super.crawlerStopped();
+                }
+
+                @Override
+                protected void crawlerStarted() {
+                    eventsender.addListener(this, true);
+                    super.crawlerStarted();
+                }
             };
-            eventsender.addListener(lc, true);
+
             lc.setFilter(crawlerFilter);
             lc.setHandler(this);
             String jobText = job.getText();

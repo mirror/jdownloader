@@ -90,10 +90,10 @@ public class SlingFileCom extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             downloadLink.setProperty("directlink", false);
             String filename = br.getRegex("<h3>Downloading <span>(.*?)</span></h3>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
-                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            if (filename == null) filename = br.getRegex("<title>(.*?) \\- SlingFile \\- Free File Hosting \\& Online Storage</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setName(filename.trim());
+            if (br.containsHTML("The file you have requested has been deleted.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filesize = br.getRegex("<td>(.{2,20}) \\| Uploaded").getMatch(0);
             if (filesize == null) filesize = br.getRegex("<strong>Size:</strong>(.*?)</li").getMatch(0);
             if (filesize == null) {
