@@ -100,7 +100,7 @@ public class BottomBar extends MigPanel {
                     return true;
                 case HOSTER:
                     for (Pattern filterPattern : filterPatterns) {
-                        if (filterPattern.matcher(v.getName()).find()) return false;
+                        if (filterPattern.matcher(v.getHost()).find()) return false;
                     }
                     return true;
                 }
