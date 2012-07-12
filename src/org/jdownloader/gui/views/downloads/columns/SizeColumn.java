@@ -32,7 +32,7 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
 
     @Override
     public int getDefaultWidth() {
-        return 65;
+        return 70;
     }
 
     // @Override
@@ -42,7 +42,13 @@ public class SizeColumn extends ExtFileSizeColumn<AbstractNode> {
     // }
 
     @Override
+    public int getMinWidth() {
+        return getDefaultWidth();
+    }
+
+    @Override
     protected long getBytes(AbstractNode o2) {
+
         if (o2 instanceof CrawledPackage) {
             return ((CrawledPackage) o2).getView().getFileSize();
         } else if (o2 instanceof CrawledLink) {
