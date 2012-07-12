@@ -76,6 +76,7 @@ public class LetitBitNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setDebug(true);
+        br.setCustomCharset("UTF-8");
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         // /* set english language */
@@ -183,6 +184,7 @@ public class LetitBitNet extends PluginForHost {
 
         if (!validate || !getPluginConfig().getBooleanProperty("STATUS", false)) return null;
         Browser skymonk = new Browser();
+        skymonk.setCustomCharset("UTF-8");
         skymonk.getHeaders().put("Pragma", null);
         skymonk.getHeaders().put("Cache-Control", null);
         skymonk.getHeaders().put("Accept-Charset", null);
@@ -219,6 +221,7 @@ public class LetitBitNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
             br.setVerbose(debugSwitch);
+            br.setCustomCharset("UTF-8");
         } catch (Throwable e) {
             /* only available after 0.9xx version */
         }
@@ -430,6 +433,7 @@ public class LetitBitNet extends PluginForHost {
             // Load cookies
             try {
                 this.setBrowserExclusive();
+                br.setCustomCharset("UTF-8");
                 br.setCookie("http://letitbit.net/", "lang", "en");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
@@ -477,6 +481,7 @@ public class LetitBitNet extends PluginForHost {
         br.getHeaders().put("Cache-Control", "no-cache");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Length", "0");
+        br.setCustomCharset("UTF-8");
     }
 
     @Override
@@ -540,6 +545,7 @@ public class LetitBitNet extends PluginForHost {
                         if (!validate) {
                             Browser skymonk = new Browser();
                             skymonk.setCookie("http://letitbit.net/", "lang", "en");
+                            skymonk.setCustomCharset("UTF-8");
                             try {
                                 skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=1.76");
                             } catch (Throwable e1) {
