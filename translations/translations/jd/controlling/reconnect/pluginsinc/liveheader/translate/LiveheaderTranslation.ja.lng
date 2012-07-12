@@ -6,6 +6,7 @@ DataCompareDialog_layoutDialogContent_name_help=ルータ名を入力してく�
 DataCompareDialog_layoutDialogContent_password=パスワード
 DataCompareDialog_layoutDialogContent_user=ユーザ名
 DataCompareDialog_layoutDialogContent_webinterface=ルータの Web インターフェイス
+EditScriptAction_EditScriptAction_=スクリプトの編集
 GetIPAction_GetIPAction_=ルータ IP を取得
 GetIPAction_actionPerformed_d_msg=ルータ IP を取得中
 GetIPAction_actionPerformed_d_title=ルータ IP を検索

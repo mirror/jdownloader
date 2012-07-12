@@ -1,0 +1,4 @@
+gui_title=ストリーミング
+gui_tooltip=ストリーミングリンクの管理
+popup_streaming=ストリーミング
+popup_streaming_playvlc=再生
