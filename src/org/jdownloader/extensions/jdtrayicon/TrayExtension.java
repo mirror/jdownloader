@@ -206,6 +206,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
     private ExtensionConfigPanel<TrayExtension> configPanel;
 
+    private long                                lastCloseRequest;
+
+    private boolean                             asking;
+
     public ExtensionConfigPanel<TrayExtension> getConfigPanel() {
         return configPanel;
     }
@@ -513,16 +517,17 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
     public void windowStateChanged(WindowEvent evt) {
         int oldState = evt.getOldState();
         int newState = evt.getNewState();
-
+        if (System.currentTimeMillis() - lastCloseRequest < 1000 || asking) return;
         if ((oldState & JFrame.ICONIFIED) == 0 && (newState & JFrame.ICONIFIED) != 0) {
             iconified = true;
 
             switch (getSettings().getOnMinimizeAction()) {
             case ASK:
+
                 final OnMinimizeAction[] ret = new OnMinimizeAction[1];
                 ret[0] = null;
                 final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.BUTTONS_HIDE_OK, _.minimized_ask(), _.minimize_options(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
-
+                asking = true;
                 try {
 
                     d.setLeftActions(new AppAction() {
@@ -553,6 +558,8 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
                 } catch (DialogNoAnswerException e1) {
                     Log.exception(e1);
+                } finally {
+                    asking = false;
                 }
                 if (d.isDontShowAgainSelected() && ret[0] != null) {
                     getSettings().setOnMinimizeAction(ret[0]);
@@ -661,7 +668,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
 
         LazyExtension tray = null;
         try {
-
+            lastCloseRequest = System.currentTimeMillis();
             main: if (isEnabled()) {
 
                 switch (getSettings().getOnCloseAction()) {
