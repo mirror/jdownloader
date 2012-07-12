@@ -51,12 +51,11 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemade.com", "filemade.co" }, urls = { "https?://(www\\.)?filemade\\.com?/[a-z0-9]{12}", "http://we\\.love\\.to\\.change\\.domains\\-filemade\\.co" }, flags = { 2, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemade.com", "filemade.co" }, urls = { "https?://(www\\.)?filemade\\.com?/[a-z0-9]{12}", "WELIKETOCHANGEDOMAINSHAHA" }, flags = { 2, 0 })
 public class FileMadeCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://filemade.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -68,6 +67,8 @@ public class FileMadeCom extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static final Object  LOCK                         = new Object();
+    private String               domain                       = null;
+    private String               domainHost;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
@@ -83,17 +84,16 @@ public class FileMadeCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
-        link.setUrlDownload(link.getDownloadURL().replace("filemade.co/", "filemade.com/"));
     }
 
     @Override
     public String getAGBLink() {
-        return COOKIE_HOST + "/tos.html";
+        return "http://filemade.com/tos.html";
     }
 
     public FileMadeCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium("http://filemade.com/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -109,13 +109,16 @@ public class FileMadeCom extends PluginForHost {
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setCookie("http://filemade.com", "lang", "english");
+        br.setCookie("http://filemade.co", "lang", "english");
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        domain = new Regex(link.getDownloadURL(), "(https?://.*?/)").getMatch(0);
+        domainHost = new Regex(link.getDownloadURL(), "https?://(.*?)/").getMatch(0);
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,7 +126,7 @@ public class FileMadeCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + domainHost + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
@@ -559,10 +562,12 @@ public class FileMadeCom extends PluginForHost {
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
+                if (domainHost == null) domainHost = "filemade.com";
+                if (domain == null) domain = "http://filemade.com";
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser();
-                final Object ret = account.getProperty("cookies", null);
+                final Object ret = account.getProperty("cookies" + domainHost, null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
@@ -571,19 +576,19 @@ public class FileMadeCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
+                            this.br.setCookie(domain, key, value);
                         }
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                getPage("http://" + domainHost + "/login.html");
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/?op=my_account");
+                if (br.getCookie("http://" + domainHost, "login") == null || br.getCookie(domain, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                getPage("http://" + domainHost + "/?op=my_account");
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
@@ -592,15 +597,15 @@ public class FileMadeCom extends PluginForHost {
                 }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                final Cookies add = this.br.getCookies(domain);
                 for (final Cookie c : add.getCookies()) {
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
+                account.setProperty("cookies" + domainHost, cookies);
             } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
+                account.setProperty("cookies" + domainHost, Property.NULL);
                 throw e;
             }
         }

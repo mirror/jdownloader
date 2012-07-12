@@ -227,7 +227,7 @@ public class FlickrCom extends PluginForHost {
     }
 
     private String getFinalLink() {
-        final String[] sizes = { "k", "h", "o", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
+        final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String finallink = null;
         for (String size : sizes) {
             finallink = br.getRegex(size + ": \\{[\t\n\r ]+url: \\'(http://[^<>\"]*?)\\',[\t\n\r ]+").getMatch(0);
