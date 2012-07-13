@@ -65,8 +65,12 @@ public class LogController extends LogSourceProvider {
      * @return
      */
     public static LogSource CL() {
-        LogSource ret = getRebirthLogger();
-        if (ret != null) return ret;
+        return CL(true);
+    }
+
+    public static LogSource CL(boolean allowRebirthLogger) {
+        LogSource ret = null;
+        if (allowRebirthLogger && (ret = getRebirthLogger()) != null) return ret;
         return getInstance().getCurrentClassLogger();
     }
 

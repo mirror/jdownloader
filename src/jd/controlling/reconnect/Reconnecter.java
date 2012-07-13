@@ -187,7 +187,7 @@ public final class Reconnecter implements StateMachineInterface {
         if (!this.statemachine.isStartState()) { return false; }
         boolean ret = false;
         long startTime = System.currentTimeMillis();
-        LogSource logger = LogController.CL();
+        LogSource logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         logger.info("Perform reconnect");
         try {

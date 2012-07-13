@@ -186,7 +186,8 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
         if (value instanceof AbstractPackageNode) {
             renderer.setBorder(normalBorder);
         } else if (value instanceof AbstractPackageChildrenNode) {
-            if (((AbstractPackageNode) ((AbstractPackageChildrenNode) value).getParentNode()).getChildren().size() == 1 && CFG_GUI.HIDE_SINGLECHILD_PACKAGES.isEnabled()) {
+            AbstractPackageNode parent = ((AbstractPackageNode) ((AbstractPackageChildrenNode) value).getParentNode());
+            if (parent != null && parent.getChildren().size() == 1 && CFG_GUI.HIDE_SINGLECHILD_PACKAGES.isEnabled()) {
                 renderer.setBorder(normalBorder);
             } else {
                 renderer.setBorder(leftGapBorder);

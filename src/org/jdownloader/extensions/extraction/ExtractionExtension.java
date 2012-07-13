@@ -718,8 +718,6 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
         } catch (Exception e) {
             logger.log(e);
-        } finally {
-            logger.close();
         }
     }
 

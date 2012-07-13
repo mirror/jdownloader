@@ -51,7 +51,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
 
     public void init(boolean noCache) {
         List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
-        LogSource logger = LogController.CL();
+        LogSource logger = LogController.CL(false);
         logger.info("HostPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
         LogController.setRebirthLogger(logger);

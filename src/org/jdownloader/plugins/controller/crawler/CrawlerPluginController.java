@@ -70,7 +70,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     public void init(boolean noCache) {
         List<LazyCrawlerPlugin> plugins = new ArrayList<LazyCrawlerPlugin>();
         final long t = System.currentTimeMillis();
-        LogSource logger = LogController.CL();
+        LogSource logger = LogController.CL(false);
         logger.info("CrawlerPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
         LogController.setRebirthLogger(logger);

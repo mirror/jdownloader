@@ -130,7 +130,7 @@ public class RouterUtils {
 
     private static boolean checkPort(String host, int port) {
         URLConnectionAdapter con = null;
-        LogSource logger = LogController.CL();
+        LogSource logger = LogController.CL(false);
         logger.setAllowTimeoutFlush(false);
         try {
             logger.info("Check " + host + ":" + port);

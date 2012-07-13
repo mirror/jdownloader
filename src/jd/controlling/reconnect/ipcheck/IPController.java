@@ -262,7 +262,7 @@ public class IPController extends ArrayList<IPConnectionState> {
         final long endTime = System.currentTimeMillis() + waitForIPTime * 1000;
         final long endOfflineTime = System.currentTimeMillis() + waitForOfflineTime * 1000;
         boolean hasBeenOffline = false;
-        LogSource logger = LogController.CL();
+        LogSource logger = LogController.CL(false);
         try {
             while (true) {
                 /* ip change detected then we can stop */

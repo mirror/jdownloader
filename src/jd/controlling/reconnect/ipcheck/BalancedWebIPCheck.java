@@ -68,7 +68,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         synchronized (this.LOCK) {
             System.out.println("CHECK");
             for (int i = 0; i < (checkOnlyOnce ? 1 : this.servicesInUse.size()); i++) {
-                LogSource logger = LogController.CL();
+                LogSource logger = LogController.CL(false);
                 logger.setAllowTimeoutFlush(false);
                 try {
                     final String service = this.servicesInUse.get(i);
@@ -111,7 +111,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
             if (b) {
                 servicesInUse.clear();
                 for (int i = 0; i < SERVICES.size(); i++) {
-                    LogSource logger = LogController.CL();
+                    LogSource logger = LogController.CL(false);
                     logger.setAllowTimeoutFlush(false);
                     try {
 
