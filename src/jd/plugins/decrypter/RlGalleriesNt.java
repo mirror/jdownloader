@@ -21,6 +21,7 @@ import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -48,8 +49,14 @@ public class RlGalleriesNt extends PluginForDecrypt {
         }
         final String host = new Regex(parameter, "(http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net)").getMatch(0);
         for (String aLink : links) {
-            br.getPage(host + aLink);
-            String finallink = br.getRedirectLocation();
+            try {
+                if (isAbort()) break;
+            } catch (final Throwable e) {
+            }
+            sleep(300, param);
+            Browser brc = br.cloneBrowser();
+            brc.getPage(host + aLink);
+            String finallink = brc.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

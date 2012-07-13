@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
+import jd.Launcher;
 import jd.parser.Regex;
 
 import org.appwork.exceptions.WTFException;
@@ -32,8 +33,7 @@ import org.appwork.utils.Files;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.appwork.utils.zip.ZipIOException;
@@ -42,6 +42,7 @@ import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.jdserv.JD_SERV_CONSTANTS;
 import org.jdownloader.jdserv.UploadInterface;
+import org.jdownloader.logging.LogController;
 
 public class LogAction extends AppAction {
 
@@ -68,9 +69,11 @@ public class LogAction extends AppAction {
                     long timestamp = Long.parseLong(timestampString);
                     LogFolder lf;
                     lf = new LogFolder(f, timestamp);
-
+                    if (Launcher.startup == timestamp) {
+                        /* this is our current logfolder, flush it before we can upload it */
+                        lf.setNeedsFlush(true);
+                    }
                     if (Files.getFiles(new FileFilter() {
-
                         @Override
                         public boolean accept(File pathname) {
                             return pathname.isFile() && pathname.length() > 0;
@@ -124,18 +127,26 @@ public class LogAction extends AppAction {
                             final File zip = Application.getResource("tmp/logs/logPackage.zip");
                             zip.delete();
                             zip.getParentFile().mkdirs();
-                            ZipIOWriter writer = new ZipIOWriter(zip) {
-                                public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
-                                    if (addFile.getName().endsWith(".lck") || (addFile.isFile() && addFile.length() == 0)) return;
-                                    if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
-                                    super.addFile(addFile, compress, fullPath);
+                            ZipIOWriter writer = null;
+                            try {
+                                if (lf.isNeedsFlush()) {
+                                    LogController.getInstance().flushSinks(true);
                                 }
+                                writer = new ZipIOWriter(zip) {
+                                    public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
+                                        if (addFile.getName().endsWith(".lck") || (addFile.isFile() && addFile.length() == 0)) return;
+                                        if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
+                                        super.addFile(addFile, compress, fullPath);
+                                    }
+                                };
 
-                            };
-
-                            writer.addDirectory(lf.getFolder(), true, null);
-
-                            writer.close();
+                                writer.addDirectory(lf.getFolder(), true, null);
+                            } finally {
+                                try {
+                                    writer.close();
+                                } catch (final Throwable e) {
+                                }
+                            }
                             if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
                             id = JD_SERV_CONSTANTS.CLIENT.create(UploadInterface.class).upload(IO.readFile(zip), "", id);
                             if (Thread.currentThread().isInterrupted()) throw new WTFException("INterrupted");
@@ -157,16 +168,10 @@ public class LogAction extends AppAction {
                 Dialog.getInstance().showDialog(p);
 
                 Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), "jdlog://" + id);
-            } catch (final DialogClosedException e1) {
+            } catch (final DialogNoAnswerException e1) {
                 Log.exception(Level.WARNING, e1);
-
-            } catch (final DialogCanceledException e1) {
-                Log.exception(Level.WARNING, e1);
-
             }
-        } catch (DialogClosedException e1) {
-            e1.printStackTrace();
-        } catch (DialogCanceledException e1) {
+        } catch (DialogNoAnswerException e1) {
             e1.printStackTrace();
         }
     }

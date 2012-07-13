@@ -518,8 +518,8 @@ public class UloadTo extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
+                    maxPrem.set(-1);
+                    account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }

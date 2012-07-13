@@ -39,13 +39,29 @@ public class LogFolder {
         this.folder = folder;
     }
 
-    private long lastModified;
-    private File folder;
+    private long    lastModified;
+    private File    folder;
+    private boolean needsFlush = false;
 
     public LogFolder(File f, long timestamp) {
         created = timestamp;
         lastModified = f.lastModified();
         folder = f;
+    }
+
+    /**
+     * @return the needsFlush
+     */
+    public boolean isNeedsFlush() {
+        return needsFlush;
+    }
+
+    /**
+     * @param needsFlush
+     *            the needsFlush to set
+     */
+    public void setNeedsFlush(boolean needsFlush) {
+        this.needsFlush = needsFlush;
     }
 
 }

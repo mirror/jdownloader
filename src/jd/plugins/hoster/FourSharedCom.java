@@ -49,11 +49,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
-    public static final String PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private static String       agent        = null;
-    private static final String PASSWORDTEXT = "enter a password to access";
-    private static final Object LOCK         = new Object();
-    private static final String COOKIE_HOST  = "http://4shared.com";
+    public static final String  PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
+    private static String       agent                                     = null;
+    private static final String PASSWORDTEXT                              = "enter a password to access";
+    private static final Object LOCK                                      = new Object();
+    private static final String COOKIE_HOST                               = "http://4shared.com";
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -352,7 +352,7 @@ public class FourSharedCom extends PluginForHost {
         if (accountDetails == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.getPage(accountDetails);
         final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "yyyy-MM-dd", Locale.UK));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.UK) + (24 * 60 * 60 * 1000l));
         String accType = br.getRegex("Account Type:</td>.*?>(.*?)(&|<)").getMatch(0);
         if (accType != null) accType = accType.trim();
         if ("FREE".equalsIgnoreCase(accType)) {
