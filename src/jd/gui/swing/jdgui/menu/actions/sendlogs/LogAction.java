@@ -156,7 +156,7 @@ public class LogAction extends AppAction {
             try {
                 Dialog.getInstance().showDialog(p);
 
-                Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), id);
+                Dialog.getInstance().showInputDialog(0, _GUI._.LogAction_actionPerformed_givelogid_(), "jdlog://" + id);
             } catch (final DialogClosedException e1) {
                 Log.exception(Level.WARNING, e1);
 
