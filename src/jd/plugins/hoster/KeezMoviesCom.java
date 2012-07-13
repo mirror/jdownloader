@@ -45,52 +45,88 @@ public class KeezMoviesCom extends PluginForHost {
     private String DLLINK    = null;
     private String FLASHVARS = null;
 
-    public KeezMoviesCom(final PluginWrapper wrapper) {
+    public KeezMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /**
-     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in
-     * JavaScript by Chris Veness
+     * AES CTR(Counter) Mode for Java ported from AES-CTR-Mode implementation in JavaScript by Chris Veness
      * 
      * @see <a
      *      href="http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf">"Recommendation for Block Cipher Modes of Operation - Methods and Techniques"</a>
      */
-    private String AESCounterModeDecrypt(final String cipherText, final String key, int nBits) {
+    private String AESCounterModeDecrypt(String cipherText, String key, int nBits) throws Exception {
         if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
         if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
         String res = null;
         nBits = nBits / 8;
-        final byte[] data = Base64.decode(cipherText.toCharArray());
-        final byte[] k = Arrays.copyOf(key.getBytes(), nBits);
-        try {
-            final Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
-            final SecretKey secretKey = generateSecretKey(k, nBits);
-            final byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
-            final IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
-            cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
-            res = new String(cipher.doFinal(data, 8, data.length - 8));
-        } catch (final Throwable e) {
-        }
+        byte[] data = Base64.decode(cipherText.toCharArray());
+        byte[] k = Arrays.copyOf(key.getBytes(), nBits);
+
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        SecretKey secretKey = generateSecretKey(k, nBits);
+        byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
+        IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey, nonce);
+        res = new String(cipher.doFinal(data, 8, data.length - 8));
         return res;
     }
 
-    private SecretKey generateSecretKey(byte[] keyBytes, final int nBits) throws Exception {
+    private SecretKey generateSecretKey(byte[] keyBytes, int nBits) throws Exception {
         try {
-            final SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
-            final Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
             keyBytes = cipher.doFinal(keyBytes);
-        } catch (final InvalidKeyException e) {
+        } catch (InvalidKeyException e) {
             if (e.getMessage().contains("Illegal key size")) {
                 getPolicyFiles();
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unlimited Strength JCE Policy Files needed!");
-        } catch (final Throwable e1) {
+        } catch (Throwable e1) {
             return null;
         }
         System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
         return new SecretKeySpec(keyBytes, "AES");
+    }
+
+    private class BouncyCastleAESCounterModeDecrypt {
+        private String decrypt(String cipherText, String key, int nBits) throws Exception {
+            if (!(nBits == 128 || nBits == 192 || nBits == 256)) { return "Error: Must be a key mode of either 128, 192, 256 bits"; }
+            if (cipherText == null || key == null) { return "Error: cipher and/or key equals null"; }
+            byte[] decrypted;
+            nBits = nBits / 8;
+            byte[] data = Base64.decode(cipherText.toCharArray());
+            byte[] k = Arrays.copyOf(key.getBytes(), nBits);
+            /* AES/CTR/NoPadding (SIC == CTR) */
+            org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.modes.SICBlockCipher(new org.bouncycastle.crypto.engines.AESEngine()));
+            cipher.reset();
+            SecretKey secretKey = generateSecretKey(k, nBits);
+            byte[] nonceBytes = Arrays.copyOf(Arrays.copyOf(data, 8), nBits / 2);
+            IvParameterSpec nonce = new IvParameterSpec(nonceBytes);
+            /* true == encrypt; false == decrypt */
+            cipher.init(true, new org.bouncycastle.crypto.params.ParametersWithIV(new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()), ((IvParameterSpec) nonce).getIV()));
+            decrypted = new byte[cipher.getOutputSize(data.length - 8)];
+            int decLength = cipher.processBytes(data, 8, data.length - 8, decrypted, 0);
+            cipher.doFinal(decrypted, decLength);
+            return new String(decrypted);
+        }
+
+        private SecretKey generateSecretKey(byte[] keyBytes, int nBits) throws Exception {
+            try {
+                SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+                /* AES/ECB/NoPadding */
+                org.bouncycastle.crypto.BufferedBlockCipher cipher = new org.bouncycastle.crypto.BufferedBlockCipher(new org.bouncycastle.crypto.engines.AESEngine());
+                cipher.init(true, new org.bouncycastle.crypto.params.KeyParameter(secretKey.getEncoded()));
+                keyBytes = new byte[cipher.getOutputSize(secretKey.getEncoded().length)];
+                int decLength = cipher.processBytes(secretKey.getEncoded(), 0, secretKey.getEncoded().length, keyBytes, 0);
+                cipher.doFinal(keyBytes, decLength);
+            } catch (Throwable e) {
+                return null;
+            }
+            System.arraycopy(keyBytes, 0, keyBytes, nBits / 2, nBits / 2);
+            return new SecretKeySpec(keyBytes, "AES");
+        }
     }
 
     @Override
@@ -117,12 +153,12 @@ public class KeezMoviesCom extends PluginForHost {
         }
     }
 
-    private String getValue(final String s) {
+    private String getValue(String s) {
         return new Regex(FLASHVARS, "\\&" + s + "=(.*?)(\\&|$)").getMatch(0);
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -133,7 +169,7 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         // Set cookie so we can watch all videos ;)
@@ -148,10 +184,17 @@ public class KeezMoviesCom extends PluginForHost {
         if (FLASHVARS == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         FLASHVARS = Encoding.htmlDecode(FLASHVARS);
-        final String isEncrypted = getValue("encrypted");
+        String isEncrypted = getValue("encrypted");
         if ("1".equals(isEncrypted) || Boolean.parseBoolean(isEncrypted)) {
-            DLLINK = AESCounterModeDecrypt(getValue("video_url"), getValue("video_title"), 256);
-            if (DLLINK != null && DLLINK.startsWith("Error:")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
+            String decrypted = getValue("video_url");
+            String key = getValue("video_title");
+            try {
+                DLLINK = new BouncyCastleAESCounterModeDecrypt().decrypt(decrypted, key, 256);
+            } catch (Throwable e) {
+                /* Fallback for stable version */
+                DLLINK = AESCounterModeDecrypt(decrypted, key, 256);
+            }
+            if (DLLINK != null && (DLLINK.startsWith("Error:") || !DLLINK.startsWith("http"))) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, DLLINK); }
         } else {
             DLLINK = getValue("video_url");
         }
@@ -171,7 +214,7 @@ public class KeezMoviesCom extends PluginForHost {
         } finally {
             try {
                 con.disconnect();
-            } catch (final Throwable e) {
+            } catch (Throwable e) {
             }
         }
     }
@@ -181,7 +224,7 @@ public class KeezMoviesCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
 }
