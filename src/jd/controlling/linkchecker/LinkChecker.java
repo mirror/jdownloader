@@ -386,6 +386,7 @@ public class LinkChecker<E extends CheckableLink> {
     private static void updateAvailableStatus(PluginForHost plgToUse, DownloadLink link, LogSource logger) {
         if (link.getAvailableStatus() != AvailableStatus.UNCHECKED) {
             logger.info("Link " + link.getDownloadURL() + " is " + link.getAvailableStatus());
+            logger.clear();
             return;
         }
         AvailableStatus availableStatus = null;
