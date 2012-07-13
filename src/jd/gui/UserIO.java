@@ -381,10 +381,12 @@ public class UserIO {
             }
         }
         FileChooserType fct = FileChooserType.OPEN_DIALOG;
-        for (final FileChooserType f : FileChooserType.values()) {
-            if (f.getId() == dialogType) {
-                fct = f;
-                break;
+        if (dialogType != null) {
+            for (final FileChooserType f : FileChooserType.values()) {
+                if (f.getId() == dialogType) {
+                    fct = f;
+                    break;
+                }
             }
         }
 
