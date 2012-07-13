@@ -1,2 +1,4 @@
 gui_title=Streaming
+gui_tooltip=Gestisci i tuoi link streaming
 popup_streaming=Streaming
+popup_streaming_playvlc=Riproduci
