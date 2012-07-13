@@ -16,10 +16,12 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -32,6 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -39,8 +42,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
-    private static final String NEXTPAGE             = "http://shareflare.net/tmpl/tmpl_frame_top.php?link=";
-    private static final String LINKFRAMEPART        = "tmpl/tmpl_frame_top\\.php\\?link=";
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
     private static final Object LOCK                 = new Object();
     private static final String FREELIMIT            = ">Your limit for free downloads is over for today<";
@@ -99,27 +100,13 @@ public class ShareFlareNet extends PluginForHost {
         }
     }
 
-    private String getCaptchaUrl() {
-        String captchaUrl = br.getRegex("<div class=\"cont c2\" align=\"center\">.*?<img src=\\'(http.*?)\\'").getMatch(0);
-        if (captchaUrl == null) {
-            captchaUrl = br.getRegex("('|\")(http://letitbit\\.net/cap\\.php\\?jpg=.*?\\.jpg)('|\")").getMatch(1);
-            if (captchaUrl == null) {
-                String capid = br.getRegex("name=\"(uid2|uid)\" value=\"(.*?)\"").getMatch(1);
-                if (capid != null) captchaUrl = "http://letitbit.net/cap.php?jpg=" + capid + ".jpg";
-            }
-        }
-        return captchaUrl;
-    }
-
-    private String getDllink() {
-        String dllink = br.getRegex("var direct_links = \\{[\t\n\r ]+\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/f/[a-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+    private String getDllink(final Browser br) {
+        String dllink = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
         return dllink;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        /* seems no longer supports multiple free downloads */
         return 1;
     }
 
@@ -140,60 +127,35 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         debug = debug + br.submitForm(dlform);
-        Form captchaform = br.getFormbyProperty("id", "dvifree");
-        if (captchaform == null) {
-            logger.warning("captchaform is null...");
+        dlform = br.getFormbyProperty("id", "dvifree");
+        if (dlform == null) {
+            logger.warning("dlform#2 is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br.containsHTML("\"cap\"")) {
-            logger.info("Found captcha, continuing...");
-            String captchaUrl = getCaptchaUrl();
-            for (int i = 0; i <= 3; i++) {
-                br.setFollowRedirects(false);
-                captchaform = br.getFormbyProperty("id", "dvifree");
-                captchaUrl = getCaptchaUrl();
-                if (captchaform == null || captchaUrl == null) {
-                    logger.warning("captchaform or captchaUrl is null");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String code = getCaptchaCode(captchaUrl, downloadLink);
-                captchaform.put("cap", code);
-                br.submitForm(captchaform);
-                if (getCaptchaUrl() != null) continue;
-                if (!br.containsHTML(LINKFRAMEPART)) {
-                    logger.warning("Browser doesn't contain the LINKFRAMEPART string, stopping...");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                break;
+        br.submitForm(dlform);
+        // Waittime before captcha is skippable
+        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final Browser ajaxBR = br.cloneBrowser();
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        for (int i = 0; i <= 3; i++) {
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode(cf, downloadLink);
+            ajaxBR.postPage("http://shareflare.net/ajax/check_recaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            if (ajaxBR.containsHTML("error_wrong_captcha")) {
+                rc.reload();
+                continue;
             }
-            if (getCaptchaUrl() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else {
-            logger.info("Didn't found captcha, continuing...");
-            br.submitForm(captchaform);
+            break;
         }
-        br.getPage(NEXTPAGE);
-        String dllink = getDllink();
-        if (dllink == null) {
-            String wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
-            int tt = 45;
-            if (wait != null) {
-                logger.info("Regexed waittime is found...(" + wait + " seconds)");
-                tt = Integer.parseInt(wait);
-            }
-            sleep(tt * 1001, downloadLink);
-            br.getPage(NEXTPAGE);
-            dllink = getDllink();
-            if (dllink == null) {
-                /** If waittime still exists we should have a server error */
-                wait = br.getRegex("y =[ ]+(\\d+);").getMatch(0);
-                if (wait != null) logger.info("Either server error or plugin broken!\n");
-                logger.warning("dllink is null");
-                logger.info(debug);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            logger.info("dllink found, hopefully we have no hidden waittime here...");
-        }
+        if (ajaxBR.containsHTML("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = getDllink(ajaxBR);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html") && con.getLongContentLength() < (downloadLink.getDownloadSize() / 2)) {

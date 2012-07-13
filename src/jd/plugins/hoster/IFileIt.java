@@ -35,16 +35,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://(www\\.)?ifile\\.it/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "http://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends PluginForHost {
 
     private final String        useragent               = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
     private static final Object LOCK                    = new Object();
     private boolean             showDialog              = false;
-    private int                 MAXFREECHUNKS           = 0;
+    private int                 MAXFREECHUNKS           = 1;
     private static final String ONLY4REGISTERED         = "You need to be a registered user in order to download this file";
     private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Only downloadable for registered users");
     private static final String NOCHUNKS                = "NOCHUNKS";
@@ -52,18 +50,34 @@ public class IFileIt extends PluginForHost {
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://secure.ifile.it/account-signup.html");
+        this.enablePremium("http://filecloud.io/user-register.html");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("ifile.it/", "filecloud.io/"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        updateBrowser(br);
+        br.setRequestIntervalLimit(getHost(), 250);
+        simulateBrowser();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("var __ab1 = 0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return AvailableStatus.TRUE;
     }
 
     public void doFree(final DownloadLink downloadLink, boolean resume, boolean viaAccount) throws Exception, PluginException {
-        if (!viaAccount && br.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDUSERTEXT); }
+        final String ab1 = br.getRegex("var __ab1 = (\\d+);").getMatch(0);
+        if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(true);
         // Br2 is our xml browser now!
         final Browser br2 = br.cloneBrowser();
         br2.setReadTimeout(40 * 1000);
-        final String ukey = new Regex(downloadLink.getDownloadURL(), "ifile\\.it/(.+)").getMatch(0);
-        String ab = viaAccount ? "1" : "0";
-        xmlrequest(br2, "http://ifile.it/new_download-request.json", "ukey=" + ukey + "&ab=" + ab);
+        final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
+        xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1);
         if (br2.containsHTML("\"captcha\":1")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);
@@ -75,7 +89,7 @@ public class IFileIt extends PluginForHost {
             for (int i = 0; i <= 5; i++) {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                xmlrequest(br2, "http://ifile.it/new_download-request.json", "ukey=" + ukey + "&ab=" + ab + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
+                xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1 + "&ctype=recaptcha&recaptcha_response=" + Encoding.urlEncode_light(c) + "&recaptcha_challenge=" + rc.getChallenge());
                 if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) {
                     rc.reload();
                     continue;
@@ -84,12 +98,13 @@ public class IFileIt extends PluginForHost {
             }
         }
         if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = br2.getRegex("ticket_url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        br.getPage("http://filecloud.io/download.html");
+        String dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("last try getting dllink failed, plugin must be defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replace("\\", "");
         br.setFollowRedirects(false);
         int chunks = MAXFREECHUNKS;
         if (downloadLink.getBooleanProperty(IFileIt.NOCHUNKS, false) || resume == false) {
@@ -192,14 +207,11 @@ public class IFileIt extends PluginForHost {
             br = new Browser();
             updateBrowser(br);
             loginAPI(account, null, false);
-            /* needed as if_skey seems different without this */
-            br.getPage("http://ifile.it/?t=" + System.currentTimeMillis());
             br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink, true, true);
         } else {
             final String ukey = new Regex(downloadLink.getDownloadURL(), "http://.*?/(.*?)(/.*?)?$").getMatch(0);
-
-            br.postPage("http://ifile.it/api-fetch_download_url.api", "akey=" + account.getProperty("akey", null) + "&ukey=" + ukey);
+            br.postPage("http://filecloud.io/api-fetch_download_url.api", "akey=" + account.getProperty("akey", null) + "&ukey=" + ukey);
             final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
             if (response == null || response.length != 3 || response[0].equals("error")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
@@ -236,7 +248,7 @@ public class IFileIt extends PluginForHost {
             updateBrowser(br);
             if (refresh || account.getProperty("akey", null) == null) {
                 /* login get apikey */
-                br.postPage("https://secure.ifile.it/api-fetch_apikey.api", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 final String[] response = br.getRegex("\\{\"status\":\"(.*?)\",\"(.*?)\":\"(.*?)\"\\}").getRow(0);
                 if (response == null || response.length != 3 || response[0].equals("error")) {
                     if (response[1].equals("message")) {
@@ -253,7 +265,7 @@ public class IFileIt extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("akey", response[2]);
             }
-            br.setCookie("http://ifile.it", "if_akey", account.getStringProperty("akey", null));
+            br.setCookie("http://filecloud.io", "if_akey", account.getStringProperty("akey", null));
         }
     }
 
@@ -261,27 +273,7 @@ public class IFileIt extends PluginForHost {
         if (br == null) return;
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        updateBrowser(br);
-        br.setRequestIntervalLimit(getHost(), 250);
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        simulateBrowser();
-        if (br.containsHTML("file not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("font-size: [0-9]+%; color: gray;\">(.*?)\\&nbsp;").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("id=\"descriptive_link\" value=\"http://ifile.it/.*?/(.*?)\"").getMatch(0);
-        }
-        final String filesize = br.getRegex(".*?(([0-9]+|[0-9]+\\.[0-9]+) (MB|KB|B|GB)).*?").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML(ONLY4REGISTERED)) downloadLink.getLinkStatus().setStatusText(ONLY4REGISTEREDUSERTEXT);
-        downloadLink.setName(filename.trim().replaceAll("(\r|\n|\t)", ""));
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        br.setCookie("http://filecloud.io/", "lang", "en");
     }
 
     @Override

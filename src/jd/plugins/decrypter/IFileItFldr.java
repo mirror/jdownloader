@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ifile.it" }, urls = { "http://[\\w\\.]*?ifile\\.it/_[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io" }, urls = { "http://(www\\.)?(ifile\\.it|filecloud\\.io)/_[a-z0-9]+" }, flags = { 0 })
 public class IFileItFldr extends PluginForDecrypt {
 
     public IFileItFldr(PluginWrapper wrapper) {
@@ -38,9 +38,9 @@ public class IFileItFldr extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("ifile.it/", "filecloud.io/");
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>(.*?)\\| ifile\\.it</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?)\\| filecloud\\.io</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<legend>(.*?)</legend>").getMatch(0);
         String[] linkinformation = br.getRegex("<tr class=\"context_row\" id=\"row.*?\">(.*?)</tr>").getColumn(0);
         boolean fail = false;

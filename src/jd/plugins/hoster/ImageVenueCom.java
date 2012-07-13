@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://[\\w\\.]*?img[0-9]+\\.imagevenue\\.com/img\\.php.*?image={1,300}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "http://(www\\.)?img[0-9]+\\.imagevenue\\.com/img\\.php\\?image=.{4,300}" }, flags = { 0 })
 public class ImageVenueCom extends PluginForHost {
 
     public ImageVenueCom(PluginWrapper wrapper) {
