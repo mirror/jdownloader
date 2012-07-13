@@ -1,7 +1,11 @@
+JDGui_windowClosing_try_asnwer_close=Выход с JDownloader
+JDGui_windowClosing_try_title_=Закрывать в трей
+OnCloseAction_totray=Закрывать в трей
+OnMinimizeAction_ask=Спросить
+OnMinimizeAction_totray=Закрывать в трей
 jd_plugins_optional_jdtrayicon_jdlighttray=Настройки Трея
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Позволяет сворачивание или закрытие JD в область уведомлений, а так-же другие функции (защита паролем и др.)
 plugins_optional_JDLightTray_always=Всегда
-plugins_optional_JDLightTray_closetotray=Закрывать в трей
 plugins_optional_JDLightTray_linkgrabberresults=Развернуть главное окно, если были добавлены новые ссылки
 plugins_optional_JDLightTray_minimized=Только если главное окно свёрнуто
 plugins_optional_JDLightTray_never=Никогда
