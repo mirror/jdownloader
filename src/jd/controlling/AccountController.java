@@ -213,7 +213,6 @@ public class AccountController implements AccountControllerListener {
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
             } else if (!account.isValid()) {
                 account.setEnabled(false);
-                logger.clear();
                 LogController.CL().info("Account " + whoAmI + " is invalid!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
             } else {
