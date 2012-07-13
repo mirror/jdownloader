@@ -25,12 +25,12 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 
 import jd.Launcher;
-import jd.parser.Regex;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -58,8 +58,46 @@ public class LogAction extends AppAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
+
+        final ProgressDialog p = new ProgressDialog(new ProgressGetter() {
+            private int total;
+            private int current;
+
+            @Override
+            public int getProgress() {
+                return -1;
+
+            }
+
+            @Override
+            public String getString() {
+                return _GUI._.LogAction_getString_uploading_();
+            }
+
+            @Override
+            public void run() throws Exception {
+                create();
+            }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
+        }, Dialog.BUTTONS_HIDE_OK, _GUI._.LogAction_actionPerformed_zip_title_(), _GUI._.LogAction_actionPerformed_wait_(), null, null, null);
+
+        try {
+            Dialog.getInstance().showDialog(p);
+        } catch (Throwable e1) {
+
+        }
+
+    }
+
+    protected void create() {
+
         File[] logs = Application.getResource("logs").listFiles();
-        ArrayList<LogFolder> folders = new ArrayList<LogFolder>();
+        final ArrayList<LogFolder> folders = new ArrayList<LogFolder>();
+
         LogFolder latest = null;
 
         if (logs != null) {

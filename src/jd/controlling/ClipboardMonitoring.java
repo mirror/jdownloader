@@ -21,6 +21,7 @@ import jd.controlling.linkcollector.LinkCollector;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
@@ -180,6 +181,7 @@ public class ClipboardMonitoring {
                             LinkCollector.getInstance().addCrawlerJob(job);
                         }
                     } catch (final Throwable e) {
+                        Log.exception(e);
                     }
                 }
             }

@@ -782,7 +782,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         /* set values */
         ret.setName(pkg.getName());
         /* FilePackage contains full absolute path! */
+
         ret.setDownloadDirectory(LinkTreeUtils.getDownloadDirectory(pkg).toString());
+
         ret.setCreated(pkg.getCreated());
         ret.setExpanded(pkg.isExpanded());
         ret.setComment(pkg.getComment());

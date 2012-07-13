@@ -35,6 +35,10 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     }
 
+    public String toString() {
+        return filePath + " Complete " + isComplete() + " valid: " + isValid() + " exists: " + exists();
+    }
+
     @Override
     public int hashCode() {
         return downloadLinks.hashCode();

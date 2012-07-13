@@ -277,8 +277,8 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         }
         for (Archive archive : archives) {
             if (archive.contains(link)) {
-
-            return archive;
+                logger.info("Found Archive: " + archive);
+                return archive;
 
             }
         }
