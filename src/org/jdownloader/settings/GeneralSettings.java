@@ -374,4 +374,11 @@ public interface GeneralSettings extends ConfigInterface {
 
     void setFreeSpaceCheckEnabled(boolean b);
 
+    @AboutConfig
+    @Description("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
+    @DefaultIntValue(0)
+    int getSubfolderThreshold();
+
+    void setSubfolderThreshold(int i);
+
 }

@@ -19,7 +19,7 @@ public class TrayConfigPanel extends ExtensionConfigPanel<TrayExtension> {
         addPair(T._.plugins_optional_JDLightTray_closetotray2(), null, new ComboBox<OnCloseAction>(keyHandler, new OnCloseAction[] { OnCloseAction.ASK, OnCloseAction.TO_TRAY, OnCloseAction.TO_TASKBAR, OnCloseAction.EXIT }, new String[] { OnCloseAction.ASK.getTranslation(), OnCloseAction.TO_TRAY.getTranslation(), OnCloseAction.TO_TASKBAR.getTranslation(), OnCloseAction.EXIT.getTranslation() }));
 
         KeyHandler<OnMinimizeAction> keyHandler2 = (KeyHandler<OnMinimizeAction>) CFG_TRAY_CONFIG.SH.getKeyHandler("OnMinimizeAction", KeyHandler.class);
-        addPair(T._.plugins_optional_JDLightTray_minimizetotray(), null, new ComboBox<OnMinimizeAction>(keyHandler2, new OnMinimizeAction[] { OnMinimizeAction.ASK, OnMinimizeAction.TO_TRAY, OnMinimizeAction.TO_TASKBAR }, new String[] { OnMinimizeAction.ASK.getTranslation(), OnMinimizeAction.TO_TRAY.getTranslation(), OnMinimizeAction.TO_TASKBAR.getTranslation() }));
+        addPair(T._.plugins_optional_JDLightTray_minimizetotray(), null, new ComboBox<OnMinimizeAction>(keyHandler2, new OnMinimizeAction[] { OnMinimizeAction.TO_TRAY, OnMinimizeAction.TO_TASKBAR }, new String[] { OnMinimizeAction.TO_TRAY.getTranslation(), OnMinimizeAction.TO_TASKBAR.getTranslation() }));
         addPair(T._.plugins_optional_JDLightTray_startMinimized(), null, new Checkbox(CFG_TRAY_CONFIG.START_MINIMIZED_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_singleClick(), null, new Checkbox(CFG_TRAY_CONFIG.TOOGLE_WINDOW_STATUS_WITH_SINGLE_CLICK_ENABLED));
         addPair(T._.plugins_optional_JDLightTray_tooltip(), null, new Checkbox(CFG_TRAY_CONFIG.TOOL_TIP_ENABLED));

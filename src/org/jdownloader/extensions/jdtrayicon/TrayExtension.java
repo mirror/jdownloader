@@ -522,62 +522,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             iconified = true;
 
             switch (getSettings().getOnMinimizeAction()) {
-            case ASK:
 
-                final OnMinimizeAction[] ret = new OnMinimizeAction[1];
-                ret[0] = null;
-                final ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL | Dialog.LOGIC_DONT_SHOW_AGAIN_IGNORES_OK | Dialog.BUTTONS_HIDE_OK, _.minimized_ask(), _.minimize_options(), NewTheme.I().getIcon("exit", 32), _.JDGui_windowClosing_try_asnwer_close(), null);
-                asking = true;
-                try {
-
-                    d.setLeftActions(new AppAction() {
-                        {
-                            setName(_.JDGui_windowClosing_try_answer_totaskbar());
-                        }
-
-                        @Override
-                        public void actionPerformed(ActionEvent e1) {
-                            ret[0] = OnMinimizeAction.TO_TASKBAR;
-                            d.dispose();
-
-                        }
-                    }, new AppAction() {
-                        {
-                            setName(_.JDGui_windowClosing_try_answer_tray());
-                            setEnabled(SystemTray.isSupported());
-                        }
-
-                        @Override
-                        public void actionPerformed(ActionEvent e1) {
-
-                            ret[0] = OnMinimizeAction.TO_TRAY;
-                            d.dispose();
-                        }
-                    });
-                    Dialog.I().showDialog(d);
-
-                } catch (DialogNoAnswerException e1) {
-                    Log.exception(e1);
-                } finally {
-                    asking = false;
-                }
-                if (d.isDontShowAgainSelected() && ret[0] != null) {
-                    getSettings().setOnMinimizeAction(ret[0]);
-                }
-                if (ret[0] != null) {
-                    switch (ret[0]) {
-                    case TO_TASKBAR:
-                        return;
-                    case TO_TRAY:
-                        // let's hope that this does not flicker. works fine for win7
-
-                        miniIt(true);
-                        JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
-                    }
-                } else {
-                    JDGui.getInstance().getMainFrame().setExtendedState(JFrame.NORMAL);
-
-                }
             case TO_TASKBAR:
                 return;
             case TO_TRAY:
@@ -698,7 +643,9 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                         }
                     }
                 case EXIT:
+                    if (!CrossSystem.isMac()) ShutdownController.getInstance().removeShutdownVetoListener(RlyExitListener.getInstance());
 
+                    break main;
                 case TO_TASKBAR:
                     JDGui.getInstance().getMainFrame().setExtendedState(JFrame.ICONIFIED);
                     return;

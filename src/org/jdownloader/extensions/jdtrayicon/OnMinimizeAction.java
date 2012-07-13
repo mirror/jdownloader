@@ -4,8 +4,7 @@ import org.jdownloader.extensions.jdtrayicon.translate.T;
 
 public enum OnMinimizeAction {
     TO_TRAY(T._.OnMinimizeAction_totray()),
-    TO_TASKBAR(T._.OnMinimizeAction_totaskbar()),
-    ASK(T._.OnMinimizeAction_ask());
+    TO_TASKBAR(T._.OnMinimizeAction_totaskbar());
 
     private String translation;
 
