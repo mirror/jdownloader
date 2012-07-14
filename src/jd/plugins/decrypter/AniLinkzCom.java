@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get|img|dsa).+/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anilinkz.com" }, urls = { "http://[\\w\\.]*?anilinkz\\.com/(?!get|img|dsa|series).+/.+" }, flags = { 0 })
 public class AniLinkzCom extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORTED_HOSTER         = Pattern.compile("(youtube\\.com|veoh\\.com)", Pattern.CASE_INSENSITIVE);
@@ -49,6 +49,10 @@ public class AniLinkzCom extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getHeaders().put("Referer", null);
         br.getPage(parameter);
+        if (br.containsHTML(">Page Not Found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final Browser br2 = br.cloneBrowser();
         // set filepackage
         final String filepackage = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
@@ -68,9 +72,7 @@ public class AniLinkzCom extends PluginForDecrypt {
         String[] dllinks;
         String mirror = null;
         // get dllinks
-        progress.setRange(mirrorCount);
         for (int i = 0; i <= mirrorCount; i++) {
-            progress.increase(1);
             String escapeAll = br.getRegex("escapeall\\('(.*)'\\)\\)\\);").getMatch(0);
             if (escapeAll != null) {
                 escapeAll = escapeAll.replaceAll("[A-Z~!@#\\$\\*\\{\\}\\[\\]\\-\\+\\.]?", "");
