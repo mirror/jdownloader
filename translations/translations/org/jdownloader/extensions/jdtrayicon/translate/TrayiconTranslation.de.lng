@@ -1,7 +1,15 @@
+JDGui_windowClosing_try_answer_totaskbar=Zur Taskleiste minimieren
+JDGui_windowClosing_try_answer_tray=Im Tray verstecken
+JDGui_windowClosing_try_asnwer_close=JDownloader beenden
+JDGui_windowClosing_try_msg_2=Bitte wähle zwischen\n  - JDownloader beenden (Alle laufenden Prozesse werden beendet)\n  - Zur Taskleiste minimieren (Downloads werden fortgesetzt)\n  - Im System Tray verstecken (Downloads laufen im Hintergrund weiter)
+OnCloseAction_exit=Programm beenden
+OnMinimizeAction_ask=Frag mich
+OnMinimizeAction_totaskbar=Zur Taskleiste minimieren
 jd_plugins_optional_jdtrayicon_jdlighttray=Tray
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Ermöglicht es JDownloader in den Tray (Rechts unten bei der Uhr) zu legen. Über ein Trayicon können die wichtigsten Funktionen weiterhin erreicht werden.
+minimize_options=Bitte wähle zwischen    - In die Tasktbar minimieren    - Im System Tray verstecken
+minimized_ask=JDownloader minimieren!
 plugins_optional_JDLightTray_always=Immer
-plugins_optional_JDLightTray_closetotray=In den Tray minimieren
 plugins_optional_JDLightTray_linkgrabberresults=Hauptfenster zeigen wenn neue Links gesammelt wurden
 plugins_optional_JDLightTray_minimized=Nur wenn das Hauptfenster minimiert ist
 plugins_optional_JDLightTray_never=Nie
