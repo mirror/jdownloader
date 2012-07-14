@@ -1060,7 +1060,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://linkcrypt.ws/dir/" + containerId);
-        if (br.containsHTML("<h1>Folder not avialable\\!</h1>") && br.containsHTML("linkcrypt\\.ws/image/Warning\\.png")) {
+        if (br.containsHTML("<div id=\"content\"><center>(\r\n|\n)<img src=\"http://linkcrypt\\.ws/image/Warning\\.png\"/>(\r\n|\n)<h1>Folder not avialable!</h1>")) {
             logger.info("This link might be offline: " + parameter);
             final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
             if (additional != null) {
