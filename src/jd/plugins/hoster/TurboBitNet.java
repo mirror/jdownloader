@@ -367,7 +367,7 @@ public class TurboBitNet extends PluginForHost {
             if (downloadUrl == null) {
                 downloadUrl = br.getRegex("(/download/redirect/[0-9A-F]{32}/" + dllink.replaceAll(MAINPAGE, "") + ")").getMatch(0);
                 if (downloadUrl == null) {
-                    downloadUrl = br.getRegex("<a href=\'([^\']+ id=)").getMatch(0);
+                    downloadUrl = br.getRegex("<a href=\'([^\']+)").getMatch(0);
                 }
             }
         }

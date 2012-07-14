@@ -91,6 +91,7 @@ public class UniBytesCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
+            dllink = dllink == null ? br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0) : dllink;
             if (dllink == null) {
                 if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
                 int iwait = 60;
