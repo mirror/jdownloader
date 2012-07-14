@@ -41,7 +41,15 @@ public class XHamsterCom extends PluginForHost {
     }
 
     public String getDllink() throws IOException, PluginException {
-        final String dllink = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+        String dllink = null;
+        String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
+        String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
+        if (server != null && file != null) {
+            // Examplelink (ID): 986043
+            dllink = server + "/key=" + file;
+        } else {
+            dllink = file;
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return Encoding.htmlDecode(dllink);
     }
@@ -56,7 +64,7 @@ public class XHamsterCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Video Not found|403 Forbidden)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(Video Not found|403 Forbidden|>This video was deleted<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- xHamster\\.com</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta name=\"description\" content=\"(.*?)\"").getMatch(0);

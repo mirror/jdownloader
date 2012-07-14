@@ -116,7 +116,8 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report anything else
+                     * append fake filename , because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -185,7 +186,7 @@ public class UploadingCom extends PluginForHost {
         ai.setStatus("Premium Membership");
         String validUntil = br.getRegex("Valid Until</label>[\n\r\t ]+<span>([^<>]+)").getMatch(0);
         if (validUntil != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMM dd yyyy", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil.trim(), "MMMM dd,yyyy", null));
         } else {
             // not sure about this (old not tested)
             if (br.containsHTML("<span>Lifetime membership</")) {
@@ -443,7 +444,7 @@ public class UploadingCom extends PluginForHost {
             // this needs to be checked
             if (br.containsHTML("UPGRADE TO PREMIUM")) {
                 isPremium = false;
-            } else if (br.containsHTML("Subscription</label> <span>Premium</span>")) {
+            } else if (br.containsHTML("Subscription</label>[\t\n\r ]+<span>Premium</span></li>")) {
                 isPremium = true;
             } else {
                 isPremium = false;
@@ -453,7 +454,8 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController
+     * handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override
@@ -500,7 +502,7 @@ public class UploadingCom extends PluginForHost {
                 }
                 // end of previously used cookies //
                 br.getPage(MAINPAGE);
-                if (br.containsHTML("uploading\\.com/signout/\">Logout</a>")) {
+                if (br.containsHTML("href=\"http://uploading.com/signout\">Logout</a>")) {
                     // you're already logged in dopey, current cookies are fine.
                     return;
                 }

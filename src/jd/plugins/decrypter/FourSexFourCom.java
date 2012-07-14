@@ -61,6 +61,24 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("fucking8\\.com/includes/player/\\?video=xv(\\d+)\"").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + tempID));
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + tempID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        // Filename needed for all sites below
         String filename = br.getRegex("<title>(.*?) \\- 4sex4\\.com</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
@@ -79,21 +97,27 @@ public class FourSexFourCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("xvideos\\.com/embedframe/(\\d+)").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("fucking8\\.com/includes/player/\\?video=xv(\\d+)\"").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("\\?video=xv(\\d+)\\'").getMatch(0);
+        tempID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
         if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + tempID));
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://slutload.com/watch/" + tempID));
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + tempID + "/" + System.currentTimeMillis() + ".html"));
+            br.getPage(Encoding.htmlDecode(tempID));
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                logger.warning("FourSexFourCom -> youporn link invalid, please check browser to confirm: " + parameter);
+                return null;
+            }
+            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+                logger.info("Link broken or offline: " + parameter);
+                return decryptedLinks;
+            }
+            String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
+            if (type == null) type = "flv";
+            dl.setFinalFileName(filename + "." + type);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         if (tempID == null) {
