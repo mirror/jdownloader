@@ -336,14 +336,14 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -437,7 +437,7 @@ public class DdlStorageCom extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         /** Wait time reconnect handling */
-        if (correctedBR.contains(">You have reached the download\\-limit:")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (correctedBR.contains(">You have reached the download-limit:")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         // adjust this regex to catch the wait time string for COOKIE_HOST
         if (correctedBR.contains("You have to wait")) {
             /** TODO: Improve those regexes */
