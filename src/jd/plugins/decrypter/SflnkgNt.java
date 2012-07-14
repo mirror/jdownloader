@@ -138,6 +138,11 @@ public class SflnkgNt extends PluginForDecrypt {
             captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
             captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/papi");
 
+            /* cleanup html source */
+            String cleanUp = br.toString();
+            cleanUp = cleanUp.replaceAll("<div class=\"hidden dialog\" title=\"Register on Safelinking\".*?</div>", "");
+            br.getRequest().setHtmlCode(cleanUp);
+
             for (Entry<String, String> next : captchaRegex.entrySet()) {
                 if (br.containsHTML(next.getValue())) {
                     cType = next.getKey();
@@ -151,7 +156,9 @@ public class SflnkgNt extends PluginForDecrypt {
                 if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
                     data += "&link-password=" + getUserInput(null, param);
                 }
-                Browser captchaBr = br.cloneBrowser();
+
+                Browser captchaBr = null;
+                if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
 
                 switch (CaptchaTyp.valueOf(cType)) {
                 case recaptcha:
@@ -171,9 +178,6 @@ public class SflnkgNt extends PluginForDecrypt {
                 case fancy:
                     captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
-                    // captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=registered&sid="
-                    // + new Regex(br,
-                    // "includes/captcha_factory/securimage/securimage_register\\.php\\?hash=[^\"]+sid=([a-z0-9]{32}))").getMatch(0));
                     data += "&fancy-captcha=" + captchaBr.toString().trim();
                     break;
                 case qaptcha:
@@ -212,12 +216,12 @@ public class SflnkgNt extends PluginForDecrypt {
                     if (br.getHttpConnection().getResponseCode() == 500) logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
                 }
 
-                if (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT) || br.containsHTML("<strong>Prove you are human</strong>")) {
+                if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT) || br.containsHTML("<strong>Prove you are human</strong>")) {
                     continue;
                 }
                 break;
             }
-            if (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             if (br.containsHTML(PASSWORDPROTECTEDTEXT)) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (br.containsHTML(">All links are dead\\.<|>Links dead<")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
             // container handling (if no containers found, use webprotection
