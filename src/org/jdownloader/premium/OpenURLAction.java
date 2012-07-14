@@ -35,6 +35,6 @@ public class OpenURLAction extends AppAction {
             LogController.CL().log(e2);
         }
         if (StringUtils.isEmpty(url)) url = info.getTld();
-        CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(info.getTld(), id));
+        CrossSystem.openURLOrShowMessage(AccountController.createFullBuyPremiumUrl(url, id));
     }
 }
