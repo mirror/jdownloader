@@ -79,12 +79,13 @@ public class EltrecetvComAr extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
         String filename = br.getRegex("<title>(.*?) \\|.*?</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\\s+<h1>(.*?)</h1>").getMatch(0);
         }
-        final String id = new Regex(downloadLink.getDownloadURL(), ".*?/(\\d+)/.*?").getMatch(0);
+        String id = new Regex(dllink, "/(\\d+)/[^/]+$").getMatch(0);
         br.getPage("http://www.eltrecetv.com.ar/playlist/" + id);
         String streamer = br.getRegex("<jwplayer:streamer>(rtmp.*?)</jwplayer:streamer>").getMatch(0);
         String playpath = br.getRegex("<media:content bitrate=\"\\d+\" url=\"([^\"]+)").getMatch(0);
