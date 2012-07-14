@@ -1,5 +1,5 @@
 gui_config_antistandby_mode=Način
-gui_config_antistandby_whiledl=Nedozvoljava pripravnost računala kod preuzimanja
-gui_config_antistandby_whilejd=Nedozvoljava pripravnost računala dok je JD pokrenut
+gui_config_antistandby_whiledl=Kod preuzimanja nedozvoljava računalu da ide u pripravnost
+gui_config_antistandby_whilejd=Dok je JD pokrenut nedozvoljava računalu da ide u pripravnost
 jd_plugins_optional_antistandby_jdantistandby=Anti StandBy
 jd_plugins_optional_antistandby_jdantistandby_description=Jednostavno nedozvoljava vašem računalu da ide u stanje pripravnosti ili mirovanja kako bi preuzimanja zadržao aktivnima.
