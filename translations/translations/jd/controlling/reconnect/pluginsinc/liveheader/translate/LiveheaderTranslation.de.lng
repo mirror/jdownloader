@@ -81,6 +81,6 @@ jd_router_reconnectrecorder_Gui_icon_good=Wiederverbinden erfolgreich aufgezeich
 jd_router_reconnectrecorder_Gui_icon_progress=Reconnect wird aufgenommen
 literally_password=Passwort
 literally_router_ip=Router IP
-literally_router_model=Rouder Model
+literally_router_model=Router Model
 literally_username=Benutzername
 logins_required=Es scheint als benötige der Router LogIn Inforationen um einen Reconnect durchführen zu können. Bitte gib den Benutzernamen und das Passwort für das Routerwebinterface ein
