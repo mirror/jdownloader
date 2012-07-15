@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com/(en/|\\?)[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "axifile.com" }, urls = { "http://(www\\.)?axifile\\.com/(en/|\\?)(?!soft|contact|login|partners|register|rules|service|down)[A-Z0-9]+" }, flags = { 0 })
 public class AxiFileCom extends PluginForHost {
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
@@ -73,6 +73,22 @@ public class AxiFileCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
+        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        // Hoster tags filenames, set correct name here
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -173,21 +189,6 @@ public class AxiFileCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        downloadLink.setName(filename.trim());
-        return AvailableStatus.TRUE;
     }
 
     @Override

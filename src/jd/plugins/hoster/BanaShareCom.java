@@ -53,6 +53,53 @@ public class BanaShareCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (br.containsHTML("You have reached the download-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (new Regex(brbefore, "(No such file|No such user exist|File not found)").matches()) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(brbefore, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
+                        if (filename == null) {
+                            filename = new Regex(brbefore, "<div id=\"file_name\">(.*?)</div>").getMatch(0);
+                        }
+                    }
+                }
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) {
+            filesize = new Regex(brbefore, "</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
+            if (filesize == null) {
+                filesize = new Regex(brbefore, "href=\"http://banashare\\.com/[a-z0-9]{12}/" + filename + "\\.html\">" + filename + " - (.*?)</a>").getMatch(0);
+            }
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     public void doSomething() throws NumberFormatException, PluginException {
         brbefore = br.toString();
         ArrayList<String> someStuff = new ArrayList<String>();
@@ -486,53 +533,6 @@ public class BanaShareCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (!brbefore.contains("Premium-Account expire")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (brbefore.contains("(No such file|No such user exist|File not found)")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(brbefore, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(brbefore, "<div id=\"file_name\">(.*?)</div>").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(brbefore, "</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(brbefore, "href=\"http://banashare\\.com/[a-z0-9]{12}/" + filename + "\\.html\">" + filename + " - (.*?)</a>").getMatch(0);
-            }
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
-        if (filesize != null) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

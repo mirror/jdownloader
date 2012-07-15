@@ -58,6 +58,11 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(decrypted));
             return decryptedLinks;
         }
+        externalID = br.getRegex("\"http://(www\\.)?cyberporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externalID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.cyberporn.com/video/" + externalID));
+            return decryptedLinks;
+        }
         externalID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
         if (externalID != null) {
             if (filename == null) {

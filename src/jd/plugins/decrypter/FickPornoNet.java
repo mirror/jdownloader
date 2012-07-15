@@ -71,7 +71,7 @@ public class FickPornoNet extends PluginForDecrypt {
                 return null;
             }
             if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
-                logger.info("Link broken or offline: " + parameter);
+                logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
@@ -86,7 +86,7 @@ public class FickPornoNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("holyxxx\\.com/")) {
+        if (br.containsHTML("(holyxxx\\.com/|name=\"movie\" value=\"http://(www\\.)?pornotube\\.com/player/)")) {
             logger.info("This link is probably broken: " + parameter);
             return decryptedLinks;
         }

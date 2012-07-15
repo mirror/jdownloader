@@ -92,7 +92,7 @@ public class ShufuniCom extends PluginForHost {
                 downloadLink.setFinalFileName(filename);
             }
         } else {
-            if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for|The page you are looking for is not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\- Free Porn Video[\t\n\r ]+</title>").getMatch(0);

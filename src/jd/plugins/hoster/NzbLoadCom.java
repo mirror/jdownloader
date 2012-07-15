@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzbload.com" }, urls = { "http://(www\\.)?nzbload\\.com/en/download/[a-z0-9]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzbload.com" }, urls = { "http://(www\\.)?nzbloaddecrypted\\.com/en/download/[a-z0-9]+/\\d+" }, flags = { 0 })
 public class NzbLoadCom extends PluginForHost {
 
     public NzbLoadCom(PluginWrapper wrapper) {
@@ -43,6 +43,10 @@ public class NzbLoadCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.nzbload.com/en/legal/terms-of-service";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("nzbloaddecrypted.com/", "nzbload.com/"));
     }
 
     @Override
@@ -72,6 +76,7 @@ public class NzbLoadCom extends PluginForHost {
         final String rcID = br2.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
         if (rcID == null || sleep == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=start-download&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2));
+        if (br.containsHTML("Free users can download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
         final String expiry = get("expiry");
         final String hash = get("hash");
         if (expiry == null || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

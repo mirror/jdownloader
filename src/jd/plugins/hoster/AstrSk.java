@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "astr.sk" }, urls = { "http://(www\\.)?(mojedata|astr)\\.sk/[A-Za-z0-9_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojedata.sk", "astr.sk" }, urls = { "http://(www\\.)?(mojedata|astr)\\.sk/[A-Za-z0-9_]+", "fhidveirhjndDELETEMErrh375ohfvn3fduibvknr" }, flags = { 0, 0 })
 public class AstrSk extends PluginForHost {
 
     public AstrSk(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class AstrSk extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // english version (astr) is offline, revert too mojedata
-        link.setUrlDownload(link.getDownloadURL().replace("astr.sk", "mojedata.sk"));
+        link.setUrlDownload(link.getDownloadURL().replace("astr.sk/", "mojedata.sk/"));
     }
 
     @Override
@@ -49,20 +49,6 @@ public class AstrSk extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        br.setFollowRedirects(true);
-        Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -83,6 +69,21 @@ public class AstrSk extends PluginForHost {
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(">If you reside outside of Slovakia, Czech Republic or the USA you will have to")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
+        br.setFollowRedirects(true);
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

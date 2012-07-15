@@ -61,8 +61,10 @@ public class MediafireCom extends PluginForHost {
     static {
         // Internet Explorer
         // release:
-        // ie9: "Stable release    9.0.7 / April 11, 2012; 2 months ago" http://en.wikipedia.org/wiki/Internet_Explorer_9
-        // ie10: "Preview release 10.0.8400.0 / May 31, 2012; 40 days ago" http://en.wikipedia.org/wiki/Internet_Explorer_10
+        // ie9: "Stable release    9.0.7 / April 11, 2012; 2 months ago"
+        // http://en.wikipedia.org/wiki/Internet_Explorer_9
+        // ie10: "Preview release 10.0.8400.0 / May 31, 2012; 40 days ago"
+        // http://en.wikipedia.org/wiki/Internet_Explorer_10
         // notes: only version 9 and 10
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; Win64; x64; Trident/6.0)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.2; WOW64; Trident/6.0)");
@@ -100,7 +102,8 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; NP06)");
         stringAgent.add("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0; NP08; MAAU; NP08)");
         // chrome
-        // release: "Stable release  20.0.1132.47  (June 28, 2012; 12 days ago)" http://en.wikipedia.org/wiki/Google_Chrome
+        // release: "Stable release  20.0.1132.47  (June 28, 2012; 12 days ago)"
+        // http://en.wikipedia.org/wiki/Google_Chrome
         // notes: only allow the last 18-2x releases
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19");
         stringAgent.add("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.162 Safari/535.19");
@@ -318,7 +321,8 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.52 Safari/536.5");
         stringAgent.add("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.56 Safari/536.5");
         // firefox
-        // stable: "Stable release  13.0.1  (June 15, 2012; 25 days ago)" http://en.wikipedia.org/wiki/Firefox
+        // stable: "Stable release  13.0.1  (June 15, 2012; 25 days ago)"
+        // http://en.wikipedia.org/wiki/Firefox
         // notes: 2011-present based on Gecko date
         stringAgent.add("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.8; en-GB; rv:1.9.2.28) Gecko/20120306 Firefox/3.6.28");
         stringAgent.add("Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.27) Gecko/20120216 Firefox/3.6.27");
@@ -370,11 +374,13 @@ public class MediafireCom extends PluginForHost {
         stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.17) Gecko/20110422 Ubuntu/8.04 (hardy) Firefox/3.6.17");
         stringAgent.add("Mozilla/5.0 (X11; U; Linux x86_64; en-US; rv:1.9.2.26) Gecko/20120216 Red Hat/3.6.26-1.el6_2 Firefox/3.6.26");
         // safari
-        // release: "Stable release  5.1.7  (May 9, 2012; 61 days ago)" http://en.wikipedia.org/wiki/Safari_(web_browser)
+        // release: "Stable release  5.1.7  (May 9, 2012; 61 days ago)"
+        // http://en.wikipedia.org/wiki/Safari_(web_browser)
         // notes: not sure on safari...
 
         // opera
-        // release: "Stable release  12.00  (June 14, 2012; 25 days ago)" http://en.wikipedia.org/wiki/Opera_(web_browser)
+        // release: "Stable release  12.00  (June 14, 2012; 25 days ago)"
+        // http://en.wikipedia.org/wiki/Opera_(web_browser)
         // notes: 11.64-12.x (present)
         stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.229 Version/11.64");
         stringAgent.add("Opera/9.80 (Windows NT 5.1; U; en) Presto/2.10.289 Version/12.00");
@@ -390,10 +396,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array.
+     * This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release
+     * dates are valid.
      * 
-     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @return eg.
+     *         "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
         final Random rand = new Random();
@@ -458,10 +467,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified
+     * array. This array contains current user agents gathered from httpd access
+     * logs. Benefits over RandomUserAgent.* are: versions and respective
+     * release dates are valid.
      * 
-     * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
+     * @return eg.
+     *         "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
         final Random rand = new Random();
@@ -539,7 +551,8 @@ public class MediafireCom extends PluginForHost {
     /** The name of the error page used by MediaFire */
     private static final String ERROR_PAGE        = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is available
+     * The number of retries to be performed in order to determine if a file is
+     * available
      */
     private static final int    NUMBER_OF_RETRIES = 3;
 
@@ -631,7 +644,7 @@ public class MediafireCom extends PluginForHost {
         String url = null;
         this.br.setDebug(true);
         boolean captchaCorrect = false;
-        this.br.getHeaders().put("User-Agent", MediafireCom.agent);
+        if (account == null) this.br.getHeaders().put("User-Agent", MediafireCom.agent);
         for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
             if (url != null) {
                 break;
@@ -952,7 +965,11 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
-        this.setBrowserExclusive();
+        /**
+         * Don't delete cookies as the user might uses a free account to
+         * download
+         */
+        // this.setBrowserExclusive();
         this.br.setFollowRedirects(false);
         br.forceDebug(true);
         downloadLink.setProperty("type", "");

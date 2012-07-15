@@ -49,6 +49,67 @@ public class Tube8Com extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        if (setEx) this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null || br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);
+        if (verifyAge != null) {
+            br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
+        }
+        String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
+            }
+        }
+        Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final String hash = br.getRegex("var hash = \"([a-z0-9]+)\"").getMatch(0);
+        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?_=" + System.currentTimeMillis() + "&hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0));
+        final String correctedBR = br2.toString().replace("\\", "");
+        boolean prefer3gp = getPluginConfig().getBooleanProperty(mobile, false);
+        if (prefer3gp) {
+            find3gpLinks(correctedBR);
+            if (dllink == null) {
+                logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
+                findNormalLinks(correctedBR);
+            }
+        } else {
+            findNormalLinks(correctedBR);
+            if (dllink == null) {
+                logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
+                find3gpLinks(correctedBR);
+            }
+        }
+        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = Encoding.htmlDecode(dllink);
+        filename = filename.trim();
+        if (dllink.contains(".3gp")) {
+            downloadLink.setFinalFileName((filename + ".3gp"));
+        } else {
+            downloadLink.setFinalFileName(filename + ".flv");
+        }
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(Encoding.htmlDecode(dllink));
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         try {
@@ -120,67 +181,6 @@ public class Tube8Com extends PluginForHost {
             if (br.containsHTML("invalid") || br.containsHTML("0\\|")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         } finally {
             br.setFollowRedirects(follow);
-        }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        if (setEx) this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String verifyAge = br.getRegex("(<div class=\"enter\\-btn\">)").getMatch(0);
-        if (verifyAge != null) {
-            br.postPage(downloadLink.getDownloadURL(), "processdisclaimer=");
-        }
-        String filename = br.getRegex("<title>(.*?) \\- ").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("var videotitle=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
-            }
-        }
-        Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        final String hash = br.getRegex("var hash = \"([a-z0-9]+)\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?_=" + System.currentTimeMillis() + "&hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0));
-        final String correctedBR = br2.toString().replace("\\", "");
-        boolean prefer3gp = getPluginConfig().getBooleanProperty(mobile, false);
-        if (prefer3gp) {
-            find3gpLinks(correctedBR);
-            if (dllink == null) {
-                logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
-                findNormalLinks(correctedBR);
-            }
-        } else {
-            findNormalLinks(correctedBR);
-            if (dllink == null) {
-                logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
-                find3gpLinks(correctedBR);
-            }
-        }
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        if (dllink.contains(".3gp")) {
-            downloadLink.setFinalFileName((filename + ".3gp"));
-        } else {
-            downloadLink.setFinalFileName(filename + ".flv");
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(Encoding.htmlDecode(dllink));
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
         }
     }
 
