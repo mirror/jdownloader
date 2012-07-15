@@ -1,5 +1,5 @@
 JDGui_windowClosing_try_answer_totaskbar=Riduci nella barra delle applicazioni
-JDGui_windowClosing_try_answer_tray=Nascondi nel tray
+JDGui_windowClosing_try_answer_tray=Nascondi nella barra di sistema
 JDGui_windowClosing_try_asnwer_close=Esci da JDownloader
 JDGui_windowClosing_try_msg_2=Scegli una delle opzioni\n  - Esci da JDownloader (Interrompi ogni processo in corso)\n  - Riduci a icona (I download resteranno attivi)\n  - Nascondi nella barra delle applicazioni (I download resteranno attivi in background)
 JDGui_windowClosing_try_title_=Chiudi nel tray
