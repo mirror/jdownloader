@@ -1,3 +1,5 @@
+ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title=サポートされないアーカイブ
+ValidateArchiveAction_ValidateArchiveAction_multi=アーカイブの検証
 ValidateArchiveAction_actionPerformed_=アーカイブは %s1 個に分割され、全て完了済みです
 ValidateArchiveAction_actionPerformed_bad=アーカイブは %s1 個に分割され、不完了です
 archivename=アーカイブ名
