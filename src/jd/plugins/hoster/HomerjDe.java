@@ -17,6 +17,10 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -24,11 +28,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homerj.de" }, urls = { "http://(www\\.)?homerj\\.de/index\\.php\\?show=vods\\&play=\\d+\\&res=\\d+p" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "homerj.de" }, urls = { "http://(www\\.)?homerj\\.de/index\\.php\\?show=vods\\&play=\\d+(\\&res=\\d+p)?" }, flags = { 0 })
 public class HomerjDe extends PluginForHost {
 
-    private String clipUrl              = null;
-    private String clipNetConnectionUrl = null;
+    private String DLLINK = null;
 
     public HomerjDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -47,36 +50,67 @@ public class HomerjDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String dllink = clipNetConnectionUrl + "/" + clipUrl;
-
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            rtmp.setPlayPath(clipUrl);
-            rtmp.setUrl(clipNetConnectionUrl);
-            rtmp.setTimeOut(-1);
-            rtmp.setResume(true);
-
-            ((RTMPDownload) dl).startDownload();
-        } else {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String res = checkResolution();
+        if (res != null) br.getPage(downloadLink.getDownloadURL() + "&res=" + res);
+        String filename = br.getRegex("<title>HomerJ.de \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<meta name=\"PAGE-TOPIC\" content=\"(.*?)\">").getMatch(0);
+            filename = br.getRegex("<meta name=\"PAGE\\-TOPIC\" content=\"(.*?)\">").getMatch(0);
         }
-        clipUrl = br.getRegex("url: \'(.*?)\'").getMatch(0);
-        clipNetConnectionUrl = br.getRegex("netConnectionUrl: \'(.*?)\'").getMatch(0);
-        if (filename == null || clipUrl == null || clipNetConnectionUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        downloadLink.setFinalFileName(filename.trim() + ".flv");
-        return AvailableStatus.TRUE;
+        String content = br.getRegex("pseudo_VodPlayer\\((.*)\\)\\);").getMatch(0);
+        if (content == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        String tmpDllink = null;
+        for (String s : new Regex(content, "base64_decode\\(\'(.*?)\'\\)").getColumn(0)) {
+            tmpDllink = Encoding.Base64Decode(s);
+            if (tmpDllink.startsWith("http") && tmpDllink.matches("http://vods\\d+\\.fr\\.ovh\\.homerj\\.de(:80)?/vods_homerj/[0-9a-f]+/[0-9a-f]+/[0-9a-f]+\\.mp4")) {
+                DLLINK = tmpDllink;
+            }
+        }
+
+        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setFinalFileName(filename.trim() + "(" + res + ").mp4");
+        final Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        try {
+            br2.doNotFilterMultibleSlashs(true);
+        } catch (Throwable e) {
+            /* does not exist in 09581 */
+        }
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(DLLINK);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+    }
+
+    private String checkResolution() {
+        String[] res = { "1080p", "720p", "480p", "360p", "240p" };
+        for (String r : res) {
+            if (br.getRegex("res=" + r).matches()) return r;
+        }
+        return null;
     }
 
     @Override
@@ -90,4 +124,5 @@ public class HomerjDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
