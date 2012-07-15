@@ -62,7 +62,7 @@ public class HomerjDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String res = checkResolution();
+        String res = getHighestResolution();
         if (res != null) br.getPage(downloadLink.getDownloadURL() + "&res=" + res);
         String filename = br.getRegex("<title>HomerJ.de \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
@@ -83,11 +83,6 @@ public class HomerjDe extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        try {
-            br2.doNotFilterMultibleSlashs(true);
-        } catch (Throwable e) {
-            /* does not exist in 09581 */
-        }
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
@@ -105,7 +100,7 @@ public class HomerjDe extends PluginForHost {
         }
     }
 
-    private String checkResolution() {
+    private String getHighestResolution() {
         String[] res = { "1080p", "720p", "480p", "360p", "240p" };
         for (String r : res) {
             if (br.getRegex("res=" + r).matches()) return r;

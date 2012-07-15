@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class RDMdthk extends PluginForDecrypt {
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -38,7 +38,12 @@ public class RDMdthk extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(param.toString());
+        final String parameter = param.toString();
+        br.getPage(parameter);
+        if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) {
+            logger.info("This link might be offline: " + parameter);
+            return decryptedLinks;
+        }
         final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
 
         final String title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
@@ -69,4 +74,5 @@ public class RDMdthk extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
+
 }

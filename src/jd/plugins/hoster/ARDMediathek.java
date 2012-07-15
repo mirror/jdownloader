@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
 //q=&t= parameter comes from jd.plugins.decrypter.RDMdthk
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/\\d+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { PluginWrapper.DEBUG_ONLY })
 public class ARDMediathek extends PluginForHost {
 
     private String[] urlValues;
@@ -67,7 +67,7 @@ public class ARDMediathek extends PluginForHost {
 
     private void download(final DownloadLink downloadLink) throws Exception {
 
-        final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
+        final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"").getMatches();
 
         String[] stream = null;
         for (final String[] s : streams) {
@@ -90,6 +90,7 @@ public class ARDMediathek extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                if (dl.getConnection().getResponseCode() == 403) throw new PluginException(LinkStatus.ERROR_FATAL, "This Content is not longer available!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
@@ -99,11 +100,11 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, GeneralSecurityException {
         // check if rtmp link is valid here
-        urlValues = new Regex(downloadLink.getDownloadURL(), "hrtmp://[\\w\\.]*?ardmediathek\\.de/ard/servlet/content/(\\d+)\\?documentId=(\\d+)\\&q=(\\w)\\&t=(\\w)").getRow(0);
+        urlValues = new Regex(downloadLink.getDownloadURL(), "(ardmediathek\\.de/.*?)\\?documentId=(\\d+)\\&q=(\\w)\\&t=(\\w)").getRow(0);
         quality = urlValues[2];
         type = urlValues[3];
         // call url without q dummy parameter
-        br.getPage("http://www.ardmediathek.de/ard/servlet/content/" + urlValues[0] + "?documentId=" + urlValues[1]);
+        br.getPage("http://www." + urlValues[0] + "?documentId=" + urlValues[1]);
         // invalid content
         if (br.containsHTML("<h1>Leider konnte die gew&uuml;nschte Seite<br />nicht gefunden werden.</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return AvailableStatus.TRUE;
@@ -120,4 +121,5 @@ public class ARDMediathek extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
