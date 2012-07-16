@@ -53,6 +53,7 @@ could_not_download_file=Impossisibile scaricare l'aggiornamento.
 could_not_install_file=Impossibile installare il file: %s1
 could_not_overwrite=Impossibile sovrascrivere il file %s1.
 could_not_update_updater=Programma aggiornamento obsoleto. Impossibile aggironare il programma.
+details=Altro...
 dialag_branch_resetted=Edizione obsoleta
 dialog_branch_resetted_msg=%s2 %s1 - Versione non più disponibile. \nRipristinata versione stabile più recente.
 dialog_rly_cancel=Annullare l'aggiornamento?
