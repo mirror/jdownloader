@@ -1,6 +1,6 @@
 UpdateException_SignatureViolation=Die Herkunft dieses Updates konnte nicht verifiziert werden.
 UpdateException_notavailable=Unsere Updateserver sind gerade überlastet. Bitte später erneut versuchen.
-UpdateException_notavailable2=Problem Beschreibung: \r\n                  → "%s1"
+UpdateException_notavailable2=Problem Beschreibung: \r\n                  -> "%s1"
 UpdateException_proxyauth=Proxy Zugangsdaten ungültig: %s1
 UpdateException_proxyconnect=Proxy Verbindung fehlgeschlagen: %s1
 UpdateException_socket=Keine Internetverbindung zum Updateserver: %s1
