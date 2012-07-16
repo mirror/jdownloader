@@ -375,6 +375,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie("http://uploaded.to/", "lang", "de");
         br.getPage("http://uploaded.to/language/de");
+        if (br.containsHTML("<title>ul.to - Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
         br.getPage("http://uploaded.to/file/" + id);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().contains(".to/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
@@ -451,12 +452,12 @@ public class Uploadedto extends PluginForHost {
         requestFileInformation(downloadLink);
         login(account);
         if (account.getBooleanProperty("free")) {
-            br.getPage(downloadLink.getDownloadURL());
             doFree(downloadLink);
         } else {
             br.setFollowRedirects(false);
             String id = getID(downloadLink);
             br.getPage("http://uploaded.to/file/" + id + "/ddl");
+            if (br.containsHTML("<title>ul.to - Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
             String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
             if (error == null) {
                 error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);

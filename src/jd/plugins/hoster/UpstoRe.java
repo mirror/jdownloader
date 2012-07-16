@@ -175,13 +175,19 @@ public class UpstoRe extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            if (br.containsHTML("unlimited premium")) {
+                ai.setValidUntil(-1);
+                ai.setStatus("Unlimited Premium User");
+            } else {
+                account.setValid(false);
+                return ai;
+            }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
+            ai.setStatus("Premium User");
         }
         account.setValid(true);
-        ai.setStatus("Premium User");
+
         return ai;
     }
 
