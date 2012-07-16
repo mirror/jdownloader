@@ -1,6 +1,6 @@
 UpdateException_SignatureViolation=The origin of this update could not be verified!
 UpdateException_notavailable=Our Updateservers are busy right now. Please try again later.
-UpdateException_notavailable2=Problem Description: \n\n                  → "%s1"
+UpdateException_notavailable2=Problem Description: \n\n                  -> "%s1"
 UpdateException_proxyauth=Proxy Authentication invalid: %s1
 UpdateException_proxyconnect=Proxy connection failed: %s1
 UpdateException_socket=No Internet connection to updateserver: %s1
