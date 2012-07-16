@@ -25,6 +25,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -35,12 +36,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "azushare.net" }, urls = { "http://(www\\.)?azushare\\.net/[A-Za-z0-9]+/" }, flags = { 0 })
 public class AzuShareNet extends PluginForHost {
+
+    private static final String MAINPAGE = "http://azushare.net";
+    private static final Object LOCK     = new Object();
 
     public AzuShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,9 +54,6 @@ public class AzuShareNet extends PluginForHost {
     public String getAGBLink() {
         return "http://azushare.net/premium";
     }
-
-    private static final String MAINPAGE = "http://azushare.net";
-    private static final Object LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
@@ -70,7 +70,7 @@ public class AzuShareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final Regex limit = br.getRegex(">For next free download you have to wait <strong>(\\d+):(\\d+)s</strong>");
         if (limit.getMatches().length == 1) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limit.getMatch(0)) * 60 + Integer.parseInt(limit.getMatch(1))) * 1001l);

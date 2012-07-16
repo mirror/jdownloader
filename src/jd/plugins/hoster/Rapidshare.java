@@ -51,7 +51,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.*?(\"|\r|\n| |$|\\?)|\\#\\!download(\\||%7C)\\d+.*?(\\||%7C)\\d+(\\||%7C).+?($|(\\||%7C)\\d+))" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://[\\w\\.]*?rapidshare\\.com/(files/\\d+/.*?(\"|\r|\n|$|\\?)|\\#\\!download(\\||%7C)\\d+.*?(\\||%7C)\\d+(\\||%7C).+?($|(\\||%7C)\\d+))" }, flags = { 2 })
 public class Rapidshare extends PluginForHost {
 
     public static class RSLink {
@@ -490,7 +490,7 @@ public class Rapidshare extends PluginForHost {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
 
-        String filename = new Regex(link, "https?://[\\w\\.]*?rapidshare\\.com/files/\\d+/?(.*?)($|\\?|&|\"|\r| $|$)").getMatch(0);
+        String filename = new Regex(link, "https?://[\\w\\.]*?rapidshare\\.com/files/\\d+/?(.*?)($|\\?|&|\"|\r|$)").getMatch(0);
         if (filename == null) {
             filename = new Regex(link, "\\#\\!download(\\||%7C)(\\d+.*?)(\\||%7C)(\\d+)(\\||%7C)(.+?)($|\\||%7C)").getMatch(5);
 
