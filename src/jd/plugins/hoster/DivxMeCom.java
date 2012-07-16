@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxme.com" }, urls = { "http://(www\\.)?divxme\\.com/[a-z0-9]{12}" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxme.com" }, urls = { "http://(www\\.)?divxme\\.com/[a-z0-9]{12}" }, flags = { 32 })
 public class DivxMeCom extends PluginForHost {
 
     private String              BRBEFORE      = "";

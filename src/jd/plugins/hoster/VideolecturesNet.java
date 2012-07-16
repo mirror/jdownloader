@@ -24,7 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videolectures.net" }, urls = { "http://[\\w\\.]*?videolectures\\.net/.+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videolectures.net" }, urls = { "http://[\\w\\.]*?videolectures\\.net/.+" }, flags = { 32 })
 public class VideolecturesNet extends PluginForHost {
 
     private String clipUrl              = null;

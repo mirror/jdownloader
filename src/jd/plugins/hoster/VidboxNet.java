@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidbox.net" }, urls = { "http://(www\\.)?vidbox\\.net/file\\.php\\?fd=[0-9a-f]+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidbox.net" }, urls = { "http://(www\\.)?vidbox\\.net/file\\.php\\?fd=[0-9a-f]+" }, flags = { 32 })
 public class VidboxNet extends PluginForHost {
 
     private String DLLINK;

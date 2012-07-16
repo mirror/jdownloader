@@ -32,7 +32,7 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 
 // Altes Decrypterplugin bis Revision 14394 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
 public class MyVideo extends PluginForHost {
 
     private String       CLIPURL  = null;

@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deditv.com" }, urls = { "http://(www\\.)?deditv\\.com/play\\.php\\?v=[0-9a-f]+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deditv.com" }, urls = { "http://(www\\.)?deditv\\.com/play\\.php\\?v=[0-9a-f]+" }, flags = { 32 })
 public class DeditvCom extends PluginForHost {
 
     private String DLLINK;

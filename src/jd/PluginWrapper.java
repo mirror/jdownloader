@@ -22,22 +22,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public abstract class PluginWrapper {
 
-    public static final int         LOAD_ON_INIT = 1 << 1;
-
-    /**
-     * See http://wiki.jdownloader.org/knowledge/wiki/glossary/cnl2 for cnl2
-     * details. If a Decrypter uses CNL2, we can think about activating this
-     * feature here. JDownloader then will only decrypt indriect or
-     * deepencrypted links. Direct links will be opened in th systems
-     * defaultbrowser to use CNL
-     */
-    public static final int         CNL_2        = 1 << 4;
-
-    /**
-     * Load only if debug flag is set. For internal developer plugins
-     */
-    public static final int         DEBUG_ONLY   = 1 << 5;
-
     private transient LazyPlugin<?> lazy;
 
     public PluginWrapper(final LazyPlugin<?> lazy) {

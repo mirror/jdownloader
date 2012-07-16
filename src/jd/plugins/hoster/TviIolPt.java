@@ -24,7 +24,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt" }, urls = { "http://(www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(www\\.)?tvi24\\.iol\\.pt/aa---videos---[\\w-]+/[\\w-]+/\\d+-\\d+\\.html" }, flags = { PluginWrapper.DEBUG_ONLY, PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tvi.iol.pt", "tvi24.iol.pt" }, urls = { "http://(www\\.)?tvi\\.iol\\.pt/mediacenter\\.html\\?(load=\\d+\\&gal_id=\\d+|mul_id=\\d+\\&load=\\d+&pagina=\\d+\\&pos=\\d+)", "http://(www\\.)?tvi24\\.iol\\.pt/aa---videos---[\\w-]+/[\\w-]+/\\d+-\\d+\\.html" }, flags = { 32, 32 })
 public class TviIolPt extends PluginForHost {
 
     private String clipUrl              = null;

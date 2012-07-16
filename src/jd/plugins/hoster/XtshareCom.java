@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtshare.com" }, urls = { "http://(www\\.)?xtshare\\.com/toshare\\.php\\?Id=\\d+(\\&view=[0-9a-f]+)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xtshare.com" }, urls = { "http://(www\\.)?xtshare\\.com/toshare\\.php\\?Id=\\d+(\\&view=[0-9a-f]+)?" }, flags = { 32 })
 public class XtshareCom extends PluginForHost {
 
     private String DLLINK;

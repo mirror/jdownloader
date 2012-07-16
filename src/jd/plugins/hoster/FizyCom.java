@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]+" }, flags = { 32 })
 public class FizyCom extends PluginForHost {
 
     private String        clipUrl              = null;

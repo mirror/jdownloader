@@ -27,7 +27,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarndecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videarn.com" }, urls = { "http://(www\\.)?videarndecrypted\\.com/video\\.php\\?id=\\d+" }, flags = { 32 })
 public class VidearnCom extends PluginForHost {
 
     public VidearnCom(final PluginWrapper wrapper) {

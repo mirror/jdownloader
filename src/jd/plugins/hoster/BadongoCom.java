@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.StringFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.+" }, flags = { PluginWrapper.LOAD_ON_INIT })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "badongo.com" }, urls = { "http://[\\w\\.]*?badongo\\.viajd.*/.+" }, flags = { 2 })
 public class BadongoCom extends PluginForHost {
 
     private static final String FILETEMPLATE = "/ajax/prototype/ajax_api_filetemplate.php";

@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { 32 })
 public class ProSevenDe extends PluginForHost {
 
     private HashMap<String, String> fileDesc;

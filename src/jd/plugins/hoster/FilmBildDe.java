@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?film\\.bild\\.de/detail\\.aspx\\?s=detail&m=\\d+&pl=(m|t)(#s=movie&m=\\d+&pl=m)?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "film.bild.de" }, urls = { "http://(www\\.)?film\\.bild\\.de/detail\\.aspx\\?s=detail&m=\\d+&pl=(m|t)(#s=movie&m=\\d+&pl=m)?" }, flags = { 32 })
 public class FilmBildDe extends PluginForHost {
 
     private String clipUrl = null;

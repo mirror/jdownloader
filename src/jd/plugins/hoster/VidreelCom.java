@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidreel.com" }, urls = { "http://(www\\.)?vidreel\\.com/video/[0-9a-zA-Z]+/" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidreel.com" }, urls = { "http://(www\\.)?vidreel\\.com/video/[0-9a-zA-Z]+/" }, flags = { 32 })
 public class VidreelCom extends PluginForHost {
 
     private String DLLINK;

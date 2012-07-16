@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
 //q=&t= parameter comes from jd.plugins.decrypter.RDMdthk
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "hrtmp://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+\\&q=\\w\\&t=\\w" }, flags = { 32 })
 public class ARDMediathek extends PluginForHost {
 
     private String[] urlValues;

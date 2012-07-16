@@ -31,7 +31,7 @@ import jd.plugins.download.DownloadInterface;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.rutube\\.ru/[0-9a-f]{32}/?" }, flags = { PluginWrapper.DEBUG_ONLY })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rutube.ru" }, urls = { "http://(www\\.)?video\\.rutube\\.ru/[0-9a-f]{32}/?" }, flags = { 32 })
 public class RuTubeRu extends PluginForHost {
 
     private String DLLINK;

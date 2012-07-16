@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+" }, flags = { PluginWrapper.DEBUG_ONLY })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     public RDMdthk(final PluginWrapper wrapper) {
