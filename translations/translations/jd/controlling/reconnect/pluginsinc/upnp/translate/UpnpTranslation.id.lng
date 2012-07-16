@@ -1,9 +1,16 @@
+UPNPReconnectInvoker_getName_=Sambung ulang router UPNP
 UPNPRouterPlugin_run_wizard_title=Wizard Router UPNP
 auto=Tata UPNP otomatis
 controlURLTxt_help=Masukkan URL kendali...
 interaction_UpnpReconnect_wanservice_ip=Protokol Internet
 interaction_UpnpReconnect_wanservice_ppp=Protokol titik-ke-titik
+jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Tak ditemukan router UPNP yang benar
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Gagal
 jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Berhasil
 literally_choose_router=Pilih piranti
+literally_control_url=URL kontrol
 literally_router=Router UPNP
+literally_service_type=Tipe servis
+malformedservicetype=Tipe servis cacat. Coba UPNP tata otomatis.
+malformedurl=URL kontrol cacat. Coba UPNP tata otomatis.
+try_reconnect=Coba UPNP sambung ulang : %s1
