@@ -45,25 +45,17 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video/)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
-
     private static final Object LOCK                       = new Object();
-
     private static final String VIDEOPLAYER                = "<meta property=\"og:video\"";
-
     private static final String LIMITREACHED               = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
-
     private static final String COUNTRYBLOCK               = "\t+Fişierul nu este disponibil pentru vizionare în ţara dumneavoastră";
-
     private static final String COUNTRYBLOCKUSERTEXT       = JDL.L("plugins.hoster.triluliluro.country", "This file is not downloadable in your country.");
-
     private static final String ONLYFORREGISTEREDUSERS     = "\t+Trebuie să.*?intri în cont</a> ca să poţi accesa acest fişier";
-
     private static final String ONLYFORREGISTEREDUSERSTEXT = JDL.L("plugins.hoster.triluliluro.user", "This file is only downloadable for registered users!");
-
     private String              NONSTANDARDMD5             = null;
 
     public TriLuLiLuRo(PluginWrapper wrapper) {
@@ -72,6 +64,40 @@ public class TriLuLiLuRo extends PluginForHost {
         if (!"ro".equalsIgnoreCase(System.getProperty("user.language"))) {
             setConfigElements();
         }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(COUNTRYBLOCK)) {
+            try {
+                localProxy(true);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
+        String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
+                    if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+                }
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        if (br.containsHTML(VIDEOPLAYER))
+            downloadLink.setFinalFileName(filename + ".mp4");
+        else
+            downloadLink.setFinalFileName(filename + ".mp3");
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -178,40 +204,6 @@ public class TriLuLiLuRo extends PluginForHost {
         return result != null ? result.toString() : "";
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(COUNTRYBLOCK)) {
-            try {
-                localProxy(true);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-            br.getPage(downloadLink.getDownloadURL());
-        }
-        if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
-        String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta name=\"title\" content=\"Trilulilu \\- (.*?) - Muzică Diverse\" />").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Trilulilu \\- (.*?) - Muzică Diverse</title>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<div class=\"music_demo\">[\n\t\r ]+<h3>(.*?)\\.mp3 \\(demo 30 de secunde\\)</h3").getMatch(0);
-                    if (filename == null) filename = br.getRegex("<div class=\"hentry\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-                }
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(VIDEOPLAYER))
-            downloadLink.setFinalFileName(filename + ".mp4");
-        else
-            downloadLink.setFinalFileName(filename + ".mp3");
-        return AvailableStatus.TRUE;
-    }
-
     private void getDownloadUrl(DownloadLink downloadLink) throws PluginException, IOException {
         Browser br2 = br.cloneBrowser();
         DLLINK = br.getRegex("<param name=\"flashvars\" value=\"song=(http.*?\\.mp3)").getMatch(0);
@@ -314,7 +306,8 @@ public class TriLuLiLuRo extends PluginForHost {
                         value = value + r;
                     }
                     /*
-                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
+                     * Encoded as 64-bit double precision floating point number
+                     * IEEE 754 standard
                      */
                     value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
                 } else {

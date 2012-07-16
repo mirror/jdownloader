@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,22 +36,23 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://(www\\.)?chomikuj\\.pl/.+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl/.+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // private static final String PASSWORDWRONG = ">Nieprawidłowe hasło<";
     private static final String PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
+    private String              FOLDERPASSWORD           = null;
     private ArrayList<Integer>  REGEXSORT                = new ArrayList<Integer>();
     private String              ERROR                    = null;
     private String              REQUESTVERIFICATIONTOKEN = null;
+    private static final String PAGEDECRYPTLINK          = "http://chomikujpagedecrypt\\.pl/.*?\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/");
         String problem = null;
         try {
             problem = parameter.substring(parameter.lastIndexOf(","));
@@ -61,13 +63,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         // The message used on errors in this plugin
         ERROR = "Error while decrypting link: " + parameter;
         br.setFollowRedirects(false);
-        br.getPage(parameter);
-        // If we have a new link we have to use it or we'll have big problems
-        // later when POSTing things to the server
-        if (br.getRedirectLocation() != null) {
-            parameter = br.getRedirectLocation();
-            br.getPage(br.getRedirectLocation());
-        }
         // Check if the link directly wants to access a specified page of the
         // gallery, if so remove it to avoid problems
         String checkPage = new Regex(parameter, "chomikuj\\.pl/.*?(,\\d+)$").getMatch(0);
@@ -78,6 +73,13 @@ public class ChoMikujPl extends PluginForDecrypt {
             } else {
                 br.getPage(parameter);
             }
+        }
+        br.getPage(parameter);
+        // If we have a new link we have to use it or we'll have big problems
+        // later when POSTing things to the server
+        if (br.getRedirectLocation() != null) {
+            parameter = br.getRedirectLocation();
+            br.getPage(br.getRedirectLocation());
         }
         String fpName = br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
@@ -106,34 +108,40 @@ public class ChoMikujPl extends PluginForDecrypt {
         fpName = fpName.trim();
         // Alle Haupt-POSTdaten
         String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(REQUESTVERIFICATIONTOKEN);
-        decryptedLinks = decryptAll(parameter, postdata, param);
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
-        fp.addLinks(decryptedLinks);
+        decryptedLinks = decryptAll(parameter, postdata, param, fp);
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> decryptAll(final String parameter, final String postdata, final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> decryptAll(final String parameter, final String postdata, final CryptedLink param, final FilePackage fp) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String savePost = null;
+        String savePost = postdata;
         String saveLink = null;
-        String password = null;
+
         // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
-            Form pass = br.getFormbyProperty("id", "LoginToFolder");
+            final Form pass = br.getFormbyProperty("id", "LoginToFolder");
             if (pass == null) {
                 logger.warning(ERROR + " :: Can't find Password Form!");
                 return null;
             }
             for (int i = 0; i <= 3; i++) {
-                password = getUserInput(null, param);
-                pass.put("Password", password);
+                FOLDERPASSWORD = param.getStringProperty("password");
+                if (FOLDERPASSWORD == null) {
+                    FOLDERPASSWORD = getUserInput(null, param);
+                }
+                pass.put("Password", FOLDERPASSWORD);
                 br.submitForm(pass);
-                if (br.containsHTML("\\{\"IsSuccess\":true"))
+                if (br.containsHTML("\\{\"IsSuccess\":true")) {
                     break;
-                else
+                } else {
+                    // Maybe password was saved before but has changed in the
+                    // meantime!
+                    param.setProperty("password", Property.NULL);
                     continue;
+                }
             }
             if (!br.containsHTML("\\{\"IsSuccess\":true")) {
                 logger.warning("Wrong password!");
@@ -142,21 +150,49 @@ public class ChoMikujPl extends PluginForDecrypt {
             saveLink = parameter;
         }
         logger.info("Looking how many pages we got here for link " + parameter + " ...");
+
         // Herausfinden wie viele Seiten der Link hat
-        int pageCount = getPageCount(parameter);
+        int pageCount = 1;
+        if (param.toString().matches(PAGEDECRYPTLINK)) {
+            pageCount = Integer.parseInt(new Regex(param.toString(), ",(\\d+)$").getMatch(0));
+        } else {
+            pageCount = getPageCount(parameter);
+        }
         if (pageCount == -1) {
             logger.warning("Error, couldn't successfully find the number of pages for link: " + parameter);
             return null;
         } else if (pageCount == 0) pageCount = 1;
-        logger.info("Found " + pageCount + " pages. Starting to decrypt them now.");
-        final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
-        /** Decrypt all pages, start with 1 (not 0 as it was before) */
-        for (int i = 1; i <= pageCount; ++i) {
-            logger.info("Decrypting page " + i + " of link: " + parameter);
+
+        // More than one page? Every page goes back into the decrypter as a
+        // single link!
+        if (pageCount > 1 && !param.toString().matches(PAGEDECRYPTLINK)) {
+            logger.info("Found " + pageCount + " pages. Adding those for the decryption now.");
+            for (int i = 1; i <= pageCount; i++) {
+                final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujpagedecrypt.pl/") + "," + i);
+                dl.setProperty("reallink", parameter);
+                fp.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
+            }
+        } else {
+            final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
+            /** Decrypt all pages, start with 1 (not 0 as it was before) */
+            // try {
+            // if (isAbort()) {
+            // logger.info("Chomikuj decryption aborted");
+            // break;
+            // }
+            // } catch (final Throwable e) {
+            // }
+            logger.info("Decrypting page " + pageCount + " of link: " + parameter);
             final Browser tempBr = new Browser();
             prepareBrowser(parameter, tempBr);
-            accessPage(postdata, tempBr, i);
-            // Every full page has 30 links (pictures)
+            accessPage(postdata, tempBr, pageCount);
+            // Every full page has 30 links
             /** For photos */
             String[][] fileIds = tempBr.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?title=\"([^<>\"]*?)\".*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
             addRegexInt(0, 1, 3, 4, 2);
@@ -164,7 +200,9 @@ public class ChoMikujPl extends PluginForDecrypt {
                 /** Specified for videos */
                 fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']+)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
                 addRegexInt(2, 3, 0, 1, 0);
-                /** Last attempt, only get IDs (no pre-available-check possible) */
+                /**
+                 * Last attempt, only get IDs (no pre-available-check possible)
+                 */
                 if (fileIds == null || fileIds.length == 0) {
                     fileIds = tempBr.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
                 }
@@ -179,25 +217,19 @@ public class ChoMikujPl extends PluginForDecrypt {
                     logger.info("The following link is offline: " + parameter);
                     return decryptedLinks;
                 }
-                // If the last page only contains a file or fileS the regex's
-                // don't work but the decrypter isn't broken so the user should
-                // get the links!
-                if (tempBr.containsHTML("\\.zip")) {
-                    logger.info("Stopping at page " + i + " because there were no pictures found on the page but i did find a .zip file!");
-                    return decryptedLinks;
-                }
                 logger.warning(ERROR);
                 return null;
             }
             if (fileIds != null && fileIds.length != 0) {
                 for (String[] id : fileIds) {
-                    String finalLink = String.format("&id=%s&gallerylink=%s&", id[REGEXSORT.get(3)], param.toString().replace("chomikuj.pl", "60423fhrzisweguikipo9re"));
-                    DownloadLink dl = createDownloadlink(finalLink);
+                    final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setProperty("fileid", id[REGEXSORT.get(3)]);
                     if (id.length > 1) {
                         if (id.length == 5) {
                             dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim()));
                         } else {
                             dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim());
+                            
                         }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
@@ -209,13 +241,19 @@ public class ChoMikujPl extends PluginForDecrypt {
                     } else {
                         dl.setName(String.valueOf(new Random().nextInt(1000000)));
                     }
-                    if (saveLink != null && savePost != null && password != null) {
+                    if (saveLink != null && savePost != null && FOLDERPASSWORD != null) {
                         dl.setProperty("savedlink", saveLink);
                         dl.setProperty("savedpost", savePost);
                         // Not needed yet but might me useful in the future
-                        dl.setProperty("password", password);
+                        dl.setProperty("password", FOLDERPASSWORD);
                     }
                     dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
                     decryptedLinks.add(dl);
                 }
             }
@@ -224,13 +262,19 @@ public class ChoMikujPl extends PluginForDecrypt {
                     String folderLink = folder[0];
                     folderLink = "http://chomikuj.pl" + folderLink;
                     if (folderLink.contains(linkPart) && !folderLink.equals(parameter)) {
-                        decryptedLinks.add(createDownloadlink(folderLink));
+                        final DownloadLink dl = createDownloadlink(folderLink);
+                        fp.add(dl);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
                     }
                 }
             }
         }
         return decryptedLinks;
-
     }
 
     private void addRegexInt(int filename, int filenameExt, int filesize, int fileid, int fullfilename) {

@@ -37,7 +37,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parellisavvyclub.com" }, urls = { "http://(www\\.)?parellisavvyclub\\.com/(watchMedia\\.faces\\?id=\\d+|video\\?sckey=[^\"\\']+(\\&pl=\\d+)?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "parellisavvyclub.com" }, urls = { "https?://(www\\.)?parellisavvyclub\\.com/(watchMedia\\.faces\\?id=\\d+|video\\?sckey=[^\"\\']+(\\&pl=\\d+)?)" }, flags = { 2 })
 public class ParelliSavvyClubCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.parellisavvyclub.com";
@@ -47,6 +47,10 @@ public class ParelliSavvyClubCom extends PluginForHost {
     public ParelliSavvyClubCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://shop.parellinaturalhorsetraining.com/savvySignupStep1.jsf");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
     @Override

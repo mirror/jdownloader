@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://[\\w\\.]*?worldstarhiphop\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "worldstarhiphop.com" }, urls = { "http://(www\\.)?worldstarhiphopdecrypted\\.com/videos/video(\\d+)?.php\\?v=[a-zA-Z0-9]+" }, flags = { 0 })
 public class WorldStarHipHopCom extends PluginForHost {
 
     private String dllink = null;
@@ -47,45 +47,38 @@ public class WorldStarHipHopCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("worldstarhiphopdecrypted.com/", "worldstarhiphop.com/"));
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setCookie("http://worldstaruncut.com/", "worldstarAdultOk", "true");
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("worldstaruncut.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (br.containsHTML("<title>Video: No Video </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Video: (.*?)</title>").getMatch(0);
+        String filename = null;
+        if (br.getURL().contains("worldstaruncut.com/")) {
+            if (br.getURL().equals("http://www.worldstarhiphop.com/videos/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            getURLUniversal();
+            filename = br.getRegex("<title>([^<>\"]*?)\\(\\*Warning\\*").getMatch(0);
+            if (filename == null) filename = br.getRegex("<td width=\"607\" class=\"style4\">([^<>\"]*?) \\(\\*Warning\\*").getMatch(0);
+        } else {
+            if (br.containsHTML("<title>Video: No Video </title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h1 style=\"width:438px;\">(.*?)</h1>").getMatch(0);
-                if (filename == null) filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
+                filename = br.getRegex("<title>Video: (.*?)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1 style=\"width:438px;\">(.*?)</h1>").getMatch(0);
+                    if (filename == null) filename = br.getRegex("<span style=\"display:none;\">Watching: (.*?)</span><img src=\"").getMatch(0);
+                }
             }
-        }
-        dllink = br.getRegex("v=playFLV\\.php\\?loc=(http://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
+            dllink = br.getRegex("v=playFLV\\.php\\?loc=(http://.*?\\.(mp4|flv))\\&amp;").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("v=(http://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
+                dllink = br.getRegex("(http://hwcdn\\.net/[a-z0-9]+/cds/\\d+/\\d+/\\d+/.*?\\.(mp4|flv))").getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("\"(http://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
-                    }
+                    dllink = br.getRegex("v=(http://.*?\\.com/.*?/vid/.*?\\.(mp4|flv))").getMatch(0);
+                    if (dllink == null) getURLUniversal();
                 }
             }
         }
@@ -110,6 +103,24 @@ public class WorldStarHipHopCom extends PluginForHost {
                 con.disconnect();
             } catch (final Throwable e) {
             }
+        }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    private void getURLUniversal() {
+        dllink = br.getRegex("addVariable\\(\"file\",\"(http://.*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://hw\\-videos\\.worldstarhiphop\\.com/u/vid/.*?)\"").getMatch(0);
         }
     }
 

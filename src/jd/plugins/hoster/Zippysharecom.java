@@ -172,15 +172,15 @@ public class Zippysharecom extends PluginForHost {
 
         String filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
         if (filename == null) {
-            filename = br.getRegex("<title>Zippyshare.com - (.*?)</title>").getMatch(0);
+            filename = br.getRegex("<title>Zippyshare\\.com \\- (.*?)</title>").getMatch(0);
         }
         if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
         if (filename.contains("/fileName?key=")) {
-            final String url = br.getRegex("var fulllink = '(.*?)';").getMatch(-1);
-            filename = new Regex(url, "'/(.*?)';").getMatch(0);
+            final String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
+            if (url != null) filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
         }
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
