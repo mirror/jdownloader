@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -52,10 +54,12 @@ public class OneFichierCom extends PluginForHost {
     private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
     private static final String  FREELINK       = "freeLink";
     private static final String  PREMLINK       = "premLink";
+    private static final String  SSL_CONNECTION = "SSL_CONNECTION";
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -236,8 +240,10 @@ public class OneFichierCom extends PluginForHost {
         }
         login(account);
         String dllink = link.getStringProperty(PREMLINK, null);
+        boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
         if (dllink != null) {
             /* try to resume existing file */
+            if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
             br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
@@ -261,7 +267,9 @@ public class OneFichierCom extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        String useDllink = dllink;
+        if (useSSL) useDllink = useDllink.replaceFirst("http://", "https://");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -283,8 +291,8 @@ public class OneFichierCom extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -318,6 +326,10 @@ public class OneFichierCom extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void setConfigElements() {
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(false));
     }
 
     private void prepareBrowser(final Browser br) {
