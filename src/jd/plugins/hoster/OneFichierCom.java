@@ -17,11 +17,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -46,6 +50,8 @@ public class OneFichierCom extends PluginForHost {
     private static final String  PREMIUMPAGE    = "https://www.1fichier.com/en/login.pl";
     private static final String  MAINPAGE       = "www.1fichier.com";
     private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
+    private static final String  FREELINK       = "freeLink";
+    private static final String  PREMLINK       = "premLink";
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,13 +59,10 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        // Note: We cannot replace all domains with "1fichier.com" because the
-        // downloadlinks are always bind to a domains
-        // Prefer english language
-        if (!link.getDownloadURL().contains("/en/")) {
-            // /en/index.html
+        // Remove everything after the domain
+        if (!link.getDownloadURL().endsWith("/")) {
             Regex idhostandName = new Regex(link.getDownloadURL(), "http://(.*?)\\.(.*?)/");
-            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/en/index.html");
+            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1));
         }
     }
 
@@ -69,18 +72,23 @@ public class OneFichierCom extends PluginForHost {
         prepareBrowser(br);
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">Software error:<")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML("(The requested file could not be found|The file may has been deleted by its owner|Le fichier demandé n\\'existe pas\\.|Il a pu être supprimé par son propriétaire\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
-        if (filename == null) filename = br.getRegex("Download of ([^<>\"]*?)<br/>[\t\n\r ]+<br/>").getMatch(0);
-        String filesize = br.getRegex("<th>File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
-        if (filename != null) link.setName(filename.trim());
-        if (filesize != null) {
-            filesize = filesize.replace("Go", "Gb").replace("Mo", "Mb").replace("Ko", "Kb");
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML("bad")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+)").getMatches();
+        if (linkInfo == null || linkInfo.length == 0) {
+            logger.warning("Decrypter broken for link");
+            return null;
         }
-        if (br.containsHTML(PASSWORDTEXT)) {
+        String filename = linkInfo[0][0];
+        String filesize = linkInfo[0][1];
+        if (filename != null) link.setFinalFileName(filename.trim());
+        if (filesize != null) {
+            long size = 0;
+            link.setDownloadSize(size = SizeFormatter.getSize(filesize));
+            if (size > 0) link.setProperty("VERIFIEDFILESIZE", size);
+        }
+        if (br.containsHTML("password")) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
             return AvailableStatus.UNCHECKABLE;
         }
@@ -89,6 +97,25 @@ public class OneFichierCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+        String dllink = downloadLink.getStringProperty(FREELINK, null);
+        if (dllink != null) {
+            /* try to resume existing file */
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                /* could not resume, fetch new link */
+                br.followConnection();
+                downloadLink.setProperty(FREELINK, Property.NULL);
+                dllink = null;
+                br.setFollowRedirects(false);
+                br.setCustomCharset("utf-8");
+                br.getPage(downloadLink.getDownloadURL());
+            } else {
+                /* resume download */
+                dl.startDownload();
+                return;
+            }
+        }
         if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         String passCode = null;
@@ -109,15 +136,16 @@ public class OneFichierCom extends PluginForHost {
             // downloads will remove the limit
             br.postPage(downloadLink.getDownloadURL(), "submit=Download+the+file");
         }
-        String dllink = br.getRedirectLocation();
+        dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /* server has issues with range requests ->result in broken file */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        downloadLink.setProperty(FREELINK, dllink);
         dl.startDownload();
     }
 
@@ -135,8 +163,10 @@ public class OneFichierCom extends PluginForHost {
         account.setValid(true);
         br.getPage("http://www.1fichier.com/en/console/abo.pl");
         String premUntil = br.getRegex("subscribed to our advanced services to (\\d+/\\d+/\\d+)").getMatch(0);
+        if (premUntil == null) premUntil = br.getRegex("You are a premium user !.*Until[ ]*:[ ]*(\\d+/\\d+/\\d+)").getMatch(0);
         if (premUntil != null) {
             account.setValid(true);
+            account.setProperty("type", "PREMIUM");
             ai.setStatus("Premium User");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(premUntil, "dd/MM/yyyy", null) + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
@@ -149,9 +179,10 @@ public class OneFichierCom extends PluginForHost {
             ai.setStatus("Premium User");
         } else {
             ai.setUnlimitedTraffic();
+            account.setProperty("type", "FREE");
             try {
-                maxPrem.set(5);
-                account.setMaxSimultanDownloads(5);
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -197,44 +228,96 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        String passCode = null;
         requestFileInformation(link);
-        login(account);
-        Browser brold = br;
-        br = new Browser();
-        prepareBrowser(br);
-        br.setCookie("https://www.1fichier.com", "SID", brold.getCookie("https://www.1fichier.com", "SID"));
-        br.setFollowRedirects(false);
-        sleep(10 * 1000l, link);
-        br.getPage(link.getDownloadURL().replace("en/index.html", ""));
-        if (maxPrem.get() == 5) {
+        String passCode = null;
+        if (maxPrem.get() == 1 && "FREE".equalsIgnoreCase(account.getStringProperty("type", null))) {
             doFree(link);
-        } else {
-            if (br.containsHTML(PASSWORDTEXT)) passCode = handlePassword(link, passCode);
-            String dllink = br.getRedirectLocation();
-            if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-            if (dllink == null) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            return;
+        }
+        login(account);
+        String dllink = link.getStringProperty(PREMLINK, null);
+        if (dllink != null) {
+            /* try to resume existing file */
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
-                logger.warning("The final dllink seems not to be a file!");
+                /* could not resume, fetch new link */
                 br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                link.setProperty(PREMLINK, Property.NULL);
+                dllink = null;
+            } else {
+                /* resume download */
+                dl.startDownload();
+                return;
             }
-            if (passCode != null) {
-                link.setProperty("pass", passCode);
-            }
-            dl.startDownload();
         }
+        br.setFollowRedirects(false);
+        sleep(2 * 1000l, link);
+        br.getPage(link.getDownloadURL().replace("en/index.html", ""));
+        if (br.containsHTML("password")) passCode = handlePassword(link, passCode);
+        dllink = br.getRedirectLocation();
+        if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
+        }
+        link.setProperty(PREMLINK, dllink);
+        dl.startDownload();
     }
 
-    private void login(Account account) throws Exception {
-        this.setBrowserExclusive();
-        prepareBrowser(br);
-        br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
-        if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    private boolean login(Account account) throws Exception {
+        synchronized (account) {
+            try {
+                /** Load cookies */
+                this.setBrowserExclusive();
+                prepareBrowser(br);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie("http://" + MAINPAGE, key, value);
+                            this.br.setCookie("https://" + MAINPAGE, key, value);
+                        }
+                        Browser brc = br.cloneBrowser();
+                        brc.getPage("http://" + MAINPAGE);
+                        if (brc.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) {
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
+                if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                return true;
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     private void prepareBrowser(final Browser br) {

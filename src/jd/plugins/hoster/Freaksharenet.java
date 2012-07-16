@@ -71,6 +71,17 @@ public class Freaksharenet extends PluginForHost {
         Form form = br.getForm(1);
         final String ajax = br.getRegex("\\$\\.get\\(\"\\.\\./\\.\\.(.*?)\",").getMatch(0);
         if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (form.getAction().contains("shop")) {
+            logger.info("Wrong form = shop form!");
+            form = null;
+            Form[] forms = br.getForms();
+            if (forms == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            for (Form a : forms) {
+                if (a.getAction().contains("shop")) continue;
+                form = a;
+                break;
+            }
+        }
         String ttt = null;
         if (ajax != null) {
             final Browser br2 = br.cloneBrowser();
