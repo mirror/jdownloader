@@ -448,6 +448,10 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
                     lst.add(e);
                     break;
                 }
+                if (p.matcher(e.getCategory()).find()) {
+                    lst.add(e);
+                    break;
+                }
                 if (p.matcher(e.getTranslation()).find()) {
                     lst.add(e);
                     break;
