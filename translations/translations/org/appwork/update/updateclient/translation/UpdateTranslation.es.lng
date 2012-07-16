@@ -53,6 +53,7 @@ could_not_download_file=No se pudo descargar la actualización.
 could_not_install_file=No se pudo instalar un archivo: %s1
 could_not_overwrite=No se pudo sobreescribir el archivo %s1
 could_not_update_updater=El actualizador no ha logrado actualizarse!
+details=Más...
 dialag_branch_resetted=Edición desfasada
 dialog_branch_resetted_msg=%s2 %s1 - La edición ya no existe. Se ha restablecido la última versión estable.
 dialog_rly_cancel=¿Realmente deseas cancelar la actualización?
