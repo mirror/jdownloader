@@ -26,12 +26,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://(www\\.)?1fichier\\.com/(en/)?dir/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(www\\.)?1fichier\\.com/(en/)?dir/[A-Za-z0-9]+" }, flags = { 0 })
 public class OneFichierComFolder extends PluginForDecrypt {
 
     public OneFichierComFolder(PluginWrapper wrapper) {
@@ -42,36 +41,33 @@ public class OneFichierComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         prepareBrowser(br);
-        if (!parameter.contains("1fichier.com/en/")) parameter = parameter.replace("1fichier.com/", "1fichier.com/en/");
-        br.getPage(parameter);
+        br.getPage(parameter + "?e=1");
         String passCode = null;
-        final String fpName = br.getRegex("height=\"20\" />\\&nbsp;Shared Folder ([^<>\"]*?)<br/>").getMatch(0);
-        if (br.containsHTML(">Accessing this shared folder is protected by a password")) {
+        if (br.containsHTML("password")) {
             for (int i = 0; i <= 3; i++) {
                 passCode = getUserInput("Enter password for: " + parameter, param);
-                br.postPage(parameter, "pass=" + Encoding.urlEncode(passCode));
-                if (br.containsHTML(">Accessing this shared folder is protected by a password")) continue;
+                br.postPage(parameter + "?e=1", "pass=" + Encoding.urlEncode(passCode));
+                if (br.containsHTML("password")) continue;
                 break;
             }
-            if (br.containsHTML(">Accessing this shared folder is protected by a password")) throw new DecrypterException(DecrypterException.PASSWORD);
+            if (br.containsHTML("password")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        String[][] linkInfo = br.getRegex("<a href=\"(http://[a-z0-9\\-]+\\.1fichier\\.com(/en/)?)\" title=\"Download ([^<>\"]*?)\">[^<>\"]*?</a></td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
+        String[][] linkInfo = br.getRegex("(https?://[a-z0-9\\-]+\\..*?);([^;]+);([0-9]+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (String singleLinkInfo[] : linkInfo) {
             DownloadLink dl = createDownloadlink(singleLinkInfo[0]);
-            dl.setName(Encoding.htmlDecode(singleLinkInfo[2].trim()));
-            dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[3]));
+            dl.setFinalFileName(Encoding.htmlDecode(singleLinkInfo[1].trim()));
+            long size = -1;
+            dl.setDownloadSize(size = SizeFormatter.getSize(singleLinkInfo[2]));
+            if (size > 0) {
+                if (size > 0) dl.setProperty("VERIFIEDFILESIZE", size);
+            }
             if (passCode != null) dl.setProperty("pass", passCode);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

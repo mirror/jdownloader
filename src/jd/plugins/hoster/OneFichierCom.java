@@ -42,7 +42,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "http://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
@@ -61,8 +61,8 @@ public class OneFichierCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) {
         // Remove everything after the domain
         if (!link.getDownloadURL().endsWith("/")) {
-            Regex idhostandName = new Regex(link.getDownloadURL(), "http://(.*?)\\.(.*?)/");
-            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1));
+            Regex idhostandName = new Regex(link.getDownloadURL(), "https?://(.*?)\\.(.*?)(/|$)");
+            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/");
         }
     }
 
@@ -82,7 +82,7 @@ public class OneFichierCom extends PluginForHost {
         }
         String filename = linkInfo[0][0];
         String filesize = linkInfo[0][1];
-        if (filename != null) link.setFinalFileName(filename.trim());
+        if (filename != null) link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             long size = 0;
             link.setDownloadSize(size = SizeFormatter.getSize(filesize));
