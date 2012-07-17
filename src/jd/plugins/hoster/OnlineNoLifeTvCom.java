@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -49,7 +50,7 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     private boolean             notDownloadable     = false;
     private static final Object LOCK                = new Object();
     private static final String MAINPAGE            = "http://online.nolife-tv.com/";
-    private static final String SKEY                = "9fJhXtl%5D%7CFR%3FN%7D%5B%3A%5Fd%22%5F";
+    private static final String SALT                = "YTUzYmUxODUzNzcwZjBlYmUwMzExZDY5OTNjN2JjYmU=";
 
     public OnlineNoLifeTvCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -194,13 +195,12 @@ public class OnlineNoLifeTvCom extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             /*
-             * Hier wird über die Kekse(Premium/Free) bestimmt welche
-             * Videoqualität man bekommt. Spart oben in den dlmethoden einige
-             * Zeilen an Code. Die Methode "setBrowserExclusive()" muss dabei
-             * deaktiviert sein.
+             * Hier wird über die Kekse(Premium/Free) bestimmt welche Videoqualität man bekommt. Spart oben in den dlmethoden einige Zeilen
+             * an Code. Die Methode "setBrowserExclusive()" muss dabei deaktiviert sein.
              */
-            br.postPage("/_newplayer/api/api_player.php", "skey=" + SKEY + "&connect=1&a=US");
-            br.postPage("/_newplayer/api/api_player.php", "quality=0&skey=" + SKEY + "&a=UEM%7CSEM&id%5Fnlshow=" + new Regex(downloadLink.getDownloadURL(), "online\\.nolife\\-tv\\.com/index\\.php\\?id=(\\d+)").getMatch(0));
+
+            long ts = System.currentTimeMillis();
+            br.postPage("/_nlfplayer/api/api_player.php", "a=UEM%7CSEM%7CMEM%7CCH%7CSWQ&id%5Fnlshow=" + getId(downloadLink.getDownloadURL()) + "&timestamp=" + ts + "&skey=" + getSKey(ts) + "&quality=0");
             DLLINK = br.getRegex("\\&url=(http://[^<>\"\\'\\&]+\\.mp4)\\&").getMatch(0);
             if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             filename = filename.trim();
@@ -230,6 +230,14 @@ public class OnlineNoLifeTvCom extends PluginForHost {
         }
     }
 
+    private String getSKey(long s) {
+        return JDHash.getMD5(JDHash.getMD5(String.valueOf(s)) + Encoding.Base64Decode(SALT));
+    }
+
+    private String getId(String s) {
+        return new Regex(s, "\\?id=(\\d+)").getMatch(0);
+    }
+
     @Override
     public void reset() {
     }
@@ -241,4 +249,5 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
