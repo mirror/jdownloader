@@ -526,6 +526,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Socks4" })
     String jd_gui_swing_dialog_ProxyDialog_socks4();
 
+    @Default(lngs = { "en" }, values = { "Direct" })
+    String jd_gui_swing_dialog_ProxyDialog_direct();
+
     @Default(lngs = { "en" }, values = { "Add new Proxy" })
     String jd_gui_swing_dialog_ProxyDialog_title();
 

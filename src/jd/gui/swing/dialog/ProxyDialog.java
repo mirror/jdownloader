@@ -36,7 +36,7 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
     private JTextField      txtUser;
     private JTextField      txtPass;
 
-    private final String[]  types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4() };
+    private final String[]  types = new String[] { _GUI._.jd_gui_swing_dialog_ProxyDialog_http(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks5(), _GUI._.jd_gui_swing_dialog_ProxyDialog_socks4(), _GUI._.jd_gui_swing_dialog_ProxyDialog_direct() };
     private JLabel          lblUser;
     private JLabel          lblPass;
     private JLabel          lblPort;
@@ -110,7 +110,6 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
         if (myText.endsWith(":")) return;
         for (int i = 0; i < 2; i++) {
             try {
-
                 URL url = new URL(myText);
                 txtHost.setText(url.getHost());
                 if (url.getPort() > 0) {
@@ -144,10 +143,13 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
 
             switch (cmbType.getSelectedIndex()) {
             case 0:
-
                 // http
                 txtPass.setVisible(true);
                 lblPass.setVisible(true);
+                txtPort.setVisible(true);
+                lblUser.setVisible(true);
+                txtUser.setVisible(true);
+                lblPort.setVisible(true);
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("8080");
                 }
@@ -156,18 +158,44 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 // socks5
                 txtPass.setVisible(true);
                 lblPass.setVisible(true);
-
+                txtPort.setVisible(true);
+                lblUser.setVisible(true);
+                txtUser.setVisible(true);
+                lblPort.setVisible(true);
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
                 }
                 break;
-            default:
+            case 2:
+                // socks4
                 txtPass.setVisible(false);
                 lblPass.setVisible(false);
+                txtPort.setVisible(true);
+                lblUser.setVisible(true);
+                txtUser.setVisible(true);
+                lblPort.setVisible(true);
                 if (StringUtils.isEmpty(txtPort.getText())) {
                     txtPort.setText("1080");
                 }
-
+                break;
+            case 3:
+                // direct
+                txtPass.setVisible(false);
+                lblPass.setVisible(false);
+                txtPort.setVisible(false);
+                lblUser.setVisible(false);
+                txtUser.setVisible(false);
+                lblPort.setVisible(false);
+                break;
+            default:
+                txtPass.setVisible(false);
+                lblPass.setVisible(false);
+                lblUser.setVisible(true);
+                txtUser.setVisible(true);
+                lblPort.setVisible(true);
+                if (StringUtils.isEmpty(txtPort.getText())) {
+                    txtPort.setText("1080");
+                }
             }
 
         } else {
@@ -192,6 +220,9 @@ public class ProxyDialog extends AbstractDialog<HTTPProxy> implements CaretListe
                 type = HTTPProxy.TYPE.SOCKS5;
             } else if (cmbType.getSelectedIndex() == 2) {
                 type = HTTPProxy.TYPE.SOCKS4;
+            } else if (cmbType.getSelectedIndex() == 3) {
+                type = HTTPProxy.TYPE.DIRECT;
+                return HTTPProxy.parseHTTPProxy("direct://" + txtHost.getText());
             } else {
                 return null;
             }
