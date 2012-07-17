@@ -41,8 +41,8 @@ public class ProxyInfo extends HTTPProxy {
         return ret;
     }
 
-    public ProxyInfo(ProxyData proxyData) {
-        this.cloneProxy(HTTPProxy.getHTTPProxy(proxyData.getProxy()));
+    public ProxyInfo(ProxyData proxyData, HTTPProxy proxyTemplate) {
+        this.cloneProxy(proxyTemplate);
         this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
         this.ID = proxyData.getID();
         if (ID == null) {

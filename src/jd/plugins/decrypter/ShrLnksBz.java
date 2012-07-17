@@ -59,7 +59,6 @@ public class ShrLnksBz extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
@@ -291,29 +290,36 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (dlclinks == null) { return new ArrayList<DownloadLink>(); }
         String test = Encoding.htmlDecode(dlclinks);
         File file = null;
-        final URLConnectionAdapter con = brc.openGetConnection(dlclinks);
-        if (con.getResponseCode() == 200) {
-            if (con.isContentDisposition()) {
-                test = Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition"));
+        URLConnectionAdapter con = null;
+        try {
+            con = brc.openGetConnection(dlclinks);
+            if (con.getResponseCode() == 200) {
+                if (con.isContentDisposition()) {
+                    test = Plugin.getFileNameFromDispositionHeader(con.getHeaderField("Content-Disposition"));
+                } else {
+                    test = test.replaceAll("(http://share-links\\.biz/|/|\\?)", "") + ".dlc";
+                }
+                file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
+                if (file == null) { return new ArrayList<DownloadLink>(); }
+                file.deleteOnExit();
+                brc.downloadConnection(file, con);
             } else {
-                test = test.replaceAll("(http://share-links\\.biz/|/|\\?)", "") + ".dlc";
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            file = JDUtilities.getResourceFile("tmp/sharelinks/" + test);
-            if (file == null) { return new ArrayList<DownloadLink>(); }
-            file.deleteOnExit();
-            brc.downloadConnection(file, con);
-        } else {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
 
-        if (file != null && file.exists() && file.length() > 100) {
-            final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
-            if (decryptedLinks.size() > 0) { return decryptedLinks; }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (file != null && file.exists() && file.length() > 100) {
+                final ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                if (decryptedLinks.size() > 0) { return decryptedLinks; }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            return new ArrayList<DownloadLink>();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
-        return new ArrayList<DownloadLink>();
     }
 
     private String unpackJS(final String fun, final int value) throws Exception {
@@ -338,5 +344,10 @@ public class ShrLnksBz extends PluginForDecrypt {
         }
         if (result == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         return result.toString();
+    }
+
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
     }
 }

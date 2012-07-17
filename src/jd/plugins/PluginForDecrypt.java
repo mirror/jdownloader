@@ -122,6 +122,15 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
+     * return how many Instances of this PluginForDecrypt may crawl concurrently
+     * 
+     * @return
+     */
+    public int getMaxConcurrentProcessingInstances() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
      * Diese Methode entschlüsselt Links.
      * 
      * @param cryptedLinks

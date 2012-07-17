@@ -32,7 +32,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
         boolean canremove = false;
         if (selected != null) {
             for (ProxyInfo pi : selected) {
-                if (pi.isRemote()) {
+                if (pi.isRemote() || pi.isDirect()) {
                     canremove = true;
                     break;
                 }

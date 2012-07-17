@@ -32,6 +32,7 @@ import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
 
@@ -244,6 +245,7 @@ public class ProxyController {
 
     private List<HTTPProxy> getAvailableDirects() {
         List<InetAddress> ips = HTTPProxyUtils.getLocalIPs();
+        LogController.CL().info(ips.toString());
         ArrayList<HTTPProxy> directs = new ArrayList<HTTPProxy>(ips.size());
         if (ips.size() > 1) {
             // we can use non if we have only one WAN ips anyway
@@ -337,19 +339,22 @@ public class ProxyController {
                 /* config available */
                 restore: for (ProxyData proxyData : ret) {
                     try {
-                        proxy = new ProxyInfo(proxyData);
-                        for (HTTPProxy p : dupeCheck) {
-                            if (p.sameProxy(proxy)) {
-                                /* proxy already got restored */
-                                continue restore;
+                        HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
+                        if (proxyTemplate != null) {
+                            proxy = new ProxyInfo(proxyData, proxyTemplate);
+                            for (HTTPProxy p : dupeCheck) {
+                                if (p.sameProxy(proxy)) {
+                                    /* proxy already got restored */
+                                    continue restore;
+                                }
                             }
+                            dupeCheck.add(proxy);
+                            proxies.add(proxy);
+                            if (proxyData.isDefaultProxy()) {
+                                newDefaultProxy = proxy;
+                            }
+                            if (proxy.isProxyRotationEnabled()) rotCheck = true;
                         }
-                        dupeCheck.add(proxy);
-                        proxies.add(proxy);
-                        if (proxyData.isDefaultProxy()) {
-                            newDefaultProxy = proxy;
-                        }
-                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
                     } catch (final Throwable e) {
                         Log.exception(e);
                     }
@@ -406,30 +411,33 @@ public class ProxyController {
                 restore: for (ProxyData proxyData : ret) {
                     /* check if the local IP is still avilable */
                     try {
-                        proxy = new ProxyInfo(proxyData);
-                        for (HTTPProxy p : dupeCheck) {
-                            if (p.sameProxy(proxy)) {
-                                /* proxy already got restored */
+                        HTTPProxy proxyTemplate = HTTPProxy.getHTTPProxy(proxyData.getProxy());
+                        if (proxyTemplate != null) {
+                            proxy = new ProxyInfo(proxyData, proxyTemplate);
+                            for (HTTPProxy p : dupeCheck) {
+                                if (p.sameProxy(proxy)) {
+                                    /* proxy already got restored */
+                                    continue restore;
+                                }
+                            }
+                            boolean localIPAvailable = false;
+                            for (HTTPProxy p : availableDirects) {
+                                if (p.sameProxy(proxy)) {
+                                    localIPAvailable = true;
+                                    break;
+                                }
+                            }
+                            if (localIPAvailable == false) {
+                                /* local ip no longer available */
                                 continue restore;
                             }
-                        }
-                        boolean localIPAvailable = false;
-                        for (HTTPProxy p : availableDirects) {
-                            if (p.sameProxy(proxy)) {
-                                localIPAvailable = true;
-                                break;
+                            dupeCheck.add(proxy);
+                            directs.add(proxy);
+                            if (proxyData.isDefaultProxy()) {
+                                newDefaultProxy = proxy;
                             }
+                            if (proxy.isProxyRotationEnabled()) rotCheck = true;
                         }
-                        if (localIPAvailable == false) {
-                            /* local ip no longer available */
-                            continue restore;
-                        }
-                        dupeCheck.add(proxy);
-                        directs.add(proxy);
-                        if (proxyData.isDefaultProxy()) {
-                            newDefaultProxy = proxy;
-                        }
-                        if (proxy.isProxyRotationEnabled()) rotCheck = true;
                     } catch (final Throwable e) {
                         Log.exception(e);
                     }

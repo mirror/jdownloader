@@ -200,6 +200,8 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                             try {
                                 PluginForDecrypt plg = l.newInstance();
                                 ap.setHasConfig(plg.hasConfig());
+                                ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
+                                l.setMaxConcurrentInstances(ap.getMaxConcurrentInstances());
                                 l.setHasConfig(plg.hasConfig());
                             } catch (UpdateRequiredClassNotFoundException e) {
                                 logger.finest("@CrawlerPlugin incomplete:" + simpleName + " " + new String(names[i]) + " " + e.getMessage() + " " + revision);

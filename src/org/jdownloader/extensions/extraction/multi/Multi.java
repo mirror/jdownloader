@@ -1019,6 +1019,7 @@ public class Multi extends IExtraction {
             }
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
+            logger.log(e);
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("No password was provided")) {
 
                 // file password protected: net.sf.sevenzipjbinding.SevenZipException: HRESULT: 0x80004005 (Fail). Archive file (format:
@@ -1031,6 +1032,7 @@ public class Multi extends IExtraction {
                 throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
             }
         } catch (Throwable e) {
+            logger.log(e);
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         }
 

@@ -10,7 +10,8 @@ public class AbstractCrawlerPlugin implements Storable {
     private String  displayName;
     private long    version;
     private boolean hasConfig;
-    private int     interfaceVersion = 0;
+    private int     interfaceVersion       = 0;
+    private int     maxConcurrentInstances = Integer.MAX_VALUE;
 
     public boolean isHasConfig() {
         return hasConfig;
@@ -78,6 +79,21 @@ public class AbstractCrawlerPlugin implements Storable {
      */
     public void setInterfaceVersion(int interfaceVersion) {
         this.interfaceVersion = interfaceVersion;
+    }
+
+    /**
+     * @return the maxConcurrentInstances
+     */
+    public int getMaxConcurrentInstances() {
+        return maxConcurrentInstances;
+    }
+
+    /**
+     * @param maxConcurrentInstances
+     *            the maxConcurrentInstances to set
+     */
+    public void setMaxConcurrentInstances(int maxConcurrentInstances) {
+        this.maxConcurrentInstances = maxConcurrentInstances;
     }
 
 }

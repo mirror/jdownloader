@@ -62,7 +62,7 @@ public class LinkCrawler implements IOPermission {
     private HashSet<String>             duplicateFinderFinal        = new HashSet<String>();
     private HashSet<String>             duplicateFinderDeep         = new HashSet<String>();
     private LinkCrawlerHandler          handler                     = null;
-    private static ThreadPoolExecutor   threadPool                  = null;
+    protected static ThreadPoolExecutor threadPool                  = null;
 
     private HashSet<String>             captchaBlockedHoster        = new HashSet<String>();
     private LinkCrawlerFilter           filter                      = null;
@@ -509,6 +509,16 @@ public class LinkCrawler implements IOPermission {
 
                                                     public long getAverageRuntime() {
                                                         return pDecrypt.getAverageCrawlRuntime();
+                                                    }
+
+                                                    @Override
+                                                    protected Object sequentialLockingObject() {
+                                                        return pDecrypt.getDisplayName();
+                                                    }
+
+                                                    @Override
+                                                    protected int maxConcurrency() {
+                                                        return pDecrypt.getMaxConcurrentInstances();
                                                     }
 
                                                     @Override

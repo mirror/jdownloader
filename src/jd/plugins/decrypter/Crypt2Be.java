@@ -81,4 +81,9 @@ public class Crypt2Be extends PluginForDecrypt {
         }
         return finallink;
     }
+
+    /* NOTE: no override to keep compatible to old stable */
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
 }

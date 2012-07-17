@@ -13,11 +13,13 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     public LazyCrawlerPlugin(AbstractCrawlerPlugin ap, Class<PluginForDecrypt> class1, PluginClassLoaderChild classLoader) {
         super(ap.getPattern(), JD_PLUGINS_DECRYPTER + ap.getClassname(), ap.getDisplayName(), ap.getVersion(), class1, classLoader);
         hasConfig = ap.isHasConfig();
+        maxConcurrentInstances = ap.getMaxConcurrentInstances();
     }
 
-    private long    decrypts        = 0;
-    private long    decryptsRuntime = 0;
-    private boolean hasConfig       = false;
+    private long    decrypts               = 0;
+    private long    decryptsRuntime        = 0;
+    private int     maxConcurrentInstances = Integer.MAX_VALUE;
+    private boolean hasConfig              = false;
 
     public boolean isHasConfig() {
         return hasConfig;
@@ -68,5 +70,20 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
             this.setHasConfig(false);
             throw e;
         }
+    }
+
+    /**
+     * @return the maxConcurrentInstances
+     */
+    public int getMaxConcurrentInstances() {
+        return maxConcurrentInstances;
+    }
+
+    /**
+     * @param maxConcurrentInstances
+     *            the maxConcurrentInstances to set
+     */
+    public void setMaxConcurrentInstances(int maxConcurrentInstances) {
+        this.maxConcurrentInstances = maxConcurrentInstances;
     }
 }
