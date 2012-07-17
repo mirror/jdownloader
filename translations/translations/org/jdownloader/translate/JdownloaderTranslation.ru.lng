@@ -1,9 +1,11 @@
+DuplicateAction_DuplicateAction_=Дублировать правило
 LinkCollector_addCrawledLink_offlinepackage=Офлайн файлы
 LinkCollector_addCrawledLink_variouspackage=Разные файлы
 LinkCollector_archiv=%s1
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=Офлайн файлы
 LinkgrabberFilterRule_duplicate=%s1 (копировать)
-Main_run_autostart_=Начать закачки
+Main_run_autostart_=Начинается скачивание
+Main_run_autostart_msg=Скачивание начнется через несколько секунд...
 Mainstart_now=Начать сейчас!
 PackagizerSettings_folderbypackage_rule_name=Создать подкаталог по названию пакета?
 RemoveAction_actionPerformed_rly_msg=Точно хотите удалить выбранные правила???
