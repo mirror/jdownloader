@@ -237,7 +237,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     continue;
                 }
-                final String fun = br.getRegex("eval(.*)\n").getMatch(0);
+                final String fun = br.getRegex("eval(.*)(\n|\r)").getMatch(0);
                 String result = fun != null ? unpackJS(fun, 1) : null;
                 if (result != null) {
                     if (result.contains("share-links.biz")) {
@@ -322,9 +322,11 @@ public class ShrLnksBz extends PluginForDecrypt {
         final ScriptEngine engine = manager.getEngineByName("javascript");
         final Invocable inv = (Invocable) engine;
         try {
+            logger.info(fun);
             if (value == 1) {
                 result = engine.eval(fun);
                 result = "parent = 1;" + result.toString().replace(".frames.Main.location.href", "").replace("window", "\"window\"");
+                logger.info(result.toString());
                 result = engine.eval(result.toString());
             } else {
                 engine.eval(fun);

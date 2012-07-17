@@ -224,7 +224,6 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
                     archive.getSettings().setExtractionInfo(new ExtractionInfo(getExtractToFolder(), archive));
                     fireEvent(ExtractionEvent.Type.FINISHED);
-
                     logger.clear();
                     break;
                 case ExtractionControllerConstants.EXIT_CODE_INCOMPLETE_ERROR:

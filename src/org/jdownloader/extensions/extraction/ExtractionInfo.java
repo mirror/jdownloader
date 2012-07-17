@@ -27,7 +27,6 @@ public class ExtractionInfo implements Storable {
     private ArrayList<String> files;
 
     public ExtractionInfo(/* storable */) {
-
     }
 
     public ExtractionInfo(File extractToFolder, Archive archive) {

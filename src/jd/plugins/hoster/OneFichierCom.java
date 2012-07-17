@@ -17,8 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -26,8 +24,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -42,19 +40,20 @@ import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1fichier.com" }, urls = { "https?://(?!www\\.)[a-z0-9\\-]+\\.(dl4free\\.com|alterupload\\.com|cjoint\\.net|desfichiers\\.com|dfichiers\\.com|megadl\\.fr|mesfichiers\\.org|piecejointe\\.net|pjointe\\.com|tenvoi\\.com|1fichier\\.com)/?" }, flags = { 2 })
 public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
-    private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow)";
+    private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
     private static final String  PREMIUMPAGE    = "https://www.1fichier.com/en/login.pl";
     private static final String  MAINPAGE       = "www.1fichier.com";
     private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
     private static final String  FREELINK       = "freeLink";
     private static final String  PREMLINK       = "premLink";
+    private static final String  HOTLINK        = "HOTLINK";
     private static final String  SSL_CONNECTION = "SSL_CONNECTION";
+    private boolean              pwProtected    = false;
 
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,6 +71,7 @@ public class OneFichierCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        pwProtected = false;
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.setFollowRedirects(false);
@@ -79,7 +79,12 @@ public class OneFichierCom extends PluginForHost {
         br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">Software error:<")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("bad")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+)").getMatches();
+        if (br.containsHTML("password")) {
+            pwProtected = true;
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
+            return AvailableStatus.UNCHECKABLE;
+        }
+        String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+);(\\d+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Decrypter broken for link");
             return null;
@@ -92,12 +97,18 @@ public class OneFichierCom extends PluginForHost {
             link.setDownloadSize(size = SizeFormatter.getSize(filesize));
             if (size > 0) link.setProperty("VERIFIEDFILESIZE", size);
         }
-        if (br.containsHTML("password")) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
-            return AvailableStatus.UNCHECKABLE;
+        if ("1".equalsIgnoreCase(linkInfo[0][2])) {
+            link.setProperty("HOTLINK", true);
+        } else {
+            link.setProperty("HOTLINK", Property.NULL);
         }
+
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return AvailableStatus.TRUE;
+    }
+
+    public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
+        return acc == null && link.getProperty("HOTLINK", null) != null;
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
@@ -123,7 +134,7 @@ public class OneFichierCom extends PluginForHost {
         if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         String passCode = null;
-        if (br.containsHTML(PASSWORDTEXT)) {
+        if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput("Password?", downloadLink);
             } else {
@@ -158,21 +169,17 @@ public class OneFichierCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        try {
-            login(account);
-        } catch (PluginException e) {
+        br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+        String timeStamp = br.getRegex("(\\d+)").getMatch(0);
+        if (timeStamp == null || "0".equalsIgnoreCase(timeStamp) || "error".equalsIgnoreCase(timeStamp)) {
+            account.setProperty("type", Property.NULL);
             account.setValid(false);
             return ai;
-        }
-        account.setValid(true);
-        br.getPage("http://www.1fichier.com/en/console/abo.pl");
-        String premUntil = br.getRegex("subscribed to our advanced services to (\\d+/\\d+/\\d+)").getMatch(0);
-        if (premUntil == null) premUntil = br.getRegex("You are a premium user !.*Until[ ]*:[ ]*(\\d+/\\d+/\\d+)").getMatch(0);
-        if (premUntil != null) {
+        } else {
             account.setValid(true);
             account.setProperty("type", "PREMIUM");
             ai.setStatus("Premium User");
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(premUntil, "dd/MM/yyyy", null) + (24 * 60 * 60 * 1000l));
+            ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
             try {
                 maxPrem.set(20);
@@ -181,18 +188,8 @@ public class OneFichierCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             ai.setStatus("Premium User");
-        } else {
-            ai.setUnlimitedTraffic();
-            account.setProperty("type", "FREE");
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
-            }
-            ai.setStatus("Registered (free) User");
+            return ai;
         }
-        return ai;
     }
 
     @Override
@@ -226,7 +223,10 @@ public class OneFichierCom extends PluginForHost {
             passCode = downloadLink.getStringProperty("pass", null);
         }
         br.postPage(br.getURL(), "pass=" + passCode);
-        if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+        if (br.containsHTML(PASSWORDTEXT)) {
+            downloadLink.setProperty("pass", Property.NULL);
+            throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+        }
         return passCode;
     }
 
@@ -238,9 +238,8 @@ public class OneFichierCom extends PluginForHost {
             doFree(link);
             return;
         }
-        login(account);
         String dllink = link.getStringProperty(PREMLINK, null);
-        boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, false);
+        boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
         if (dllink != null) {
             /* try to resume existing file */
             if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
@@ -259,8 +258,18 @@ public class OneFichierCom extends PluginForHost {
         }
         br.setFollowRedirects(false);
         sleep(2 * 1000l, link);
-        br.getPage(link.getDownloadURL().replace("en/index.html", ""));
-        if (br.containsHTML("password")) passCode = handlePassword(link, passCode);
+        String url = link.getDownloadURL().replace("en/index.html", "");
+        url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
+        URLConnectionAdapter con = br.openGetConnection(url);
+        if (con.getResponseCode() == 401) {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.followConnection();
+        if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
         dllink = br.getRedirectLocation();
         if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
         if (dllink == null) {
@@ -282,54 +291,8 @@ public class OneFichierCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean login(Account account) throws Exception {
-        synchronized (account) {
-            try {
-                /** Load cookies */
-                this.setBrowserExclusive();
-                prepareBrowser(br);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof Map<?, ?>) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie("http://" + MAINPAGE, key, value);
-                            this.br.setCookie("https://" + MAINPAGE, key, value);
-                        }
-                        Browser brc = br.cloneBrowser();
-                        brc.getPage("http://" + MAINPAGE);
-                        if (brc.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            return false;
-                        }
-                    }
-                }
-                br.postPage(PREMIUMPAGE, "mail=" + Encoding.urlEncode(account.getUser()) + " &pass=" + Encoding.urlEncode(account.getPass()) + "&secure=on&Login=Login");
-                if (br.getCookie(MAINPAGE, "SID") == null || br.getCookie(MAINPAGE, "SID").equals("")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-                return true;
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
-        }
-    }
-
     private void setConfigElements() {
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
     }
 
     private void prepareBrowser(final Browser br) {

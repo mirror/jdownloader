@@ -373,6 +373,7 @@ abstract public class DownloadInterface {
                 linkStatus.setValue(10 * 60000l);
                 error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT._.download_error_message_unavailable());
             } catch (IOException e) {
+                LogSource.exception(logger, e);
                 if (e.getMessage() != null && e.getMessage().contains("reset")) {
                     logger.info("Connection reset: network problems!");
                     linkStatus.setValue(1000l * 60 * 5);

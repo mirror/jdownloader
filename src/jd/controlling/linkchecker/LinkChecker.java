@@ -408,18 +408,27 @@ public class LinkChecker<E extends CheckableLink> {
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;
         } finally {
+            if (availableStatus == null) {
+                logger.severe("Link " + link.getDownloadURL() + " is broken, status was null");
+                availableStatus = AvailableStatus.UNCHECKABLE;
+            }
             logger.info("Link " + link.getDownloadURL() + " is " + availableStatus);
-            if (availableStatus != AvailableStatus.UNCHECKABLE) {
-                logger.clear();
-            } else {
+            switch (availableStatus) {
+            case UNCHECKABLE:
                 logger.flush();
+                break;
+            case TRUE:
+                link.getLinkStatus().removeStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case FALSE:
+            default:
+                logger.clear();
+                break;
             }
             try {
                 plgToUse.getBrowser().getHttpConnection().disconnect();
             } catch (Throwable e) {
             }
         }
-        if (availableStatus == null) availableStatus = AvailableStatus.UNCHECKABLE;
         link.setAvailableStatus(availableStatus);
     }
 }

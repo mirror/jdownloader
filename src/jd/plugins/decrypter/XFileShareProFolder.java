@@ -60,9 +60,12 @@ public class XFileShareProFolder extends PluginForDecrypt {
         }
         String[] links = br.getRegex("<div class=\"link\"><a href=\"(.+?" + HOST + "[^\"]+)").getColumn(0);
         if (links == null || links.length == 0) links = br.getRegex("<b>Filename: </b><a href=\"(.+?" + HOST + "[^\"]+)").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        if (links != null && links.length > 0) {
+            for (String dl : links) {
+                decryptedLinks.add(createDownloadlink(dl));
+            }
+        }
+        String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + HOST + "[^\"]+users/[^\"]+)").getColumn(0);
         // name isn't needed, other than than text output for fpName.
         String fpName = new Regex(parameter, "folder/\\d+/.+/(.+)").getMatch(0); // name
         if (fpName == null) {
@@ -79,6 +82,11 @@ public class XFileShareProFolder extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
+        }
+        if (folders != null && folders.length > 0) {
+            for (String dl : folders) {
+                decryptedLinks.add(createDownloadlink(dl));
+            }
         }
         return decryptedLinks;
     }

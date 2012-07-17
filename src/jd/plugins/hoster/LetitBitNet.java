@@ -319,6 +319,7 @@ public class LetitBitNet extends PluginForHost {
         String url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
         if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
+            if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
             logger.warning("url couldn't be found!");
             logger.severe(url);
             logger.severe(br2.toString());

@@ -50,7 +50,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easybytez.com" }, urls = { "http://(www\\.)?easybytez\\.com/(?!users)[a-z0-9]{12}" }, flags = { 2 })
 public class EasyBytezCom extends PluginForHost {
 
     private String              BRBEFORE            = "";

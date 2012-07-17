@@ -311,8 +311,8 @@ public class LinkCrawler implements IOPermission {
             }
         }
         if (stopped) {
-            crawlerStopped();
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STOPPED));
+            crawlerStopped();
         }
     }
 
@@ -336,8 +336,8 @@ public class LinkCrawler implements IOPermission {
             crawler.incrementAndGet();
         }
         if (started) {
-            crawlerStarted();
             EVENTSENDER.fireEvent(new LinkCrawlerEvent(this, LinkCrawlerEvent.Type.STARTED));
+            crawlerStarted();
         }
         return true;
     }

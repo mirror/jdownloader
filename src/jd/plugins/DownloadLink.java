@@ -514,6 +514,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /** Setzt alle DownloadWErte zurueck */
     public void reset() {
         this.setProperty(PROPERTY_VERIFIEDFILESIZE, Property.NULL);
+        /* TODO: remove forced filename */
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;

@@ -22,6 +22,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -38,10 +39,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /**
- * They have a linkchecker but it's only available for registered users (well
- * maybe it also works so) but it doesn't show the filenames of the links:
- * http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to
- * check
+ * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of the links:
+ * http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com/(dl|v)/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadHeroCom extends PluginForHost {
@@ -116,8 +115,8 @@ public class UploadHeroCom extends PluginForHost {
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
@@ -194,6 +193,22 @@ public class UploadHeroCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            /* check if cookie is outdated */
+            synchronized (LOCK) {
+                Object ret = account.getProperty("cookies", null);
+                if (ret == null) {
+                    /* cookie already got deleted */
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                Browser brc = br.cloneBrowser();
+                brc.getPage("http://uploadhero.com/my-account");
+                String expire = brc.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
+                if (expire == null) {
+                    logger.info("try to refresh cookie, as it seems to be invalid!");
+                    account.setProperty("cookies", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
