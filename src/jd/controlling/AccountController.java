@@ -190,35 +190,39 @@ public class AccountController implements AccountControllerListener {
                 ai.setValidUntil(-1);
             }
             ClassLoader oldClassLoader = currentThread.getContextClassLoader();
+            long tempDisabledBefore = account.getTmpDisabledTimeout();
             try {
                 /*
                  * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                  */
                 currentThread.setContextClassLoader(plugin.getLazyP().getClassLoader());
                 ai = plugin.fetchAccountInfo(account);
+                account.setAccountInfo(ai);
             } finally {
                 account.setUpdateTime(System.currentTimeMillis());
                 currentThread.setContextClassLoader(oldClassLoader);
             }
-            if (ai == null) {
-                /* not every plugin has fetchAccountInfo */
-                account.setAccountInfo(null);
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
-                return null;
-            }
-            account.setAccountInfo(ai);
-            if (ai.isExpired()) {
-                logger.clear();
-                LogController.CL().info("Account " + whoAmI + " is expired!");
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
-            } else if (!account.isValid()) {
+            if (account.isValid() == false) {
+                /* account is invalid */
                 account.setEnabled(false);
                 LogController.CL().info("Account " + whoAmI + " is invalid!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
-            } else {
-                logger.clear();
-                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
+                return ai;
             }
+            if (ai != null && ai.isExpired()) {
+                /* expired account */
+                logger.clear();
+                LogController.CL().info("Account " + whoAmI + " is expired!");
+                this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
+                return ai;
+            }
+            if (tempDisabledBefore > 0 && account.getTmpDisabledTimeout() == tempDisabledBefore) {
+                /* reset temp disabled information */
+                logger.info("no longer temp disabled!");
+                account.setTempDisabled(false);
+            }
+            logger.clear();
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
         } catch (final Throwable e) {
             if (e instanceof PluginException) {
                 PluginException pe = (PluginException) e;
@@ -269,13 +273,12 @@ public class AccountController implements AccountControllerListener {
                 } catch (final IPCheckException e2) {
                 }
             }
-            logger.severe("AccountCheck: Failed because of exception");
+            logger.severe("AccountCheck: Failed because of exception, temp disable it!");
             logger.log(e);
             /* move download log into global log */
-            account.setAccountInfo(null);
-            account.setEnabled(false);
-            account.setValid(false);
-            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.INVALID, account));
+            account.setProperty(Account.PROPERTY_TEMP_DISABLED_TIMEOUT, config.getTempDisableOnErrorTimeout() * 60 * 1000l);
+            account.setTempDisabled(true);
+            this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.UPDATE, account));
         } finally {
             logger.close();
             if (bThread != null) {

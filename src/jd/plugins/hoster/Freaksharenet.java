@@ -117,7 +117,7 @@ public class Freaksharenet extends PluginForHost {
                 final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
                 rc.setCode(c);
-                if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
+                if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 30 * 60 * 1000l); }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|>Wrong Captcha)")) {
                     continue;
                 }
@@ -220,7 +220,7 @@ public class Freaksharenet extends PluginForHost {
     }
 
     private void handleOtherErrors(DownloadLink downloadLink) throws PluginException {
-        if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 10 * 60 * 1000l); }
+        if (br.containsHTML(MAXDLSLIMITMESSAGE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Reached max free DLs", 30 * 60 * 1000l); }
         if (br.containsHTML("File can not be found")) {
             logger.info("File for the following is offline (server error): " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

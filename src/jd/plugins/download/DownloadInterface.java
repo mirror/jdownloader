@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -804,6 +805,7 @@ abstract public class DownloadInterface {
         boolean resumed = false;
         if (this.isRangeRequestSupported() && this.checkResumabled()) {
             /* we can continue to resume the download */
+            logger.finer(".....connectResumable");
             resumed = connectResumable();
         } else {
             long verifiedFileSize = downloadLink.getVerifiedFileSize();
@@ -817,8 +819,10 @@ abstract public class DownloadInterface {
             }
             if (this.isRangeRequestSupported()) {
                 /* range requests are supported! */
+                logger.finer(".....connectFirstRange");
                 connectFirstRange();
             } else {
+                logger.finer(".....connectRangeless");
                 /* our connection happens rangeless */
                 request.getHeaders().remove("Range");
                 browser.connect(request);
@@ -833,22 +837,23 @@ abstract public class DownloadInterface {
                 this.setFilesizeCheck(true);
                 this.downloadLink.setDownloadSize(connection.getRange()[2]);
             }
-            if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && getFileSize() == downloadLink.getChunksProgress()[0] + 1) {
-                /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
-                /* we fake a content disposition connection so plugins work normal */
-                if (connection.isContentDisposition() == false) {
-                    List<String> list = new ArrayList<String>();
-                    list.add("fakeContent");
-                    connection.getHeaderFields().put("Content-Disposition", list);
-                }
-                List<String> list = new ArrayList<String>();
-                list.add("application/octet-stream");
-                connection.getHeaderFields().put("Content-Type", list);
-                dlAlreadyFinished = true;
-            }
         } else if (resumed == false && connection.getLongContentLength() > 0 && connection.isOK()) {
             this.setFilesizeCheck(true);
             this.downloadLink.setDownloadSize(connection.getLongContentLength());
+        }
+        if (connection.getResponseCode() == 416 && resumed == true && downloadLink.getChunksProgress().length == 1 && downloadLink.getVerifiedFileSize() == downloadLink.getChunksProgress()[0] + 1) {
+            logger.info("Faking Content-Disposition for already finished downloads");
+            /* we requested a finished loaded file, got 416 and content-range with * and one chunk only */
+            /* we fake a content disposition connection so plugins work normal */
+            if (connection.isContentDisposition() == false) {
+                List<String> list = new ArrayList<String>();
+                list.add("fakeContent");
+                connection.getHeaderFields().put("Content-Disposition", list);
+            }
+            List<String> list = new ArrayList<String>();
+            list.add("application/octet-stream");
+            connection.getHeaderFields().put("Content-Type", list);
+            dlAlreadyFinished = true;
         }
         return connection;
     }
@@ -895,11 +900,11 @@ abstract public class DownloadInterface {
 
     protected boolean connectResumable() throws IOException {
         // TODO: endrange pruefen
-
         long[] chunkProgress = downloadLink.getChunksProgress();
         String start, end;
         start = end = "";
         boolean rangeRequested = false;
+        logger.info("chunksProgress: " + Arrays.toString(chunkProgress));
         if (downloadLink.getVerifiedFileSize() > 0) {
             start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
             end = (getFileSize() / chunkProgress.length) + "";
@@ -908,10 +913,14 @@ abstract public class DownloadInterface {
             end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
         }
         if (downloadLink.getVerifiedFileSize() < 0 && start.equals("0")) {
+            logger.info("rangeless resumable connect");
             rangeRequested = false;
             request.getHeaders().remove("Range");
         } else {
             rangeRequested = true;
+            if (start.equalsIgnoreCase(end)) {
+                logger.info("WTF, start equals end! Workaround by manipulating the startRange");
+            }
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
         browser.connect(request);

@@ -600,7 +600,7 @@ public class DepositFiles extends PluginForHost {
         if (fileName == null || fileSizeString == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String fixedName = new Regex(fileName, "(.+)\\?").getMatch(0);
         if (fixedName != null) fileName = fixedName;
-        downloadLink.setName(fileName);
+        downloadLink.setName(Encoding.htmlDecode(fileName));
         downloadLink.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileSizeString)));
         return AvailableStatus.TRUE;
     }

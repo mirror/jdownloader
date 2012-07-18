@@ -27,6 +27,7 @@ import org.appwork.swing.exttable.columns.ExtDateColumn;
 import org.appwork.swing.exttable.columns.ExtPasswordEditorColumn;
 import org.appwork.swing.exttable.columns.ExtProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
@@ -283,6 +284,11 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             }
 
             @Override
+            protected String getDateFormatString() {
+                return "dd.MM.yy";
+            }
+
+            @Override
             protected Date getDate(Account o2, Date date) {
                 AccountInfo ai = o2.getAccountInfo();
                 if (ai == null) {
@@ -309,6 +315,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
             protected boolean isIndeterminated(final Account value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 if (checkRunning) { return AccountChecker.getInstance().contains(value); }
+                if (value.isValid() && value.isEnabled() && value.isTempDisabled()) return true;
                 return false;
 
             }
@@ -316,8 +323,11 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
             @Override
             protected String getString(Account ac, long current, long total) {
                 AccountInfo ai = ac.getAccountInfo();
+                long timeout = -1;
                 if (!ac.isValid()) {
                     return "";
+                } else if (ac.isEnabled() && ac.isTempDisabled() && ((timeout = ac.getTmpDisabledTimeout() - System.currentTimeMillis()) > 0)) {
+                    return _GUI._.premiumaccounttablemodel_column_trafficleft_tempdisabled(TimeFormatter.formatMilliSeconds(timeout, 0));
                 } else if (ai == null) {
                     return "";
                 } else {

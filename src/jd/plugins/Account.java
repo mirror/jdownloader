@@ -44,19 +44,24 @@ public class Account extends Property {
         this.concurrentUsePossible = concurrentUsePossible;
     }
 
-    private boolean                     valid              = true;
+    private boolean        valid              = true;
 
-    private transient long              tmpDisabledTimeout = -1;
-    private transient UniqueSessionID   ID                 = new UniqueSessionID();
+    private transient long tmpDisabledTimeout = -1;
+
+    public long getTmpDisabledTimeout() {
+        return tmpDisabledTimeout;
+    }
+
+    private transient UniqueSessionID   ID           = new UniqueSessionID();
 
     /* keep for comp. reasons */
-    private String                      hoster             = null;
-    private AccountInfo                 accinfo            = null;
+    private String                      hoster       = null;
+    private AccountInfo                 accinfo      = null;
 
-    private long                        updatetime         = 0;
-    private int                         maxDownloads       = 0;
+    private long                        updatetime   = 0;
+    private int                         maxDownloads = 0;
 
-    private transient AccountController ac                 = null;
+    private transient AccountController ac           = null;
 
     /**
      * 
@@ -221,11 +226,15 @@ public class Account extends Property {
     public void setTempDisabled(final boolean tempDisabled) {
         boolean notify = false;
         synchronized (this) {
-            if ((this.tmpDisabledTimeout > 0 && tempDisabled == false) || (this.tmpDisabledTimeout <= 0 && tempDisabled == true)) {
-                long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
-                Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
-                if (timeout == null || timeout <= 0) timeout = defaultTmpDisabledTimeOut;
-                this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
+            if ((this.tmpDisabledTimeout > 0 && tempDisabled == false) || tempDisabled == true) {
+                if (tempDisabled == false) {
+                    this.tmpDisabledTimeout = -1;
+                } else {
+                    long defaultTmpDisabledTimeOut = 60 * 60 * 1000l;
+                    Long timeout = this.getLongProperty(PROPERTY_TEMP_DISABLED_TIMEOUT, defaultTmpDisabledTimeOut);
+                    if (timeout == null || timeout <= 0) timeout = defaultTmpDisabledTimeOut;
+                    this.tmpDisabledTimeout = System.currentTimeMillis() + timeout;
+                }
                 notify = true;
             }
         }
