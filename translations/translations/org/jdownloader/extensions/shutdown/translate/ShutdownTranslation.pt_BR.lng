@@ -14,7 +14,7 @@ gui_config_jdshutdown_standby=Suspender  (Não disponível em todos os Sistemas 
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">O JDownloader será fechado!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red"> O sistema entrará em modo de hibernação!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">O sistema será desligado!</font></h2>
-interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">O sistema entrará no modo suspender!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">O sistema entrará em modo de espera!</font></h2>
 interaction_shutdown_dialog_title_closejd=Fechar o JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernar?
 interaction_shutdown_dialog_title_shutdown=Desligar?
