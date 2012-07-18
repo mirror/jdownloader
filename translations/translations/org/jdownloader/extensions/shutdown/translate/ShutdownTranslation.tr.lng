@@ -1,5 +1,7 @@
+action_tooltip=İndirmeler tamamlandığında Sistemin kapatılmasını etkinleştir
 addons_jdshutdown_statusmessage_disabled=Sisteminiz JDownloader tarafından KAPATILMAYACAK.
 addons_jdshutdown_statusmessage_enabled=İndirmeler bittikten sonra JDownloader Sisteminizi kapatacak.
+config_toolbarbutton=Araç çubuğu düğmesi görüntülensin
 gui_config_jdshutdown_close=JDownloader'ı Kapat
 gui_config_jdshutdown_enabledOnStart=Başlangıçta etkinleştirilsin
 gui_config_jdshutdown_forceshutdown=Bilgisayarı Kapatmaya zorla (Tüm İS için değildir)
@@ -19,3 +21,4 @@ interaction_shutdown_dialog_title_shutdown=Bilgisayar Kapatılsın mı?
 interaction_shutdown_dialog_title_standby=Beklemeye alınsın mı?
 jd_plugins_optional_jdshutdown=JDownloader'ı Kapat
 jd_plugins_optional_jdshutdown_description=PC'nizi otomatik olarak kapatın, askıya, hazırda beklemeye alın veya indirmeler bittiğinde JDownloader'ı kapatsın
+lit_shutdownn=Sistem kapatma

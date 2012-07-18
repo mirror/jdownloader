@@ -121,7 +121,7 @@ gui_warning_reconnectunknown=Yeniden bağlanma bilinmiyor
 jd_controlling_SingleDownloadController_askexists=%s2 Paketindeki '%s1' dosyası zaten mevcut. Ne yapmak istiyorsunuz?
 jd_controlling_SingleDownloadController_askexists_title=Dosya mevcut
 jd_controlling_reconnect_Reconnector_progress_failed2=Yeniden bağlanma birçok kez başarısız oldu! Otomatik yeniden bağlanma devre dışı bırakıldı! Lütfen yeniden bağlanma ayarlarınızı gözden geçirin!
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Hiçbir yeniden bağlanma yöntemi seçilmedi</u></b><br/><p>Yeniden bağlanma, Bazı dosya barındırma sitelerinin Ücretsiz Kullanıcılara uygulamış olduğu uzun bekleme sürelerini Atlatmak için kullanılan gelişmiş bir Yöntemdir. Premium Hesap varken kullanılmasının faydası yoktur.</p><p>Yeniden bağlanma hakkında daha fazla bilgi edinebilmek için <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>bunu okuyun</a></p>
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Hiçbir yeniden bağlanma yöntemi seçilmedi</u></b><br/><p>Yeniden bağlanma, Bazı dosya barındırma sitelerinin Ücretsiz Kullanıcılara uygulamış olduğu uzun bekleme sürelerini Atlatmak için kullanılan gelişmiş bir Yöntemdir. Premium Hesap varken kullanılmasının faydası yoktur.</p><p>Yeniden bağlanma hakkında daha fazla bilgi edinebilmek için bunu <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>okuyun</a></p>
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Yeniden bağlanma yok (kullanmıyorum)
 jd_plugins_PluginUtils_askPassword=Lütfen %s1 için parolayı girin
 literally_offline=Çevrimdışı
