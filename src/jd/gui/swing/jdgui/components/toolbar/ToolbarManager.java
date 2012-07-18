@@ -93,4 +93,16 @@ public class ToolbarManager {
         map.put(action.getID(), action);
         if (action.isDefaultVisible()) list.add(action);
     }
+
+    private void removeIntern(AbstractToolbarAction action) {
+        map.remove(action.getID());
+        list.remove(action);
+    }
+
+    public void remove(AbstractToolbarAction action) {
+        removeIntern(action);
+        update();
+        MainToolBar.getInstance().updateToolbar();
+    }
+
 }

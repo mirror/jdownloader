@@ -17,35 +17,27 @@
 package org.jdownloader.extensions.shutdown;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
-import jd.config.Property;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.gui.UserIO;
-import jd.nutils.Executer;
+import jd.gui.swing.jdgui.components.toolbar.ToolbarManager;
+import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
+import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
 import jd.nutils.JDFlags;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
-import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.actions.AppAction;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
-import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
@@ -53,17 +45,15 @@ import org.jdownloader.logging.LogController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
 
-    private final int                               count                 = 60;
-    private static final String                     CONFIG_ENABLEDONSTART = "ENABLEDONSTART";
-    private static final String                     CONFIG_MODE           = "CONFIG_MODE";
-    private static final String                     CONFIG_FORCESHUTDOWN  = "FORCE";
-    private Thread                                  shutdown              = null;
-    private boolean                                 shutdownEnabled;
-    private AppAction                               menuAction            = null;
-    private String[]                                MODES_AVAIL           = null;
-    private ExtensionConfigPanel<ShutdownExtension> configPanel;
+    private final int             count      = 60;
 
-    public ExtensionConfigPanel<ShutdownExtension> getConfigPanel() {
+    private Thread                shutdown   = null;
+
+    private AbstractToolbarAction menuAction = null;
+
+    private ShutdownConfigPanel   configPanel;
+
+    public ShutdownConfigPanel getConfigPanel() {
         return configPanel;
     }
 
@@ -73,8 +63,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public ShutdownExtension() throws StartException {
         setTitle(_.jd_plugins_optional_jdshutdown());
-        MODES_AVAIL = new String[] { _.gui_config_jdshutdown_shutdown(), _.gui_config_jdshutdown_standby(), _.gui_config_jdshutdown_hibernate(), _.gui_config_jdshutdown_close() };
-        shutdownEnabled = getPropertyConfig().getBooleanProperty(CONFIG_ENABLEDONSTART, false);
+
     }
 
     private void closejd() {
@@ -95,7 +84,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         case CrossSystem.OS_WINDOWS_NT:
         case CrossSystem.OS_WINDOWS_SERVER_2008:
             /* not so modern windows versions */
-            if (getPropertyConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+            if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
@@ -147,7 +136,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             break;
         case CrossSystem.OS_MAC_OTHER:
             /* mac os */
-            if (getPropertyConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+            if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
                 try {
                     JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
@@ -299,7 +288,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     private class ShutDown extends Thread {
         @Override
         public void run() {
-            if (shutdownEnabled == false) return;
+            if (getSettings().isShutdownActive() == false) return;
             /* check for running jdunrar and wait */
             // OptionalPluginWrapper addon =
             // JDUtilities.getOptionalPlugin("unrar");
@@ -332,11 +321,10 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             // }
             // }
 
-            int ret = getPropertyConfig().getIntegerProperty(CONFIG_MODE, 0);
             String message;
             int ret2;
-            switch (ret) {
-            case 0:
+            switch (getSettings().getShutdownMode()) {
+            case SHUTDOWN:
                 /* try to shutdown */
                 LogController.CL().info("ask user about shutdown");
                 message = _.interaction_shutdown_dialog_msg_shutdown();
@@ -348,7 +336,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     shutdown();
                 }
                 break;
-            case 1:
+            case STANDBY:
                 /* try to standby */
                 LogController.CL().info("ask user about standby");
                 message = _.interaction_shutdown_dialog_msg_standby();
@@ -360,7 +348,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     standby();
                 }
                 break;
-            case 2:
+            case HIBERNATE:
                 /* try to hibernate */
                 LogController.CL().info("ask user about hibernate");
                 message = _.interaction_shutdown_dialog_msg_hibernate();
@@ -372,7 +360,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                     hibernate();
                 }
                 break;
-            case 3:
+            case CLOSE:
                 /* try to close */
                 LogController.CL().info("ask user about closing");
                 message = _.interaction_shutdown_dialog_msg_closejd();
@@ -411,73 +399,69 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     @Override
     protected void stop() throws StopException {
         DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (menuAction != null) {
+
+                    ToolbarManager.getInstance().remove(menuAction);
+                }
+            }
+        };
+
     }
 
     @Override
     protected void start() throws StartException {
-        if (menuAction == null) menuAction = new AppAction() {
-            {
-                setName("Shutdown");
-                setIconKey("logout");
+        if (menuAction == null) {
+            menuAction = new AbstractToolbarToggleAction(CFG_SHUTDOWN.SHUTDOWN_ACTIVE) {
 
-                this.setEnabled(true);
-                setSelected(false);
+                {
+                    setName(_.lit_shutdownn());
 
-                this.addPropertyChangeListener(new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent evt) {
-                        if (evt.getPropertyName() == SELECTED_KEY) {
-                            shutdownEnabled = isSelected();
-                        }
-                    }
-                });
-            }
+                    this.setEnabled(true);
+                    setSelected(false);
 
-            public void actionPerformed(ActionEvent e) {
-                if (shutdownEnabled) {
-                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_enabled());
-                } else {
-                    UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_disabled());
                 }
-            }
-
-        };
-        menuAction.setSelected(shutdownEnabled);
-        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
-        LogController.CL().info("Shutdown OK");
-    }
-
-    protected void initSettings(ConfigContainer config) {
-        Property subConfig = getPropertyConfig();
-
-        config.setGroup(new ConfigGroup(getName(), getIconKey()));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_ENABLEDONSTART, _.gui_config_jdshutdown_enabledOnStart()).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, subConfig, CONFIG_MODE, MODES_AVAIL, _.gui_config_jdshutdown_mode()).setDefaultValue(0));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, _.gui_config_jdshutdown_forceshutdown()).setDefaultValue(false));
-
-        /* enable force shutdown for Mac OSX */
-        if (CrossSystem.isMac()) {
-            config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
-                    Executer exec = new Executer("/usr/bin/osascript");
-                    File tmp = Application.getResource("tmp/osxnopasswordforshutdown.scpt");
-                    tmp.delete();
-                    try {
-                        IO.writeToFile(tmp, IO.readURL(Application.getRessourceURL(Application.getPackagePath(ShutdownExtension.class) + "osxnopasswordforshutdown.scpt")));
-
-                        exec.addParameter(tmp.getAbsolutePath());
-                        exec.setWaitTimeout(0);
-                        exec.start();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    } finally {
-                        tmp.delete();
-                        tmp.deleteOnExit();
+                    super.actionPerformed(e);
+                    if (isSelected()) {
+                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_enabled());
+                    } else {
+                        UserIO.getInstance().requestMessageDialog(UserIO.DONT_SHOW_AGAIN, _.addons_jdshutdown_statusmessage_disabled());
                     }
                 }
 
-            }, _.gui_config_jdshutdown_osx_force_short(), _.gui_config_jdshutdown_osx_force_long(), null));
+                @Override
+                public String createIconKey() {
+                    return "logout";
+                }
+
+                @Override
+                protected String createMnemonic() {
+                    return null;
+                }
+
+                @Override
+                protected String createAccelerator() {
+                    return null;
+                }
+
+                @Override
+                protected String createTooltip() {
+                    return _.action_tooltip();
+                }
+
+            };
         }
+
+        if (getSettings().isToolbarButtonEnabled()) {
+            ToolbarManager.getInstance().add(menuAction);
+        }
+        DownloadWatchDog.getInstance().getStateMachine().addListener(this);
+        LogController.CL().info("Shutdown OK");
     }
 
     @Override
@@ -499,25 +483,26 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     @Override
     protected void initExtension() throws StartException {
-        ConfigContainer cc = new ConfigContainer(getName());
-        initSettings(cc);
-        configPanel = createPanelFromContainer(cc);
+        // ConfigContainer cc = new ConfigContainer(getName());
+        // initSettings(cc);
+        configPanel = new ShutdownConfigPanel(this);
     }
 
     public void onStateChange(StateEvent event) {
-        if (shutdownEnabled == false) return;
+        if (!getSettings().isShutdownActive()) return;
         if (DownloadWatchDog.IDLE_STATE == event.getNewState() || DownloadWatchDog.STOPPED_STATE == event.getNewState()) {
-            if (DownloadWatchDog.getInstance().getDownloadssincelastStart() > 0) {
-                if (shutdown != null) {
-                    if (!shutdown.isAlive()) {
-                        shutdown = new ShutDown();
-                        shutdown.start();
-                    }
-                } else {
+            // if (DownloadWatchDog.getInstance().getDownloadssincelastStart() >
+            // 0) {
+            if (shutdown != null) {
+                if (!shutdown.isAlive()) {
                     shutdown = new ShutDown();
                     shutdown.start();
                 }
+            } else {
+                shutdown = new ShutDown();
+                shutdown.start();
             }
+            // }
         }
     }
 
