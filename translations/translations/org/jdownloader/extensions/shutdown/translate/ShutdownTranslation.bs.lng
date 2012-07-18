@@ -1,5 +1,7 @@
+action_tooltip=Omogući Shutdown sistema nakon završenih Download-a
 addons_jdshutdown_statusmessage_disabled=Računalnik NEBO izklopljen z strani JDownloader-a
 addons_jdshutdown_statusmessage_enabled=JDownloader će isključiti računar nakon završetka svih download-a!
+config_toolbarbutton=Dugme Alatne trake je vidljivo
 gui_config_jdshutdown_close=Zatvori JDownloader
 gui_config_jdshutdown_enabledOnStart=Omogućeno na Startu
 gui_config_jdshutdown_forceshutdown=Isključi računar (Nije za sve OS)
@@ -19,3 +21,4 @@ interaction_shutdown_dialog_title_shutdown=Ugasiti računar
 interaction_shutdown_dialog_title_standby=Pripravnost?
 jd_plugins_optional_jdshutdown=JD Gašenje
 jd_plugins_optional_jdshutdown_description=Automatski isključi, suspenduj, hiberniraj računar ili zatvori JDownloader kada se završe svi download-i.
+lit_shutdownn=Shutdown
