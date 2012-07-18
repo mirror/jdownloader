@@ -58,6 +58,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         return false;
     }
 
+    @Override
+    public boolean isSearchEnabled() {
+        return false;
+    }
+
     protected boolean onSingleClick(MouseEvent e, final AbstractNode obj) {
 
         if (e.isAltDown() || e.isAltGraphDown()) {

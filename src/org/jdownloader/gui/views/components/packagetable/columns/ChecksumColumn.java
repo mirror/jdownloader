@@ -7,6 +7,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.translate._GUI;
 
 public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
@@ -19,6 +20,36 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
     public ChecksumColumn() {
         super(_GUI._.checksumcolumnmd5());
 
+    }
+
+    public void configureEditorComponent(final AbstractNode value, final boolean isSelected, final int row, final int column) {
+
+        this.editorField.removeActionListener(this);
+        String str = this.getEditorStringValue(value);
+        if (str == null) {
+            // under substance, setting setText(null) somehow sets the label
+            // opaque.
+            str = "";
+        }
+        this.editorField.setText(str);
+        this.editorField.addActionListener(this);
+
+        this.editorIconLabel.setIcon(this.getIcon(value));
+
+    }
+
+    private String getEditorStringValue(AbstractNode value) {
+        DownloadLink dl = null;
+        if (value instanceof CrawledLink) {
+            dl = ((CrawledLink) value).getDownloadLink();
+        } else if (value instanceof DownloadLink) {
+            dl = ((DownloadLink) value);
+        }
+        if (dl != null) {
+            if (!StringUtils.isEmpty(dl.getSha1Hash())) { return dl.getSha1Hash(); }
+            if (dl.getMD5Hash() != null) return dl.getMD5Hash();
+        }
+        return null;
     }
 
     @Override
@@ -49,8 +80,18 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
             dl = ((DownloadLink) object);
         }
         if (dl != null) {
+            value = value.replaceAll("[^0-9a-fA-f]", "");
+            if (value != null && value.length() == 32) {
+                dl.setMD5Hash(value);
+            } else if (value != null && value.length() == 40) {
+                dl.setSha1Hash(value);
+            } else if (value == null || value.length() == 0) {
 
-            dl.setMD5Hash(value);
+                dl.setSha1Hash(null);
+                dl.setMD5Hash(null);
+
+            }
+
         }
     }
 
@@ -62,7 +103,10 @@ public class ChecksumColumn extends ExtTextColumn<AbstractNode> {
         } else if (value instanceof DownloadLink) {
             dl = ((DownloadLink) value);
         }
-        if (dl != null) return dl.getMD5Hash();
+        if (dl != null) {
+            if (!StringUtils.isEmpty(dl.getSha1Hash())) { return "[SHA1] " + dl.getSha1Hash(); }
+            if (dl.getMD5Hash() != null) return "[MD5] " + dl.getMD5Hash();
+        }
         return null;
 
     }

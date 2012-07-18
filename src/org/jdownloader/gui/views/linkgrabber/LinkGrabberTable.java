@@ -56,7 +56,7 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
 
     @Override
     public boolean isSearchEnabled() {
-        return true;
+        return false;
     }
 
     @Override
