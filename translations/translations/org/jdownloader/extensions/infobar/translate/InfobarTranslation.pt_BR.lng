@@ -1,4 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=Zona de Soltura
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Arraste URLs, Links ou arquivos DLC até aqui!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Ocultar Barra de Informações
 jd_plugins_optional_infobar_docking=Ativar redimencionamento pelas bordas
-jd_plugins_optional_infobar_jdinfobar_description=JDInfoBar
-jd_plugins_optional_infobar_jdinfobar=JD Barra de Info
+jd_plugins_optional_infobar_dropLocation2=Habilitar Local de Soltura
+jd_plugins_optional_infobar_jdinfobar=Barra de Informações
+jd_plugins_optional_infobar_jdinfobar_description=Painel flutuante com informações de Downloads em tempo real, e Zona de Soltura onde você pode adicionar links, URLs ou arquivos DLC.
 jd_plugins_optional_infobar_opacity=Opacidade da caixa de dialogo [em %]

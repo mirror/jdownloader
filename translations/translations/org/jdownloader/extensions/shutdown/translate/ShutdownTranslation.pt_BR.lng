@@ -1,20 +1,24 @@
-﻿gui_config_jdshutdown_shutdown=Desligar
-gui_config_jdshutdown_forceshutdown=Forçar saída (Não disponível para todos os SO's)
-interaction_shutdown_dialog_title_standby=Modo de espera?
-interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistema será desligado</font></h2>
+action_tooltip=Habilita o Desligamento do Sistema após finalizar os Downloads
+addons_jdshutdown_statusmessage_disabled=O Sistema não será desligado após o término dos downloads
+addons_jdshutdown_statusmessage_enabled=O Sistema será desligado após o término dos downloads
+config_toolbarbutton=Botão da Barra de Ferramentas visível
+gui_config_jdshutdown_close=Fechar o JDownloader
+gui_config_jdshutdown_enabledOnStart=Habilitar ao Iniciar
+gui_config_jdshutdown_forceshutdown=Forçar saída (Não disponível em todos os Sistemas Operacionais)
+gui_config_jdshutdown_hibernate=Hibernar (Não disponível em todos os Sistemas Operacionais)
+gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_osx_force_long=Forçar instalação ao desligar (Somente para Mac OSX)
+gui_config_jdshutdown_osx_force_short=Instalar
+gui_config_jdshutdown_shutdown=Desligar
+gui_config_jdshutdown_standby=Suspender  (Não disponível em todos os Sistemas Operacionais)
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">O JDownloader será fechado!</font></h2>
+interaction_shutdown_dialog_msg_hibernate=<h2><font color="red"> O sistema entrará em modo de hibernação!</font></h2>
+interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">O sistema será desligado!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">O sistema entrará no modo suspender!</font></h2>
+interaction_shutdown_dialog_title_closejd=Fechar o JDownloader?
 interaction_shutdown_dialog_title_hibernate=Hibernar?
 interaction_shutdown_dialog_title_shutdown=Desligar?
-interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader será fechado!</font></h2>
-addons_jdshutdown_statusmessage_disabled=O Sistema não será desligado após o término dos downloads
-gui_config_jdshutdown_hibernate=Hibernar (Não disponível para todos os SO's)
-gui_config_jdshutdown_close=Fechar JD
-gui_config_jdshutdown_standby=Standby  (Não disponível para todos os SO's)
-gui_config_jdshutdown_osx_force_short=Instalar
-jd_plugins_optional_jdshutdown=JD Desligar
-interaction_shutdown_dialog_title_closejd=Fechar JD?
-gui_config_jdshutdown_mode=Modo:
-addons_jdshutdown_statusmessage_enabled=O Sistema será desligado após o término dos downloads
-interaction_shutdown_dialog_msg_standby=<h2><fotn color="red">Sistema entrará em standby</font></h2>
-interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistema será definido para modo de hibernação</font></h2>
-jd_plugins_optional_jdshutdown_description=Desliga automaticamente, suspende, hiberna seu computador ou fecha assim que os downloads terminarem.
+interaction_shutdown_dialog_title_standby=Modo de espera?
+jd_plugins_optional_jdshutdown=Desligamento
+jd_plugins_optional_jdshutdown_description=Automaticamente desliga, suspende, hiberna seu computador ou fecha o JDownloader assim que os downloads terminarem.
+lit_shutdownn=Desligar
