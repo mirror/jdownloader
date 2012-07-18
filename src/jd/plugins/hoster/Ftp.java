@@ -38,8 +38,6 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.StringUtils;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z0-9]{2,3}(:\\d+)?/[^& \"\r\n]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
@@ -65,8 +63,7 @@ public class Ftp extends PluginForHost {
             ftp.connect(url);
             if (oldStyle()) {
                 /*
-                 * old style, list folder content and then change into folder to
-                 * retrieve the file
+                 * old style, list folder content and then change into folder to retrieve the file
                  */
                 if (!filePath.contains("/")) filePath = "/" + filePath;
                 String[] list = ftp.getFileInfo(Encoding.urlDecode(filePath, false));
@@ -89,14 +86,12 @@ public class Ftp extends PluginForHost {
                 }
             } else {
                 /*
-                 * new style, do a getSize request and then switch to binary and
-                 * retrieve file by complete path
+                 * new style, do a getSize request and then switch to binary and retrieve file by complete path
                  */
                 /* switch binary mode */
                 ftp.bin();
                 /*
-                 * some servers do not allow to list the folder, so this may
-                 * fail but file still might be online
+                 * some servers do not allow to list the folder, so this may fail but file still might be online
                  */
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {
@@ -152,8 +147,7 @@ public class Ftp extends PluginForHost {
 
             File tmp = null;
             /*
-             * we need dummy browser for RAFDownload, else nullpointer will
-             * happen
+             * we need dummy browser for RAFDownload, else nullpointer will happen
              */
             br = new Browser();
             dl = new RAFDownload(this, downloadLink, null);
@@ -181,14 +175,12 @@ public class Ftp extends PluginForHost {
                 }
                 if (oldStyle()) {
                     /*
-                     * in old style we moved into the folder and only need to
-                     * retrieve the file by name
+                     * in old style we moved into the folder and only need to retrieve the file by name
                      */
                     ftp.download(name, tmp = new File(downloadLink.getFileOutput() + ".part"));
                 } else {
                     /*
-                     * in new style we need to retrieve the file by complete
-                     * path
+                     * in new style we need to retrieve the file by complete path
                      */
                     try {
                         ftp.download(Encoding.urlDecode(filePath, false), tmp = new File(downloadLink.getFileOutput() + ".part"), downloadLink.getBooleanProperty("RESUME", true));
@@ -220,9 +212,9 @@ public class Ftp extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
             }
 
-            if (!StringUtils.isEmpty(downloadLink.getMD5Hash()) && !downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
+            if (!isEmpty(downloadLink.getMD5Hash()) && !downloadLink.getMD5Hash().equalsIgnoreCase(JDHash.getMD5(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
 
-            if (!StringUtils.isEmpty(downloadLink.getSha1Hash()) && !downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
+            if (!isEmpty(downloadLink.getSha1Hash()) && !downloadLink.getSha1Hash().equalsIgnoreCase(JDHash.getSHA1(tmp))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " CRC error"); }
 
             if (!tmp.renameTo(new File(downloadLink.getFileOutput()))) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, " Rename failed. file exists?"); }
             downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
@@ -238,6 +230,11 @@ public class Ftp extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
+    }
+
+    private boolean isEmpty(String s) {
+        if (s == null || s.trim().length() == 0) return true;
+        return false;
     }
 
     @Override
@@ -304,8 +301,7 @@ public class Ftp extends PluginForHost {
                 /* switch binary mode */
                 ftp.bin();
                 /*
-                 * some servers do not allow to list the folder, so this may
-                 * fail but file still might be online
+                 * some servers do not allow to list the folder, so this may fail but file still might be online
                  */
                 long size = ftp.getSize(Encoding.urlDecode(filePath, false));
                 if (size != -1) {

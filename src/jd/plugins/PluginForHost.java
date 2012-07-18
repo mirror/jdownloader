@@ -55,17 +55,14 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
 /**
- * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien
- * herunterladen koennen
+ * Dies ist die Oberklasse fuer alle Plugins, die von einem Anbieter Dateien herunterladen koennen
  * 
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
     private static Pattern[] PATTERNS     = new Pattern[] {
                                           /**
-                                           * these patterns should split
-                                           * filename and fileextension
-                                           * (extension must include the point)
+                                           * these patterns should split filename and fileextension (extension must include the point)
                                            */
                                           // multipart rar archives
             Pattern.compile("(.*)(\\.pa?r?t?\\.?[0-9]+.*?\\.rar$)", Pattern.CASE_INSENSITIVE),
@@ -240,8 +237,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text
-     * gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
+     * Hier werden Treffer fuer Downloadlinks dieses Anbieters in diesem Text gesucht. Gefundene Links werden dann in einem ArrayList zurueckgeliefert
      * 
      * @param data
      *            Ein Text mit beliebig vielen Downloadlinks dieses Anbieters
@@ -270,8 +266,7 @@ public abstract class PluginForHost extends Plugin {
 
                 try {
                     /*
-                     * use this REGEX to cut of following http links,
-                     * (?=https?:|$|\r|\n|)
+                     * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
                     final DownloadLink link = new DownloadLink(this, null, getHost(), file, true);
                     links.add(link);
@@ -287,15 +282,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * OVERRIDE this function if you need to modify the link, ATTENTION: you
-     * have to use new browser instances, this plugin might not have one!
+     * OVERRIDE this function if you need to modify the link, ATTENTION: you have to use new browser instances, this plugin might not have one!
      */
     public void correctDownloadLink(final DownloadLink link) throws Exception {
     }
 
     /**
-     * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname,
-     * verfuegbarkeit etc.
+     * Holt Informationen zu einem Link. z.B. dateigroeße, Dateiname, verfuegbarkeit etc.
      * 
      * @param parameter
      * @return true/false je nach dem ob die Datei noch online ist (verfuegbar)
@@ -312,13 +305,11 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * Integer.Min_Value will result in no download at all (eg no free
-     * supported)
+     * Integer.Min_Value will result in no download at all (eg no free supported)
      * 
      * <=0 will result in unlimited
      * 
-     * return max possible simultan downloads for given link and
-     * account,overwrite this if you want special handling, eg for multihost
+     * return max possible simultan downloads for given link and account,overwrite this if you want special handling, eg for multihost
      */
     public int getMaxSimultanDownload(DownloadLink link, final Account account) {
         int max;
@@ -344,8 +335,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * Override this if you want special handling for DownloadLinks to bypass
-     * MaxSimultanDownloadNum
+     * Override this if you want special handling for DownloadLinks to bypass MaxSimultanDownloadNum
      */
     public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
         return false;
@@ -382,10 +372,8 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     /**
-     * By overriding this method, a plugin is able to return a
-     * HostPluginInfoGenerator. <br>
-     * <b>Attention: Until next stable update, we have to return Object
-     * here.</b>
+     * By overriding this method, a plugin is able to return a HostPluginInfoGenerator. <br>
+     * <b>Attention: Until next stable update, we have to return Object here.</b>
      * 
      * @return
      */
@@ -409,8 +397,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /*
-     * finer controlling if we can download the link with given account, eg link
-     * is only downloadable for premium ones
+     * finer controlling if we can download the link with given account, eg link is only downloadable for premium ones
      */
     public boolean canHandle(final DownloadLink downloadLink, final Account account) {
         return true;
@@ -455,18 +442,14 @@ public abstract class PluginForHost extends Plugin {
 
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         /*
-         * fetchAccountInfo must fill ai.setProperty("multiHostSupport",
-         * ArrayList<String>); to signal all supported multiHosts
+         * fetchAccountInfo must fill ai.setProperty("multiHostSupport", ArrayList<String>); to signal all supported multiHosts
          * 
-         * please synchronized on accountinfo and the ArrayList<String> when you
-         * change something in the handleMultiHost function
+         * please synchronized on accountinfo and the ArrayList<String> when you change something in the handleMultiHost function
          * 
-         * in fetchAccountInfo we don't have to synchronize because we create a
-         * new instance of AccountInfo and fill it
+         * in fetchAccountInfo we don't have to synchronize because we create a new instance of AccountInfo and fill it
          * 
-         * if you need customizable maxDownloads, please use
-         * getMaxSimultanDownload to handle this you are in multihost when
-         * account host does not equal link host!
+         * if you need customizable maxDownloads, please use getMaxSimultanDownload to handle this you are in multihost when account host does not equal link
+         * host!
          * 
          * 
          * 
@@ -476,8 +459,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren
-     * etc)
+     * Stellt das Plugin in den Ausgangszustand zurueck (variablen intialisieren etc)
      */
     public abstract void reset();
 
@@ -548,8 +530,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * may only be used from within the plugin, because it only works when
-     * SingleDownloadController is still running
+     * may only be used from within the plugin, because it only works when SingleDownloadController is still running
      */
     protected boolean isAborted(DownloadLink downloadLink) {
         SingleDownloadController dlc = downloadLink.getDownloadLinkController();
@@ -561,8 +542,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden
-     * kann
+     * Gibt die Url zurueck, unter welcher ein PremiumAccount gekauft werden kann
      * 
      * @return
      */
@@ -631,8 +611,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * plugins may change the package identifier used for auto package matching.
-     * some hosters replace chars, shorten filenames...
+     * plugins may change the package identifier used for auto package matching. some hosters replace chars, shorten filenames...
      * 
      * @param packageIdentifier
      * @return
@@ -642,9 +621,8 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hosters have bad filenames. Rapidshare for example replaces all
-     * special chars and spaces with _. Plugins can try to autocorrect this
-     * based on other downloadlinks
+     * Some hosters have bad filenames. Rapidshare for example replaces all special chars and spaces with _. Plugins can try to autocorrect this based on other
+     * downloadlinks
      * 
      * @param cache
      *            TODO
@@ -687,8 +665,7 @@ public abstract class PluginForHost extends Plugin {
                     fileNameSplit = new Regex(originalFilename, p).getRow(0);
                     if (fileNameSplit != null) {
                         /*
-                         * regex matched, so we should now have filename,
-                         * extension in fileNameSplit
+                         * regex matched, so we should now have filename, extension in fileNameSplit
                          */
                         pattern = p;
                         if (cache != null) {
@@ -702,8 +679,7 @@ public abstract class PluginForHost extends Plugin {
             }
             if (fileNameSplit == null) {
                 /*
-                 * no valid pattern found,lets split filename into
-                 * name/extension as fallback
+                 * no valid pattern found,lets split filename into name/extension as fallback
                  */
                 fileNameSplit = CrossSystem.splitFileName(originalFilename);
                 pattern = null;
@@ -731,8 +707,7 @@ public abstract class PluginForHost extends Plugin {
                     if (newName != null) return newName;
                 }
                 /*
-                 * this holds the filename that got extracted with same pattern
-                 * as the originalFilename
+                 * this holds the filename that got extracted with same pattern as the originalFilename
                  */
                 prototypesplit = null;
                 if (cache != null && pattern != null) {
@@ -743,9 +718,7 @@ public abstract class PluginForHost extends Plugin {
                     /* no prototypesplit available yet, create new one */
                     if (pattern != null) {
                         /*
-                         * a pattern does exist, we must use the same one to
-                         * make sure the *filetypes* match (eg . part01.rar and
-                         * .r01 with same filename
+                         * a pattern does exist, we must use the same one to make sure the *filetypes* match (eg . part01.rar and .r01 with same filename
                          */
                         prototypesplit = new Regex(prototypeName, pattern).getMatch(0);
                     } else {
@@ -777,7 +750,7 @@ public abstract class PluginForHost extends Plugin {
                     }
                 }
 
-                if ((StringUtils.isEmpty(MD5) && MD5.equalsIgnoreCase(next.getMD5Hash())) || (!StringUtils.isEmpty(SHA1) && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
+                if ((!StringUtils.isEmpty(MD5) && MD5.equalsIgnoreCase(next.getMD5Hash())) || (!StringUtils.isEmpty(SHA1) && SHA1.equalsIgnoreCase(next.getSha1Hash()))) {
                     // 100% mirror! ok and now? these files should have the
                     // same filename!!
                     return next.getName();
@@ -803,8 +776,7 @@ public abstract class PluginForHost extends Plugin {
             if (Character.toLowerCase(oC) != Character.toLowerCase(pC)) {
                 for (char oCC : originalReplaces) {
                     /*
-                     * first we check if char from Original is on replacement
-                     * List, if so, we use char from prototype
+                     * first we check if char from Original is on replacement List, if so, we use char from prototype
                      */
                     if (oC == oCC) {
                         sb.append(pC);
@@ -813,8 +785,7 @@ public abstract class PluginForHost extends Plugin {
                 }
                 for (char pCC : prototypeReplaces) {
                     /*
-                     * then we check if char from prototype is on replacement
-                     * List, if so, we use char from original
+                     * then we check if char from prototype is on replacement List, if so, we use char from original
                      */
                     if (pC == pCC) {
                         sb.append(oC);
@@ -858,8 +829,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * Some hoster manipulate the filename after upload. rapidshare for example,
-     * replaces special chars and spaces with _
+     * Some hoster manipulate the filename after upload. rapidshare for example, replaces special chars and spaces with _
      * 
      * @return
      */
@@ -872,8 +842,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * If a plugin want's to define it's one premium info dialog or premiuminfo
-     * panel. overwrite this methods
+     * If a plugin want's to define it's one premium info dialog or premiuminfo panel. overwrite this methods
      * 
      * @param dialog
      * @return
