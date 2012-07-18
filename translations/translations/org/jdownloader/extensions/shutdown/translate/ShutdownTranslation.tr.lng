@@ -10,7 +10,7 @@ gui_config_jdshutdown_mode=Kip:
 gui_config_jdshutdown_osx_force_long=Bilgisayarı Kapatmaya zorla'yı kur (sadece Mac OSX)
 gui_config_jdshutdown_osx_force_short=Kur
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
-gui_config_jdshutdown_standby=Beklemeye al (Tüm İS için değildir)
+gui_config_jdshutdown_standby=Beklemeye al (Tüm işletim sistemleri için değildir)
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda bekleme kipine alınacak!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem kapatılacak!</font></h2>
@@ -19,6 +19,6 @@ interaction_shutdown_dialog_title_closejd=JDownloader kapatılsın mı?
 interaction_shutdown_dialog_title_hibernate=Hazırda Beklemeye alınsın mı?
 interaction_shutdown_dialog_title_shutdown=Bilgisayar Kapatılsın mı?
 interaction_shutdown_dialog_title_standby=Beklemeye alınsın mı?
-jd_plugins_optional_jdshutdown=JDownloader'ı Kapat
+jd_plugins_optional_jdshutdown=JD Sistem Kapatma
 jd_plugins_optional_jdshutdown_description=PC'nizi otomatik olarak kapatın, askıya, hazırda beklemeye alın veya indirmeler bittiğinde JDownloader'ı kapatsın
 lit_shutdownn=Sistem kapatma
