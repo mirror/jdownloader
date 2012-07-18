@@ -53,6 +53,7 @@ could_not_download_file=Ne mogu preuzeti ažuriranja.
 could_not_install_file=Ne mogu instalirati datoteku: %s1
 could_not_overwrite=Ne mogu prepisati datoteku %s1.
 could_not_update_updater=Updater je zastario. Updater nije moguće ažurirati!
+details=Više...
 dialag_branch_resetted=Zastarjelo izdanje
 dialog_branch_resetted_msg=%s2 %s1-izdanje više ne postoji. Vrati na najnovije stabilno izdanje.
 dialog_rly_cancel=Stvarno otkazati ažuriranje?

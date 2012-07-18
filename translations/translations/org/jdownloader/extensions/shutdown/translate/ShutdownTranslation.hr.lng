@@ -1,5 +1,7 @@
+action_tooltip=Uključeno gašenje računala nakon završenih preuzimanja
 addons_jdshutdown_statusmessage_disabled=Računalo neće biti ugašeno nakon preuzimanja
 addons_jdshutdown_statusmessage_enabled=Računalo će biti ugašeno po završetku preuzimanja!
+config_toolbarbutton=Vidljiv gumb alatne trake
 gui_config_jdshutdown_close=Izlaz iz JD-a
 gui_config_jdshutdown_enabledOnStart=Uključeno kod pokretanja
 gui_config_jdshutdown_forceshutdown=Prisili na gašenje računala (nije za sve sustave)
@@ -19,3 +21,4 @@ interaction_shutdown_dialog_title_shutdown=Isključivanje?
 interaction_shutdown_dialog_title_standby=Stanje pripravnosti?
 jd_plugins_optional_jdshutdown=JD isključivanje
 jd_plugins_optional_jdshutdown_description=Automatsko isključivanje, pripravnost, hibernacija računala ili zatvaranje JDownloader-a kada budu sva preuzimanja završena.
+lit_shutdownn=Gašenje
