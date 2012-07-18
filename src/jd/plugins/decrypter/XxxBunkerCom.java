@@ -45,16 +45,10 @@ public class XxxBunkerCom extends PluginForDecrypt {
             return null;
         }
         filename = Encoding.htmlDecode(filename.trim());
-        String externID = br.getRegex("setTimeout\\(function\\(\\)\\{pl\\((\\d+),").getMatch(0);
+        String externID = br.getRegex("amfdata=http%3A%2F%2F141\\.\\d+\\.\\d+\\.\\d+%2Fflashservices%2Fgateway\\.php%7C(\\d+)%7Cdefault%7C\\&amp;").getMatch(0);
         if (externID != null) {
-            br.getPage("http://xxxbunker.com/videoPlayer.php?videoid=" + externID + "&autoplay=true&ageconfirm=false&title=true&r=" + System.currentTimeMillis());
-            externID = br.getRegex("%2Fflashservices%2Fgateway\\.php%7C(\\d+)%7Cdefault%7").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
-                return decryptedLinks;
-            }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+            return decryptedLinks;
         }
         externID = br.getRegex("postbackurl=([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {

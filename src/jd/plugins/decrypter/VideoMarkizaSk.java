@@ -118,7 +118,7 @@ public class VideoMarkizaSk extends PluginForDecrypt {
             final String sectionID = br.getRegex("var ut_section_id = \"(\\d+)\"").getMatch(0);
             final String siteID = br.getRegex("var site_id = \"(\\d+)\"").getMatch(0);
             if (media == null || sectionID == null || siteID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link or there is no video: " + parameter);
                 return null;
             }
             br.getPage("http://www.markiza.sk/bin/player/flowplayer/config.php?site=" + siteID + "&subsite=&section=" + sectionID + "&media=" + media + "&jsVar=flowplayerJSConfig" + media);

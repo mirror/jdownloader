@@ -466,7 +466,7 @@ public class VeohCom extends PluginForHost {
         // Allow +18 videos
         br.setCookie("http://veoh.com/", "confirmedAdult", "true");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Dieses Video ist nicht mehr verf&uuml;gbar|AnyClip)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(Dieses Video ist nicht mehr verf&uuml;gbar|AnyClip|>Sorry, we couldn\\'t find the video you were looking for)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = br.getRegex("\"title\":\"(.*?)(\\s+RAW)?\"").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));

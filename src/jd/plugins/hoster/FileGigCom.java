@@ -56,6 +56,7 @@ public class FileGigCom extends PluginForHost {
     private static final Object LOCK     = new Object();
     private final String        MAINPAGE = "http://filegig.com";
 
+    /** Uses same script as ugoupload.net */
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -126,7 +127,6 @@ public class FileGigCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                // br.getPage("");
                 br.postPage("http://www.filegig.com/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (br.containsHTML("filegig\\.com/upgrade\\.html\">upgrade account</a>") || !br.containsHTML("filegig\\.com/upgrade\\.html\">extend account</a>")) {
@@ -161,12 +161,7 @@ public class FileGigCom extends PluginForHost {
         br.getPage("http://www.filegig.com/upgrade.html");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
-        }
+        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -176,7 +171,7 @@ public class FileGigCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

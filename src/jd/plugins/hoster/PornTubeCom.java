@@ -65,8 +65,7 @@ public class PornTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\| PornTube\\.com</title>").getMatch(0);
+        String filename = br.getRegex("<title>(.*?) \\| PornTube\\.com</title>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(/.*?)\\'").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\\'(/xml/index\\?id=[0-9\\-]+)\\'").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

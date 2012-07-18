@@ -79,6 +79,17 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(tempID.replace("tube8.com/embed", "tube8.com/")));
             return decryptedLinks;
         }
+        tempID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
+        if (tempID == null) tempID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("http://www.redtube.com/" + tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("(name=\"movie\" value=\"http://(www\\.)?megaporn\\.com/|name=\"movie\" value=\"http://video\\.megarotic\\.com/|<h3><center><a href=\"http://seemygf\\.com/vod/)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

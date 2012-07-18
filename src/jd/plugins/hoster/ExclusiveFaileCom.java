@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -32,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -44,35 +45,31 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "180upload.com" }, urls = { "https?://(www\\.)?180upload\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class OneEightZeroUploadCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exclusivefaile.com" }, urls = { "https?://(www\\.)?exclusivefaile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class ExclusiveFaileCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://180upload.com";
+    private final String         COOKIE_HOST                  = "http://exclusivefaile.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.6.5-raz
-    // mods: filename, filesize, dllink
-    // non account: 2 chunks, 1 max dl.
+    // XfileSharingProBasic Version 2.5.6.8-raz
+    // mods:
+    // non account: 1 * maxdl
     // free account:
     // premium account:
     // protocol: no https
     // captchatype: null
     // other: no redirects
-    // other: they allow one -2 connection to each fileserver, ngnix throws
-    // header errors with more than 1 maxdl to that server ip, they
-    // have multiple fileservers ip allowing session to each, but no solution
-    // coded for that yet.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -84,19 +81,19 @@ public class OneEightZeroUploadCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public OneEightZeroUploadCom(PluginWrapper wrapper) {
+    public ExclusiveFaileCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
-        return false;
+        return true;
     }
 
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
-        return false;
+        return true;
     }
 
     public void prepBrowser() {
@@ -111,39 +108,81 @@ public class OneEightZeroUploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(>File Not Found, Copyright infringement issue, file expired or deleted by its owner\\.|>No such file|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(br, "type=\"hidden\" name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
-        String filesize = new Regex(br, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(br, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+        String[] fileInfo = new String[3];
+        // scan the first page
+        scanInfo(fileInfo);
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
+        if (fileInfo[0] == null) {
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                sendForm(download1);
+                scanInfo(fileInfo);
             }
         }
-        if (filename == null || filename.equals("")) {
+        if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) link.setMD5Hash(md5hash.trim());
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(fileInfo[0].trim());
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
+    }
+
+    private String[] scanInfo(String[] fileInfo) {
+        // standard traits from base page
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // traits from download1 page below.
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
+                            if (fileInfo[0] == null) {
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                }
+            }
+        }
+        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        return fileInfo;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -332,18 +371,22 @@ public class OneEightZeroUploadCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            // within the html comment
-            dllink = new Regex(br, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"([^<>\"]+)\"><img src=\"(https?://[\\w\\.]+)?/images/downloadbutton.png\"/></a>").getMatch(0);
+                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        // generic fail over for COOKIE_HOST on final link
+                        // format.
                         if (dllink == null) {
-                            dllink = new Regex(correctedBR, "<a href=\"([^<>\"]+)\">[\\w\"\\= \\;<>]+Download").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
-                                String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                                     for (String crypted : cryptedScripts) {
                                         dllink = decodeDownloadLink(crypted);
@@ -529,8 +572,14 @@ public class OneEightZeroUploadCom extends PluginForHost {
     private Form getFormByKey(final String key, final String value) {
         Form[] workaround = br.getForms();
         if (workaround != null) {
-            for (Form f : workaround)
-                if (f.hasInputFieldByName(key) == f.getVarsMap().containsValue(value)) { return f; }
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
         }
         return null;
     }

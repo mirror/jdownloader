@@ -7,12 +7,10 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category)[^/]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
@@ -65,16 +63,19 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         } else {
             // <em>Download all screenhots:</em>
             // <font size="3px">
-            contentReleaseLinks = br.getRegex("<em>Download all screenhots:</em>(.*?)<p><em>Previews:</em><br/>").getMatch(0);
+            contentReleaseLinks = br.getRegex("<strong>Download all screenhots:</strong>(.*?)<p><strong>Previews:</strong><br").getMatch(0);
             if (contentReleaseLinks == null) {
                 logger.warning("contentReleaseLinks == null");
                 return null;
             }
         }
         String[] links = new Regex(contentReleaseLinks, "<a href=\"(http[^\"]+)").getColumn(0);
-        if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+        if (links == null || links.length == 0) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        for (final String link : links) {
+            if (!this.canHandle(link)) decryptedLinks.add(createDownloadlink(link));
         }
 
         String[] imgs = br.getRegex("(http://([\\w\\.]+)?pixhost\\.org/show/[^\"]+)").getColumn(0);

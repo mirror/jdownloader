@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitvid.com" }, urls = { "http://(www\\.)?twitviddecrypted\\.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com", "twitvid.com" }, urls = { "http://(www\\.)?tellydecrypted\\.com/[A-Z0-9]+", "djg35zu54o9zhjrofnvfheDELETEMEfdhzk67rfwdefvki" }, flags = { 0, 0 })
 public class TwitVidCom extends PluginForHost {
 
     private String dllink = null;
@@ -39,7 +39,7 @@ public class TwitVidCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.twitvid.com/index.php?area=about&action=terms";
+        return "http://www.telly.com/index.php?area=about&action=terms";
     }
 
     @Override
@@ -48,7 +48,7 @@ public class TwitVidCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("twitviddecrypted.com/", "twitvid.com/"));
+        link.setUrlDownload(link.getDownloadURL().replace("tellydecrypted.com/", "telly.com/"));
     }
 
     @Override
@@ -56,12 +56,12 @@ public class TwitVidCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<b>This twitvid has been deleted</b>") || downloadLink.getDownloadURL().contains("twitvid.com/videos") || downloadLink.getDownloadURL().contains("/index.php?")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\" />").getMatch(0);
+        if (downloadLink.getDownloadURL().contains("/index.php?") || br.containsHTML(">No videos yet")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String vPath = br.getRegex("video_path=\"(/playVideo_[^<>\"]*?)\"").getMatch(0);
         if (vPath == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.twitvid.com" + vPath;
+        dllink = "http://www.telly.com" + vPath;
         br.getPage(dllink);
         dllink = br.getRedirectLocation();
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

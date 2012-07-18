@@ -55,7 +55,7 @@ public class AmateurDumperCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("\\'(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)\\'").getMatch(0);
+        tempID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
         if (tempID != null) {
             br.getPage(tempID);
             String finallink = br.getRegex("var urlAddress = \"(http://.*?)\"").getMatch(0);

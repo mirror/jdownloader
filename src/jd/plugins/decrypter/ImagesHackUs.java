@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageshack.us" }, urls = { "http://(www\\.)?(img[0-9]{1,4}\\.imageshack\\.us/g/[a-z0-9]+\\.[a-zA-Z0-9]{2,4}/|imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imageshack.us" }, urls = { "http://(www\\.)?(img[0-9]{1,4}\\.imageshack\\.us/g/[a-z0-9]+\\.[a-zA-Z0-9]{2,4}/|imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+)" }, flags = { 0 })
 public class ImagesHackUs extends PluginForDecrypt {
 
     public ImagesHackUs(PluginWrapper wrapper) {
@@ -38,10 +38,10 @@ public class ImagesHackUs extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
-        if (parameter.matches(".*?imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+/")) {
+        if (parameter.matches(".*?imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+")) {
             String finallink = br.getRegex("<meta property=\"og:image\" content=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) {

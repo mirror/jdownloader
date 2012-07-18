@@ -119,7 +119,7 @@ public class FileboxRo extends PluginForHost {
                 return AvailableStatus.TRUE;
             }
         } else {
-            if (br.containsHTML("(File deleted or file lifespan expired|Wrong link|Filebox.ro is temporarily not available\\.)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(File deleted or file lifespan expired|Wrong link|Filebox\\.ro is temporarily not available\\.|>Fisierul pe care incerci sa il downloadezi a expirat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             String filesize = br.getRegex("Dimensiune: </span>(.*?)<hr/>").getMatch(0);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

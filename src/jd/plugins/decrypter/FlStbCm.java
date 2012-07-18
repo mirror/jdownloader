@@ -86,6 +86,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("veoh\\.com/static/swf/webplayer/WebPlayer\\.swf\\?version=v[0-9\\.]+\\&amp;permalinkId=v([^<>\"/]*?)\\&").getMatch(0);
+            if (externID == null) externID = br.getRegex("<embed src=\"http://(www\\.)?veoh\\.com/videodetails2\\.swf\\?permalinkId=v([^<>\"/]*?)\\&").getMatch(1);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.veoh.com/watch/v" + externID));
                 return decryptedLinks;
@@ -112,6 +113,11 @@ public class FlStbCm extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
                     return decryptedLinks;
                 }
+            }
+            externID = br.getRegex("<embed src=\\'(http://(www\\.)?dalealplay\\.com/[^<>\"]*?)\\'").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink(externID));
+                return decryptedLinks;
             }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);

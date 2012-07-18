@@ -54,6 +54,35 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            if (br.getRedirectLocation().contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(br.getRedirectLocation());
+        }
+        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<Attribute name=\"title\">(.*?)</Attribute>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1 class=\"title\" id=\"\">(.*?)</h1>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                    }
+                }
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
+        downloadLink.setName(filename);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -100,14 +129,10 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        // Pretend we're using an iphone^^
-        br.getHeaders().put("User-Agent", "Apple-iPhone3C1/801.293");
-        br.getPage("http://www.scribd.com/mobile/documents/" + new Regex(downloadLink.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0));
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        final String dllink = br.getRegex("\"(/mobile/doc/\\d+/download/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML(">\\[not available on mobile\\]<")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com" + dllink, true, 0);
+        if (br.containsHTML("(>\\[not available on mobile\\]<|>You must be <a class=\"login\")")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
+        // No download handling known
+        if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com" + null, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">Can\\'t download that document") || br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
@@ -117,33 +142,17 @@ public class ScribdCom extends PluginForHost {
         dl.startDownload();
     }
 
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
         if (br.containsHTML("class=\"download_disabled_button\"")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
         login(account);
-        br.setFollowRedirects(false);
-        String fileExt = getConfiguredServer();
-        String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
-        if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Browser xmlbrowser = br.cloneBrowser();
-        xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        xmlbrowser.postPage("http://www.scribd.com/newdoc/download_dialog", "lightbox=true&id=" + fileId + "&show_container=true");
-        final String correctedXML = xmlbrowser.toString().replace("\\", "");
-        // Check if the selected format is available
-        if (!correctedXML.contains("value=\"" + fileExt + "\"")) {
-            if (correctedXML.contains("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
-            throw new PluginException(LinkStatus.ERROR_FATAL, "The selected format is not available for this file!");
-        }
-        String dllink = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + fileExt;
-        br.getPage(dllink);
-        dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
+        final String[] downloadInfo = getDllink(parameter);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        parameter.setFinalFileName(parameter.getName() + "." + fileExt);
+        parameter.setFinalFileName(parameter.getName() + "." + downloadInfo[1]);
         dl.startDownload();
     }
 
@@ -156,33 +165,26 @@ public class ScribdCom extends PluginForHost {
         if (br.containsHTML("Invalid username or password") || !br.containsHTML("login_successful_lb")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+    private String[] getDllink(final DownloadLink parameter) throws PluginException, IOException {
+        String[] dlinfo = new String[2];
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(br.getRedirectLocation());
+        dlinfo[1] = getConfiguredServer();
+        final String fileId = new Regex(parameter.getDownloadURL(), "scribd\\.com/doc/(\\d+)/").getMatch(0);
+        if (fileId == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser xmlbrowser = br.cloneBrowser();
+        xmlbrowser.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        xmlbrowser.postPage("http://www.scribd.com/newdoc/download_dialog", "lightbox=true&id=" + fileId + "&show_container=true");
+        final String correctedXML = xmlbrowser.toString().replace("\\", "");
+        // Check if the selected format is available
+        if (!correctedXML.contains("id=\"download_" + dlinfo[1] + "\"")) {
+            if (correctedXML.contains("premium: true")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.scribdcom.errors.nofreedownloadlink", "Download is only available for premium users!"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, "The selected format is not available for this file!");
         }
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"media:title\" content=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<Attribute name=\"title\">(.*?)</Attribute>").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<h1 class=\"title\" id=\"\">(.*?)</h1>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                    }
-                }
-            }
-        }
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
-        downloadLink.setName(filename);
-        return AvailableStatus.TRUE;
+        dlinfo[0] = "http://www.scribd.com/document_downloads/" + fileId + "?secret_password=&extension=" + dlinfo[1];
+        br.getPage(dlinfo[0]);
+        dlinfo[0] = br.getRedirectLocation();
+        if (dlinfo[0] == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return dlinfo;
     }
 
     @Override

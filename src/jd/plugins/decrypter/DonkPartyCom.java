@@ -43,6 +43,10 @@ public class DonkPartyCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        if (br.containsHTML("Media not found\\!<")) {
+            logger.info("Decrypter broken for link: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<span style=\"font\\-weight: bold; font\\-size: 18px;\">(.*?)</span><br").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- Donk Party</title>").getMatch(0);
         if (filename == null) {
@@ -67,6 +71,15 @@ public class DonkPartyCom extends PluginForDecrypt {
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + tempID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
+        }
+        tempID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);
+        if (tempID != null) {
+            br.getPage(tempID);
+            tempID = br.getRegex("var urlAddress = \"(http://[^<>\"]*?)\";").getMatch(0);
+            if (tempID != null) {
+                decryptedLinks.add(createDownloadlink(tempID));
+                return decryptedLinks;
+            }
         }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

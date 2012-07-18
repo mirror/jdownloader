@@ -25,8 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twitvid.com" }, urls = { "http://(www\\.)?twitvid\\.com/(?!awesome|post|best|funnyimpressions|http|https|index|javascript|redirect)[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telly.com" }, urls = { "http://(www\\.)?(telly|twitvid)\\.com/(?!awesome|post|best|funnyimpressions|http|https|index|javascript|redirect)[A-Z0-9]+" }, flags = { 0 })
 public class TwitVidComDecrypter extends PluginForDecrypt {
 
     public TwitVidComDecrypter(PluginWrapper wrapper) {
@@ -39,15 +38,21 @@ public class TwitVidComDecrypter extends PluginForDecrypt {
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("twitvid.com/", "telly.com/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">No videos yet")) {
+            final DownloadLink offline = createDownloadlink(parameter.replace("telly.com/", "tellydecrypted.com/"));
+            offline.setAvailable(false);
+            decryptedLinks.add(offline);
+            return decryptedLinks;
+        }
         String externID = br.getRegex("property=\"og:image\" content=\"http://i(\\d+)?\\.ytimg\\.com/vi/([^<>\"/]*?)/hqdefault").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
             return decryptedLinks;
         }
-        decryptedLinks.add(createDownloadlink(parameter.replace("twitvid.com/", "twitviddecrypted.com/")));
+        decryptedLinks.add(createDownloadlink(parameter.replace("telly.com/", "tellydecrypted.com/")));
         return decryptedLinks;
     }
 

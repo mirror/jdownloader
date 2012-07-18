@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -30,17 +28,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "videobam.com" }, urls = { "http://(www\\.)?videobam\\.com/(?!user|faq|login|dmca|signup|terms)(videos/download/)?[A-Za-z0-9]+" }, flags = { 0 })
 public class VideoBamCom extends PluginForHost {
-
-    private String DLLINK = null;
 
     public VideoBamCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("videos/download/", ""));
+        link.setUrlDownload("http://videobam.com/videos/download/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -54,56 +52,54 @@ public class VideoBamCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(>404 Page Not Found|>The page you requested was not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("property=\"og:title\" content=\"(.*?)\" />").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<section id=\"video\\-title\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("title: \\'(.*?)\\',").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
-            }
+        if (br.containsHTML(">404 Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex("File name: ([^<>\"]*?)<br />").getMatch(0);
+        final String filesize = br.getRegex("File size: ([^<>\"]*?)</div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        final boolean resume = true;
+        final int chunks = 0;
+        final String ajaxDLurl = br.getRegex("\\'(/videos/ajax_download_url/[^<>\"]*?)\\'").getMatch(0);
+        if (ajaxDLurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // Waittime can be skipped
+        // int wait = 30;
+        // final String waittime =
+        // br.getRegex("var timeout = (\\d+);").getMatch(0);
+        // if (waittime != null) wait = Integer.parseInt(waittime);
+        // sleep(wait * 1001l, downloadLink);
+        br.getPage("http://videobam.com" + ajaxDLurl);
+        String dllink = null;
+        if (br.containsHTML("You can not download more than 1 video per 30 minutes")) {
+            // Try stream download, only throw exception if that also fails
+            br.getPage("http://videobam.com/" + new Regex(downloadLink.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
+            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        } else {
+            if (br.containsHTML("\"url\":false")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dllink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
         }
-        DLLINK = br.getRegex("\",\"url\":\"(http:.*?)\"").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        filename = filename.trim();
-        if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "videobam\\.com/(.+)").getMatch(0);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        Browser br2 = br.cloneBrowser();
-        // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br2.openGetConnection(DLLINK);
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, chunks);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("You can not download more than 1 video per 30 minutes")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.startDownload();
     }
 
     @Override

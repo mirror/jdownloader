@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -72,13 +73,13 @@ public class DreamAmateursCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink(finallink);
+            final DownloadLink dl = createDownloadlink(finallink);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         tempID = br.getRegex("file=(http://hostave4\\.net/.*?)\\&screenfile").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -86,11 +87,43 @@ public class DreamAmateursCom extends PluginForDecrypt {
         }
         tempID = br.getRegex("file=(.*?)\\&link=http%3A%2F%2F").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + "http://flash.serious-cash.com/" + tempID + ".flv");
+            final DownloadLink dl = createDownloadlink("directhttp://" + "http://flash.serious-cash.com/" + tempID + ".flv");
             dl.setFinalFileName(filename + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
 
+        }
+        tempID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (tempID != null) {
+            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(tempID));
+            tempID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (tempID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+
+        }
+        tempID = br.getRegex("\\&file=(http://(www\\.)?revengetv\\.net/[^<>\"]*?)\\&beginimage").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        tempID = br.getRegex("flashvars=\"file=(http://(www\\.)?hostave3\\.net/[^<>\"]*?)\\&screenfile=").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+
+        }
+        if (br.containsHTML("\\&file=http://embed\\.kickassratios\\.com/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

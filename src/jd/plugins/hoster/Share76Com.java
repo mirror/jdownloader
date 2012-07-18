@@ -108,10 +108,7 @@ public class Share76Com extends PluginForHost {
                 }
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-        }
+        String filesize = new Regex(correctedBR, "\\[<font style=\"color:#114\">([^<>\"]*?)</font>\\]</h2>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -546,7 +543,11 @@ public class Share76Com extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

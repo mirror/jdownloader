@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dup.co.il" }, urls = { "http://(www\\.)?dup\\.co\\.il/file\\.php\\?akey=[\\w]{14}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dup.co.il" }, urls = { "http://(www\\.)?dup\\.co\\.il/(file\\.php\\?akey=|v/)[\\w]{14}" }, flags = { 0 })
 public class DupCoIl extends PluginForHost {
 
     // they have https, but not configured/setup correctly.
@@ -52,32 +52,15 @@ public class DupCoIl extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String protcol = new Regex(br.getURL(), "(https?)://").getMatch(0);
-        String uid = new Regex(br.getURL(), "\\?akey=([\\w]{14})").getMatch(0);
-        String dllink = protcol + "://www.dup.co.il/php-download.php?akey=" + uid;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        downloadLink.setProperty("freelink", dllink);
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">שגיאה : הדף המבוקש אינו קיים במערכת זו \\!\\ <|שגיאה : הדף המבוקש אינו קיים במערכת זו \\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("name=\"description\" content=\"(.*?) ישירה\">").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>דאפ \\| (.*?)</title>").getMatch(0);
-        String extension = br.getRegex("סוג הקובץ <br> <b>(.*?)</b>").getMatch(0);
-        if (filename == null || extension == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = br.getRegex("גודל קובץ <br> <b>(.*?)</b>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) להורדה -\\ דאפ</title>").getMatch(0);
+        final String extension = br.getRegex("סוג הקובץ <br> <b>([^<>\"]*?)</b>").getMatch(0);
+        if (filename == null || extension == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("גודל קובץ <br> <b>([^<>\"]*?)</b>").getMatch(0);
         // seems like the ; is missing to be a valid unicode html expression
         // (&#NUMBER;)
         filename = filename.replaceAll("\\&\\#(\\d+)", "&#$1;");
@@ -87,6 +70,21 @@ public class DupCoIl extends PluginForHost {
         link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String protcol = new Regex(br.getURL(), "(https?)://").getMatch(0);
+        String uid = new Regex(br.getURL(), "([\\w]{14})$").getMatch(0);
+        String dllink = protcol + "://www.dup.co.il/php-download.php?akey=" + uid;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setProperty("freelink", dllink);
+        dl.startDownload();
     }
 
     @Override

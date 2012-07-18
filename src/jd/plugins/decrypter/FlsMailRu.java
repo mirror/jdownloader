@@ -100,10 +100,10 @@ public class FlsMailRu extends PluginForDecrypt {
                     filesize = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixFilesize(filesize, br);
                     finallink.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
-                filename = Encoding.htmlDecode(filename.trim());
-                finallink.setFinalFileName(filename);
                 finallink.setProperty("folderID", parameter);
                 finallink.setProperty("realfilename", filename);
+                filename = Encoding.htmlDecode(filename.trim());
+                finallink.setFinalFileName(filename);
                 finallink.setAvailable(true);
                 decryptedLinks.add(finallink);
             }
