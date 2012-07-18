@@ -2270,4 +2270,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Please send this log ID to your supporter!" })
     String LogAction_actionPerformed_givelogid_();
 
+    @Default(lngs = { "en" }, values = { "MD5 Checksum" })
+    String checksumcolumnmd5();
+
+    @Default(lngs = { "en" }, values = { "Sha1 Checksum" })
+    String checksumcolumnsha1();
+
 }

@@ -36,6 +36,7 @@ import org.appwork.utils.Exceptions;
 import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.settings.GeneralSettings;
@@ -73,7 +74,8 @@ public class RAFDownload extends DownloadInterface {
             if (JsonConfig.create(GeneralSettings.class).isHashCheckEnabled()) {
                 synchronized (HASHCHECKLOCK) {
                     /*
-                     * we only want one hashcheck running at the same time. many finished downloads can cause heavy diskusage here
+                     * we only want one hashcheck running at the same time. many
+                     * finished downloads can cause heavy diskusage here
                      */
                     String hash = null;
                     String type = null;
@@ -84,7 +86,8 @@ public class RAFDownload extends DownloadInterface {
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
                         String hashFile = Hash.getMD5(part);
                         success = hash.equalsIgnoreCase(hashFile);
-                    } else if ((hash = downloadLink.getSha1Hash()) != null) {
+
+                    } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash())) {
                         /* SHA1 Check */
                         type = "SHA1";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
@@ -322,13 +325,15 @@ public class RAFDownload extends DownloadInterface {
     /**
      * 
      * @param downloadLink
-     *            downloadlink der geladne werden soll (wird zur darstellung verwendet)
+     *            downloadlink der geladne werden soll (wird zur darstellung
+     *            verwendet)
      * @param request
      *            Verbindung die geladen werden soll
      * @param b
      *            Resumefaehige verbindung
      * @param i
-     *            max chunks. fuer negative werte wirden die chunks aus der config verwendet. Bsp: -3 : Min(3,Configwert);
+     *            max chunks. fuer negative werte wirden die chunks aus der
+     *            config verwendet. Bsp: -3 : Min(3,Configwert);
      * @return
      * @throws IOException
      * @throws PluginException
