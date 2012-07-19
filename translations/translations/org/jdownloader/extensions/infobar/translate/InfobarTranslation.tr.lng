@@ -4,5 +4,5 @@ jd_plugins_optional_infobar_InfoDialog_hideWindow=Bilgi Çubuğunu gizle
 jd_plugins_optional_infobar_docking=Kenarlara Kenetleme etkin
 jd_plugins_optional_infobar_dropLocation2=Bırakma bölgesi etkin
 jd_plugins_optional_infobar_jdinfobar=Bilgi Çubuğu
-jd_plugins_optional_infobar_jdinfobar_description=Bilgi çubuğu, bağlantıları, URL'leri veya DLC dosyalarını ekleyebileceğiniz Sürükle'V'Birak Bölgesi içeren ve indirmeler hakkında gerçek zamanlı bilgi gösteren gezdirilebilir küçük bir tablodur.
+jd_plugins_optional_infobar_jdinfobar_description=Bilgi çubuğu, bağlantıları, URL'leri veya DLC dosyalarını ekleyebileceğiniz Sürükle'V'Bırak Bölgesi içeren ve indirmeler hakkında gerçek zamanlı bilgi gösteren gezdirilebilir küçük bir tablodur.
 jd_plugins_optional_infobar_opacity=Bilgi çubuğunun saydamlığı [% olarak]

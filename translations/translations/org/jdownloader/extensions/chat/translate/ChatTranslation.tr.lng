@@ -1,7 +1,7 @@
 description=JDownloader geliştirenleri ve destekçileri ile iletişime geçin
 gui_tab_title=%s1 Kanal
-jd_plugins_optional_jdchat_JDChatView_title=JD Destek Sohbet
-jd_plugins_optional_jdchat_JDChatView_tooltip=JD Destek Sohbet
+jd_plugins_optional_jdchat_JDChatView_title=Destek Sohbet
+jd_plugins_optional_jdchat_JDChatView_tooltip=Destek Sohbet
 jd_plugins_optional_jdchat_JDChat_topic_default=Günün iletisi yükleniyor
 jd_plugins_optional_jdchat_JDChat_topic_tooltip=Günün iletisi
 jd_plugins_optional_jdchat_closeTab=Sekmeyi kapat
