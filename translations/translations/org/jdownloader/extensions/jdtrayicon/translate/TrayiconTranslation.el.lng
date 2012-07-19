@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Ελαχιστοποίηση στη Γραμμή Εργασιών
 JDGui_windowClosing_try_answer_tray=Απόκρυψη στην Περιοχή Ειδοποιήσεων
 JDGui_windowClosing_try_asnwer_close=Έξοδος από το JDownloader
-JDGui_windowClosing_try_msg_2=Παρακαλούμε επιλέξτε μεταξύ των\r\n-Έξοδος από το JDownloader (Ακύρωση όλων των διεργασιών)\r\n-Ελαχιστοποίηση στη Γραμμή Εργασιών (Οι Λήψεις θα συνεχιστούν)\r\n-Απόκρυψη στην Περιοχή Ειδοποιήσεων (Οι Λήψεις θα συνεχιστούν στο παρασκήνιο)
+JDGui_windowClosing_try_msg_2=Παρακαλούμε επιλέξτε μεταξύ των:\r\n-Έξοδος από το JDownloader (Ακύρωση όλων των διεργασιών)\r\n-Ελαχιστοποίηση στη Γραμμή Εργασιών (Οι Λήψεις θα συνεχιστούν)\r\n-Απόκρυψη στην Περιοχή Ειδοποιήσεων (Οι Λήψεις θα συνεχιστούν στο παρασκήνιο)
 JDGui_windowClosing_try_title_=Κλείσιμο στην Περιοχή Ειδοποιήσεων
 OnCloseAction_exit=Τερματισμός της Εφαρμογής
 OnCloseAction_totaskbar=Ελαχιστοποίηση στη Γραμμή Εργασιών
@@ -11,7 +11,7 @@ OnMinimizeAction_totaskbar=Ελαχιστοποίηση στη Γραμμή Ερ
 OnMinimizeAction_totray=Κλείσιμο στην Περιοχή Ειδοποιήσεων
 jd_plugins_optional_jdtrayicon_jdlighttray=Εικονίδιο
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Επιτρέπει την ελαχιστοποίηση ή το κλείσιμο του JDownloader στην Περιοχή ειδοποιήσεων, καθώς και άλλες σχετικές δυνατότητες όπως προστασία με κωδικό και άλλα.
-minimize_options=Παρακαλούμε επιλέξτε μεταξύ των\r\n-Ελαχιστοποίηση στη Γραμμή Εργασιών\r\n-Απόκρυψη στην Περιοχή Ειδοποιήσεων
+minimize_options=Παρακαλούμε επιλέξτε μεταξύ των:\r\n-Ελαχιστοποίηση στη Γραμμή Εργασιών\r\n-Απόκρυψη στην Περιοχή Ειδοποιήσεων
 minimized_ask=Ελαχιστοποίηση του JDownloader!
 plugins_optional_JDLightTray_always=Πάντα
 plugins_optional_JDLightTray_closetotray2=Πατήστε στην ενέργεια 'Κλείσιμο <X>'
