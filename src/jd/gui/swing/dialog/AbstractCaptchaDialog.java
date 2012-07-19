@@ -438,7 +438,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
 
             headerPanel.add(header);
         }
-        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle()) + ".json"), LocationStorage.class);
+        config = JsonConfig.create(Application.getResource("cfg/CaptchaDialogDimensions_" + Hash.getMD5(getTitle())), LocationStorage.class);
 
         HeaderScrollPane sp;
         final int size = org.jdownloader.settings.staticreferences.CFG_GUI.CAPTCHA_SCALE_FACTOR.getValue();

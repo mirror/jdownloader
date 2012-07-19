@@ -29,6 +29,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -53,10 +54,11 @@ public class RapidGatorNet extends PluginForHost {
         this.enablePremium("http://rapidgator.net/article/premium");
     }
 
-    private static final String MAINPAGE = "http://rapidgator.net/";
-    private static final Object LOCK     = new Object();
-    private static String       agent    = null;
-    private static boolean      hasDled  = false;
+    private static final String MAINPAGE   = "http://rapidgator.net/";
+    private static final Object LOCK       = new Object();
+    private static String       agent      = null;
+    private static boolean      hasDled    = false;
+    private static long         timeBefore = 0;
 
     @Override
     public String getAGBLink() {
@@ -119,13 +121,26 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        /*
-         * they might have an automated download tool detection routine. If you try to download something new too soon, your IP does not get
-         * removed from active downloading IP database. I assume it only happens after successful download and not failures.
-         */
-        if (hasDled) sleep(90 * 1037l, downloadLink);
+        // experimental code - raz
+        // so called 15mins between your last download, ends up with your IP blocked for the day.. Trail and error until we find the sweet
+        // spot.
+        if (hasDled) {
+            long result = System.currentTimeMillis() - timeBefore;
+            // 35 minute wait less time since last download.
+            logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
+            if (result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", 2100000 - result);
+        }
         try {
+            // far as I can tell it's not needed.
             requestFileInformation(downloadLink);
+            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+            for (String link : sitelinks) {
+                if (link.matches("(.+\\.(js|css))")) {
+                    Browser br2 = br.cloneBrowser();
+                    simulateBrowser(br2, link);
+                }
+            }
+            // end of experiment
             if (br.containsHTML("You have reached your daily downloads limit. Please try")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You have reached your daily downloads limit", 60 * 60 * 1000l);
             if (br.containsHTML("(You can`t download not more than 1 file at a time in free mode\\.<|>Wish to remove the restrictions\\?)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can`t download more than 1 file at a periode of time in free mode", 60 * 60 * 1000l);
             final String freedlsizelimit = br.getRegex("\\'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode<").getMatch(0);
@@ -261,6 +276,8 @@ public class RapidGatorNet extends PluginForHost {
         } catch (Exception e) {
             hasDled = false;
             throw e;
+        } finally {
+            timeBefore = System.currentTimeMillis();
         }
     }
 
@@ -358,6 +375,17 @@ public class RapidGatorNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void simulateBrowser(Browser rb, String url) {
+        if (rb == null || url == null) return;
+        URLConnectionAdapter con = null;
+        try {
+            con = rb.openGetConnection(url);
+        } catch (final Throwable e) {
+        } finally {
+            con.disconnect();
+        }
     }
 
     @Override
