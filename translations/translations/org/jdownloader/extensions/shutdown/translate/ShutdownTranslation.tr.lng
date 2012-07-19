@@ -20,5 +20,5 @@ interaction_shutdown_dialog_title_hibernate=Hazırda Beklemeye alınsın mı?
 interaction_shutdown_dialog_title_shutdown=Bilgisayar Kapatılsın mı?
 interaction_shutdown_dialog_title_standby=Beklemeye alınsın mı?
 jd_plugins_optional_jdshutdown=Sistem Kapatma
-jd_plugins_optional_jdshutdown_description=İndirmeler bittiğinde ya da durdurulduğunda, bilgisayarınız otomatik olarak kapatılsın, askıya, hazırda beklemeye alınsın ya da JDownloader'dan çıkılsın.
+jd_plugins_optional_jdshutdown_description=İndirmeler bittiğinde ya da durdurulduğunda, bilgisayarınız otomatik olarak kapatılsın, askıya, hazırda beklemeye alınsın veya JDownloader'dan çıkılsın.
 lit_shutdownn=Sistem kapatma
