@@ -139,6 +139,12 @@ public class FileDefendCom extends PluginForHost {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
+            // when file is deleted/expired - only image is displayed
+            if (correctedBR.contains("http://filedefend.com/images/error.png")) {
+                logger.warning("file deleted or expired");
+                return AvailableStatus.FALSE;
+            }
+
             logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -152,8 +158,10 @@ public class FileDefendCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-            if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/([A-Za-z0-9]{12})/(.*?)</font>").getMatch(1);
+            // found file ID, searching for filename
+            // if filename not found then the final filename will be file ID
+            if (fileInfo[0] != null) {
                 fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
                 if (fileInfo[0] == null) {
                     fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
