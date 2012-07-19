@@ -1,1 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=Drag & släpp område
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Släpp URLer, Hperlänkar eller DLC filer här!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Dölj InfoBar
+jd_plugins_optional_infobar_docking=Aktivera dockning till sidorna
+jd_plugins_optional_infobar_dropLocation2=Aktivera släpp område
 jd_plugins_optional_infobar_jdinfobar=JDInfoList
+jd_plugins_optional_infobar_jdinfobar_description=Liten flytande panel med information om nerladdningar i realtid, och Drag & släpp yta där du kan lägga till länkar, URLer eller DLC filer.
+jd_plugins_optional_infobar_opacity=Dialogens genomskinlighet [i %]

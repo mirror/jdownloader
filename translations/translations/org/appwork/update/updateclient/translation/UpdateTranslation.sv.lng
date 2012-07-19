@@ -53,6 +53,7 @@ could_not_download_file=Kunde inte ladda ner uppdatering.
 could_not_install_file=Kunde inte installera filen: %s1
 could_not_overwrite=Kunde inte skriva över filen %s1.
 could_not_update_updater=Updater fel: Kunde inte uppdatera Updater!
+details=Mer...
 dialag_branch_resetted=Edition utdaterad
 dialog_branch_resetted_msg=%s2 %s1-Edition existerar inte längre. Återställt till senaste stabila edition.
 dialog_rly_cancel=Avbryt uppdatering?
