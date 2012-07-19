@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 /** Links always come rom a decrypter */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minusdecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.[A-Za-z0-9]{1,7}" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minusdecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/.+" }, flags = { 0, 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {

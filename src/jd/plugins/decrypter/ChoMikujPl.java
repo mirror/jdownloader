@@ -109,6 +109,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         // Alle Haupt-POSTdaten
         String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(REQUESTVERIFICATIONTOKEN);
         final FilePackage fp = FilePackage.getInstance();
+        // Make only one package
+        fp.setProperty("ALLOW_MERGE", true);
         fp.setName(fpName);
         decryptedLinks = decryptAll(parameter, postdata, param, fp);
         return decryptedLinks;
@@ -181,13 +183,6 @@ public class ChoMikujPl extends PluginForDecrypt {
         } else {
             final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
             /** Decrypt all pages, start with 1 (not 0 as it was before) */
-            // try {
-            // if (isAbort()) {
-            // logger.info("Chomikuj decryption aborted");
-            // break;
-            // }
-            // } catch (final Throwable e) {
-            // }
             logger.info("Decrypting page " + pageCount + " of link: " + parameter);
             final Browser tempBr = new Browser();
             prepareBrowser(parameter, tempBr);
@@ -229,7 +224,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                             dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim()));
                         } else {
                             dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim());
-                            
+
                         }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);

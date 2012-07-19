@@ -105,6 +105,11 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            // Some errorhandling
+            if (br.containsHTML(">Channel: <a href=\"/\\d+,\\d+,channel\\.html\"> pornhub</a>")) {
+                logger.info("filestube: Pornhub link is broken: " + parameter);
+                return decryptedLinks;
+            }
             externID = br.getRegex("tnaflix.com/embedding_player/player_[^<>\"]+\\.swf\" /><param name=\"FlashVars\" value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
             if (externID != null) {
                 br.getPage("http://www.tnaflix.com/embedding_player/" + externID);

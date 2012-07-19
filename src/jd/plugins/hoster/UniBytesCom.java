@@ -51,6 +51,37 @@ public class UniBytesCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+        // Use the english language
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
+        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
+        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
+        if (filename == null || filesize == null) {
+            // Leave this in
+            logger.warning("Fatal error happened in the availableCheck...");
+            logger.warning("Filename = " + filename);
+            logger.warning("Filesize = " + filesize);
+            logger.warning(br.toString());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Set final name here because server sometimes sends bad filenames
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -196,36 +227,6 @@ public class UniBytesCom extends PluginForHost {
         br.setCookie(MAINPAGE, "lang", "en");
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
-        // Use the english language
-        br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
-        String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
-        String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
-        if (filename == null || filesize == null) {
-            // Leave this in
-            logger.warning("Fatal error happened in the availableCheck...");
-            logger.warning("Filename = " + filename);
-            logger.warning("Filesize = " + filesize);
-            logger.warning(br.toString());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

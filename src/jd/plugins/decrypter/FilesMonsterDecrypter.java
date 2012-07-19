@@ -54,8 +54,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Is the file offline ? If so, let's stop here and just add it to the
         // downloadlist so the user can see the status
-        if (br.getRedirectLocation() != null) {
-            DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
+        if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<)")) {
+            final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
+            finalOne.setAvailable(false);
             decryptedLinks.add(finalOne);
             return decryptedLinks;
         }
@@ -86,7 +87,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         } else {
             logger.info("postThat is null, probably limit reached, adding only the premium link...");
         }
-        DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
+        final DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
         if (fname != null && fsize != null) {
             thebigone.setFinalFileName(Encoding.htmlDecode(fname.trim()));
             thebigone.setDownloadSize(SizeFormatter.getSize(fsize));

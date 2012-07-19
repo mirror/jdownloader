@@ -48,7 +48,7 @@ public class SexCom extends PluginForDecrypt {
             return null;
         }
         String externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<a target=\"_blank\" rel=\"nofollow\" href=\"http://[^<>\"]*?\" onclick=\"_gaq[^<>\"]*?\">[\t\n\r ]+<img alt=\"[^<>\"]*?\" title=\"[^<>\"]*?\" src=\"(http://images\\.sex\\.com/images/[^<>\"]*?)\"").getMatch(0);
-        // For .gif imagesf
+        // For .gif images
         if (externID == null) externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<img alt=\"\" title=\"\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);

@@ -30,6 +30,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+" }, flags = { 0 })
 public class MinUsComDecrypter extends PluginForDecrypt {
 
@@ -51,27 +53,42 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         // Get album name for package name
         String fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
         // do not catch first "name", only items within array
+        final String singleLink = br.getRegex("<a class=\"btn\\-action btn\\-download\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
         String[] items = br.getRegex("\\{[\r\n\t]+(\"name\":[^\\}]+)\\} ").getColumn(0);
-        // fail over for single items ?. Either that or they changed website yet again and do not display the full gallery array.
+        // fail over for single items ?. Either that or they changed website yet
+        // again and do not display the full gallery array.
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
-        if (items == null || items.length == 0) {
+        if ((singleLink == null) && (items == null || items.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleitems : items) {
-            String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
-            final String filesize = new Regex(singleitems, "\"filesize_bytes\": ?(\\d+)").getMatch(0);
-            final String secureprefix = new Regex(singleitems, "\"secure_prefix\": ?\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
-            final String linkid = new Regex(singleitems, "\"id\": ?\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
-            if (filename == null || filesize == null || secureprefix == null || linkid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        if (items != null && items.length != 0) {
+            for (String singleitems : items) {
+                String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
+                final String filesize = new Regex(singleitems, "\"filesize_bytes\": ?(\\d+)").getMatch(0);
+                final String secureprefix = new Regex(singleitems, "\"secure_prefix\": ?\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
+                final String linkid = new Regex(singleitems, "\"id\": ?\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
+                if (filename == null || filesize == null || secureprefix == null || linkid == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
+                final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename.substring(filename.lastIndexOf("."));
+                final DownloadLink dl = createDownloadlink(filelink);
+                dl.setFinalFileName(filename);
+                dl.setDownloadSize(Long.parseLong(filesize));
+                dl.setAvailable(true);
+                dl.setProperty("mainid", mainid);
+                decryptedLinks.add(dl);
             }
-            filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
-            final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename.substring(filename.lastIndexOf("."));
-            DownloadLink dl = createDownloadlink(filelink);
-            dl.setFinalFileName(filename);
-            dl.setDownloadSize(Long.parseLong(filesize));
+        }
+        // Only one link available, add it!
+        if (singleLink != null) {
+            final String filesize = br.getRegex("<span class=\"text\">Download \\(([^<>\"]*?)\\)</span>").getMatch(0);
+            final String filelink = singleLink.replace("minus.com/", "minusdecrypted.com/");
+            final DownloadLink dl = createDownloadlink(filelink);
+            dl.setFinalFileName(new Regex(singleLink, "minus\\.com/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\"").getMatch(0));
+            if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setAvailable(true);
             dl.setProperty("mainid", mainid);
             decryptedLinks.add(dl);
