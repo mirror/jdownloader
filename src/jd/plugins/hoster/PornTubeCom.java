@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -60,23 +58,30 @@ public class PornTubeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(page-not-found\\.jpg\"|<title>Error 404 \\- Page not Found \\| PornTube\\.com</title>|alt=\"Page not Found\")")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| PornTube\\.com</title>").getMatch(0);
-        DLLINK = br.getRegex("addVariable\\(\\'config\\', \\'(/.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(/xml/index\\?id=[0-9\\-]+)\\'").getMatch(0);
+        String filename = br.getRegex("<h2 class=\"videoTitle\">.*?<span>(.*?)</span></h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) \\| PornTube\\.com</title>").getMatch(0);
+        DLLINK = br.getRegex("addVariable\\(\'file\', \'(http[^\']+)").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("addVariable\\(\'config\', \'(/.*?)\'").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\'(/xml/index\\?id=[0-9\\-]+)\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.porntube.com" + Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
-        String ext = ".m4v";
-        if (DLLINK.contains(".flv")) ext = ".flv";
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
+        if (!DLLINK.startsWith("http")) {
+            br.getPage("http://www.porntube.com" + Encoding.htmlDecode(DLLINK));
+            DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        String ext = "mp4";
+        if (DLLINK.contains(".flv")) ext = "flv";
+        filename = filename.endsWith(".") ? filename + ext : filename + "." + ext;
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -107,4 +112,5 @@ public class PornTubeCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

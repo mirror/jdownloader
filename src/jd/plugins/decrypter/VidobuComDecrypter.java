@@ -26,8 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 /**
- * Decrypts embedded vidobu links, the hosterplugin for this site exists for the
- * other kind of links
+ * Decrypts embedded vidobu links, the hosterplugin for this site exists for the other kind of links
  */
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vidobu.com" }, urls = { "http://(www\\.)?vidobu\\.com/videolar/[a-z0-9\\-_]+/(\\d+/)?" }, flags = { 0 })
 public class VidobuComDecrypter extends PluginForDecrypt {
@@ -44,12 +43,13 @@ public class VidobuComDecrypter extends PluginForDecrypt {
             logger.info("Video only available for registered users: " + parameter);
             return decryptedLinks;
         }
-        String externID = br.getRegex("\"http://player\\.vimeo\\.com/video/(\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://vimeo.com/" + externID));
-            return decryptedLinks;
+        String embedUrl = br.getRegex("\"(http://player\\.vimeo\\.com/video/\\d+)").getMatch(0);
+        if (embedUrl != null) {
+            DownloadLink dl = createDownloadlink(embedUrl);
+            dl.setProperty("Referer", parameter);
+            decryptedLinks.add(dl);
         }
-        if (externID == null) {
+        if (embedUrl == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

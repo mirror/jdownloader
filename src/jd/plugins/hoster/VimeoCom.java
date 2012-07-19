@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.)?vimeo\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www|player\\.)?vimeo\\.com/(video/)\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
     private static final String MAINPAGE   = "http://vimeo.com";
@@ -465,6 +465,7 @@ public class VimeoCom extends PluginForHost {
         br.setFollowRedirects(true);
         String url = downloadLink.getDownloadURL().replaceFirst("www\\.vimeo\\.com", "vimeo.com");
         downloadLink.setUrlDownload(url);
+        if (downloadLink.getStringProperty("Referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer"));
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
         if (br.containsHTML(">Page not found on Vimeo<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(">This is a private video<") && br.containsHTML("Do you have permission to watch this video\\?")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. Do you have no permission to watch this video!"); }
