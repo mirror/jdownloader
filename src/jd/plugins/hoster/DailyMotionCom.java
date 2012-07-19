@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotion\\.com/video/[a-z0-9\\-_]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dailymotion.com" }, urls = { "http://(www\\.)?dailymotiondecrypted\\.com/video/[a-z0-9\\-_]+" }, flags = { 2 })
 public class DailyMotionCom extends PluginForHost {
 
     public String               dllink                 = null;
@@ -49,6 +49,100 @@ public class DailyMotionCom extends PluginForHost {
     public DailyMotionCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.dailymotion.com/register");
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("dailymotiondecrypted.com/", "dailymotion.com/"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        br.setFollowRedirects(true);
+        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
+        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // We can't download livestreams
+        if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String subtitleStuff = br.getRegex("\"sequence\",  \"(.*?)\"").getMatch(0);
+        if (subtitleStuff != null) subtitles = new Regex(Encoding.urlDecode(subtitleStuff, false).replace("\\", ""), "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
+        String filename = br.getRegex("name=\"title\" content=\"Dailymotion \\-(.*?)\\- ein Film").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("videos</a><span> > </span><b>(.*?)</b></div>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("class=\"title\" title=\"(.*?)\"").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("vs_videotitle:\"(.*?)\"").getMatch(0);
+                }
+            }
+        }
+        if (filename == null) {
+            logger.warning("filename is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = br.getRegex("addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
+        if (dllink != null) {
+            String allLinks = Encoding.htmlDecode(dllink).replace("\\", "");
+            logger.info("alllinkstext: " + allLinks);
+            if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
+                // Video not available for your country, let's get the
+                // downloadUrl from another place
+                logger.info("This video is not available for this country, trying to get the url from another place...");
+                dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
+                if (dllink == null) {
+                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
+                    downloadLink.setName(filename + ".mp4");
+                    dllink = COUNTRYBLOCK;
+                    return AvailableStatus.TRUE;
+                }
+            } else if (new Regex(allLinks, REGISTEREDONLY).matches()) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
+                downloadLink.setName(filename + ".mp4");
+                dllink = REGISTEREDONLY;
+                return AvailableStatus.TRUE;
+            } else {
+                // Prefer HD videos
+                getQuality("hd720URL", allLinks);
+                if (dllink == null) {
+                    getQuality("hqURL", allLinks);
+                    if (dllink == null) {
+                        getQuality("sdURL", allLinks);
+                        if (dllink == null) {
+                            getQuality("ldURL", allLinks);
+                        }
+                    }
+                }
+            }
+        }
+        if (dllink == null) {
+            dllink = downloadLink.getDownloadURL();
+            if (isRtmp()) {
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+                return AvailableStatus.TRUE;
+            }
+            logger.warning("dllink is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replace("\\", "");
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dllink);
+            if (!con.getContentType().contains("html")) {
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
@@ -137,94 +231,6 @@ public class DailyMotionCom extends PluginForHost {
         br.getHeaders().put("X-Prototype-Version", "1.6.1");
         br.postPage("http://www.dailymotion.com/pageitem/login?urlback=%2Fde&request=%2Flogin", "form_name=dm_pageitem_login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1&login_submit=Login");
         if (br.getCookie(MAINPAGE, "sid") == null || br.getCookie(MAINPAGE, "dailymotion_auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.setCookie("http://www.dailymotion.com", "family_filter", "off");
-        br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String subtitleStuff = br.getRegex("\"sequence\",  \"(.*?)\"").getMatch(0);
-        if (subtitleStuff != null) subtitles = new Regex(Encoding.urlDecode(subtitleStuff, false).replace("\\", ""), "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
-        String filename = br.getRegex("name=\"title\" content=\"Dailymotion \\-(.*?)\\- ein Film").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("videos</a><span> > </span><b>(.*?)</b></div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"title\" title=\"(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("vs_videotitle:\"(.*?)\"").getMatch(0);
-                }
-            }
-        }
-        if (filename == null) {
-            logger.warning("filename is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = br.getRegex("addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
-        if (dllink != null) {
-            String allLinks = Encoding.htmlDecode(dllink).replace("\\", "");
-            logger.info("alllinkstext: " + allLinks);
-            if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
-                // Video not available for your country, let's get the
-                // downloadUrl from another place
-                logger.info("This video is not available for this country, trying to get the url from another place...");
-                dllink = br.getRegex("addVariable\\(\"video\", \"(http://.*?)\"\\)").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
-                    downloadLink.setName(filename + ".mp4");
-                    dllink = COUNTRYBLOCK;
-                    return AvailableStatus.TRUE;
-                }
-            } else if (new Regex(allLinks, REGISTEREDONLY).matches()) {
-                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
-                downloadLink.setName(filename + ".mp4");
-                dllink = REGISTEREDONLY;
-                return AvailableStatus.TRUE;
-            } else {
-                // Prefer HD videos
-                getQuality("hd720URL", allLinks);
-                if (dllink == null) {
-                    getQuality("hqURL", allLinks);
-                    if (dllink == null) {
-                        getQuality("sdURL", allLinks);
-                        if (dllink == null) {
-                            getQuality("ldURL", allLinks);
-                        }
-                    }
-                }
-            }
-        }
-        if (dllink == null) {
-            dllink = downloadLink.getDownloadURL();
-            if (isRtmp()) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
-                return AvailableStatus.TRUE;
-            }
-            logger.warning("dllink is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = dllink.replace("\\", "");
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
-        return AvailableStatus.TRUE;
     }
 
     private void getQuality(String quality, String allLinks) {

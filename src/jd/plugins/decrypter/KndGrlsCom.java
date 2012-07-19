@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -43,7 +44,8 @@ public class KndGrlsCom extends PluginForDecrypt {
         String page = br.getPage(parameter);
         if (parameter.contains("com/gallery")) { // it's a gallery
             return decryptGalleryLinks(br);
-        } else if (parameter.contains("com/girls")) { // it's a girl's gallery collection
+        } else if (parameter.contains("com/girls")) { // it's a girl's gallery
+                                                      // collection
             return decryptGirlsGalleryCollection(page);
         } else if (parameter.contains("com/video")) { // it's a video
             return decryptVideoLinks(br);
@@ -73,13 +75,13 @@ public class KndGrlsCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptVideoLinks(Browser br) throws PluginException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String link = br.getRegex("so\\.addParam\\('flashvars',.*file=(http://www\\.kindgirls\\.com//videos\\d+/[a-zA-Z0-9_]+\\.m4v).*").getMatch(0);
+        final String link = br.getRegex("\\'flashvars\\',\\'\\&amp;file=(http://[^<>\"]*?\\.m4v)").getMatch(0);
         if (link == null || link.length() == 0) {
             logger.severe("Variable 'link' not found, Please report issue to JDownloader Developement.");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        decryptedLinks.add(createDownloadlink("directhttp://" + link));
-        String girlsname = br.getRegex("<h3>Video *. *<a href='/girls/[a-zA-Z0-9 _\\-/]+'>([a-zA-Z0-9\\- _]+)</a>.*").getMatch(0);
+        decryptedLinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(link)));
+        String girlsname = br.getRegex("<h3>Video *. *<a href=\\'/girls/[a-zA-Z0-9 _\\-/]+\\'>([a-zA-Z0-9\\- _]+)</a>.*").getMatch(0);
         if (girlsname != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName("Kindgirls - " + girlsname.trim());

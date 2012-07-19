@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -50,18 +49,20 @@ public class DevArtCm extends PluginForDecrypt {
      * @author raztoki
      */
 
-    /* This plugin grabs range of content depending on parameter. 
-            profile.devart.com/gallery/uid*
-            profile.devart.com/favorites/uid*
-            profile.devart.com/gallery/*
-            profile.devart.com/favorites/*
-              * = ?offset=\\d+
-                
-                All of the above formats should support spanning pages, but when parameter contains '?offset=x' it will not span. 
-               
-            profilename.deviantart.com/art/uid/  == grabs the 'download image' (best quality available).
-
-       I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any issues.
+    /*
+     * This plugin grabs range of content depending on parameter.
+     * profile.devart.com/gallery/uid* profile.devart.com/favorites/uid*
+     * profile.devart.com/gallery/* profile.devart.com/favorites/* =
+     * ?offset=\\d+
+     * 
+     * All of the above formats should support spanning pages, but when
+     * parameter contains '?offset=x' it will not span.
+     * 
+     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best
+     * quality available).
+     * 
+     * I've created the plugin this way to allow users to grab as little or as
+     * much, content as they wish. Hopefully this wont create any issues.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -116,8 +117,6 @@ public class DevArtCm extends PluginForDecrypt {
 
     private void parseArtPage(ArrayList<DownloadLink> ret, String parameter) throws Exception {
         boolean ratedContent = false;
-        String fileName = null;
-        String[][] dllinks = null;
         // login if required, else don't
         if (br.containsHTML(">Mature Content Filter</a>")) {
             String artPageURL = br.getURL();
@@ -128,37 +127,14 @@ public class DevArtCm extends PluginForDecrypt {
         if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
             ratedContent = true;
         }
-        String dllink = br.getRegex("id=\"download\\-button\" href=\"(https?://[\\w\\.\\-]*?deviantart.com/download/\\d+/.*?)\"").getMatch(0);
-        if (dllink == null) {
-            // fail over, when download isn't present
-            fileName = br.getRegex("<title>(.+) on deviantART</title>").getMatch(0);
-            if (fileName == null) fileName = br.getRegex("<meta name=\"title\" content=\"(.+) on deviantART\" />").getMatch(0);
-            // find the largest Image
-            String imgL = br.getRegex("(<img  name=\"gmi\\-ResViewSizer_fullimg\" .+ class=\"fullview smshadow\">)").getMatch(0);
-            // regular image
-            String imgR = br.getRegex("(<img  name=\"gmi\\-ResViewSizer_img\" .+ class=\"smshadow\" >)").getMatch(0);
-            if (imgL != null)
-                dllinks = new Regex(imgL, "src=\"([^\"]+(\\.[a-z]+))").getMatches();
-            else
-                dllinks = new Regex(imgR, "src=\"([^\"]+(\\.[a-z]+))").getMatches();
-            if (dllinks == null) {
-                logger.warning("Possible Plugin error, with finding download image: " + parameter);
-                return;
-            }
-        }
-        // dllink[]
+        String dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+
         if (dllink != null) {
-            DownloadLink dl = createDownloadlink("DEVART://" + dllink);
-            dl.setProperty("ratedContent", ratedContent);
+            final DownloadLink dl = createDownloadlink("directhttp://" + dllink);
             ret.add(dl);
         }
-        // dllinks[][]
-        else if (dllinks != null && fileName != null) {
-            DownloadLink dl = createDownloadlink("DEVART://" + dllinks[0][0]);
-            dl.setFinalFileName(Encoding.htmlDecode(fileName + dllinks[0][1]).trim());
-            dl.setProperty("ratedContent", ratedContent);
-            ret.add(dl);
-        } else {
+
+        else {
             logger.warning("Error within parseArtPage");
             return;
         }

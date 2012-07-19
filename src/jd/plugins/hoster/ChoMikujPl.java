@@ -45,7 +45,6 @@ public class ChoMikujPl extends PluginForHost {
     private String              DLLINK              = null;
 
     private static final String PREMIUMONLY         = "(Aby pobrać ten plik, musisz być zalogowany lub wysłać jeden SMS\\.|Właściciel tego chomika udostępnia swój transfer, ale nie ma go już w wystarczającej|wymaga opłacenia kosztów transferu z serwerów Chomikuj\\.pl)";
-
     private static final String PREMIUMONLYUSERTEXT = "Download is only available for registered/premium users!";
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
@@ -64,7 +63,7 @@ public class ChoMikujPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (!getDllink(link, br.cloneBrowser())) {
+        if (!getDllink(link, br.cloneBrowser(), false)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -116,7 +115,7 @@ public class ChoMikujPl extends PluginForHost {
         return "http://chomikuj.pl/Regulamin.aspx";
     }
 
-    public boolean getDllink(DownloadLink theLink, Browser br) throws NumberFormatException, PluginException, IOException {
+    public boolean getDllink(final DownloadLink theLink, final Browser br, final boolean premium) throws NumberFormatException, PluginException, IOException {
         final boolean redirectsSetting = br.isFollowingRedirects();
         br.setFollowRedirects(false);
         final String fid = theLink.getStringProperty("fileid");
@@ -125,7 +124,8 @@ public class ChoMikujPl extends PluginForHost {
         String savedPost = theLink.getStringProperty("savedpost");
         if (savedLink != null && savedPost != null) br.postPage(savedLink, savedPost);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        if (theLink.getStringProperty("video") != null) {
+        // Premium users can always download the original file
+        if (theLink.getStringProperty("video") != null && !premium) {
             br.setFollowRedirects(true);
             videolink = true;
             br.getPage("http://chomikuj.pl/ShowVideo.aspx?id=" + fid);
@@ -134,7 +134,7 @@ public class ChoMikujPl extends PluginForHost {
             br.getPage("http://chomikuj.pl/Video.ashx?id=" + fid + "&type=1&ts=" + new Random().nextInt(1000000000) + "&file=video&start=0");
             DLLINK = br.getRedirectLocation();
             theLink.setFinalFileName(theLink.getName());
-        } else if (theLink.getName().endsWith(".mp3") || theLink.getName().endsWith(".MP3")) {
+        } else if ((theLink.getName().endsWith(".mp3") || theLink.getName().endsWith(".MP3")) && !premium) {
             br.getPage("http://chomikuj.pl/Audio.ashx?id=" + fid + "&type=2&tp=mp3");
             DLLINK = br.getRedirectLocation();
             theLink.setFinalFileName(theLink.getName());
@@ -165,7 +165,7 @@ public class ChoMikujPl extends PluginForHost {
         requestFileInformation(downloadLink);
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         if (!videolink) {
-            if (!getDllink(downloadLink, br)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
+            if (!getDllink(downloadLink, br, false)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.chomikujpl.only4registered", PREMIUMONLYUSERTEXT));
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
@@ -181,13 +181,15 @@ public class ChoMikujPl extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        Browser brc = br.cloneBrowser();
         DLLINK = null;
-        getDllink(link, brc);
+        getDllink(link, br, true);
+        if (br.containsHTML("Masz \\\\u003cb\\\\u003e\\d+(,\\d+)? MB\\\\u003c/b\\\\u003e")) {
+            logger.info("Disabling chomikuj.pl account: Not enough traffic available");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (DLLINK == null) {
-            String argh1 = brc.getRegex("orgFile\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
-            String argh2 = brc.getRegex("userSelection\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
+            String argh1 = br.getRegex("orgFile\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
+            String argh2 = br.getRegex("userSelection\\\\\" value=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (argh1 == null || argh2 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // For some files they ask
             // "Do you really want to download this file", so we have to confirm
@@ -196,12 +198,13 @@ public class ChoMikujPl extends PluginForHost {
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
-            if (DLLINK == null) getDllink(link, brc);
+            if (DLLINK == null) getDllink(link, br, true);
         }
         if (DLLINK == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        sleep(2 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");

@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://[\\w\\d\\.]*?(easy\\-share|crocko)\\.com/([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://[\\w\\d\\.]*?(easy\\-share|crocko)\\.com/(?!us|pt|accounts|billing)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
 public class CrockoCom extends PluginForHost {
 
     private static Boolean      longwait     = null;
@@ -131,7 +131,8 @@ public class CrockoCom extends PluginForHost {
             if (longwait == null) longwait = false;
             if (waittime > 90 && longwait == false) {
                 /*
-                 * only request reconnect if we dont have to wait long on every download
+                 * only request reconnect if we dont have to wait long on every
+                 * download
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
@@ -176,7 +177,8 @@ public class CrockoCom extends PluginForHost {
             }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /*
-             * another as default cause current stable has easy-captcha method that does not work
+             * another as default cause current stable has easy-captcha method
+             * that does not work
              */
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
@@ -243,7 +245,8 @@ public class CrockoCom extends PluginForHost {
         if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (acc != null && prem == null) {
             /*
-             * buggy easyshare server, login does not work always, it needs PREMIUM cookie
+             * buggy easyshare server, login does not work always, it needs
+             * PREMIUM cookie
              */
             br.setCookie(MAINPAGE, "PREMIUM", acc);
         }
