@@ -33,6 +33,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -476,6 +477,11 @@ public class DirectHTTP extends PluginForHost {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
         }
         return urlConnection;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        handleFree(link);
     }
 
     @SuppressWarnings("deprecation")

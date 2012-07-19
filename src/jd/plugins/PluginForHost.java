@@ -195,8 +195,18 @@ public abstract class PluginForHost extends Plugin {
 
     @Override
     public void clean() {
-        dl = null;
-        br = null;
+        try {
+            dl.getConnection().disconnect();
+        } catch (Throwable e) {
+        } finally {
+            dl = null;
+        }
+        try {
+            br.disconnect();
+        } catch (Throwable e) {
+        } finally {
+            br = null;
+        }
         super.clean();
     }
 
@@ -424,14 +434,7 @@ public abstract class PluginForHost extends Plugin {
                 handleFree(downloadLink);
             }
         } finally {
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable e) {
-            }
-            try {
-                br.disconnect();
-            } catch (Throwable e) {
-            }
+            clean();
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {

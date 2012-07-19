@@ -20,7 +20,6 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
         links = new ArrayList<CrawledLink>();
         links.add(l);
         name = l.getName();
-
         size = l.getSize();
 
     }

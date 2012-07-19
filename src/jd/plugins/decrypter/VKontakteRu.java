@@ -124,7 +124,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private ArrayList<DownloadLink> decryptAudioAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         int overallCounter = 1;
         DecimalFormat df = new DecimalFormat("00000");
-        br.getPage(parameter);
+        /* not needed as we already have requested this page */
+        // br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String postData = null;
         if (new Regex(parameter, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
@@ -154,8 +155,11 @@ public class VKontakteRu extends PluginForDecrypt {
         final Regex vids = new Regex(parameter, "/video_ext\\.php\\?oid=(\\d+)\\&id=(\\d+)");
         if (vids.getMatches().length == 1) {
             parameter = "http://vk.com/video" + vids.getMatch(0) + "_" + vids.getMatch(1);
+            if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
+        } else {
+            /* not needed as we already have requested this page */
+            // br.getPage(parameter);
         }
-        br.getPage(parameter);
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -171,10 +175,12 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPhotoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         final String type = "singlephotoalbum";
-        if (parameter.contains("#/album"))
+        if (parameter.contains("#/album")) {
             parameter = "http://vk.com/album" + new Regex(parameter, "#/album((\\-)?\\d+_\\d+)").getMatch(0);
-        else if (parameter.matches(".*?vk\\.com/(photos|id)\\d+")) parameter = parameter.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
-        br.getPage(parameter);
+        } else if (parameter.matches(".*?vk\\.com/(photos|id)\\d+")) {
+            parameter = parameter.replaceAll("vk\\.com/(photos|id)", "vk.com/album") + "_0";
+        }
+        if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
         if (br.containsHTML(FILEOFFLINE) || br.containsHTML("(В альбоме нет фотографий|<title>DELETED</title>)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
@@ -227,8 +233,13 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptPhotoAlbums(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         final String type = "multiplephotoalbums";
-        if (parameter.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) parameter = "http://vk.com/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
-        br.getPage(parameter);
+        if (parameter.matches(".*?vk\\.com/id\\d+\\?z=albums\\d+")) {
+            parameter = "http://vk.com/albums" + new Regex(parameter, "(\\d+)$").getMatch(0);
+            if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
+        } else {
+            /* not needed as we already have requested this page */
+            // br.getPage(parameter);
+        }
         final String numberOfEntrys = br.getRegex("\\| (\\d+) albums?</title>").getMatch(0);
         final String startOffset = br.getRegex("var preload = \\[(\\d+),\"").getMatch(0);
         if (numberOfEntrys == null || startOffset == null) {
@@ -248,7 +259,8 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptVideoAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter, ProgressController progress) throws IOException {
         final String type = "multiplevideoalbums";
-        br.getPage(parameter);
+        /* not needed as we already have requested this page */
+        // br.getPage(parameter);
         final String numberOfEntrys = br.getRegex("(\\d+) videos<").getMatch(0);
         if (numberOfEntrys == null) {
             logger.warning("Decrypter broken for link: " + parameter);

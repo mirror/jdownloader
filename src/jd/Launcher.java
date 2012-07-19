@@ -632,7 +632,6 @@ public class Launcher {
                         } catch (Throwable e) {
                             Launcher.LOG.log(e);
                             Dialog.getInstance().showExceptionDialog("Exception occured", "An unexpected error occured.\r\nJDownloader will try to fix this. If this happens again, please contact our support.", e);
-
                             org.jdownloader.controlling.JDRestartController.getInstance().restartViaUpdater(false);
                         }
                     }

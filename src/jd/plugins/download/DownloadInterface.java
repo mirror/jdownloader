@@ -706,7 +706,7 @@ abstract public class DownloadInterface {
 
     private final long         startTimeStamp           = System.currentTimeMillis();
 
-    private boolean            dlAlreadyFinished        = false;
+    protected boolean          dlAlreadyFinished        = false;
 
     public static final String PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
 

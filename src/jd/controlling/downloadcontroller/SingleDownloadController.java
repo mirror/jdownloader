@@ -737,16 +737,12 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 downloadLink.setLivePlugin(null);
                 if (originalPlugin != livePlugin) {
                     /* we have 2 different plugins */
-                    originalPlugin.getBrowser().disconnect();
-                    originalPlugin.setBrowser(null);
-                    originalPlugin.setDownloadLink(null);
                     originalPlugin.clean();
+                    originalPlugin.setDownloadLink(null);
                 }
                 if (livePlugin != null) {
-                    livePlugin.getBrowser().disconnect();
-                    livePlugin.setBrowser(null);
-                    livePlugin.setDownloadLink(null);
                     livePlugin.clean();
+                    livePlugin.setDownloadLink(null);
                 }
             } finally {
                 linkStatus.setActive(false);
