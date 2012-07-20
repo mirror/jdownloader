@@ -49,17 +49,6 @@ public class SpankWireCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
     // main code by external user "hpdub33"
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -76,12 +65,14 @@ public class SpankWireCom extends PluginForHost {
                 filename = br.getRegex("<meta name=\"Description\" content=\"(.*?)\"").getMatch(0);
             }
         }
-        DLLINK = br.getRegex("flashvars\\.video_url = \"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.public\\.spankwire\\.com/std/.*?)\"").getMatch(0);
+        DLLINK = br.getRegex("flashvars\\.video_url = \"(http[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
+        if (DLLINK.contains(".mp4"))
+            downloadLink.setFinalFileName(filename + ".mp4");
+        else
+            downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -91,6 +82,17 @@ public class SpankWireCom extends PluginForHost {
         else
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

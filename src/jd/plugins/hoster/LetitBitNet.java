@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -45,6 +47,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -58,6 +61,7 @@ public class LetitBitNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
+    private static String        AGENT                             = RandomUserAgent.generate();
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -78,6 +82,7 @@ public class LetitBitNet extends PluginForHost {
         br.setDebug(true);
         br.setCustomCharset("UTF-8");
         br.setCookie("http://letitbit.net/", "lang", "en");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.getPage(downloadLink.getDownloadURL());
         // /* set english language */
         // br.postPage(downloadLink.getDownloadURL(),
@@ -252,38 +257,39 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
-        Form freeForm = br.getFormbyProperty("id", "ifree_form");
+        final Form freeForm = br.getFormbyProperty("id", "ifree_form");
         if (freeForm == null) {
             logger.info("Found did not found freeForm!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(freeForm);
-        if ("RU".equals(br.getCookie("http://letitbit.net", "country"))) {
-            /*
-             * special handling for RU,seems they get an extra *do you want to
-             * buy or download for free* page...man i hate fixing this ;) find
-             * ru proxies here http://spys.ru/free-proxy-list/RU/
-             */
-            Form[] allforms = br.getForms();
-            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            Form down = null;
-            for (Form singleform : allforms) {
-                if (singleform.containsHTML("md5crypt") && singleform.getAction() != null) {
-                    down = singleform;
-                    break;
-                }
+
+        // Those are steps which are not always there, sometimes, only russian
+        // users have to do those
+        Form[] allforms = br.getForms();
+        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Form down = null;
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("sms/check")) {
+                down = singleform;
+                break;
             }
-            if (down != null) {
-                down.setMethod(Form.MethodType.POST);
-                br.submitForm(down);
-            }
-            allforms = br.getForms();
-            if (allforms != null) br.submitForm(allforms[allforms.length - 1]);
         }
-        String serverPart = br.getRegex("\\$\\.post\\(\"(/ajax/download\\d+\\.php)\"").getMatch(0);
-        if (serverPart == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        serverPart = br.getRegex("(https?://(s\\d+\\.)?letitbit.net)/ajax/download").getMatch(0);
-        if (serverPart == null) serverPart = "http://letitbit.net";
+        if (down != null) {
+            down.setMethod(Form.MethodType.POST);
+            down.put("ref", "http%3A%2F%2Fsvn.jdownloader.org%2Fissues%2F5373");
+            br.submitForm(down);
+            final Form wtf = br.getFormbyProperty("id", "d3_form");
+            if (wtf != null) {
+                br.submitForm(wtf);
+            }
+        }
+
+        final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)function DownloadClick\\(\\)").getMatch(0);
+        if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
+        if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        ajaxPostpage = "http://letitbit.net" + ajaxPostpage;
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
         if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
@@ -294,31 +300,50 @@ public class LetitBitNet extends PluginForHost {
             logger.info("No waittime found, continuing...");
         }
         sleep((wait + 5) * 1001l, downloadLink);
-        prepareBrowser(br);
+        Browser br2 = br.cloneBrowser();
+        prepareBrowser(br2);
         /*
          * this causes issues in 09580 stable, no workaround known, please
          * update to latest jd version
          */
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(serverPart + "/ajax/download3.php", "");
-        br.getHeaders().put("X-Requested-With", null);
+        br2.postPage(ajaxPostpage + "/ajax/download3.php", "");
         /* we need to remove the newline in old browser */
-        final String resp = br.toString().replaceAll("%0D%0A", "").trim();
+        final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) {
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        DecimalFormat df = new DecimalFormat("0000");
-        Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        for (int i = 0; i <= 5; i++) {
-            String code = getCaptchaCode("letitbitnew", serverPart + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
-            sleep(2000, downloadLink);
-            br2.postPage(serverPart + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
-            if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
-            break;
+        // reCaptcha handling
+        if (ajaxPostpage.contains("recaptcha")) {
+            final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            // Normal captcha handling, UNTESTED!
+            final DecimalFormat df = new DecimalFormat("0000");
+            for (int i = 0; i <= 5; i++) {
+                String code = getCaptchaCode("letitbitnew", ajaxPostpage + df.format(new Random().nextInt(1000)), downloadLink);
+                sleep(2000, downloadLink);
+                br2.postPage(ajaxPostpage + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
+                if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
+                break;
+            }
+            if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
         if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
