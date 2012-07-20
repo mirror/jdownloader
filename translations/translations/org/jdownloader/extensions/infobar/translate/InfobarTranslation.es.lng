@@ -3,6 +3,6 @@ jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Arrastre aquí URLs, enlace
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Ocultar Barra de Información
 jd_plugins_optional_infobar_docking=Adherir a los bordes de la pantalla
 jd_plugins_optional_infobar_dropLocation2=Habilitar zona de Arrastrar y Soltar
-jd_plugins_optional_infobar_jdinfobar=JD Barra de Informacion
+jd_plugins_optional_infobar_jdinfobar=Barra de Información
 jd_plugins_optional_infobar_jdinfobar_description=Panel flotante con el estado en tiempo real de las Descargas. Tambien funciona como una zona de Arrastrar y Soltar donde se pueden agregar enlaces, URLs o archivos DLC.
 jd_plugins_optional_infobar_opacity=Opacidad de la ventana (%):
