@@ -839,3 +839,5 @@ jd/plugins/hoster/MadShareCom.class
 jd/plugins/hoster/ImageHostOrg.class
 jd/captcha/methods/lttbt
 jd/plugins/hoster/ShareXXpgComBr.class
+jd/plugins/hoster/FileKeeperOrg.class
+jd/plugins/hoster/AnnonHostNet.class

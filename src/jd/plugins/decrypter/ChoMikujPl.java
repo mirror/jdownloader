@@ -33,6 +33,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -120,7 +122,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String savePost = postdata;
         String saveLink = null;
-
+        final PluginForHost lol = JDUtilities.getPluginForHost("chomikuj.pl");
+        final boolean decryptFolders = lol.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS);
         // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
@@ -252,7 +255,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                     decryptedLinks.add(dl);
                 }
             }
-            if (allFolders != null && allFolders.length != 0) {
+            if (decryptFolders && allFolders != null && allFolders.length != 0) {
                 for (String[] folder : allFolders) {
                     String folderLink = folder[0];
                     folderLink = "http://chomikuj.pl" + folderLink;

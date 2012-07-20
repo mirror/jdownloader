@@ -299,18 +299,18 @@ public class LetitBitNet extends PluginForHost {
         } else {
             logger.info("No waittime found, continuing...");
         }
-        sleep((wait + 5) * 1001l, downloadLink);
+        sleep((wait + 1) * 1001l, downloadLink);
         Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
          * this causes issues in 09580 stable, no workaround known, please
          * update to latest jd version
          */
-        br2.postPage(ajaxPostpage + "/ajax/download3.php", "");
+        br2.postPage("http://letitbit.net/ajax/download3.php", "");
         /* we need to remove the newline in old browser */
         final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) {
-            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 1000l);
+            if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // reCaptcha handling
@@ -344,6 +344,8 @@ public class LetitBitNet extends PluginForHost {
             }
             if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+        // Downloadlimit is per day so let's just wait 3 hours
+        if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
         String url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
         if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
@@ -512,11 +514,12 @@ public class LetitBitNet extends PluginForHost {
          * below ;)
          */
         if (br == null) { return; }
+        br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Pragma", "no-cache");
         br.getHeaders().put("Cache-Control", "no-cache");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Content-Length", "0");
-        br.setCustomCharset("UTF-8");
+        br.setCustomCharset("utf-8");
     }
 
     @Override

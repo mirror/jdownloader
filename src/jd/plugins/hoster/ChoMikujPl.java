@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Random;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
@@ -50,10 +52,12 @@ public class ChoMikujPl extends PluginForHost {
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
     private boolean             videolink           = false;
     private static final Object LOCK                = new Object();
+    public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
 
     public ChoMikujPl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://chomikuj.pl/Create.aspx");
+        setConfigElements();
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -254,6 +258,10 @@ public class ChoMikujPl extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ChoMikujPl.DECRYPTFOLDERS, JDL.L("plugins.hoster.chomikujpl.decryptfolders", "Decrypt folders and subfolders")).setDefaultValue(true));
     }
 
     @Override
