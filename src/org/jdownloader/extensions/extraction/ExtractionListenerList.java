@@ -216,7 +216,6 @@ public class ExtractionListenerList implements ExtractionListener {
             break;
         case CLEANUP:
             try {
-
                 ArchiveFile af = null;
                 if (controller.getException() != null) {
                     if (controller.getException() instanceof ExtractionException) {

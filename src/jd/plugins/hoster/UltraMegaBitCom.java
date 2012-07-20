@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "http://(www\\.)?ultramegabit\\.com/file/details/[A-Za-z0-9\\-_]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultramegabit.com" }, urls = { "https?://(www\\.)?ultramegabit\\.com/file/details/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class UltraMegaBitCom extends PluginForHost {
 
     public UltraMegaBitCom(PluginWrapper wrapper) {
@@ -40,6 +40,11 @@ public class UltraMegaBitCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://ultramegabit.com/terms";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http:"));
     }
 
     @Override

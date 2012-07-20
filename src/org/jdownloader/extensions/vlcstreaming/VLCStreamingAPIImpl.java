@@ -86,7 +86,7 @@ public class VLCStreamingAPIImpl implements VLCStreamingAPI {
                                 } else {
                                     mirror.setProperty("streamingRange", "bytes=" + startPosition + "-");
                                 }
-                                if (accounts.size() > 0) {
+                                if (accounts != null && accounts.size() > 0) {
                                     plugin.handlePremium(mirror, accounts.get(0));
                                 } else {
                                     plugin.handleFree(mirror);

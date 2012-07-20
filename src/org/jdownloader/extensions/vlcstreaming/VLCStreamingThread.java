@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.vlcstreaming;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import jd.http.Browser;
@@ -113,6 +114,11 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
         } catch (final Throwable e) {
             logger.log(e);
             logger.flush();
+            getResponse().setResponseCode(ResponseCode.SERVERERROR_INTERNAL);
+            try {
+                getResponse().getOutputStream();
+            } catch (IOException e1) {
+            }
         } finally {
             if (doCleanup) cleanup.run();
         }
