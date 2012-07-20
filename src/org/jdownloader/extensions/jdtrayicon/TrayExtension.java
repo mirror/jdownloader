@@ -16,6 +16,7 @@
 
 package org.jdownloader.extensions.jdtrayicon;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Point;
@@ -240,6 +241,28 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             // if (CrossSystem.isMac()) {
             // img = ImageProvider.convertToGrayScale(img);
             // }
+
+            // workaround for gnome 3 transparency bug
+            if (System.getProperty("sun.desktop").equals("gnome")) { // gnome desktop
+                // img = ImageProvider.convertToGrayScale(img);
+                java.awt.Robot robo = new java.awt.Robot();
+                Color tmp, newColor;
+                int cr, cb, cg, alpha;
+                for (int y = 0; y < img.getHeight(); y++) {
+                    newColor = robo.getPixelColor(0, y);
+                    for (int x = 0; x < img.getWidth(); x++) {
+                        tmp = new Color(img.getRGB(x, y));
+                        alpha = (img.getRGB(x, y) >> 24) & 0xFF;
+                        // calculate new color values for each channel
+                        cr = (alpha / 255) * tmp.getRed() + ((255 - alpha) / 255) * newColor.getRed();
+                        cg = (alpha / 255) * tmp.getGreen() + ((255 - alpha) / 255) * newColor.getGreen();
+                        cb = (alpha / 255) * tmp.getBlue() + ((255 - alpha) / 255) * newColor.getBlue();
+                        tmp = new Color(cr, cg, cb);
+                        img.setRGB(x, y, tmp.getRGB());
+                    }
+                }
+            }
+
             /*
              * trayicon message must be set, else windows cannot handle icon right (eg autohide feature)
              */
