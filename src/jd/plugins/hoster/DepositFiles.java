@@ -596,8 +596,22 @@ public class DepositFiles extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
+        if (fileName == null) {
+            String eval = br.getRegex("class=\"info\".*?unescape\\('(.*?)'").getMatch(0);
+            if (eval != null) {
+                JDUtilities.getPluginForHost("youtube.com");
+                eval = jd.plugins.hoster.Youtube.unescape(eval);
+                fileName = new Regex(eval, FILE_INFO_NAME).getMatch(0);
+            }
+        }
         final String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
-        if (fileName == null || fileSizeString == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (fileName == null || fileSizeString == null) {
+            if (fileSizeString != null) {
+                fileName = new Regex(link, "files/([\\w]+)").getMatch(0);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         String fixedName = new Regex(fileName, "(.+)\\?").getMatch(0);
         if (fixedName != null) fileName = fixedName;
         downloadLink.setName(Encoding.htmlDecode(fileName));

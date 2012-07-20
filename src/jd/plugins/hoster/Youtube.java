@@ -65,6 +65,7 @@ public class Youtube extends PluginForHost {
         for (i = 0; i < s.length(); i++) {
             ch = s.charAt(i);
             switch (ch) {
+            case '%':
             case '\\':
                 ch = s.charAt(++i);
                 StringBuilder sb2 = null;
@@ -213,8 +214,7 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: '(https.*?)'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * dont know if this is important but seems to set pstMsg to
-                     * 1 ;)
+                     * dont know if this is important but seems to set pstMsg to 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     br.cloneBrowser().getPage(checkConnection);

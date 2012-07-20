@@ -213,7 +213,13 @@ public class ShareOnlineBiz extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
-        HashMap<String, String> infos = loginAPI(account, true);
+        HashMap<String, String> infos = null;
+        try {
+            infos = loginAPI(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
         /* evaluate expire date */
         final Long validUntil = Long.parseLong(infos.get("expire_date"));
         account.setValid(true);
