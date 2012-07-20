@@ -59,6 +59,7 @@ public class Youtube extends PluginForHost {
 
     public static String unescape(final String s) {
         char ch;
+        char ch2;
         final StringBuilder sb = new StringBuilder();
         int ii;
         int i;
@@ -67,6 +68,7 @@ public class Youtube extends PluginForHost {
             switch (ch) {
             case '%':
             case '\\':
+                ch2 = ch;
                 ch = s.charAt(++i);
                 StringBuilder sb2 = null;
                 switch (ch) {
@@ -97,6 +99,9 @@ public class Youtube extends PluginForHost {
                     sb.append((char) Long.parseLong(sb2.toString(), 16));
                     continue;
                 default:
+                    if (ch2 == '%') {
+                        sb.append(ch2);
+                    }
                     sb.append(ch);
                     continue;
                 }
