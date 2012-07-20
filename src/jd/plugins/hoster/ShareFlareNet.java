@@ -120,6 +120,8 @@ public class ShareFlareNet extends PluginForHost {
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
         String debug = br.toString();
+        final Form fastDl = br.getFormbyProperty("id", "fast_download_form");
+        if (fastDl != null) br.submitForm(fastDl);
         Form dlform = br.getFormbyProperty("id", "dvifree");
         if (dlform == null) {
             if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
