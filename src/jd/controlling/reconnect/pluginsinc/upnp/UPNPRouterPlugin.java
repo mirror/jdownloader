@@ -150,6 +150,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     @Override
     public JComponent getGUI() {
         final JPanel p = new JPanel(new MigLayout("ins 0 0 0 0,wrap 3", "[][][grow,fill]", "[fill]"));
+        p.setOpaque(false);
         JButton find = new ExtButton(new UPNPScannerAction(this)).setTooltipsEnabled(true);
         find.setHorizontalAlignment(SwingConstants.LEFT);
         JButton auto = new ExtButton(new AutoDetectUpnpAction(this)).setTooltipsEnabled(true);
