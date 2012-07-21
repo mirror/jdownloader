@@ -1,4 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=Strefa Drag'N'Drop
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Wrzuć tu odnośniki do adresów www lub pliki DLC!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Ukryj Pasek Informacyjny
 jd_plugins_optional_infobar_docking=Włącz dokowanie do krawędzi
+jd_plugins_optional_infobar_dropLocation2=Uaktywnij Strefę Zrzutu
 jd_plugins_optional_infobar_jdinfobar=InfoPasek
 jd_plugins_optional_infobar_jdinfobar_description=Mały pływający panel informacyjny ze statystykami pobierania w czasie rzeczywistym oraz strefa Przeciągnij & Upuść do przeciągania linków, adresów URL i plików DLC.
 jd_plugins_optional_infobar_opacity=Przeźroczystość [%]
