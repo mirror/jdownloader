@@ -64,6 +64,7 @@ public class RapidGatorNet extends PluginForHost {
     private static boolean       hasDled    = false;
     private static long          timeBefore = 0;
     private final static String  LASTIP     = "LASTIP";
+    private static String        lastIP     = null;
     static private final Pattern IPREGEX    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
 
     private static String[]      IPCHECK    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -429,7 +430,9 @@ public class RapidGatorNet extends PluginForHost {
             currentIP = getIP();
         }
         if (currentIP == null) return false;
-        return !currentIP.equals(link.getStringProperty(LASTIP, null));
+        String lastIP = link.getStringProperty(LASTIP, null);
+        if (lastIP == null) lastIP = RapidGatorNet.lastIP;
+        return !currentIP.equals(lastIP);
     }
 
     private boolean setIP(String IP, DownloadLink link) throws PluginException {
@@ -442,6 +445,7 @@ public class RapidGatorNet extends PluginForHost {
             } else {
                 String lastIP = IP;
                 link.setProperty(LASTIP, lastIP);
+                RapidGatorNet.lastIP = lastIP;
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
