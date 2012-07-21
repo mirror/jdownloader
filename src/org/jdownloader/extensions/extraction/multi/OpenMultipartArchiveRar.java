@@ -72,7 +72,7 @@ public class OpenMultipartArchiveRar {
 
                     return new RandomAccessFileInStream(randomAccessFile);
                 }
-
+                
                 // Nothing useful in cache. Open required volume.
                 randomAccessFile = new RandomAccessFile(filename, "r");
 

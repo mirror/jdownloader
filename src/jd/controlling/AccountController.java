@@ -211,6 +211,8 @@ public class AccountController implements AccountControllerListener {
             }
             if (ai != null && ai.isExpired()) {
                 /* expired account */
+                account.setValid(false);
+                account.setEnabled(false);
                 logger.clear();
                 LogController.CL().info("Account " + whoAmI + " is expired!");
                 this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.EXPIRED, account));
