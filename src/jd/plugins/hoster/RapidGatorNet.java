@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -62,6 +65,8 @@ public class RapidGatorNet extends PluginForHost {
     private static long          timeBefore = 0;
     private static String        lastIP     = null;
     static private final Pattern IPREGEX    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+
+    private static String[]      IPCHECK    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     @Override
     public String getAGBLink() {
@@ -129,7 +134,7 @@ public class RapidGatorNet extends PluginForHost {
         // spot.
         String currentIP = getIP();
         logger.info("New Download: currentIP = " + currentIP);
-        if (hasDled && compareIP(currentIP)) {
+        if (hasDled && ipChanged(currentIP) == false) {
             long result = System.currentTimeMillis() - timeBefore;
             // 35 minute wait less time since last download.
             logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
@@ -394,26 +399,18 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private static final String[] ipCheckServers() {
-        String[] ipServ = new String[4];
-        ipServ[0] = "http://ipcheck0.jdownloader.org";
-        ipServ[1] = "http://ipcheck1.jdownloader.org";
-        ipServ[2] = "http://ipcheck2.jdownloader.org";
-        ipServ[3] = "http://ipcheck3.jdownloader.org";
-        return ipServ;
-    }
-
     private String getIP() throws PluginException {
         Browser ip = new Browser();
         String currentIP = null;
-        String[] ipServers = ipCheckServers();
-        for (String ipServer : ipServers) {
+        ArrayList<String> checkIP = new ArrayList<String>(Arrays.asList(IPCHECK));
+        Collections.shuffle(checkIP);
+        for (String ipServer : checkIP) {
             if (currentIP == null) {
                 try {
                     ip.getPage(ipServer);
                     currentIP = ip.getRegex(IPREGEX).getMatch(0);
-                    if (currentIP == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } catch (Exception e) {
+                    if (currentIP != null) break;
+                } catch (Throwable e) {
                 }
             }
         }
@@ -424,26 +421,29 @@ public class RapidGatorNet extends PluginForHost {
         return currentIP;
     }
 
-    private boolean compareIP(String IP) throws PluginException {
+    private boolean ipChanged(String IP) throws PluginException {
         String currentIP = null;
-        if (IP != null && new Regex(IP, IPREGEX).matches())
+        if (IP != null && new Regex(IP, IPREGEX).matches()) {
             currentIP = IP;
-        else
+        } else {
             currentIP = getIP();
-        if (currentIP.equals(lastIP))
-            return true;
-        else
-            return false;
+        }
+        if (currentIP == null) return false;
+        return !currentIP.equals(lastIP);
     }
 
-    private void setIP(String IP) throws PluginException {
-        if (IP != null && !new Regex(IP, IPREGEX).matches()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (compareIP(IP)) {
-            // Static IP or failure to reconnect! We don't change lastIP
-            logger.warning("Your IP hasn't changed since last download");
-        } else {
-            lastIP = IP;
-            logger.info("LastIP = " + lastIP);
+    private boolean setIP(String IP) throws PluginException {
+        synchronized (IPCHECK) {
+            if (IP != null && !new Regex(IP, IPREGEX).matches()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (ipChanged(IP) == false) {
+                // Static IP or failure to reconnect! We don't change lastIP
+                logger.warning("Your IP hasn't changed since last download");
+                return false;
+            } else {
+                lastIP = IP;
+                logger.info("LastIP = " + lastIP);
+                return true;
+            }
         }
     }
 

@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -336,11 +337,11 @@ public class EasyBytezCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            if (login(account, true) == false) {
-                br.getPage(COOKIE_HOST + "/?op=my_account");
-                doSomething();
-            }
+            login(account, true, true);
         } catch (PluginException e) {
+            if (br.containsHTML("Your IP is temporarily blocked due to 3 incorrect login attempts")) {
+                ai.setStatus("Your IP is temporarily blocked due to 3 incorrect login attempts");
+            }
             account.setValid(false);
             return ai;
         }
@@ -374,7 +375,7 @@ public class EasyBytezCom extends PluginForHost {
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
             ai.setStatus("Premium User");
         }
@@ -438,7 +439,7 @@ public class EasyBytezCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
-        login(account, false);
+        login(account, false, false);
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
@@ -448,22 +449,33 @@ public class EasyBytezCom extends PluginForHost {
         } else {
             dllink = link.getStringProperty("premlink");
             if (dllink != null) {
+                URLConnectionAdapter con = null;
                 try {
                     Browser br2 = br.cloneBrowser();
-                    URLConnectionAdapter con = br2.openGetConnection(dllink);
+                    con = br2.openGetConnection(dllink);
                     if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
                         link.setProperty("premlink", Property.NULL);
                         dllink = null;
                     }
-                    con.disconnect();
                 } catch (Exception e) {
                     link.setProperty("premlink", Property.NULL);
                     dllink = null;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
             if (dllink == null) {
                 br.getPage(link.getDownloadURL());
                 doSomething();
+                if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                    synchronized (LOCK) {
+                        account.setProperty("cookies", null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
@@ -478,7 +490,10 @@ public class EasyBytezCom extends PluginForHost {
             }
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                synchronized (LOCK) {
+                    account.setProperty("cookies", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
@@ -506,7 +521,7 @@ public class EasyBytezCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private boolean login(Account account, boolean showCaptcha) throws Exception {
+    private void login(Account account, boolean showCaptcha, boolean doCheck) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
@@ -523,13 +538,18 @@ public class EasyBytezCom extends PluginForHost {
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(COOKIE_HOST, key, value);
                         }
-                        Browser brc = br.cloneBrowser();
-                        brc.getPage(COOKIE_HOST + "/?op=my_account");
-                        if ((brc.getCookie(COOKIE_HOST, "login")) == null || brc.getCookie(COOKIE_HOST, "xfss") == null) {
-                            /* cookies are no longer valid, refresh them */
+                        if (doCheck) {
+                            br.getPage(COOKIE_HOST + "/?op=my_account");
+                            doSomething();
+                            if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
+                                /* cookies are no longer valid, refresh them */
+                            } else {
+                                /* cookies are still okay, no need to refresh */
+                                return;
+                            }
                         } else {
-                            /* cookies are still okay, no need to refresh */
-                            return false;
+                            /* no doCheck */
+                            return;
                         }
                     }
                 }
@@ -581,7 +601,6 @@ public class EasyBytezCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
-                return true;
             } catch (PluginException e) {
                 account.setProperty("cookies", null);
                 throw e;
