@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
@@ -242,7 +243,7 @@ public class OronCom extends PluginForHost {
                 /*
                  * one day more as we want the account be valid on expire day too
                  */
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null) + (24 * 60 * 60 * 1000l));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
             }
             ai.setStatus("Premium User");
             try {
