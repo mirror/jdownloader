@@ -63,7 +63,7 @@ public class RapidGatorNet extends PluginForHost {
     private static String        agent      = null;
     private static boolean       hasDled    = false;
     private static long          timeBefore = 0;
-    private static String        lastIP     = null;
+    private final static String  LASTIP     = "LASTIP";
     static private final Pattern IPREGEX    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
 
     private static String[]      IPCHECK    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
@@ -134,7 +134,7 @@ public class RapidGatorNet extends PluginForHost {
         // spot.
         String currentIP = getIP();
         logger.info("New Download: currentIP = " + currentIP);
-        if (hasDled && ipChanged(currentIP) == false) {
+        if (hasDled && ipChanged(currentIP, downloadLink) == false) {
             long result = System.currentTimeMillis() - timeBefore;
             // 35 minute wait less time since last download.
             logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
@@ -288,7 +288,7 @@ public class RapidGatorNet extends PluginForHost {
             throw e;
         } finally {
             timeBefore = System.currentTimeMillis();
-            setIP(currentIP);
+            setIP(currentIP, downloadLink);
         }
     }
 
@@ -421,7 +421,7 @@ public class RapidGatorNet extends PluginForHost {
         return currentIP;
     }
 
-    private boolean ipChanged(String IP) throws PluginException {
+    private boolean ipChanged(String IP, DownloadLink link) throws PluginException {
         String currentIP = null;
         if (IP != null && new Regex(IP, IPREGEX).matches()) {
             currentIP = IP;
@@ -429,18 +429,19 @@ public class RapidGatorNet extends PluginForHost {
             currentIP = getIP();
         }
         if (currentIP == null) return false;
-        return !currentIP.equals(lastIP);
+        return !currentIP.equals(link.getStringProperty(LASTIP, null));
     }
 
-    private boolean setIP(String IP) throws PluginException {
+    private boolean setIP(String IP, DownloadLink link) throws PluginException {
         synchronized (IPCHECK) {
             if (IP != null && !new Regex(IP, IPREGEX).matches()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (ipChanged(IP) == false) {
+            if (ipChanged(IP, link) == false) {
                 // Static IP or failure to reconnect! We don't change lastIP
                 logger.warning("Your IP hasn't changed since last download");
                 return false;
             } else {
-                lastIP = IP;
+                String lastIP = IP;
+                link.setProperty(LASTIP, lastIP);
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
