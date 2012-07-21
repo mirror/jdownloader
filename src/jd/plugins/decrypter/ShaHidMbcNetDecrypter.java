@@ -55,7 +55,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         private String hex;
         private String name;
 
-        Quality(final String hexvalue, final String fileprefix) {
+        Quality(String hexvalue, String fileprefix) {
             hex = hexvalue;
             name = fileprefix;
         }
@@ -69,38 +69,38 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         }
     }
 
-    private final String KEY     = "UzJpJCtQWCxYZiEsNXxeOA==";
+    private String KEY     = "UzJpJCtQWCxYZiEsNXxeOA==";
 
-    private final String HASHKEY = "amEtPj5HQmNMa2E5P2hiVA==";
+    private String HASHKEY = "amEtPj5HQmNMa2E5P2hiVA==";
 
-    public ShaHidMbcNetDecrypter(final PluginWrapper wrapper) {
+    public ShaHidMbcNetDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
         setBrowserExclusive();
         br.getPage(parameter);
 
-        final String channelId = br.getRegex("channelId=(.*?)\\&").getMatch(0);
-        final String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
-        final String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
+        String channelId = br.getRegex("channelId=(.*?)\\&").getMatch(0);
+        String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
+        String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
         if (channelId == null || playerForm == null || mediaId == null) { return null; }
 
         int page = 0;
         String quality;
         boolean next = true;
-        final byte[] buffer = new byte[1024];
-        final Map<String, String> qStr = new HashMap<String, String>();
-        final Map<String, String> links = new HashMap<String, String>();
+        byte[] buffer = new byte[1024];
+        Map<String, String> qStr = new HashMap<String, String>();
+        Map<String, String> links = new HashMap<String, String>();
 
         // processing plugin configuration
-        final SubConfiguration cfg = SubConfiguration.getConfig("shahid.mbc.net");
-        final Map<String, Object> shProperties = new LinkedHashMap<String, Object>(cfg.getProperties());
+        SubConfiguration cfg = SubConfiguration.getConfig("shahid.mbc.net");
+        Map<String, Object> shProperties = new LinkedHashMap<String, Object>(cfg.getProperties());
 
-        for (final Entry<String, Object> property : shProperties.entrySet()) {
+        for (Entry<String, Object> property : shProperties.entrySet()) {
             if (property.getKey().matches("(ALLOW_HD|ALLOW_HIGH|ALLOW_MEDIUM|ALLOW_LOW|ALLOW_LOWEST)") && (Boolean) property.getValue()) {
                 qStr.put(Quality.valueOf(property.getKey()).getHexValue(), Quality.valueOf(property.getKey()).toString());
             }
@@ -109,7 +109,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         // try and catch, da Anzahl der Seitenaufrufe(Variable page) unbekannt
         while (next) {
             // Get -> RC4 encrypted http stream to byte array
-            final String req = "http://cache.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Channel") + "/" + getHmacSHA256(channelId) + "/" + page++;
+            String req = "http://cache2.delvenetworks.com/ps/c/v1/" + getHmacSHA256("RC4\n" + Encoding.Base64Decode(KEY)) + "/" + getHmacSHA256("Channel") + "/" + getHmacSHA256(channelId) + "/" + page++;
 
             byte[] enc = null;
             try {
@@ -124,12 +124,12 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                         throw new Exception("use fallback");
                     }
                 }
-            } catch (final Throwable e) {
+            } catch (Throwable e) {
                 /* fallback */
                 ByteArrayOutputStream result = null;
                 try {
-                    final URL url = new URL(req);
-                    final InputStream input = url.openStream();
+                    URL url = new URL(req);
+                    InputStream input = url.openStream();
                     result = new ByteArrayOutputStream();
                     try {
                         int amount = 0;
@@ -140,15 +140,15 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     } finally {
                         try {
                             input.close();
-                        } catch (final Throwable e2) {
+                        } catch (Throwable e2) {
                         }
                         try {
                             result.close();
-                        } catch (final Throwable e3) {
+                        } catch (Throwable e3) {
                         }
                         enc = result.toByteArray();
                     }
-                } catch (final Throwable e4) {
+                } catch (Throwable e4) {
                     next = false;
                 }
             }
@@ -160,17 +160,17 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             try {
                 // Decrypt -> http stream
                 /* TODO: change me after 0.9xx public --> jd.crypt.RC4 */
-                final LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new LnkCrptWs.KeyCaptchaShowDialogTwo();
-                final byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
+                LnkCrptWs.KeyCaptchaShowDialogTwo arkfour = new LnkCrptWs.KeyCaptchaShowDialogTwo();
+                byte[] compressedPlainData = arkfour.D(Encoding.Base64Decode(KEY).getBytes(), enc);
 
                 // Decompress -> decrypted http stream
-                final Inflater decompressor = new Inflater();
+                Inflater decompressor = new Inflater();
                 decompressor.setInput(compressedPlainData);
-                final ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedPlainData.length);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedPlainData.length);
 
                 try {
                     while (true) {
-                        final int count = decompressor.inflate(buffer);
+                        int count = decompressor.inflate(buffer);
                         if (count == 0 && decompressor.finished()) {
                             break;
                         } else if (count == 0) {
@@ -180,18 +180,18 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                             bos.write(buffer, 0, count);
                         }
                     }
-                } catch (final Throwable t) {
+                } catch (Throwable t) {
                 } finally {
                     decompressor.end();
                 }
 
                 // Parsing -> video urls
-                final String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
-                final String[] finalContent = decompressedPlainData.split(new String(new byte[] { 0x05, 0x40, 0x39 }));
-
+                String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
+                String[] finalContent = decompressedPlainData.split(new String(new byte[] { 0x05, 0x40, 0x39 }));
                 if (finalContent == null || finalContent.length == 0) { return null; }
+                if (finalContent.length == 1) finalContent = decompressedPlainData.split(new String(new byte[] { 0x05, 0x40, 0x38 }));
 
-                for (final String fC : finalContent) {
+                for (String fC : finalContent) {
                     if (fC.length() < 40) {
                         continue;
                     }
@@ -205,19 +205,19 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                         }
                     }
                 }
-            } catch (final Throwable e) {
+            } catch (Throwable e) {
                 continue;
             }
         }
 
-        final FilePackage fp = FilePackage.getInstance();
+        FilePackage fp = FilePackage.getInstance();
         String fpName;
 
-        for (final Entry<String, String> link : links.entrySet()) {
+        for (Entry<String, String> link : links.entrySet()) {
             if (link.getKey() == null) {
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(link.getKey());
+            DownloadLink dl = createDownloadlink(link.getKey());
             if (dl.getName() == null) {
                 continue;
             }
@@ -232,7 +232,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             }
             try {
                 distribute(dl);
-            } catch (final Throwable e) {
+            } catch (Throwable e) {
                 /* does not exist in 09581 */
             }
             decryptedLinks.add(dl);
@@ -242,17 +242,22 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String getHmacSHA256(final String s) {
+    private String getHmacSHA256(String s) {
         try {
-            final SecretKey key = new SecretKeySpec(Encoding.Base64Decode(HASHKEY).getBytes(), "HmacSHA256");
-            final Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKey key = new SecretKeySpec(Encoding.Base64Decode(HASHKEY).getBytes(), "HmacSHA256");
+            Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(key);
             mac.reset();
             mac.update(s.getBytes());
-            return jd.crypt.Base64.encodeBytes(mac.doFinal()).replace("=", "");
-        } catch (final Throwable e) {
+            return safeUrl(jd.crypt.Base64.encodeBytes(mac.doFinal()));
+        } catch (Throwable e) {
             return null;
         }
+    }
+
+    private String safeUrl(String s) {
+        if (s == null) return null;
+        return s.replace("=", "").replace("+", "-").replace("/", "_");
     }
 
 }
