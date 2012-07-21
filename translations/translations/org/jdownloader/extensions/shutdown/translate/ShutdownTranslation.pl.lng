@@ -1,7 +1,7 @@
 action_tooltip=Uaktywnij Wyłączanie Systemu po zakończeniu wszystkich pobierań
 addons_jdshutdown_statusmessage_disabled=System NIE ZOSTANIE zamknięty przez JDownloadera.
 addons_jdshutdown_statusmessage_enabled=JDownloader zamknie system po ukończeniu pobierania.
-config_toolbarbutton=Widoczna pozycja w Menu
+config_toolbarbutton=Widoczny klawisz w Menu Narzędzi
 gui_config_jdshutdown_close=Zamknij JD
 gui_config_jdshutdown_enabledOnStart=Uaktywnione przy Starcie
 gui_config_jdshutdown_forceshutdown=Wymuś zamykanie (nie dla wszystkich systemów)
