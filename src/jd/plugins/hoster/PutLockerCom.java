@@ -63,6 +63,10 @@ public class PutLockerCom extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
+            if (br.containsHTML("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>Free Account")) {
+                logger.warning("Free Accounts are not currently supported");
+                ai.setStatus("Free Accounts are not currently supported");
+            }
             account.setValid(false);
             return ai;
         }
@@ -203,7 +207,7 @@ public class PutLockerCom extends PluginForHost {
                 String proActive = null;
                 if (cookiesSet) {
                     br.getPage("http://www.putlocker.com/profile.php?pro");
-                    proActive = br.getRegex("Pro  Status<[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
+                    proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
                     if (proActive == null) {
                         logger.severe("No longer Pro-Status, try to fetch new cookie!\r\n" + br.toString());
                     } else {
@@ -218,7 +222,7 @@ public class PutLockerCom extends PluginForHost {
                     String captchaIMG = br.getRegex("<img src=\"(/include/captcha.php\\?[^\"]+)\" />").getMatch(0);
                     if (captchaIMG == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     DownloadLink dummyLink = new DownloadLink(this, "Account", "putlocker.com", "http://putlocker.com", true);
-                    String captcha = getCaptchaCode(captchaIMG, dummyLink);
+                    String captcha = getCaptchaCode(captchaIMG.replace("&amp;", "&"), dummyLink);
                     if (captcha != null) login.put("captcha_code", Encoding.urlEncode(captcha));
                 }
                 login.put("user", Encoding.urlEncode(account.getUser()));
@@ -229,7 +233,7 @@ public class PutLockerCom extends PluginForHost {
                 if (br.getCookie(MAINPAGE, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // finish off more code here
                 br.getPage("http://www.putlocker.com/profile.php?pro");
-                proActive = br.getRegex("Pro  Status<[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
+                proActive = br.getRegex("Pro  ?Status</?[^>]+>[\r\n\t ]+<[^>]+>(Active)").getMatch(0);
                 if (proActive == null) {
                     logger.severe(br.toString());
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
