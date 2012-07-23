@@ -20,39 +20,46 @@ public class MacAntiStandBy extends Thread {
     }
 
     public void run() {
+        try {
+            while (true) {
 
-        while (true) {
+                switch (extension.getMode()) {
+                case DOWNLOADING:
+                    if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                        if (!processIsRunning()) {
 
-            switch (extension.getMode()) {
-            case DOWNLOADING:
-                if (DownloadWatchDog.getInstance().getStateMachine().hasPassed(DownloadWatchDog.RUNNING_STATE, DownloadWatchDog.STOPPING_STATE)) {
+                            logger.fine("JDAntiStandby: Start");
+                            doit();
+                        }
+
+                    } else {
+                        if (processIsRunning()) {
+
+                            process.destroy();
+                            process = null;
+                        }
+                    }
+                    break;
+                case RUNNING:
                     if (!processIsRunning()) {
-
-                        logger.fine("JDAntiStandby: Start");
                         doit();
                     }
-
-                } else {
-                    if (processIsRunning()) {
-
-                        process.destroy();
-                        process = null;
-                    }
+                    break;
+                default:
+                    logger.finest("JDAntiStandby: Config error (unknown mode: " + extension.getMode() + ")");
                 }
-                break;
-            case RUNNING:
-                if (!processIsRunning()) {
-                    doit();
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    logger.log(e);
+                    return;
                 }
-                break;
-            default:
-                logger.finest("JDAntiStandby: Config error (unknown mode: " + extension.getMode() + ")");
             }
-            try {
-                Thread.sleep(5000);
-            } catch (InterruptedException e) {
-                logger.log(e);
-                return;
+        } finally {
+            if (processIsRunning()) {
+
+                process.destroy();
+                process = null;
             }
         }
 
