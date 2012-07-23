@@ -235,6 +235,13 @@ public class IFileIt extends PluginForHost {
         if (br.containsHTML("<span class=\"label label\\-important\">no</span>")) {
             ai.setStatus("Normal User");
             account.setProperty("typ", "free");
+        } else if (br.containsHTML("<span class=\"label label\\-success\">yes</span>")) {
+            ai.setStatus("Premium User");
+            account.setProperty("typ", "premium");
+            final String expires = br.getRegex("\\$\\(\\'#expires\\'\\)\\.empty\\(\\)\\.append\\(  show_local_dt\\( (\\d+) \\) \\);").getMatch(0);
+            if (expires != null) {
+                ai.setValidUntil(Long.parseLong(expires) * 1000);
+            }
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -246,9 +253,19 @@ public class IFileIt extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        doFree(link, true, true);
+        if ("premium".equals(account.getStringProperty("typ", null))) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(link.getDownloadURL());
+            doFree(link, true, true);
+        }
     }
 
     @Override

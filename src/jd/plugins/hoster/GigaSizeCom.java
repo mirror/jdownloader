@@ -49,6 +49,22 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.getHeaders().put("User-Agent", agent);
+        br.getPage("http://www.gigasize.com");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
+        if (br.containsHTML("error\">Download error<\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+        String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
+        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(dat[0]);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(dat[1]));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
@@ -128,6 +144,8 @@ public class GigaSizeCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             if (br.getURL().contains("cannot_read_file_from_server") || br.containsHTML("(>Download Error<|GigaSize servers or some storage box has been downed)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+            // Other server error
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -184,22 +202,6 @@ public class GigaSizeCom extends PluginForHost {
         }
         if (br.getCookie("http://gigasize.com", "MIIS_GIGASIZE_AUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("premium\":1")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.getHeaders().put("User-Agent", agent);
-        br.getPage("http://www.gigasize.com");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("limit-download-free")) { return AvailableStatus.UNCHECKABLE; }
-        if (br.containsHTML("error\">Download error<\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        String[] dat = br.getRegex("<strong title=\"(.*?)\".*?File size:.*?>(.*?)<").getRow(0);
-        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(dat[0]);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(dat[1]));
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -62,7 +63,7 @@ public class DivxStageNet extends PluginForHost {
     // This plugin is 99,99% copy the same as the MovShareNet plugin, if this
     // gets broken please also check the other one!
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
@@ -76,8 +77,10 @@ public class DivxStageNet extends PluginForHost {
         String filename = br.getRegex("class=\"video_det\">.*?<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (!br.containsHTML("The file is beeing transfered to our other servers")) {
-            DLLINK = br.getRegex("video/divx\" src=\"(.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("src\" value=\"(.*?)\"").getMatch(0);
+            final String fkey = br.getRegex("filekey=\"([^<>\"]*?)\"").getMatch(0);
+            if (fkey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage("http://divxstage.eu/api/player.api.php?file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&user=undefined&key=" + Encoding.urlEncode(fkey) + "&pass=undefined&codes=1");
+            DLLINK = br.getRegex("url=(http://[^<>\"]*?)\\&").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
@@ -91,7 +94,7 @@ public class DivxStageNet extends PluginForHost {
         if (filename.trim().equals("Untitled")) {
             downloadLink.setFinalFileName("Video " + System.currentTimeMillis() + ".avi");
         } else {
-            downloadLink.setFinalFileName(filename + ".avi");
+            downloadLink.setFinalFileName(filename + ".flv");
         }
         return AvailableStatus.TRUE;
     }

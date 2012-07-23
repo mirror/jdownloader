@@ -1,7 +1,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,36 +27,31 @@ public class BookFiOrg extends PluginForHost {
         return -1;
     }
 
+    private String DLLINK = null;
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink param) throws Exception {
         final String parameter = param.getDownloadURL();
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-
-        // Gets page, filesize and download link
         br.getPage(parameter);
         String[] info = br.getRegex("<a class=\"button active\" href=\"([^\"]+)\">.*?\\([^,]+, ([^\\)]+?)\\)</a>").getRow(0);
         if (info == null || info[0] == null || info[1] == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        br.setFollowRedirects(false);
-        br.getPage(info[0]);
-
         // Goes to download link to find out filename
-        String filename = null;
-        if (br.getRedirectLocation() != null) filename = new Regex(br.getRedirectLocation(), "/([^/]*)$").getMatch(0);
+        String filename = br.getRegex("<h2 style=\"display:inline\">([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1 style=\"color:#49AFD0\"  itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
-        param.setFinalFileName(filename);
+        param.setName(filename + ".pdf");
         param.setDownloadSize(SizeFormatter.getSize(info[1]));
-
+        DLLINK = info[0];
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

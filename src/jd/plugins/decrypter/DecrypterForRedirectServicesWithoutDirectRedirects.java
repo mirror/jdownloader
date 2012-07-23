@@ -75,7 +75,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = null;
             }
             if (finallink == null) { return decryptedLinks; }
-        } else if (parameter.contains("alturl.com") || parameter.contains("protect-ddl.com") || parameter.contains("hide.linkleak.org") || parameter.contains("href.hu") || parameter.contains("madmimi.com") || parameter.contains("http://t.co")) {
+        } else if (parameter.contains("alturl.com") || parameter.contains("protect-ddl.com") || parameter.contains("hide.linkleak.org") || parameter.contains("href.hu") || parameter.contains("madmimi.com")) {
             br.getPage(parameter);
             finallink = br.getRedirectLocation();
             if (finallink == null) {
@@ -721,6 +721,12 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             if (finallink != null) {
                 finallink = finallink.replace("\\", "");
             }
+        } else if (parameter.contains("http://t.co")) {
+            if (br.containsHTML("(>Sorry, but we couldn’t find that link|>Sorry, leider konnten wir diesen Link nicht finden<)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            finallink = br.getRedirectLocation();
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);

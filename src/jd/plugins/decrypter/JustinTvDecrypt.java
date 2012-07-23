@@ -46,6 +46,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.contains("/videos")) {
+            if (br.containsHTML("<strong id=\"videos_count\">0")) {
+                logger.info("Nothing to decrypt here: " + parameter);
+                return decryptedLinks;
+            }
             String[] links = br.getRegex("<p class=\"title\"><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) return null;

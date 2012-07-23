@@ -48,6 +48,38 @@ public class MovShareNet extends PluginForHost {
         return -1;
     }
 
+    // This plugin is 99,99% copy the same as the DivxStageNet plugin, if this
+    // gets broken please also check the other one!
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        setBrowserExclusive();
+        br.getHeaders().put("Accept-Encoding", "");
+        br.getPage(downloadLink.getDownloadURL());
+        if (!br.getURL().contains(EPRON)) {
+            if (br.containsHTML(HUMANTEXT)) {
+                Form IAmAHuman = br.getForm(0);
+                if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * needed for stable 09581 working, post without data did not
+                 * set content length to 0
+                 */
+                IAmAHuman.put("submit", "");
+                br.submitForm(IAmAHuman);
+            }
+        }
+        if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = (br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0));
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = filename.trim();
+        if (filename.equals("Untitled") || filename.equals("Title")) {
+            downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0) + ".avi");
+        } else {
+            downloadLink.setFinalFileName(filename + ".avi");
+        }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
@@ -88,38 +120,6 @@ public class MovShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    // This plugin is 99,99% copy the same as the MovShareNet plugin, if this
-    // gets broken please also check the other one!
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        setBrowserExclusive();
-        br.getHeaders().put("Accept-Encoding", "");
-        br.getPage(downloadLink.getDownloadURL());
-        if (!br.getURL().contains(EPRON)) {
-            if (br.containsHTML(HUMANTEXT)) {
-                Form IAmAHuman = br.getForm(0);
-                if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                /*
-                 * needed for stable 09581 working, post without data did not
-                 * set content length to 0
-                 */
-                IAmAHuman.put("submit", "");
-                br.submitForm(IAmAHuman);
-            }
-            if (br.containsHTML("(The file is beeing transfered to our other servers|This file no longer exists on our servers)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        String filename = (br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0));
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        if (filename.equals("Untitled") || filename.equals("Title")) {
-            downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0) + ".avi");
-        } else {
-            downloadLink.setFinalFileName(filename + ".avi");
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

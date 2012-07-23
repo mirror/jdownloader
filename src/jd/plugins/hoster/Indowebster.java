@@ -73,6 +73,7 @@ public class Indowebster extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (br.containsHTML("Storage Maintenance, Back Later")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Storage maintenance", 60 * 60 * 1000l); }
+        if (br.containsHTML(">404 Page Not Found<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown server error (404)"); }
         String passCode = link.getStringProperty("pass", null);
         if (br.containsHTML(PASSWORDTEXT)) {
             final String valueName = br.getRegex("type=\"password\" name=\"(.*?)\"").getMatch(0);
@@ -134,6 +135,7 @@ public class Indowebster extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(">404 Page Not Found<")) return AvailableStatus.UNCHECKABLE;
         // Convert old links to new links
         String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);
         if (newlink != null) {

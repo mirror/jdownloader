@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -66,7 +67,10 @@ public class BitBonusCom extends PluginForHost {
             downloadLink.setFinalFileName(downloadLink.getName());
             downloadLink.setDownloadSize(downloadLink.getDownloadSize());
         } else {
-            br.getPage(downloadLink.getDownloadURL());
+            final URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+            if (br.containsHTML("(>Internal Server Error|Please notify the webmaster if you believe there is a problem|<title>BitBonus\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (loaded == false) {
                 synchronized (LOCK) {

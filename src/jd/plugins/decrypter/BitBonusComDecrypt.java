@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -47,7 +48,14 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString().replace("www.", "");
-        br.getPage(parameter);
+        final URLConnectionAdapter con = br.openGetConnection(parameter);
+        if (con.getResponseCode() == 500) {
+            DownloadLink finalOne = createDownloadlink(parameter.replace("bitbonus.com/", "bitbonusdecrypted.com/"));
+            finalOne.setAvailable(false);
+            decryptedLinks.add(finalOne);
+            return decryptedLinks;
+        }
+        br.followConnection();
         /** File offline? */
         if (br.containsHTML("(>Internal Server Error|Please notify the webmaster if you believe there is a problem|<title>BitBonus\\.com</title>)")) {
             DownloadLink finalOne = createDownloadlink(parameter.replace("bitbonus.com/", "bitbonusdecrypted.com/"));

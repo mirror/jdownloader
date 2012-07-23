@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleak.com/view\\?i=[a-z0-9]+_\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "liveleak.com" }, urls = { "http://(www\\.)?liveleakdecrypted\\.com/view\\?i=[a-z0-9]+_\\d+" }, flags = { 0 })
 public class LiveLeakCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,15 +48,8 @@ public class LiveLeakCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("liveleakdecrypted.com/", "liveleak.com/"));
     }
 
     @Override
@@ -65,15 +58,16 @@ public class LiveLeakCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Item not found|<title>LiveLeak\\.com \\- </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("class=\"section_title\" style=\"vertical\\-align:top; padding\\-right:10px\">(.*?)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>LiveLeak\\.com \\- (.*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("file: \"(http://.*?)\"").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("file_url=(http[^/]+)\\&preview_image_url=").getMatch(0);
+        String filename = br.getRegex("<title>LiveLeak\\.com \\- (.*?)</title>").getMatch(0);
+        String ext = ".mp4";
+        DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
+        if (DLLINK == null) {
+            ext = ".flv";
+            DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
-        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".flv";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -92,6 +86,17 @@ public class LiveLeakCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
