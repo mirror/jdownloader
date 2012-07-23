@@ -11,6 +11,9 @@ gui_config_jdshutdown_osx_force_long=Bilgisayarı Kapatmaya zorla'yı kur (sadec
 gui_config_jdshutdown_osx_force_short=Kur
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
 gui_config_jdshutdown_standby=Beklemeye al (Tüm işletim sistemleri için değildir)
+install_force=Sistem kapatma zorlayıcısını yükle
+install_msg=Sistem kapatma zorlayıcısı özelliğini yüklemek istiyor muzunuz?
+install_title=Sistem kapatma zorlayıcısını yükle
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda bekleme kipine alınacak!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem kapatılacak!</font></h2>
