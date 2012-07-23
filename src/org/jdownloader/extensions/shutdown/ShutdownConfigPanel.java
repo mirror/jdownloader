@@ -36,7 +36,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
         if (CrossSystem.isMac()) {
             add(new ExtButton(new AppAction() {
                 {
-                    setName("Install Force");
+                    setName(T._.install_force());
                 }
 
                 @Override
@@ -51,7 +51,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
                     }
 
                 }
-            }));
+            }), "gapleft 37");
             CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                 @Override
@@ -82,7 +82,7 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
 
     protected void installMacForcedShutdown() throws IOException, DialogClosedException, DialogCanceledException {
 
-        Dialog.getInstance().showConfirmDialog(0, "Install", "Install the force Shutdown feature now?");
+        Dialog.getInstance().showConfirmDialog(0, T._.install_title(), T._.install_msg());
         Executer exec = new Executer("/usr/bin/osascript");
         File tmp = Application.getResource("tmp/osxnopasswordforshutdown.scpt");
         tmp.delete();

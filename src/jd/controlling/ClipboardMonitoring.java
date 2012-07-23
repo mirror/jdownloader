@@ -23,6 +23,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 
@@ -132,20 +133,17 @@ public class ClipboardMonitoring {
                             try {
                                 if (changeDetector(oldStringContent, newStringContent)) {
                                     /*
-                                     * we only use normal String Content to
-                                     * detect a change
+                                     * we only use normal String Content to detect a change
                                      */
                                     handleThisRound = newStringContent;
                                     try {
                                         /*
-                                         * lets fetch fresh HTML Content if
-                                         * available
+                                         * lets fetch fresh HTML Content if available
                                          */
                                         String htmlContent = getHTMLTransferData(currentContent);
                                         if (htmlContent != null) {
                                             /*
-                                             * remember that we had HTML content
-                                             * this round
+                                             * remember that we had HTML content this round
                                              */
                                             oldHTMLContent = htmlContent;
                                             handleThisRound = handleThisRound + "\r\n" + htmlContent;
@@ -157,19 +155,16 @@ public class ClipboardMonitoring {
                                     }
                                 } else if (oldHTMLContent != null) {
                                     /*
-                                     * no String Content change detected, let's
-                                     * verify if the HTML content hasn't changed
+                                     * no String Content change detected, let's verify if the HTML content hasn't changed
                                      */
                                     try {
                                         /*
-                                         * lets fetch fresh HTML Content if
-                                         * available
+                                         * lets fetch fresh HTML Content if available
                                          */
                                         String htmlContent = getHTMLTransferData(currentContent);
                                         if (htmlContent != null) {
                                             /*
-                                             * remember that we had HTML content
-                                             * this round
+                                             * remember that we had HTML content this round
                                              */
                                             if (changeDetector(oldHTMLContent, htmlContent)) {
                                                 oldHTMLContent = htmlContent;
@@ -188,6 +183,7 @@ public class ClipboardMonitoring {
                         }
                         if (!StringUtils.isEmpty(handleThisRound)) {
                             LinkCollectingJob job = new LinkCollectingJob(handleThisRound);
+                            job.setExtractPasswords(PasswordUtils.getPasswords(handleThisRound));
                             job.setCustomSourceUrl(lastBrowserUrl);
                             LinkCollector.getInstance().addCrawlerJob(job);
                         }
@@ -303,9 +299,7 @@ public class ClipboardMonitoring {
     public static String getHTMLTransferData(final Transferable transferable) throws UnsupportedFlavorException, IOException {
         DataFlavor htmlFlavor = null;
         /*
-         * for our workaround for
-         * https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good
-         * if we have utf8 charset
+         * for our workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=385421, it would be good if we have utf8 charset
          */
         for (final DataFlavor flav : transferable.getTransferDataFlavors()) {
             if (flav.getMimeType().contains("html") && flav.getRepresentationClass().isAssignableFrom(byte[].class)) {
@@ -329,12 +323,10 @@ public class ClipboardMonitoring {
             byte[] htmlBytes = (byte[]) transferable.getTransferData(htmlFlavor);
             if (CrossSystem.isLinux()) {
                 /*
-                 * workaround for firefox bug https://bugzilla
-                 * .mozilla.org/show_bug .cgi?id=385421
+                 * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
                  */
                 /*
-                 * write check to skip broken first bytes and discard 0 bytes if
-                 * they are in intervalls
+                 * write check to skip broken first bytes and discard 0 bytes if they are in intervalls
                  */
                 int indexOriginal = 0;
                 for (int i = 6; i < htmlBytes.length - 1; i++) {
@@ -365,8 +357,7 @@ public class ClipboardMonitoring {
     public static boolean hasSupportedTransferData(final Transferable transferable) {
         if (transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
             /*
-             * string and html always come together, so no need to check for
-             * html
+             * string and html always come together, so no need to check for html
              */
             return true;
         } else if (urlFlavor != null && transferable.isDataFlavorSupported(urlFlavor)) {
@@ -400,6 +391,7 @@ public class ClipboardMonitoring {
             if (!StringUtils.isEmpty(content)) {
                 LinkCollectingJob job = new LinkCollectingJob(content);
                 job.setCustomSourceUrl(browserUrl);
+                job.setExtractPasswords(PasswordUtils.getPasswords(content));
                 LinkCollector.getInstance().addCrawlerJob(job);
             }
         } catch (final Throwable e) {
@@ -474,8 +466,7 @@ public class ClipboardMonitoring {
                 byte[] xmozurlprivBytes = (byte[]) transferable.getTransferData(flav);
                 if (CrossSystem.isLinux()) {
                     /*
-                     * workaround for firefox bug https://bugzilla
-                     * .mozilla.org/show_bug .cgi?id=385421
+                     * workaround for firefox bug https://bugzilla .mozilla.org/show_bug .cgi?id=385421
                      */
                     /*
                      * discard 0 bytes if they are in intervalls

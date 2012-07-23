@@ -78,4 +78,13 @@ public interface ShutdownTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Toolbar Button visible" })
     String config_toolbarbutton();
+
+    @Default(lngs = { "en" }, values = { "Install Force Shutdown" })
+    String install_force();
+
+    @Default(lngs = { "en" }, values = { "Install Force Shutdown" })
+    String install_title();
+
+    @Default(lngs = { "en" }, values = { "Do you want to prepare your System for the force shutdown feature?" })
+    String install_msg();
 }

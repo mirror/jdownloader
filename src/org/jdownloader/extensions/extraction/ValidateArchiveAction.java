@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLink.LinkState;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
 import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.plugins.DownloadLink;
@@ -56,20 +55,20 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
 
         nextLink: for (ChildrenType l : si.getSelectedChildren()) {
             if (l instanceof CrawledLink) {
-                if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
-                    CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));
-                    if (extractor.isLinkSupported(clf)) {
+                // if (((CrawledLink) l).getLinkState() != LinkState.OFFLINE) {
+                CrawledLinkFactory clf = new CrawledLinkFactory(((CrawledLink) l));
+                if (extractor.isLinkSupported(clf)) {
 
-                        for (Archive a : archives) {
-                            if (a.contains(clf)) continue nextLink;
-                        }
-
-                        Archive archive = extractor.getArchiveByFactory(clf);
-                        if (archive != null) {
-                            archives.add(archive);
-                        }
-
+                    for (Archive a : archives) {
+                        if (a.contains(clf)) continue nextLink;
                     }
+
+                    Archive archive = extractor.getArchiveByFactory(clf);
+                    if (archive != null) {
+                        archives.add(archive);
+                    }
+
+                    // }
                 }
             } else if (l instanceof DownloadLink) {
                 if (((DownloadLink) l).isAvailable() || new File(((DownloadLink) l).getFileOutput()).exists()) {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -127,7 +128,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
         job.setCustomSourceUrl(source);
         job.setCustomComment(comment);
         job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-        job.setExtractPassword(passwords);
+        HashSet<String> pws = new HashSet<String>();
+        pws.add(passwords);
+        job.setExtractPasswords(pws);
         LinkCollector.getInstance().addCrawlerJob(job);
     }
 

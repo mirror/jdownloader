@@ -2,6 +2,7 @@ package org.jdownloader.translate;
 
 import org.appwork.txtresource.Default;
 import org.appwork.txtresource.Defaults;
+import org.appwork.txtresource.Description;
 import org.appwork.txtresource.TranslateInterface;
 
 @Defaults(lngs = { "en" })
@@ -505,5 +506,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Create Subfolder by Packagename" })
     String PackagizerSettings_folderbypackage_rule_name();
+
+    @Description("All words and all variants for the word 'password' should be placed here, seperated by a |. Example: passwort|pass|pw")
+    @Default(lngs = { "en" }, values = { "пароль|пасс|pa?s?w|passwort|password|passw?|pw" })
+    String pattern_password();
 
 }

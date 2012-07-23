@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import javax.swing.BorderFactory;
@@ -37,6 +38,8 @@ import jd.parser.html.HTMLParser;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtCheckBox;
@@ -53,6 +56,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.RememberRelativeLocator;
+import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.controlling.Priority;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.gui.translate._GUI;
@@ -78,18 +82,20 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
     private JButton                             confirmOptions;
 
-    private boolean                             deepAnalyse = false;
+    private boolean                             deepAnalyse   = false;
 
     private ArrayList<PackageHistoryEntry>      packageHistory;
 
     private JLabel                              errorLabel;
 
     private DelayedRunnable                     delayedValidate;
-    private WindowListener                      listener    = null;
+    private WindowListener                      listener      = null;
 
     private ExtTextField                        downloadPassword;
 
     private JComboBox                           priority;
+
+    private HashSet<String>                     autoPasswords = new HashSet<String>(); ;
 
     public boolean isDeepAnalyse() {
         return deepAnalyse;
@@ -156,9 +162,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         ret.setDeepAnalyse(isDeepAnalyse());
         ret.setPackageName(packagename.getText());
         ret.setAutoExtract(this.extractToggle.isSelected());
-        ret.setExtractPassword(password.getText());
+
+        HashSet<String> passwords = JSonStorage.restoreFromString(password.getText(), new TypeRef<HashSet<String>>() {
+        }, new HashSet<String>());
+        if (passwords == null || passwords.size() == 0) {
+            passwords = new HashSet<String>();
+            passwords.add(password.getText());
+        }
+        ret.setExtractPasswords(passwords);
         ret.setPriority((Priority) priority.getSelectedItem());
         ret.setDownloadPassword(downloadPassword.getText());
+
         if (!StringUtils.isEmpty(ret.getPackageName())) {
             boolean found = false;
             for (PackageHistoryEntry pe : packageHistory) {
@@ -334,10 +348,10 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         p.add(priority, "sg right");
 
         if (Application.getJavaVersion() >= 17000000) {
-            J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(input);
+            J17DragAndDropDelegater dnd = new J17DragAndDropDelegater(this, input);
             input.setTransferHandler(dnd);
         } else {
-            DragAndDropDelegater dnd = new DragAndDropDelegater(input);
+            DragAndDropDelegater dnd = new DragAndDropDelegater(this, input);
             input.setTransferHandler(dnd);
         }
         input.setEditable(false);
@@ -361,6 +375,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                         input.setText(_GUI._.AddLinksDialog_ParsingClipboard());
                                     };
                                 };
+
+                                parse(newText);
                                 newText = (list(HTMLParser.getHttpLinks(newText)));
                             }
                         }
@@ -538,6 +554,17 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
         JLabel ret = new JLabel(NewTheme.I().getIcon(iconKey, 24));
         ret.setToolTipText(tooltip);
         return ret;
+    }
+
+    public void parse(String txt) {
+
+        autoPasswords.addAll(PasswordUtils.getPasswords(txt));
+
+        if (autoPasswords.size() > 1) {
+            password.setText(JSonStorage.toString(autoPasswords));
+        } else {
+            password.setText(autoPasswords.toArray(new String[] {})[0]);
+        }
     }
 
 }

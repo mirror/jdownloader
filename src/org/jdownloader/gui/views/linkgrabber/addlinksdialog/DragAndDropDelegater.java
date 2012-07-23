@@ -18,10 +18,12 @@ public class DragAndDropDelegater extends TransferHandler {
 
     private TransferHandler org;
     private ExtTextArea     input;
+    private AddLinksDialog  dialog;
 
-    public DragAndDropDelegater(ExtTextArea input) {
+    public DragAndDropDelegater(AddLinksDialog addLinksDialog, ExtTextArea input) {
         org = input.getTransferHandler();
         this.input = input;
+        dialog = addLinksDialog;
     }
 
     @Override
@@ -39,6 +41,7 @@ public class DragAndDropDelegater extends TransferHandler {
         boolean ret = org.importData(support);
         if (ret) {
             String txt = input.getText();
+            dialog.parse(txt);
             input.setText(AddLinksDialog.list(HTMLParser.getHttpLinks(txt)));
         }
         return ret;

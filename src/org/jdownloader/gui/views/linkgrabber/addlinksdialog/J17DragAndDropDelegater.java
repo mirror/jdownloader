@@ -12,18 +12,23 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
 import jd.parser.html.HTMLParser;
 
 import org.appwork.swing.components.ExtTextArea;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.logging.LogController;
 
 public class J17DragAndDropDelegater extends TransferHandler {
 
     private TransferHandler org;
     private ExtTextArea     input;
+    private AddLinksDialog  dialog;
 
-    public J17DragAndDropDelegater(ExtTextArea input) {
+    public J17DragAndDropDelegater(AddLinksDialog addLinksDialog, ExtTextArea input) {
         org = input.getTransferHandler();
         this.input = input;
+        dialog = addLinksDialog;
     }
 
     // 1.7 only @Override
@@ -66,16 +71,35 @@ public class J17DragAndDropDelegater extends TransferHandler {
 
     @Override
     public boolean importData(TransferSupport support) {
-        boolean ret = org.importData(support);
-        if (ret) {
-            String txt = input.getText();
-            String[] list = HTMLParser.getHttpLinks(txt);
+        String html;
+        try {
+            html = ClipboardMonitoring.getHTMLTransferData(support.getTransferable());
+
+            String text = ClipboardMonitoring.getStringTransferData(support.getTransferable());
+            // boolean ret = org.importData(support);
+
+            String base = ClipboardMonitoring.getCurrentBrowserURL(support.getTransferable());
+
+            StringBuilder sb = new StringBuilder();
+            if (!StringUtils.isEmpty(html)) {
+                sb.append(html);
+            }
+
+            if (!StringUtils.isEmpty(text)) {
+                if (sb.length() > 0) sb.append("\r\n");
+                sb.append(text);
+            }
+
+            String txt = sb.toString();
+            dialog.parse(txt);
+            String[] list = HTMLParser.getHttpLinks(txt, base);
             if (list.length == 0) {
-                list = HTMLParser.getHttpLinks(txt.replace("www.", "http://www."));
+                list = HTMLParser.getHttpLinks(txt.replace("www.", "http://www."), base);
             }
             if (list.length == 0) {
-                list = HTMLParser.getHttpLinks("http://" + txt);
+                list = HTMLParser.getHttpLinks("http://" + txt, base);
             }
+
             if (list.length == 0) {
                 input.setText(txt);
             } else {
@@ -83,8 +107,12 @@ public class J17DragAndDropDelegater extends TransferHandler {
                 input.setText(parsed);
             }
 
+            return true;
+
+        } catch (Throwable e) {
+            LogController.CL().log(e);
         }
-        return ret;
+        return false;
     }
 
     @Override

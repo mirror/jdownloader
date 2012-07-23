@@ -663,9 +663,9 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
                 link.getDesiredPackageInfo().setName(job.getPackageName());
             }
-            if (!StringUtils.isEmpty(job.getExtractPassword())) {
+            if (job.getExtractPasswords() != null && job.getExtractPasswords().size() > 0) {
                 if (link.getDesiredPackageInfo() == null) link.setDesiredPackageInfo(new PackageInfo());
-                link.getArchiveInfo().getExtractionPasswords().add(job.getExtractPassword());
+                link.getArchiveInfo().getExtractionPasswords().addAll(job.getExtractPasswords());
             }
             if (job.isAutoStart()) {
                 link.setAutoConfirmEnabled(true);

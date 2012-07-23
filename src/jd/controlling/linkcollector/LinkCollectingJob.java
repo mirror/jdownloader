@@ -1,6 +1,7 @@
 package jd.controlling.linkcollector;
 
 import java.io.File;
+import java.util.Set;
 
 import org.jdownloader.controlling.Priority;
 
@@ -89,12 +90,12 @@ public class LinkCollectingJob {
         this.deepAnalyse = deepAnalyse;
     }
 
-    public String getExtractPassword() {
-        return extractPassword;
+    public Set<String> getExtractPasswords() {
+        return extractPasswords;
     }
 
-    public void setExtractPassword(String extractPassword) {
-        this.extractPassword = extractPassword;
+    public void setExtractPasswords(Set<String> extractPasswords) {
+        this.extractPasswords = extractPasswords;
     }
 
     public File getOutputFolder() {
@@ -113,8 +114,8 @@ public class LinkCollectingJob {
         this.packageName = packageName;
     }
 
-    private String extractPassword;
-    private File   outputFolder;
-    private String packageName;
+    private Set<String> extractPasswords;
+    private File        outputFolder;
+    private String      packageName;
 
 }
