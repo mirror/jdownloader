@@ -130,7 +130,7 @@ public class FileSwapCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex("Storage Used: <.+>([\\d\\.]+ (KB|MB|GB|TB)) <").getMatch(0);
+        String space = br.getRegex("Storage Used:.+>([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " GiB");
         account.setValid(true);
         ai.setUnlimitedTraffic();
@@ -163,7 +163,7 @@ public class FileSwapCom extends PluginForHost {
                 prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && account.getPass() != null) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
                     final HashMap<String, String> cookies = (HashMap<String, String>) ret;
                     if (account.isValid()) {
@@ -176,9 +176,13 @@ public class FileSwapCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(HOST.replace("http://", "https://") + "/account/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1");
+                if (account.getPass() != null) {
+                    br.postPage(HOST.replace("http://", "https://") + "/account/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&rememberme=1");
+                } else {
+                    br.postPage(HOST.replace("http://", "https://") + "/account/login.php", "username=" + Encoding.urlEncode(account.getUser()) + "&password=&rememberme=1");
+                }
                 if (!br.getRegex("(Invalid username/password)").matches() && !br.getURL().matches(".+fileswap\\.com/index\\.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.getRegex(">Account Type:<.+<span>(Premium)</span>").matches()) {
+                if (!br.getRegex("Account Type:.+<span>(Premium)</span>").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);
