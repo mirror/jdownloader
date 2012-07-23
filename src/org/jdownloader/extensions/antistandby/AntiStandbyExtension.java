@@ -16,9 +16,6 @@
 
 package org.jdownloader.extensions.antistandby;
 
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.ConfigGroup;
 import jd.plugins.AddonPanel;
 
 import org.appwork.utils.os.CrossSystem;
@@ -27,24 +24,11 @@ import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.antistandby.translate.AntistandbyTranslation;
-import org.jdownloader.logging.LogController;
 
 public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, AntistandbyTranslation> {
 
-    private static final String                        CONFIG_MODE = "CONFIG_MODE2";
-    private String[]                                   modes;
-
-    private boolean                                    status;
-    private JDAntiStandbyThread                        asthread    = null;
+    private Thread                                     asthread = null;
     private ExtensionConfigPanel<AntiStandbyExtension> configPanel;
-
-    public boolean isStatus() {
-        return status;
-    }
-
-    public int getMode() {
-        return getPropertyConfig().getIntegerProperty(CONFIG_MODE, 0);
-    }
 
     public ExtensionConfigPanel<AntiStandbyExtension> getConfigPanel() {
         return configPanel;
@@ -57,14 +41,22 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
     public AntiStandbyExtension() throws StartException {
         super();
         setTitle(_.jd_plugins_optional_antistandby_jdantistandby());
-        modes = new String[] { _.gui_config_antistandby_whiledl(), _.gui_config_antistandby_whilejd() };
 
+    }
+
+    public boolean isLinuxRunnable() {
+        return false;
+    }
+
+    @Override
+    public boolean isDefaultEnabled() {
+        return true;
     }
 
     @Override
     protected void stop() throws StopException {
         if (asthread != null) {
-            asthread.setRunning(false);
+            asthread.interrupt();
             asthread = null;
         }
     }
@@ -75,24 +67,14 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void start() throws StartException {
-        switch (CrossSystem.getID()) {
-        case CrossSystem.OS_WINDOWS_2003:
-        case CrossSystem.OS_WINDOWS_VISTA:
-        case CrossSystem.OS_WINDOWS_XP:
-        case CrossSystem.OS_WINDOWS_7:
-        case CrossSystem.OS_WINDOWS_2000:
-        case CrossSystem.OS_WINDOWS_NT:
-            asthread = new JDAntiStandbyThread(this);
+        if (CrossSystem.isWindows()) {
+            asthread = new WindowsAntiStandby(this);
             asthread.start();
-        default:
-            LogController.CL().fine("JDAntiStandby: System is not supported (" + CrossSystem.getOSString() + ")");
+        } else if (CrossSystem.isMac()) {
+            asthread = new MacAntiStandBy(this);
+            asthread.start();
+
         }
-
-    }
-
-    protected void initSettings(ConfigContainer config) {
-        config.setGroup(new ConfigGroup(getName(), "settings"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPropertyConfig(), CONFIG_MODE, modes, _.gui_config_antistandby_mode()).setDefaultValue(0));
 
     }
 
@@ -108,9 +90,14 @@ public class AntiStandbyExtension extends AbstractExtension<AntiStandbyConfig, A
 
     @Override
     protected void initExtension() throws StartException {
-        ConfigContainer cc = new ConfigContainer(getName());
-        initSettings(cc);
-        configPanel = createPanelFromContainer(cc);
+
+        configPanel = new AntistandbyConfigPanel(this);
+    }
+
+    public Mode getMode() {
+        Mode ret = getSettings().getMode();
+        if (ret == null) ret = Mode.DOWNLOADING;
+        return ret;
     }
 
 }

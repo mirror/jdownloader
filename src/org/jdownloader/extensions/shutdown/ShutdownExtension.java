@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
@@ -54,6 +54,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     private ShutdownConfigPanel   configPanel;
 
+    private LogSource             logger;
+
     public ShutdownConfigPanel getConfigPanel() {
         return configPanel;
     }
@@ -64,6 +66,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public ShutdownExtension() throws StartException {
         setTitle(_.jd_plugins_optional_jdshutdown());
+        logger = LogController.CL(ShutdownExtension.class);
 
     }
 
@@ -90,20 +93,24 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
                 } catch (Exception e) {
+                    logger.log(e);
                 }
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
                 } catch (Exception e) {
+                    logger.log(e);
                 }
             } else {
                 /* normal shutdown */
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {
+                    logger.log(e);
                 }
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {
+                    logger.log(e);
                 }
             }
             if (id == CrossSystem.OS_WINDOWS_2000 || id == CrossSystem.OS_WINDOWS_NT) {
@@ -129,10 +136,12 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
             } catch (Exception e) {
+                logger.log(e);
             }
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
             } catch (Exception e) {
+                logger.log(e);
             }
             break;
         case CrossSystem.OS_MAC_OTHER:
@@ -142,13 +151,23 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 try {
                     System.out.println(JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0));
                 } catch (Exception e) {
-                    Log.exception(e);
+
+                    logger.log(e);
+
+                }
+                try {
+                    System.out.println(JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0));
+                } catch (Exception e) {
+
+                    logger.log(e);
+
                 }
             } else {
                 /* normal shutdown */
                 try {
                     JDUtilities.runCommand("/usr/bin/osascript", new String[] { "-e", "tell application \"Finder\" to shut down" }, null, 0);
                 } catch (Exception e) {
+                    logger.log(e);
                 }
             }
             break;
@@ -157,18 +176,22 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             try {
                 dbusPowerState("Shutdown");
             } catch (Exception e) {
+                logger.log(e);
             }
             try {
                 JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
             } catch (Exception e) {
+                logger.log(e);
             }
             try {
                 JDUtilities.runCommand("poweroff", new String[] {}, null, 0);
             } catch (Exception e) {
+                logger.log(e);
             }
             try {
                 JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
             } catch (Exception e) {
+                logger.log(e);
             }
         }
         try {
