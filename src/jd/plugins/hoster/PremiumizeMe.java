@@ -234,13 +234,15 @@ public class PremiumizeMe extends PluginForHost {
             case 502:
                 /* unknown technical error, block host for 3 mins */
                 if (statusMessage == null) statusMessage = "Unknown technical error";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
-                break;
+                // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
+                /* only disable plugin for this link */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 503:
                 /* temp multihoster issue, maintenance period, block host for 3 mins */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
-                tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
-                break;
+                // tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
+                /* only disable plugin for this link */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 3 * 60 * 1000l);
             case 509:
                 /* fair use limit reached ,block host for 10 mins */
                 if (statusMessage == null) statusMessage = "Fair use limit reached!";

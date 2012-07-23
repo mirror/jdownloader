@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www|player\\.)?vimeo\\.com/(video/)\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
     private static final String MAINPAGE   = "http://vimeo.com";
