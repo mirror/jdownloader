@@ -13,7 +13,7 @@ public class AntistandbyConfigPanel extends ExtensionConfigPanel<AntiStandbyExte
         // Property subConfig = getPropertyConfig();
         KeyHandler<Mode> keyHandler2 = (KeyHandler<Mode>) CFG_ANTISTANDBY.SH.getKeyHandler(CFG_ANTISTANDBY.MODE.getKey(), KeyHandler.class);
 
-        addPair(T._.mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.RUNNING, Mode.DOWNLOADING }, new String[] { T._.gui_config_antistandby_whiledl2(), T._.gui_config_antistandby_whilejd2() }));
+        addPair(T._.mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.DOWNLOADING, Mode.RUNNING }, new String[] { T._.gui_config_antistandby_whiledl2(), T._.gui_config_antistandby_whilejd2() }));
 
     }
 
