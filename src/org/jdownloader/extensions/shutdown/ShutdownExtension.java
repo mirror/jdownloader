@@ -35,6 +35,7 @@ import jd.utils.JDUtilities;
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.AbstractExtension;
@@ -139,8 +140,9 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             if (getSettings().isForceShutdownEnabled()) {
                 /* force shutdown */
                 try {
-                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
+                    System.out.println(JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0));
                 } catch (Exception e) {
+                    Log.exception(e);
                 }
             } else {
                 /* normal shutdown */

@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.shutdown;
 
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 
@@ -10,9 +11,14 @@ import jd.nutils.Executer;
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
+import org.appwork.swing.components.ExtButton;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.shutdown.translate.T;
 
@@ -26,7 +32,26 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
         addPair(T._.gui_config_jdshutdown_mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.SHUTDOWN, Mode.STANDBY, Mode.HIBERNATE, Mode.CLOSE }, new String[] { Mode.SHUTDOWN.getTranslation(), Mode.STANDBY.getTranslation(), Mode.HIBERNATE.getTranslation(), Mode.CLOSE.getTranslation() }));
         addPair(T._.gui_config_jdshutdown_forceshutdown(), null, new Checkbox(CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED));
         addPair(T._.config_toolbarbutton(), null, new Checkbox(CFG_SHUTDOWN.TOOLBAR_BUTTON_ENABLED));
+
         if (CrossSystem.isMac()) {
+            add(new ExtButton(new AppAction() {
+                {
+                    setName("Install Force");
+                }
+
+                @Override
+                public void actionPerformed(ActionEvent e) {
+
+                    try {
+                        installMacForcedShutdown();
+                        CFG_SHUTDOWN.FORCE_FOR_MAC_INSTALLED.setValue(true);
+                    } catch (Throwable e2) {
+                        e2.printStackTrace();
+                        CFG_SHUTDOWN.FORCE_FOR_MAC_INSTALLED.setValue(false);
+                    }
+
+                }
+            }));
             CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
                 @Override
@@ -40,8 +65,9 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
                             try {
                                 installMacForcedShutdown();
                                 CFG_SHUTDOWN.FORCE_FOR_MAC_INSTALLED.setValue(true);
-                            } catch (IOException e) {
+                            } catch (Throwable e) {
                                 e.printStackTrace();
+                                CFG_SHUTDOWN.FORCE_FOR_MAC_INSTALLED.setValue(false);
                             }
                         }
                     }
@@ -54,7 +80,9 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
 
     }
 
-    protected void installMacForcedShutdown() throws IOException {
+    protected void installMacForcedShutdown() throws IOException, DialogClosedException, DialogCanceledException {
+
+        Dialog.getInstance().showConfirmDialog(0, "Install", "Install the force Shutdown feature now?");
         Executer exec = new Executer("/usr/bin/osascript");
         File tmp = Application.getResource("tmp/osxnopasswordforshutdown.scpt");
         tmp.delete();
@@ -66,9 +94,10 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
             exec.start();
 
         } finally {
-            tmp.delete();
+
             tmp.deleteOnExit();
         }
+
     }
 
     @Override
