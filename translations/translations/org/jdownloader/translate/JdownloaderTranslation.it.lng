@@ -126,6 +126,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nessuna riconnessione
 jd_plugins_PluginUtils_askPassword=Inserisci la password per %s1
 literally_offline=Offline
 literally_yes=Sì
+pattern_password=пароль|пасс|pa?s?w|passwort|password|passw?|pw
 pluginforhost_infogenerator_title=Account %s1@%s2
 plugins_error_downloadfailed=Download fallito
 plugins_errors_disconnect=Disconnettere?

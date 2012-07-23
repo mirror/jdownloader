@@ -11,6 +11,9 @@ gui_config_jdshutdown_osx_force_long=Installa spegnimento forzato (solo per MAC 
 gui_config_jdshutdown_osx_force_short=Installa
 gui_config_jdshutdown_shutdown=Spegnimento
 gui_config_jdshutdown_standby=Standby (non in tutti i S.O.)
+install_force=Spegnimento forzato per installazione
+install_msg=Preparare il sistema per la funzione spegnimento forzato?
+install_title=Spegnimento forzato per installazione
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader verrà chiuso!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Il sistema verra posto in ibernazione!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Il sistema verrà spento!</font></h2>
