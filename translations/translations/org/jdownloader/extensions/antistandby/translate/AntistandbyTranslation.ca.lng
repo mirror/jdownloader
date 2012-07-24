@@ -1,4 +1,1 @@
-gui_config_antistandby_mode=Mode:
-gui_config_antistandby_whiledl=Prevenir l'espera mentre es descarrega
-gui_config_antistandby_whilejd=Prevenir l'espera mentre JD està en funcionament
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby

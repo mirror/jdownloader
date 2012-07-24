@@ -1,7 +1,7 @@
+OnMinimizeAction_ask=Pregunta'm
 jd_plugins_optional_jdtrayicon_jdlighttray=Area de notificació
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Permet minimitzar o tancar JDownloader per a l'àrea de notificació, i altres característiques relacionades com la protecció amb contrasenya i molt més.
 plugins_optional_JDLightTray_always=Sempre
-plugins_optional_JDLightTray_closetotray=Minimitzar a l'àrea de notificació
 plugins_optional_JDLightTray_linkgrabberresults=Mostra JDownloader si es graben nous enllaços
 plugins_optional_JDLightTray_minimized=Només cuan la el miniframe estigui minimitzat
 plugins_optional_JDLightTray_never=Mai
