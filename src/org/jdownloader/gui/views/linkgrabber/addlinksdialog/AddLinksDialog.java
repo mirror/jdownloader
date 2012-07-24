@@ -562,7 +562,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
 
         if (autoPasswords.size() > 1) {
             password.setText(JSonStorage.toString(autoPasswords));
-        } else {
+        } else if (autoPasswords.size() > 0) {
             password.setText(autoPasswords.toArray(new String[] {})[0]);
         }
     }
