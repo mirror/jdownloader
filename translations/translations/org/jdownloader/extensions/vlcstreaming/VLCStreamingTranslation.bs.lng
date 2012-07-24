@@ -1,4 +1,6 @@
 gui_title=Streaming
 gui_tooltip=Upravljajte svim svojim Linkovima Streaming-a
 popup_streaming=Streaming
+popup_streaming_playrar=Otvori Arhivu
 popup_streaming_playvlc=Reprodukuj
+unraraction=Pokrenii Arhivu

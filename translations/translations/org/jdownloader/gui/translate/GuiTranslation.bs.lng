@@ -543,7 +543,6 @@ buyaction_message=Većina Domaćina nudi "Pemium Modus". Download u Premium Modu
 buyaction_title=Kupi Premium Nalog
 buyaction_title_buy_account=Nastavi
 checksumcolumnmd5=MD5 Checksum
-checksumcolumnsha1=Sha1 Checksum
 config_fontname=default
 downloadview_all=Svi Download-i
 downloadview_failed=Neuspjeli Download-i

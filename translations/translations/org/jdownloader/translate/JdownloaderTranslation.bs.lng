@@ -126,6 +126,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Nema Ponovne konekcij
 jd_plugins_PluginUtils_askPassword=Molimo unesite šifru za %s1
 literally_offline=Offline
 literally_yes=Da
+pattern_password=šifra|пароль|пасс|pa?s?w|passwort|password|passw?|pw
 pluginforhost_infogenerator_title=Nalog %s1@%s2
 plugins_error_downloadfailed=Download neuspješan
 plugins_errors_disconnect=Diskonektuj?
