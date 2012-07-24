@@ -72,7 +72,7 @@ public class VoaYeursCom extends PluginForDecrypt {
         }
         externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed", "tube8.com/")));
+            decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
             return decryptedLinks;
         }
         externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
@@ -120,11 +120,6 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
-            return decryptedLinks;
-        }
         externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
         if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
         if (externID != null) {
@@ -155,6 +150,19 @@ public class VoaYeursCom extends PluginForDecrypt {
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("tnaflix\\.com//embedding_player/player[^<>\"/]*?\" /><param name=\"FlashVars\" value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

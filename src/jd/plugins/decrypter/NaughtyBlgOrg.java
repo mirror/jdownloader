@@ -39,23 +39,23 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
 
         // check if DL is from the 'clips' section
         Regex categoryCheck = null;
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-clips.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-clips.*\">");
         if (categoryCheck.matches()) {
             category = Category.CLIP;
         }
         // check if DL is from the 'movies' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-movies.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-movies.*\">");
         if (categoryCheck.matches()) {
             category = Category.MOVIE;
         }
         // check if DL is from the 'siterips' section
-        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category-siterips.*\">");
+        categoryCheck = br.getRegex("<div id=\"post-\\d+\" class=\".*category\\-siterips.*\">");
         if (categoryCheck.matches()) {
             category = Category.SITERIP;
         }
         String contentReleaseLinks = null;
         if (category != Category.SITERIP) {
-            contentReleaseLinks = br.getRegex(">Download:</(.*?)</div>").getMatch(0);
+            contentReleaseLinks = br.getRegex(">Download:?</(.*?)</div>").getMatch(0);
             if (contentReleaseLinks == null) {
                 logger.warning("contentReleaseLinks == null");
                 return null;

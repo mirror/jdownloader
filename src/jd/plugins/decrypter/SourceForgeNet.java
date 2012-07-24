@@ -40,6 +40,8 @@ public class SourceForgeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        // We get downloadlinks depending on our useragent
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setFollowRedirects(true);
         // Test if we already have a direct link here
         URLConnectionAdapter con = br.openGetConnection(parameter);

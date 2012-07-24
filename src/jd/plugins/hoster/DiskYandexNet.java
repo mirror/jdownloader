@@ -60,7 +60,7 @@ public class DiskYandexNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(link)));
-        if (br.containsHTML(">Decryption error<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">resource not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = parse("name");
         String filesize = parse("size");
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

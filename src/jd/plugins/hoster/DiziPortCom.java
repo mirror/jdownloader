@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "diziport.com" }, urls = { "http://(www\\.)?diziport\\.com/.*?/.*?/(\\d+)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "diziport.com" }, urls = { "http://(www\\.)?diziportdecrypted\\.com/.*?/.*?/(\\d+)?" }, flags = { 0 })
 public class DiziPortCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -49,15 +49,8 @@ public class DiziPortCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("diziportdecrypted.com/", "diziport.com/"));
     }
 
     @Override
@@ -65,13 +58,13 @@ public class DiziPortCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">sayfa bulunamadý")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">sayfa bulunamadý") || !br.containsHTML("\\'/js/swfobject\\.js\\'")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?) izle \\- Diziport\"").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) izle - Diziport</title>").getMatch(0);
         DLLINK = br.getRegex("\\&sid=(.*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://diziport.com/nesne.php?olay=sayac&sid=" + DLLINK);
+        br.getPage("http://diziport.com/nesne-uye.php?olay=sayac&sid=" + DLLINK);
         DLLINK = br.getRegex("\\&strSource=(http.*?)(\\&publisherLogo=|\\')").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
@@ -102,6 +95,17 @@ public class DiziPortCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
