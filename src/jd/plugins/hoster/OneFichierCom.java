@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -46,12 +46,9 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
     private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private static final String  PREMIUMPAGE    = "https://www.1fichier.com/en/login.pl";
-    private static final String  MAINPAGE       = "www.1fichier.com";
-    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading some files|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
+    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
     private static final String  FREELINK       = "freeLink";
     private static final String  PREMLINK       = "premLink";
-    private static final String  HOTLINK        = "HOTLINK";
     private static final String  SSL_CONNECTION = "SSL_CONNECTION";
     private boolean              pwProtected    = false;
 
@@ -77,7 +74,7 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
-        if (br.containsHTML(">Software error:<")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("bad")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("password")) {
             pwProtected = true;
@@ -86,7 +83,7 @@ public class OneFichierCom extends PluginForHost {
         }
         String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+);(\\d+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Decrypter broken for link");
+            logger.warning("Available Status broken for link");
             return null;
         }
         String filename = linkInfo[0][0];
@@ -116,6 +113,7 @@ public class OneFichierCom extends PluginForHost {
         if (dllink != null) {
             /* try to resume existing file */
             br.setFollowRedirects(true);
+            // at times the second chunk creates 404 errors!
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 /* could not resume, fetch new link */
@@ -124,15 +122,16 @@ public class OneFichierCom extends PluginForHost {
                 dllink = null;
                 br.setFollowRedirects(false);
                 br.setCustomCharset("utf-8");
-                br.getPage(downloadLink.getDownloadURL());
             } else {
                 /* resume download */
                 dl.startDownload();
                 return;
             }
         }
+        // use the English page, less support required
+        br.getPage(downloadLink.getDownloadURL() + "en/index.html");
         if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+        if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
         String passCode = null;
         if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -147,14 +146,15 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
             }
         } else {
-            // Their limit is just very short so a 30 second waittime for all
-            // downloads will remove the limit
-            br.postPage(downloadLink.getDownloadURL(), "submit=Download+the+file");
+            // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
+            // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) +
+            // "[^;]+)").getMatch(0);
+            br.postPage(downloadLink.getDownloadURL() + "en/", "submit=Download+the+file");
         }
-        dllink = br.getRedirectLocation();
+        if (dllink == null) dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
