@@ -84,6 +84,12 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.getPage(parameter);
 
+        String[] setCookie = br.getRegex("setCookie\\(\'(\\w+)\',\\s?\'([0-9\\.]+)\',\\s?\\d+\\)").getRow(0);
+        if (!(setCookie == null || setCookie.length != 2)) {
+            br.setCookie(br.getHost(), setCookie[0], setCookie[1]);
+            br.getPage(parameter);
+        }
+
         String channelId = br.getRegex("channelId=(.*?)\\&").getMatch(0);
         String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
         String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
