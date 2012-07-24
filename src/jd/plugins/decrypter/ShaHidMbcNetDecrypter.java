@@ -193,9 +193,8 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
                 // Parsing -> video urls
                 String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
-                String[] finalContent = decompressedPlainData.split(new String(new byte[] { 0x05, 0x40, 0x39 }));
+                String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\n]+)").getColumn(0);
                 if (finalContent == null || finalContent.length == 0) { return null; }
-                if (finalContent.length == 1) finalContent = decompressedPlainData.split(new String(new byte[] { 0x05, 0x40, 0x38 }));
 
                 for (String fC : finalContent) {
                     if (fC.length() < 40) {
@@ -204,7 +203,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                     // Einzellink oder Alles
                     if (fC.contains("rtmp")) {
                         if (fC.contains(mediaId + "-") || (Boolean) shProperties.get("COMPLETE_SEASON")) {
-                            quality = JDHexUtils.getHexString(fC.substring(16, 18));
+                            quality = JDHexUtils.getHexString(fC.substring(0, 2));
                             if (quality != null && qStr.containsKey(quality)) {
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());
                             }
