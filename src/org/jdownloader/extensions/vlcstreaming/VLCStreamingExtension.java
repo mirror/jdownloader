@@ -45,7 +45,8 @@ import org.jdownloader.logging.LogController;
 
 public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig, VLCStreamingTranslation> implements MenuFactoryListener {
 
-    private LogSource logger;
+    private LogSource              logger;
+    protected VLCStreamingProvider streamProvider = null;
 
     public VLCStreamingExtension() {
         logger = LogController.CL(getClass());
@@ -59,6 +60,7 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
     @Override
     protected void stop() throws StopException {
         try {
+            streamProvider = null;
             MenuFactoryEventSender.getInstance().removeListener(this);
             if (vlcstreamingAPI != null) {
                 RemoteAPIController.getInstance().unregister(vlcstreamingAPI);
@@ -68,13 +70,18 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
         }
     }
 
+    public VLCStreamingProvider getStreamProvider() {
+        return streamProvider;
+    }
+
     @Override
     protected void start() throws StartException {
         if (vlcBinary == null) {
             vlcBinary = getVLCBinary();
             if (StringUtils.isEmpty(vlcBinary)) { throw new StartException("Could not find vlc binary"); }
         }
-        vlcstreamingAPI = new VLCStreamingAPIImpl();
+        streamProvider = new VLCStreamingProvider(this);
+        vlcstreamingAPI = new VLCStreamingAPIImpl(this);
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
         new EDTRunner() {
@@ -84,6 +91,10 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                 tab = new VLCGui(VLCStreamingExtension.this);
             }
         }.waitForEDT();
+    }
+
+    public VLCStreamingAPIImpl getVlcstreamingAPI() {
+        return vlcstreamingAPI;
     }
 
     protected String getVLCRevision(String binary) {
@@ -193,12 +204,21 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                 }
 
                 public void actionPerformed(ActionEvent e) {
-                    Executer exec = new Executer(getVLCBinary());
-                    exec.setLogger(LogController.CL());
-                    exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID() });
-                    exec.setRunin(Application.getRoot(Launcher.class));
-                    exec.setWaitTimeout(0);
-                    exec.start();
+                    new Thread() {
+                        public void run() {
+                            try {
+                                getVlcstreamingAPI().addHandler(link.getUniqueID().toString(), new DirectStreamingImpl(VLCStreamingExtension.this, link));
+                                Executer exec = new Executer(getVLCBinary());
+                                exec.setLogger(LogController.CL());
+                                exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID() });
+                                exec.setRunin(Application.getRoot(Launcher.class));
+                                exec.setWaitTimeout(0);
+                                exec.start();
+                            } catch (final Throwable e) {
+                                logger.log(e);
+                            }
+                        };
+                    }.start();
 
                 }
             });

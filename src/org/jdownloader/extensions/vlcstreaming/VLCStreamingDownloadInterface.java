@@ -10,7 +10,7 @@ import jd.plugins.download.DownloadInterface;
 
 public class VLCStreamingDownloadInterface extends DownloadInterface {
 
-    public VLCStreamingDownloadInterface(VLCStreamingThread vlcStreamingThread, PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
+    public VLCStreamingDownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
         super(plugin, downloadLink, request);
     }
 

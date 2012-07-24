@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.vlcstreaming;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 import jd.http.Browser;
@@ -16,8 +16,6 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
-import org.appwork.utils.io.streamingio.Streaming;
-import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
@@ -26,9 +24,9 @@ import org.jdownloader.logging.LogController;
 
 public class VLCStreamingThread extends Thread implements BrowserSettings, DownloadInterfaceFactory {
 
-    private RemoteAPIResponse    response;
-    private RemoteAPIRequest     request;
-    private StreamingInputStream sis = null;
+    private RemoteAPIResponse response;
+    private RemoteAPIRequest  request;
+    private InputStream       sis = null;
 
     public RemoteAPIResponse getResponse() {
         return response;
@@ -38,18 +36,18 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
         return request;
     }
 
-    private HTTPProxy proxy;
-    private LogSource logger;
-    private Streaming streaming;
+    private HTTPProxy          proxy;
+    private LogSource          logger;
+    private StreamingInterface streamingInterface;
 
-    public VLCStreamingThread(RemoteAPIResponse response, RemoteAPIRequest request, Streaming streaming) {
+    public VLCStreamingThread(RemoteAPIResponse response, RemoteAPIRequest request, StreamingInterface streamingInterface) {
         this.response = response;
         this.request = request;
+        this.streamingInterface = streamingInterface;
         proxy = Browser._getGlobalProxy();
         logger = LogController.getInstance().getLogger("VLCStreaming");
         logger.setAllowTimeoutFlush(false);
-        this.streaming = streaming;
-        setName("Streaming: " + new File(getStreaming().getOutputFile()).getName());
+        setName("Streaming: " + streamingInterface.toString());
     }
 
     @Override
@@ -80,10 +78,11 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
                 if (start != null) startPosition = Long.parseLong(start);
                 if (stop != null) stopPosition = Long.parseLong(stop);
             }
-            sis = getStreaming().getInputStream(startPosition, stopPosition);
-            long completeSize = getStreaming().getFinalFileSize();
+            sis = streamingInterface.getInputStream(startPosition, stopPosition);
+            long completeSize = streamingInterface.getFinalFileSize();
             if (sis == null) {
                 getResponse().setResponseCode(ResponseCode.ERROR_NOT_FOUND);
+                getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
                 getResponse().getOutputStream();
             } else {
                 getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES, "ranges"));
@@ -99,15 +98,7 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
                     }
                     getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, completeSize + ""));
                 }
-                Input2OutputStreamForwarder forwarder = new Input2OutputStreamForwarder(sis, getResponse().getOutputStream()) {
-                    {
-                        if (rangeRequest != null) {
-                            thread.setName("Streaming: " + new File(getStreaming().getOutputFile()).getName() + "-" + rangeRequest.getValue());
-                        } else {
-                            thread.setName("Streaming: " + new File(getStreaming().getOutputFile()).getName());
-                        }
-                    }
-                };
+                Input2OutputStreamForwarder forwarder = new Input2OutputStreamForwarder(sis, getResponse().getOutputStream());
                 doCleanup = false;
                 forwarder.forward(cleanup);
             }
@@ -162,19 +153,12 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
 
     @Override
     public DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request) throws Exception {
-        return new VLCStreamingDownloadInterface(this, downloadLink.getLivePlugin(), downloadLink, request);
+        return new VLCStreamingDownloadInterface(downloadLink.getLivePlugin(), downloadLink, request);
     }
 
     @Override
     public DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request, boolean resume, int chunks) throws Exception {
-        return new VLCStreamingDownloadInterface(this, downloadLink.getLivePlugin(), downloadLink, request);
-    }
-
-    /**
-     * @return the streaming
-     */
-    public Streaming getStreaming() {
-        return streaming;
+        return new VLCStreamingDownloadInterface(downloadLink.getLivePlugin(), downloadLink, request);
     }
 
 }

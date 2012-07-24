@@ -28,12 +28,18 @@ public class BrowserAdapter {
     private static DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request) throws Exception {
         Thread current = Thread.currentThread();
         if (current instanceof DownloadInterfaceFactory) { return ((DownloadInterfaceFactory) current).getDownloadInterface(downloadLink, request); }
+        PluginForHost livePlugin = downloadLink.getLivePlugin();
+        DownloadInterfaceFactory ret = null;
+        if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request);
         return RAFDownload.download(downloadLink, request);
     }
 
     private static DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request, boolean b, int i) throws Exception {
         Thread current = Thread.currentThread();
         if (current instanceof DownloadInterfaceFactory) { return ((DownloadInterfaceFactory) current).getDownloadInterface(downloadLink, request, b, i); }
+        PluginForHost livePlugin = downloadLink.getLivePlugin();
+        DownloadInterfaceFactory ret = null;
+        if (livePlugin != null && (ret = livePlugin.getCustomizedDownloadFactory()) != null) return ret.getDownloadInterface(downloadLink, request, b, i);
         return RAFDownload.download(downloadLink, request, b, i);
     }
 

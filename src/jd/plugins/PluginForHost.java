@@ -39,6 +39,7 @@ import jd.http.Browser;
 import jd.nutils.Formatter;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
@@ -178,6 +179,16 @@ public abstract class PluginForHost extends Plugin {
     private String                             premiumurl                                   = null;
 
     private DownloadLink                       link                                         = null;
+
+    protected DownloadInterfaceFactory         customizedDownloadFactory                    = null;
+
+    public DownloadInterfaceFactory getCustomizedDownloadFactory() {
+        return customizedDownloadFactory;
+    }
+
+    public void setCustomizedDownloadFactory(DownloadInterfaceFactory customizedDownloadFactory) {
+        this.customizedDownloadFactory = customizedDownloadFactory;
+    }
 
     public boolean checkLinks(final DownloadLink[] urls) {
         return false;

@@ -32,8 +32,11 @@ import net.sf.sevenzipjbinding.PropID;
 import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.io.streamingio.Streaming;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
+import org.jdownloader.extensions.vlcstreaming.VLCStreamingProvider;
 import org.jdownloader.logging.LogController;
 
 /**
@@ -51,17 +54,18 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
     private String                          firstName;
     private Logger                          logger;
     private RandomAccessStream              latestAccessedStream;
+    private VLCStreamingProvider            streamProvider;
 
-    RarStreamProvider(Archive archive) {
-        this.password = "";
+    RarStreamProvider(Archive archive, String password, VLCStreamingProvider streamProvider) {
+        if (password == null) password = "";
+        this.password = password;
         this.archive = archive;
+        this.streamProvider = streamProvider;
         init();
     }
 
-    RarStreamProvider(Archive archive, String password) {
-        this.password = password;
-        this.archive = archive;
-        init();
+    public VLCStreamingProvider getStreamProvider() {
+        return streamProvider;
     }
 
     private void init() {
@@ -118,8 +122,10 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
 
             if (logger != null) logger.info("New RandomAccess: " + (af == null ? filename : af.getFilePath()));
             name = filename;
-            stream = new RandomAccessStream(af == null ? archive.getArchiveFileByPath(filename) : af, filename, this);
-
+            ArchiveFile archiveFile = af == null ? archive.getArchiveFileByPath(filename) : af;
+            if (archiveFile == null) return null;
+            Streaming streaming = streamProvider.getStreamingProvider(((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0));
+            stream = new RandomAccessStream(archiveFile, filename, this, streaming);
             openStreamMap.put(filename, stream);
             return stream;
         } catch (Exception e) {

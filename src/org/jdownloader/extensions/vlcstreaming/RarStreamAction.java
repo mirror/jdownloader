@@ -33,13 +33,12 @@ public class RarStreamAction extends AppAction {
         if (link == null) return false;
         String filename = link.getName().toLowerCase(Locale.ENGLISH);
         if (filename.endsWith("rar")) return true;
-
         return false;
     }
 
     public void actionPerformed(ActionEvent e) {
 
-        new RarStreamer(archive).start();
+        new RarStreamer(archive, extension).start();
 
     }
 
