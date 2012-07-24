@@ -1,4 +1,6 @@
-gui_config_antistandby_mode=Modo:
-gui_config_antistandby_whiledl=Prevenir modo de espera enquanto baixa arquivos
-gui_config_antistandby_whilejd=Prevenir modo de espera enquanto executa o JD
+gui_config_antistandby_mode2=Modo:
+gui_config_antistandby_whiledl2=Downloads estiverem em progresso
+gui_config_antistandby_whilejd2=O JDownloader estiver sendo executado
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby
+jd_plugins_optional_antistandby_jdantistandby_description=Simplesmente previne seu computador de entrar no modo de espera ou hibernação para manter os downloads ativos.
+mode=Prevenir Suspender/Hibernar quando

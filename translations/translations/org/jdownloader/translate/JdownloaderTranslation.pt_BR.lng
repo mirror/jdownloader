@@ -126,6 +126,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Sem Reconexão
 jd_plugins_PluginUtils_askPassword=Por favor, insira a senha para %s1
 literally_offline=Offline
 literally_yes=Sim
+pattern_password=пароль|пасс|pa?s?w|passwort|senha|password|passw?|pw
 pluginforhost_infogenerator_title=Conta %s1@%s2
 plugins_error_downloadfailed=Falha de download
 plugins_errors_disconnect=Desconectar?
