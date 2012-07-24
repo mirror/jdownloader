@@ -16,4 +16,10 @@ public interface VLCStreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Manage all your Streaming Links" })
     String gui_tooltip();
+
+    @Default(lngs = { "en" }, values = { "Open Archive" })
+    String popup_streaming_playrar();
+
+    @Default(lngs = { "en" }, values = { "Play Archive" })
+    String unraraction();
 }
