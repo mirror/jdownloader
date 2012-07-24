@@ -230,11 +230,12 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     /*
-     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of the new ArrayList
+     * we override sort to have a better sorting of packages/files, to keep their structure alive,data is only used to specify the size of
+     * the new ArrayList
      */
     @Override
     public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
-        boolean hideSingleChildPackages = CFG_GUI.HIDE_SINGLECHILD_PACKAGES.isEnabled();
+        boolean hideSingleChildPackages = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {
             /* RESET sorting to nothing,tri-state */
             this.sortColumn = column = null;

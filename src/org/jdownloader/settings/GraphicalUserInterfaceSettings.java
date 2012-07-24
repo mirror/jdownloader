@@ -372,4 +372,10 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     void setHideSingleChildPackages(boolean b);
 
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    @RequiresRestart
+    boolean isFileCountInSizeColumnVisible();
+
+    void setFileCountInSizeColumnVisible(boolean b);
 }

@@ -19,8 +19,6 @@ public class CFG_GUI {
     // Static Mappings for interface org.jdownloader.settings.GraphicalUserInterfaceSettings
     public static final GraphicalUserInterfaceSettings                 CFG                                              = JsonConfig.create(GraphicalUserInterfaceSettings.class);
     public static final StorageHandler<GraphicalUserInterfaceSettings> SH                                               = (StorageHandler<GraphicalUserInterfaceSettings>) CFG.getStorageHandler();
-
-    public static final BooleanKeyHandler                              HIDE_SINGLECHILD_PACKAGES                        = SH.getKeyHandler("HideSingleChildPackages", BooleanKeyHandler.class);
     // let's do this mapping here. If we map all methods to static handlers, access is faster, and we get an error on init if mappings are
     // wrong.
     // ALL
@@ -30,6 +28,8 @@ public class CFG_GUI {
      * If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_ETACOLUMN_ENABLED                  = SH.getKeyHandler("PremiumAlertETAColumnEnabled", BooleanKeyHandler.class);
+    // 20
+    public static final IntegerKeyHandler                              CAPTCHA_DIALOG_TIMEOUT                           = SH.getKeyHandler("CaptchaDialogTimeout", IntegerKeyHandler.class);
     // 500
     /**
      * Refreshrate in ms for the DownloadView
@@ -37,31 +37,38 @@ public class CFG_GUI {
     public static final LongKeyHandler                                 DOWNLOAD_VIEW_REFRESH                            = SH.getKeyHandler("DownloadViewRefresh", LongKeyHandler.class);
     // false
     /**
+     * If true, java will try to use D3D for graphics
+     **/
+    public static final BooleanKeyHandler                              USE_D3D                                          = SH.getKeyHandler("UseD3D", BooleanKeyHandler.class);
+    // false
+    /**
      * Enable/disable Enable/disable Clipboard monitoring
      **/
     public static final BooleanKeyHandler                              CLIPBOARD_MONITORED                              = SH.getKeyHandler("ClipboardMonitored", BooleanKeyHandler.class);
-    // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
-    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                              = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // true
     /**
      * True if move button should be visible in downloadview
      **/
     public static final BooleanKeyHandler                              SHOW_MOVE_DOWN_BUTTON                            = SH.getKeyHandler("ShowMoveDownButton", BooleanKeyHandler.class);
+    // jd.gui.swing.jdgui.views.settings.panels.advanced.AdvancedSettings
+    public static final StringKeyHandler                               ACTIVE_CONFIG_PANEL                              = SH.getKeyHandler("ActiveConfigPanel", StringKeyHandler.class);
     // true
     /**
      * Enable/disable support for system DPI settings. Default value is true.
      **/
     public static final BooleanKeyHandler                              FONT_RESPECTS_SYSTEM_DPI                         = SH.getKeyHandler("FontRespectsSystemDPI", BooleanKeyHandler.class);
-    // standard
-    /**
-     * Icon Theme ID. Make sure that ./themes/<ID>/ exists
-     **/
-    public static final StringKeyHandler                               THEME_ID                                         = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
     // true
     /**
      * Enable/Disable the Linkgrabber Sidebar QuicktoggleButton
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_SIDEBAR_TOGGLE_BUTTON_ENABLED        = SH.getKeyHandler("LinkgrabberSidebarToggleButtonEnabled", BooleanKeyHandler.class);
+    // standard
+    /**
+     * Icon Theme ID. Make sure that ./themes/<ID>/ exists
+     **/
+    public static final StringKeyHandler                               THEME_ID                                         = SH.getKeyHandler("ThemeID", StringKeyHandler.class);
+    // DETAILS
+    public static final EnumKeyHandler                                 FILE_CHOOSER_VIEW                                = SH.getKeyHandler("FileChooserView", EnumKeyHandler.class);
     // 100
     /**
      * Font scale factor in percent. Default value is 100 which means no font scaling.
@@ -87,19 +94,26 @@ public class CFG_GUI {
      * True if move button should be visible in downloadview
      **/
     public static final BooleanKeyHandler                              SHOW_MOVE_TO_BOTTOM_BUTTON                       = SH.getKeyHandler("ShowMoveToBottomButton", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                     = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
     // false
     /**
      * If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.
      **/
     public static final BooleanKeyHandler                              PREMIUM_ALERT_SPEED_COLUMN_ENABLED               = SH.getKeyHandler("PremiumAlertSpeedColumnEnabled", BooleanKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                              BALLOON_NOTIFICATION_ENABLED                     = SH.getKeyHandler("BalloonNotificationEnabled", BooleanKeyHandler.class);
     // false
     public static final BooleanKeyHandler                              LOG_VIEW_VISIBLE                                 = SH.getKeyHandler("LogViewVisible", BooleanKeyHandler.class);
+    // false
+    /**
+     * Hide the package in case it only contains one child
+     **/
+    public static final BooleanKeyHandler                              HIDE_SINGLE_CHILD_PACKAGES                       = SH.getKeyHandler("HideSingleChildPackages", BooleanKeyHandler.class);
+    // 2500
+    public static final IntegerKeyHandler                              TOOLTIP_TIMEOUT                                  = SH.getKeyHandler("TooltipTimeout", IntegerKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                              = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                               LOOK_AND_FEEL                                    = SH.getKeyHandler("LookAndFeel", StringKeyHandler.class);
-    // true
-    public static final BooleanKeyHandler                              CONFIG_VIEW_VISIBLE                              = SH.getKeyHandler("ConfigViewVisible", BooleanKeyHandler.class);
     // SKIP_FILE
     public static final EnumKeyHandler                                 LAST_IF_FILE_EXISTS                              = SH.getKeyHandler("LastIfFileExists", EnumKeyHandler.class);
     // 100
@@ -107,10 +121,10 @@ public class CFG_GUI {
      * Captcha Dialog Image scale Faktor in %
      **/
     public static final IntegerKeyHandler                              CAPTCHA_SCALE_FACTOR                             = SH.getKeyHandler("CaptchaScaleFactor", IntegerKeyHandler.class);
-    // false
-    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                      = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // FILENAME
     public static final EnumKeyHandler                                 SELECTED_DOWNLOAD_SEARCH_CATEGORY                = SH.getKeyHandler("SelectedDownloadSearchCategory", EnumKeyHandler.class);
+    // false
+    public static final BooleanKeyHandler                              PASSWORD_PROTECTION_ENABLED                      = SH.getKeyHandler("PasswordProtectionEnabled", BooleanKeyHandler.class);
     // true
     /**
      * True if move button should be visible in downloadview
@@ -123,11 +137,11 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              SAVE_DOWNLOAD_VIEW_CROSS_SESSION_ENABLED         = SH.getKeyHandler("SaveDownloadViewCrossSessionEnabled", BooleanKeyHandler.class);
     // default
     /**
-     * Font to be used. Default value is default.
+     * Font to be used. Default value is default. For foreign chars use e.g. Dialog
      **/
     public static final StringKeyHandler                               FONT_NAME                                        = SH.getKeyHandler("FontName", StringKeyHandler.class);
-    // null
-    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                              FILE_COUNT_IN_SIZE_COLUMN_VISIBLE                = SH.getKeyHandler("FileCountInSizeColumnVisible", BooleanKeyHandler.class);
     // null
     public static final StringKeyHandler                               PASSWORD                                         = SH.getKeyHandler("Password", StringKeyHandler.class);
     // true
@@ -135,6 +149,10 @@ public class CFG_GUI {
      * Highlight Table in Downloadview if table is filtered
      **/
     public static final BooleanKeyHandler                              FILTER_HIGHLIGHT_ENABLED                         = SH.getKeyHandler("FilterHighlightEnabled", BooleanKeyHandler.class);
+    // null
+    public static final ObjectKeyHandler                               LAST_FRAME_STATUS                                = SH.getKeyHandler("LastFrameStatus", ObjectKeyHandler.class);
+    // null
+    public static final StringKeyHandler                               LANGUAGE                                         = SH.getKeyHandler("Language", StringKeyHandler.class);
     // true
     /**
      * Enable/Disable the Linkgrabber Sidebar
@@ -147,6 +165,13 @@ public class CFG_GUI {
      * If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added
      **/
     public static final BooleanKeyHandler                              LINKGRABBER_AUTO_TAB_SWITCH_ENABLED              = SH.getKeyHandler("LinkgrabberAutoTabSwitchEnabled", BooleanKeyHandler.class);
+    // false
+    /**
+     * If true, hostcolumn will also show full hostname
+     **/
+    public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                               = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
+    // true
+    public static final BooleanKeyHandler                              CAPTCHA_DIALOG_UNIQUE_POSITION_BY_HOSTER_ENABLED = SH.getKeyHandler("CaptchaDialogUniquePositionByHosterEnabled", BooleanKeyHandler.class);
     // false
     /**
      * If enabled, JDownloader GUI will come to top when new links are added
@@ -169,11 +194,6 @@ public class CFG_GUI {
      * If disabled, The Hostercolumn will show gray disabled icons if the link is disabled
      **/
     public static final BooleanKeyHandler                              COLORED_ICONS_FOR_DISABLED_HOSTER_COLUMN_ENABLED = SH.getKeyHandler("ColoredIconsForDisabledHosterColumnEnabled", BooleanKeyHandler.class);
-
-    /**
-     * If true, The Hostercolumn will show full hostname
-     **/
-    public static final BooleanKeyHandler                              SHOW_FULL_HOSTNAME                               = SH.getKeyHandler("ShowFullHostname", BooleanKeyHandler.class);
     // true
     /**
      * True if move button should be visible in downloadview
@@ -181,11 +201,12 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              SHOW_MOVE_UP_BUTTON                              = SH.getKeyHandler("ShowMoveUpButton", BooleanKeyHandler.class);
     // false
     /**
-     * Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is
-     * visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like
-     * SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to
-     * activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance.
-     * Default value is false which means the translucency feature is enabled
+     * Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner
+     * background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real
+     * translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is
+     * ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is
+     * supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency
+     * feature is enabled
      **/
     public static final BooleanKeyHandler                              WINDOW_OPAQUE                                    = SH.getKeyHandler("WindowOpaque", BooleanKeyHandler.class);
 }
