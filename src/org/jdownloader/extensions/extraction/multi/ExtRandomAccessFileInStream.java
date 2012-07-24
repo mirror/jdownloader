@@ -40,18 +40,14 @@ public class ExtRandomAccessFileInStream extends RandomAccessFileInStream {
 
     @Override
     public long seek(long l, int i) throws SevenZipException {
-        // System.out.println("SEEK " + filename);
         owner.setLatestAccessedStream(this);
         return super.seek(l, i);
     }
 
     @Override
-    public int read(byte[] abyte0) throws SevenZipException {
-        // System.out.println("READ " + filename);
+    public int read(byte[] abyte0) throws SevenZipException { //
         owner.setLatestAccessedStream(this);
-
         return super.read(abyte0);
-
     }
 
     @Override
