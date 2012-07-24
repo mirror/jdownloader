@@ -5,14 +5,14 @@ config_toolbarbutton=Araç çubuğunda düğmesi görünebilsin
 gui_config_jdshutdown_close=JDownloader'ı Kapat
 gui_config_jdshutdown_enabledOnStart=Başlangıçta etkinleştirilsin
 gui_config_jdshutdown_forceshutdown=Bilgisayarı Kapatmaya zorla (Tüm işletim sistemleri için değildir)
-gui_config_jdshutdown_hibernate=Hazırda Beklemeye al (Tüm İS için değildir)
+gui_config_jdshutdown_hibernate=Hazırda Beklemeye al (Tüm işletim sistemleri için değildir)
 gui_config_jdshutdown_mode=Kip:
-gui_config_jdshutdown_osx_force_long=Bilgisayarı Kapatmaya zorla'yı kur (sadece Mac OSX)
+gui_config_jdshutdown_osx_force_long=Sistem kapatma zorlayıcısını yükle (sadece Mac OSX)
 gui_config_jdshutdown_osx_force_short=Kur
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
 gui_config_jdshutdown_standby=Beklemeye al (Tüm işletim sistemleri için değildir)
 install_force=Sistem kapatma zorlayıcısını yükle
-install_msg=Sistem kapatma zorlayıcısı özelliğini yüklemek istiyor muzunuz?
+install_msg=Sisteminizi, sistem kapatma zorlayıcısı özelliği için hazırlamak istiyor musunuz?
 install_title=Sistem kapatma zorlayıcısını yükle
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda bekleme kipine alınacak!</font></h2>
