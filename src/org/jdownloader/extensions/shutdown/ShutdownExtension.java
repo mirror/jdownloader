@@ -37,14 +37,17 @@ import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
+import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.logging.LogController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
@@ -205,6 +208,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     private void prepareHibernateOrStandby() {
+
+        checkStandbyHibernateSettings(getSettings().getShutdownMode());
         LogController.CL().info("Stop all running downloads");
         DownloadWatchDog.getInstance().stopDownloads();
         /* reset enabled flag */
@@ -548,4 +553,45 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
 
     public void onStateUpdate(StateEvent event) {
     }
+
+    public static void checkStandbyHibernateSettings(Mode newValue) {
+        try {
+            switch (newValue) {
+            case HIBERNATE:
+                Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
+                // we should add the return for other languages
+                if (status.getStd() != null && !status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return;
+                if (status.getStd() != null && !status.getStd().contains("Hibernation has not been enabled")) return;
+                LogController.CL().info(status.toString());
+                Dialog.getInstance().showMessageDialog(T._.show_admin());
+                String path = CrossSystem.is64Bit() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
+                try {
+                    LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "on" }).toString());
+
+                } catch (Throwable e) {
+                    LogController.CL().log(e);
+                }
+                break;
+            case STANDBY:
+                status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
+                // we should add the return for other languages
+                if (status.getStd() != null && status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return;
+                if (status.getStd() != null && status.getStd().contains("Hibernation has not been enabled")) return;
+                LogController.CL().info(status.toString());
+                Dialog.getInstance().showMessageDialog(T._.show_admin());
+                path = CrossSystem.is64Bit() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
+                try {
+                    LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "off" }).toString());
+
+                } catch (Throwable e) {
+                    LogController.CL().log(e);
+                }
+                break;
+
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
 }
