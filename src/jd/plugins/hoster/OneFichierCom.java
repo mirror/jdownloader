@@ -171,9 +171,21 @@ public class OneFichierCom extends PluginForHost {
         maxPrem.set(1);
         br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
-        if (timeStamp == null || "0".equalsIgnoreCase(timeStamp) || "error".equalsIgnoreCase(timeStamp)) {
+        if (timeStamp == null || "error".equalsIgnoreCase(timeStamp)) {
             account.setProperty("type", Property.NULL);
             account.setValid(false);
+            return ai;
+        } else if ("0".equalsIgnoreCase(timeStamp) && false) {
+            /* not finished yet */
+            account.setValid(true);
+            account.setProperty("type", "FREE");
+            ai.setStatus("Free User");
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
             return ai;
         } else {
             account.setValid(true);
@@ -187,7 +199,6 @@ public class OneFichierCom extends PluginForHost {
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
-            ai.setStatus("Premium User");
             return ai;
         }
     }
