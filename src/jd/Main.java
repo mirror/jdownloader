@@ -36,7 +36,7 @@ public class Main {
 
     static {
         // only use ipv4, because debian changed default stack to ipv6
-        /* we have to make sure that this property gets set before any network stuff gets loaded! */
+        /* we have to make sure that this property gets set before any network stuff gets loaded!! */
         System.setProperty("java.net.preferIPv4Stack", "true");
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
