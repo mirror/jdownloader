@@ -394,7 +394,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @param b
      */
     public void setExpanded(boolean b) {
-        if (this.isExpanded == b) return;
+        if (this.isExpanded != null && this.isExpanded == b) return;
         this.isExpanded = b;
         if (b == false) {
             setProperty(PROPERTY_EXPANDED, Property.NULL);
