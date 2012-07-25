@@ -1,3 +1,8 @@
-jd_plugins_optional_infobar_docking=Включить прикрепление к бокам
+jd_plugins_optional_infobar_InfoDialog_help=Зона Корзины
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Перетаскивайте сюда URL-ы, гиперссылки или файлы DLC!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Скрыть панель инфо
+jd_plugins_optional_infobar_docking=Включить прикрепление к краям
+jd_plugins_optional_infobar_dropLocation2=Разрешить перетаскивание в Корзину
 jd_plugins_optional_infobar_jdinfobar=Панель инфо
-jd_plugins_optional_infobar_opacity=непрозрачность диалога [в %]
+jd_plugins_optional_infobar_jdinfobar_description=Маленькая плавающаяпанель с информацией о загрузках в реальном времени, и зона Корзины, куда вы можете добавить ссылки, URL-ы или файлы DLC.
+jd_plugins_optional_infobar_opacity=Непрозрачность [в %]

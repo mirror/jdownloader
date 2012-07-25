@@ -1,2 +1,5 @@
+jd_plugins_optional_JDGrowlNotification_allfinished=ВСе закачки остановлены
+jd_plugins_optional_JDGrowlNotification_finished=Заачка остановлена
+jd_plugins_optional_JDGrowlNotification_started=Запуск jDownloader...
 jd_plugins_optional_jdgrowlnotification_description=Сообщения об ошибках
 jd_plugins_optional_jdgrowlnotification=Сообщения об ошибках
