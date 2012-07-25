@@ -4,16 +4,16 @@ addons_jdshutdown_statusmessage_enabled=JDownloader arresterà il sistema alla t
 config_toolbarbutton=Barra strumenti visibile
 gui_config_jdshutdown_close=Chiudi JD
 gui_config_jdshutdown_enabledOnStart=Abilita all'avvio
-gui_config_jdshutdown_forceshutdown=Arresta il sistema  (non in tutti i S.O.)
+gui_config_jdshutdown_forceshutdown=Forza l'arresto (non in tutti i S.O.)
 gui_config_jdshutdown_hibernate=Iberna (non in tutti i S.O.)
 gui_config_jdshutdown_mode=Modo:
 gui_config_jdshutdown_osx_force_long=Installa spegnimento forzato (solo per MAC OSX)
 gui_config_jdshutdown_osx_force_short=Installa
 gui_config_jdshutdown_shutdown=Spegnimento
 gui_config_jdshutdown_standby=Standby (non in tutti i S.O.)
-install_force=Spegnimento forzato per installazione
+install_force=Installa spegnimento forzato
 install_msg=Preparare il sistema per la funzione spegnimento forzato?
-install_title=Spegnimento forzato per installazione
+install_title=Installa spegnimento forzato
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader verrà chiuso!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Il sistema verra posto in ibernazione!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Il sistema verrà spento!</font></h2>
