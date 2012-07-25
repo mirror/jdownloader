@@ -1,5 +1,6 @@
 package org.jdownloader.settings.advanced;
 
+import org.jdownloader.gui.translate._GUI;
 
 public class RangeValidator extends Validator {
 
@@ -23,7 +24,7 @@ public class RangeValidator extends Validator {
     }
 
     public String toString() {
-        return "Valid Range: " + min + " - " + max;
+        return _GUI._.RangeValidator_toString_object_(min, max);
     }
 
     public long getMax() {

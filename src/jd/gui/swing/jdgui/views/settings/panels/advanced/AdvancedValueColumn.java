@@ -19,6 +19,7 @@ import org.appwork.swing.exttable.columns.ExtTextAreaColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.reflection.Clazz;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.RangeValidator;
 
@@ -33,7 +34,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private ExtComboColumn<AdvancedConfigEntry>       enumColumn;
 
     public AdvancedValueColumn() {
-        super("Value");
+        super(_GUI._.AdvancedValueColumn_AdvancedValueColumn_object_());
         columns = new ArrayList<ExtColumn<AdvancedConfigEntry>>();
         initColumns();
     }

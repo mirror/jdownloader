@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.advanced.AdvancedConfigEntry;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
@@ -37,7 +38,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
 
     @Override
     protected void initColumns() {
-        addColumn(new ExtTextColumn<AdvancedConfigEntry>("Key") {
+        addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_key_()) {
             private static final long serialVersionUID = 1L;
 
             @Override
@@ -61,7 +62,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
             }
         });
         addColumn(new AdvancedValueColumn());
-        addColumn(new ExtTextColumn<AdvancedConfigEntry>("Type") {
+        addColumn(new ExtTextColumn<AdvancedConfigEntry>(_GUI._.AdvancedTableModel_initColumns_type_()) {
             private static final long serialVersionUID = 1L;
 
             @Override
