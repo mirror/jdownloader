@@ -88,6 +88,6 @@ public interface ShutdownTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to prepare your System for the force shutdown feature?" })
     String install_msg();
 
-    @Default(lngs = { "en" }, values = { "Administrator Rights are required to setup JDownloader for Hibernateor Standby Mode" })
+    @Default(lngs = { "en" }, values = { "Administrator Rights are required to setup JDownloader for Hibernate or Standby Mode" })
     String show_admin();
 }
