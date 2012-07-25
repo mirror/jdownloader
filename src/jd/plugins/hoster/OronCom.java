@@ -68,6 +68,60 @@ public class OronCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceAll("://.*\\.oron.com", "://oron.com"));
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", ua);
+        br.setCookie("http://www.oron.com", "lang", "english");
+        br.getPage(link.getDownloadURL());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            logger.warning("Oron: Hoster server problems, or the hoster blocking JD.");
+            logger.warning("Oron: Please confirm in browser and report issues to JD developement team.");
+            throw new PluginException(LinkStatus.ERROR_FATAL);
+        }
+        doSomething();
+        if (new Regex(brbefore, Pattern.compile("(?i)(No such file with this filename|No such user exist|File( could)? Not( be)? Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) {
+            String suggestedName;
+            if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {
+                link.setName(suggestedName);
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // Not using brbefore as filename can be <!--commented out & cleanup
+        // removes comments.
+        String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);
+        if (filename == null) filename = new Regex(brbefore, "div.*?Filename:.*?<.*?>(.*?)<").getMatch(0);
+        String filesize = new Regex(brbefore, "Size: (.*?)<").getMatch(0);
+        // Handling for links which can only be downloaded by premium users
+        if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) {
+            // return AvailableStatus.UNCHECKABLE;
+            link.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
+        }
+        // Prevention measures against hoster change ups.
+        // Allow null filesize, allows plugins to 'work longer'.
+        if (filesize == null) {
+            logger.warning("Oron: Filesize could not be found, continuing...");
+            logger.warning("Oron: Please report bug to developement team.");
+        }
+        // Set fail over filename when null.
+        if (filename == null) {
+            logger.warning("Oron: Filename could not be found, continuing with UID as temp filename.");
+            logger.warning("Oron: Please report bug to developement team.");
+            filename = new Regex(link.getDownloadURL(), "oron.com/(.+)").getMatch(0);
+        }
+        if (filename != null) link.setName(filename);
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText("Site maintenance");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML(SERVERERROR)) {
+            link.getLinkStatus().setStatusText("Server error");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        return AvailableStatus.TRUE;
+    }
+
     public void checkErrors(DownloadLink theLink) throws NumberFormatException, PluginException {
         // Some waittimes...
         if (brbefore.contains(MAINTENANCE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Site maintenance mode", 10 * 60 * 1000l); }
@@ -84,7 +138,7 @@ public class OronCom extends PluginForHost {
             if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
             int waittime = ((3600 * hours) + (60 * minutes) + seconds + 1) * 1000;
             logger.info("Detected waittime #1, waiting " + waittime + "milliseconds");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
         if (brbefore.contains("You have reached the download-limit")) {
             String tmphrs = new Regex(brbefore, "\\s+(\\d+)\\s+hours?").getMatch(0);
@@ -125,7 +179,7 @@ public class OronCom extends PluginForHost {
         if (br.containsHTML(SERVERERROR)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l); }
         if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
         br.setFollowRedirects(true);
-        if (brbefore.contains("\"download1\"")) br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
+        if (brbefore.contains("\"download1\"")) br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=+Regular+Download+");
         long timeBefore = System.currentTimeMillis();
         doSomething();
         checkErrors(downloadLink);
@@ -175,7 +229,7 @@ public class OronCom extends PluginForHost {
         if (passCode != null) {
             downloadLink.setProperty("pass", passCode);
         }
-        String dllink = br.getRegex("height=\"[0-9]+\"><a href=\"(.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://[a-zA-Z0-9]+\\.oron\\.com/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition()) && dl.getConnection().getContentType() != null && !dl.getConnection().getContentType().contains("octet")) {
@@ -241,7 +295,8 @@ public class OronCom extends PluginForHost {
                 return ai;
             } else {
                 /*
-                 * one day more as we want the account be valid on expire day too
+                 * one day more as we want the account be valid on expire day
+                 * too
                  */
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH) + (24 * 60 * 60 * 1000l));
             }
@@ -465,60 +520,6 @@ public class OronCom extends PluginForHost {
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("Premium Account expires") && !br.containsHTML("Upgrade to premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!br.containsHTML("Premium Account expires")) nopremium = true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", ua);
-        br.setCookie("http://www.oron.com", "lang", "english");
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            logger.warning("Oron: Hoster server problems, or the hoster blocking JD.");
-            logger.warning("Oron: Please confirm in browser and report issues to JD developement team.");
-            throw new PluginException(LinkStatus.ERROR_FATAL);
-        }
-        doSomething();
-        if (new Regex(brbefore, Pattern.compile("(?i)(No such file with this filename|No such user exist|File( could)? Not( be)? Found|>This file has been blocked for TOS violation)", Pattern.CASE_INSENSITIVE)).matches()) {
-            String suggestedName;
-            if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {
-                link.setName(suggestedName);
-            }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Not using brbefore as filename can be <!--commented out & cleanup
-        // removes comments.
-        String filename = br.getRegex("Filename: ?(<[\\w\"\\= ]+>)?([^\"<]+)").getMatch(1);
-        if (filename == null) filename = new Regex(brbefore, "div.*?Filename:.*?<.*?>(.*?)<").getMatch(0);
-        String filesize = new Regex(brbefore, "Size: (.*?)<").getMatch(0);
-        // Handling for links which can only be downloaded by premium users
-        if (brbefore.contains(ONLY4PREMIUMERROR0) || brbefore.contains(ONLY4PREMIUMERROR1)) {
-            // return AvailableStatus.UNCHECKABLE;
-            link.getLinkStatus().setStatusText(JDL.L("plugins.host.errormsg.only4premium", "Only downloadable for premium users!"));
-        }
-        // Prevention measures against hoster change ups.
-        // Allow null filesize, allows plugins to 'work longer'.
-        if (filesize == null) {
-            logger.warning("Oron: Filesize could not be found, continuing...");
-            logger.warning("Oron: Please report bug to developement team.");
-        }
-        // Set fail over filename when null.
-        if (filename == null) {
-            logger.warning("Oron: Filename could not be found, continuing with UID as temp filename.");
-            logger.warning("Oron: Please report bug to developement team.");
-            filename = new Regex(link.getDownloadURL(), "oron.com/(.+)").getMatch(0);
-        }
-        if (filename != null) link.setName(filename);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(MAINTENANCE)) {
-            link.getLinkStatus().setStatusText("Site maintenance");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML(SERVERERROR)) {
-            link.getLinkStatus().setStatusText("Server error");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

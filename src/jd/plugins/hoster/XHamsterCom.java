@@ -44,13 +44,14 @@ public class XHamsterCom extends PluginForHost {
         String dllink = null;
         String server = br.getRegex("\\'srv\\': \\'(.*?)\\'").getMatch(0);
         String file = br.getRegex("\\'file\\': \\'(.*?)\\'").getMatch(0);
-        if (server != null && file != null) {
+        if (server == null || file == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (file.startsWith("http")) {
+            // Examplelink (ID): 968106
+            dllink = file;
+        } else {
             // Examplelink (ID): 986043
             dllink = server + "/key=" + file;
-        } else {
-            dllink = file;
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return Encoding.htmlDecode(dllink);
     }
 

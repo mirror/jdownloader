@@ -40,8 +40,7 @@ public class Mv2kTo extends PluginForDecrypt {
      * Description of the regexes array: 1= nowvideo.eu,streamcloud.com
      * 2=flashx.tv,veervid.com,ginbig
      * .com,vidbux.com,xvidstage.com,xvidstream.net
-     * ,flashstream.in,hostingbulk.com
-     * ,vreer.com,uploadc.com,dragonuploadz.com,allmyvideos
+     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos
      * .net,vidreel.com,putlocker
      * .com,vureel.com,vidbox.netdeditv.com,watchfreeinhd.com and many others
      * 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv

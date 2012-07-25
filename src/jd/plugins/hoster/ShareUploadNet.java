@@ -93,13 +93,14 @@ public class ShareUploadNet extends PluginForHost {
         // Note that there are links which always show this error, must be a
         // bug!
         if (br.containsHTML("The allowed bandwidth assigned to your IP is used up")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML("The allowed download sessions assigned to your IP is used up")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan dls", 5 * 60 * 1000l);
         final String finalLink = findLink();
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = 60;
         final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
@@ -139,7 +140,7 @@ public class ShareUploadNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
 }
