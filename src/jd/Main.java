@@ -17,18 +17,80 @@
 
 package jd;
 
+import java.io.File;
+
+import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
+import org.appwork.utils.IO;
+import org.appwork.utils.IOErrorHandler;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.logging.LogController;
 
 public class Main {
 
     static {
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
+        IO.setErrorHandler(new IOErrorHandler() {
+            private boolean   reported;
+            private LogSource logger;
+
+            {
+                reported = false;
+                logger = LogController.getInstance().getLogger("GlobalIOErrors");
+            }
+
+            @Override
+            public void onWriteException(final Throwable e, final File file, final byte[] data) {
+                logger.log(e);
+                if (reported) return;
+                reported = true;
+                new Thread() {
+                    public void run() {
+                        Dialog.getInstance().showExceptionDialog("Write Error occured", "An error occured while writing " + data.length + " bytes to " + file, e);
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        LogAction la = new LogAction();
+                        la.actionPerformed(null);
+                    }
+                }.start();
+
+            }
+
+            @Override
+            public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
+                logger.log(e);
+                if (reported) return;
+                reported = true;
+                new Thread() {
+                    public void run() {
+                        Dialog.getInstance().showExceptionDialog("Read Error occured", "An error occured while reading data", e);
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        LogAction la = new LogAction();
+                        la.actionPerformed(null);
+                    }
+                }.start();
+            }
+
+            @Override
+            public void onCopyException(Throwable e, File in, File out) {
+
+            }
+        });
     }
 
     public static void checkLanguageSwitch(final String[] args) {
