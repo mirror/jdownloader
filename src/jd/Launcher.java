@@ -222,8 +222,6 @@ public class Launcher {
         System.setProperty("jd.randomNumber", "" + (System.currentTimeMillis() + new Random().nextLong()));
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("sun.swing.enableImprovedDragGesture", "true");
-        // only use ipv4, because debian changed default stack to ipv6
-        System.setProperty("java.net.preferIPv4Stack", "true");
         try {
             // log source revision infos
             Launcher.LOG.info(IO.readFileToString(Application.getResource("build.json")));
