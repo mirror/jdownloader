@@ -1,6 +1,11 @@
+enter_password=Unesite Šifru za otvaranje %s1
+enter_passwordfor=Molimo unesite Šifre. Pokušajte jednu od ovih: %s1
+enter_passwordfor2=Molimo unesite Šifre.
 gui_title=Streaming
 gui_tooltip=Upravljajte svim svojim Linkovima Streaming-a
+open_rar=Otvori Rar Arhivu
+open_rar_msg=Molimo sačekajte dok JDownloader prirpema Stream
 popup_streaming=Streaming
-popup_streaming_playrar=Otvori Arhivu
 popup_streaming_playvlc=Reprodukuj
 unraraction=Pokrenii Arhivu
+wrong_password=Pogrešna Šifra!
