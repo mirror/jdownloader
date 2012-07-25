@@ -1461,4 +1461,17 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     public void handleUnHandledLink(CrawledLink link) {
     }
 
+    @Override
+    public void nodeUpdated(CrawledPackage source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
+        super.nodeUpdated(source, notify);
+        switch (notify) {
+        case PROPERTY_CHANCE:
+            refreshData();
+            break;
+        case STRUCTURE_CHANCE:
+            _controllerStructureChanged(QueuePriority.LOW);
+            break;
+        }
+    }
+
 }

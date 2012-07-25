@@ -444,7 +444,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                             }
                             autoFileNameCorrection(pkgchildren);
                         }
-                        pkg.notifyStructureChanges();
+                        pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
                     } finally {
                         writeUnlock();
                     }
@@ -501,7 +501,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                                 }
                             }
                         }
-                        pkg.notifyStructureChanges();
+                        pkg.nodeUpdated(null, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
                     } finally {
                         writeUnlock();
                     }
@@ -628,7 +628,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return packages;
     }
 
-    public void nodeUpdated(PackageType source) {
+    public void nodeUpdated(PackageType source, AbstractPackageNode.NOTIFY notify) {
         contentChanged.incrementAndGet();
     }
 

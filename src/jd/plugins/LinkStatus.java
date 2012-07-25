@@ -347,7 +347,7 @@ public class LinkStatus implements Serializable {
 
     private void notifyChanges() {
         DownloadLink dl = this.downloadLink;
-        if (dl != null) dl.getFilePackage().nodeUpdated(dl);
+        if (dl != null) dl.getFilePackage().nodeUpdated(dl, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     /**

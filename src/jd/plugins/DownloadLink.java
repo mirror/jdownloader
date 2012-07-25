@@ -60,88 +60,88 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         TRUE;
     }
 
-    private static final String                          PROPERTY_MD5              = "MD5";
-    private static final String                          PROPERTY_SHA1             = "SHA1";
-    private static final String                          PROPERTY_PASS             = "pass";
-    private static final String                          PROPERTY_FINALFILENAME    = "FINAL_FILENAME";
-    private static final String                          PROPERTY_FORCEDFILENAME   = "FORCED_FILENAME";
-    private static final String                          PROPERTY_COMMENT          = "COMMENT";
-    private static final String                          PROPERTY_PRIORITY         = "PRIORITY";
-    private static final String                          PROPERTY_FINISHTIME       = "FINISHTIME";
-    private static final String                          PROPERTY_ENABLED          = "ENABLED";
-    private static final String                          PROPERTY_PWLIST           = "PWLIST";
-    private static final String                          PROPERTY_LINKDUPEID       = "LINKDUPEID";
-    private static final String                          PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
-    private static final String                          PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
-    public static final String                           PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
-    public static final String                           PROPERTY_FINALLOCATION    = "FINALLOCATION";
-    public static final String                           PROPERTY_LASTFPNAME       = "LASTFPNAME";
+    private static final String                                         PROPERTY_MD5              = "MD5";
+    private static final String                                         PROPERTY_SHA1             = "SHA1";
+    private static final String                                         PROPERTY_PASS             = "pass";
+    private static final String                                         PROPERTY_FINALFILENAME    = "FINAL_FILENAME";
+    private static final String                                         PROPERTY_FORCEDFILENAME   = "FORCED_FILENAME";
+    private static final String                                         PROPERTY_COMMENT          = "COMMENT";
+    private static final String                                         PROPERTY_PRIORITY         = "PRIORITY";
+    private static final String                                         PROPERTY_FINISHTIME       = "FINISHTIME";
+    private static final String                                         PROPERTY_ENABLED          = "ENABLED";
+    private static final String                                         PROPERTY_PWLIST           = "PWLIST";
+    private static final String                                         PROPERTY_LINKDUPEID       = "LINKDUPEID";
+    private static final String                                         PROPERTY_SPEEDLIMIT       = "SPEEDLIMIT";
+    private static final String                                         PROPERTY_VERIFIEDFILESIZE = "VERIFIEDFILESIZE";
+    public static final String                                          PROPERTY_RESUMEABLE       = "PROPERTY_RESUMEABLE";
+    public static final String                                          PROPERTY_FINALLOCATION    = "FINALLOCATION";
+    public static final String                                          PROPERTY_LASTFPNAME       = "LASTFPNAME";
 
-    public static final int                              LINKTYPE_CONTAINER        = 1;
+    public static final int                                             LINKTYPE_CONTAINER        = 1;
 
-    public static final int                              LINKTYPE_NORMAL           = 0;
+    public static final int                                             LINKTYPE_NORMAL           = 0;
 
-    private static final long                            serialVersionUID          = 1981079856214268373L;
+    private static final long                                           serialVersionUID          = 1981079856214268373L;
 
-    private static final String                          UNKNOWN_FILE_NAME         = "unknownFileName";
-    private static final String                          PROPERTY_CHUNKS           = "CHUNKS";
+    private static final String                                         UNKNOWN_FILE_NAME         = "unknownFileName";
+    private static final String                                         PROPERTY_CHUNKS           = "CHUNKS";
 
-    private transient AvailableStatus                    availableStatus           = AvailableStatus.UNCHECKED;
+    private transient AvailableStatus                                   availableStatus           = AvailableStatus.UNCHECKED;
 
-    private long[]                                       chunksProgress            = null;
+    private long[]                                                      chunksProgress            = null;
 
     /** Aktuell heruntergeladene Bytes der Datei */
-    private long                                         downloadCurrent           = 0;
+    private long                                                        downloadCurrent           = 0;
 
-    private transient DownloadInterface                  downloadInstance;
+    private transient DownloadInterface                                 downloadInstance;
 
-    private transient SingleDownloadController           downloadLinkController;
+    private transient SingleDownloadController                          downloadLinkController;
 
     /** Maximum der heruntergeladenen Datei (Dateilaenge) */
-    private long                                         downloadMax               = 0;
+    private long                                                        downloadMax               = 0;
 
-    private String                                       browserurl                = null;
+    private String                                                      browserurl                = null;
 
-    private FilePackage                                  filePackage;
+    private FilePackage                                                 filePackage;
 
     /** Hoster des Downloads */
-    private String                                       host;
+    private String                                                      host;
 
     /** Zeigt an, ob dieser Downloadlink aktiviert ist */
-    private boolean                                      isEnabled;
+    private boolean                                                     isEnabled;
 
-    private LinkStatus                                   linkStatus;
+    private LinkStatus                                                  linkStatus;
 
-    private int                                          linkType                  = LINKTYPE_NORMAL;
+    private int                                                         linkType                  = LINKTYPE_NORMAL;
 
     /** Beschreibung des Downloads */
     /* kann sich noch ändern, NICHT final */
-    private String                                       name;
+    private String                                                      name;
 
-    private transient PluginForHost                      defaultplugin;
+    private transient PluginForHost                                     defaultplugin;
 
-    private transient PluginForHost                      liveplugin;
+    private transient PluginForHost                                     liveplugin;
 
     /*
      * we need to keep this some time to perfom conversion from variable to property
      */
-    private String                                       finalFileName;
+    private String                                                      finalFileName;
 
     /**
      * /** Von hier soll der Download stattfinden
      */
-    private String                                       urlDownload;
+    private String                                                      urlDownload;
 
-    private transient PluginProgress                     pluginProgress;
+    private transient PluginProgress                                    pluginProgress;
 
-    private transient ImageIcon                          icon                      = null;
+    private transient ImageIcon                                         icon                      = null;
 
-    private long                                         created                   = -1l;
+    private long                                                        created                   = -1l;
 
-    private transient UniqueSessionID                    uniqueID                  = null;
-    transient private AbstractNodeNotifier<DownloadLink> propertyListener;
-    transient DomainInfo                                 domainInfo                = null;
-    transient Boolean                                    resumeable                = null;
+    private transient UniqueSessionID                                   uniqueID                  = null;
+    transient private AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener;
+    transient DomainInfo                                                domainInfo                = null;
+    transient Boolean                                                   resumeable                = null;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -249,7 +249,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             this.setProperty(PROPERTY_PRIORITY, priority);
         }
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     /**
@@ -493,13 +493,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setAvailableStatus(AvailableStatus availableStatus) {
         this.availableStatus = availableStatus;
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
     }
 
-    private void notifyChanges() {
-        AbstractNodeNotifier<DownloadLink> pl = propertyListener;
-        if (pl == null) pl = this.filePackage;
-        if (pl != null) pl.nodeUpdated(this);
+    private void notifyChanges(AbstractNodeNotifier.NOTIFY notify) {
+        AbstractNodeNotifier<AbstractPackageChildrenNode> pl = propertyListener;
+        if (pl != null) {
+            pl.nodeUpdated(this, notify);
+            return;
+        }
+        AbstractNodeNotifier<DownloadLink> pl2 = filePackage;
+        if (pl2 != null) pl2.nodeUpdated(this, notify);
     }
 
     /**
@@ -578,7 +582,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     public void setAvailable(boolean available) {
         this.availableStatus = available ? AvailableStatus.TRUE : AvailableStatus.FALSE;
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
     }
 
     /**
@@ -598,7 +602,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadCurrent(long downloadedCurrent) {
         downloadCurrent = downloadedCurrent;
-        if (this.getDownloadInstance() == null) notifyChanges();
+        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     public void setDownloadInstance(DownloadInterface downloadInterface) {
@@ -617,7 +621,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public void setDownloadSize(long downloadMax) {
         this.downloadMax = downloadMax;
-        if (this.getDownloadInstance() == null) notifyChanges();
+        if (this.getDownloadInstance() == null) notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     /*
@@ -634,7 +638,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         } else {
             setProperty(PROPERTY_ENABLED, isEnabled);
         }
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -677,7 +681,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(name)) name = UNKNOWN_FILE_NAME;
         this.name = name;
         this.setIcon(null);
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     /*
@@ -691,7 +695,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             this.setProperty(PROPERTY_FORCEDFILENAME, name);
         }
         setIcon(null);
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     private void setIcon(ImageIcon icon) {
@@ -738,7 +742,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
         finalFileName = null;
         setIcon(null);
-        notifyChanges();
+        notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE);
     }
 
     /**
@@ -944,7 +948,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this;
     }
 
-    public void setNodeChangeListener(AbstractNodeNotifier<DownloadLink> propertyListener) {
+    public void setNodeChangeListener(AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener) {
         this.propertyListener = propertyListener;
     }
 

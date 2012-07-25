@@ -129,7 +129,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
 
     private long                                                   created           = -1l;
 
-    private transient boolean                                      isExpanded        = false;
+    private transient Boolean                                      isExpanded        = null;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
     private transient UniqueSessionID                              uniqueID          = null;
@@ -202,7 +202,11 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
+        try {
+            isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
+        } catch (final Throwable e) {
+            isExpanded = false;
+        }
         uniqueID = new UniqueSessionID();
     }
 
@@ -379,6 +383,8 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * @return
      */
     public boolean isExpanded() {
+        if (isExpanded != null) return isExpanded.booleanValue();
+        isExpanded = getBooleanProperty(PROPERTY_EXPANDED, false);
         return isExpanded;
     }
 
@@ -427,20 +433,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         }
     }
 
-    public void nodeUpdated(DownloadLink source) {
-        notifyChanges();
-    }
-
-    private void notifyChanges() {
-        PackageController<FilePackage, DownloadLink> n = getControlledBy();
-        if (n != null) {
-            n.nodeUpdated(this);
-        }
-        if (fpInfo != null) {
-            fpInfo.changeVersion();
-        }
-    }
-
     public int indexOf(DownloadLink child) {
         synchronized (this) {
             return downloadLinkList.indexOf(child);
@@ -464,6 +456,17 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     @Override
     public ChildComparator<DownloadLink> getCurrentSorter() {
         return sorter;
+    }
+
+    @Override
+    public void nodeUpdated(DownloadLink source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
+        PackageController<FilePackage, DownloadLink> n = getControlledBy();
+        if (fpInfo != null) {
+            fpInfo.changeVersion();
+        }
+        if (n != null) {
+            n.nodeUpdated(this, notify);
+        }
     }
 
 }

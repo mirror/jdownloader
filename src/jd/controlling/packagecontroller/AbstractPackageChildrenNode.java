@@ -4,9 +4,9 @@ import org.jdownloader.DomainInfo;
 
 public interface AbstractPackageChildrenNode<E> extends AbstractNode {
 
-	E getParentNode();
+    E getParentNode();
 
-	void setParentNode(E parent);
+    void setParentNode(E parent);
 
-	public DomainInfo getDomainInfo();
+    public DomainInfo getDomainInfo();
 }

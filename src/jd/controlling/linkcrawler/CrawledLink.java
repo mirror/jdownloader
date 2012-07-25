@@ -21,7 +21,7 @@ import org.jdownloader.controlling.Priority;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
-public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier<DownloadLink> {
+public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier<AbstractPackageChildrenNode> {
 
     public static enum LinkState {
         ONLINE,
@@ -90,12 +90,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     /**
-     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info
-     * about how to prozess the file afterwards.
+     * Linkid should be unique for a certain link. in most cases, this is the url itself, but somtimes (youtube e.g.) the id contains info about how to prozess
+     * the file afterwards.
      * 
      * example:<br>
-     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID
-     * different.
+     * 2 youtube links may have the same url, but the one will be converted into mp3, and the other stays flv. url is the same, but linkID different.
      * 
      * @return
      */
@@ -281,7 +280,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     public void setEnabled(boolean b) {
         if (b == enabledState) return;
         enabledState = b;
-        notifyChanges();
+        nodeUpdated(this, AbstractNodeNotifier.NOTIFY.STRUCTURE_CHANCE);
     }
 
     public long getCreated() {
@@ -397,15 +396,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         return brokenCrawlerHandler;
     }
 
-    public void nodeUpdated(DownloadLink source) {
-        notifyChanges();
-    }
-
-    private void notifyChanges() {
-        CrawledPackage lparent = parent;
-        if (lparent != null) lparent.nodeUpdated(this);
-    }
-
     /**
      * @param collectingInfo
      *            the collectingInfo to set
@@ -418,7 +408,6 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      * @return the collectingInfo
      */
     public LinkCollectingInformation getCollectingInfo() {
-
         if (collectingInfo != null || sourceLink == null) return collectingInfo;
         return sourceLink.getCollectingInfo();
     }
@@ -435,6 +424,12 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
 
     public void setArchiveInfo(ArchiveInfo archiveInfo) {
         this.archiveInfo = archiveInfo;
+    }
+
+    @Override
+    public void nodeUpdated(AbstractPackageChildrenNode source, AbstractNodeNotifier.NOTIFY notify) {
+        CrawledPackage lparent = parent;
+        if (lparent != null) lparent.nodeUpdated(this, notify);
     }
 
 }

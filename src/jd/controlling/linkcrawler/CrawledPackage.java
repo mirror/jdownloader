@@ -158,8 +158,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
-     * return the actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
+     * downloadloadfolder
      * 
      * @return
      */
@@ -176,7 +176,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     public void notifyStructureChanges() {
-
     }
 
     /**
@@ -228,15 +227,6 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
         return getView().isEnabled();
     }
 
-    public void nodeUpdated(CrawledLink source) {
-        notifyChanges();
-    }
-
-    private void notifyChanges() {
-        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
-        if (n != null) n.nodeUpdated(this);
-    }
-
     public int indexOf(CrawledLink child) {
         synchronized (this) {
             return children.indexOf(child);
@@ -261,6 +251,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
             Log.L.info("UNSORTED");
         }
         sorter = comparator;
+    }
+
+    @Override
+    public void nodeUpdated(CrawledLink source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
+        PackageController<CrawledPackage, CrawledLink> n = getControlledBy();
+        if (n != null) n.nodeUpdated(this, notify);
     }
 
 }
