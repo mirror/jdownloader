@@ -11,6 +11,9 @@ gui_config_jdshutdown_osx_force_long=Instaliraj Force Shutdown (samo MacOSX)
 gui_config_jdshutdown_osx_force_short=Instaliraj
 gui_config_jdshutdown_shutdown=Gašenje računala
 gui_config_jdshutdown_standby=Stanje pripravnosti (nije za sve sustave)
+install_force=Instaliraj prisilno gašenje
+install_msg=Želite li pripremiti svoj sustav za značajke prisilnog gašenja
+install_title=Instaliraj prisilno gašenje
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader će biti zatvoren!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sustav će ići u hibernaciju!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sustav će se isključiti!</font></h2>

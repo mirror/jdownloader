@@ -126,6 +126,7 @@ jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=Bez rekonekcije
 jd_plugins_PluginUtils_askPassword=Molimo unesite lozinku za %s1
 literally_offline=Van mreže
 literally_yes=Da
+pattern_password=passwort|Lozinka|passw|password|pw
 pluginforhost_infogenerator_title=Račun %s1@%s2
 plugins_error_downloadfailed=Preuzimanje nije uspjelo
 plugins_errors_disconnect=Prekinuti vezu?
