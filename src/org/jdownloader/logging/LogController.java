@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import jd.Launcher;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkchecker.LinkCheckerThread;
 import jd.controlling.linkcrawler.LinkCrawlerThread;
@@ -50,7 +49,7 @@ public class LogController extends LogSourceProvider {
     }
 
     private LogController() {
-        super(Launcher.startup);
+        super(System.currentTimeMillis());
     }
 
     public static LogSource CL(Class<?> clazz) {

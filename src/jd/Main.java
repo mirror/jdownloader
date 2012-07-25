@@ -28,7 +28,6 @@ import org.appwork.storage.jackson.JacksonMapper;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.IO;
 import org.appwork.utils.IOErrorHandler;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.logging.LogController;
@@ -39,17 +38,16 @@ public class Main {
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
         IO.setErrorHandler(new IOErrorHandler() {
-            private boolean   reported;
-            private LogSource logger;
+            private boolean reported;
 
             {
                 reported = false;
-                logger = LogController.getInstance().getLogger("GlobalIOErrors");
+
             }
 
             @Override
             public void onWriteException(final Throwable e, final File file, final byte[] data) {
-                logger.log(e);
+                LogController.getInstance().getLogger("GlobalIOErrors").log(e);
                 if (reported) return;
                 reported = true;
                 new Thread() {
@@ -69,7 +67,7 @@ public class Main {
 
             @Override
             public void onReadStreamException(final Throwable e, final java.io.InputStream fis) {
-                logger.log(e);
+                LogController.getInstance().getLogger("GlobalIOErrors").log(e);
                 if (reported) return;
                 reported = true;
                 new Thread() {
@@ -114,7 +112,7 @@ public class Main {
         try {
             // USe Jacksonmapper in this project
             JSonStorage.setMapper(new JacksonMapper());
-            /* FAKE Commit for coalado */
+
             checkLanguageSwitch(args);
             try {
                 /* set D3D Property if not already set by user */

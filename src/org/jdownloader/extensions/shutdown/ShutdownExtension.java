@@ -18,7 +18,10 @@ package org.jdownloader.extensions.shutdown;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
@@ -34,6 +37,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -256,6 +260,38 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
             }
             break;
         }
+    }
+
+    public static void main(String[] args) {
+        System.out.println(CrossSystem.is64Bit());
+        // try {
+        // JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+        // } catch (Exception e) {
+        // // try {
+        // // JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+        // // } catch (Exception ex) {
+        // // }
+        // }
+        String path = CrossSystem.is64Bit() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
+        try {
+            execute(new String[] { path, "powercfg", "-hibernate", "off" });
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected static void execute(String[] command) throws IOException, UnsupportedEncodingException, InterruptedException {
+        ProcessBuilder probuilder = new ProcessBuilder(command);
+
+        Process process = probuilder.start();
+        System.out.println(Arrays.toString(command));
+        System.out.println(IO.readInputStreamToString(process.getInputStream()));
+        System.out.println(IO.readInputStreamToString(process.getErrorStream()));
+        System.out.println(process.waitFor());
     }
 
     private void standby() {
