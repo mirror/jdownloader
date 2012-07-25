@@ -22,8 +22,8 @@ public class RarStreamAction extends AppAction {
 
     public RarStreamAction(Archive archive, ExtractionExtension extractor, VLCStreamingExtension extension) {
 
-        setName(T._.popup_streaming_playrar());
-        Image front = NewTheme.I().getImage("archive", 20, true);
+        setName(T._.unraraction());
+        Image front = NewTheme.I().getImage("archive", 14, true);
         setSmallIcon(new ImageIcon(ImageProvider.merge(extension.getIcon(20).getImage(), front, 0, 0, 5, 5)));
         this.archive = archive;
         this.extension = extension;

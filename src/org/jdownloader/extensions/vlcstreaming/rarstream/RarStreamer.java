@@ -1,29 +1,45 @@
 package org.jdownloader.extensions.vlcstreaming.rarstream;
 
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.Launcher;
 import jd.nutils.Executer;
+import jd.nutils.io.FileSignatures;
+import jd.nutils.io.Signature;
 import net.sf.sevenzipjbinding.ArchiveFormat;
+import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
-import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.Regex;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool;
+import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.io.streamingio.StreamingChunk;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.appwork.utils.swing.dialog.ProgressDialog;
+import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionException;
-import org.jdownloader.extensions.extraction.content.ContentView;
-import org.jdownloader.extensions.extraction.content.PackedFile;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.vlcstreaming.StreamingInterface;
+import org.jdownloader.extensions.vlcstreaming.T;
 import org.jdownloader.extensions.vlcstreaming.VLCStreamingExtension;
 import org.jdownloader.extensions.vlcstreaming.VLCStreamingProvider;
 import org.jdownloader.logging.LogController;
@@ -39,11 +55,14 @@ public class RarStreamer implements Runnable, StreamingInterface {
     private RarStreamProvider     rarStreamProvider;
     private StreamingChunk        streamingChunk;
     private Thread                extractionThread;
+    private ExtractionExtension   extractor;
+    private FileSignatures        fileSignatures;
 
     public RarStreamer(Archive archive, VLCStreamingExtension extension) {
         this.archive = archive;
         this.extension = extension;
         this.streamProvider = extension.getStreamProvider();
+        extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
         logger = LogController.CL();
     }
 
@@ -54,34 +73,291 @@ public class RarStreamer implements Runnable, StreamingInterface {
     @Override
     public void run() {
         try {
-            open();
-        } catch (ExtractionException e) {
-            logger.log(e);
-        }
-    }
 
-    private void updateContentView(ISimpleInArchive simpleInterface) {
-        try {
-            ContentView newView = new ContentView();
-            for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
-                try {
-                    if (item.getPath().trim().equals("")) continue;
-                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
-                } catch (SevenZipException e) {
-                    logger.log(e);
-                }
+            String ID = "extract" + archive.getFactory().getID();
+            StreamingInterface streamingInterface = extension.getVlcstreamingAPI().getStreamingInterface(ID);
+            if (streamingInterface != null) {
+                openVLC(ID);
+
+                return;
             }
-            archive.setContentView(newView);
-        } catch (SevenZipException e) {
+            openArchiveInDialog();
+
+            extension.getVlcstreamingAPI().addHandler(ID, this);
+            rarStreamProvider.setReadyForExtract(true);
+
+            extract();
+
+            openVLC(ID);
+        } catch (Throwable e) {
             logger.log(e);
+            Dialog.getInstance().showExceptionDialog("Error occured", e.getMessage(), e);
+        }
+
+    }
+
+    protected void openVLC(String ID) {
+        Executer exec = new Executer(extension.getVLCBinary());
+        exec.setLogger(LogController.CL());
+        exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID });
+        exec.setRunin(Application.getRoot(Launcher.class));
+        exec.setWaitTimeout(0);
+        exec.start();
+    }
+
+    protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
+        ProgressGetter pg = new ProgressDialog.ProgressGetter() {
+
+            @Override
+            public void run() throws Exception {
+
+                open();
+                if (archive.isProtected()) {
+
+                    HashSet<String> spwList = archive.getSettings().getPasswords();
+                    HashSet<String> passwordList = new HashSet<String>();
+                    if (spwList != null) {
+                        passwordList.addAll(spwList);
+                    }
+                    passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
+                    passwordList.add(archive.getName());
+                    ArrayList<String> pwList = extractor.getSettings().getPasswordList();
+                    if (pwList == null) pwList = new ArrayList<String>();
+                    passwordList.addAll(pwList);
+
+                    logger.info("Start password finding for " + archive);
+
+                    String correctPW = null;
+
+                    for (String password : passwordList) {
+                        if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                        if (checkPassword(password)) {
+                            correctPW = password;
+                            break;
+                        }
+                    }
+
+                    if (correctPW == null) {
+                        String password = askPassword();
+                        while (true) {
+                            if (checkPassword(password)) {
+                                break;
+                            } else {
+                                Dialog.getInstance().showMessageDialog(T._.wrong_password());
+                            }
+                        }
+                    }
+
+                    logger.info("Found password for " + archive + "->" + archive.getPassword());
+                    /* avoid duplicates */
+                    pwList.remove(archive.getPassword());
+                    pwList.add(0, archive.getPassword());
+                    extractor.getSettings().setPasswordList(pwList);
+                }
+
+            }
+
+            @Override
+            public String getString() {
+                return null;
+            }
+
+            @Override
+            public int getProgress() {
+                return -1;
+            }
+
+            @Override
+            public String getLabelString() {
+                return null;
+            }
+        };
+
+        ProgressDialog d = new ProgressDialog(pg, Dialog.BUTTONS_HIDE_CANCEL, T._.open_rar(), T._.open_rar_msg(), null, null, null) {
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(200, 40);
+            }
+
+        };
+        Dialog.getInstance().showDialog(d);
+        if (d.getThrowable() != null) {
+
+        throw new ExtractionException(d.getThrowable(), streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null); }
+
+    }
+
+    /**
+     * Helper for the passwordfinding method.
+     * 
+     * @author botzi
+     * 
+     */
+    private static class BooleanHelper {
+        private boolean bool;
+
+        BooleanHelper() {
+            bool = false;
+        }
+
+        /**
+         * Marks that the boolean was found.
+         */
+        void found() {
+            bool = true;
+        }
+
+        /**
+         * Returns the result.
+         * 
+         * @return The result.
+         */
+        boolean getBoolean() {
+            return bool;
         }
     }
 
-    private void open() throws ExtractionException {
-        String ID = "extract" + archive.getFactory().getID();
-        StreamingInterface streamingInterface = extension.getVlcstreamingAPI().getStreamingInterface(ID);
-        if (streamingInterface != null) return;
-        rarStreamProvider = new RarStreamProvider(archive, "serienjunkies.org", this.streamProvider);
+    public FileSignatures getFileSignatures() {
+        if (fileSignatures == null) fileSignatures = new FileSignatures();
+        return fileSignatures;
+    }
+
+    protected boolean checkPassword(String password) throws ExtractionException {
+
+        ReusableByteArrayOutputStream buffer = null;
+        try {
+            buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
+            try {
+                rarStreamProvider.close();
+            } catch (final Throwable e) {
+            }
+            try {
+                rarArchive.close();
+            } catch (Throwable e) {
+            }
+            try {
+                streamingChunk.close();
+            } catch (Throwable e) {
+            }
+
+            rarStreamProvider = new RarStreamProvider(archive, password, this.streamProvider);
+            IInStream rarStream = rarStreamProvider.getStream(archive.getFirstArchiveFile());
+            rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, rarStreamProvider);
+
+            final BooleanHelper passwordfound = new BooleanHelper();
+            HashSet<String> checkedExtensions = new HashSet<String>();
+            for (final ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
+                if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
+                    /*
+                     * we also check for items with size ==0, they should have a packedsize>0
+                     */
+                    continue;
+                }
+                if (Thread.currentThread().isInterrupted()) {
+                    /* extraction got aborted */
+                    throw new InterruptedException();
+                }
+                final String path = item.getPath();
+                String ext = Files.getExtension(path);
+                if (checkedExtensions.add(ext)) {
+                    if (!passwordfound.getBoolean()) {
+                        try {
+                            buffer.reset();
+                            final ReusableByteArrayOutputStream signatureBuffer = buffer;
+                            final long maxPWCheckSize = extractor.getSettings().getMaxPasswordCheckSize() * 1024;
+
+                            final int signatureMinLength;
+                            if (new Regex(path, ".+\\.iso").matches()) {
+                                signatureMinLength = 37000;
+                            } else if (new Regex(path, ".+\\.mp3").matches()) {
+                                signatureMinLength = 512;
+                            } else {
+                                signatureMinLength = 32;
+                            }
+                            logger.fine("Try to crack " + path);
+                            ExtractOperationResult result = item.extractSlow(new ISequentialOutStream() {
+                                public int write(byte[] data) throws SevenZipException {
+                                    int toWrite = Math.min(signatureBuffer.free(), data.length);
+                                    if (toWrite > 0) {
+                                        /* we still have enough buffer left to write the data */
+                                        signatureBuffer.write(data, 0, toWrite);
+                                    }
+                                    if (signatureBuffer.size() >= signatureMinLength) {
+                                        /* we have enough data available for a signature check */
+                                        StringBuilder sigger = new StringBuilder();
+                                        for (int i = 0; i < signatureBuffer.size() - 1; i++) {
+                                            String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
+                                            s = (s.length() < 2 ? "0" + s : s);
+                                            s = s.substring(s.length() - 2);
+                                            sigger.append(s);
+                                        }
+                                        Signature signature = getFileSignatures().getSignature(sigger.toString());
+                                        if (signature != null) {
+                                            if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
+                                                /* signature matches, lets abort PWFinding now */
+                                                passwordfound.found();
+                                                return 0;
+                                            }
+                                        }
+                                    }
+                                    if (item.getSize() <= maxPWCheckSize) {
+                                        /* we still allow further extraction as the itemSize <= maxPWCheckSize */
+                                        return data.length;
+                                    } else {
+                                        /* this will throw SevenZipException */
+                                        return 0;
+                                    }
+                                }
+                            }, password);
+                            if (ExtractOperationResult.OK.equals(result)) {
+                                passwordfound.found();
+                            }
+                        } catch (SevenZipException e) {
+
+                            // An error will be thrown if the write method
+                            // returns
+                            // 0.
+                        }
+                    } else {
+                        /* pw found */
+                        break;
+                    }
+                }
+                // if (filter(item.getPath())) continue;
+            }
+            if (!passwordfound.getBoolean()) return false;
+            archive.setPassword(password);
+
+            return true;
+        } catch (SevenZipException e) {
+            if (e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened")) {
+                /* happens eg when opening pw protected 7zip */return false;
+            }
+            if (e.getMessage().contains("HRESULT: 0x80004005")) { return false; }
+            throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
+        } catch (Throwable e) {
+            throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
+        } finally {
+            try {
+                ReusableByteArrayOutputStreamPool.reuseReusableByteArrayOutputStream(buffer);
+            } catch (Throwable e) {
+            } finally {
+                buffer = null;
+            }
+        }
+
+    }
+
+    private void open() throws ExtractionException, DialogClosedException, DialogCanceledException {
+
+        // password0
+
+        String password = archive.getPassword();
+        if (password == null) password = "";
+        // }
+
+        rarStreamProvider = new RarStreamProvider(archive, password, this.streamProvider);
         try {
             IInStream rarStream = rarStreamProvider.getStream(archive.getFirstArchiveFile());
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, rarStreamProvider);
@@ -95,16 +371,10 @@ public class RarStreamer implements Runnable, StreamingInterface {
                     archive.setProtected(true);
                 }
             }
-            updateContentView(rarArchive.getSimpleInterface());
+
             System.out.println("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
-            extension.getVlcstreamingAPI().addHandler(ID, this);
-            extract();
-            Executer exec = new Executer(extension.getVLCBinary());
-            exec.setLogger(LogController.CL());
-            exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID });
-            exec.setRunin(Application.getRoot(Launcher.class));
-            exec.setWaitTimeout(0);
-            exec.start();
+
+            return;
         } catch (SevenZipException e) {
             logger.log(e);
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("No password was provided")) {
@@ -113,8 +383,9 @@ public class RarStreamer implements Runnable, StreamingInterface {
                 // Rar)
                 // can't be opened
                 // There are password protected multipart rar files
+                // archive.setProtected(true);
                 archive.setProtected(true);
-
+                return;
             } else {
                 throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
             }
@@ -122,29 +393,70 @@ public class RarStreamer implements Runnable, StreamingInterface {
             logger.log(e);
             throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
         }
+
+    }
+
+    protected String askPassword() throws DialogClosedException, DialogCanceledException {
+        HashSet<String> passwords = new HashSet<String>();
+        HashSet<String> settings = archive.getSettings().getPasswords();
+        if (settings != null) {
+            passwords.addAll(settings);
+        }
+        passwords.addAll(archive.getFactory().getGuessedPasswordList(archive));
+        String password = "";
+        if (passwords.size() == 1) {
+            password = passwords.iterator().next();
+        }
+        if (!StringUtils.isEmpty(archive.getPassword())) {
+            password = archive.getPassword();
+        }
+        // if (StringUtils.isEmpty(password)) {
+        if (passwords.size() > 0) {
+            password = Dialog.getInstance().showInputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
+        } else {
+            password = Dialog.getInstance().showInputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
+        }
+        return password;
     }
 
     public void extract() throws IOException, SevenZipException {
         File tmp = Application.getResource("/tmp/streaming/extract" + System.currentTimeMillis());
         tmp.getParentFile().mkdirs();
         streamingChunk = new StreamingChunk(tmp, 0);
+
         extractionThread = new Thread() {
             public void run() {
                 try {
                     streamingChunk.setCanGrow(true);
-                    rarArchive.extractSlow(bestItem.getItemIndex(), new ISequentialOutStream() {
+                    if (archive.isProtected()) {
+                        rarArchive.extractSlow(bestItem.getItemIndex(), new ISequentialOutStream() {
 
-                        @Override
-                        public int write(byte[] abyte0) throws SevenZipException {
-                            if (abyte0.length == 0) return 0;
-                            try {
-                                streamingChunk.write(abyte0, 0, abyte0.length);
-                                return abyte0.length;
-                            } catch (IOException e) {
-                                throw new SevenZipException(e);
+                            @Override
+                            public int write(byte[] abyte0) throws SevenZipException {
+                                if (abyte0.length == 0) return 0;
+                                try {
+                                    streamingChunk.write(abyte0, 0, abyte0.length);
+                                    return abyte0.length;
+                                } catch (IOException e) {
+                                    throw new SevenZipException(e);
+                                }
                             }
-                        }
-                    });
+                        }, archive.getPassword());
+                    } else {
+                        rarArchive.extractSlow(bestItem.getItemIndex(), new ISequentialOutStream() {
+
+                            @Override
+                            public int write(byte[] abyte0) throws SevenZipException {
+                                if (abyte0.length == 0) return 0;
+                                try {
+                                    streamingChunk.write(abyte0, 0, abyte0.length);
+                                    return abyte0.length;
+                                } catch (IOException e) {
+                                    throw new SevenZipException(e);
+                                }
+                            }
+                        });
+                    }
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 } finally {
@@ -183,6 +495,8 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
     @Override
     public InputStream getInputStream(final long startPosition, final long stopPosition) throws IOException {
+
+        logger.info("New Stream: " + startPosition + " -> " + stopPosition);
         return new InputStream() {
             long   currentPosition = startPosition;
             byte[] bufferByte      = new byte[1];
@@ -197,11 +511,17 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
             @Override
             public int read(byte[] b, int off, int len) throws IOException {
-                if (currentPosition != 0 && currentPosition > streamingChunk.getAvailableChunkSize()) return -1;
+                logger.info("VLC Read: " + len + " bytes at " + currentPosition);
+
+                if (currentPosition != 0 && currentPosition > streamingChunk.getAvailableChunkSize()) {
+                    System.out.println("-1 answer");
+                    return -1;
+                }
                 try {
                     int ret;
                     ret = streamingChunk.read(b, off, len, currentPosition);
                     if (ret >= 0) currentPosition += ret;
+
                     return ret;
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -216,5 +536,4 @@ public class RarStreamer implements Runnable, StreamingInterface {
             }
         };
     }
-
 }

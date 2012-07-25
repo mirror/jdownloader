@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.vlcstreaming.rarstream;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.sevenzipjbinding.IInStream;
@@ -31,22 +32,27 @@ public class RandomAccessStream implements IInStream {
         this.filename = filename;
     }
 
-    public RandomAccessStream(ArchiveFile archiveFile, String filename, RarStreamProvider rarOpener, Streaming streaming) {
+    public RandomAccessStream(ArchiveFile archiveFile, String filename, RarStreamProvider rarOpener, Streaming streaming) throws SevenZipException {
         this.archiveFile = archiveFile;
         this.filename = filename;
         owner = rarOpener;
         this.streaming = streaming;
+
     }
 
     protected Streaming            streaming;
     protected AtomicLong           currentPosition    = new AtomicLong(0);
     protected StreamingInputStream currentInputStream = null;
     protected RarStreamProvider    owner              = null;
+    private int                    seekMode;
 
     @Override
     public synchronized int read(byte[] abyte0) throws SevenZipException {
+
         owner.setLatestAccessedStream(this);
+
         if (abyte0.length == 0) return 0;
+
         StreamingInputStream lcurrentInputStream = currentInputStream;
         try {
             int ret = -1;
@@ -55,6 +61,23 @@ public class RandomAccessStream implements IInStream {
             } else {
                 currentInputStream = streaming.getInputStream(currentPosition.get(), -1);
                 ret = currentInputStream.read(abyte0);
+
+            }
+            if (ret > 0) {
+                if (!owner.isReadyForExtract()) {
+                    StringBuffer hexString = new StringBuffer();
+                    for (int i = 0; i < ret; i++) {
+                        String hex = Integer.toHexString(0xFF & abyte0[i]);
+                        if (hex.length() == 1) hexString.append("0");
+                        hexString.append(hex);
+                    }
+                    owner.getLogger().finer("Read at " + currentPosition + " " + ret + " bytes: " + hexString);
+                    if (ret > 100) {
+                        owner.getLogger().finer(URLEncoder.encode(new String(abyte0), "UTF-8"));
+                    }
+                }
+                currentPosition.addAndGet(ret);
+
             }
             if (ret <= 0) {
                 /* map EOF to 0, according to http://sevenzipjbind.sourceforge.net/javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html */
@@ -71,7 +94,8 @@ public class RandomAccessStream implements IInStream {
     public synchronized long seek(long l, int i) throws SevenZipException {
         owner.setLatestAccessedStream(this);
         close();
-        switch (i) {
+        seekMode = i;
+        switch (seekMode) {
         case SEEK_SET:
             currentPosition.set(l);
             break;
@@ -79,10 +103,14 @@ public class RandomAccessStream implements IInStream {
             currentPosition.addAndGet(l);
             break;
         case SEEK_END:
+
             currentPosition.set(streaming.getFinalFileSize() + l);
             break;
         default:
             throw new RuntimeException((new StringBuilder()).append("Seek: unknown origin: ").append(i).toString());
+        }
+        if (!owner.isReadyForExtract()) {
+            owner.getLogger().finer("Seek " + currentPosition.get() + " " + filename + " i " + i + " L " + l);
         }
         return currentPosition.get();
     }

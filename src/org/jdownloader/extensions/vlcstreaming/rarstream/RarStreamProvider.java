@@ -46,7 +46,7 @@ import org.jdownloader.logging.LogController;
  * 
  */
 class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
-    private Map<String, RandomAccessStream> openStreamMap = new HashMap<String, RandomAccessStream>();
+    private Map<String, RandomAccessStream> openStreamMap   = new HashMap<String, RandomAccessStream>();
     private String                          name;
     private String                          password;
     private Archive                         archive;
@@ -55,6 +55,11 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
     private Logger                          logger;
     private RandomAccessStream              latestAccessedStream;
     private VLCStreamingProvider            streamProvider;
+    private boolean                         readyForExtract = false;
+
+    public boolean isReadyForExtract() {
+        return readyForExtract;
+    }
 
     RarStreamProvider(Archive archive, String password, VLCStreamingProvider streamProvider) {
         if (password == null) password = "";
@@ -62,6 +67,10 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
         this.archive = archive;
         this.streamProvider = streamProvider;
         init();
+    }
+
+    public Archive getArchive() {
+        return archive;
     }
 
     public VLCStreamingProvider getStreamProvider() {
@@ -90,6 +99,10 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
             }
 
         }
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 
     public Object getProperty(PropID propID) throws SevenZipException {
@@ -172,6 +185,16 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
 
     public RandomAccessStream getLatestAccessedStream() {
         return latestAccessedStream;
+    }
+
+    public void setReadyForExtract(boolean b) {
+        readyForExtract = b;
+
+    }
+
+    public RandomAccessStream getPart1Stream() throws SevenZipException {
+        return (RandomAccessStream) getStream(getArchive().getFirstArchiveFile());
+
     }
 
 }
