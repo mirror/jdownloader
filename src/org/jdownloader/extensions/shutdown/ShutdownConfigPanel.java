@@ -21,6 +21,7 @@ import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.shutdown.translate.T;
+import org.jdownloader.logging.LogController;
 
 public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension> {
 
@@ -32,7 +33,57 @@ public class ShutdownConfigPanel extends ExtensionConfigPanel<ShutdownExtension>
         addPair(T._.gui_config_jdshutdown_mode(), null, new ComboBox<Mode>(keyHandler2, new Mode[] { Mode.SHUTDOWN, Mode.STANDBY, Mode.HIBERNATE, Mode.CLOSE }, new String[] { Mode.SHUTDOWN.getTranslation(), Mode.STANDBY.getTranslation(), Mode.HIBERNATE.getTranslation(), Mode.CLOSE.getTranslation() }));
         addPair(T._.gui_config_jdshutdown_forceshutdown(), null, new Checkbox(CFG_SHUTDOWN.FORCE_SHUTDOWN_ENABLED));
         addPair(T._.config_toolbarbutton(), null, new Checkbox(CFG_SHUTDOWN.TOOLBAR_BUTTON_ENABLED));
+        if (CrossSystem.isWindows()) {
 
+            CFG_SHUTDOWN.SHUTDOWN_MODE.getEventSender().addListener(new GenericConfigEventListener<Enum>() {
+
+                @Override
+                public void onConfigValidatorError(KeyHandler<Enum> keyHandler, Enum invalidValue, ValidationException validateException) {
+                }
+
+                @Override
+                public void onConfigValueModified(KeyHandler<Enum> keyHandler, Enum newValue) {
+                    try {
+                        switch ((Mode) newValue) {
+                        case HIBERNATE:
+                            Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
+                            // we should add the return for other languages
+                            if (status.getStd() != null && !status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return;
+                            if (status.getStd() != null && !status.getStd().contains("Hibernation has not been enabled")) return;
+                            LogController.CL().info(status.toString());
+                            String path = CrossSystem.is64Bit() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
+                            try {
+                                LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "on" }).toString());
+
+                            } catch (Throwable e) {
+                                LogController.CL().log(e);
+                            }
+                            break;
+                        case STANDBY:
+                            status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
+                            // we should add the return for other languages
+                            if (status.getStd() != null && status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return;
+                            if (status.getStd() != null && status.getStd().contains("Hibernation has not been enabled")) return;
+                            LogController.CL().info(status.toString());
+
+                            path = CrossSystem.is64Bit() ? Application.getResource("tools\\Windows\\elevate\\Elevate64.exe").getAbsolutePath() : Application.getResource("tools\\Windows\\elevate\\Elevate32.exe").getAbsolutePath();
+                            try {
+                                LogController.CL().info(ShutdownExtension.execute(new String[] { path, "powercfg", "-hibernate", "off" }).toString());
+
+                            } catch (Throwable e) {
+                                LogController.CL().log(e);
+                            }
+                            break;
+
+                        }
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            });
+        }
         if (CrossSystem.isMac()) {
             add(new ExtButton(new AppAction() {
                 {
