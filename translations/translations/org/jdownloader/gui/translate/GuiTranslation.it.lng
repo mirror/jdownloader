@@ -701,6 +701,7 @@ jd_gui_swing_jdgui_views_log_tab_title=Registro attività
 jd_gui_swing_jdgui_views_log_tab_tooltip=Visualizza o invia il registro attività
 jd_gui_userio_defaulttitle_confirm=Conferma
 jd_gui_userio_defaulttitle_input=Inserire!
+linkgrabber_confirmall_shortcut=Ctrl+Invio
 linkgrabber_onlinestatus_offline=offline
 linkgrabber_onlinestatus_online=online
 linkgrabber_onlinestatus_uncheckable=Temporaneamente non verificabile
