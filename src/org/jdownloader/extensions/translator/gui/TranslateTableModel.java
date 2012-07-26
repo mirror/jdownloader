@@ -32,13 +32,11 @@ import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.ToolTip;
 import org.appwork.swing.exttable.columns.ExtIconColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 
 /**
  * The Tablemodel defines all columns and renderers
@@ -51,13 +49,12 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
     private ExtTextColumn<TranslateEntry> editColum;
     private List<Pattern>                 filter;
     private TranslatorExtension           extension;
-    private LogSource                     logger;
 
     public TranslateTableModel(TranslatorExtension translatorExtension) {
         // this is is used to store table states(sort,column positions,
         // properties)
         super("TranslateTableModel");
-        logger = LogController.CL();
+
         this.extension = translatorExtension;
     }
 
@@ -463,8 +460,6 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
             }
         }
 
-        logger.info("NewSize  " + lst.size());
-
         super._fireTableStructureChanged(lst, refreshSort);
 
     }
@@ -472,7 +467,6 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
     public void updateFilter(SearchField searchField) {
         this.filter = searchField.filterPatterns;
 
-        logger.info("Filter " + filter);
         _fireTableStructureChanged(extension.getTranslationEntries(), true);
     }
 

@@ -184,6 +184,7 @@ public class TranslatorGui extends AddonPanel<TranslatorExtension> implements Li
 
         };
         table.getSelectionModel().addListSelectionListener(this);
+        if (search != null) search.setTable(table);
     }
 
     protected void layoutMenu() {

@@ -32,13 +32,11 @@ import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.logging.Log;
-import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.SearchCategory;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 
 public class SearchField extends ExtTextField implements MouseMotionListener, MouseListener {
@@ -59,11 +57,10 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
     private int              iconGap        = 38;
     private Border           orgBorder;
     private TranslateTable   table2Filter;
-    private LogSource        logger;
 
     public SearchField(TranslateTable table) {
         super();
-        logger = LogController.CL();
+
         this.table2Filter = table;
         img = NewTheme.I().getImage("search", SIZE);
         LAFOptions lafo = LookAndFeelController.getInstance().getLAFOptions();
@@ -136,10 +133,10 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
     }
 
     private synchronized void updateFilter() {
-        logger.info("Update Filter");
+
         String filterRegex = this.getText();
         boolean enabled = filterRegex.length() > 0;
-        logger.info("Enabled " + enabled);
+
         if (enabled) {
 
             ArrayList<Pattern> list = new ArrayList<Pattern>();
@@ -154,7 +151,7 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
 
                 }
                 filterPatterns = list;
-                logger.info("List  " + filterPatterns);
+
                 table2Filter.updaterFilter(this);
 
             } catch (final Throwable e) {
@@ -291,5 +288,10 @@ public class SearchField extends ExtTextField implements MouseMotionListener, Mo
 
     public boolean highlightFilter() {
         return true;
+    }
+
+    public void setTable(TranslateTable table) {
+        this.table2Filter = table;
+        table2Filter.updaterFilter(this);
     }
 }
