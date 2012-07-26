@@ -1,4 +1,4 @@
-package jd.plugins.download;
+package jd.plugins.download.raf;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,6 +16,7 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Exceptions;
@@ -58,7 +59,7 @@ public class RAFChunk extends Thread {
 
     private long                            requestedEndByte;
 
-    private RAFDownload                     dl;
+    private OldRAFDownload                  dl;
 
     private DownloadLink                    downloadLink;
 
@@ -75,7 +76,7 @@ public class RAFChunk extends Thread {
      * @param endByte
      * @param connection
      */
-    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, RAFDownload dl, DownloadLink link) {
+    public RAFChunk(long startByte, long endByte, URLConnectionAdapter connection, OldRAFDownload dl, DownloadLink link) {
         super("DownloadChunkRAF");
         this.startByte = startByte;
         this.endByte = endByte;
