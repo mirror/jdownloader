@@ -56,7 +56,8 @@ public class LookAndFeelController {
     private String                         laf = null;
 
     /**
-     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of LookAndFeelController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private LookAndFeelController() {
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
@@ -323,6 +324,14 @@ public class LookAndFeelController {
         /* we want our own FontScaling, not SystemDPI */
         UIManager.put("Synthetica.font.respectSystemDPI", config.isFontRespectsSystemDPI());
         UIManager.put("Synthetica.font.scaleFactor", config.getFontScaleFactor());
+        /*
+         * fixes http://svn.jdownloader.org/issues/1897 #1 When the Downloads grid or LinkGrabber grid is open and a vertical thumb (the
+         * slider) is in the scrollbar, clicking on the blank part of the scrollbar is supposed to move the thumb and document by one page
+         * in that direction. Currently, it moves the thumb and document enough to move the thumb under the cursor, one page at a time. That
+         * is supposed to happen only if the mouse is held down longer than the time to display the page.
+         */
+        UIManager.put("Synthetica.scrollBarTrack.hoverAndPressed.enabled", true);
+        // UIManager.put("Synthetica.scrollBarTrack.hoverOnButtons.enabled", true);
         if (config.isFontRespectsSystemDPI() && config.getFontScaleFactor() != 100) {
             LogController.CL().warning("SystemDPI might interfere with JD's FontScaling");
         }
@@ -335,8 +344,8 @@ public class LookAndFeelController {
             UIManager.put("Synthetica.window.opaque", true);
         }
         /*
-         * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode, you have to remove
-         * this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
+         * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this sourcecode,
+         * you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
          */
         try {
             /* we save around x-400 ms here by not using AES */
