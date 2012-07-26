@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -51,11 +53,12 @@ public class PanBaiduCom extends PluginForHost {
         br.setFollowRedirects(true);
         final String dirName = link.getStringProperty("dirname");
         br.getPage(link.getStringProperty("mainlink"));
+        final DecimalFormat df = new DecimalFormat("0000");
         if (dirName != null) {
             final String uk = br.getRegex("type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
             if (uk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=%2F" + dirName + "&t=0." + System.currentTimeMillis() + "&type=1&uk=" + uk);
+            br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=" + dirName + "&t=0." + df.format(new Random().nextInt(100000)) + "&type=1&uk=" + uk);
         }
         if (br.containsHTML("<title>[\t\n\r ]+的完全公开目录_百度网盘")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String correctedBR = br.toString().replace("\\", "");

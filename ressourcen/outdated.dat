@@ -849,3 +849,6 @@ jd/plugins/hoster/PyramidFilesCom.class
 jd/plugins/hoster/TangleCom.class
 jd/plugins/hoster/CumFoxCom.class
 jd/plugins/hoster/DragonUploadzCom.class
+jd/plugins/hoster/IShareFastCom.class
+jd/plugins/hoster/BatShareCom.class
+jd/plugins/hoster/CrocShareCom.class

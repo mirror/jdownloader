@@ -35,24 +35,25 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/photos/([^<>\"/]+/\\d+|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/[^<>\"/]+)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String MAINPAGE = "http://flickr.com/";
+    private static final String MAINPAGE     = "http://flickr.com/";
+    private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<Integer> pages = new ArrayList<Integer>();
         ArrayList<String> addLinks = new ArrayList<String>();
-        pages.add(1);
-        br.setCookiesExclusive(true);
-        String parameter = param.toString();
         br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+        pages.add(1);
+        String parameter = param.toString();
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
@@ -67,10 +68,16 @@ public class FlickrCom extends PluginForDecrypt {
         /** Login is not always needed but we force it to get all pictures */
         getUserLogin();
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
+        String fpName = null;
+        if (parameter.matches(FAVORITELINK)) {
+            fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
+        } else {
+            fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
+        }
         /**
-         * Handling for albums/sets Only decrypt all pages if user did NOT add a direct page link
+         * Handling for albums/sets Only decrypt all pages if user did NOT add a
+         * direct page link
          * */
         if (!parameter.contains("/page")) {
             final String[] picpages = br.getRegex("data\\-track=\"page\\-(\\d+)\"").getColumn(0);
@@ -87,6 +94,7 @@ public class FlickrCom extends PluginForDecrypt {
                 String[] links = br.getRegex(regex).getColumn(0);
                 if (links != null && links.length != 0) {
                     for (String singleLink : links) {
+                        // Regex catches links twice, check that here
                         if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
                     }
                 }

@@ -75,7 +75,6 @@ public class OneFichierCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) return AvailableStatus.UNCHECKABLE;
-        if (br.containsHTML("bad")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("password")) {
             pwProtected = true;
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
@@ -87,7 +86,9 @@ public class OneFichierCom extends PluginForHost {
             return null;
         }
         String filename = linkInfo[0][0];
+        if (filename == null) filename = br.getRegex(">File name :</th><td>([^<>\"]*?)</td>").getMatch(0);
         String filesize = linkInfo[0][1];
+        if (filesize == null) filesize = br.getRegex(">File size :</th><td>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filename != null) link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) {
             long size = 0;
@@ -146,8 +147,11 @@ public class OneFichierCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
             }
         } else {
-            // ddlink is within the ?e=1 page request! but it seems you need to do the following posts to be able to use the link
-            // dllink = br.getRegex("(http.+/get/" + new Regex(downloadLink.getDownloadURL(), "https?://([^\\.]+)").getMatch(0) +
+            // ddlink is within the ?e=1 page request! but it seems you need to
+            // do the following posts to be able to use the link
+            // dllink = br.getRegex("(http.+/get/" + new
+            // Regex(downloadLink.getDownloadURL(),
+            // "https?://([^\\.]+)").getMatch(0) +
             // "[^;]+)").getMatch(0);
             br.postPage(downloadLink.getDownloadURL() + "en/", "submit=Download+the+file");
         }

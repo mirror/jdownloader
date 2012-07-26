@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -44,12 +45,13 @@ public class PanBaiduCom extends PluginForDecrypt {
         br.getPage(parameter);
         String correctedBR = br.toString().replace("\\", "");
         decryptData(decryptedLinks, correctedBR, parameter, null);
+        final DecimalFormat df = new DecimalFormat("0000");
         final String uk = new Regex(correctedBR, "type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
-        final String[] dirs = new Regex(correctedBR, "\"server_filename\":\"([^<>\"]*?)\",\"server_mtime\":\\d+,\"server_ctime\":\\d+,\"local_mtime\":\\d+,\"local_ctime\":\\d+,\"dir_ref\":\\-1,\"isdir\":1").getColumn(0);
+        final String[] dirs = new Regex(correctedBR, "\"path\":\"\\d+%3A(%2F%E[^<>\"]*?)\".*?\"server_filename\":\"[^<>/\"]+\",\"server_mtime\":\\d+,\"server_ctime\":\\d+,\"local_mtime\":\\d+,\"local_ctime\":\\d+,\"dir_ref\":\\-1,\"isdir\":1").getColumn(0);
         if (dirs != null && dirs.length != 0 && uk != null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             for (final String dir : dirs) {
-                br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=%2F" + dir + "&t=0." + System.currentTimeMillis() + "&type=1&uk=" + uk);
+                br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=" + dir + "&t=0." + df.format(new Random().nextInt(100000)) + "&type=1&uk=" + uk);
                 correctedBR = br.toString().replace("\\", "");
                 decryptData(decryptedLinks, correctedBR, parameter, dir);
             }
