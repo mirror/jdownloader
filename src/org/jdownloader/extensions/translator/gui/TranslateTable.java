@@ -15,11 +15,13 @@ import jd.gui.swing.jdgui.BasicJDTable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.translator.TranslateEntry;
 import org.jdownloader.extensions.translator.TranslatorExtension;
 import org.jdownloader.extensions.translator.gui.actions.CopyFromOtherAction;
 import org.jdownloader.extensions.translator.gui.actions.ResetTranslationAction;
 import org.jdownloader.extensions.translator.gui.actions.UseDefaultAction;
+import org.jdownloader.logging.LogController;
 
 /**
  * Table for all entries
@@ -31,6 +33,7 @@ import org.jdownloader.extensions.translator.gui.actions.UseDefaultAction;
 public class TranslateTable extends BasicJDTable<TranslateEntry> {
     private ExtOverlayRowHighlighter rhDefault;
     private TranslatorExtension      owner;
+    private LogSource                logger;
 
     @Override
     protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection, ExtColumn<TranslateEntry> column, MouseEvent ev) {
@@ -45,6 +48,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
 
         super(tableModel);
         this.owner = owner;
+        logger = LogController.CL();
         this.setSearchEnabled(true);
 
         int opacity = 20;
@@ -115,6 +119,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
     // }
 
     public void updaterFilter(SearchField searchField) {
+        logger.info("Update " + searchField);
         ((TranslateTableModel) getExtTableModel()).updateFilter(searchField);
     }
 

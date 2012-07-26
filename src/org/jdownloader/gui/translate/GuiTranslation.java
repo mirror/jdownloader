@@ -2294,4 +2294,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Valid Range: %s1 - %s2" })
     String RangeValidator_toString_object_(long min, long max);
 
+    @Default(lngs = { "en" }, values = { "Ctrl+Enter" })
+    String linkgrabber_confirmall_shortcut();
+
 }

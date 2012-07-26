@@ -28,6 +28,7 @@ public class ConfirmAllAction extends AppAction {
 
     public ConfirmAllAction(boolean autostart) {
         setAutoStart(autostart);
+        setAccelerator(_GUI._.linkgrabber_confirmall_shortcut());
     }
 
     public void setAutoStart(boolean b) {
@@ -49,6 +50,7 @@ public class ConfirmAllAction extends AppAction {
     }
 
     public void actionPerformed(ActionEvent e) {
+
         IOEQ.add(new Runnable() {
 
             public void run() {

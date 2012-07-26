@@ -140,7 +140,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         autoConfirm.setVisible(false);
         setFilteredAvailable(LinkCollector.getInstance().getfilteredStuffSize());
         addLinks = new JButton(new AddLinksAction());
-        confirmAll = new JButton(new ConfirmAllAction() {
+        confirmAll = new ExtButton(new ConfirmAllAction() {
             {
                 org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getEventSender().addListener(new GenericConfigEventListener<Boolean>() {
 
