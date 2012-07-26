@@ -109,6 +109,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         return null;
                     }
                     if (doExtended) {
+                        logger.info("Doing extended decrypt, this takes time...");
                         // Old way
                         for (String fbid : links) {
                             br.getPage("http://www.facebook.com/photo.php?fbid=" + fbid + "&set=" + setID + "&type=1");
@@ -121,6 +122,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
                         }
                     } else {
+                        logger.info("Doing fast decrypt...");
                         for (String directlink : links) {
                             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(directlink.trim()));
                             dl.setAvailable(true);

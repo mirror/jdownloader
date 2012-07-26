@@ -94,7 +94,7 @@ public class FlickrCom extends PluginForDecrypt {
                 String[] links = br.getRegex(regex).getColumn(0);
                 if (links != null && links.length != 0) {
                     for (String singleLink : links) {
-                        // Regex catches links twice, check that here
+                        // Regex catches links twice, correct that here
                         if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
                     }
                 }
