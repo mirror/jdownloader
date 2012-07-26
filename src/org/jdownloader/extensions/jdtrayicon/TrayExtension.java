@@ -445,6 +445,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                                     trayIconChecker.interrupt();
                                     trayIconChecker = null;
                                 }
+
                                 guiFrame.setAlwaysOnTop(true);
                                 disableAlwaysonTop.restart();
                                 guiFrame.toFront();
