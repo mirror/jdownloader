@@ -1,4 +1,5 @@
 gui_config_antistandby_mode2=Режим:
 gui_config_antistandby_whiledl2=Закачка в процессе
+gui_config_antistandby_whilejd2=JDownloader запущен
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby
 jd_plugins_optional_antistandby_jdantistandby_description=Просто препятствует вашему компьютеру входить в режим ожидания или спячки для поддержания закачек активными.

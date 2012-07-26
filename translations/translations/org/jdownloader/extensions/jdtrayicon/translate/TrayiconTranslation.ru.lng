@@ -1,6 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Минимизировать с Таскбар
 JDGui_windowClosing_try_answer_tray=Свернуть в трей
 JDGui_windowClosing_try_asnwer_close=Выход из JDownloader
+JDGui_windowClosing_try_msg_2=Пожалуйста, выберете между\r\n    - Выход с JDownloader (остановка всех запущенных процессов)\r\n    - Минимизировать в Таксбар (закачки продолжатся)\r\n    - Спрятать в Трей (закачки продолжатся в фоне)
 JDGui_windowClosing_try_title_=Закрывать в трей
 OnCloseAction_exit=Выход с программы
 OnCloseAction_totaskbar=Минимизировать в Таскбар
@@ -10,6 +11,7 @@ OnMinimizeAction_totaskbar=Минимизировать в Таскбар
 OnMinimizeAction_totray=Закрывать в трей
 jd_plugins_optional_jdtrayicon_jdlighttray=Настройки системного трея
 jd_plugins_optional_jdtrayicon_jdlighttray_description=Позволяет сворачивание или закрытие JD в область уведомлений, а также другие функции (защита паролем и др.)
+minimize_options=Пожалуйста, выберете между\r\n    - Минимизировать в Таксбар\r\n    - Спрятать в Трей
 minimized_ask=Минимизировать JD!
 plugins_optional_JDLightTray_always=Всегда
 plugins_optional_JDLightTray_closetotray2=Дейстрие при клике на 'Close <X>'
