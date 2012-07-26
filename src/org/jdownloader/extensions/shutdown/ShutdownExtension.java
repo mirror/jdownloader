@@ -31,7 +31,6 @@ import jd.gui.UserIO;
 import jd.gui.swing.jdgui.components.toolbar.ToolbarManager;
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarAction;
 import jd.gui.swing.jdgui.components.toolbar.actions.AbstractToolbarToggleAction;
-import jd.nutils.JDFlags;
 import jd.plugins.AddonPanel;
 import jd.utils.JDUtilities;
 
@@ -48,11 +47,10 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
+import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
 
 public class ShutdownExtension extends AbstractExtension<ShutdownConfig, ShutdownTranslation> implements StateEventListener {
-
-    private final int             count      = 60;
 
     private Thread                shutdown   = null;
 
@@ -373,48 +371,52 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 /* try to shutdown */
                 LogController.CL().info("ask user about shutdown");
                 message = _.interaction_shutdown_dialog_msg_shutdown();
-                UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_shutdown(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                UserIO.setCountdownTime(-1);
-                LogController.CL().info("Return code: " + ret2);
-                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+
+                WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
+                try {
+                    NewUIO.I().show(WarningDialogInterface.class, d);
                     shutdown();
+                } catch (Throwable e) {
+
                 }
                 break;
             case STANDBY:
                 /* try to standby */
                 LogController.CL().info("ask user about standby");
+
                 message = _.interaction_shutdown_dialog_msg_standby();
-                UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_standby(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                UserIO.setCountdownTime(-1);
-                LogController.CL().info("Return code: " + ret2);
-                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
+                try {
+                    NewUIO.I().show(WarningDialogInterface.class, d);
                     standby();
+                } catch (Throwable e) {
+
                 }
                 break;
             case HIBERNATE:
                 /* try to hibernate */
                 LogController.CL().info("ask user about hibernate");
+
                 message = _.interaction_shutdown_dialog_msg_hibernate();
-                UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_hibernate(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                UserIO.setCountdownTime(-1);
-                LogController.CL().info("Return code: " + ret2);
-                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
+                try {
+                    NewUIO.I().show(WarningDialogInterface.class, d);
                     hibernate();
+                } catch (Throwable e) {
+
                 }
                 break;
             case CLOSE:
                 /* try to close */
                 LogController.CL().info("ask user about closing");
                 message = _.interaction_shutdown_dialog_msg_closejd();
-                UserIO.setCountdownTime(count);
-                ret2 = UserIO.getInstance().requestConfirmDialog(UserIO.STYLE_HTML, _.interaction_shutdown_dialog_title_closejd(), message, UserIO.getInstance().getIcon(UserIO.ICON_WARNING), null, null);
-                UserIO.setCountdownTime(-1);
-                LogController.CL().info("Return code: " + ret2);
-                if (JDFlags.hasSomeFlags(ret2, UserIO.RETURN_OK, UserIO.RETURN_COUNTDOWN_TIMEOUT)) {
+
+                d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
+                try {
+                    NewUIO.I().show(WarningDialogInterface.class, d);
                     closejd();
+                } catch (Throwable e) {
+
                 }
                 break;
             default:
