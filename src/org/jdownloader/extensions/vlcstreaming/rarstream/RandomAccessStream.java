@@ -79,6 +79,9 @@ public class RandomAccessStream implements IInStream {
                 currentPosition.addAndGet(ret);
 
             }
+            if (ret >= 0) {
+                currentPosition.set(currentInputStream.getCurrentPosition());
+            }
             if (ret <= 0) {
                 /* map EOF to 0, according to http://sevenzipjbind.sourceforge.net/javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html */
                 return 0;

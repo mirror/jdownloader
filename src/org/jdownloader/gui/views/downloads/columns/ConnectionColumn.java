@@ -190,7 +190,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                     labels[index].setVisible(true);
                     index++;
                 }
-                labels[index].setText("" + dli.getChunksDownloading());
+                labels[index].setText("" + dli.getManagedConnetionHandler().size());
                 labels[index].setIcon(connections);
                 labels[index].setVisible(true);
             }
@@ -257,7 +257,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
                 }
             }
             if (dli != null) {
-                panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_chunks(dli.getChunksDownloading()), connections, JLabel.LEADING));
+                panel.add(lbl = new JLabel(_GUI._.ConnectionColumn_getStringValue_chunks(dli.getManagedConnetionHandler().size()), connections, JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
                 lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
             }

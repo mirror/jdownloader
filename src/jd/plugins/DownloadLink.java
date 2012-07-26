@@ -301,7 +301,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     public long getDownloadSpeed() {
         DownloadInterface dli = getDownloadInstance();
         if (dli == null || !getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) return 0;
-        return dli.getSpeed();
+        return dli.getManagedConnetionHandler().getSpeed();
     }
 
     public String getDownloadURL() {

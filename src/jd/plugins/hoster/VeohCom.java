@@ -229,7 +229,8 @@ public class VeohCom extends PluginForHost {
             /* once init the buffer is enough */
             BUFFER = new byte[256 * 1024];
             try {
-                dl = new RAFDownload(this, downloadLink, null);
+                RAFDownload raf = new RAFDownload(this, downloadLink, null);
+                dl = raf;
                 try {
                     downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(dl.getManagedConnetionHandler());
                 } catch (final Throwable e) {
@@ -314,7 +315,7 @@ public class VeohCom extends PluginForHost {
                             partEndByte += miniblock;
                             downloadLink.setDownloadCurrent(BYTESLOADED);
                             try {
-                                dl.setTotalLinkBytesLoaded(BYTESLOADED);
+                                raf.setTotalLinkBytesLoaded(BYTESLOADED);
                             } catch (final Throwable e) {
                             }
                             if (partEndByte > 0) {

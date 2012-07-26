@@ -34,7 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -150,15 +149,11 @@ public class Ftp extends PluginForHost {
              * we need dummy browser for RAFDownload, else nullpointer will happen
              */
             br = new Browser();
-            dl = new RAFDownload(this, downloadLink, null);
-            dl.setResume(false);
-
+            RAFDownload raf = new RAFDownload(this, downloadLink, null);
+            raf.setResume(false);
+            raf.addChunksDownloading(1);
+            dl = raf;
             downloadLink.setDownloadInstance(dl);
-            dl.addChunksDownloading(1);
-            Chunk ch = dl.new Chunk(0, 0, null, null) {
-            };
-            ch.setInProgress(true);
-            dl.getChunks().add(ch);
             try {
                 ftp.setCmanager(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
@@ -203,7 +198,6 @@ public class Ftp extends PluginForHost {
                 downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
                 downloadLink.setDownloadInstance(null);
                 downloadLink.getLinkStatus().setStatusText(null);
-                ch.setInProgress(false);
             }
             if (tmp.length() != downloadLink.getDownloadSize()) {
                 if (oldStyle() || downloadLink.getBooleanProperty("RESUME", true) == false) {

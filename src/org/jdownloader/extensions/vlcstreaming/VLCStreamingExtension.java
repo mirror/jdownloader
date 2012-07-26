@@ -207,10 +207,19 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                     new Thread() {
                         public void run() {
                             try {
-                                getVlcstreamingAPI().addHandler(link.getUniqueID().toString(), new DirectStreamingImpl(VLCStreamingExtension.this, link));
+                                String ID = link.getUniqueID().toString();
+                                StreamingInterface streamingInterface = getVlcstreamingAPI().getStreamingInterface(ID);
+                                if (streamingInterface == null) {
+                                    getVlcstreamingAPI().addHandler(ID, new DirectStreamingImpl(VLCStreamingExtension.this, link));
+                                }
+                                String[] params = new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID };
+                                if (false) {
+                                    System.out.println(params[0]);
+                                    return;
+                                }
                                 Executer exec = new Executer(getVLCBinary());
                                 exec.setLogger(LogController.CL());
-                                exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + link.getUniqueID() });
+                                exec.addParameters(params);
                                 exec.setRunin(Application.getRoot(Launcher.class));
                                 exec.setWaitTimeout(0);
                                 exec.start();

@@ -46,6 +46,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.RAFDownload;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -411,8 +412,8 @@ public class Uploadedto extends PluginForHost {
         try {
             /* remove next major update */
             /* workaround for broken timeout in 0.9xx public */
-            dl.getRequest().setConnectTimeout(30000);
-            dl.getRequest().setReadTimeout(60000);
+            ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
+            ((RAFDownload) dl).getRequest().setReadTimeout(60000);
         } catch (final Throwable ee) {
         }
         if (!dl.getConnection().isContentDisposition()) {
@@ -494,8 +495,8 @@ public class Uploadedto extends PluginForHost {
             try {
                 /* remove next major update */
                 /* workaround for broken timeout in 0.9xx public */
-                dl.getRequest().setConnectTimeout(30000);
-                dl.getRequest().setReadTimeout(60000);
+                ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
+                ((RAFDownload) dl).getRequest().setReadTimeout(60000);
             } catch (final Throwable ee) {
             }
 

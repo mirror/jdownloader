@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.RAFDownload;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -108,7 +109,10 @@ public class GoogleGroups extends PluginForHost {
         na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, na);
-        dl.setFilesizeCheck(false);
+        try {
+            ((RAFDownload) dl).setFilesizeCheck(false);
+        } catch (final Throwable e) {
+        }
         dl.startDownload();
     }
 

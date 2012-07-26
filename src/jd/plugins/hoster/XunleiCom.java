@@ -17,6 +17,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.logging.Level;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -85,7 +87,15 @@ public class XunleiCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         download = true;
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -5);
+        String url = downloadLink.getDownloadURL();
+        try {
+            String host = new Regex(url, "http://(.*?)(:|/)").getMatch(0);
+            InetAddress ip = InetAddress.getByName(host);
+            url = url.replace("http://" + host, "http://" + ip.getHostAddress());
+        } catch (final Throwable e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

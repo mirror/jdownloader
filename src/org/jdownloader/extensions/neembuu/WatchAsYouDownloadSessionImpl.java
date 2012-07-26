@@ -20,11 +20,12 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+
 import javax.swing.JPanel;
 
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-import jd.plugins.download.DownloadInterface.Chunk;
+import jd.plugins.download.RAFDownload;
 import jpfm.FormatterEvent;
 import jpfm.MountListener;
 import jpfm.mount.Mount;
@@ -44,8 +45,8 @@ import neembuu.vfs.file.TroubleHandler;
 import neembuu.vfs.progresscontrol.ThrottleFactory;
 import neembuu.vfs.readmanager.ReadRequestState;
 import neembuu.vfs.readmanager.impl.SeekableConnectionFileImplBuilder;
-import org.appwork.utils.logging.Log;
 
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
 import org.jdownloader.extensions.neembuu.gui.VirtualFilesPanel;
 import org.jdownloader.extensions.neembuu.newconnectionprovider.JD_HTTP_Download_Manager;
@@ -79,9 +80,9 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             // jdds.getDownloadLink().getFilePackage().setProperty("NB_VirtualFileSystem",
             // fileSystem);
             NeembuuExtension.getInstance().getVirtualFileSystems().put(jdds.getDownloadLink().getFilePackage(), fileSystem);
-            jdds.getDownloadInterface().logger.info("Using new filesystem " + fileSystem);
+            jdds.getDownloadLink().getLivePlugin().getLogger().info("Using new filesystem " + fileSystem);
         } else {
-            jdds.getDownloadInterface().logger.info("Using previous created filesystem " + fileSystem);
+            jdds.getDownloadLink().getLivePlugin().getLogger().info("Using previous created filesystem " + fileSystem);
         }
         // read the javadoc to know what this does
         // Briefly : sometimes the filesystem is hung because of big sized
@@ -220,7 +221,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                         try {
                             // jdds.getWatchAsYouDownloadSession().getVirtualFileSystem().removeAllSessions();
                         } catch (Exception ioe) {
-                            jdds.getDownloadInterface().logger.log(Level.INFO, event.getMessage(), event.getException());
+                            jdds.getDownloadLink().getLivePlugin().getLogger().log(Level.INFO, event.getMessage(), event.getException());
                         }
                     } else if (event.getEventType() == FormatterEvent.EVENT.DETACHED) {
                         virtualFileSystem.unmountAndEndSessions(true);
@@ -233,11 +234,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
 
     // @Override
     public void waitForDownloadToFinish() throws PluginException {
-        jdds.getDownloadInterface().addChunksDownloading(1);
-        Chunk ch = jdds.getDownloadInterface().new Chunk(0, 0, null, null) {
-        };
-        ch.setInProgress(true);
-        jdds.getDownloadInterface().getChunks().add(ch);
         jdds.getDownloadLink().getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
         jdds.getDownloadInterface().getManagedConnetionHandler().addThrottledConnection(new FakeThrottledConnection(jdds));
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
@@ -245,10 +241,12 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ie) {
-                Log.L.log(Level.FINE,"updateloop interrupted",ie);
+                Log.L.log(Level.FINE, "updateloop interrupted", ie);
             }
-
-            jdds.getDownloadInterface().setTotalLinkBytesLoaded(getTotalDownloaded());
+            try {
+                ((RAFDownload) jdds.getDownloadInterface()).setTotalLinkBytesLoaded(getTotalDownloaded());
+            } catch (final Throwable e) {
+            }
             jdds.getDownloadLink().setChunksProgress(new long[] { totalDownloaded });
 
             if (jdds.getDownloadInterface().externalDownloadStop()) {
@@ -257,7 +255,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                 try {
                     virtualFileSystem.unmountAndEndSessions();
                 } catch (Exception ex) {
-                    Log.L.log(Level.INFO,"Error in Unmount and end session ",ex);
+                    Log.L.log(Level.INFO, "Error in Unmount and end session ", ex);
                 }
                 break UPDATE_LOOP;
             }
@@ -266,7 +264,6 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
         jdds.getDownloadLink().getLinkStatus().removeStatus(LinkStatus.FINISHED);
         jdds.getDownloadLink().setDownloadInstance(null);
         // jdds.getDownloadLink().getLinkStatus().setStatusText(null);
-        ch.setInProgress(false);
         jdds.getDownloadLink().setChunksProgress(new long[] { getTotalDownloaded() });
 
         // wait for other splits to finish
@@ -276,7 +273,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
                     try {
                         virtualFileSystem.unmountAndEndSessions();
                     } catch (Exception ex) {
-                        Log.L.log(Level.INFO,"Error in Unmount and end session ",ex);
+                        Log.L.log(Level.INFO, "Error in Unmount and end session ", ex);
                     }
                     break WAIT_FOR_SPLITS_TO_FINISH;
                 }
@@ -284,7 +281,7 @@ final class WatchAsYouDownloadSessionImpl implements WatchAsYouDownloadSession {
             }
         } catch (InterruptedException ie) {
             // the stop button pressed
-            Log.L.log(Level.FINE,"Stop button pressed",ie);
+            Log.L.log(Level.FINE, "Stop button pressed", ie);
         }
 
         jdds.getDownloadLink().getFilePackage().setProperty(NeembuuExtension.INITIATED_BY_WATCH_ACTION, false);

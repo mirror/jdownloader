@@ -94,12 +94,8 @@ public class ShareNownet extends PluginForHost {
         }
         form.remove("Submit2");
         form.remove("Usenet+Download");
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form);
-        if (dl.getRequest().getLocation() != null) {
-            br.followConnection();
-            if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
         if (dl.getConnection().getLongContentLength() == 0 || dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.getURL().contains("download.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -3,10 +3,12 @@ package org.jdownloader.extensions.vlcstreaming;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
 import jd.controlling.AccountController;
+import jd.controlling.IOEQ;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -16,6 +18,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterfaceFactory;
 
+import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.utils.Application;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool;
 import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutputStream;
@@ -44,7 +47,7 @@ public class VLCStreamingProvider {
                     private long fileSize = -1;
 
                     @Override
-                    public boolean connectStreamingOutputStream(final StreamingOutputStream streamingOutputStream, long startPosition, long endPosition) throws IOException {
+                    public boolean connectStreamingOutputStream(final StreamingOutputStream streamingOutputStream, final long startPosition, long endPosition) throws IOException {
                         /* this method should be called within our VLCStreamingThread */
                         ClassLoader oldClassLoader = null;
                         try {
@@ -86,19 +89,24 @@ public class VLCStreamingProvider {
                                 new Thread() {
                                     public void run() {
                                         ReusableByteArrayOutputStream buffer = null;
+                                        long read = 0;
                                         try {
+
                                             buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(10240, false);
                                             InputStream is = con.getInputStream();
                                             while (true) {
                                                 int ret = is.read(buffer.getInternalBuffer());
                                                 if (ret == -1) break;
                                                 if (ret == 0) continue;
+                                                read += ret;
                                                 streamingOutputStream.write(buffer.getInternalBuffer(), 0, ret);
                                             }
+                                            System.out.println("Chunk Done -> Chunk Started at: " + startPosition + " read: " + read);
                                         } catch (StreamingOverlapWrite e) {
                                             System.out.println("Chunk overlapping");
                                         } catch (final Throwable e) {
                                             e.printStackTrace();
+                                            System.out.println("Chunk Error -> Chunk Started at: " + startPosition + " read: " + read);
                                         } finally {
                                             try {
                                                 con.disconnect();
@@ -129,11 +137,24 @@ public class VLCStreamingProvider {
 
                     @Override
                     protected synchronized void closeInputStream(StreamingInputStream streamingInputStream) {
-                        StreamingOutputStream outputStream = findLastStreamingOutputStreamFor(streamingInputStream);
+                        final StreamingOutputStream outputStream = findLastStreamingOutputStreamFor(streamingInputStream);
+
                         super.closeInputStream(streamingInputStream);
                         if (outputStream != null) {
-                            outputStream.close();
+                            DelayedRunnable delayedOutputStreamCloser = new DelayedRunnable(IOEQ.TIMINGQUEUE, 10000) {
+
+                                @Override
+                                public void delayedrun() {
+                                    ArrayList<StreamingInputStream> all = findAllStreamingInputStreamsFor(outputStream);
+                                    if (all.size() == 0) {
+                                        System.out.println("Last input closed, close output");
+                                        outputStream.close();
+                                    }
+                                }
+                            };
+                            delayedOutputStreamCloser.resetAndStart();
                         }
+
                     }
 
                     @Override

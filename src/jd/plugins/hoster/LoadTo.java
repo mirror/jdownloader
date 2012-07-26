@@ -67,10 +67,6 @@ public class LoadTo extends PluginForHost {
         br.setFollowRedirects(true);
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, linkurl, "", true, 1);
-        try {
-            dl.setReadTimeout(60000);
-        } catch (final Throwable e) {
-        }
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html")) {
             br.followConnection();

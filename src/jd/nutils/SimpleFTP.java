@@ -52,6 +52,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.RAFDownload;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.event.Eventsender;
@@ -528,7 +529,12 @@ public class SimpleFTP {
                 @Override
                 public long transfered() {
                     DownloadInterface ldl = dl;
-                    if (ldl != null) ldl.setTotalLinkBytesLoaded(resumeAmount + super.transfered());
+                    if (ldl != null) {
+                        try {
+                            ((RAFDownload) ldl).setTotalLinkBytesLoaded(resumeAmount + super.transfered());
+                        } catch (final Throwable e) {
+                        }
+                    }
                     return super.transfered();
                 }
 

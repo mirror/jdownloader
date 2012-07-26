@@ -693,7 +693,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     /*
                      * dieser sync block dient dazu das immer nur ein link gestartet wird und dann der dupe check durchgeführt werden kann
                      */
-                    if (DownloadInterface.preDownloadCheckFailed(downloadLink)) {
+                    if (DownloadWatchDog.preDownloadCheckFailed(downloadLink)) {
                         if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) onErrorFileExists();
                         return;
                     }

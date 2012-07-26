@@ -25,6 +25,8 @@ import jd.plugins.download.RAFDownload;
 
 public class BrowserAdapter {
 
+    public static final int ERROR_REDIRECTED = -1;
+
     private static DownloadInterface getDownloadInterface(DownloadLink downloadLink, Request request) throws Exception {
         Thread current = Thread.currentThread();
         if (current instanceof DownloadInterfaceFactory) { return ((DownloadInterfaceFactory) current).getDownloadInterface(downloadLink, request); }
@@ -45,7 +47,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createGetRequest(link));
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createGetRequest(link));
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -53,10 +56,10 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()));
+                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         dl.connect(br);
                         break;
@@ -79,7 +82,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createPostRequest(url, postdata));
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createPostRequest(url, postdata));
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -87,11 +91,11 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createPostRequestfromRedirectedRequest(dl.getRequest(), postdata));
+                    dl = getDownloadInterface(downloadLink, r = br.createPostRequestfromRedirectedRequest(r, postdata));
                     try {
                         dl.connect(br);
                         break;
@@ -113,7 +117,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean b, int c) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createPostRequest(url, postdata), b, c);
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createPostRequest(url, postdata), b, c);
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -121,11 +126,11 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createPostRequestfromRedirectedRequest(dl.getRequest(), postdata), b, c);
+                    dl = getDownloadInterface(downloadLink, r = br.createPostRequestfromRedirectedRequest(r, postdata), b, c);
                     try {
                         dl.connect(br);
                         break;
@@ -147,7 +152,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createRequest(link), b, c);
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(link), b, c);
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -155,11 +161,11 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()), b, c);
+                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r), b, c);
                     try {
                         dl.connect(br);
                         break;
@@ -182,7 +188,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createRequest(form), resume, chunks);
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(form), resume, chunks);
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -190,11 +197,11 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()), resume, chunks);
+                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r), resume, chunks);
                     try {
                         dl.connect(br);
                         break;
@@ -217,7 +224,8 @@ public class BrowserAdapter {
 
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
-        DownloadInterface dl = getDownloadInterface(downloadLink, br.createRequest(form));
+        Request r;
+        DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(form));
         try {
             dl.connect(br);
         } catch (PluginException e) {
@@ -225,11 +233,11 @@ public class BrowserAdapter {
                 dl.getConnection().disconnect();
             } catch (Throwable e2) {
             }
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == ERROR_REDIRECTED) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()));
+                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         dl.connect(br);
                         break;

@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -46,15 +45,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file4safe.com" }, urls = { "http://(www\\.)?file4safe\\.com/[a-z0-9]{12}" }, flags = { 2 })
 public class File4SafeCom extends PluginForHost {
 
-    private static AtomicInteger CONNECTIONS   = new AtomicInteger();
+    private static final String COOKIE_HOST   = "http://www.file4safe.com";
 
-    private static final String  COOKIE_HOST   = "http://www.file4safe.com";
+    private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
 
-    private static final String  PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
-    private static final String  PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-    private String               brbefore      = "";
-    public boolean               nopremium     = false;
+    private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
+    private String              brbefore      = "";
+    public boolean              nopremium     = false;
 
     public File4SafeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -461,40 +458,20 @@ public class File4SafeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            int chunks = 1;
-            synchronized (CONNECTIONS) {
 
-                while (this.getMaxConnections() - CONNECTIONS.get() < 1) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -1 * this.getMaxConnections());
 
-                    link.getLinkStatus().setStatusText("Wait for free connection ");
-                    sleep(5000, link);
-                }
-                if (link.getChunksProgress() != null) {
-                    if (this.getMaxConnections() - CONNECTIONS.get() < link.getChunksProgress().length) {
-                        link.setChunksProgress(null);
-                    }
-
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -1 * (this.getMaxConnections() - CONNECTIONS.get()));
-                chunks = link.getChunksProgress() != null ? link.getChunksProgress().length : dl.getChunkNum();
-                CONNECTIONS.set(CONNECTIONS.get() + chunks);
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
             }
-            try {
+            if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
 
-                if (passCode != null) {
-                    link.setProperty("pass", passCode);
-                }
-                if (dl.getConnection().getContentType() != null && dl.getConnection().getContentType().contains("html")) {
-                    logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
 
-                    br.followConnection();
-
-                }
-                dl.startDownload();
-
-            } finally {
-                CONNECTIONS.set(Math.max(0, CONNECTIONS.get() - chunks));
             }
+            dl.startDownload();
+
         }
     }
 

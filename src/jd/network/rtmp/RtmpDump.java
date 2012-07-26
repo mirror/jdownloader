@@ -79,8 +79,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path
-     * will is saved to the variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path will is saved to the
+     * variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -200,11 +200,6 @@ public class RtmpDump extends RTMPDownload {
         try {
             this.getManagedConnetionHandler().addThrottledConnection(tcon);
             this.addChunksDownloading(1);
-            this.CHUNK = new Chunk(0, 0, null, this.downloadLink.getDownloadInstance()) {
-
-            };
-            this.CHUNK.setInProgress(true);
-            this.getChunks().add(this.CHUNK);
             this.downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 this.downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
@@ -341,7 +336,6 @@ public class RtmpDump extends RTMPDownload {
             this.downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             this.downloadLink.setDownloadInstance(null);
             this.downloadLink.getLinkStatus().setStatusText(null);
-            this.CHUNK.setInProgress(false);
             this.getManagedConnetionHandler().removeThrottledConnection(tcon);
             try {
                 this.downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());

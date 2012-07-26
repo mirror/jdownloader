@@ -9,15 +9,17 @@ import org.appwork.utils.io.streamingio.Streaming;
 
 public class DirectStreamingImpl implements StreamingInterface {
 
-    private Streaming streaming;
+    private Streaming    streaming;
+    private DownloadLink link;
 
     public DirectStreamingImpl(VLCStreamingExtension extension, DownloadLink link) throws IOException {
         streaming = extension.getStreamProvider().getStreamingProvider(link);
+        this.link = link;
     }
 
     @Override
     public boolean isRangeRequestSupported() {
-        return true;
+        return !link.getName().endsWith(".avi");
     }
 
     @Override

@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -55,8 +54,7 @@ public class ClipfishDe extends PluginForHost {
 
         if (downloadLink.getDownloadURL().startsWith("http")) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
-            final URLConnectionAdapter urlConnection = dl.connect();
-            if (urlConnection.getLongContentLength() == 0) {
+            if (dl.getConnection().getLongContentLength() == 0) {
                 br.followConnection();
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 return;
@@ -84,11 +82,9 @@ public class ClipfishDe extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) {
         /*
-         * warum sollte ein video das der decrypter sagte es sei online, offline
-         * sein ;)
+         * warum sollte ein video das der decrypter sagte es sei online, offline sein ;)
          * 
-         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden
-         * ist als er dann geladen wird?
+         * coa: hm.. weil er vieleicht so nem anderen zeitpunk eingefügt worden ist als er dann geladen wird?
          */
         return AvailableStatus.TRUE;
     }

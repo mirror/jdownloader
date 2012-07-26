@@ -7,6 +7,7 @@ package org.jdownloader.extensions.neembuu;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -25,6 +26,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 public final class NBUtils {
     public static URLConnectionAdapter copyConnection(DownloadLink downloadLink, DownloadInterface di, PluginForHost plugin, long startByte, Browser b, URLConnectionAdapter connection, int retriesMade) {
         long start = startByte;
+        Logger logger = plugin.getLogger();
         // String end = (endByte > 0 ? endByte + 1 : "") + "";
 
         /*
@@ -35,15 +37,15 @@ public final class NBUtils {
         if (oldConnectionStart == (start) && retriesMade < 6) {
             // if retried this a number of times,
             // we must try making a newconnection.
-            di.logger.finer("Takeover connection at " + oldConnectionStart);
+            logger.finer("Takeover connection at " + oldConnectionStart);
             return connection;
         }
         try {
             /* only forward referer if referer already has been sent! */
             boolean forwardReferer = /* plugin.getBrowser() */b.getHeaders().contains("Referer");
             Browser br = /* plugin.getBrowser() */b.cloneBrowser();
-            br.setReadTimeout(di.getReadTimeout());
-            br.setConnectTimeout(di.getRequestTimeout());
+            br.setReadTimeout(plugin.getBrowser().getReadTimeout());
+            br.setConnectTimeout(plugin.getBrowser().getConnectTimeout());
             /* set requested range */
 
             Map<String, String> request = connection.getRequestProperties();
@@ -75,9 +77,9 @@ public final class NBUtils {
                 } catch (Throwable e) {
                 }
                 if (con.getResponseCode() != 416) {
-                    di.logger.severe(LinkStatus.ERROR_DOWNLOAD_FAILED + "Server: " + con.getResponseMessage());
+                    logger.severe(LinkStatus.ERROR_DOWNLOAD_FAILED + "Server: " + con.getResponseMessage());
                 } else {
-                    di.logger.warning("HTTP 416, maybe finished last chunk?");
+                    logger.warning("HTTP 416, maybe finished last chunk?");
                 }
                 return null;
             }
@@ -87,13 +89,13 @@ public final class NBUtils {
                     con.disconnect();
                 } catch (Throwable e) {
                 }
-                di.logger.severe(LinkStatus.ERROR_DOWNLOAD_FAILED + "Server: Redirect");
+                logger.severe(LinkStatus.ERROR_DOWNLOAD_FAILED + "Server: Redirect");
                 return null;
             }
             return con;
         } catch (Exception e) {
-            LogSource.exception(di.logger, e);
-            di.logger.log(Level.SEVERE, "ERROR_RETRY", e);
+            LogSource.exception(logger, e);
+            logger.log(Level.SEVERE, "ERROR_RETRY", e);
         }
         return null;
     }

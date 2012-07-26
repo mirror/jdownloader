@@ -78,6 +78,13 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
                 if (start != null) startPosition = Long.parseLong(start);
                 if (stop != null) stopPosition = Long.parseLong(stop);
             }
+            if (rangeRequest != null && streamingInterface.isRangeRequestSupported() == false) {
+                getResponse().setResponseCode(ResponseCode.ERROR_RANGE_NOT_SUPPORTED);
+                getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES, "none"));
+                getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
+                getResponse().getOutputStream();
+                return;
+            }
             sis = streamingInterface.getInputStream(startPosition, stopPosition);
             long completeSize = streamingInterface.getFinalFileSize();
             if (sis == null) {
@@ -94,7 +101,7 @@ public class VLCStreamingThread extends Thread implements BrowserSettings, Downl
                     if (stopPosition == -1) {
                         getResponse().getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + startPosition + "-" + (completeSize - 1) + "/" + completeSize));
                     } else {
-                        getResponse().getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + startPosition + "-" + stopPosition + "/" + completeSize));
+                        getResponse().getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + startPosition + "-" + (stopPosition - 1) + "/" + completeSize));
                     }
                     getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, completeSize + ""));
                 }

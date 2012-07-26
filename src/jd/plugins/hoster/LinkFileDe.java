@@ -59,7 +59,6 @@ public class LinkFileDe extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_CAPTCHA, JDL.L("downloadlink.status.error.captcha_wrong", "Captcha wrong"));
         }
-        dl.setResume(true);
         dl.startDownload();
     }
 

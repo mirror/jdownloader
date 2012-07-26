@@ -46,7 +46,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
@@ -359,16 +358,17 @@ public class Rapidshare extends PluginForHost {
         link.setUrlDownload(this.getCorrectedURL(link.getDownloadURL()));
     }
 
-    private DownloadInterface createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
-        DownloadInterface dl = this.createHackedDownloadInterface2(downloadLink, br.createRequest(url));
+    private RAFDownload createHackedDownloadInterface(final Browser br, final DownloadLink downloadLink, final String url) throws IOException, PluginException, Exception {
+        Request r = br.createRequest(url);
+        RAFDownload dl = this.createHackedDownloadInterface2(downloadLink, r);
         try {
             dl.connect(br);
         } catch (final PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+            if (e.getValue() == -1) {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = this.createHackedDownloadInterface2(downloadLink, br.createGetRequestRedirectedRequest(dl.getRequest()));
+                    dl = this.createHackedDownloadInterface2(downloadLink, r = br.createGetRequestRedirectedRequest(r));
                     try {
                         dl.connect(br);
                         break;
@@ -386,9 +386,9 @@ public class Rapidshare extends PluginForHost {
         return dl;
     }
 
-    private DownloadInterface createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
+    private RAFDownload createHackedDownloadInterface2(final DownloadLink downloadLink, final Request request) throws IOException, PluginException {
         request.getHeaders().put("Accept-Encoding", "");
-        final DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request) {
+        final RAFDownload dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request) {
 
             long lastWrite = -1;
 
@@ -398,14 +398,12 @@ public class Rapidshare extends PluginForHost {
                     final int max   = 30 * 1024;
                     int       speed = 30 * 1024;
 
-                    @Override
                     public int getMaximalSpeed() {
                         if (speed >= max) return max;
                         if (speed <= 0) return max;
                         return speed;
                     }
 
-                    @Override
                     public void setMaximalSpeed(final int i) {
                         this.speed = i;
                     }

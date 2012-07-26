@@ -67,6 +67,7 @@ import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.settings.IfFileExistsAction;
 import org.jdownloader.translate._JDT;
 
 public class DownloadWatchDog implements DownloadControllerListener, StateMachineInterface, ShutdownVetoListener, IOPermission, FileCreationListener {
@@ -1421,6 +1422,52 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
 
             }.start();
         }
+    }
+
+    public static boolean preDownloadCheckFailed(DownloadLink link) {
+        if (!link.isAvailabilityStatusChecked() && link.getForcedFileName() == null) {
+            /*
+             * dont proceed if no linkcheck has done yet, maybe we dont know filename yet
+             */
+            return false;
+        }
+        DownloadLink downloadLink = link;
+        DownloadLink block = DownloadController.getInstance().getFirstLinkThatBlocks(downloadLink);
+        LinkStatus linkstatus = link.getLinkStatus();
+        if (block != null) {
+            linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+            if (block.getDefaultPlugin() != null) linkstatus.setStatusText(_JDT._.system_download_errors_linkisBlocked(block.getHost()));
+            return true;
+        }
+        File fileOutput = new File(downloadLink.getFileOutput());
+        if (fileOutput.getParentFile() == null) {
+            linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkstatus.setErrorMessage(_JDT._.system_download_errors_invalidoutputfile());
+            return true;
+        }
+        if (fileOutput.isDirectory()) return false;
+        if (!fileOutput.getParentFile().exists()) {
+            if (!fileOutput.getParentFile().mkdirs()) {
+                linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+                linkstatus.setErrorMessage(_JDT._.system_download_errors_invalidoutputfile());
+                return true;
+            }
+        }
+        if (fileOutput.exists()) {
+            // TODO: handle all options!?
+            if (JsonConfig.create(GeneralSettings.class).getIfFileExistsAction() == IfFileExistsAction.OVERWRITE_FILE) {
+                if (!new File(downloadLink.getFileOutput()).delete()) {
+                    linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+                    linkstatus.setErrorMessage(_JDT._.system_download_errors_couldnotoverwrite());
+                    return true;
+                }
+            } else {
+                linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                linkstatus.setErrorMessage(_JDT._.downloadlink_status_error_file_exists());
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

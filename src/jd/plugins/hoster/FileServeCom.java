@@ -68,8 +68,7 @@ public class FileServeCom extends PluginForHost {
     }
 
     /**
-     * To get back the linkchecker API, revert to revision 15263, it was removed
-     * because it was broken (error 500)
+     * To get back the linkchecker API, revert to revision 15263, it was removed because it was broken (error 500)
      */
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
@@ -85,8 +84,7 @@ public class FileServeCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
+                     * we test 100 links at once - its tested with 500 links, probably we could test even more at the same time...
                      */
                     if (index == urls.length || links.size() > 40) {
                         break;
@@ -97,8 +95,7 @@ public class FileServeCom extends PluginForHost {
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) {
                         sb.append("%0D%0A");
@@ -285,10 +282,6 @@ public class FileServeCom extends PluginForHost {
         }
         if (this.dl.getConnection().getContentType().contains("html")) {
             logger.info("The finallink doesn't seem to be a file...");
-            try {
-                logger.info(dl.getRequest().printHeaders());
-            } catch (final Throwable e) {
-            }
             this.br.followConnection();
             this.handleErrors(br);
             logger.warning("Unexpected error at the last step...");
@@ -466,8 +459,7 @@ public class FileServeCom extends PluginForHost {
         if ("302".equalsIgnoreCase(code)) dllink = br.getRegex("next\":\"(.*?)\"").getMatch(0);
         if (dllink == null) {
             /**
-             * This is another method to get the downloadlink. If this doesn't
-             * work, try via normal browser login
+             * This is another method to get the downloadlink. If this doesn't work, try via normal browser login
              */
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(username + ":" + password));
             br.getPage(link.getDownloadURL());

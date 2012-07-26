@@ -171,20 +171,30 @@ public class OneFichierCom extends PluginForHost {
         maxPrem.set(1);
         br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
+        String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         if (timeStamp == null || "error".equalsIgnoreCase(timeStamp)) {
+            ai.setStatus("Username/Password invalid");
             account.setProperty("type", Property.NULL);
             account.setValid(false);
             return ai;
-        } else if ("0".equalsIgnoreCase(timeStamp) && false) {
-            /* not finished yet */
-            account.setValid(true);
-            account.setProperty("type", "FREE");
-            ai.setStatus("Free User");
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
+        } else if ("0".equalsIgnoreCase(timeStamp)) {
+            if (freeCredits != null && Float.parseFloat(freeCredits) > 0) {
+                /* not finished yet */
+                account.setValid(true);
+                account.setProperty("type", "FREE");
+                ai.setStatus("Free User (Credits available)");
+                ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
+                try {
+                    maxPrem.set(1);
+                    account.setMaxSimultanDownloads(1);
+                    account.setConcurrentUsePossible(false);
+                } catch (final Throwable e) {
+                }
+            } else {
+                ai.setStatus("Free User (No credits left)");
+                account.setProperty("type", Property.NULL);
+                account.setValid(false);
+                return ai;
             }
             return ai;
         } else {
