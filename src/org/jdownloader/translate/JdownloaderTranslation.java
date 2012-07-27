@@ -51,9 +51,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "Connection Manager", "Verbindungsverwaltung" })
     String gui_settings_proxy_title();
 
-    @Default(lngs = { "en" }, values = { "Last finished package: Download Directory" })
-    String replacer_downloaddirectory();
-
     @Default(lngs = { "en" }, values = { "No permissions to write to harddisk" })
     String download_error_message_iopermissions();
 
@@ -87,9 +84,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Wrong password" })
     String decrypter_wrongpassword();
 
-    @Default(lngs = { "en" }, values = { "Last finished File: Checksum (SHA1/MD5) if set by hoster" })
-    String replacer_checksum();
-
     @Default(lngs = { "en" }, values = { "Could not overwrite existing file" })
     String system_download_errors_couldnotoverwrite();
 
@@ -110,12 +104,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Unexpected rangeheader format:" })
     String download_error_message_rangeheaderparseerror();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: Download-URL (only for non-container links)" })
-    String replacer_downloadurl();
-
-    @Default(lngs = { "en" }, values = { "Last finished package: Password" })
-    String replacer_password();
 
     @Default(lngs = { "en" }, values = { "Premium Error" })
     String downloadlink_status_error_premium();
@@ -150,14 +138,8 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "running..." })
     String gui_warning_reconnect_running();
 
-    @Default(lngs = { "en" }, values = { "Last finished File: Hoster" })
-    String replacer_hoster();
-
     @Default(lngs = { "en" }, values = { "Your current IP" })
     String gui_config_reconnect_showcase_currentip();
-
-    @Default(lngs = { "en" }, values = { "Last finished package: Filelist" })
-    String replacer_filelist();
 
     @Default(lngs = { "en" }, values = { "CRC-Check FAILED(%s1)" })
     String system_download_doCRC2_failed(Object s1);
@@ -185,12 +167,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Invalid Outputfile" })
     String system_download_errors_invalidoutputfile();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: is Available (Yes,No)" })
-    String replacer_available();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: Filename" })
-    String replacer_filename();
 
     @Default(lngs = { "en" }, values = { "Could not clone the connection" })
     String download_error_message_connectioncopyerror();
@@ -234,41 +210,20 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Captcha wrong" })
     String downloadlink_status_error_captcha_wrong();
 
-    @Default(lngs = { "en" }, values = { "jDownloader: Revision/Version" })
-    String replacer_jdversion();
-
-    @Default(lngs = { "en" }, values = { "Last finished package: Packagename" })
-    String replacer_packagename();
-
     @Default(lngs = { "en" }, values = { "Not tested yet" })
     String gui_config_reconnect_showcase_message_none();
 
     @Default(lngs = { "en" }, values = { "Do not show pending Captchas for %s1" })
     String captchacontroller_cancel_dialog_allorhost_cancelhost(Object s1);
 
-    @Default(lngs = { "en" }, values = { "Last finished package: Comment" })
-    String replacer_comment();
-
     @Default(lngs = { "en" }, values = { "Unknown error" })
     String decrypter_unknownerror();
-
-    @Default(lngs = { "en" }, values = { "Current Time" })
-    String replacer_time();
-
-    @Default(lngs = { "en" }, values = { "Used Java Version" })
-    String replacer_javaversion();
 
     @Default(lngs = { "en" }, values = { "Temporarily unavailable" })
     String controller_status_tempunavailable();
 
-    @Default(lngs = { "en" }, values = { "Last finished package: Auto Password" })
-    String replacer_autopassword();
-
     @Default(lngs = { "en" }, values = { "Cancel all pending Captchas" })
     String captchacontroller_cancel_dialog_allorhost_all();
-
-    @Default(lngs = { "en" }, values = { "jDownloader: Homedirectory/Installdirectory" })
-    String replacer_jdhomedirectory();
 
     @Default(lngs = { "en" }, values = { "Download" })
     String download_connection_normal();
@@ -324,32 +279,17 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "(Filesize unknown)" })
     String gui_download_filesize_unknown();
 
-    @Default(lngs = { "en" }, values = { "Current IP Address" })
-    String replacer_ipaddress();
-
     @Default(lngs = { "en" }, values = { "Waiting for user input" })
     String downloadlink_status_waitinguserio();
 
     @Default(lngs = { "en" }, values = { "Password wrong" })
     String plugins_errors_wrongpassword();
 
-    @Default(lngs = { "en" }, values = { "Current Date" })
-    String replacer_date();
-
     @Default(lngs = { "en" }, values = { "File not found" })
     String downloadlink_status_error_file_not_found();
 
     @Default(lngs = { "en" }, values = { "various" })
     String controller_packages_defaultname();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: Browser-URL" })
-    String replacer_browserurl();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: Filesize" })
-    String replacer_filesize();
-
-    @Default(lngs = { "en" }, values = { "Last finished File: Filepath" })
-    String replacer_filepath();
 
     @Default(lngs = { "en" }, values = { "No Reconnect" })
     String jd_controlling_reconnect_plugins_DummyRouterPlugin_getName();

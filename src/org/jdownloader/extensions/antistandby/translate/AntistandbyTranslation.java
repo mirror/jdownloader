@@ -13,9 +13,6 @@ public interface AntistandbyTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "AntiStandBy" })
     String jd_plugins_optional_antistandby_jdantistandby();
 
-    @Default(lngs = { "en" }, values = { "Mode:" })
-    String gui_config_antistandby_mode2();
-
     @Default(lngs = { "en" }, values = { "JDownloader is running" })
     String gui_config_antistandby_whilejd2();
 

@@ -68,9 +68,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Create Subfolder" })
     String settings_use_subpath();
 
-    @Default(lngs = { "en" }, values = { "The path %s1 does not exist." })
-    String plugins_optional_extraction_messages(Object s1);
-
     @Default(lngs = { "en" }, values = { "... only if there are no root folders" })
     String settings_subpath_no_folder2();
 
@@ -158,15 +155,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Set Extraction Path" })
     String contextmenu_extract_to();
 
-    @Default(lngs = { "en" }, values = { "Show Extraction Path" })
-    String contextmenu_openextract_folder();
-
-    @Default(lngs = { "en" }, values = { "Auto Extract Enabled" })
-    String contextmenu_auto_extract_package();
-
-    @Default(lngs = { "en" }, values = { "Validate Archive" })
-    String contextmenu_validate_parent();
-
     @Default(lngs = { "en" }, values = { "Validate %s1" })
     String ValidateArchiveAction_ValidateArchiveAction(String name);
 
@@ -212,15 +200,6 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "File must be downloaded" })
     String downloadedbad();
 
-    @Default(lngs = { "en" }, values = { "Extract Password" })
-    String contextmenu_set_password();
-
-    @Default(lngs = { "en" }, values = { "Extract Password for %s1" })
-    String password(String s);
-
-    @Default(lngs = { "en" }, values = { "Extract after Download" })
-    String auto_extract_enabled();
-
     @Default(lngs = { "en" }, values = { "File exists" })
     String file_exists();
 
@@ -250,12 +229,6 @@ public interface ExtractionTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Extract Files" })
     String menu_tools_extract_files();
-
-    @Default(lngs = { "en" }, values = { "Unsupported Archive" })
-    String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_title();
-
-    @Default(lngs = { "en" }, values = { "This is either no Archive or an unsupported Archive Type" })
-    String ExtractionExtension_onExtendPopupMenuDownloadTable_unsupported_message();
 
     @Default(lngs = { "en" }, values = { "Extract Archive(s) to..." })
     String extract_to2();

@@ -121,9 +121,4 @@ public interface TrayiconTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Minimize to Taskbar" })
     String JDGui_windowClosing_try_answer_totaskbar();
 
-    @Default(lngs = { "en" }, values = { "Minimize JDownloader!" })
-    String minimized_ask();
-
-    @Default(lngs = { "en" }, values = { "Please choose between \r\n   - Minimize to Taskbar \r\n   - Hide in System Tray " })
-    String minimize_options();
 }

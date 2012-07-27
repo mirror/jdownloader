@@ -19,9 +19,6 @@ public interface ShutdownTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Hibernate?" })
     String interaction_shutdown_dialog_title_hibernate();
 
-    @Default(lngs = { "en" }, values = { "Enabled on Start" })
-    String gui_config_jdshutdown_enabledOnStart();
-
     @Default(lngs = { "en" }, values = { "Close JD" })
     String gui_config_jdshutdown_close();
 
@@ -58,17 +55,11 @@ public interface ShutdownTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Force Shutdown (Not for all OS)" })
     String gui_config_jdshutdown_forceshutdown();
 
-    @Default(lngs = { "en" }, values = { "Install" })
-    String gui_config_jdshutdown_osx_force_short();
-
     @Default(lngs = { "en" }, values = { "<h2><font color=\"red\">System will be shut down!</font></h2>" })
     String interaction_shutdown_dialog_msg_shutdown();
 
     @Default(lngs = { "en" }, values = { "Close JD?" })
     String interaction_shutdown_dialog_title_closejd();
-
-    @Default(lngs = { "en" }, values = { "Install Force Shutdown (only Mac OSX)" })
-    String gui_config_jdshutdown_osx_force_long();
 
     @Default(lngs = { "en" }, values = { "Shutdown" })
     String lit_shutdownn();

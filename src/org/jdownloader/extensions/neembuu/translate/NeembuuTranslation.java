@@ -55,15 +55,6 @@ public interface NeembuuTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Do you want to download this file instead ?" })
     String neembuu_could_not_handle_message();
 
-    @Default(lngs = { "en" }, values = { "Do you wish to watch as you download this file?" })
-    String approve_WatchAsYouDownload_Message();
-
-    @Default(lngs = { "en" }, values = { "Neembuu watch as you download" })
-    String approve_WatchAsYouDownload_Title();
-
-    @Default(lngs = { "en" }, values = { "Could not start a watch as you download session for\n" })
-    String failed_WatchAsYouDownload_Message();
-
     @Default(lngs = { "en" }, values = { "Neembuu watch as you download failed." })
     String failed_WatchAsYouDownload_Title();
 

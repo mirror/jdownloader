@@ -55,17 +55,11 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Example: 3Com ADSL" })
     String gui_config_reconnect_selectrouter_example();
 
-    @Default(lngs = { "en" }, values = { "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!" })
-    String gui_config_liveHeader_warning_noCURLConvert();
-
     @Default(lngs = { "en" }, values = { "You disabled the IP-Check. This will increase the reconnection times dramatically!\r\n\r\nSeveral further modules like Reconnect Recorder are disabled." })
     String jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message();
 
     @Default(lngs = { "en" }, values = { "Can't find your routers hostname" })
     String gui_config_routeripfinder_notfound();
-
-    @Default(lngs = { "en" }, values = { "Search for routers hostname..." })
-    String gui_config_routeripfinder_featchIP();
 
     @Default(lngs = { "en" }, values = { "Hostname found: %s1" })
     String gui_config_routeripfinder_ready(Object s1);
@@ -172,9 +166,6 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Open Webinterface" })
     String DataCompareDialog_open_webinterface();
 
-    @Default(lngs = { "en" }, values = { "Username and Password are not set. In most cases, \r\nthese information is required for a successful reconnection.\r\n\r\nContinue anyway?" })
-    String LiveHeaderDetectionWizard_runOnlineScan_warning_logins();
-
     @Default(lngs = { "en" }, values = { "It seems that there is no Webinterface at http://%s1. \r\nThe Router IP might be invalid. \r\n\r\nContinue anyway?" })
     String LiveHeaderDetectionWizard_runOnlineScan_warning_badip(String hostName);
 
@@ -208,35 +199,14 @@ public interface LiveheaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enter Router's IP, or click [Find RouterIP]..." })
     String LiveHeaderReconnect_getGUI_help_ip();
 
-    @Default(lngs = { "en" }, values = { "Service not available. Please try again later." })
-    String LiveHeaderDetectionWizard_runOnlineScan_notalive();
-
     @Default(lngs = { "en" }, values = { "Autodetection of Reconnect Settings needs to enable the IP Check Feature. Continue?" })
     String ipcheck();
 
     @Default(lngs = { "en" }, values = { "IP Check has been disabled now. We recommend to enabled global IP Checks. Otherwise your reconnects may fail." })
     String ipcheckreverted();
 
-    @Default(lngs = { "en" }, values = { "It seems that your Router requires logins to perform a reconnect. \r\nPlease enter the Router's webinterface username and password." })
-    String logins_required();
-
-    @Default(lngs = { "en" }, values = { "JDownloader set up your Reconnect Settings successfully. Getting a new IP takes %s1." })
-    String autodetection_success(String time);
-
-    @Default(lngs = { "en" }, values = { "Ups! JDownloader could not find working Reconnect Settings. \r\nPlease make sure that you have a dynamic IP and try again with different Inputs." })
-    String autodetection_failed();
-
     @Default(lngs = { "en" }, values = { "LiveHeader: %s1" })
     String LiveHeaderInvoker_getName_(String name);
-
-    @Default(lngs = { "en" }, values = { "Auto Setup" })
-    String AutoDetectAction_AutoDetectAction_();
-
-    @Default(lngs = { "en" }, values = { "Share your Reconnect Settings" })
-    String RouterSendAction_actionPerformed_();
-
-    @Default(lngs = { "en" }, values = { "JDownloader detected that you have successfully set up your reconnection settings.\r\nPlease follow this wizard and share your settings with others.\r\nThis will only take a few seconds." })
-    String RouterSendAction_actionPerformed_msg();
 
     @Default(lngs = { "en" }, values = { "JDownloader could not find a working LiveHeader Reconnect Script. \r\nPlease make sure that you entered correct information, and that you have a dynamic IP connection." })
     String AutoDetectAction_run_failed();
