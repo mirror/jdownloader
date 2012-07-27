@@ -52,6 +52,7 @@ public class FlickrCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
+        br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
         pages.add(1);
         String parameter = param.toString();
         // Check if link is for hosterplugin
@@ -80,11 +81,13 @@ public class FlickrCom extends PluginForDecrypt {
          * direct page link
          * */
         if (!parameter.contains("/page")) {
-            final String[] picpages = br.getRegex("data\\-track=\"page\\-(\\d+)\"").getColumn(0);
-            if (picpages != null && picpages.length != 0) {
-                for (String picpage : picpages)
-                    pages.add(Integer.parseInt(picpage));
+            // Removed old way of finding page number on the 27.07.12
+            final String picCount = br.getRegex("\"total\":\"(\\d+)\"").getMatch(0);
+            if (picCount == null) {
+                logger.warning("Couldn't find total number of pictures, aborting...");
+                return null;
             }
+            pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 72));
         }
         final int lastPage = pages.get(pages.size() - 1);
         for (int i = 1; i <= lastPage; i++) {
