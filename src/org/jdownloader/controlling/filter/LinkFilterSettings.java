@@ -82,7 +82,7 @@ public interface LinkFilterSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @org.appwork.storage.config.annotations.Description("true to show filterexceptions as quickfilters in linkgrabber sidebar")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("true to show filterexceptions as quickfilters in linkgrabber sidebar")
     boolean isExceptionAsQuickfilterEnabled();
 
     void setExceptionAsQuickfilterEnabled(boolean b);
@@ -90,7 +90,7 @@ public interface LinkFilterSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @org.appwork.storage.config.annotations.Description("show a restore button for filtered links")
+    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("show a restore button for filtered links")
     boolean isRestoreButtonEnabled();
 
     void setRestoreButtonEnabled(boolean b);

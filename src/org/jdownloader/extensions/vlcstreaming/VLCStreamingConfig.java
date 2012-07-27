@@ -4,13 +4,13 @@ import jd.plugins.ExtensionConfigInterface;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 public interface VLCStreamingConfig extends ExtensionConfigInterface {
 
     @AboutConfig
     @DefaultStringValue("")
-    @Description("customized path to vlc binary")
+    @DescriptionForConfigEntry("customized path to vlc binary")
     String getVLCCommand();
 
     void setVLCCommand(String vlc);

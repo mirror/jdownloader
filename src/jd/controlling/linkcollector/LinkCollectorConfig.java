@@ -3,7 +3,7 @@ package jd.controlling.linkcollector;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface LinkCollectorConfig extends ConfigInterface {
@@ -11,7 +11,7 @@ public interface LinkCollectorConfig extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("check links for on/offline status")
+    @DescriptionForConfigEntry("check links for on/offline status")
     boolean getDoLinkCheck();
 
     void setDoLinkCheck(boolean b);
@@ -19,14 +19,14 @@ public interface LinkCollectorConfig extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("use top(true) or bottom(false) position for merge")
+    @DescriptionForConfigEntry("use top(true) or bottom(false) position for merge")
     boolean getDoMergeTopBottom();
 
     void setDoMergeTopBottom(boolean b);
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @Description("autoexpand packages in linkcollector")
+    @DescriptionForConfigEntry("autoexpand packages in linkcollector")
     boolean isPackageAutoExpanded();
 
     void setPackageAutoExpanded(boolean b);

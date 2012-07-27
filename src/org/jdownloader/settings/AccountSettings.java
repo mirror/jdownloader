@@ -8,7 +8,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AllowStorage;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
 public interface AccountSettings extends ConfigInterface {
@@ -23,7 +23,7 @@ public interface AccountSettings extends ConfigInterface {
     @AboutConfig
     @DefaultIntValue(5)
     @SpinnerValidator(min = 1, max = Integer.MAX_VALUE)
-    @Description("Default temporary disabled timeout (in minutes) on unknown errors while account checking!")
+    @DescriptionForConfigEntry("Default temporary disabled timeout (in minutes) on unknown errors while account checking!")
     int getTempDisableOnErrorTimeout();
 
     void setTempDisableOnErrorTimeout(int j);

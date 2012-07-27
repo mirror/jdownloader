@@ -12,7 +12,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultFactory;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.defaults.AbstractDefaultFactory;
@@ -56,7 +56,7 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultIntValue(10)
     @AboutConfig
     @SpinnerValidator(min = 0, max = 120)
-    @Description("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
+    @DescriptionForConfigEntry("AutoStart Downloads will show a Countdown Dialog after Startup. Set the countdown time to 0 to remove this dialog. @see showCountdownonAutoStartDownloads")
     int getAutoStartCountdownSeconds();
 
     AutoDownloadStartOption getAutoStartDownloadOption();
@@ -75,51 +75,51 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultLongValue(5 * 60 * 1000l)
-    @Description("Waittime in ms if a Download HashCheck Failed")
+    @DescriptionForConfigEntry("Waittime in ms if a Download HashCheck Failed")
     long getDownloadHashCheckFailedRetryWaittime();
 
     @AboutConfig
-    @Description("Download Speed limit in bytes.")
+    @DescriptionForConfigEntry("Download Speed limit in bytes.")
     @DefaultIntValue(50 * 1024)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getDownloadSpeedLimit();
 
     @AboutConfig
     @DefaultLongValue(30 * 60 * 1000l)
-    @Description("Waittime in ms if a Download Temp Unavailable Failed")
+    @DescriptionForConfigEntry("Waittime in ms if a Download Temp Unavailable Failed")
     long getDownloadTempUnavailableRetryWaittime();
 
     @AboutConfig
     @DefaultLongValue(10 * 60 * 1000l)
-    @Description("Waittime in ms if a Download had unknown IOException")
+    @DescriptionForConfigEntry("Waittime in ms if a Download had unknown IOException")
     long getDownloadUnknownIOExceptionWaittime();
 
     @AboutConfig
-    @Description("flush download buffers when filled up to x percent (1-100)")
+    @DescriptionForConfigEntry("flush download buffers when filled up to x percent (1-100)")
     @DefaultIntValue(80)
     @SpinnerValidator(min = 1, max = 100)
     int getFlushBufferLevel();
 
     @AboutConfig
-    @Description("flush download buffers after x ms")
+    @DescriptionForConfigEntry("flush download buffers after x ms")
     @DefaultIntValue(2 * 60 * 1000)
     int getFlushBufferTimeout();
 
     @AboutConfig
-    @Description("Force Jdownloader to always keep a certain amount of MB Diskspace free")
+    @DescriptionForConfigEntry("Force Jdownloader to always keep a certain amount of MB Diskspace free")
     @DefaultIntValue(512)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getForcedFreeSpaceOnDisk();
 
     @AboutConfig
-    @Description("Timeout for connecting to a httpserver")
+    @DescriptionForConfigEntry("Timeout for connecting to a httpserver")
     @SpinnerValidator(min = 0, max = 600000)
     @DefaultIntValue(60000)
     @RequiresRestart
     int getHttpConnectTimeout();
 
     @AboutConfig
-    @Description("Timeout for reading from a httpserver")
+    @DescriptionForConfigEntry("Timeout for reading from a httpserver")
     @SpinnerValidator(min = 0, max = 600000)
     @DefaultIntValue(300000)
     @RequiresRestart
@@ -130,25 +130,25 @@ public interface GeneralSettings extends ConfigInterface {
     IfFileExistsAction getIfFileExistsAction();
 
     @AboutConfig
-    @Description("max buffer size for write operations in kb")
+    @DescriptionForConfigEntry("max buffer size for write operations in kb")
     @SpinnerValidator(min = 100, max = 10240)
     @DefaultIntValue(500)
     int getMaxBufferSize();
 
     @AboutConfig
-    @Description("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
+    @DescriptionForConfigEntry("http://jdownloader.org/knowledge/wiki/glossary/chunkload")
     @SpinnerValidator(min = 1, max = 20)
     @DefaultIntValue(1)
     int getMaxChunksPerFile();
 
     @AboutConfig
-    @Description("How often a Plugin restarts a download if download failed")
+    @DescriptionForConfigEntry("How often a Plugin restarts a download if download failed")
     @DefaultIntValue(3)
     @RequiresRestart
     int getMaxPluginRetries();
 
     @AboutConfig
-    @Description("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
+    @DescriptionForConfigEntry("How many downloads should Jdownloader download at once? Note that most hosters allow only one download at a time in freemode")
     @SpinnerValidator(min = 1, max = 20)
     @DefaultIntValue(3)
     int getMaxSimultaneDownloads();
@@ -159,20 +159,20 @@ public interface GeneralSettings extends ConfigInterface {
     int getMaxSimultaneDownloadsPerHost();
 
     @AboutConfig
-    @Description("Timeout for network problems")
+    @DescriptionForConfigEntry("Timeout for network problems")
     @SpinnerValidator(min = 0, max = 1000000)
     @DefaultIntValue(15000)
     @RequiresRestart
     int getNetworkIssuesTimeout();
 
     @AboutConfig
-    @Description("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
+    @DescriptionForConfigEntry("Pause Speed. in Pause Mode we limit speed to this value to keep connections open, but use hardly bandwidth")
     @DefaultIntValue(10240)
     @SpinnerValidator(min = 0, max = Integer.MAX_VALUE)
     int getPauseSpeed();
 
     @AboutConfig
-    @Description("Penaltytime before a retry if JDownloader lost connection")
+    @DescriptionForConfigEntry("Penaltytime before a retry if JDownloader lost connection")
     @DefaultIntValue(5 * 60 * 1000)
     int getWaittimeOnConnectionLoss();
 
@@ -192,7 +192,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @Description("AutoReconnect enabled?")
+    @DescriptionForConfigEntry("AutoReconnect enabled?")
     boolean isAutoReconnectEnabled();
 
     @AboutConfig
@@ -204,7 +204,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isConvertRelativePathesJDRoot();
 
     @AboutConfig
-    @Description("Do not start further downloads if others are waiting for a reconnect/new ip")
+    @DescriptionForConfigEntry("Do not start further downloads if others are waiting for a reconnect/new ip")
     @DefaultBooleanValue(true)
     boolean isDownloadControllerPrefersReconnectEnabled();
 
@@ -238,18 +238,18 @@ public interface GeneralSettings extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
     @RequiresRestart
-    @Description("If true, JDownloader performs updates automatically without user interaction")
+    @DescriptionForConfigEntry("If true, JDownloader performs updates automatically without user interaction")
     boolean isSilentUpdateEnabled();
 
     @AboutConfig
     @DefaultBooleanValue(true)
     @RequiresRestart
-    @Description("If false, JDownloader will autorestart to finish a update silently. Warning: only disable when really needed!")
+    @DescriptionForConfigEntry("If false, JDownloader will autorestart to finish a update silently. Warning: only disable when really needed!")
     boolean isSilentUpdateWithRestartEnabled();
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @Description("Use available Accounts?")
+    @DescriptionForConfigEntry("Use available Accounts?")
     boolean isUseAvailableAccounts();
 
     @AboutConfig
@@ -280,21 +280,21 @@ public interface GeneralSettings extends ConfigInterface {
 
     @DefaultFactory(DefaultBrowserCommand.class)
     @AboutConfig
-    @Description("CommandLine to open a link in a browser. Use %s as wildcard for the url")
+    @DescriptionForConfigEntry("CommandLine to open a link in a browser. Use %s as wildcard for the url")
     void setBrowserCommandLine(String[] b);
 
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
 
     void setCleanUpFilenames(boolean b);
 
-    @Description("Is true, if jdownloader got closed with running downloads.")
+    @DescriptionForConfigEntry("Is true, if jdownloader got closed with running downloads.")
     @DefaultBooleanValue(false)
     void setClosedWithRunningDownloads(boolean b);
 
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("Correct pathes relative to JDownloader root")
+    @DescriptionForConfigEntry("Correct pathes relative to JDownloader root")
     void setConvertRelativePathesJDRoot(boolean b);
 
     void setDefaultDownloadFolder(String ddl);
@@ -351,7 +351,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @DefaultBooleanValue(true)
     @AboutConfig
-    @Description("@see AutoStartCountdownSeconds")
+    @DescriptionForConfigEntry("@see AutoStartCountdownSeconds")
     void setShowCountdownonAutoStartDownloads(boolean b);
 
     @DefaultBooleanValue(false)
@@ -368,14 +368,14 @@ public interface GeneralSettings extends ConfigInterface {
     void setWaittimeOnConnectionLoss(int milliseconds);
 
     @AboutConfig
-    @Description("Should JDownloader check free available diskspace before download starts?")
+    @DescriptionForConfigEntry("Should JDownloader check free available diskspace before download starts?")
     @DefaultBooleanValue(true)
     boolean isFreeSpaceCheckEnabled();
 
     void setFreeSpaceCheckEnabled(boolean b);
 
     @AboutConfig
-    @Description("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
+    @DescriptionForConfigEntry("if this value is >0, the subfolder option only will be used if the package contains more than subfolderThreshold value links")
     @DefaultIntValue(0)
     int getSubfolderThreshold();
 

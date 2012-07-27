@@ -6,7 +6,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface RemoteAPIConfig extends ConfigInterface {
@@ -14,7 +14,7 @@ public interface RemoteAPIConfig extends ConfigInterface {
     @DefaultIntValue(3128)
     @AboutConfig
     @RequiresRestart
-    @Description("remoteapi will listen on this port")
+    @DescriptionForConfigEntry("remoteapi will listen on this port")
     int getAPIPort();
 
     void setAPIPort(int i);
@@ -22,7 +22,7 @@ public interface RemoteAPIConfig extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("enable/disable the remoteapi")
+    @DescriptionForConfigEntry("enable/disable the remoteapi")
     boolean getAPIEnabled();
 
     void setAPIEnabled(boolean b);
@@ -30,7 +30,7 @@ public interface RemoteAPIConfig extends ConfigInterface {
     @DefaultBooleanValue(false)
     @AboutConfig
     @RequiresRestart
-    @Description("remoteapi will listen on localhost only")
+    @DescriptionForConfigEntry("remoteapi will listen on localhost only")
     boolean getAPIlocalhost();
 
     void setAPIlocalhost(boolean b);
@@ -38,13 +38,13 @@ public interface RemoteAPIConfig extends ConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("ExternInterface(Cnl2,Flashgot) will listen on 9666")
+    @DescriptionForConfigEntry("ExternInterface(Cnl2,Flashgot) will listen on 9666")
     boolean getExternInterfaceEnabled();
 
     void setExternInterfaceEnabled(boolean b);
 
     @AboutConfig
-    @Description("ExternInterface(Cnl2,Flashgot) Authorized Websites")
+    @DescriptionForConfigEntry("ExternInterface(Cnl2,Flashgot) Authorized Websites")
     ArrayList<String> getExternInterfaceAuth();
 
     void setExternInterfaceAuth(ArrayList<String> auth);

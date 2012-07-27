@@ -6,13 +6,13 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface ShutdownConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(false)
     @AboutConfig
-    @Description("Forcing Shutdown works only on some systems.")
+    @DescriptionForConfigEntry("Forcing Shutdown works only on some systems.")
     boolean isForceShutdownEnabled();
 
     void setForceShutdownEnabled(boolean b);
@@ -25,7 +25,7 @@ public interface ShutdownConfig extends ExtensionConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @Description("If enabled, JD will shut down the system after downloads have finished")
+    @DescriptionForConfigEntry("If enabled, JD will shut down the system after downloads have finished")
     boolean isShutdownActive();
 
     void setShutdownActive(boolean b);
@@ -39,7 +39,7 @@ public interface ShutdownConfig extends ExtensionConfigInterface {
     @DefaultBooleanValue(true)
     @AboutConfig
     @RequiresRestart
-    @Description("If enabled, The Main Toolbar will contain a button to quickly enable or disable Shutdown")
+    @DescriptionForConfigEntry("If enabled, The Main Toolbar will contain a button to quickly enable or disable Shutdown")
     boolean isToolbarButtonEnabled();
 
     void setToolbarButtonEnabled(boolean b);

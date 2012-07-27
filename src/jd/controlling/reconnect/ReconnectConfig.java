@@ -7,7 +7,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.PlainStorage;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 
@@ -66,13 +66,13 @@ public interface ReconnectConfig extends ConfigInterface {
 
     void setSecondsBeforeFirstIPCheck(int seconds);
 
-    @Description("Please enter Website for IPCheck here")
+    @DescriptionForConfigEntry("Please enter Website for IPCheck here")
     @AboutConfig
     String getGlobalIPCheckUrl();
 
     void setGlobalIPCheckUrl(String url);
 
-    @Description("Please enter Regex for IPCheck here")
+    @DescriptionForConfigEntry("Please enter Regex for IPCheck here")
     @AboutConfig
     @DefaultStringValue(IP.IP_PATTERN)
     String getGlobalIPCheckPattern();
@@ -105,7 +105,7 @@ public interface ReconnectConfig extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(5)
-    @Description("Auto Reconnect Wizard performs a few reconnects for each successfull script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
+    @DescriptionForConfigEntry("Auto Reconnect Wizard performs a few reconnects for each successfull script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
     @SpinnerValidator(min = 1, max = 20)
     int getOptimizationRounds();
 

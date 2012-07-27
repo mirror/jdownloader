@@ -3,7 +3,7 @@ package org.jdownloader.extensions.translator;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-import org.appwork.txtresource.Description;
+import org.appwork.txtresource.DescriptionForTranslationEntry;
 import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationSource;
 import org.appwork.utils.StringUtils;
@@ -60,7 +60,7 @@ public class TranslateEntry {
         // Get Translation String without replacing the %s*wildcard
 
         source = tinterface._getHandler().getSource(method);
-        Description da = m.getAnnotation(Description.class);
+        DescriptionForTranslationEntry da = m.getAnnotation(DescriptionForTranslationEntry.class);
         if (da != null) {
             description = da.value();
         }

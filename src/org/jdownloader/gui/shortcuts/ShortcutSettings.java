@@ -3,23 +3,22 @@ package org.jdownloader.gui.shortcuts;
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-
-import com.sun.org.glassfish.gmbal.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 public interface ShortcutSettings extends ConfigInterface {
     @AboutConfig
     @DefaultStringValue("Ctrl+Enter")
-    @Description("Confirm All Button in the Linkgrabber Tab")
+    @DescriptionForConfigEntry("Confirm All Button in the Linkgrabber Tab")
     String getLinkgrabberActionsConfirmAll();
 
     @AboutConfig
     @DefaultStringValue("Ctrl+U")
-    @Description("Upload Changes in Translator Module")
+    @DescriptionForConfigEntry("Upload Changes in Translator Module")
     String getTranslatorExtensionUpload();
 
     @AboutConfig
     @DefaultStringValue("Ctrl+S")
-    @Description("Save Changes in Translator Module")
+    @DescriptionForConfigEntry("Save Changes in Translator Module")
     String getTranslatorExtensionSaveLocally();
 
     @AboutConfig

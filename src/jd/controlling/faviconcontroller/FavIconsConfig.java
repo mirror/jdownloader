@@ -6,7 +6,7 @@ import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 
 public interface FavIconsConfig extends ConfigInterface {
@@ -14,7 +14,7 @@ public interface FavIconsConfig extends ConfigInterface {
     @DefaultIntValue(12)
     @AboutConfig
     @RequiresRestart
-    @Description("max. number of favicon threads")
+    @DescriptionForConfigEntry("max. number of favicon threads")
     int getMaxThreads();
 
     void setMaxThreads(int i);
@@ -22,7 +22,7 @@ public interface FavIconsConfig extends ConfigInterface {
     @DefaultIntValue(20000)
     @AboutConfig
     @RequiresRestart
-    @Description("max. time in ms before killing an idle favicon thread")
+    @DescriptionForConfigEntry("max. time in ms before killing an idle favicon thread")
     int getThreadKeepAlive();
 
     void setThreadKeepAlive(int i);

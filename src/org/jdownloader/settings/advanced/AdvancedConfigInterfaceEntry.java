@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
 import org.appwork.storage.config.ConfigInterface;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.handler.KeyHandler;
 
@@ -40,7 +40,7 @@ public class AdvancedConfigInterfaceEntry implements AdvancedConfigEntry {
 
     public String getDescription() {
 
-        Description an = keyHandler.getAnnotation(Description.class);
+        DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
         if (an != null) { return an.value(); }
         return null;
     }

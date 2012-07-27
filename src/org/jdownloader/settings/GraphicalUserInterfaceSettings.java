@@ -9,7 +9,7 @@ import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultLongValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
@@ -36,7 +36,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     String getActiveConfigPanel();
 
     @AboutConfig
-    @Description("Captcha Dialog Image scale Faktor in %")
+    @DescriptionForConfigEntry("Captcha Dialog Image scale Faktor in %")
     @DefaultIntValue(100)
     @SpinnerValidator(min = 50, max = 500, step = 10)
     int getCaptchaScaleFactor();
@@ -55,20 +55,20 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     org.jdownloader.gui.views.downloads.View getDownloadView();
 
     @AboutConfig
-    @Description("Refreshrate in ms for the DownloadView")
+    @DescriptionForConfigEntry("Refreshrate in ms for the DownloadView")
     @DefaultLongValue(500)
     @SpinnerValidator(min = 50, max = 5000, step = 25)
     @RequiresRestart
     public long getDownloadViewRefresh();
 
     @AboutConfig
-    @Description("Font to be used. Default value is default. For foreign chars use e.g. Dialog")
+    @DescriptionForConfigEntry("Font to be used. Default value is default. For foreign chars use e.g. Dialog")
     @DefaultStringValue("default")
     @RequiresRestart
     String getFontName();
 
     @AboutConfig
-    @Description("Font scale factor in percent. Default value is 100 which means no font scaling.")
+    @DescriptionForConfigEntry("Font scale factor in percent. Default value is 100 which means no font scaling.")
     @DefaultIntValue(100)
     @RequiresRestart
     int getFontScaleFactor();
@@ -88,12 +88,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultStringValue("standard")
     @AboutConfig
-    @Description("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
+    @DescriptionForConfigEntry("Icon Theme ID. Make sure that ./themes/<ID>/ exists")
     @ValidatorFactory(ThemeValidator.class)
     String getThemeID();
 
     @AboutConfig
-    @Description("Disable animation and all animation threads. Optional value. Default value is true.")
+    @DescriptionForConfigEntry("Disable animation and all animation threads. Optional value. Default value is true.")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isAnimationEnabled();
@@ -119,48 +119,48 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isBalloonNotificationEnabled();
 
     @AboutConfig
-    @Description("Enable/disable Enable/disable Clipboard monitoring")
+    @DescriptionForConfigEntry("Enable/disable Enable/disable Clipboard monitoring")
     @DefaultBooleanValue(true)
     boolean isClipboardMonitored();
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @Description("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
+    @DescriptionForConfigEntry("If disabled, The Hostercolumn will show gray disabled icons if the link is disabled")
     boolean isColoredIconsForDisabledHosterColumnEnabled();
 
     @DefaultBooleanValue(false)
     boolean isConfigViewVisible();
 
     @AboutConfig
-    @Description("Highlight Table in Downloadview if table is filtered")
+    @DescriptionForConfigEntry("Highlight Table in Downloadview if table is filtered")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isFilterHighlightEnabled();
 
     @AboutConfig
-    @Description("Enable/disable support for system DPI settings. Default value is true.")
+    @DescriptionForConfigEntry("Enable/disable support for system DPI settings. Default value is true.")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isFontRespectsSystemDPI();
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @Description("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
+    @DescriptionForConfigEntry("If enabled, The User Interface will switch to Linkgrabber Tab if a new job has been added")
     boolean isLinkgrabberAutoTabSwitchEnabled();
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @Description("If enabled, JDownloader GUI will come to top when new links are added")
+    @DescriptionForConfigEntry("If enabled, JDownloader GUI will come to top when new links are added")
     boolean isLinkgrabberFrameToTopOnNewLinksEnabled();
 
     @AboutConfig
-    @Description("Enable/Disable the Linkgrabber Sidebar")
+    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isLinkgrabberSidebarEnabled();
 
     @AboutConfig
-    @Description("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
+    @DescriptionForConfigEntry("Enable/Disable the Linkgrabber Sidebar QuicktoggleButton")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isLinkgrabberSidebarToggleButtonEnabled();
@@ -177,70 +177,70 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     public boolean isPasswordProtectionEnabled();
 
     @AboutConfig
-    @Description("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    @DescriptionForConfigEntry("If true, ETAColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertETAColumnEnabled();
 
     @AboutConfig
-    @Description("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    @DescriptionForConfigEntry("If true, SpeedColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertSpeedColumnEnabled();
 
     @AboutConfig
-    @Description("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
+    @DescriptionForConfigEntry("If true, TaskColumn will show Premium Alerts in Free Download mode if JD thinks Premium would be better currently.")
     boolean isPremiumAlertTaskColumnEnabled();
 
     @AboutConfig
-    @Description("Set to true of you want jd to remember the latest selected download view")
+    @DescriptionForConfigEntry("Set to true of you want jd to remember the latest selected download view")
     @DefaultBooleanValue(false)
     boolean isSaveDownloadViewCrossSessionEnabled();
 
     @AboutConfig
-    @Description("True if move button should be visible in downloadview")
+    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isShowMoveDownButton();
 
-    @Description("True if move button should be visible in downloadview")
+    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
     @AboutConfig
     @RequiresRestart
     @DefaultBooleanValue(false)
     boolean isShowMoveToBottomButton();
 
-    @Description("True if move button should be visible in downloadview")
+    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
     @RequiresRestart
     @AboutConfig
     @DefaultBooleanValue(false)
     boolean isShowMoveToTopButton();
 
-    @Description("True if move button should be visible in downloadview")
+    @DescriptionForConfigEntry("True if move button should be visible in downloadview")
     @AboutConfig
     @RequiresRestart
     @DefaultBooleanValue(false)
     boolean isShowMoveUpButton();
 
     @AboutConfig
-    @Description("Highlight Column in Downloadview if table is not in downloadsortorder")
+    @DescriptionForConfigEntry("Highlight Column in Downloadview if table is not in downloadsortorder")
     @DefaultBooleanValue(true)
     @RequiresRestart
     boolean isSortColumnHighlightEnabled();
 
     @AboutConfig
-    @Description("Paint all labels/text with or without antialias. Default value is false.")
+    @DescriptionForConfigEntry("Paint all labels/text with or without antialias. Default value is false.")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isTextAntiAliasEnabled();
 
     @AboutConfig
-    @Description("If false, Most of the Tooltips will be disabled")
+    @DescriptionForConfigEntry("If false, Most of the Tooltips will be disabled")
     @DefaultBooleanValue(true)
     boolean isTooltipEnabled();
 
     @AboutConfig
-    @Description("If true, hostcolumn will also show full hostname")
+    @DescriptionForConfigEntry("If true, hostcolumn will also show full hostname")
     @DefaultBooleanValue(false)
     boolean isShowFullHostname();
 
     @AboutConfig
-    @Description("If true, java will try to use D3D for graphics")
+    @DescriptionForConfigEntry("If true, java will try to use D3D for graphics")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isUseD3D();
@@ -256,7 +256,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     // void setDownloadViewSidebarVisible(boolean b);
 
     @AboutConfig
-    @Description("Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency feature is enabled")
+    @DescriptionForConfigEntry("Enable/disable window opacity on Java 6u10 and above. A value of 'false' disables window opacity which means that the window corner background which is visible for non-rectangular windows disappear. Furthermore the shadow for popupMenus makes use of real translucent window. Some themes like SyntheticaSimple2D support translucent titlePanes if opacity is disabled. The property is ignored on JRE's below 6u10. Note: It is recommended to activate this feature only if your graphics hardware acceleration is supported by the JVM - a value of 'false' can affect application performance. Default value is false which means the translucency feature is enabled")
     @DefaultBooleanValue(false)
     @RequiresRestart
     boolean isWindowOpaque();
@@ -367,7 +367,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @Description("Hide the package in case it only contains one child")
+    @DescriptionForConfigEntry("Hide the package in case it only contains one child")
     boolean isHideSingleChildPackages();
 
     void setHideSingleChildPackages(boolean b);

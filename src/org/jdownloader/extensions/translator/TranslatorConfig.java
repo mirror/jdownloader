@@ -6,7 +6,7 @@ import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.CryptedStorage;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
-import org.appwork.storage.config.annotations.Description;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 
 /**
  * This interface defines all settings of the translation Extension. Extend it if you need additional entries. Make sure that you have a
@@ -18,12 +18,12 @@ import org.appwork.storage.config.annotations.Description;
 @CryptedStorage(key = { 0x00, 0x02, 0x11, 0x01, 0x01, 0x54, 0x02, 0x01, 0x01, 0x01, 0x12, 0x01, 0x01, 0x01, 0x22, 0x01 })
 public interface TranslatorConfig extends ExtensionConfigInterface {
 
-    @Description("Username for the SVN Access")
+    @DescriptionForConfigEntry("Username for the SVN Access")
     public String getSVNUser();
 
     public void setSVNUser(String user);
 
-    @Description("Password for the SVN Access")
+    @DescriptionForConfigEntry("Password for the SVN Access")
     public String getSVNPassword();
 
     public void setSVNPassword(String password);
