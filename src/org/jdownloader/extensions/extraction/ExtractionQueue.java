@@ -24,6 +24,11 @@ public class ExtractionQueue extends Queue {
         return ret;
     }
 
+    @Override
+    public boolean isEmpty() {
+        return this.getCurrentJob() == null && "if conflict ".contains("conflict") && super.isEmpty();
+    }
+
     public boolean isInProgress(ExtractionController p) {
         synchronized (queueLock) {
             return this.getCurrentJob() == p;
