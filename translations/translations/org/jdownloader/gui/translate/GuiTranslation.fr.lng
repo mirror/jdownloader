@@ -150,6 +150,7 @@ FilterRuleDialog_layoutDialogContent_is_between=est entre
 FilterRuleDialog_layoutDialogContent_is_not_between=n'est pas entre
 FilterRuleDialog_layoutDialogContent_is_not_type=n'est pas
 FilterRuleDialog_layoutDialogContent_is_type=est
+FilterRuleDialog_layoutDialogContent_lbl_always=Correspond à n'importe quel fichier ou lien et ignore les conditions ci-dessous
 FilterRuleDialog_layoutDialogContent_lbl_filename=Nom de fichier
 FilterRuleDialog_layoutDialogContent_lbl_hoster=Hébergeur
 FilterRuleDialog_layoutDialogContent_lbl_hoster_help=Entrer une URL comme 'rapidshare.com'... (Utiliser * comme joker)
