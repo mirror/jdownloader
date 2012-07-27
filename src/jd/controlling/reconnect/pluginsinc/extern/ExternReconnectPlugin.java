@@ -5,7 +5,6 @@ import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
@@ -23,22 +22,14 @@ import jd.controlling.reconnect.RouterPlugin;
 import jd.controlling.reconnect.pluginsinc.extern.translate.T;
 import jd.gui.UserIO;
 import jd.gui.swing.components.ComboBrowseFile;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storage;
-import org.appwork.utils.Hash;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.TextComponentChangeListener;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.appwork.utils.swing.dialog.ExtFileChooserDialog;
-import org.appwork.utils.swing.dialog.FileChooserSelectionMode;
 import org.jdownloader.images.NewTheme;
 
 /**
@@ -184,33 +175,6 @@ public class ExternReconnectPlugin extends RouterPlugin implements ActionListene
     private String getCommand() {
         // TODO Auto-generated method stub
         return this.getStorage().get(ExternReconnectPlugin.COMMAND, JDUtilities.getConfiguration().getStringProperty("InteractionExternReconnect_Command", ""));
-    }
-
-    public static void main(String[] args) {
-        ExtFileChooserDialog d = new ExtFileChooserDialog(0, "", null, null);
-        d.setFileSelectionMode(FileChooserSelectionMode.FILES_ONLY);
-        try {
-            Dialog.getInstance().showDialog(d);
-
-            System.out.println(Hash.getMD5(d.getSelectedFile()));
-
-            Browser br = new Browser();
-
-            URLConnectionAdapter con = br.openPostConnection("http://highresaudio.com/download.php", "userData={\"response_status\":\"JSONOBJECT\",\"userID\":\"72\",\"surname\":\"Thomas\",\"lastname\":\"Rechenmacher\",\"sessionID\":\"0270650278cf074bcd51152f2c859bc90a538095\"}&paidID=11203&formatID=30737&trackID=58241&");
-
-            br.download(new File(d.getSelectedFile().getAbsolutePath() + "_2"), con);
-
-            System.out.println("Finished: " + Hash.getMD5(new File(d.getSelectedFile().getAbsolutePath() + "_2")));
-        } catch (DialogClosedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (DialogCanceledException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
     }
 
     @Override
