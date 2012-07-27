@@ -1,7 +1,7 @@
 OnCloseAction_exit=Quitter l'application
 OnCloseAction_totaskbar=Minimiser dans la barre des tâches
 OnCloseAction_totray=Fermer dans la zone de notification
-OnMinimizeAction_ask=Demandez-moi
+OnMinimizeAction_ask=Me demander
 OnMinimizeAction_totaskbar=Minimiser dans la barre des tâches
 OnMinimizeAction_totray=Fermer dans la zone de notification
 jd_plugins_optional_jdtrayicon_jdlighttray=Zone de notification
