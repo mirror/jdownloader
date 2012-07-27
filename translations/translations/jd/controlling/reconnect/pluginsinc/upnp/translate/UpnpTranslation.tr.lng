@@ -1,5 +1,4 @@
-AutoDetectAction_run_failed=UPNP aygıtları bulundu fakat yeniden bağlanma işlemi gerçekleştirilemedi. Bunun yerine Live Header yeniden bağlanma yöntemini deneyin!
-AutoDetectAction_run_optimize=Eniyile: %s1
+AutoDetectAction_run_failed=UPNP aygıtları bulundu fakat yeniden bağlanma işlemi gerçekleştirilemedi. \n\nBunun yerine Live Header yeniden bağlanma yöntemini deneyin!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Çalışma ağınızdaki UPNP yeniden bağlanma aygıtlarının tümünü bulmaya çalışır. \n\nFritzBox Yönlendiricilerinin birçoğu genelde bu yöntemle yeniden bağlanabilir.
 UPNPReconnectInvoker_getName_=UPNP Yönlendirici yeniden bağlanma
 UPNPRouterPlugin_run_error=UPNP aygıtı bulunamadı. Bunun yerine Live Header Yeniden Bağlanma yöntemini deneyin.
@@ -10,10 +9,6 @@ auto=UPNP otomatik ayarlama
 controlURLTxt_help=Denetim URL'sini girin...
 interaction_UpnpReconnect_wanservice_ip=Internet Protokolü
 interaction_UpnpReconnect_wanservice_ppp=Noktadan Noktaya Protokolü
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Hiçbir UPNP yönlendirici bulunamadı
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Başarısız
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JD yeniden bağlanma ayarlarını başarıyla ayarladı! Yönlendiriciniz '%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Başarılı
 literally_choose_router=Aygıtı Seçin
 literally_control_url=Denetim URL'si
 literally_router=UPNP (ETVÇ) Yönlendirici

@@ -1,4 +1,3 @@
-gui_config_antistandby_mode2=Kip:
 gui_config_antistandby_whiledl2=İndirmeler yürütülürken
 gui_config_antistandby_whilejd2=JDownloader açık durumdayken
 jd_plugins_optional_antistandby_jdantistandby=Bekleme Önleyici

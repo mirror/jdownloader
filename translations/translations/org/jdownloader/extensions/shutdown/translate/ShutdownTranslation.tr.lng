@@ -3,17 +3,14 @@ addons_jdshutdown_statusmessage_disabled=Sisteminiz JDownloader tarafından KAPA
 addons_jdshutdown_statusmessage_enabled=İndirmeler bittikten sonra JDownloader Sisteminizi kapatacak.
 config_toolbarbutton=Araç çubuğunda düğmesi görünebilsin
 gui_config_jdshutdown_close=JDownloader'ı Kapat
-gui_config_jdshutdown_enabledOnStart=Başlangıçta etkinleştirilsin
 gui_config_jdshutdown_forceshutdown=Bilgisayarı Kapatmaya zorla (Tüm işletim sistemleri için değildir)
 gui_config_jdshutdown_hibernate=Hazırda Beklemeye al (Tüm işletim sistemleri için değildir)
 gui_config_jdshutdown_mode=Kip:
-gui_config_jdshutdown_osx_force_long=Sistem kapatma zorlayıcısını yükle (sadece Mac OSX)
-gui_config_jdshutdown_osx_force_short=Kur
 gui_config_jdshutdown_shutdown=Bilgisayarı Kapat
 gui_config_jdshutdown_standby=Beklemeye al (Tüm işletim sistemleri için değildir)
-install_force=Sistem kapatma zorlayıcısını yükle
-install_msg=Sisteminizi, sistem kapatma zorlayıcısı özelliği için hazırlamak istiyor musunuz?
-install_title=Sistem kapatma zorlayıcısını yükle
+install_force=Bilgisayar kapatma zorlayıcısını yükle
+install_msg=Sisteminizi, bilgisayar kapatma zorlayıcısı özelliği için hazırlamak istiyor musunuz?
+install_title=Bilgisayar kapatma zorlayıcısını yükle
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kapatılacak!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Sistem hazırda bekleme kipine alınacak!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Sistem kapatılacak!</font></h2>
@@ -25,3 +22,4 @@ interaction_shutdown_dialog_title_standby=Beklemeye alınsın mı?
 jd_plugins_optional_jdshutdown=Sistem Kapatma
 jd_plugins_optional_jdshutdown_description=İndirmeler bittiğinde ya da durdurulduğunda, bilgisayarınız otomatik olarak kapatılsın, askıya, hazırda beklemeye alınsın veya JDownloader'dan çıkılsın.
 lit_shutdownn=Sistem kapatma
+show_admin=JDownloader'ı hazırda bekleme (hibernasyon) veya bekleme kiplerine ayarlamak için Yönetici yetkileri gereklidir.
