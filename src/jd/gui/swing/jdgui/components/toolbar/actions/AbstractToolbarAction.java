@@ -22,7 +22,10 @@ public abstract class AbstractToolbarAction extends AppAction {
 
     abstract public String createIconKey();
 
-    abstract protected String createMnemonic();
+    public String createMnemonic() {
+        // we hardly use Mnemonics in JD
+        return "-";
+    }
 
     final public AbstractToolbarAction init() {
         if (inited) return this;

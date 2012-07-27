@@ -11,12 +11,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction();
 
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_aboutaction_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_aboutaction_mnemonics();
-
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String action_aboutaction_tooltip();
 
@@ -26,28 +20,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Add Container" })
     String action_addcontainer();
 
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_addcontainer_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_addcontainer_mnemonic();
-
     String action_addcontainer_tooltip();
 
     @Default(lngs = { "en" }, values = { "Changelog" })
     String action_changelog();
 
-    String action_changelog_accelerator();
-
-    String action_changelog_mnemonic();
-
     String action_changelog_tooltip();
-
-    @Default(lngs = { "en" }, values = { "ctrl+c" })
-    String action_clipboard_observer_accelerator();
-
-    @Default(lngs = { "en" }, values = { "c" })
-    String action_clipboard_observer_mnemonics();
 
     @Default(lngs = { "en" }, values = { "Enable or Disable Clipboard Observer." })
     String action_clipboard_observer_tooltip();
@@ -55,157 +33,31 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Exit" })
     String action_exit();
 
-    String action_exit_accelerator();
-
-    String action_exit_mnemonic();
-
     String action_exit_tooltip();
 
     @Default(lngs = { "en" }, values = { "Help" })
     String action_help();
 
-    String action_help_accelerator();
-
-    String action_help_mnemonic();
-
     String action_help_tooltip();
-
-    @Default(lngs = { "en" }, values = { "Log" })
-    String action_log();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_log_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_log_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "Show Log" })
-    String action_log_tooltip();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_open_dlfolder_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_open_dlfolder_mnemonic();
 
     @Default(lngs = { "en" }, values = { "Open the default download destination" })
     String action_open_dlfolder_tooltip();
 
-    @Default(lngs = { "en" }, values = { "ctrl+b" })
-    String action_pause_accelerator();
-
-    @Default(lngs = { "en" }, values = { "b" })
-    String action_pause_mnemonic();
-
     @Default(lngs = { "en" }, values = { "Pause Downloads. This sets global speed limit to 10 kb/s" })
     String action_pause_tooltip();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_premium_toggle_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_premium_toggle_mnemonic();
 
     @Default(lngs = { "en" }, values = { "Enable or disable all Premium Accounts" })
     String action_premium_toggle_tooltip();
 
-    @Default(lngs = { "en" }, values = { "ctrl+i" })
-    String action_reconnect_invoke_accelerator();
-
-    @Default(lngs = { "en" }, values = { "i" })
-    String action_reconnect_invoke_mnemonic();
-
     @Default(lngs = { "en" }, values = { "Perform a Reconnect, to get a new dynamic IP" })
     String action_reconnect_invoke_tooltip();
-
-    @Default(lngs = { "en" }, values = { "ctrl+r" })
-    String action_reconnect_toggle_accelerator();
-
-    @Default(lngs = { "en" }, values = { "r" })
-    String action_reconnect_toggle_mnemonic();
 
     @Default(lngs = { "en" }, values = { "Enable or Disable Auto-Reconnection" })
     String action_reconnect_toggle_tooltip();
 
-    // action_
-    @Default(lngs = { "en" }, values = { "Disable Links" })
-    String action_remove_disabled_links();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_disabled_links_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_disabled_links_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "tooltip" })
-    String action_remove_disabled_links_tooltip();
-
-    // action_//
-    @Default(lngs = { "en" }, values = { "Remove Dupes" })
-    String action_remove_dupe_links();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_dupe_links_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_dupe_links_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "tooltip" })
-    String action_remove_dupe_links_tooltip();
-
-    // action_//
-    @Default(lngs = { "en" }, values = { "Remove failed links" })
-    String action_remove_failed_links();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_failed_links_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_failed_links_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "tooltip" })
-    String action_remove_failed_links_tooltip();
-
-    @Default(lngs = { "en" }, values = { "Remove Links" })
-    String action_remove_links();
-
-    String action_remove_links_accelerator();
-
-    String action_remove_links_mnemonic();
-
-    String action_remove_links_tooltip();
-
-    // action_//
-    @Default(lngs = { "en" }, values = { "Remove offline links" })
-    String action_remove_offline_links();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_offline_links_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_remove_offline_links_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "tooltip" })
-    String action_remove_offline_links_tooltip();
-
-    @Default(lngs = { "en" }, values = { "Remove Packages" })
-    String action_remove_packages();
-
-    String action_remove_packages_accelerator();
-
-    String action_remove_packages_mnemonic();
-
-    String action_remove_packages_tooltip();
-
     // action_//
     @Default(lngs = { "en" }, values = { "Restart" })
     String action_restart();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_restart_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_restart_mnemonic();
 
     @Default(lngs = { "en" }, values = { "Restart JDownloader" })
     String action_restart_tooltip();
@@ -214,35 +66,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Settings" })
     String action_settings_menu();
 
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_settings_menu_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_settings_menu_mnemonic();
-
     @Default(lngs = { "en" }, values = { "Open Settings panel" })
     String action_settings_menu_tooltip();
 
-    @Default(lngs = { "en" }, values = { "ctrl+p" })
-    String action_start_downloads_accelerator();
-
-    @Default(lngs = { "en" }, values = { "p" })
-    String action_start_downloads_mnemonic();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_start_update_accelerator();
-
-    @Default(lngs = { "en" }, values = { "-" })
-    String action_start_update_mnemonic();
-
     @Default(lngs = { "en" }, values = { "Check for new updates." })
     String action_start_update_tooltip();
-
-    @Default(lngs = { "en" }, values = { "ctrl+s" })
-    String action_stop_downloads_accelerator();
-
-    @Default(lngs = { "en" }, values = { "s" })
-    String action_stop_downloads_mnemonic();
 
     @Default(lngs = { "en" }, values = { "Stops all running Downloads" })
     String action_stop_downloads_tooltip();
@@ -381,15 +209,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "New Package Name" })
     String gui_linklist_editpackagename_message();
-
-    @Default(lngs = { "en" }, values = { "Upload failed" })
-    String gui_logDialog_warning_uploadFailed();
-
-    @Default(lngs = { "en" }, values = { "Please describe your Problem/Bug/Question!" })
-    String gui_logger_askQuestion();
-
-    @Default(lngs = { "en" }, values = { "Please send this loglink to your supporter" })
-    String gui_logupload_message();
 
     @Default(lngs = { "en" }, values = { "About" })
     String gui_menu_about();
@@ -538,24 +357,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Username:" })
     String jd_gui_swing_dialog_ProxyDialog_username();
 
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all completed DownloadLinks?" })
-    String jd_gui_swing_jdgui_menu_actions_CleanupDownload_message();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all completed FilePackages?" })
-    String jd_gui_swing_jdgui_menu_actions_CleanupPackages_message();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all disabled DownloadLinks?" })
-    String jd_gui_swing_jdgui_menu_actions_RemoveDisabledAction_message();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all duplicated DownloadLinks?" })
-    String jd_gui_swing_jdgui_menu_actions_RemoveDupesAction_message();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all failed DownloadLinks?" })
-    String jd_gui_swing_jdgui_menu_actions_RemoveFailedAction_message();
-
-    @Default(lngs = { "en" }, values = { "Do you really want to remove all offline DownloadLinks?" })
-    String jd_gui_swing_jdgui_menu_actions_RemoveOfflineAction_message();
-
     @Default(lngs = { "en" }, values = { "This option needs a JDownloader restart." })
     String jd_gui_swing_jdgui_settings_ConfigPanel_restartquestion();
 
@@ -583,20 +384,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Stopmark is set" })
     String jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
 
-    @Default(lngs = { "en" }, values = { "Upload Log" })
-    String jd_gui_swing_jdgui_views_info_LogInfoPanel_upload();
-
     @Default(lngs = { "en" }, values = { "Linkgrabber" })
     String jd_gui_swing_jdgui_views_linkgrabberview_tab_title();
 
     @Default(lngs = { "en" }, values = { "Collect, add and select links and URLs" })
     String jd_gui_swing_jdgui_views_linkgrabberview_tab_tooltip();
-
-    @Default(lngs = { "en" }, values = { "Log" })
-    String jd_gui_swing_jdgui_views_log_tab_title();
-
-    @Default(lngs = { "en" }, values = { "See or Upload the Log" })
-    String jd_gui_swing_jdgui_views_log_tab_tooltip();
 
     @Default(lngs = { "en" }, values = { "Please confirm!" })
     String jd_gui_userio_defaulttitle_confirm();
@@ -618,9 +410,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "dd.MM.yy HH:mm" })
     String added_date_column_dateformat();
-
-    @Default(lngs = { "en" }, values = { "Chart is loading or not available" })
-    String plugins_config_premium_chartapi_caption_error2();
 
     @Default(lngs = { "en" }, values = { "Actions" })
     String premiumaccounttablemodel_column_actions();
@@ -673,9 +462,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Enable/Disable" })
     String settings_linkgrabber_filter_columns_enabled();
 
-    @Default(lngs = { "en" }, values = { "Upload of logfile failed!" })
-    String sys_warning_loguploadfailed();
-
     @Default(lngs = { "en" }, values = { "If the file already exists:" })
     String system_download_triggerfileexists();
 
@@ -693,9 +479,6 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { ".*(error|failed).*" })
     String userio_errorregex();
-
-    @Default(lngs = { "en" }, values = { "Please enter!" })
-    String userio_input_title();
 
     @Default(lngs = { "en" }, values = { "No Proxy" })
     String gui_column_proxytype_no_proxy();
@@ -2098,9 +1881,6 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "You really should know that..." })
     String literall_usage_tipp();
 
-    @Default(lngs = { "en" }, values = { "... a single click and a double click on the Downloadfolder Column have different functions:\r\n            A single click opens a Dialog to choose a new Downloadfolder\r\n            A double click opens the current Downloadfolder in the Explorer " })
-    String DownloadFolderColumn_onSingleClick_object_();
-
     @Default(lngs = { "en" }, values = { "Failed Links" })
     String DeleteFailedAction_DeleteFailedAction_object_();
 
@@ -2183,17 +1963,11 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "It contains the most important features to control JDownloader without leaving your browser." })
     String JDToolbarOffer_layoutDialogContent_desc2_();
 
-    @Default(lngs = { "en" }, values = { "Download is running" })
-    String ConnectionColumn_DownloadIsRunning();
-
     @Default(lngs = { "en" }, values = { "Download can be resumed" })
     String ConnectionColumn_DownloadIsResumeable();
 
     @Default(lngs = { "en" }, values = { "Account in use: %s1" })
     String ConnectionColumn_DownloadUsesAccount(String s);
-
-    @Default(lngs = { "en" }, values = { "Download is not running" })
-    String ConnectionColumn_DownloadIsNotRunning();
 
     @Default(lngs = { "en" }, values = { "New Package" })
     String NewPackageDialog_NewPackageDialog_();
@@ -2293,8 +2067,5 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Valid Range: %s1 - %s2" })
     String RangeValidator_toString_object_(long min, long max);
-
-    @Default(lngs = { "en" }, values = { "Ctrl+Enter" })
-    String linkgrabber_confirmall_shortcut();
 
 }

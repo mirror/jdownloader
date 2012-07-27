@@ -17,8 +17,7 @@ public class Seperator extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of Seperator. This is a singleton class. Access the
-     * only existing instance by using {@link #getInstance()}.
+     * Create a new instance of Seperator. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private Seperator() {
 
@@ -29,11 +28,6 @@ public class Seperator extends AbstractToolbarAction {
 
     @Override
     public String createIconKey() {
-        return null;
-    }
-
-    @Override
-    protected String createMnemonic() {
         return null;
     }
 

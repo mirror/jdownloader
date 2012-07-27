@@ -30,11 +30,6 @@ public class AbstractToolbarAdapterAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return delegate.createMnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
         return delegate.createAccelerator();
     }

@@ -47,6 +47,7 @@ import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
 
@@ -487,13 +488,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 }
 
                 @Override
-                protected String createMnemonic() {
-                    return null;
-                }
-
-                @Override
                 protected String createAccelerator() {
-                    return null;
+                    return ShortcutController._.getShutdownExtensionToggleShutdownAction();
                 }
 
                 @Override

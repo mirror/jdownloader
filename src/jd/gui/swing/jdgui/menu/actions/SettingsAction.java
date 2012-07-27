@@ -22,6 +22,7 @@ import jd.gui.swing.SwingGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
@@ -44,13 +45,9 @@ public class SettingsAction extends ActionAdapter {
     }
 
     @Override
-    public String createMnemonic() {
-        return _GUI._.action_settings_menu_mnemonic();
-    }
-
-    @Override
     public String createAccelerator() {
-        return _GUI._.action_settings_menu_accelerator();
+
+        return ShortcutController._.getOpenSettingsAction();
     }
 
     @Override

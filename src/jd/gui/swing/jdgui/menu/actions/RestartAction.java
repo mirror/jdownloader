@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class RestartAction extends ActionAdapter {
@@ -60,13 +61,8 @@ public class RestartAction extends ActionAdapter {
     }
 
     @Override
-    public String createMnemonic() {
-        return _GUI._.action_restart_mnemonic();
-    }
-
-    @Override
     public String createAccelerator() {
-        return _GUI._.action_restart_accelerator();
+        return ShortcutController._.getRestartJDownloaderAction();
     }
 
     @Override

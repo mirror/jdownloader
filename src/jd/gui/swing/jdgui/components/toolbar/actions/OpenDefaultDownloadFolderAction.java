@@ -5,6 +5,7 @@ import java.io.File;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -12,8 +13,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolbarAction {
     private static final OpenDefaultDownloadFolderAction INSTANCE = new OpenDefaultDownloadFolderAction();
 
     /**
-     * get the only existing instance of OpenDefaultDownloadFolderAction. This
-     * is a singleton
+     * get the only existing instance of OpenDefaultDownloadFolderAction. This is a singleton
      * 
      * @return
      */
@@ -26,8 +26,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of OpenDefaultDownloadFolderAction. This is a
-     * singleton class. Access the only existing instance by using
+     * Create a new instance of OpenDefaultDownloadFolderAction. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
     private OpenDefaultDownloadFolderAction() {
@@ -51,13 +50,8 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_open_dlfolder_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_open_dlfolder_accelerator();
+        return ShortcutController._.getOpenDefaultDownloadFolderAction();
     }
 
     @Override

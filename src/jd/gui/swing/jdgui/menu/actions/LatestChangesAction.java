@@ -19,6 +19,7 @@ package jd.gui.swing.jdgui.menu.actions;
 import java.awt.event.ActionEvent;
 
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class LatestChangesAction extends ActionAdapter {
@@ -39,13 +40,8 @@ public class LatestChangesAction extends ActionAdapter {
     }
 
     @Override
-    public String createMnemonic() {
-        return _GUI._.action_changelog_mnemonic();
-    }
-
-    @Override
     public String createAccelerator() {
-        return _GUI._.action_changelog_accelerator();
+        return ShortcutController._.getOpenLatestChangesAction();
     }
 
     @Override

@@ -1,13 +1,13 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction {
     private static final GlobalPremiumSwitchToggleAction INSTANCE = new GlobalPremiumSwitchToggleAction();
 
     /**
-     * get the only existing instance of GlobalPremiumSwitchToggleAction. This
-     * is a singleton
+     * get the only existing instance of GlobalPremiumSwitchToggleAction. This is a singleton
      * 
      * @return
      */
@@ -16,8 +16,7 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
     }
 
     /**
-     * Create a new instance of GlobalPremiumSwitchToggleAction. This is a
-     * singleton class. Access the only existing instance by using
+     * Create a new instance of GlobalPremiumSwitchToggleAction. This is a singleton class. Access the only existing instance by using
      * {@link #getInstance()}.
      */
     private GlobalPremiumSwitchToggleAction() {
@@ -34,13 +33,8 @@ public class GlobalPremiumSwitchToggleAction extends AbstractToolbarToggleAction
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_premium_toggle_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_premium_toggle_accelerator();
+        return ShortcutController._.getGlobalPremiumToggleAction();
     }
 
     @Override

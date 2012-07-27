@@ -6,6 +6,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class ReconnectAction extends AbstractToolbarAction {
@@ -21,8 +22,8 @@ public class ReconnectAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of ReconnectAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ReconnectAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ReconnectAction() {
 
@@ -45,13 +46,8 @@ public class ReconnectAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_reconnect_invoke_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_reconnect_invoke_accelerator();
+        return ShortcutController._.getDoReconnectAction();
     }
 
     @Override

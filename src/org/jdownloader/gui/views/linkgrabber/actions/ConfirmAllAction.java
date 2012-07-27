@@ -13,6 +13,7 @@ import jd.controlling.packagecontroller.AbstractNode;
 
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
@@ -28,7 +29,7 @@ public class ConfirmAllAction extends AppAction {
 
     public ConfirmAllAction(boolean autostart) {
         setAutoStart(autostart);
-        setAccelerator(_GUI._.linkgrabber_confirmall_shortcut());
+        setAccelerator(ShortcutController._.getLinkgrabberActionsConfirmAll());
     }
 
     public void setAutoStart(boolean b) {

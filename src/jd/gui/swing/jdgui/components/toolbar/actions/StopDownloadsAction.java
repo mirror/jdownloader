@@ -7,14 +7,14 @@ import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class StopDownloadsAction extends AbstractToolbarAction {
     private static final StopDownloadsAction INSTANCE = new StopDownloadsAction();
 
     /**
-     * get the only existing instance of StopDownloadsAction. This is a
-     * singleton
+     * get the only existing instance of StopDownloadsAction. This is a singleton
      * 
      * @return
      */
@@ -23,8 +23,8 @@ public class StopDownloadsAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of StopDownloadsAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StopDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private StopDownloadsAction() {
 
@@ -47,13 +47,8 @@ public class StopDownloadsAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_stop_downloads_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_stop_downloads_accelerator();
+        return ShortcutController._.getStopDownloadsAction();
     }
 
     @Override

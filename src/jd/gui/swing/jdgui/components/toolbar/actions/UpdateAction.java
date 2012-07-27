@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 
 import jd.utils.WebUpdate;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class UpdateAction extends AbstractToolbarAction {
@@ -19,8 +20,7 @@ public class UpdateAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of UpdateAction. This is a singleton class. Access
-     * the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of UpdateAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private UpdateAction() {
 
@@ -41,13 +41,8 @@ public class UpdateAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_start_update_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_start_update_accelerator();
+        return ShortcutController._.getDoUpdateCheckAction();
     }
 
     @Override

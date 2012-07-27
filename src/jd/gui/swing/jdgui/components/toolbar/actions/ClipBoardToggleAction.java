@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.components.toolbar.actions;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class ClipBoardToggleAction extends AbstractToolbarToggleAction {
@@ -15,8 +16,8 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction {
     }
 
     /**
-     * Create a new instance of ClipBoardAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of ClipBoardAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private ClipBoardToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GUI.CLIPBOARD_MONITORED);
@@ -28,13 +29,9 @@ public class ClipBoardToggleAction extends AbstractToolbarToggleAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_clipboard_observer_mnemonics();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_clipboard_observer_accelerator();
+        return ShortcutController._.getToolbarClipboardToggle();
+
     }
 
     @Override

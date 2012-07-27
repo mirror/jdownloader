@@ -34,8 +34,6 @@ public class AboutAction extends AppAction {
         setName(_GUI._.action_aboutaction());
         setIconKey("about");
         setTooltipText(_GUI._.action_aboutaction_tooltip());
-        setAccelerator(_GUI._.action_aboutaction_accelerator());
-        setMnemonic(_GUI._.action_aboutaction_mnemonics());
 
     }
 

@@ -13,7 +13,7 @@ import jd.gui.swing.jdgui.JDGui;
 
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
-import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberTableModel;
 import org.jdownloader.gui.views.linkgrabber.actions.ConfirmAction;
@@ -23,8 +23,7 @@ public class StartDownloadsAction extends AbstractToolbarAction {
     private static final StartDownloadsAction INSTANCE = new StartDownloadsAction();
 
     /**
-     * get the only existing instance of StartDownloadsAction. This is a
-     * singleton
+     * get the only existing instance of StartDownloadsAction. This is a singleton
      * 
      * @return
      */
@@ -33,8 +32,8 @@ public class StartDownloadsAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of StartDownloadsAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StartDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private StartDownloadsAction() {
 
@@ -61,13 +60,8 @@ public class StartDownloadsAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_start_downloads_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_start_downloads_accelerator();
+        return ShortcutController._.getStartDownloadsAction();
     }
 
     @Override

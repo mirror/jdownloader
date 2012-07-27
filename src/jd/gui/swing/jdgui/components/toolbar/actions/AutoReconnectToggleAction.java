@@ -4,6 +4,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
@@ -19,7 +20,8 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
     }
 
     /**
-     * Create a new instance of AutoReconnectToggleAction. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of AutoReconnectToggleAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private AutoReconnectToggleAction() {
         super(org.jdownloader.settings.staticreferences.CFG_GENERAL.AUTO_RECONNECT_ENABLED);
@@ -65,13 +67,13 @@ public class AutoReconnectToggleAction extends AbstractToolbarToggleAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_reconnect_toggle_mnemonic();
+    protected String createAccelerator() {
+        return ShortcutController._.getToolbarAutoReconnectToggle();
+
     }
 
-    @Override
-    protected String createAccelerator() {
-        return _GUI._.action_reconnect_toggle_accelerator();
+    public static void main(String[] args) {
+
     }
 
     @Override

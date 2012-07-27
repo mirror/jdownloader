@@ -12,7 +12,7 @@ public abstract class ActionAdapter extends AppAction {
         setName(name);
         setIconKey(iconKey);
         setIconSizes(20);
-        setMnemonic(createMnemonic());
+
         setAccelerator(createAccelerator());
         setTooltipText(createTooltip());
         initDefaults();
@@ -21,7 +21,7 @@ public abstract class ActionAdapter extends AppAction {
     public ActionAdapter(String name, String deprec, int id) {
         super();
         setName(name);
-        setMnemonic(createMnemonic());
+
         setAccelerator(createAccelerator());
         setTooltipText(createTooltip());
         initDefaults();
@@ -35,8 +35,6 @@ public abstract class ActionAdapter extends AppAction {
 
     @Deprecated
     public abstract void initDefaults();
-
-    public abstract String createMnemonic();
 
     public abstract String createAccelerator();
 

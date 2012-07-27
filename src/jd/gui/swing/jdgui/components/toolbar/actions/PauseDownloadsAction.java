@@ -11,6 +11,7 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.swing.EDTRunner;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -18,8 +19,7 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     private static final PauseDownloadsAction INSTANCE = new PauseDownloadsAction();
 
     /**
-     * get the only existing instance of PauseDownloadsAction. This is a
-     * singleton
+     * get the only existing instance of PauseDownloadsAction. This is a singleton
      * 
      * @return
      */
@@ -28,8 +28,8 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     }
 
     /**
-     * Create a new instance of PauseDownloadsAction. This is a singleton class.
-     * Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of PauseDownloadsAction. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private PauseDownloadsAction() {
 
@@ -45,13 +45,8 @@ public class PauseDownloadsAction extends AbstractToolbarAction {
     }
 
     @Override
-    protected String createMnemonic() {
-        return _GUI._.action_pause_mnemonic();
-    }
-
-    @Override
     protected String createAccelerator() {
-        return _GUI._.action_pause_accelerator();
+        return ShortcutController._.getPauseDownloadsToggleAction();
     }
 
     @Override

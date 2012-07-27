@@ -24,6 +24,7 @@ import jd.controlling.linkcollector.LinkCollector;
 import jd.gui.UserIO;
 import jd.nutils.io.JDFileFilter;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 
@@ -53,13 +54,8 @@ public class AddContainerAction extends ActionAdapter {
     }
 
     @Override
-    public String createMnemonic() {
-        return _GUI._.action_addcontainer_mnemonic();
-    }
-
-    @Override
     public String createAccelerator() {
-        return _GUI._.action_addcontainer_accelerator();
+        return ShortcutController._.getAddContainerAction();
     }
 
     @Override

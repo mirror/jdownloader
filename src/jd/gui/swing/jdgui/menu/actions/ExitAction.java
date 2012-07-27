@@ -18,6 +18,7 @@ package jd.gui.swing.jdgui.menu.actions;
 
 import java.awt.event.ActionEvent;
 
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.translate._GUI;
 
 public class ExitAction extends ActionAdapter {
@@ -38,13 +39,8 @@ public class ExitAction extends ActionAdapter {
     }
 
     @Override
-    public String createMnemonic() {
-        return _GUI._.action_exit_mnemonic();
-    }
-
-    @Override
     public String createAccelerator() {
-        return _GUI._.action_exit_accelerator();
+        return ShortcutController._.getExitJDownloaderAction();
     }
 
     @Override

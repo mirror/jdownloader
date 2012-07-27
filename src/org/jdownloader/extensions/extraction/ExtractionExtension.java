@@ -78,6 +78,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
+import org.jdownloader.gui.shortcuts.ShortcutController;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
@@ -504,18 +505,14 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             }
 
             @Override
-            protected String createMnemonic() {
-                return null;
-            }
-
-            @Override
             public String createIconKey() {
+
                 return "unpack";
             }
 
             @Override
             protected String createAccelerator() {
-                return null;
+                return ShortcutController._.getExtractionUnpackFilesAction();
             }
         };
 
