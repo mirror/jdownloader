@@ -43,8 +43,10 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
+import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.shutdown.translate.ShutdownTranslation;
 import org.jdownloader.extensions.shutdown.translate.T;
 import org.jdownloader.gui.shortcuts.ShortcutController;
@@ -333,37 +335,19 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         @Override
         public void run() {
             if (getSettings().isShutdownActive() == false) return;
-            /* check for running jdunrar and wait */
-            // OptionalPluginWrapper addon =
-            // JDUtilities.getOptionalPlugin("unrar");
-            // if (addon != null && addon.isEnabled()) {
-            // while (true) {
-            // Object obj = addon.getPlugin().interact("isWorking", null);
-            // if (obj == null || (obj instanceof Boolean &&
-            // obj.equals(false))) break;
-            // logger.info("JD-Unrar is working - wait before shutting down");
-            // try {
-            // Thread.sleep(1000);
-            // } catch (InterruptedException e) {
-            // JDLogger.exception(e);
-            // }
-            // }
-            // }
-
-            // addon = JDUtilities.getOptionalPlugin("extraction");
-            // if (addon != null && addon.isEnabled()) {
-            // while (true) {
-            // Object obj = addon.getPlugin().interact("isWorking", null);
-            // if (obj == null || (obj instanceof Boolean &&
-            // obj.equals(false))) break;
-            // logger.info("JD-Unrar is working - wait before shutting down");
-            // try {
-            // Thread.sleep(1000);
-            // } catch (InterruptedException e) {
-            // JDLogger.exception(e);
-            // }
-            // }
-            // }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e1) {
+                e1.printStackTrace();
+            }
+            ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+            while (!extractor.getJobQueue().isEmpty()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 
             String message;
             int ret2;
