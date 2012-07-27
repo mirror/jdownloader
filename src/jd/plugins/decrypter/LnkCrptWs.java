@@ -1060,7 +1060,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         br.getPage("http://linkcrypt.ws/dir/" + containerId);
-        if (br.containsHTML("<title>Linkcrypt.ws // Error 404</title>")) {
+        if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
             logger.info("This link might be offline: " + parameter);
             final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
             if (additional != null) {

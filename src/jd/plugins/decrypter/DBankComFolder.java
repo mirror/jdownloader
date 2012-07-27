@@ -69,12 +69,13 @@ public class DBankComFolder extends PluginForDecrypt {
             br.getPage(parameter);
         }
 
-        String fpName = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
+        String fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
         if (fpName == null) {
-            fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
+            fpName = parameter;
         }
 
-        String globalLinkData = br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
+        String globalLinkData = br.getRegex("var globallinkdata = \\{.*?\"resource\":\\{(.*?)\\}\\;").getMatch(0);
+        if (globalLinkData == null) br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);
         String links = new Regex(globalLinkData, "\"files\":\\[(.*?)\\]\\}").getMatch(0);
 
         if (links == null) return null;
@@ -84,6 +85,7 @@ public class DBankComFolder extends PluginForDecrypt {
         for (String[] all : new Regex(links, "\\{(.*?)\\}").getMatches()) {
             if (passCode != null) linkParameter.put("password", passCode);
             for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
+                if ("downloadurl".equals(single[0])) System.out.println(single[1]);
                 linkParameter.put(single[0], single[1]);
             }
             DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));

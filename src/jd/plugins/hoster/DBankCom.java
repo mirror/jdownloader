@@ -100,13 +100,17 @@ public class DBankCom extends PluginForHost {
             if (!br.getRegex("\"retcode\":\"0000\"").matches()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Wrong password!"); }
             br.getPage(dllink);
         }
+
         String key = br.getRegex("\"encryKey\":\"([^\"]+)").getMatch(0);
-        /* normal link list */
-        Regex linkInfo = br.getRegex("\"id\":" + downloadLink.getStringProperty("id") + ",\"downloadurl\":\"([^<>\"]*?)\"");
-        /* password protected link list */
-        if (linkInfo.getMatches().length == 0) linkInfo = br.getRegex("\"id\":" + downloadLink.getStringProperty("id") + ",\"nspurl\":\".*?\",\"size\":\\d+,\"downloadurl\":\"([^<>\"]*?)\"");
-        /* single download link */
-        if (linkInfo.getMatches().length == 0) linkInfo = br.getRegex("\"downloadurl\":\"([^<>\"]*?)\"");
+        String linkList = br.getRegex("\"files\":\\[(.*?)\\]\\}").getMatch(0);
+        String fileId = downloadLink.getStringProperty("id");
+        String currentJsonString = null;
+        for (String s : new Regex(linkList == null ? "NPE" : linkList, "\\{(.*?)\\}").getColumn(0)) {
+            if (new Regex(s, "\"id\":" + fileId).matches()) currentJsonString = s;
+        }
+
+        /* get fresh encrypted url string */
+        Regex linkInfo = new Regex(currentJsonString, "\"downloadurl\":\"([^<>\"]+)");
         /* fail */
         if (linkInfo.getMatches().length == 0 || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
