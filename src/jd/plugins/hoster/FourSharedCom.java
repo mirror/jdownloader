@@ -348,13 +348,14 @@ public class FourSharedCom extends PluginForHost {
             ai.setTrafficMax(SizeFormatter.getSize(dat[1]));
             ai.setTrafficLeft((long) (ai.getTrafficMax() * (100.0 - Float.parseFloat(dat[0])) / 100.0));
         }
-        final String accountDetails = br.getRegex("(/account/(myAccount|settingsAjax)\\.jsp\\?sId=[^\"]+)").getMatch(0);
+        final String accountDetails = br.getRegex("(/account/(myAccount|settingsAjax)\\.jsp\\?sId=([^\"]+))").getMatch(2);
         if (accountDetails == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage(accountDetails);
+        br.getPage("http://www.4shared.com/account/myAccountAjax.jsp?sId=" + accountDetails);
         final String expire = br.getRegex("<td>Expiration Date:</td>.*?<td>(.*?)<span").getMatch(0);
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.UK) + (24 * 60 * 60 * 1000l));
         String accType = br.getRegex("Account Type:</td>.*?>(.*?)(&|<)").getMatch(0);
-        if (accType != null) accType = accType.trim();
+        if (expire == null || accType == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd.MM.yyyy", Locale.UK) + (24 * 60 * 60 * 1000l));
+        accType = accType.trim();
         if ("FREE".equalsIgnoreCase(accType)) {
             ai.setStatus("Registered (free) User");
             account.setValid(true);
