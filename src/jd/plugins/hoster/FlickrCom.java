@@ -94,7 +94,7 @@ public class FlickrCom extends PluginForHost {
                 filename += ".flv";
         } else {
             br.getPage(downloadLink.getDownloadURL() + "/in/photostream");
-            DLLINK = getFinalLink();
+            DLLINK = getFinalLink(new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
             if (DLLINK == null) DLLINK = br.getRegex("\"(http://farm\\d+\\.(static\\.flickr|staticflickr)\\.com/\\d+/.*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
@@ -226,11 +226,14 @@ public class FlickrCom extends PluginForHost {
         return a;
     }
 
-    private String getFinalLink() {
+    private String getFinalLink(final String id) {
+        // Make sure we get the correct downloadlinks
+        final String picInfo = br.getRegex("photo\\.init\\((\\{\"id\":\"" + id + "\".*?\"is_public\":\\d+\\})").getMatch(0);
+        if (picInfo == null) return null;
         final String[] sizes = { "o", "k", "h", "l", "c", "z", "m", "n", "s", "t", "q", "sq" };
         String finallink = null;
         for (String size : sizes) {
-            finallink = br.getRegex(size + "\":\\{\"label\":\"[^<>\"/]+\",\"file\":\"[^<>\"/]+\",\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            finallink = new Regex(picInfo, "\"id\":\"" + id + "\"[^\t\n\r]+" + size + "\":\\{\"label\":\"[^\t\n\r]+\",\"file\":\"[^\t\n\r]+\",\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (finallink != null) break;
         }
         if (finallink != null) finallink = finallink.replace("\\", "");
