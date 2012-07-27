@@ -303,10 +303,11 @@ public class LetitBitNet extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
+        br2.getHeaders().put("Content-Length", "0");
         br2.postPage("http://letitbit.net/ajax/download3.php", "");
+        br2.getHeaders().remove("Content-Length");
         /* we need to remove the newline in old browser */
         final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) {
@@ -408,8 +409,7 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and
-                     * retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -434,8 +434,7 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with
-                 * username/password
+                 * premium code is bound to a registered account,must login with username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -485,8 +484,7 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100
-                 * logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie("http://letitbit.net/", "log");
@@ -510,8 +508,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff
-         * below ;)
+         * last time they did not block the useragent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");

@@ -104,8 +104,14 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
         // processing plugin configuration
         SubConfiguration cfg = SubConfiguration.getConfig("shahid.mbc.net");
-        Map<String, Object> shProperties = new LinkedHashMap<String, Object>(cfg.getProperties());
-
+        Map<String, Object> shProperties = new LinkedHashMap<String, Object>();
+        if (cfg.getProperties() != null) {
+            shProperties.putAll(cfg.getProperties());
+        } else {
+            for (Quality q : Quality.values()) {
+                qStr.put(q.getHexValue(), q.getName());
+            }
+        }
         for (Entry<String, Object> property : shProperties.entrySet()) {
             if (property.getKey().matches("(ALLOW_HD|ALLOW_HIGH|ALLOW_MEDIUM|ALLOW_LOW|ALLOW_LOWEST)") && (Boolean) property.getValue()) {
                 qStr.put(Quality.valueOf(property.getKey()).getHexValue(), Quality.valueOf(property.getKey()).toString());
