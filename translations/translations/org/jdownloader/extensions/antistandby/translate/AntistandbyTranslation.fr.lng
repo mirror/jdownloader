@@ -1,5 +1,2 @@
-gui_config_antistandby_mode=Mode :
-gui_config_antistandby_whiledl=Empêcher la mise en veille pendant les téléchargements
-gui_config_antistandby_whilejd=Empêcher la mise en veille pendant le fonctionnement de JD
 jd_plugins_optional_antistandby_jdantistandby=Anti Extinction
 jd_plugins_optional_antistandby_jdantistandby_description=Empêche la mise en veille ou l'extinction pour favoriser les téléchargements
