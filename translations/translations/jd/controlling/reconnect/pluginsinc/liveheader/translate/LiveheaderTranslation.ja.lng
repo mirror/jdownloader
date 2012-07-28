@@ -16,7 +16,6 @@ LiveHeaderReconnect_onConfigValueModified_ask_title=再接続設定を共有し�
 ReconnectRecorderAction_ReconnectRecorderAction_=新しいスクリプトを作成
 RouterSendAction_RouterSendAction_=設定を共有
 RouterSendAction_RouterSendAction_tt=あなたの再接続設定を他人と共有します。\n\nこのウィザードはあなたの再接続設定をサーバへアップロードします。\n\n共有により、自動検出が改善されます。
-RouterSendAction_actionPerformed_=あなたの再接続設定を共有
 RouterSendAction_actionPerformed_title=再接続設定を共有
 gui_btn_abort=中止
 gui_btn_cancel=キャンセル

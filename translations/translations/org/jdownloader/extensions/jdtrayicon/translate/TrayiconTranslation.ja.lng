@@ -9,6 +9,7 @@ OnMinimizeAction_totray=トレイに閉じる
 jd_plugins_optional_jdtrayicon_jdlighttray=Light トレイ
 plugins_optional_JDLightTray_always=常に
 plugins_optional_JDLightTray_closetotray2='閉じる<X>' をクリックした時の動作
+plugins_optional_JDLightTray_linkgrabberresults=新しいリンクを補足した場合、メインウィンドウを前面に表示する
 plugins_optional_JDLightTray_minimized=メインウィンドウを最小化した場合のみ
 plugins_optional_JDLightTray_minimizetotray='最小化<_>' をクリックした時の動作
 plugins_optional_JDLightTray_never=しない

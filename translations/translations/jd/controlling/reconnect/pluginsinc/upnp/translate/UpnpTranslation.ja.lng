@@ -1,11 +1,7 @@
 AutoDetectAction_run_failed=UPNPデバイスが見つかりましたが再接続できません。LiveHeader を使用してください。
-AutoDetectAction_run_optimize=最適化: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Tries to find all UPNP Reconnect Devices in your Network.\n\nMost FritzBox Routers can be reonnected this way.
 UPNPRouterPlugin_run_wizard_title=UPNP ルータ ウィザード
 auto=UPNP 自動設定
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point プロトコル
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=UPNP ルータが見つかりません。
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=失敗
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=完了
 literally_choose_router=デバイスの選択
 literally_service_type=サービスの種類

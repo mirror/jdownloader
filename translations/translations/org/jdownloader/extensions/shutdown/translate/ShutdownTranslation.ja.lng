@@ -1,13 +1,15 @@
+action_tooltip=ダウンロード終了後、システムをシャットダウンする
 addons_jdshutdown_statusmessage_disabled=このシステムは、JDownloader でシャットダウンできません！
 addons_jdshutdown_statusmessage_enabled=JDownloader はダウンロード完了後にシステムをシャットダウンします。
+config_toolbarbutton=ツールバーボタンを表示
 gui_config_jdshutdown_close=JDownloader を閉じる
 gui_config_jdshutdown_forceshutdown=強制的にシャットダウン(一部の OS のみ対応)
 gui_config_jdshutdown_hibernate=休止状態(一部の OS のみ対応)
 gui_config_jdshutdown_mode=モード:
-gui_config_jdshutdown_osx_force_long=強制シャットダウンをインストール(Mac OSX のみ)
-gui_config_jdshutdown_osx_force_short=インストール
 gui_config_jdshutdown_shutdown=シャットダウン
 gui_config_jdshutdown_standby=スタンバイ状態(一部の OS のみ対応)
+install_force=強制的にシャットダウンする
+install_title=強制的にシャットダウンする
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader は終了されます！</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">システムは休止モードになります！</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">システムはシャットダウンされます！</font></h2>
@@ -16,3 +18,6 @@ interaction_shutdown_dialog_title_closejd=JDownloader を終了しますか？
 interaction_shutdown_dialog_title_hibernate=休止状態にしますか？
 interaction_shutdown_dialog_title_shutdown=シャットダウンしますか？
 interaction_shutdown_dialog_title_standby=スタンバイ状態にしますか？
+jd_plugins_optional_jdshutdown=JD シャットダウン
+jd_plugins_optional_jdshutdown_description=ダウンロード終了後、自動的に PC をシャットダウン/休止状態へ移行、または JDownloader を終了します。
+lit_shutdownn=シャットダウン
