@@ -1,6 +1,8 @@
 JDGui_windowClosing_try_answer_totaskbar=タスクバーに最小化
 JDGui_windowClosing_try_answer_tray=トレイに隠す
+JDGui_windowClosing_try_asnwer_close=JDownloader を終了
 JDGui_windowClosing_try_title_=トレイに閉じる
+OnCloseAction_exit=アプリケーションを終了
 OnCloseAction_totaskbar=タスクバーに最小化
 OnCloseAction_totray=トレイに閉じる
 OnMinimizeAction_ask=確認する
@@ -30,4 +32,5 @@ popup_exit=JDownloader を終了
 popup_pause=ダウンロードを一時停止
 popup_premiumtoggle=プレミアム有効
 popup_reconnect=再接続中
+popup_reconnecttoggle=自動再接続が有効
 popup_update=更新を確認

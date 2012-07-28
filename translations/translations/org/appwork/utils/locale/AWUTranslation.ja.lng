@@ -5,6 +5,7 @@ AccountNew_AccountNew_title=ログイン情報を入力
 AccountNew_layoutDialogContent_accountname=ユーザ名
 AccountNew_layoutDialogContent_password=パスワード
 AccountNew_layoutDialogContent_save=記憶する
+AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
 AppWorkUtils_Graph_getSpeedString=現在: %s1/s
 COMMANDLINEAPP_COMMAND=コマンド -> -
 COPYCUTPASTE_COPY=コピー

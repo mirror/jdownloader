@@ -21,3 +21,4 @@ interaction_shutdown_dialog_title_standby=スタンバイ状態にしますか�
 jd_plugins_optional_jdshutdown=JD シャットダウン
 jd_plugins_optional_jdshutdown_description=ダウンロード終了後、自動的に PC をシャットダウン/休止状態へ移行、または JDownloader を終了します。
 lit_shutdownn=シャットダウン
+show_admin=休止またはスタンバイモードを JDownloader で設定するには管理者権限が必要です
