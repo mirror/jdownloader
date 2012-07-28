@@ -57,14 +57,29 @@ public class PornHostCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<label>title</label><b>([^<>\"]*?)</b><BR><label>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<h1 style=\"color: #A4002F; margin\\-right:220px;\">([^<>\"]*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>pornhost\\.com \\- ([^<>\"]*?)</title>").getMatch(0);
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setFinalFileName(filename.trim() + ".flv");
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String dllink = null;
         if (!downloadLink.getDownloadURL().contains(".html")) {
-            dllink = br.getRegex("\"http://dl[0-9]+\\.pornhost\\.com/files/.*?/.*?/.*?/.*?/.*?/.*?\\..*?\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("reateRNPlayer.*?\"(http://.*?)\"").getMatch(0);
-            }
+            dllink = br.getRegex("\"(http://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("download this file</label>.*?<a href=\"(.*?)\"").getMatch(0);
             }
@@ -93,30 +108,6 @@ public class PornHostCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("id=\"url\" value=\"http://www\\.pornhost\\.com/(.*?)/\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>pornhost\\.com - free file hosting with a twist -(.*?)</title>").getMatch(0);
-                if (filename == null) filename = br.getRegex("\"http://file[0-9]+\\.pornhost\\.com/.*?/(.*?)\"").getMatch(0);
-            }
-        }
-        ending = br.getRegex("<label>download this file</label>.*?<a href=\".*?\">.*?(\\..*?)</a>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (ending != null && ending.length() > 1) {
-            downloadLink.setName(filename.trim() + ending);
-        } else {
-            downloadLink.setName(filename.trim());
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override

@@ -852,3 +852,6 @@ jd/plugins/hoster/DragonUploadzCom.class
 jd/plugins/hoster/IShareFastCom.class
 jd/plugins/hoster/BatShareCom.class
 jd/plugins/hoster/CrocShareCom.class
+jd/plugins/hoster/XFileShareEu.class
+jd/plugins/hoster/KickLoadCom.class
+jd/plugins/hoster/JakFileCom.class

@@ -16,11 +16,9 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -30,7 +28,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,36 +36,40 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadjet.net" }, urls = { "https?://(www\\.)?uploadjet\\.net/[a-z0-9]{12}" }, flags = { 0 })
-public class UploadJetNet extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nosvideo.com" }, urls = { "https?://(www\\.)?nosvideo\\.com/(\\?v=)?[a-z0-9]{12}" }, flags = { 0 })
+public class NosVideoCom extends PluginForHost {
 
-    private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private final String        COOKIE_HOST         = "http://uploadjet.net";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
-    private static final String ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
-    private static final String PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
-    private static final String PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private String               correctedBR                  = "";
+    private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
+    private final String         COOKIE_HOST                  = "http://nosvideo.com";
+    private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
+    private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
+    private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    // note: can not be negative -x or 0 .:. [1-*]
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(3);
+    // don't touch
+    private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    // XfileSharingProBasic Version 2.5.5.9-raz
+    // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
-    // non account: 1(resumes) * 1
+    // non account: 2 * 3
     // free account:
     // premium account:
     // protocol: no https
-    // captchatype: 4dignum
-    // other: no redirects, costum file not found regex
+    // captchatype: null
+    // other: no redirects, modified input regex, modified filename, modified
+    // decodeDownloadLink method
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("/?v=", "/"));
     }
 
     @Override
@@ -75,7 +77,7 @@ public class UploadJetNet extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public UploadJetNet(PluginWrapper wrapper) {
+    public NosVideoCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -102,49 +104,86 @@ public class UploadJetNet extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|<h2>File: <font style=\"color:darkred\"></font> \\[<font style=\"color:#114\"></font>\\]</h2>)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(correctedBR, "File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                }
+        String[] fileInfo = new String[3];
+        // scan the first page
+        scanInfo(fileInfo);
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
+        if (fileInfo[0] == null) {
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                sendForm(download1);
+                scanInfo(fileInfo);
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, ">([\\d\\.]+ ?(B|KB|MB|GB))<").getMatch(0);
-            }
-        }
-        if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download\\-limit")) {
+        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-        if (md5hash != null) link.setMD5Hash(md5hash.trim());
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setProperty("plainfilename", filename);
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "").trim();
+        // Replace wrong ending with correct ending
+        String ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
+        if (ext != null && ext.length() < 5) {
+            fileInfo[0] = fileInfo[0].replace(ext, ".flv");
+        }
+        link.setFinalFileName(fileInfo[0]);
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
+    }
+
+    private String[] scanInfo(String[] fileInfo) {
+        // standard traits from base page
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                        // traits from download1 page below.
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                            // next two are details from sharing box
+                            if (fileInfo[0] == null) {
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                                if (fileInfo[0] == null) {
+                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                }
+            }
+        }
+        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        return fileInfo;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -156,103 +195,20 @@ public class UploadJetNet extends PluginForHost {
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
-            if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+            Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                download1.remove("method_free");
+                download1.remove("method_free");
+                download1.put("method_free", "Continue+to+Video");
+                sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
         }
         if (dllink == null) {
-            Form dlForm = br.getFormbyProperty("name", "F1");
-            if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (int i = 0; i <= 3; i++) {
-                dlForm.remove(null);
-                final long timeBefore = System.currentTimeMillis();
-                boolean password = false;
-                boolean skipWaittime = false;
-                if (new Regex(correctedBR, PASSWORDTEXT).matches()) {
-                    password = true;
-                    logger.info("The downloadlink seems to be password protected.");
-                }
-                // md5 can be on the subquent pages
-                if (downloadLink.getMD5Hash() == null) {
-                    String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
-                }
-                /* Captcha START */
-                if (correctedBR.contains(";background:#ccc;text-align")) {
-                    logger.info("Detected captcha method \"plaintext captchas\" for this host");
-                    /** Captcha method by ManiacMansion */
-                    String[][] letters = new Regex(Encoding.htmlDecode(br.toString()), "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(\\d)</span>").getMatches();
-                    if (letters == null || letters.length == 0) {
-                        logger.warning("plaintext captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
-                    for (String[] letter : letters) {
-                        capMap.put(Integer.parseInt(letter[0]), letter[1]);
-                    }
-                    StringBuilder code = new StringBuilder();
-                    for (String value : capMap.values()) {
-                        code.append(value);
-                    }
-                    dlForm.put("code", code.toString());
-                    logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
-                } else if (correctedBR.contains("/captchas/")) {
-                    logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-                    String captchaurl = null;
-                    if (sitelinks == null || sitelinks.length == 0) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    for (String link : sitelinks) {
-                        if (link.contains("/captchas/")) {
-                            captchaurl = link;
-                            break;
-                        }
-                    }
-                    if (captchaurl == null) {
-                        logger.warning("Standard captcha captchahandling broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
-                    dlForm.put("code", code);
-                    logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
-                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                    logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setForm(dlForm);
-                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                    rc.setId(id);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    Form rcform = rc.getForm();
-                    rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                    rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    dlForm = rc.getForm();
-                    /** wait time is often skippable for reCaptcha handling */
-                    skipWaittime = true;
-                }
-                /* Captcha END */
-                if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
-                if (!skipWaittime) waitTime(timeBefore, downloadLink);
-                sendForm(dlForm);
-                logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true, passCode);
-                dllink = getDllink();
-                if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    dlForm = br.getFormbyProperty("name", "F1");
-                    continue;
-                } else if (dllink == null && !br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else
-                    break;
-            }
+            if (!br.containsHTML("var player = null;")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
@@ -264,13 +220,44 @@ public class UploadJetNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-        dl.startDownload();
+        try {
+            // add a download slot
+            controlFree(+1);
+            // start the dl
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlFree(-1);
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
+     * 
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
+     * 
+     * @param controlFree
+     *            (+1|-1)
+     */
+    public synchronized void controlFree(int num) {
+        logger.info("maxFree was = " + maxFree.get());
+        maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
+        logger.info("maxFree now = " + maxFree.get());
     }
 
     /** Remove HTML code which could break the plugin */
@@ -294,7 +281,7 @@ public class UploadJetNet extends PluginForHost {
         }
     }
 
-    public String getDllink() {
+    public String getDllink() throws IOException {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
@@ -304,13 +291,20 @@ public class UploadJetNet extends PluginForHost {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        // generic fail over for COOKIE_HOST on final link
+                        // format.
                         if (dllink == null) {
-                            // br or correctedBR
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            if (dllink == null) {
+                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
+                                    }
                                 }
                             }
                         }
@@ -349,9 +343,9 @@ public class UploadJetNet extends PluginForHost {
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        if (new Regex(correctedBR, "(You have reached the download(\\-| )limit|You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
-            String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
+            String WAIT = new Regex(correctedBR, "((You have reached the download(\\-| )limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);
             if (tmphrs == null) tmphrs = new Regex(correctedBR, "You have to wait.*?\\s+(\\d+)\\s+hours?").getMatch(0);
             String tmpmin = new Regex(WAIT, "\\s+(\\d+)\\s+minutes?").getMatch(0);
@@ -377,7 +371,7 @@ public class UploadJetNet extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file You requested  reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -399,7 +393,7 @@ public class UploadJetNet extends PluginForHost {
         }
     }
 
-    private String decodeDownloadLink(String s) {
+    private String decodeDownloadLink(String s) throws IOException {
         String decoded = null;
 
         try {
@@ -421,12 +415,10 @@ public class UploadJetNet extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                }
+            finallink = new Regex(decoded, "\\'flashvars\\',\\'playlist=(http://[^<>\"]*?)\\&").getMatch(0);
+            if (finallink != null) {
+                br.getPage(finallink);
+                finallink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             }
         }
         return finallink;
@@ -477,6 +469,30 @@ public class UploadJetNet extends PluginForHost {
             logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
             if (tt > 0) sleep(tt * 1000l, downloadLink);
         }
+    }
+
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
 }

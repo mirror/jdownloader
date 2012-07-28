@@ -73,7 +73,7 @@ public class CoralDriveNet extends PluginForHost {
     // premium account: 20 * unlimited
     // protocol: no https
     // captchatype: 4dignum
-    // other: no redirects
+    // other: no redirects, costum file not found regex
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -114,7 +114,7 @@ public class CoralDriveNet extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(>Invalid or Deleted File<|No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(>Invalid or Deleted File<|>Possible causes of this error could be)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;

@@ -49,6 +49,20 @@ public class CoolShareCz extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(>Soubor nenalezen<|>Vámi požadovaný soubor neexistuje<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        String filesize = br.getRegex("li>Velikost: <strong>(.*?)</strong>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
@@ -150,20 +164,6 @@ public class CoolShareCz extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(<li>Nahráno dne <strong></strong></li>|<li>Velikost: <strong>0 B</strong>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        String filesize = br.getRegex("li>Velikost: <strong>(.*?)</strong>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

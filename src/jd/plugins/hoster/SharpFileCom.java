@@ -67,7 +67,7 @@ public class SharpFileCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.5.0-raz
     // mods:
     // non account: 1 * 1
-    // free account: not tested, set same as non account
+    // free account: 1 * 1
     // premium account: 10 * 1
     // protocol: no https
     // captchatype: recaptcha
@@ -574,7 +574,7 @@ public class SharpFileCom extends PluginForHost {
                 account.setProperty("nopremium", false);
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(1);
+                Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
