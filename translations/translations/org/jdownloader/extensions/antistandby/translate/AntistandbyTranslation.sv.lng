@@ -1,4 +1,5 @@
-gui_config_antistandby_mode=Läge:
-gui_config_antistandby_whiledl=Förhindra standby vid nerladdning
-gui_config_antistandby_whilejd=Förhindra standby medans JD körs
+gui_config_antistandby_whiledl2=Nerladdning pågår
+gui_config_antistandby_whilejd2=JDownloader körs
 jd_plugins_optional_antistandby_jdantistandby=JDAntiStandby
+jd_plugins_optional_antistandby_jdantistandby_description=Förhindrar din dator att hamna i Standby eller viloläge för att hålla nerladdnignar aktiva.
+mode=Förhindra standby/viloläge när

@@ -3,14 +3,14 @@ addons_jdshutdown_statusmessage_disabled=Programmet stängs INTE av JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader kommer at att stänga av datorn efter att nerladdningen är färdig
 config_toolbarbutton=Toolbar Button synlig
 gui_config_jdshutdown_close=Stäng JD
-gui_config_jdshutdown_enabledOnStart=Aktiverad vid start
 gui_config_jdshutdown_forceshutdown=Tvinga nerstängning (Inte för alla OS)
 gui_config_jdshutdown_hibernate=Viloläge (Inte för alla OS)
 gui_config_jdshutdown_mode=Mod:
-gui_config_jdshutdown_osx_force_long=Installera Tvingande avstängning (endast på Mac OSX
-gui_config_jdshutdown_osx_force_short=Installera
 gui_config_jdshutdown_shutdown=Stäng av
 gui_config_jdshutdown_standby=Standby (Inte för alla OS)
+install_force=Installera Tvingande nerstängning
+install_msg=Vill du anpassa din dator för tvingande nerstängning?
+install_title=Installera Tvingande nerstängning
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader kommer att avslutas!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systemet kommer att försättas i viloläge!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Systemet kommer att stängas av!</font></h2>
@@ -22,3 +22,4 @@ interaction_shutdown_dialog_title_standby=Standby?
 jd_plugins_optional_jdshutdown=JD Shutdown
 jd_plugins_optional_jdshutdown_description=Automatiskt stänga av, viloläge eller avsluta JDownloader när nerladdningar är klar.
 lit_shutdownn=Stäng av
+show_admin=Administrator rättigheter krävs för att konfigurera JDownloader fö Viloläge eller Standby Mode
