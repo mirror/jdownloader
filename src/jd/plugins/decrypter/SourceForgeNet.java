@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "http://(www\\.)?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|.+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|.+)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class SourceForgeNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("https://", "http://");
         // We get downloadlinks depending on our useragent
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setFollowRedirects(true);

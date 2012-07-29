@@ -72,7 +72,7 @@ public class PornHubCom extends PluginForHost {
         br.setCookie("http://pornhub.com/", "age_verified", "1");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.pornhub.com/") || !br.containsHTML("\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         dlUrl = null;
         String file_name = br.getRegex("class=\"section_bar\"><h1 class=\"section_title\">([^<>/]*?)</h1>").getMatch(0);
         if (file_name == null) file_name = br.getRegex("<title([^<>/]*?) \\- Pornhub\\.com</title>").getMatch(0);

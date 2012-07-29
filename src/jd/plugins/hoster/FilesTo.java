@@ -28,24 +28,36 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.to" }, urls = { "http://[\\w\\.]*?files\\.to/get/[0-9]+/[\\w]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.to" }, urls = { "http://(www\\.)?files\\.to/get/[0-9]+/[\\w]+" }, flags = { 0 })
 public class FilesTo extends PluginForHost {
 
     public FilesTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://www.files.to/content/aup";
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
-    // @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
+        try {
+            br.setCookie("http://files.to/", "lang", "de");
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("(Die angeforderte Datei konnte nicht gefunden werden|>Dieser Downloadlink ist ungültig)")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
+                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
+                return AvailableStatus.TRUE;
+            }
+        } catch (Exception e) {
+            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.requestFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
@@ -62,41 +74,17 @@ public class FilesTo extends PluginForHost {
         jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1).startDownload();
     }
 
-    // @Override
-    /*
-     * /* public String getVersion() { return getVersion("$Revision$");
-     * }
-     */
-
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
 
-    // @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws PluginException {
-        try {
-            br.getPage(downloadLink.getDownloadURL());
-            if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
-                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
-                downloadLink.setDownloadSize(SizeFormatter.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
-                return AvailableStatus.TRUE;
-            }
-        } catch (Exception e) {
-            logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 

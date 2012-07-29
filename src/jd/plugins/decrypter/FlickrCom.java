@@ -44,6 +44,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String MAINPAGE     = "http://flickr.com/";
     private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
+    private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -82,16 +83,23 @@ public class FlickrCom extends PluginForDecrypt {
          * */
         if (!parameter.contains("/page")) {
             // Removed old way of finding page number on the 27.07.12
-            final String picCount = br.getRegex("\"total\":\"(\\d+)\"").getMatch(0);
+            final String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
             if (picCount == null) {
                 logger.warning("Couldn't find total number of pictures, aborting...");
                 return null;
             }
             pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 72));
         }
+        String getPage = parameter + "/page%s";
+        if (parameter.matches(GROUPSLINK)) {
+            // Try other way of loading more pictures for groups links
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            getPage = parameter + "/page%s/?fragment=1";
+        }
         final int lastPage = pages.get(pages.size() - 1);
         for (int i = 1; i <= lastPage; i++) {
-            if (i != 1) br.getPage(parameter + "/page" + i);
+            logger.info("Decrypting page " + i + " of " + lastPage);
+            if (i != 1) br.getPage(String.format(getPage, i));
             final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
             for (String regex : regexes) {
                 String[] links = br.getRegex(regex).getColumn(0);
@@ -100,6 +108,9 @@ public class FlickrCom extends PluginForDecrypt {
                         // Regex catches links twice, correct that here
                         if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
                     }
+                    logger.info("Found " + (links.length / 2) + " links on page " + i + " of " + lastPage);
+                } else {
+                    logger.info("Found 0 links on page " + i + " of " + lastPage);
                 }
             }
         }

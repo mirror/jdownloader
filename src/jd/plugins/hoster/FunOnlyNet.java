@@ -28,47 +28,36 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bigbooty.com" }, urls = { "http://(www\\.)?bigbooty\\.com/video/\\d+" }, flags = { 0 })
-public class BigBootyCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "funonly.net" }, urls = { "http://(www\\.)?funonly\\.net/funny_videos\\.aspx/funny_video~[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/video_type~flash/" }, flags = { 0 })
+public class FunOnlyNet extends PluginForHost {
 
-    private String DLLINK = null;
-
-    public BigBootyCom(PluginWrapper wrapper) {
+    public FunOnlyNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private String DLLINK = null;
+
     @Override
     public String getAGBLink() {
-        return "http://www.bigbooty.com/static/dmca";
+        return "http://www.funonly.net/";
     }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.bigbootycom", "Only downloadable for premium users");
-    private static final String PREMIUMONLYTEXT     = ">You must be premium user to view this video";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().contains("bigbooty.com/error/video_missing") || br.containsHTML("(>This video cannot be found\\. Are you sure you typed in the correct|<h2>ERROR</h2>|<title>Big Booty</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.getURL().equals("http://www.bigbooty.com/upgrade")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
-        if (br.containsHTML(PREMIUMONLYTEXT)) {
-            downloadLink.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
-            return AvailableStatus.TRUE;
-        }
-        DLLINK = br.getRegex("flashvars=\"file=(http.*?)\\&image").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.getURL().equals("http://www.funonly.net/default.aspx")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<strong>Title:</strong>([^<>\"]*?) video<br").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) video \\- Funny videos \\- Fun only[\t\n\r ]+</title>").getMatch(0);
+        DLLINK = br.getRegex("file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
+        filename = filename.trim();
+        String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
+        if (ext == null || ext.length() > 5) ext = ".mp4";
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -91,7 +80,6 @@ public class BigBootyCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -101,14 +89,19 @@ public class BigBootyCom extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
     public void reset() {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

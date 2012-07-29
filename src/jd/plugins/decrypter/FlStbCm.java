@@ -61,6 +61,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
+            if (externID == null) externID = br.getRegex("dailymotion\\.com/video/([a-z0-9\\-_]+)\"").getMatch(0);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis()));
                 return decryptedLinks;

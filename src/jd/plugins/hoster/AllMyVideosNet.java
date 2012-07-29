@@ -119,7 +119,7 @@ public class AllMyVideosNet extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -127,7 +127,8 @@ public class AllMyVideosNet extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission critical
+        // scan the second page. filesize[1] and md5hash[2] are not mission
+        // critical
         if (fileInfo[0] == null) {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
@@ -334,14 +335,19 @@ public class AllMyVideosNet extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -383,10 +389,13 @@ public class AllMyVideosNet extends PluginForHost {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link format.
+                        // generic fail over for COOKIE_HOST on final link
+                        // format.
                         if (dllink == null) {
-                            // dllink = new Regex(correctedBR, "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR, "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
+                            // dllink = new Regex(correctedBR,
+                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
                                 String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -714,7 +723,8 @@ public class AllMyVideosNet extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 

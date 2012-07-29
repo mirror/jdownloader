@@ -290,6 +290,7 @@ public class QueenShareCom extends PluginForHost {
         regexStuff.add("(visibility:hidden>.+</font>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         regexStuff.add("(<font style=\"visibility:hidden\">.*?</font>)");
+        regexStuff.add("(<font color=\"white\">.*?</font>)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
             if (lolz != null) {
