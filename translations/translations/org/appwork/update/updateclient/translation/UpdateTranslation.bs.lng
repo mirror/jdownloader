@@ -1,6 +1,6 @@
 UpdateException_SignatureViolation=Porijeklo ove nadgradnje nije moguće verifikovati!
 UpdateException_notavailable=Našu serveri za Nadgradnju su trenutno zauzeti. Molimo pokušajte ponovo kasnije.
-UpdateException_notavailable2=Opis Problema:                     → "%s1"
+UpdateException_notavailable2=Opis Problema:                     -> "%s1"
 UpdateException_proxyauth=Proxy Autentifikacija je neispravna: %s1
 UpdateException_proxyconnect=Nije uspjela konekcija na Proxy: %s1
 UpdateException_socket=Nema internet konekcije do servera za nadgradnju: %s1
