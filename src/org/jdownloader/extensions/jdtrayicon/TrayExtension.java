@@ -52,6 +52,7 @@ import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.update.inapp.RlyExitListener;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
@@ -241,9 +242,12 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             // if (CrossSystem.isMac()) {
             // img = ImageProvider.convertToGrayScale(img);
             // }
+            if (getSettings().isGreyIconEnabled()) {
+                img = ImageProvider.convertToGrayScale(img);
+            }
 
             // workaround for gnome 3 transparency bug
-            if (System.getProperty("sun.desktop").equals("gnome")) { // gnome desktop
+            if (getSettings().isGnomeTrayIconTransparentEnabled() && System.getProperty("sun.desktop").equals("gnome")) { // gnome desktop
                 // img = ImageProvider.convertToGrayScale(img);
                 java.awt.Robot robo = new java.awt.Robot();
                 Color tmp, newColor;

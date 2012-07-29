@@ -44,4 +44,15 @@ public interface TrayConfig extends ExtensionConfigInterface {
 
     public void setOnMinimizeAction(OnMinimizeAction action);
 
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    public boolean isGreyIconEnabled();
+
+    public void setGreyIconEnabled(boolean b);
+
+    @DefaultBooleanValue(true)
+    @AboutConfig
+    public boolean isGnomeTrayIconTransparentEnabled();
+
+    public void setGnomeTrayIconTransparentEnabled(boolean b);
 }
