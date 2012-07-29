@@ -70,9 +70,8 @@ public class DBankComFolder extends PluginForDecrypt {
         }
 
         String fpName = br.getRegex("<h1  id=\"link_title\">([^<>\"]*?)</h1>").getMatch(0);
-        if (fpName == null) {
-            fpName = parameter;
-        }
+        if (fpName == null) fpName = br.getRegex("<h2[ ]*id=('|\")link_title('|\") title=('|\")(.*?)('|\")").getMatch(3);
+        if (fpName == null) fpName = parameter;
 
         String globalLinkData = br.getRegex("var globallinkdata = \\{.*?\"resource\":\\{(.*?)\\}\\;").getMatch(0);
         if (globalLinkData == null) br.getRegex("var globallinkdata = \\{(.*?)\\}\\;").getMatch(0);

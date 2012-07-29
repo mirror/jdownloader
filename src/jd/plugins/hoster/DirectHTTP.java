@@ -36,6 +36,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -276,14 +277,45 @@ public class DirectHTTP extends PluginForHost {
         }
     }
 
-    private static final String JDL_PREFIX     = "jd.plugins.hoster.DirectHTTP.";
+    private static final String JDL_PREFIX        = "jd.plugins.hoster.DirectHTTP.";
 
-    public static final String  ENDINGS        = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|bat|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(!?tml)|ssa|smi|sub|srt|snd|sfv|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tif|tiff|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
-    public static final String  NORESUME       = "nochunkload";
-    public static final String  NOCHUNKS       = "nochunk";
-    public static final String  FORCE_NORESUME = "forcenochunkload";
-    public static final String  FORCE_NOCHUNKS = "forcenochunk";
-    public static final String  TRY_ALL        = "tryall";
+    public static final String  ENDINGS           = "\\.(jdeatme|3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bz2|bat|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mw|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(!?tml)|ssa|smi|sub|srt|snd|sfv|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tif|tiff|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}|\\d+$)";
+    public static final String  NORESUME          = "nochunkload";
+    public static final String  NOCHUNKS          = "nochunk";
+    public static final String  FORCE_NORESUME    = "forcenochunkload";
+    public static final String  FORCE_NOCHUNKS    = "forcenochunk";
+    public static final String  TRY_ALL           = "tryall";
+    public static final String  POSSIBLE_URLPARAM = "POSSIBLE_GETPARAM";
+
+    @Override
+    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
+        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+        try {
+            if (ret != null && ret.size() == 1) {
+                String modifiedData = null;
+                if (data.startsWith("directhttp://")) {
+                    modifiedData = data.replace("directhttp://", "");
+                } else {
+                    modifiedData = data.replace("httpsviajd://", "https://");
+                    modifiedData = modifiedData.replace("httpviajd://", "http://");
+                    modifiedData = modifiedData.replace(".jdeatme", "");
+                }
+                /* single link parsing in svn/jd2 */
+                String url = ret.get(0).getDownloadURL();
+                int idx = modifiedData.indexOf(url);
+                if (idx >= 0 && modifiedData.length() >= idx + url.length()) {
+                    String param = modifiedData.substring(idx + url.length());
+                    if (param != null) {
+                        param = new Regex(param, "(.*?)(\r|\n|$)").getMatch(0);
+                        ret.get(0).setProperty(POSSIBLE_URLPARAM, new String(param));
+                    }
+                }
+            }
+        } catch (final Throwable e) {
+            logger.severe(e.getMessage());
+        }
+        return ret;
+    }
 
     /**
      * TODO: Remove with next major-update!
@@ -522,6 +554,15 @@ public class DirectHTTP extends PluginForHost {
                     this.br.getHeaders().remove("Authorization");
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
+                String urlParams = null;
+                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 404) && (urlParams = downloadLink.getStringProperty(POSSIBLE_URLPARAM, null)) != null) {
+                    /* check if we need the URLPARAMS to download the file */
+                    urlConnection.disconnect();
+                    String newURL = downloadLink.getDownloadURL() + urlParams;
+                    downloadLink.setProperty(POSSIBLE_URLPARAM, Property.NULL);
+                    downloadLink.setUrlDownload(newURL);
+                    urlConnection = this.prepareConnection(this.br, downloadLink);
+                }
                 if (urlConnection.getResponseCode() == 401) {
                     if (urlConnection.getHeaderField("WWW-Authenticate") == null) {
                         /* no basic auth */
@@ -543,7 +584,7 @@ public class DirectHTTP extends PluginForHost {
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             downloadLink.setProperty("auth", basicauth);
             this.contentType = urlConnection.getContentType();
-            if (this.contentType.startsWith("text/html") && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
+            if (this.contentType.startsWith("text/html") && urlConnection.isContentDisposition() == false && downloadLink.getBooleanProperty(DirectHTTP.TRY_ALL, false) == false) {
                 /* jd does not want to download html content! */
                 /* if this page does redirect via js/html, try to follow */
                 this.br.followConnection();
