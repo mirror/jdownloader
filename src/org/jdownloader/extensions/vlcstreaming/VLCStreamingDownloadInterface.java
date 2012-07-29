@@ -60,7 +60,7 @@ public class VLCStreamingDownloadInterface extends DownloadInterface {
 
     @Override
     public boolean externalDownloadStop() {
-        return false;
+        return true;
     }
 
     @Override
