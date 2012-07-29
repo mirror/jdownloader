@@ -45,6 +45,7 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String MAINPAGE     = "http://flickr.com/";
     private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
     private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+";
+    private static final String PHOTOLINK    = "http://(www\\.)?flickr\\.com/photos/.*?";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -77,9 +78,10 @@ public class FlickrCom extends PluginForDecrypt {
             fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
         }
+
         /**
-         * Handling for albums/sets Only decrypt all pages if user did NOT add a
-         * direct page link
+         * Handling for albums/sets: Only decrypt all pages if user did NOT add
+         * a direct page link
          * */
         if (!parameter.contains("/page")) {
             // Removed old way of finding page number on the 27.07.12
@@ -88,8 +90,13 @@ public class FlickrCom extends PluginForDecrypt {
                 logger.warning("Couldn't find total number of pictures, aborting...");
                 return null;
             }
-            pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 72));
+            if (parameter.matches(PHOTOLINK)) {
+                pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 18));
+            } else {
+                pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 72));
+            }
         }
+
         String getPage = parameter + "/page%s";
         if (parameter.matches(GROUPSLINK)) {
             // Try other way of loading more pictures for groups links
