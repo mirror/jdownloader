@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?perfectgirls\\.net/\\d+/.{1}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?(perfectgirls\\.net/\\d+/|(ipad|m)\\.perfectgirls\\.net/gal/\\d+/).{1}" }, flags = { 0 })
 public class PerfectGirlsNet extends PluginForDecrypt {
 
     public PerfectGirlsNet(PluginWrapper wrapper) {
@@ -38,7 +38,8 @@ public class PerfectGirlsNet extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/gal/", "perfectgirls.net/");
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
         String externID = br.getRegex("\"perfectgirls\\.url\", \"(http://(www\\.)xvideos\\.com/video[^<>\"]*?)\"").getMatch(0);
@@ -119,6 +120,18 @@ public class PerfectGirlsNet extends PluginForDecrypt {
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // pornhub handling number 2
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         externID = br.getRegex("(\\'|\")(http://(www\\.)?myxvids\\.com/embed_code/\\d+/\\d+/myxvids_embed\\.js)(\\'|\")").getMatch(1);

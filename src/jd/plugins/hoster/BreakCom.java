@@ -27,7 +27,7 @@ import jd.plugins.PluginForHost;
 /**
  * @author typek_pb
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?break\\.com/index/[A-Za-z0-9\\-_]+\\-\\d+$" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "break.com" }, urls = { "http://(www\\.)?break\\.com/(index|usercontent|skittles)/[A-Za-z0-9\\-_/]+\\-\\d+$" }, flags = { 0 })
 public class BreakCom extends PluginForHost {
 
     private String dlink = null;
@@ -44,18 +44,6 @@ public class BreakCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -93,6 +81,18 @@ public class BreakCom extends PluginForHost {
             if (br.getHttpConnection() != null) br.getHttpConnection().disconnect();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    }
+
+    @Override
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (dlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     @Override
