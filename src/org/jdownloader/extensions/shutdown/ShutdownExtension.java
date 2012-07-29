@@ -360,9 +360,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 WarningDialog d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_shutdown(), message);
                 try {
                     NewUIO.I().show(WarningDialogInterface.class, d);
-                    shutdown();
                 } catch (Throwable e) {
 
+                }
+                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                    shutdown();
                 }
                 break;
             case STANDBY:
@@ -373,9 +375,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_standby(), message);
                 try {
                     NewUIO.I().show(WarningDialogInterface.class, d);
-                    standby();
                 } catch (Throwable e) {
 
+                }
+                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                    standby();
                 }
                 break;
             case HIBERNATE:
@@ -386,9 +390,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_hibernate(), message);
                 try {
                     NewUIO.I().show(WarningDialogInterface.class, d);
-                    hibernate();
                 } catch (Throwable e) {
 
+                }
+                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                    hibernate();
                 }
                 break;
             case CLOSE:
@@ -399,9 +405,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 d = new WarningDialog(ShutdownExtension.this, _.interaction_shutdown_dialog_title_closejd(), message);
                 try {
                     NewUIO.I().show(WarningDialogInterface.class, d);
-                    closejd();
                 } catch (Throwable e) {
 
+                }
+                if ((d.getReturnmask() & Dialog.RETURN_OK) == Dialog.RETURN_OK || (d.getReturnmask() & Dialog.RETURN_TIMEOUT) == Dialog.RETURN_TIMEOUT) {
+                    closejd();
                 }
                 break;
             default:
