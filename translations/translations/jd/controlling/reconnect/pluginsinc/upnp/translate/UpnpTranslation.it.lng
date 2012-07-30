@@ -1,5 +1,4 @@
 AutoDetectAction_run_failed=Trovati dispostivi UPNP, ma impossibile effettuare una riconnessione.\nProva invece riconnessione live header.
-AutoDetectAction_run_optimize=Ottimizza: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Prova a cercare nella tua rete tutti i dispositivi UPNP di riconnessione.\nLa maggior parte dei router FritzBox possono essere riconnessi in questo modo.
 UPNPReconnectInvoker_getName_=Riconnessione router UPNP
 UPNPRouterPlugin_run_error=Non trovo nessun dispositivo UPNP. Prova con Riconnessione Live Header!
@@ -10,10 +9,6 @@ auto=Impostazione automatica UPNP
 controlURLTxt_help=Inserisci la URL di controllo...
 interaction_UpnpReconnect_wanservice_ip=Protocollo internet
 interaction_UpnpReconnect_wanservice_ppp=Protocollo punto-a-punto
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Non trovo bessun router UNPN funzionante
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Fallito
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JD ha impostato correttamente le impostazioni di riconnessione!\n\nIl router è\n'%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Completato
 literally_choose_router=Scegli dispositivo
 literally_control_url=URL controllo
 literally_router=Router UPNP
