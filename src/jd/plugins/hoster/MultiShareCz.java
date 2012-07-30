@@ -81,8 +81,7 @@ public class MultiShareCz extends PluginForHost {
                 String[] hosts = Regex.getLines(hostsSup);
                 ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
                 /*
-                 * set ArrayList<String> with all supported multiHosts of this
-                 * service
+                 * set ArrayList<String> with all supported multiHosts of this service
                  */
                 ai.setProperty("multiHostSupport", supportedHosts);
             } catch (Throwable e) {
@@ -192,8 +191,7 @@ public class MultiShareCz extends PluginForHost {
                 String rnd = "dl" + Math.round(Math.random() * 10000l * Math.random());
                 String fUrl = "http://" + rnd + "mms.multishare.cz/html/mms_process.php?link=" + url + "&u_ID=" + u_ID + "&u_hash=" + u_HASH;
                 /*
-                 * resume is supported, chunks make no sense and did not work
-                 * for me either
+                 * resume is supported, chunks make no sense and did not work for me either
                  */
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, fUrl, true, 1);
                 if (dl.getConnection().isContentDisposition()) {
@@ -202,11 +200,12 @@ public class MultiShareCz extends PluginForHost {
                     return;
                 } else {
                     /*
-                     * download is not contentdisposition, so remove this host
-                     * from premiumHosts list
+                     * download is not contentdisposition, so remove this host from premiumHosts list
                      */
                     br.followConnection();
                 }
+            } else {
+                /* not enough credits */
             }
         }
         /* temp disabled the host */

@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -72,9 +73,8 @@ public class ShareRapidCz extends PluginForHost {
         }
         long realTraffic = 0l;
         /**
-         * Trafficleft actually only caused problems because in the night you
-         * got no limit when downloading from this host so i guess it's the best
-         * not to show any traffic-information
+         * Trafficleft actually only caused problems because in the night you got no limit when downloading from this host so i guess it's the best not to show
+         * any traffic-information
          */
         String trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
         if (trafficleft != null) {
@@ -155,6 +155,11 @@ public class ShareRapidCz extends PluginForHost {
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Please contact the support jdownloader.org"); }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        URLConnectionAdapter con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

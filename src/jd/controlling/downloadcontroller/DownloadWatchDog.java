@@ -520,6 +520,17 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             continue accLoop;
                         }
+                        if (!plugin.enoughTrafficFor(nextDownloadLink, acc)) {
+                            /* not enough traffic to download link with acc */
+                            if (acc == null) {
+                                /*
+                                 * we tried last account and noone could handle this link, so temp ignore it this session
+                                 */
+                                nextDownloadLink.getLinkStatus().addStatus(LinkStatus.TEMP_IGNORE);
+                                nextDownloadLink.getLinkStatus().setValue(LinkStatus.TEMP_IGNORE_REASON_NO_SUITABLE_ACCOUNT_FOUND);
+                            }
+                            continue accLoop;
+                        }
                         synchronized (downloadControlHistory) {
                             DownloadControlHistory history = downloadControlHistory.get(nextDownloadLink);
                             DownloadControlHistoryItem accountHistory = null;

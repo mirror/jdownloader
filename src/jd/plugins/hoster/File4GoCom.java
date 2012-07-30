@@ -71,6 +71,8 @@ public class File4GoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        String dllUrl = br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
+        if (dllUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped
         // int wait = 60;
         // final String waittime =
@@ -81,8 +83,9 @@ public class File4GoCom extends PluginForHost {
         br.postPage("http://www.file4go.com/recebe_id.php", "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
         String dllink = br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://www.file4go.com/dll.php?id=" + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dllink = dllUrl + dllink;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
+        /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -158,7 +161,7 @@ public class File4GoCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://(www\\.)?([a-z0-9]+\\.)?file4go\\.com//dll\\.php\\?id=[A-Za-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://(www\\.)?([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

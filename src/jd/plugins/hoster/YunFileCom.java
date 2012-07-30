@@ -195,8 +195,7 @@ public class YunFileCom extends PluginForHost {
         if (br.containsHTML("(文件不存在或系统临时维护|h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;</h2)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;(.*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) - YunFile\\.com 网盘赚钱 - 最好的网赚网盘 赚钱网盘 </title>").getMatch(0);
-        String filesize = br.getRegex("文件大小: <b>(.*?)</b><br>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("文件大小: <b>(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("文件大小: <b>(.*?)</b>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));

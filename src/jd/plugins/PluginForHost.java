@@ -420,7 +420,15 @@ public abstract class PluginForHost extends Plugin {
     /*
      * finer controlling if we can download the link with given account, eg link is only downloadable for premium ones
      */
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) {
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        return true;
+    }
+
+    public boolean enoughTrafficFor(DownloadLink downloadLink, Account account) {
+        AccountInfo ai = null;
+        if (account != null && (ai = account.getAccountInfo()) != null) {
+            if (ai.getTrafficLeft() >= 0 && ai.getTrafficLeft() < downloadLink.getDownloadSize()) return false;
+        }
         return true;
     }
 

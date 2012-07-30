@@ -132,6 +132,7 @@ public class CZShareCom extends PluginForHost {
             if (br.containsHTML("Soubor je dočasně nedostupný\\.") || dl.getConnection().getContentType().contains("unknown")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -154,10 +155,11 @@ public class CZShareCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
-        if (!con.isOK()) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        if (!con.isContentDisposition()) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 
@@ -169,34 +171,40 @@ public class CZShareCom extends PluginForHost {
     @SuppressWarnings("unchecked")
     private void login(Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
-            br.setCookiesExclusive(true);
-            final Object ret = account.getProperty("cookies", null);
-            boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-            if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-            if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                if (cookies.containsKey("SSL") && account.isValid()) {
-                    for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                        final String key = cookieEntry.getKey();
-                        final String value = cookieEntry.getValue();
-                        this.br.setCookie(MAINPAGE, key, value);
+            try {
+                br.setCustomCharset("utf-8");
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (cookies.containsKey("SSL") && account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
                     }
-                    return;
                 }
+
+                br.setFollowRedirects(true);
+                br.postPage("http://czshare.com/index.php", "login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit");
+                if (br.getCookie(MAINPAGE, "trvale") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
             }
-            br.setCustomCharset("utf-8");
-            br.setFollowRedirects(true);
-            br.postPage("http://czshare.com/index.php", "login-name=" + Encoding.urlEncode(account.getUser()) + "&login-password=" + Encoding.urlEncode(account.getPass()) + "&trvale=on&Prihlasit=P%C5%99ihl%C3%A1sit");
-            if (br.getCookie(MAINPAGE, "trvale") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            // Save cookies
-            final HashMap<String, String> cookies = new HashMap<String, String>();
-            final Cookies add = this.br.getCookies(MAINPAGE);
-            for (final Cookie c : add.getCookies()) {
-                cookies.put(c.getKey(), c.getValue());
-            }
-            account.setProperty("name", Encoding.urlEncode(account.getUser()));
-            account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-            account.setProperty("cookies", cookies);
         }
     }
 

@@ -239,16 +239,14 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
         try {
             SystemTray systemTray = SystemTray.getSystemTray();
             BufferedImage img = IconIO.getScaledInstance(NewTheme.I().getImage("logo/jd_logo_64_64", -1), (int) systemTray.getTrayIconSize().getWidth(), (int) systemTray.getTrayIconSize().getHeight());
-            // if (CrossSystem.isMac()) {
-            // img = ImageProvider.convertToGrayScale(img);
-            // }
+
             if (getSettings().isGreyIconEnabled()) {
                 img = ImageProvider.convertToGrayScale(img);
             }
 
             // workaround for gnome 3 transparency bug
-            if (getSettings().isGnomeTrayIconTransparentEnabled() && System.getProperty("sun.desktop").equals("gnome")) { // gnome desktop
-                // img = ImageProvider.convertToGrayScale(img);
+            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && "gnome".equals(System.getProperty("sun.desktop"))) { // gnome
+                                                                                                                                                   // desktop
                 java.awt.Robot robo = new java.awt.Robot();
                 Color tmp, newColor;
                 int cr, cb, cg, alpha;
