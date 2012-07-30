@@ -50,19 +50,14 @@ public class DevArtCm extends PluginForDecrypt {
      */
 
     /*
-     * This plugin grabs range of content depending on parameter.
-     * profile.devart.com/gallery/uid* profile.devart.com/favorites/uid*
-     * profile.devart.com/gallery/* profile.devart.com/favorites/* =
-     * ?offset=\\d+
+     * This plugin grabs range of content depending on parameter. profile.devart.com/gallery/uid* profile.devart.com/favorites/uid* profile.devart.com/gallery/*
+     * profile.devart.com/favorites/* = ?offset=\\d+
      * 
-     * All of the above formats should support spanning pages, but when
-     * parameter contains '?offset=x' it will not span.
+     * All of the above formats should support spanning pages, but when parameter contains '?offset=x' it will not span.
      * 
-     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best
-     * quality available).
+     * profilename.deviantart.com/art/uid/ == grabs the 'download image' (best quality available).
      * 
-     * I've created the plugin this way to allow users to grab as little or as
-     * much, content as they wish. Hopefully this wont create any issues.
+     * I've created the plugin this way to allow users to grab as little or as much, content as they wish. Hopefully this wont create any issues.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -105,6 +100,7 @@ public class DevArtCm extends PluginForDecrypt {
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
+                fp.setProperty("ALLOW_MERGE", true);
                 fp.addLinks(decryptedLinks);
             }
         }
@@ -150,8 +146,9 @@ public class DevArtCm extends PluginForDecrypt {
         }
         if (artlinks != null && artlinks.length != 0) {
             for (String al : artlinks) {
-                br.getPage(al);
-                parseArtPage(ret, parameter);
+                ret.add(createDownloadlink(al));
+                // br.getPage(al);
+                // parseArtPage(ret, parameter);
             }
         }
         if (nextPage != null && !parameter.contains("?offset=")) {

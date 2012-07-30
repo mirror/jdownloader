@@ -199,12 +199,12 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
         prepareBrowser(UA);
+        br.setCookie(MAINPAGE, "JD", "1");
         String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
         if (br.containsHTML("(>Please wait, searching file|\\'File not found\\. Probably it was deleted)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -407,6 +407,7 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         sleep(2000, link);
+        br.setCookie(MAINPAGE, "JD", "1");
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
         if (dllink == null) {
@@ -473,8 +474,7 @@ public class TurboBitNet extends PluginForHost {
                 String ua = null;
                 if (force == false) {
                     /*
-                     * we have to reuse old UA, else the cookie will become
-                     * invalid
+                     * we have to reuse old UA, else the cookie will become invalid
                      */
                     ua = account.getStringProperty("UA", null);
                 }
@@ -625,8 +625,7 @@ public class TurboBitNet extends PluginForHost {
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
