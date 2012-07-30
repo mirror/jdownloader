@@ -22,7 +22,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,38 +29,39 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stileproject.com" }, urls = { "http://(www\\.)?stileproject\\.com/video/\\d+" }, flags = { 0 })
-public class StileProjectCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heaven666.org" }, urls = { "http://(www\\.)?heaven666\\.org/[a-z0-9\\-]+\\-\\d+\\.php" }, flags = { 0 })
+public class Heaven666Org extends PluginForHost {
 
-    private String DLLINK = null;
-
-    public StileProjectCom(PluginWrapper wrapper) {
+    public Heaven666Org(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
-    public String getAGBLink() {
-        return "http://www.stileproject.com/page/tos.html";
-    }
+    private String DLLINK = null;
 
     @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+    public String getAGBLink() {
+        return "http://www.heaven666.org/legal/terms.php";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Referer", "http://www.stileproject.com/");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">404 Error Page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);
-        getdllink();
+        if (br.getURL().contains("heaven666.org/index.php?session_id=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("flashvars\\.Title = \"([^<>\"]*?)\"").getMatch(0);
+        if (!br.containsHTML("\\.swf")) {
+            DLLINK = br.getRegex("property=\"og:image\" content=\"(http://[^<>\"]*?)\"").getMatch(0);
+        } else {
+            DLLINK = br.getRegex("flashvars\\.VideoURL = \"(/[^<>\"]*?)\"").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = Encoding.htmlDecode(DLLINK);
+        if (!DLLINK.startsWith("http://h6img.com/")) DLLINK = "http://h6img.com/" + DLLINK;
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
-        if (ext == null || ext.length() > 5) ext = ".mp4";
+        if (ext == null || ext.length() > 5) ext = ".flv";
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
@@ -93,16 +93,9 @@ public class StileProjectCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // Same code as for CelebrityCuntNet
-    private void getdllink() throws PluginException, IOException {
-        final Regex videoMETA = br.getRegex("(VideoFile|VideoMeta)_(\\d+)");
-        final String type = videoMETA.getMatch(0);
-        final String id = videoMETA.getMatch(1);
-        final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);
-        if (type == null || id == null || cb == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String postData = "cacheBuster=" + System.currentTimeMillis() + "&jsonRequest=%7B%22path%22%3A%22" + type + "%5F" + id + "%22%2C%22cb%22%3A%22" + cb + "%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + type + "%5F" + id + "%22%2C%22htmlHostDomain%22%3A%22www%2Estileproject%2Ecom%22%2C%22height%22%3A%22508%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Estileproject%2Ecom%2Fgetcdnurl%2F%22%2C%22playerOnly%22%3A%22true%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22640%22%7D";
-        br.postPage("http://www.stileproject.com/getcdnurl/", postData);
-        DLLINK = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
@@ -110,10 +103,10 @@ public class StileProjectCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetPluginGlobals() {
     }
 
     @Override
-    public void resetPluginGlobals() {
+    public void resetDownloadlink(DownloadLink link) {
     }
 }

@@ -43,7 +43,7 @@ public class EroxiaCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/.*?\\.html)\\&").getMatch(0);
+        tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
