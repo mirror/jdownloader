@@ -105,7 +105,7 @@ public interface ReconnectConfig extends ConfigInterface {
 
     @AboutConfig
     @DefaultIntValue(5)
-    @DescriptionForConfigEntry("Auto Reconnect Wizard performs a few reconnects for each successfull script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
+    @DescriptionForConfigEntry("Auto Reconnect Wizard performs a few reconnects for each successful script to find the fastest one. The more rounds we use, the better the result will be, but the longer it will take.")
     @SpinnerValidator(min = 1, max = 20)
     int getOptimizationRounds();
 

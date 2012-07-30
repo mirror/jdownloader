@@ -71,12 +71,12 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DescriptionForConfigEntry("Extraction Extension autoextracts sub-archives. If you do not want this, disable this option.")
     boolean isDeepExtractionEnabled();
 
-    @DescriptionForConfigEntry("Delete archives after successfull extraction?")
+    @DescriptionForConfigEntry("Delete archives after successful extraction?")
     @DefaultBooleanValue(false)
     @AboutConfig
     boolean isDeleteArchiveFilesAfterExtraction();
 
-    @DescriptionForConfigEntry("Delete archive DownloadLinks after successfull extraction?")
+    @DescriptionForConfigEntry("Delete archive DownloadLinks after successful extraction?")
     @DefaultBooleanValue(false)
     @AboutConfig
     boolean isDeleteArchiveDownloadlinksAfterExtraction();

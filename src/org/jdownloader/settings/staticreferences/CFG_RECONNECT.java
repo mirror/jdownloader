@@ -37,7 +37,7 @@ public class CFG_RECONNECT {
     // Keyhandler interface
     // jd.controlling.reconnect.ReconnectConfig.optimizationrounds = 5
     /**
-     * Auto Reconnect Wizard performs a few reconnects for each successfull
+     * Auto Reconnect Wizard performs a few reconnects for each successful
      * script to find the fastest one. The more rounds we use, the better the
      * result will be, but the longer it will take.
      **/
