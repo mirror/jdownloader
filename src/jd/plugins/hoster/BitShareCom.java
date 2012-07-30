@@ -39,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -143,6 +144,7 @@ public class BitShareCom extends PluginForHost {
     }
 
     private void doFree(DownloadLink downloadLink) throws Exception {
+        if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         if (br.containsHTML("You reached your hourly traffic limit")) {
@@ -216,6 +218,7 @@ public class BitShareCom extends PluginForHost {
         if (dllink == null) {
             br2.postPage(JSONHOST + fileID + "/request.html", "request=getDownloadURL&ajaxid=" + tempID);
             if (br2.containsHTML("Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+            if (br2.containsHTML("Sorry, you cant download more then")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
             dllink = br2.getRegex(DLLINKREGEX).getMatch(0);
             if (dllink == null) {
                 logger.severe(br2.toString());
@@ -241,6 +244,7 @@ public class BitShareCom extends PluginForHost {
         if (br.getURL().contains("filenotfound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("(<title>404 Not Found</title>|<h1>404 Not Found</h1>|bad try)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         if (br.containsHTML("No input file specified")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        if (br.containsHTML("You don\\'t have necessary rights to start this download or your session has timed out")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
     }
 
     @Override
@@ -297,7 +301,10 @@ public class BitShareCom extends PluginForHost {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 if (agent == null) {
-                    /* we first have to load the plugin, before we can reference it */
+                    /*
+                     * we first have to load the plugin, before we can reference
+                     * it
+                     */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
                 }
@@ -345,6 +352,7 @@ public class BitShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setCookie(MAINPAGE, "language_selection", "EN");
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
