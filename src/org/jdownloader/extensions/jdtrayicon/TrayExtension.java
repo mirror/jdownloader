@@ -56,6 +56,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -245,8 +246,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             }
 
             // workaround for gnome 3 transparency bug
-            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && "gnome".equals(System.getProperty("sun.desktop"))) { // gnome
-                                                                                                                                                   // desktop
+            if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && new DesktopSupportLinux().isGnomeDesktop()) {
                 java.awt.Robot robo = new java.awt.Robot();
                 Color tmp, newColor;
                 int cr, cb, cg, alpha;
