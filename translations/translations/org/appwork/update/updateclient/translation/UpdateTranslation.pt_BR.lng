@@ -52,6 +52,7 @@ dialog_branch_resetted_msg=%s2 Edição-%s1 não existe mais.  Restaurada para a
 dialog_rly_cancel=Deseja realmente cancelar a atualização?
 download_failed_resume=Falha no Download. Tentando resumir...
 download_failed_retry=Falha no Download. Tentando novamente...
+end_list=Parar Atualização agora. Use \r\n-install id1,id2,... para instalar Pacotes
 ensureThatUpdaterExists_msg=Por favor, baixe a última versão de nossa página na Internet e instale-a!
 ensureThatUpdaterExists_title=Instalação Corrompida!
 error_app_disabled=Não foi possível atualizar %s1 agora. Tente novamente mais tarde.
