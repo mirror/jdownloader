@@ -52,6 +52,7 @@ dialog_branch_resetted_msg=%s2 %s1-Izdanje više ne postoji. Resetovano na poslj
 dialog_rly_cancel=Stvarno otkazati nadgradnju?
 download_failed_resume=Download Nije uspio. Pokušajte nastaviti...
 download_failed_retry=Download nije uspio. Pokušaj ponovo...
+end_list=Zaustavi Nadgrađivač sada. Koristi -instalacijski id1,id2,..za instalaciju Oaketa
 ensureThatUpdaterExists_msg=Molimo download-ujte posljednju verziju sa naše Web stranice i instalirajte je!
 ensureThatUpdaterExists_title=Oštećena instalacija!
 error_app_disabled=Trenutno nije moguće nadgraditi %s1. Pokušajte ponovo kasnije.
