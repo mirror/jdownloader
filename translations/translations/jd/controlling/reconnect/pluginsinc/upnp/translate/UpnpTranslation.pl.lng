@@ -1,5 +1,4 @@
 AutoDetectAction_run_failed=Znaleziono urządzenia UPNP, lecz nie można było wykonać ponownego połączenia.\r\r\nSpróbuj metody "Live Header"!
-AutoDetectAction_run_optimize=Optymalizacja: %s1
 UPNPReconnectInvoker_getName_=Ponowne Połączenie dla routera UPNP
 UPNPRouterPlugin_run_error=Nie znaleziono urządzeń UPNP.\r\nSpróbuj metody "Live Header"!
 UPNPRouterPlugin_run_mesg=Przeszukiwanie wszystkich interfejsów sieciowych
@@ -8,10 +7,6 @@ auto=Auto Konfiguracja UPNP
 controlURLTxt_help=Wprowadź kontrolny adres URL...
 interaction_UpnpReconnect_wanservice_ip=Protokół internetowy
 interaction_UpnpReconnect_wanservice_ppp=Protokół Point-to-Point
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Nie można znaleźć żadnego działającego routera UPNP
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Nieudane
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JDownloader pomyślnie ustawił opcje Ponownego Połączenia. Twój Router to '%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Udane
 literally_choose_router=Wybierz urządzenie
 literally_control_url=Kontrolny adres URL
 literally_router=Router UPNP
