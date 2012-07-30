@@ -1,12 +1,9 @@
 addons_jdshutdown_statusmessage_disabled=Система не будет выключена после завершения закачек
 addons_jdshutdown_statusmessage_enabled=JDownloader выключит систему после завершения закачек
 gui_config_jdshutdown_close=Закрыть JD
-gui_config_jdshutdown_enabledOnStart=Разрешить при запуске
 gui_config_jdshutdown_forceshutdown=Выключить компьютер (Не все ОС)
 gui_config_jdshutdown_hibernate=Спящий режим
 gui_config_jdshutdown_mode=Режим:
-gui_config_jdshutdown_osx_force_long=Установить принудит. выключение (Только Mac OSx)
-gui_config_jdshutdown_osx_force_short=Установка
 gui_config_jdshutdown_shutdown=Выключение
 gui_config_jdshutdown_standby=Ждущий режим
 install_force=Установить принудит. выключение
