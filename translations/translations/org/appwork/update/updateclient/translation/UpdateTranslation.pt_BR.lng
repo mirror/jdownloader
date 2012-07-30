@@ -61,6 +61,7 @@ error_locked=Servidor de Atualização %s1' está ocupado agora. Tente novamente
 error_occured=Ocorreu um erro
 error_occured_detailed=Não foi possível finalizar atualização.
 error_occured_start_reverting=A atualização foi interrompida. Revertendo alterações...
+error_package_creation_failed=Erro de Pacote com Falha. Por favor, tente novamente mais tarde.
 error_unknown=%s1
 error_unknown_app=Não é possível atualizar %s1. \n\n                  Tente novamente mais tarde!
 error_unknown_branch=Edição Desconhecida: %s1
