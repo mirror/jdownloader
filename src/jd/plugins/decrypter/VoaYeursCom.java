@@ -95,7 +95,7 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("freeporn\\.com/swf/player/AppLauncher_secure\\.swf\\'><param.*?<param name=\\'flashvars\\' value=\\'file=([^<>\"]*?)\\&").getMatch(0);
+        externID = br.getRegex("freeporn\\.com/swf/player/AppLauncher_secure\\.swf\">.*?<param name=\"flashvars\" value=\"file=([^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
             externID = Encoding.urlEncode(externID.trim());
             br.postPage("http://www.freeporn.com/getcdnurl/", "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + externID + "%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22505%22%2C%22path%22%3A%22" + externID + "%22%2C%22height%22%3A%22400%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Eimage%2Efreeporn%2Ecom%2Fswf%2Fplayer%2FAppLauncher%5Fsecure%2Eswf%22%2C%22htmlHostDomain%22%3A%22www%2Evoayeurs%2Ecom%22%7D&cacheBuster=1339506847983");
@@ -111,8 +111,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornrabbit\\.com/embed/(\\d+)").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://pornrabbit.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            decryptedLinks.add(createDownloadlink("http://pornrabbit.com/video/" + externID + "/"));
             return decryptedLinks;
         }
         externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
@@ -153,15 +154,9 @@ public class VoaYeursCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("tnaflix\\.com//embedding_player/player[^<>\"/]*?\" /><param name=\"FlashVars\" value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
-            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
-            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            final DownloadLink dl = createDownloadlink("http://www.tnaflix.com/teen-porn/" + System.currentTimeMillis() + "/video" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
             decryptedLinks.add(dl);
             return decryptedLinks;

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(?!facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:)(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(?!facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion)(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {

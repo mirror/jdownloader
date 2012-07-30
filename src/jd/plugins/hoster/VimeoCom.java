@@ -75,7 +75,8 @@ public class VimeoCom extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
+                 * we make sure only one result is in ret, thats the case for
+                 * svn/next major version
                  */
                 DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
@@ -89,7 +90,8 @@ public class VimeoCom extends PluginForHost {
                     if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
                     if (br.containsHTML("iconify_down_b")) {
                         /*
-                         * little pause needed so the next call does not return trash
+                         * little pause needed so the next call does not return
+                         * trash
                          */
                         Thread.sleep(1000);
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -160,7 +162,8 @@ public class VimeoCom extends PluginForHost {
                                 }
                             }
                             /*
-                             * only replace original found links by new ones, when we have some
+                             * only replace original found links by new ones,
+                             * when we have some
                              */
                             if (fp != null) {
                                 fp.addLinks(newRet);
@@ -470,7 +473,7 @@ public class VimeoCom extends PluginForHost {
         if (downloadLink.getStringProperty("Referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer"));
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
         if (br.containsHTML(">Page not found on Vimeo<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        if (br.containsHTML(">This is a private video<") && br.containsHTML("Do you have permission to watch this video\\?")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. Do you have no permission to watch this video!"); }
+        if (br.containsHTML(">Private Video<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. You have no permission to watch this video!"); }
         final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         final String signature = br.getRegex("\"signature\":\"([a-z0-9]+)\"").getMatch(0);
         final String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);

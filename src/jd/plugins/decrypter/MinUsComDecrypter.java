@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/(?!directory|search|explore|pref|https|smedia)[A-Za-z0-9]{2,}" }, flags = { 0 })
 public class MinUsComDecrypter extends PluginForDecrypt {
 
     public MinUsComDecrypter(PluginWrapper wrapper) {
