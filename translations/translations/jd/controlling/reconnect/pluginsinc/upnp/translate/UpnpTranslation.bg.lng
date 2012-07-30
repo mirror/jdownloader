@@ -1,5 +1,4 @@
 AutoDetectAction_run_failed=Намерени UPnP устройства, но не можа да се изпълни повторно свъзване.\r\nВместо това опитайте повторно свъзване Live Header!
-AutoDetectAction_run_optimize=Оптимизирай: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Се опитва да намери всички UPNP устройства за повторно свързване във вашата мрежа.\r\nПовечето FritzBox рутери могат да бъдат свързани повторно по този начин.
 UPNPReconnectInvoker_getName_=UPNP повторно свързване на рутера
 UPNPRouterPlugin_run_error=Не можа да намери никакви UPNP устройства.\r\nОпитайте вместо това Live Header повторно свързване!
@@ -10,10 +9,6 @@ auto=UPNP Автоматична настройка
 controlURLTxt_help=Въведи контролен URL...
 interaction_UpnpReconnect_wanservice_ip=Интернет протокол
 interaction_UpnpReconnect_wanservice_ppp=Протокол от точка до точка
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Не може да намери каквито и да е работещи UPNP рутери
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Неуспешно
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JD зададе успешно настройките за повторно свързване!\r\nВашия рутер е   '%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Успешно
 literally_choose_router=Избери устройство
 literally_control_url=Контролен URL
 literally_router=UPNP рутер

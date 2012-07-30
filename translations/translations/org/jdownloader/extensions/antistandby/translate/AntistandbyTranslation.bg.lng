@@ -1,0 +1,5 @@
+gui_config_antistandby_whiledl2=Изтегляне е в ход
+gui_config_antistandby_whilejd2=JDownloader работи
+jd_plugins_optional_antistandby_jdantistandby=Анти режим на готовност
+jd_plugins_optional_antistandby_jdantistandby_description=Просто предпазва вашия компютър от влизане в режим на готовност или заспиване за да запази изтеглянията активни.
+mode=Предотвратява режим на готовност/заспиване когато

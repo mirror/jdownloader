@@ -1,0 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=Зона Завлачи и Пусни
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Пуснете URL адреси, хипервръзки или DLC файлове тук!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Скрий информационната лента
+jd_plugins_optional_infobar_docking=Разреши закачване към страните
+jd_plugins_optional_infobar_dropLocation2=Разреши място за пускане
+jd_plugins_optional_infobar_jdinfobar=Информационна лента
+jd_plugins_optional_infobar_jdinfobar_description=Малък плаващ панел с информация за изтеглянията в реално време, и зона за влачене и пускане,\nкъдето може да добавяте линкове, URL адреси или DLC файлове.
+jd_plugins_optional_infobar_opacity=Прозрачност на диалоговия прозорец [в %]
