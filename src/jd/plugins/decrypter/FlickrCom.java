@@ -71,6 +71,14 @@ public class FlickrCom extends PluginForDecrypt {
         /** Login is not always needed but we force it to get all pictures */
         getUserLogin();
         br.getPage(parameter);
+
+        final String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
+        if (picCount == null) {
+            logger.warning("Couldn't find total number of pictures, aborting...");
+            return null;
+        }
+        final int totalEntries = Integer.parseInt(picCount);
+
         String fpName = null;
         if (parameter.matches(FAVORITELINK)) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
@@ -78,23 +86,26 @@ public class FlickrCom extends PluginForDecrypt {
             fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
             if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
         }
+        int maxEntriesPerPage = 0;
+        if (parameter.matches(PHOTOLINK)) {
+            maxEntriesPerPage = 18;
+        } else {
+            maxEntriesPerPage = 72;
+        }
 
         /**
          * Handling for albums/sets: Only decrypt all pages if user did NOT add
          * a direct page link
          * */
+        int lastPageCalculated = 0;
         if (!parameter.contains("/page")) {
+            logger.info("Decrypting all available pages.");
             // Removed old way of finding page number on the 27.07.12
-            final String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
-            if (picCount == null) {
-                logger.warning("Couldn't find total number of pictures, aborting...");
-                return null;
-            }
-            if (parameter.matches(PHOTOLINK)) {
-                pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 18));
-            } else {
-                pages.add((int) StrictMath.ceil(Double.parseDouble(picCount) / 72));
-            }
+            // Add 2 extra pages because usually the decrypter should already
+            // stop before
+            lastPageCalculated = (int) StrictMath.ceil(totalEntries / maxEntriesPerPage);
+            pages.add(lastPageCalculated + 2);
+            logger.info("Found " + lastPageCalculated + " pages using the calculation method.");
         }
 
         String getPage = parameter + "/page%s";
@@ -105,7 +116,7 @@ public class FlickrCom extends PluginForDecrypt {
         }
         final int lastPage = pages.get(pages.size() - 1);
         for (int i = 1; i <= lastPage; i++) {
-            logger.info("Decrypting page " + i + " of " + lastPage);
+            int addedLinksCounter = 0;
             if (i != 1) br.getPage(String.format(getPage, i));
             final String[] regexes = { "data\\-track=\"photo\\-click\" href=\"(/photos/[^<>\"\\'/]+/\\d+)" };
             for (String regex : regexes) {
@@ -113,12 +124,18 @@ public class FlickrCom extends PluginForDecrypt {
                 if (links != null && links.length != 0) {
                     for (String singleLink : links) {
                         // Regex catches links twice, correct that here
-                        if (!addLinks.contains(singleLink)) addLinks.add(singleLink);
+                        if (!addLinks.contains(singleLink)) {
+                            addLinks.add(singleLink);
+                            addedLinksCounter++;
+                        }
                     }
-                    logger.info("Found " + (links.length / 2) + " links on page " + i + " of " + lastPage);
-                } else {
-                    logger.info("Found 0 links on page " + i + " of " + lastPage);
                 }
+            }
+            logger.info("Found " + addedLinksCounter + " links on page " + i + " of approximately " + lastPage + " pages.");
+            logger.info("Found already " + addLinks.size() + " of " + totalEntries + " entries, so we still have to decrypt " + (totalEntries - addLinks.size()) + " entries!");
+            if (addedLinksCounter == 0 || (!(addedLinksCounter == maxEntriesPerPage) && i >= lastPageCalculated) || addLinks.size() == totalEntries) {
+                logger.info("Stopping at page " + i + " because it seems like we got everything decrypted.");
+                break;
             }
         }
         if (addLinks == null || addLinks.size() == 0) {

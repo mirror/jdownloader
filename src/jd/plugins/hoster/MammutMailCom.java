@@ -72,7 +72,7 @@ public class MammutMailCom extends PluginForHost {
         String filename = br.getRegex(INFOREGEX).getMatch(1);
         if (filename == null) filename = br.getRegex("\\&file_name=(.*?)\"").getMatch(0);
         String filesize = br.getRegex(INFOREGEX).getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;

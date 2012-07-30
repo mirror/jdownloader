@@ -135,6 +135,7 @@ public class FourFastFileCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("This file is either removed due to copyright claim or deleted by his owner\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(>4FastFile\\.com \\- Access Denied|You may need to login below or register to access this page\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>4FastFile\\.com \\- Download (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<td class=\"file\\-name\">(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);

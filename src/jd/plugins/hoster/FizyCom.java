@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]{2,}" }, flags = { 32 })
 public class FizyCom extends PluginForHost {
 
     private String        clipUrl              = null;
@@ -71,6 +71,22 @@ public class FizyCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        final String dllink = downloadLink.getDownloadURL();
+        final String sid = dllink.substring(dllink.lastIndexOf("/") + 1);
+        if (sid == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
+        final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0).trim();
+        String ext = br.getRegex("type\":\"(.*?)\"").getMatch(0);
+        clipUrl = br.getRegex("source\":\"(.*?)\"").getMatch(0);
+        if (filename == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        ext = ext == null ? "mp3" : ext;
+        downloadLink.setFinalFileName(decodeUnicode(filename) + "." + ext);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         final String dllink = clipNetConnectionUrl + clipUrl;
@@ -106,22 +122,6 @@ public class FizyCom extends PluginForHost {
         final int rev = Integer.parseInt(prev);
         if (rev < 10000) { return true; }
         return false;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
-        final String sid = dllink.substring(dllink.lastIndexOf("/") + 1);
-        if (sid == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        br.postPage("http://fizy.com/fizy::getSong", "SID=" + sid);
-        final String filename = br.getRegex("title\":\"(.*?)\"").getMatch(0).trim();
-        String ext = br.getRegex("type\":\"(.*?)\"").getMatch(0);
-        clipUrl = br.getRegex("source\":\"(.*?)\"").getMatch(0);
-        if (filename == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        ext = ext == null ? "mp3" : ext;
-        downloadLink.setFinalFileName(decodeUnicode(filename) + "." + ext);
-        return AvailableStatus.TRUE;
     }
 
     @Override

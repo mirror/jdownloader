@@ -53,7 +53,9 @@ public class Share4WebCom extends PluginForHost {
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        // Server sends filename with .exe ending, prevent it by setting final
+        // filename here
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
@@ -62,9 +64,17 @@ public class Share4WebCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        br.postPage(downloadLink.getDownloadURL() + "/timer", "step=timer&referer=&ad=");
+        br.postPage(downloadLink.getDownloadURL() + "/timer", "step=timer&referer=&reg=select&ad=");
         if (br.containsHTML("(>Somebody else is already downloading using your IP-address|Try to download file later)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 5 * 60 * 1000l);
         String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            // Strange "Mirror" link
+            dllink = br.getRegex("</div><div style=\"text\\-align:center;\"><br/><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                // "Normal" Downloadlink
+                dllink = br.getRegex("\"(http://[a-z0-9]+\\.share4web\\.com/getf/[^<>\"]*?)\"").getMatch(0);
+            }
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

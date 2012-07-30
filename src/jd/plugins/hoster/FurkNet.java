@@ -56,7 +56,6 @@ public class FurkNet extends PluginForHost {
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         form.remove(null);
-        br.setFollowRedirects(true);
         String waittime = br.getRegex("id=\"free_dl_countdown\">(\\d+)</div>").getMatch(0);
         if (waittime != null) {
             // waittime
@@ -81,9 +80,11 @@ public class FurkNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("File not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("This torrent is not ready for")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "This is NO VALID LINK!"); }
+        if (br.getURL().contains("https://www.furk.net/login?url=/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) :: Furk.net</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("document\\.location\\.href='/registration\\?pfile=(.*?)'\"").getMatch(0);

@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?yunfile\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
     private static final String MAINPAGE = "http://yunfile.com/";
 
@@ -48,6 +48,10 @@ public class YunFileCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://www.yunfile.com/user/premiumMembership.html");
         // this.setStartIntervall(15 * 1000l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(yunfile|filemarkets|yfdisk)\\.com/file/", "yunfile.com/file/"));
     }
 
     private void checkErrors() throws NumberFormatException, PluginException {
@@ -82,6 +86,27 @@ public class YunFileCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    // Works like MountFileCom and HowFileCom
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
+        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
+        if (con.getResponseCode() == 503) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.followConnection();
+        if (br.containsHTML("(文件不存在或系统临时维护|h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;</h2)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;(.*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>(.*?) - YunFile\\.com 网盘赚钱 - 最好的网赚网盘 赚钱网盘 </title>").getMatch(0);
+        final String filesize = br.getRegex("文件大小: <b>(.*?)</b>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -179,27 +204,6 @@ public class YunFileCom extends PluginForHost {
             account.setProperty("pass", account.getPass());
             account.setProperty("cookies", cookies);
         }
-    }
-
-    // Works like MountFileCom and HowFileCom
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setReadTimeout(3 * 60 * 1000);
-        URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
-        if (con.getResponseCode() == 503) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        br.followConnection();
-        if (br.containsHTML("(文件不存在或系统临时维护|h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;</h2)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 class=\"title\">文件下载\\&nbsp;\\&nbsp;(.*?)</h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) - YunFile\\.com 网盘赚钱 - 最好的网赚网盘 赚钱网盘 </title>").getMatch(0);
-        String filesize = br.getRegex("文件大小: <b>(.*?)</b>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

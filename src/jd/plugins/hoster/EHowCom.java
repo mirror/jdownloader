@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,33 +42,6 @@ public class EHowCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.ehow.com/terms_use.aspx";
-    }
-
-    public void getDllink() throws Exception {
-        dllink = br.getRegex("'(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flashHD/[a-z0-9-]+\\.flv)'").getMatch(0);
-        if (dllink == null) {
-            hd = false;
-            dllink = br.getRegex("(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flash/[a-z0-9-]+\\.flv)").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("id: '(http://.*?\\.flv)'").getMatch(0);
-            }
-        }
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override
@@ -96,7 +70,7 @@ public class EHowCom extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
-        URLConnectionAdapter con = br2.openGetConnection(dllink);
+        URLConnectionAdapter con = br2.openGetConnection(Encoding.htmlDecode(dllink));
         if (!con.getContentType().contains("html"))
             downloadLink.setDownloadSize(con.getLongContentLength());
         else
@@ -106,6 +80,30 @@ public class EHowCom extends PluginForHost {
         else
             downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.EHowCom.hdNotAvailable", "Download is only available in SD"));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void getDllink() throws Exception {
+        dllink = br.getRegex("'(http://cdn-viper\\.demandvideo\\.com/media/[a-z0-9-]+/flashHD/[a-z0-9-]+\\.flv)'").getMatch(0);
+        if (dllink == null) {
+            hd = false;
+            dllink = br.getRegex("\"source\":\"(http[^<>\"]*?)\"").getMatch(0);
+        }
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
     @Override
