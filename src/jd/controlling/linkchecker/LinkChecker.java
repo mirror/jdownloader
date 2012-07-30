@@ -418,6 +418,7 @@ public class LinkChecker<E extends CheckableLink> {
                 logger.flush();
                 break;
             case TRUE:
+                link.getLinkStatus().removeStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
                 link.getLinkStatus().removeStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             case FALSE:
             default:

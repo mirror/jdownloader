@@ -48,6 +48,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createGetRequest(link));
         try {
             dl.connect(br);
@@ -59,7 +60,9 @@ public class BrowserAdapter {
             if (e.getValue() == ERROR_REDIRECTED) {
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    r = br.createGetRequestRedirectedRequest(r);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r);
                     try {
                         dl.connect(br);
                         break;
@@ -83,6 +86,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createPostRequest(url, postdata));
         try {
             dl.connect(br);
@@ -95,7 +99,9 @@ public class BrowserAdapter {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createPostRequestfromRedirectedRequest(r, postdata));
+                    r = br.createPostRequestfromRedirectedRequest(r, postdata);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r);
                     try {
                         dl.connect(br);
                         break;
@@ -118,6 +124,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String url, String postdata, boolean b, int c) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createPostRequest(url, postdata), b, c);
         try {
             dl.connect(br);
@@ -130,7 +137,9 @@ public class BrowserAdapter {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createPostRequestfromRedirectedRequest(r, postdata), b, c);
+                    r = br.createPostRequestfromRedirectedRequest(r, postdata);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r, b, c);
                     try {
                         dl.connect(br);
                         break;
@@ -153,6 +162,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(link), b, c);
         try {
             dl.connect(br);
@@ -165,7 +175,9 @@ public class BrowserAdapter {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r), b, c);
+                    r = br.createGetRequestRedirectedRequest(r);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r, b, c);
                     try {
                         dl.connect(br);
                         break;
@@ -189,6 +201,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(form), resume, chunks);
         try {
             dl.connect(br);
@@ -201,7 +214,9 @@ public class BrowserAdapter {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r), resume, chunks);
+                    r = br.createGetRequestRedirectedRequest(r);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r, resume, chunks);
                     try {
                         dl.connect(br);
                         break;
@@ -225,6 +240,7 @@ public class BrowserAdapter {
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, Form form) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
+        String originalUrl = br.getURL();
         DownloadInterface dl = getDownloadInterface(downloadLink, r = br.createRequest(form));
         try {
             dl.connect(br);
@@ -237,7 +253,9 @@ public class BrowserAdapter {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = getDownloadInterface(downloadLink, r = br.createGetRequestRedirectedRequest(r));
+                    r = br.createGetRequestRedirectedRequest(r);
+                    if (originalUrl != null) r.getHeaders().put("Referer", originalUrl);
+                    dl = getDownloadInterface(downloadLink, r);
                     try {
                         dl.connect(br);
                         break;

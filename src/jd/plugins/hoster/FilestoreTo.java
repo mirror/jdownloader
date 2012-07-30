@@ -86,7 +86,7 @@ public class FilestoreTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
-        final String dllink = br.toString().trim();
+        final String dllink = br.toString().replaceAll("%0D%0A", "").trim();
         if (!dllink.startsWith("http://")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -141,8 +141,8 @@ public class FilestoreTo extends PluginForHost {
             if (br.containsHTML(">Download\\-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             haveFun();
-            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename): (.*?)(Dateigröße|Filesize):").getMatch(1);
-            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize): (.*?)Uploaded:").getMatch(1);
+            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename): (.*?)(Größe|Dateigröße|Filesize):").getMatch(1);
+            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize|Größe): (.*?)(Uploaded: |Datum: )").getMatch(1);
             if (downloadName != null) {
                 downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
                 if (downloadSize != null) {
