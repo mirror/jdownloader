@@ -123,15 +123,12 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
             if (captchaController.getCaptchafile().getName().toLowerCase().endsWith("gif")) {
                 images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
             } else {
-
                 BufferedImage img = IconIO.getImage(captchaController.getCaptchafile().toURI().toURL());
-
-                if (img.getType() == BufferedImage.TYPE_BYTE_BINARY) {
+                if (img != null && img.getType() == BufferedImage.TYPE_BYTE_BINARY) {
+                    /* some png also are this type but fail to get read by gifimages */
                     images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
-                } else {
-                    images = new Image[] { img };
                 }
-
+                if (images == null || images.length == 0 || images[0] == null) images = new Image[] { img };
             }
             if (images == null || images.length == 0 || images[0] == null) {
                 getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());

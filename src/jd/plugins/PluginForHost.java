@@ -115,16 +115,20 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Adresse nicht definiert");
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        final File captchaFile = getLocalCaptchaFile();
+        File captchaFile = null;
         try {
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
-        } catch (Exception e) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            captchaFile = getLocalCaptchaFile();
+            try {
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
+            } catch (Exception e) {
+                logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
+            return captchaCode;
+        } finally {
+            captchaFile.delete();
         }
-        final String captchaCode = getCaptchaCode(method, captchaFile, downloadLink);
-        captchaFile.delete();
-        return captchaCode;
     }
 
     protected String getCaptchaCode(final File captchaFile, final DownloadLink downloadLink) throws PluginException {
@@ -145,7 +149,6 @@ public abstract class PluginForHost extends Plugin {
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
                 final BufferedImage img = ImageIO.read(file);
-
                 linkStatus.setStatusIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
             } catch (Throwable e) {
                 e.printStackTrace();
