@@ -69,6 +69,7 @@ public class FileMadeCom extends PluginForHost {
     private static final Object  LOCK                         = new Object();
     private String               domain                       = null;
     private String               domainHost;
+    private boolean              freshLogin                   = false;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
@@ -559,7 +560,7 @@ public class FileMadeCom extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private Map<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 if (domainHost == null) domainHost = "filemade.com";
@@ -570,15 +571,15 @@ public class FileMadeCom extends PluginForHost {
                 final Object ret = account.getProperty("cookies" + domainHost, null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
                     if (account.isValid()) {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
                             this.br.setCookie(domain, key, value);
                         }
-                        return;
+                        return cookies;
                     }
                 }
                 getPage("http://" + domainHost + "/login.html");
@@ -604,6 +605,8 @@ public class FileMadeCom extends PluginForHost {
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies" + domainHost, cookies);
+                freshLogin = true;
+                return cookies;
             } catch (final PluginException e) {
                 account.setProperty("cookies" + domainHost, Property.NULL);
                 throw e;
@@ -615,7 +618,7 @@ public class FileMadeCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
-        login(account, false);
+        Map<String, String> cookies = login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
@@ -629,7 +632,18 @@ public class FileMadeCom extends PluginForHost {
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
                     Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (dlform == null) {
+                        synchronized (LOCK) {
+                            if (freshLogin == false) {
+                                Object co = account.getProperty("cookies" + domainHost, null);
+                                if (cookies == co) {
+                                    account.setProperty("cookies" + domainHost, Property.NULL);
+                                }
+                                throw new PluginException(LinkStatus.ERROR_RETRY);
+                            }
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
                     sendForm(dlform);
                     dllink = getDllink();
