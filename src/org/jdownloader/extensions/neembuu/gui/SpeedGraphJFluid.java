@@ -16,16 +16,19 @@
  */
 package org.jdownloader.extensions.neembuu.gui;
 
-import com.sun.tools.visualvm.charts.ChartFactory;
-import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
-import com.sun.tools.visualvm.charts.SimpleXYChartSupport;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
 import org.jdownloader.extensions.neembuu.translate._NT;
 import org.netbeans.lib.profiler.charts.xy.synchronous.SynchronousXYChart;
+
+import com.sun.tools.visualvm.charts.ChartFactory;
+import com.sun.tools.visualvm.charts.SimpleXYChartDescriptor;
+import com.sun.tools.visualvm.charts.SimpleXYChartSupport;
 
 /**
  * Comments by Jiri Sedlacek

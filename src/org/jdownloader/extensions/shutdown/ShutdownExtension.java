@@ -40,6 +40,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
@@ -268,7 +269,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     public static Response execute(String[] command) throws IOException, UnsupportedEncodingException, InterruptedException {
-        ProcessBuilder probuilder = new ProcessBuilder(command);
+        ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
 
         Process process = probuilder.start();
         System.out.println(Arrays.toString(command));

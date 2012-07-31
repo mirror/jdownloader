@@ -18,7 +18,9 @@ package org.jdownloader.gui.views.downloads.columns;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+
 import jd.controlling.packagecontroller.AbstractNode;
+
 import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;

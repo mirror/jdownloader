@@ -41,6 +41,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 import org.appwork.utils.net.httpconnection.HTTPProxyUtils;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.InternetConnectionSettings;
 
@@ -71,7 +72,7 @@ public class RouterUtils {
         final InetAddress hostAddress = InetAddress.getByName(ipAddress);
         ProcessBuilder pb = null;
         try {
-            pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+            pb = ProcessBuilderFactory.create(new String[] { "ping", ipAddress });
             pb.start();
             /*-n for dont resolv ip, MUCH MUCH faster*/
             out = JDUtilities.runCommand("arp", new String[] { "-n", ipAddress }, null, 10);
@@ -86,7 +87,7 @@ public class RouterUtils {
         }
         if (out == null || out.trim().length() == 0) {
             try {
-                pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+                pb = ProcessBuilderFactory.create(new String[] { "ping", ipAddress });
                 pb.start();
                 out = JDUtilities.runCommand("ip", new String[] { "neigh", "show" }, null, 10);
                 pb.directory();
@@ -107,7 +108,7 @@ public class RouterUtils {
     }
 
     private static String callArpToolWindows(final String ipAddress) throws IOException, InterruptedException {
-        final ProcessBuilder pb = new ProcessBuilder(new String[] { "ping", ipAddress });
+        final ProcessBuilder pb = ProcessBuilderFactory.create(new String[] { "ping", ipAddress });
         pb.start();
 
         final String[] parts = JDUtilities.runCommand("arp", new String[] { "-a" }, null, 10).split(System.getProperty("line.separator"));

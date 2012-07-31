@@ -14,6 +14,7 @@ import org.appwork.update.inapp.RestartDirectEvent;
 import org.appwork.update.inapp.RestartViaUpdaterEvent;
 import org.appwork.update.inapp.SilentUpdaterEvent;
 import org.appwork.utils.Application;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 
 public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
     private static final RunUpdaterOnEndAtLeastOnceDaily INSTANCE = new RunUpdaterOnEndAtLeastOnceDaily();
@@ -267,7 +268,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
 
         }
         System.out.println(sb);
-        final ProcessBuilder pb = new ProcessBuilder(tiny);
+        final ProcessBuilder pb = ProcessBuilderFactory.create(tiny);
         /*
          * needed because the root is different for jre/class version
          */

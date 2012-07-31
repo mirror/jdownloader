@@ -16,10 +16,16 @@
  */
 package org.jdownloader.extensions.neembuu;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.logging.Logger;
+
 import jpfm.SystemUtils;
+
 import org.appwork.utils.Application;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 
 /**
  *
@@ -48,7 +54,7 @@ final class PismoInstaller {
         if(uninstall) parameter = "uninstall";
         
         
-        ProcessBuilder pb = new ProcessBuilder(installer.getAbsolutePath(),parameter);
+        ProcessBuilder pb = ProcessBuilderFactory.create(installer.getAbsolutePath(),parameter);
         Process p = pb.start();
         boolean success = analyzeOutput(l, p, uninstall);
         if(!success)

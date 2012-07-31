@@ -5,6 +5,7 @@ import java.io.IOException;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.logging.LogController;
 
 public class MacAntiStandBy extends Thread {
@@ -79,7 +80,7 @@ public class MacAntiStandBy extends Thread {
     public void doit() {
         try {
             String[] command = { "pmset", "noidle" };
-            ProcessBuilder probuilder = new ProcessBuilder(command);
+            ProcessBuilder probuilder = ProcessBuilderFactory.create(command);
             logger.info("Call pmset nodile");
             process = probuilder.start();
 

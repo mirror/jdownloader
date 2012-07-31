@@ -16,7 +16,7 @@
  */
 package org.jdownloader.extensions.neembuu.postprocess;
 
-import jpfm.*;
+import jpfm.FileAttributesProvider;
 import jpfm.fs.SimpleReadOnlyFileSystem;
 import jpfm.volume.vector.VectorDirectory;
 import jpfm.volume.vector.VectorNode;

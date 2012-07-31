@@ -24,8 +24,9 @@ import jpfm.DirectoryStream;
 import jpfm.FileAttributesProvider;
 import jpfm.FileType;
 import jpfm.fs.BasicFileSystem;
-import org.appwork.utils.logging.Log;
 
+import org.appwork.utils.logging.Log;
+import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.extensions.neembuu.DownloadSession;
 import org.jdownloader.extensions.neembuu.NB_VirtualFileSystem;
 import org.jdownloader.extensions.neembuu.NeembuuExtension;
@@ -82,7 +83,7 @@ public class SimplyOpenTheVideoFile implements PostProcessor {
         String vlcLoc = NeembuuExtension.getInstance().getVlcLocation();
         if(vlcLoc!=null){
             try{
-                ProcessBuilder pb = new ProcessBuilder(vlcLoc,f.getAbsolutePath());
+                ProcessBuilder pb = ProcessBuilderFactory.create(vlcLoc,f.getAbsolutePath());
                 Process p = pb.start();
                 return true;
             }catch(Exception any){

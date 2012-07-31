@@ -23,12 +23,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.logging.Level;
+
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
 import net.miginfocom.swing.MigLayout;
+
 import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.DownloadSession;
 import org.jdownloader.extensions.neembuu.translate._NT;

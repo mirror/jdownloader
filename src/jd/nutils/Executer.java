@@ -25,6 +25,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import org.appwork.utils.processes.ProcessBuilderFactory;
+
 public class Executer extends Thread implements Runnable {
     class StreamObserver extends Thread implements Runnable {
 
@@ -385,7 +387,7 @@ public class Executer extends Thread implements Runnable {
                 this.logger.info("Execute: " + out + " in " + this.runIn);
             }
         }
-        final ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
+        final ProcessBuilder pb = ProcessBuilderFactory.create(params.toArray(new String[] {}));
         if (this.runIn != null && this.runIn.length() > 0) {
             if (new File(this.runIn).exists()) {
                 pb.directory(new File(this.runIn));

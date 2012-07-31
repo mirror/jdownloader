@@ -25,8 +25,8 @@ import javax.swing.SwingUtilities;
 import jpfm.operations.readwrite.ReadRequest;
 import neembuu.vfs.connection.NewConnectionParams;
 import neembuu.vfs.file.TroubleHandler;
-import org.appwork.utils.logging.Log;
 
+import org.appwork.utils.logging.Log;
 import org.jdownloader.extensions.neembuu.translate._NT;
 
 /**

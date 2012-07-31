@@ -43,8 +43,8 @@ import neembuu.swing.RangeSelectedListener;
 import neembuu.util.logging.LoggerUtil;
 import neembuu.vfs.file.MonitoredHttpFile;
 import neembuu.vfs.readmanager.RegionHandler;
-import org.appwork.utils.logging.Log;
 
+import org.appwork.utils.logging.Log;
 import org.jdesktop.swingx.JXCollapsiblePane;
 import org.jdownloader.extensions.neembuu.translate._NT;
 

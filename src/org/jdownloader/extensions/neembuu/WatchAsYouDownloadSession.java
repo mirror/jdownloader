@@ -17,8 +17,11 @@
 package org.jdownloader.extensions.neembuu;
 
 import java.io.File;
+
 import javax.swing.JPanel;
+
 import neembuu.vfs.file.SeekableConnectionFile;
+
 import org.jdownloader.extensions.neembuu.gui.HttpFilePanel;
 
 /**

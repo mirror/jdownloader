@@ -19,9 +19,11 @@ package org.jdownloader.extensions.neembuu.newconnectionprovider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Level;
+
 import jd.http.URLConnectionAdapter;
 import neembuu.vfs.connection.AbstractConnection;
 import neembuu.vfs.connection.NewConnectionParams;
+
 import org.jdownloader.extensions.neembuu.NBUtils;
 
 /**
