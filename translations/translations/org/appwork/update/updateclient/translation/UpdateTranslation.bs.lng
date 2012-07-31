@@ -61,6 +61,7 @@ error_locked=%s1 Server za nadgradnju je trenutno zauzet. Pokušajte ponovo kasn
 error_occured=Pojavila se greška
 error_occured_detailed=Nadgradnju nije bilo moguće završiti.
 error_occured_start_reverting=Nadgradnja je prekinuta. Poništavanje izmjena...
+error_package_creation_failed=Greška Neuspjelog Paketa. Molimo pokušajte ponovo kasnije.
 error_unknown=%s1
 error_unknown_app=Nije moguće nadgraditi %s1.                   Pokušajte ponovo kasnije!
 error_unknown_branch=Nepoznato Izdanje: %s1
