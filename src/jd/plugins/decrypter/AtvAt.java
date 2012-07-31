@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/contentset/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "atv.at" }, urls = { "http://(www\\.)?atv\\.at/contentset/\\d+([a-z0-9\\-]+/\\d+)?" }, flags = { 0 })
 public class AtvAt extends PluginForDecrypt {
 
     public AtvAt(PluginWrapper wrapper) {
@@ -60,6 +60,7 @@ public class AtvAt extends PluginForDecrypt {
         }
         name = Encoding.htmlDecode(name.trim());
         name = decodeUnicode(name);
+        final String episodeNr = br.getRegex("folge\\-(\\d+)").getMatch(0);
         final String[] links = new Regex(allLinks, "\"(http[^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -69,7 +70,11 @@ public class AtvAt extends PluginForDecrypt {
         int counter = 1;
         for (String singleLink : links) {
             final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("\\", ""));
-            dl.setFinalFileName(name + "_" + df.format(counter) + ".mp4");
+            if (episodeNr != null) {
+                dl.setFinalFileName(name + "_episode_" + df.format(Integer.parseInt(episodeNr)) + "_part_" + df.format(counter) + ".mp4");
+            } else {
+                dl.setFinalFileName(name + "_part_" + df.format(counter) + ".mp4");
+            }
             decryptedLinks.add(dl);
             counter++;
         }
