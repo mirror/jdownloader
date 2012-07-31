@@ -727,6 +727,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 return decryptedLinks;
             }
             finallink = br.getRedirectLocation();
+            if (finallink == null) finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(http[^<>\"]*?)\"").getMatch(0);
         }
         if (finallink == null) {
             logger.info("DecrypterForRedirectServicesWithoutDirectRedirects says \"Out of date\" for link: " + parameter);

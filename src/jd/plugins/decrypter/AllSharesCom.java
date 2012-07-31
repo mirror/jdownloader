@@ -41,26 +41,24 @@ public class AllSharesCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (!br.containsHTML(CAPTCHASTRING)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (int i = 0; i <= 3; i++) {
-            String captchaLink = br.getRegex(">Enter code to get links\\!</span>[\t\n\r ]+<br/><br/>[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
-            if (captchaLink == null) captchaLink = br.getRegex("\"(/captcha/captcha\\.php\\?.*?)\"").getMatch(0);
-            if (captchaLink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        if (br.containsHTML(CAPTCHASTRING)) {
+            for (int i = 0; i <= 3; i++) {
+                String captchaLink = br.getRegex(">Enter code to get links\\!</span>[\t\n\r ]+<br/><br/>[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
+                if (captchaLink == null) captchaLink = br.getRegex("\"(/captcha/captcha\\.php\\?.*?)\"").getMatch(0);
+                if (captchaLink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                captchaLink = "http://all-shares.com" + captchaLink.replace("amp;", "");
+                String code = getCaptchaCode(captchaLink, param);
+                br.postPage(parameter, "code=" + Encoding.urlEncode(code));
+                if (br.containsHTML(CAPTCHASTRING)) continue;
+                break;
             }
-            captchaLink = "http://all-shares.com" + captchaLink.replace("amp;", "");
-            String code = getCaptchaCode(captchaLink, param);
-            br.postPage(parameter, "code=" + Encoding.urlEncode(code));
-            if (br.containsHTML(CAPTCHASTRING)) continue;
-            break;
+            if (br.containsHTML(CAPTCHASTRING)) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
-        if (br.containsHTML(CAPTCHASTRING)) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String fpName = br.getRegex("\">Download <b>(.*?)</b></a>").getMatch(0);
-        String[] links = br.getRegex("\\?url=(.*?)(\\'\\)|\\&page=dl\")").getColumn(0);
+        final String fpName = br.getRegex("\">Download <b>(.*?)</b></a>").getMatch(0);
+        String[] links = br.getRegex("\\?url=([^<>\"\\']*?)\\&").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

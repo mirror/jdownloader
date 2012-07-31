@@ -76,12 +76,11 @@ public class AnimeRtioCom extends PluginForDecrypt {
          */
         String tempID = new Regex(vidEntry, "dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
         if (tempID != null) return "http://www.dailymotion.com/video/" + tempID + "_" + System.currentTimeMillis();
-        tempID = new Regex(vidEntry, "\\'(http://(www\\.)?veevr\\.com/embed/[A-Za-z0-9\\-_]+)\\?w=\\d+\\&h=\\d+\\'").getMatch(0);
+        tempID = new Regex(vidEntry, "\\'(http://(www\\.)?veevr\\.com/embed/[A-Za-z0-9\\-_]+)").getMatch(0);
         if (tempID != null) return tempID;
         tempID = new Regex(vidEntry, "sapo\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
         if (tempID != null) {
             br.getPage("http://www.animeratio.com/files/streaming/sapo/?id=" + tempID);
-            System.out.println(br.toString());
             tempID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             return tempID;
         }
@@ -89,8 +88,12 @@ public class AnimeRtioCom extends PluginForDecrypt {
         if (tempID != null) return "http://glumbouploads.com/" + tempID;
         tempID = new Regex(vidEntry, "streaming/veoh/v2\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
         if (tempID != null) return "http://www.veoh.com/watch/" + tempID;
-        tempID = new Regex(vidEntry, "putlocker\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
+        tempID = new Regex(vidEntry, "putlockers\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
         if (tempID != null) return "http://putlocker.com/file/" + tempID;
+        tempID = new Regex(vidEntry, "/files/embed/filebox\\.php\\?id=([a-z0-9]{12})\"").getMatch(0);
+        if (tempID != null) return "http://filebox.com/" + tempID;
+        tempID = new Regex(vidEntry, "yourupload\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
+        if (tempID != null) return "http://yourupload.com/file/" + tempID;
         tempID = new Regex(vidEntry, "(files/embed/myspace\\.php\\?id=\\d+)\"").getMatch(0);
         if (tempID != null) {
             br.getPage("http://www.animeratio.com/" + tempID);
@@ -99,6 +102,8 @@ public class AnimeRtioCom extends PluginForDecrypt {
         }
         tempID = br.getRegex("data=\"http://(www\\.)?facebook\\.com/v/(\\d+)\"").getMatch(0);
         if (tempID != null) return "http://www.facebook.com/video/video.php?v=" + tempID;
+        tempID = br.getRegex("data=\"(http://video\\.rutube\\.ru/[^<>\"/]*?)\"").getMatch(0);
+        if (tempID != null) return tempID;
         return null;
     }
 }
