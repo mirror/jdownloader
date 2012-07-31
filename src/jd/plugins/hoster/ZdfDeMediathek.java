@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek/(hauptnavigation/startseite(/[a-z0-9\\-_]+#?)?/)?beitrag/video/\\d+/[^<>\"/\\?#]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/(hauptnavigation/startseite(/[a-z0-9\\-_]+)?#?/)?beitrag/video/\\d+/[^<>\"/\\?#]{1}" }, flags = { 0 })
 public class ZdfDeMediathek extends PluginForHost {
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
@@ -48,9 +48,10 @@ public class ZdfDeMediathek extends PluginForHost {
         // die Videos als HTTP Streams
         br.getHeaders().put("User-Agent", "iPad");
         br.getPage("http://www.zdf.de/ZDFmediathek/" + new Regex(link.getDownloadURL(), "(beitrag/video/\\d+/.+)").getMatch(0) + "?flash=off&ipad=true");
+        if (br.containsHTML("Der Beitrag konnte nicht gefunden werden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<h1 class=\"beitragHeadline\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ") + ".mp4");
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()).replace("\"", "'").replace(":", " - ").replace("?", "") + ".mp4");
         return AvailableStatus.TRUE;
     }
 
