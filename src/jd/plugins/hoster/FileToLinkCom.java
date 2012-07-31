@@ -53,11 +53,10 @@ public class FileToLinkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        System.out.println(br.toString() + "\n");
-        System.out.println(br.toString() + "\n");
         if (br.containsHTML(">Sorry, this file does not exist\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>[a-z0-9_\\-]+/([^<>\"]*?) : File Sharing \\- Upload and Send big Files : FileToLink</title>").getMatch(0);
-        String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">Downloading <a href=\"[^<>\"]*?\" >([^<>\"]*?)</a>").getMatch(0);
+        final String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -68,10 +67,12 @@ public class FileToLinkCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        boolean facebook = false;
         String finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"0\\; URL=(/download/\\?h=[0-9a-z]+\\&t=\\d+\\&f=[0-9a-z]+)\"/>\\'").getMatch(0);
         if (finallink != null) {
             finallink = new Regex(br.getURL(), "(https?://.*\\.com)/.*").getMatch(0) + finallink;
         } else {
+            facebook = true;
             // Maybe facebook login required, let's skip that shit
             final Regex noFB = br.getRegex("\\&redirect_url=http%3A%2F%2F(www\\.)?filetolink\\.com%2Fd%2F%3Fh%3D([a-z0-9]+)%26t%3D(\\d+)%26f%3D([a-z0-9]+)\"");
             if (noFB.getMatches().length < 2) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,6 +80,9 @@ public class FileToLinkCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
+            // Also not downloadable via browser with useless Facebook App
+            // (tested)
+            if (facebook) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error: Not downloadable");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

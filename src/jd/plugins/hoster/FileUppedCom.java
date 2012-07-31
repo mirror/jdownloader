@@ -58,12 +58,12 @@ public class FileUppedCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(name=\"uploadframe\" id=\"uploadframe\"|\"http://fileupped\\.com/cgi\\-bin/upload\\.cgi\\?)") || br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"content_header_middle widebox_outer_width\">[\t\n\r ]+<h2 class=\"float\\-left\">([^<>\"]*?)</h2>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         }
-        String filesize = br.getRegex(">File size</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
+        String filesize = br.getRegex(">File size:</b></td>[\t\n\r ]+<td align=left>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));

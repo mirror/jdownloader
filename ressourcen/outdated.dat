@@ -860,3 +860,7 @@ jd/plugins/hoster/FileUploadXDe.class
 jd/plugins/hoster/FileSplashCom.class
 jd/plugins/hoster/FlyShareCz.class
 jd/plugins/hoster/DivxMeCom.class
+jd/plugins/decrypter/DtLdngCmFldr.class
+jd/plugins/hoster/DataLoadingCom.class
+jd/plugins/hoster/FooGetCom.class
+jd/plugins/hoster/CloudNxtNet.class

@@ -184,26 +184,40 @@ public class IFileIt extends PluginForHost {
                 br.setFollowRedirects(true);
                 updateBrowser(br);
                 br.getPage("http://filecloud.io/user-login.html");
-                // TODO: This will always ask for a captcha, even if none is
-                // needed, fix it!
-                final String rcID = br.getRegex("var.*?recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
-                if (rcID != null) {
-                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setId(rcID);
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    DownloadLink dummyLink = new DownloadLink(null, "Account", "filecloud.io", "http://filecloud.io", true);
-                    String c = getCaptchaCode(cf, dummyLink);
-                    br.postPage("http://filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                } else {
-                    br.postPage("http://filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                // We don't know if a captcha is needed so first we try without,
+                // if we get an errormessage we know a captcha is needed
+                boolean accountValid = false;
+                boolean captchaNeeded = false;
+                for (int i = 0; i <= 2; i++) {
+                    final String rcID = br.getRegex("var.*?recaptcha_public.*?=.*?\\'([^<>\"]*?)\\';").getMatch(0);
+                    if (captchaNeeded) {
+                        if (rcID == null) {
+                            logger.warning("recaptcha ID not found, stoping!");
+                            break;
+                        }
+                        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.setId(rcID);
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        DownloadLink dummyLink = new DownloadLink(null, "Account", "filecloud.io", "http://filecloud.io", true);
+                        String c = getCaptchaCode(cf, dummyLink);
+                        br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                    } else {
+                        br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    }
+                    if (br.getURL().contains("RECAPTCHA__INCORRECT")) {
+                        captchaNeeded = true;
+                        logger.info("Wrong captcha and/or username/password entered!");
+                        continue;
+                    }
+                    if (!br.containsHTML("class=\"icon\\-info\\-sign\"></i> you have successfully logged in")) {
+                        continue;
+                    }
+                    accountValid = true;
+                    break;
                 }
-                if (br.getURL().contains("RECAPTCHA__INCORRECT")) {
-                    logger.info("Wrong captcha and/or username/password entered!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                if (!br.containsHTML("you have successfully logged in")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!accountValid) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -225,12 +239,20 @@ public class IFileIt extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         showDialog = true;
         try {
-            login(account, true);
+            // Use cookies, check and refresh if needed
+            login(account, false);
+            br.getPage("https://secure.filecloud.io/user-account.html");
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Account invalid or old cookies, refreshing...");
+                login(account, true);
+                br.getPage("https://secure.filecloud.io/user-account.html");
+            }
+
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://filecloud.io/user-account.html");
+        br.getPage("https://secure.filecloud.io/user-account.html");
         // Only free acc support till now
         if (br.containsHTML("<span class=\"label label\\-important\">no</span>")) {
             ai.setStatus("Normal User");

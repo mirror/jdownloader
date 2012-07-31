@@ -50,8 +50,9 @@ public class DataPortCz extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Please click here to continue<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<td class=\"fil\">Název</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
-        String filesize = br.getRegex("<td class=\"fil\">Velikost</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        String filename = br.getRegex(">Název</td>[\t\n\r ]+<td><span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
+        final String filesize = br.getRegex("<td class=\"fil\">Velikost</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Set final filename here because server sends us bad filenames
         link.setFinalFileName(filename.trim());
@@ -98,7 +99,7 @@ public class DataPortCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(">Volné sloty pro stažení zdarma jsou v tuhle chvíli vyčerpány")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.dataportcz.nofreeslots", "No free slots available, wait or buy premium"), 10 * 60 * 1000l);
+        if (br.containsHTML("Počet volných slotů: <span class=\"darkblue\">0</span>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.dataportcz.nofreeslots", "No free slots available, wait or buy premium"), 10 * 60 * 1000l);
         final String captchaLink = br.getRegex("\"(/captcha/\\d+\\.png)\"").getMatch(0);
         final Form capForm = br.getFormbyProperty("id", "free_download_form");
         if (captchaLink == null || capForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -111,7 +112,11 @@ public class DataPortCz extends PluginForHost {
             logger.warning("dllink is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dllink.contains("?_fid=")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink.contains("?_fid=")) {
+            br.getPage(dllink);
+            if (br.containsHTML("Počet volných slotů: <span class=\"darkblue\">0</span>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
