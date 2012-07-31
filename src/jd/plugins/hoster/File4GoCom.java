@@ -108,6 +108,7 @@ public class File4GoCom extends PluginForHost {
                         for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
                             final String key = cookieEntry.getKey();
                             final String value = cookieEntry.getValue();
+                            if ("FREE".equalsIgnoreCase(key)) continue;
                             this.br.setCookie(MAINPAGE, key, value);
                         }
                         return;
@@ -121,6 +122,7 @@ public class File4GoCom extends PluginForHost {
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
                 for (final Cookie c : add.getCookies()) {
+                    if ("FREE".equalsIgnoreCase(c.getKey())) continue;
                     cookies.put(c.getKey(), c.getValue());
                 }
                 account.setProperty("name", Encoding.urlEncode(account.getUser()));
@@ -144,13 +146,13 @@ public class File4GoCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex(">Premium Stop: (\\d{4}/\\d{2}/\\d{2} \\d{2}:\\d{2}:\\d{2}) </b>").getMatch(0);
+        account.setValid(true);
         if (expire == null) {
             account.setValid(false);
             return ai;
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy/MM/dd hh:mm:ss", null));
         }
-        account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
     }
@@ -161,12 +163,12 @@ public class File4GoCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://(www\\.)?([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("('|\")(http://([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)('|\")").getMatch(1);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
