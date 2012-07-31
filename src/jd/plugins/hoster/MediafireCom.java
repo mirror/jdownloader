@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -396,8 +397,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -464,8 +465,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -1094,9 +1095,9 @@ public class MediafireCom extends PluginForHost {
                     logger.info("ErrorCode 500! Wait a moment!");
                     Thread.sleep(200);
                     continue;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                if (e instanceof BrowserException) throw e;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
