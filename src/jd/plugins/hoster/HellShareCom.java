@@ -291,6 +291,7 @@ public class HellShareCom extends PluginForHost {
         if (downloadOverview != null) {
             br.getPage(downloadOverview);
         }
+
         String dllink = br.getRegex("launchFullDownload\\(\\'.*?(http:.*?)(\\&|\"|\\')").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(http://data\\d+\\.helldata\\.com/[a-z0-9]+/\\d+/.*?)(\\&|\"|\\')").getMatch(0);
@@ -299,6 +300,13 @@ public class HellShareCom extends PluginForHost {
             if (br.containsHTML("button\\-download\\-full\\-nocredit")) {
                 logger.info("not enough credits to download");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            if (br.containsHTML("Daily limit exceeded")) {
+                logger.info("hellshare: Daily limit exceeded!");
+
+                UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "Daily limit exceeded!\r\nPremium disabled, will continue downloads as Free User");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit exceeded!");
             }
             logger.warning("dllink (premium) is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -319,30 +327,21 @@ public class HellShareCom extends PluginForHost {
         // edt
         // not used anymore, because there is no plan with traffic limit
         /*
-         * set max chunks to 1 because each range request counts as download,
-         * reduces traffic very fast ;)
+         * set max chunks to 1 because each range request counts as download, reduces traffic very fast ;)
          */
         /*
-         * int retry = 2; while (retry > 0) { dl =
-         * jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink,
-         * true, 1); if (!dl.getConnection().isContentDisposition()) {
-         * br.followConnection(); if
-         * (br.containsHTML("<h1>File not found</h1>")) { throw new
-         * PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); } if
-         * (br.containsHTML("The server is under the maximum load")) { throw new
-         * PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
-         * "Server is under maximum load", 10 * 60 * 1000l); } if
-         * (br.containsHTML("Incorrectly copied code from the image")) { throw
-         * new PluginException(LinkStatus.ERROR_CAPTCHA); } if
-         * (br.containsHTML("You are exceeding the limitations on this download"
-         * )) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 *
-         * 1000l); } if (br.containsHTML(
-         * "This file you downloaded already and re-download is for free")) {
-         * dllink = br.getRegex(
-         * "\"(http://data\\d+\\.helldata\\.com/[a-z0-9]+/\\d+/.*?)(\\&|\"|\\')"
-         * ).getMatch(0); retry--; continue; } throw new
-         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-         * dl.startDownload(); return; } throw new
+         * int retry = 2; while (retry > 0) { dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink,
+         * true, 1); if (!dl.getConnection().isContentDisposition()) { br.followConnection(); if
+         * (br.containsHTML("<h1>File not found</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+         * if (br.containsHTML("The server is under the maximum load")) { throw new
+         * PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 *
+         * 1000l); } if (br.containsHTML("Incorrectly copied code from the image")) { throw new
+         * PluginException(LinkStatus.ERROR_CAPTCHA); } if
+         * (br.containsHTML("You are exceeding the limitations on this download" )) { throw new
+         * PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); } if (br.containsHTML(
+         * "This file you downloaded already and re-download is for free")) { dllink = br.getRegex(
+         * "\"(http://data\\d+\\.helldata\\.com/[a-z0-9]+/\\d+/.*?)(\\&|\"|\\')" ).getMatch(0); retry--; continue; }
+         * throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } dl.startDownload(); return; } throw new
          * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
          */
     }
@@ -362,8 +361,7 @@ public class HellShareCom extends PluginForHost {
         br.postPage("http://www.hellshare.com/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&login=odeslat&DownloadRedirect=");
 
         /*
-         * this will change account language to eng,needed because language is
-         * saved in profile
+         * this will change account language to eng,needed because language is saved in profile
          */
         final String changetoeng = br.getRegex("\"(http://www\\.en\\.hellshare\\.com/--.*?profile.*?)\"").getMatch(0);
         if (changetoeng == null) {
