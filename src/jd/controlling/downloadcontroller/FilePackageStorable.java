@@ -28,6 +28,14 @@ public class FilePackageStorable implements Storable {
         }
     }
 
+    public long getUID() {
+        return filePackage.getUniqueID().getID();
+    }
+
+    public void setUID(long id) {
+        filePackage.getUniqueID().setID(id);
+    }
+
     public String getName() {
         return filePackage.getName();
     }

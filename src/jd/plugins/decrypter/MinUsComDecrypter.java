@@ -51,10 +51,11 @@ public class MinUsComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         // Get album name for package name
-        String fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?) - Minus</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
         // do not catch first "name", only items within array
         final String singleLink = br.getRegex("<a class=\"btn\\-action btn\\-download\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
-        String[] items = br.getRegex("\\{[\r\n\t]+(\"name\":[^\\}]+)\\} ").getColumn(0);
+        String[] items = br.getRegex("\\{([^}{]*?\"name\": \"[^\"]+?\"[^}{]*?)\\}").getColumn(0);
         // fail over for single items ?. Either that or they changed website yet
         // again and do not display the full gallery array.
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
@@ -73,7 +74,8 @@ public class MinUsComDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
-                final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename.substring(filename.lastIndexOf("."));
+                if (!filename.startsWith("/")) filename = "/" + filename;
+                final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename;
                 final DownloadLink dl = createDownloadlink(filelink);
                 dl.setFinalFileName(filename);
                 dl.setDownloadSize(Long.parseLong(filesize));

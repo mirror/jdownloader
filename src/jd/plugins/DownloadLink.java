@@ -138,7 +138,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private long                                                        created                   = -1l;
 
-    private transient UniqueSessionID                                   uniqueID                  = null;
+    private transient UniqueSessionID                                   uniqueID                  = new UniqueSessionID();
     transient private AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener;
     transient DomainInfo                                                domainInfo                = null;
     transient Boolean                                                   resumeable                = null;
@@ -158,7 +158,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      *            Markiert diesen DownloadLink als aktiviert oder deaktiviert
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
-        uniqueID = new UniqueSessionID();
         this.defaultplugin = plugin;
         setName(name);
         downloadMax = 0;

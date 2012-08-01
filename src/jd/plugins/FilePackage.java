@@ -132,7 +132,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient Boolean                                      isExpanded        = null;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
-    private transient UniqueSessionID                              uniqueID          = null;
+    private transient UniqueSessionID                              uniqueID          = new UniqueSessionID(); ;
     public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT  = "COMMENT";
 
@@ -183,7 +183,6 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
      * private constructor for FilePackage, sets created timestamp and downloadDirectory
      */
     private FilePackage() {
-        uniqueID = new UniqueSessionID();
         downloadDirectory = org.appwork.storage.config.JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         created = System.currentTimeMillis();
         /* till refactoring is complete */

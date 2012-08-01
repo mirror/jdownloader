@@ -867,10 +867,10 @@ public class Multi extends IExtraction {
             updateContentView(inArchive.getSimpleInterface());
             return true;
         } catch (SevenZipException e) {
-            if (e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened")) {
-                /* happens eg when opening pw protected 7zip */return false;
+            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
+                /* password required */
+                return false;
             }
-            if (e.getMessage().contains("HRESULT: 0x80004005")) { return false; }
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
             throw new ExtractionException(e, raropener != null ? raropener.getLatestAccessedStream().getArchiveFile() : null);
@@ -1032,12 +1032,8 @@ public class Multi extends IExtraction {
             updateContentView(inArchive.getSimpleInterface());
         } catch (SevenZipException e) {
             logger.log(e);
-            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("No password was provided")) {
-
-                // file password protected: net.sf.sevenzipjbinding.SevenZipException: HRESULT: 0x80004005 (Fail). Archive file (format:
-                // Rar)
-                // can't be opened
-                // There are password protected multipart rar files
+            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
+                /* password required */
                 archive.setProtected(true);
                 return true;
             } else {

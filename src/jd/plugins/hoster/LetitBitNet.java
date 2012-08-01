@@ -277,9 +277,23 @@ public class LetitBitNet extends PluginForHost {
         }
         if (down != null) {
             down.setMethod(Form.MethodType.POST);
-            down.put("ref", "http%3A%2F%2Fsvn.jdownloader.org%2Fissues%2F5373");
             br.submitForm(down);
-            final Form wtf = br.getFormbyProperty("id", "d3_form");
+            Form wtf = br.getFormbyProperty("id", "d3_form");
+            if (wtf == null) {
+                logger.info("not found d3_form->try find another correct one");
+                allforms = br.getForms();
+                for (Form singleform : allforms) {
+                    if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("sms/check") && singleform.getAction().contains("download")) {
+                        wtf = singleform;
+                        break;
+                    }
+                }
+                if (wtf != null) {
+                    logger.info("found another plausible form");
+                }
+            } else {
+                logger.info("found d3_form");
+            }
             if (wtf != null) {
                 br.submitForm(wtf);
             }

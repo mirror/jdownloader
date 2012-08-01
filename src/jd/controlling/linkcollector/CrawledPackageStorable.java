@@ -41,6 +41,14 @@ public class CrawledPackageStorable implements Storable {
         return type;
     }
 
+    public long getUID() {
+        return pkg.getUniqueID().getID();
+    }
+
+    public void setUID(long id) {
+        pkg.getUniqueID().setID(id);
+    }
+
     private CrawledPackage                 pkg;
     private ArrayList<CrawledLinkStorable> links;
 

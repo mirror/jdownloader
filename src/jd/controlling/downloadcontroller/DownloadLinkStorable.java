@@ -25,6 +25,14 @@ public class DownloadLinkStorable implements Storable {
         this.link = link;
     }
 
+    public long getUID() {
+        return link.getUniqueID().getID();
+    }
+
+    public void setUID(long id) {
+        link.getUniqueID().setID(id);
+    }
+
     public String getName() {
         return link.getName();
     }

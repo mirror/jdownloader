@@ -3,13 +3,15 @@ package jd.controlling.linkcollector;
 import jd.controlling.downloadcontroller.DownloadLinkStorable;
 import jd.controlling.linkcrawler.ArchiveInfoStorable;
 import jd.controlling.linkcrawler.CrawledLink;
+import jd.plugins.DownloadLink;
 
 import org.appwork.storage.Storable;
 
 public class CrawledLinkStorable implements Storable {
 
     private CrawledLink link;
-    private String      id = null;
+    private String      id  = null;
+    private long        UID = -1;
 
     public String getID() {
         return id;
@@ -44,6 +46,16 @@ public class CrawledLinkStorable implements Storable {
         this.link = link;
     }
 
+    public long getUID() {
+        DownloadLink dll = link.getDownloadLink();
+        if (dll != null) return dll.getUniqueID().getID();
+        return -1;
+    }
+
+    public void setUID(long id) {
+        this.UID = id;
+    }
+
     public DownloadLinkStorable getDownloadLink() {
         return new DownloadLinkStorable(link.getDownloadLink());
     }
@@ -68,6 +80,8 @@ public class CrawledLinkStorable implements Storable {
     }
 
     public CrawledLink _getCrawledLink() {
+        DownloadLink dll = link.getDownloadLink();
+        if (dll != null) dll.getUniqueID().setID(UID);
         return link;
     }
 

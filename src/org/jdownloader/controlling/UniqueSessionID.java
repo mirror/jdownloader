@@ -3,8 +3,12 @@ package org.jdownloader.controlling;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class UniqueSessionID {
-    private static final AtomicLong ID = new AtomicLong(0);
-    private final long              id = ID.incrementAndGet();
+    private static final AtomicLong ID = new AtomicLong(System.currentTimeMillis());
+    private long                    id;
+
+    public UniqueSessionID() {
+        id = ID.incrementAndGet();
+    }
 
     @Override
     public int hashCode() {
@@ -27,5 +31,14 @@ public class UniqueSessionID {
     @Override
     public String toString() {
         return id + "";
+    }
+
+    /**
+     * WARNING: by manually changing the ID you can break unique state of this Instance!
+     * 
+     * @param ID
+     */
+    public void setID(long ID) {
+        this.id = ID;
     }
 }

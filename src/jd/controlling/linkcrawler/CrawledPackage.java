@@ -13,6 +13,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
+import org.jdownloader.controlling.UniqueSessionID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -86,10 +87,14 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        downloadFolderSet = false;
 
     private boolean                                        expanded          = false;
-
+    private transient UniqueSessionID                      uniqueID          = new UniqueSessionID();
     protected CrawledPackageView                           view;
 
     private ChildComparator<CrawledLink>                   sorter;
+
+    public UniqueSessionID getUniqueID() {
+        return uniqueID;
+    }
 
     public CrawledPackage() {
         children = new ArrayList<CrawledLink>();

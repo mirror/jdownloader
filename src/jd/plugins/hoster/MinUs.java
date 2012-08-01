@@ -28,7 +28,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 /** Links always come rom a decrypter */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minusdecrypted\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/.+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minus(decrypted)?\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/.+" }, flags = { 0, 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {
@@ -48,8 +48,7 @@ public class MinUs extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         /**
-         * More will work fine for pictures but will cause server errors for
-         * other links
+         * More will work fine for pictures but will cause server errors for other links
          */
         return 2;
     }
@@ -57,15 +56,14 @@ public class MinUs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Resume/Chunks depends on link and/or fileserver so to prevent errors
-         * we deactivate it
+         * Resume/Chunks depends on link and/or fileserver so to prevent errors we deactivate it
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

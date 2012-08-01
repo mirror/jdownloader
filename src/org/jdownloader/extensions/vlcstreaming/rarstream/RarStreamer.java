@@ -331,10 +331,10 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
             return true;
         } catch (SevenZipException e) {
-            if (e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened")) {
-                /* happens eg when opening pw protected 7zip */return false;
+            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
+                /* password required */
+                return false;
             }
-            if (e.getMessage().contains("HRESULT: 0x80004005")) { return false; }
             throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
         } catch (Throwable e) {
             throw new ExtractionException(e, rarStreamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
@@ -371,19 +371,12 @@ public class RarStreamer implements Runnable, StreamingInterface {
                     archive.setProtected(true);
                 }
             }
-
-            System.out.println("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
-
+            logger.info("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
             return;
         } catch (SevenZipException e) {
             logger.log(e);
-            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("No password was provided")) {
-
-                // file password protected: net.sf.sevenzipjbinding.SevenZipException: HRESULT: 0x80004005 (Fail). Archive file (format:
-                // Rar)
-                // can't be opened
-                // There are password protected multipart rar files
-                // archive.setProtected(true);
+            if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
+                /* password required */
                 archive.setProtected(true);
                 return;
             } else {
