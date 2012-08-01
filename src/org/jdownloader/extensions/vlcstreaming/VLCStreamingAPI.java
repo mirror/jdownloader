@@ -13,4 +13,8 @@ public interface VLCStreamingAPI extends RemoteAPIInterface {
     @ApiMethodName("play")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public void play(RemoteAPIResponse response, RemoteAPIRequest request);
+
+    @ApiMethodName("video")
+    @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
+    public void video(RemoteAPIRequest request, RemoteAPIResponse response, String format);
 }

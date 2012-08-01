@@ -93,5 +93,16 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bcprov-jdk15on-147.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingLinux.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/sevenzipjbindingMac.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-core-1.0.5.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-1.0.5/core/cling-core-1.0.5-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://4thline.org/projects/cling/core/apidocs/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/cling-support-1.0.5.jar" sourcepath="C:/Users/Thomas/Downloads/cling-distribution-1.0.5/support/cling-support-1.0.5-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://4thline.org/projects/cling/support/apidocs/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="ressourcen/libs/UPNP/teleal-common-1.0.13.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
