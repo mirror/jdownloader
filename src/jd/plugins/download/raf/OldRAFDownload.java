@@ -706,7 +706,7 @@ public class OldRAFDownload extends DownloadInterface {
         } else {
             rangeRequested = true;
             if (start.equalsIgnoreCase(end)) {
-                logger.info("WTF, start equals end! Workaround by manipulating the startRange");
+                logger.info("WTF, start equals end! Workaround: maybe manipulating the startRange?! it's about time for new downloadcore!");
             }
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
@@ -979,7 +979,6 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     private void setupResume() throws FileNotFoundException {
-
         long parts = getFileSize() / getChunkNum();
         logger.info("Resume: " + getFileSize() + " partsize: " + parts);
         RAFChunk chunk;
