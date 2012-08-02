@@ -15,7 +15,6 @@ import org.teleal.cling.registry.Registry;
 import org.teleal.cling.registry.RegistryListener;
 import org.teleal.cling.support.avtransport.callback.Play;
 import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
-import org.teleal.cling.support.avtransport.callback.Stop;
 
 public class Main implements Runnable {
     public static void main(String[] args) throws Exception {
@@ -28,7 +27,7 @@ public class Main implements Runnable {
 
     void executeAction(UpnpService upnpService, Service switchPowerService) {
 
-        ActionCallback setAVTransportURIAction = new SetAVTransportURI(switchPowerService, "http://192.168.2.122:3128/vlcstreaming/video?mp4", "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
+        ActionCallback setAVTransportURIAction = new SetAVTransportURI(switchPowerService, "http://192.168.2.122:3128/vlcstreaming/video?mkv", "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
             @Override
             public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
                 // Something was wrong
@@ -44,14 +43,14 @@ public class Main implements Runnable {
         };
 
         // Executes asynchronous in the background
-        upnpService.getControlPoint().execute(new Stop(switchPowerService) {
-
-            @Override
-            public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                System.out.println("WRONG STOP " + defaultMsg);
-            }
-
-        });
+        // upnpService.getControlPoint().execute(new Stop(switchPowerService) {
+        //
+        // @Override
+        // public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+        // System.out.println("WRONG STOP " + defaultMsg);
+        // }
+        //
+        // });
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
@@ -71,10 +70,12 @@ public class Main implements Runnable {
             public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
 
                 Service switchPower;
-                if ((switchPower = device.findService(serviceId)) != null && device.getDetails().getFriendlyName().equals("[TV]UE55D7000")) {
+                if ((switchPower = device.findService(serviceId)) != null) {
 
-                    System.out.println("Service discovered: " + switchPower);
-                    executeAction(upnpService, switchPower);
+                    if (device.getDetails().getFriendlyName().equals("[TV]UE55D7000")) {
+                        System.out.println("Service discovered: " + switchPower);
+                        executeAction(upnpService, switchPower);
+                    }
 
                 }
 

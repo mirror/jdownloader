@@ -14,6 +14,8 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.jdownloader.extensions.vlcstreaming.upnp.DLNAOp;
+import org.jdownloader.extensions.vlcstreaming.upnp.DLNAOrg;
 
 public class VLCStreamingAPIImpl implements VLCStreamingAPI {
 
@@ -52,25 +54,55 @@ public class VLCStreamingAPIImpl implements VLCStreamingAPI {
         return interfaceMap.get(name);
     }
 
+    public static final int DLNA_ORG_FLAG_SENDER_PACED               = (1 << 31);
+    public static final int DLNA_ORG_FLAG_TIME_BASED_SEEK            = (1 << 30);
+    public static final int DLNA_ORG_FLAG_BYTE_BASED_SEEK            = (1 << 29);
+    public static final int DLNA_ORG_FLAG_PLAY_CONTAINER             = (1 << 28);
+    public static final int DLNA_ORG_FLAG_S0_INCREASE                = (1 << 27);
+    public static final int DLNA_ORG_FLAG_SN_INCREASE                = (1 << 26);
+    public static final int DLNA_ORG_FLAG_RTSP_PAUSE                 = (1 << 25);
+    public static final int DLNA_ORG_FLAG_STREAMING_TRANSFER_MODE    = (1 << 24);
+    public static final int DLNA_ORG_FLAG_INTERACTIVE_TRANSFERT_MODE = (1 << 23);
+    public static final int DLNA_ORG_FLAG_BACKGROUND_TRANSFERT_MODE  = (1 << 22);
+    public static final int DLNA_ORG_FLAG_CONNECTION_STALL           = (1 << 21);
+    public static final int DLNA_ORG_FLAG_DLNA_V15                   = (1 << 20);
+
     @Override
     public void video(RemoteAPIRequest request, RemoteAPIResponse response, String format) {
 
         try {
             // seeking
-            // String dlnaFeatures = "DLNA.ORG_PN=AVC_MP4_HP_HD_AAC;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=01500000000000000000000000000000";
-            String dlnaFeatures = "DLNA.ORG_PN=AVC_MP4_HP_HD_AAC;DLNA.ORG_OP=00;DLNA.ORG_FLAGS=00900000000000000000000000000000";
+            String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
+
             File fileToServe = new File("g:\\test." + format);
 
+            String ct = "video/" + format;
+            if (format.equals("mp3")) {
+                ct = "audio/mpeg";
+                dlnaFeatures = "DLNA.ORG_PN=MP3";
+            }
+            if (format.equals("flac")) {
+                ct = "audio/flac";
+                dlnaFeatures = null;
+            }
+
+            if (format.equals("mkv")) {
+                ct = "video/x-mkv";
+                // dlnaFeatures = null;
+
+            }
             long cl;
+
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
+
+            if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
+            response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
+            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
             switch (request.getRequestType()) {
             case HEAD:
                 System.out.println("HEAD " + request.getRequestHeaders());
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, fileToServe.length() + ""));
-                response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "video/mp4"));
-                response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
-                response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
                 response.getOutputStream();
                 response.closeConnection();
                 return;
@@ -89,40 +121,11 @@ public class VLCStreamingAPIImpl implements VLCStreamingAPI {
                 if (stopPosition <= 0) stopPosition = fileToServe.length() - 1;
 
                 cl = (stopPosition - startPosition) + 1;
-                if (startPosition > 5000 && true) {
-                    // response.setResponseCode(ResponseCode.ERROR_RANGE_NOT_SUPPORTED);
-                    // System.out.println("NOT Supported");
-                    // response.closeConnection();
-                    // return;
-
-                    // response.setResponseCode(ResponseCode.ERROR_NOT_FOUND);
-                    System.out.println("BAD");
-                    // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, 0 + ""));
-                    // response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "video/mp4"));
-                    //
-                    // // 01500000000000000000000000000000
-                    // response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-                    // response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
-                    // // response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + startPosition + "-" + (startPosition)
-                    // +
-                    // // "/" + fileToServe.length()));
-                    // response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
-
-                    // response.getOutputStream();
-                    // startPosition = 0;
-                    // response.closeConnection();
-                    // return;
-                }
 
                 response.setResponseCode(ResponseCode.SUCCESS_PARTIAL_CONTENT);
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, cl + ""));
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, "video/mp4"));
 
-                // 01500000000000000000000000000000
-                response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-                response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
                 response.getResponseHeaders().add(new HTTPHeader("Content-Range", "bytes " + startPosition + "-" + (stopPosition) + "/" + fileToServe.length()));
-                response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
 
                 FileInputStream ins = new FileInputStream(fileToServe);
                 ins.skip(startPosition);
@@ -135,6 +138,12 @@ public class VLCStreamingAPIImpl implements VLCStreamingAPI {
         } catch (final Throwable e) {
             if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;
             throw new RemoteAPIException(e);
+        } finally {
+            System.out.println("Resp: " + response.getResponseHeaders().toString());
         }
+    }
+
+    private String createFlags() {
+        return null;
     }
 }
