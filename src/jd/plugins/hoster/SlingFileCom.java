@@ -228,12 +228,13 @@ public class SlingFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex("<h4>Storage</h4>[\t\n\r ]+<p><span>([0-9\\.]+ [A-Za-z]{1,5}) /").getMatch(0);
+        String space = br.getRegex("Storage Used:</span>(.*?)</li>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
-        String uploadedFiles = br.getRegex("<h4>Files Uploaded</h4>[\t\n\r ]+<p><span>(\\d+) files</span>").getMatch(0);
+        String uploadedFiles = br.getRegex("Number of Files:</span>(\\d+)</l").getMatch(0);
         if (uploadedFiles != null) ai.setFilesNum(Integer.parseInt(uploadedFiles));
         ai.setUnlimitedTraffic();
         String expire = br.getRegex(">Premium Account valid until (\\d{1,2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2})").getMatch(0);
+        if (expire == null) expire = br.getRegex("Premium Membership</a> valid until (\\d{1,2} [A-Za-z]+ \\d{4} \\d{2}:\\d{2}( [A-Za-z0-9]+)?)").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
@@ -256,6 +257,7 @@ public class SlingFileCom extends PluginForHost {
         if (Boolean.FALSE.equals(link.getBooleanProperty("directlink"))) {
             dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRedirectLocation();
             if (dllink == null) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

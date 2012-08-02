@@ -190,8 +190,8 @@ public class OneFichierCom extends PluginForHost {
                 ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
                 try {
                     maxPrem.set(1);
-                    account.setMaxSimultanDownloads(1);
-                    account.setConcurrentUsePossible(false);
+                    account.setMaxSimultanDownloads(-1);
+                    account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
                 }
             } else {
