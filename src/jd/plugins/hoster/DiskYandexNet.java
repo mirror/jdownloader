@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%/+=]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%\\/+=]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.yandex.net" }, urls = { "https?://(www\\.)?(disk\\.yandex\\.net/disk/public/\\?hash=[A-Za-z0-9%/+=]+|mail\\.yandex\\.ru/disk/public/#[A-Za-z0-9%\\/+=]+|yadi\\.sk/d/[A-Za-z0-9\\-_]+)" }, flags = { 0 })
 public class DiskYandexNet extends PluginForHost {
 
     public DiskYandexNet(PluginWrapper wrapper) {
@@ -58,6 +58,11 @@ public class DiskYandexNet extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        // redirect links
+        if (link.getDownloadURL().matches("https?://(www\\.)?yadi\\.sk/d/[A-Za-z0-9\\-_]+")) {
+            br.getPage(link.getDownloadURL());
+            link.setUrlDownload(br.getURL());
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("https://disk.yandex.net/neo2/handlers/handlers.jsx", "_handlers=disk-file-info&_locale=en&_page=disk-share&_service=disk&hash=" + Encoding.urlEncode(getHashID(link)));
         if (br.containsHTML(">resource not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

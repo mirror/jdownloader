@@ -27,43 +27,27 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cuevana.tv" }, urls = { "http://(www\\.)?cuevana\\.tv/peliculas/\\d+/.{1}" }, flags = { 0 })
-public class CeVanaTv extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/)?[a-z0-9]+" }, flags = { 0 })
+public class VDiskCn extends PluginForDecrypt {
 
-    public CeVanaTv(PluginWrapper wrapper) {
+    public VDiskCn(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        String fpName = br.getRegex("<div class=\"tit\">(.*?)</div>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<div class=\"tit\">(.*?)</div>").getMatch(0);
-        br.getPage("http://www.cuevana.tv/player/source?id=" + new Regex(parameter, "cuevana\\.tv/peliculas/(\\d+)/").getMatch(0));
-        String[][] links = br.getRegex("goSource\\(\\'([a-z0-9]+)\\',\\'(.*?)\\'\\)").getMatches();
+        final String[] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        progress.setRange(links.length);
-        for (String[] info : links) {
-            br.postPage("http://www.cuevana.tv/player/source_get", "key=" + info[0] + "&host=" + info[1] + "&vars=");
-            String finallink = br.toString().trim();
-            if (finallink == null || finallink.length() > 400) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
-        }
+        for (String singleLink : links)
+            decryptedLinks.add(createDownloadlink("http://vdisk.cn" + singleLink));
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

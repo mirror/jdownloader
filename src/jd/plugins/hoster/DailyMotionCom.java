@@ -80,7 +80,7 @@ public class DailyMotionCom extends PluginForHost {
             logger.warning("filename is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = br.getRegex("addVariable\\(\"sequence\",  \"(.*?)\"").getMatch(0);
+        dllink = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (dllink != null) {
             String allLinks = Encoding.htmlDecode(dllink).replace("\\", "");
             logger.info("alllinkstext: " + allLinks);

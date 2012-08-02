@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-protect.com" }, urls = { "http://[\\w\\.]*?mega-protect\\.com/.*?\\.php" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega-protect.com" }, urls = { "http://(www\\.)?mega\\-protect\\.com/(?!inscription\\.php).*?\\.php" }, flags = { 0 })
 public class MegaPrtcCm extends PluginForDecrypt {
 
     public MegaPrtcCm(PluginWrapper wrapper) {
@@ -41,7 +41,7 @@ public class MegaPrtcCm extends PluginForDecrypt {
         if (br.containsHTML("<title>404 Not Found</title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         // Captcha handling
         for (int i = 0; i <= 5; i++) {
-            if (!br.containsHTML("captcha.php")) return null;
+            if (!br.containsHTML("captcha\\.php")) return null;
             String captchalink = "http://www.mega-protect.com/captcha.php";
             String code = getCaptchaCode(captchalink, param);
             br.getPage(parameter + "?captcha=" + code);

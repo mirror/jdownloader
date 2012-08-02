@@ -85,7 +85,7 @@ public class FilthDumpCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         if (tempID == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter or link broken: " + parameter);
             return null;
         }
         return decryptedLinks;

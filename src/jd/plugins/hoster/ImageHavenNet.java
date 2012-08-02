@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagehaven.net" }, urls = { "http://[\\w\\.]*?[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?id=.+\\.[a-z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagehaven.net" }, urls = { "http://[\\w\\.]*?[a-z]{1,4}[0-9]{1,2}\\.imagehaven\\.net/img\\.php\\?id=[^<>\"/\\[\\]]+\\.[a-z]+" }, flags = { 0 })
 public class ImageHavenNet extends PluginForHost {
 
     private String checklink;

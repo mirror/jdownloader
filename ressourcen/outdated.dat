@@ -864,3 +864,11 @@ jd/plugins/decrypter/DtLdngCmFldr.class
 jd/plugins/hoster/DataLoadingCom.class
 jd/plugins/hoster/FooGetCom.class
 jd/plugins/hoster/CloudNxtNet.class
+jd/plugins/hoster/GuShareCom.class
+jd/plugins/hoster/FileBeepCom.class
+jd/plugins/hoster/BUploadsCom.class
+jd/plugins/hoster/DarkUploadsCom.class
+jd/plugins/decrypter/HdrthCx.class
+jd/plugins/decrypter/CeVanaTv.class
+jd/plugins/decrypter/OronComFolder.class
+jd/plugins/hoster/OronCom.class

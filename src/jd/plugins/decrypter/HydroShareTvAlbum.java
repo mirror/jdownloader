@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hydroshare.tv" }, urls = { "http://(www\\.)?hydroshare\\.tv/.*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hydroshare.tv" }, urls = { "http://(www\\.)?hydroshare\\.tv/(?!Log\\-yourself\\-in|popularalbums|User\\-registration|artists|djs|brands).*?\\.html" }, flags = { 0 })
 public class HydroShareTvAlbum extends PluginForDecrypt {
 
     public HydroShareTvAlbum(PluginWrapper wrapper) {

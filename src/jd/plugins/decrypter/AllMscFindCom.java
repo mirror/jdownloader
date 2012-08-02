@@ -39,6 +39,10 @@ public class AllMscFindCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML(">File was removed from filehosting")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String goLink = br.getRegex("\"(/go/\\d+)\"").getMatch(0);
         if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

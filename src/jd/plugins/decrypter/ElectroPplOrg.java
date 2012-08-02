@@ -47,7 +47,7 @@ public class ElectroPplOrg extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String[] links = new Regex(theLinks, "\"(http://electropeople\\.org/engine/.*?)\"").getColumn(0);
+        String[] links = new Regex(theLinks, "\"(http://(www\\.)?electropeople\\.org/engine/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

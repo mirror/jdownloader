@@ -45,15 +45,21 @@ public class HentaiUltimeNet extends PluginForDecrypt {
             return null;
         }
         for (String singleLink : links) {
-            br.getPage("http://gallery.hentai-ultime.net" + singleLink);
-            final String finallink = br.getRegex("<div id=\"gsImageView\">[\t\n\r ]+<img src=\"(/[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            singleLink = "http://gallery.hentai-ultime.net" + singleLink;
+            // Check if link is a picture or another gallery
+            if (!singleLink.endsWith(".jpg.html")) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            } else {
+                br.getPage(singleLink);
+                final String finallink = br.getRegex("<div id=\"gsImageView\">[\t\n\r ]+<img src=\"(/[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://http://gallery.hentai-ultime.net" + finallink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
             }
-            final DownloadLink dl = createDownloadlink("directhttp://http://gallery.hentai-ultime.net" + finallink);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

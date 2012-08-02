@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -37,6 +38,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -53,12 +55,13 @@ public class MegaUpMe extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final String COOKIE_HOST = "http://megaup.me";
+    private static final int    DEFAULTWAITTIME = 45;
+    private static final String COOKIE_HOST     = "http://megaup.me";
 
     // FREE limits: Chunk * Maxdl
-    // PREMIUM limits: Chunks * Maxdl
-    // Captchatype: solvemedia
-    // Other notes: modified many thingsf
+    // PREMIUM limits: 20 * 20
+    // Captchatype: reCaptcha
+    // Other notes: modified many things
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
@@ -80,12 +83,39 @@ public class MegaUpMe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        final boolean hosterCaptchaHandlingBroken = true;
-        if (hosterCaptchaHandlingBroken) throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster broken!");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "", true, 0);
+        if (br.containsHTML("value=\"Free Users\""))
+            br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
+        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+        final Browser ajaxBR = br.cloneBrowser();
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+
+        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID != null) {
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
+            if (ajaxBR.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
+        }
+        final String reconnectWaittime = ajaxBR.getRegex("You must wait (\\d+) mins\\. for next download.").getMatch(0);
+        if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime) * 60 * 1001l);
+        if (ajaxBR.containsHTML("The allowed download sessions assigned to your IP is used up")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        final String finalLink = findLink(ajaxBR);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int wait = DEFAULTWAITTIME;
+        final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
+            if (br.containsHTML(">AccessKey is expired, please request")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -93,7 +123,9 @@ public class MegaUpMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        // More possible but all captchas would have to be entered before the
+        // waittime (before downloadstart) ends
+        return 5;
     }
 
     private String findLink(final Browser br) throws Exception {

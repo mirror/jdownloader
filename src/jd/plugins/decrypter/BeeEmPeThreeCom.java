@@ -44,7 +44,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Sorry\\! Something is wrong|>Page Not Found<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         final String finalFilename = br.getRegex("<div class=\"download_block\">[\t\n\r ]+<h3 class=\"my_h\">(.*?)</h3><br>").getMatch(0);
         String captchaUrl = null;
         boolean failed = true;

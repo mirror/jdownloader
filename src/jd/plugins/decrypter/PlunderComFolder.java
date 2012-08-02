@@ -21,14 +21,12 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?plunder\\.com/.+/.+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://(www\\.)?plunder\\.com/.+/.+/" }, flags = { 0 })
 public class PlunderComFolder extends PluginForDecrypt {
 
     public PlunderComFolder(PluginWrapper wrapper) {
@@ -40,9 +38,12 @@ public class PlunderComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().contains("/search/?f=")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("<title>.*?-(.*?)- Plunder").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<h1>.*?files -(.*?)</h1>").getMatch(0);
+        if (br.containsHTML("(>Server Error<|>403 \\- Forbidden: Access is denied)") || br.getURL().contains("/search/?f=")) {
+            logger.info("Link offline or server error: " + parameter);
+            return decryptedLinks;
+        }
+        String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<h1>.*?files \\-(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("title=\".*?\" href='(.*?)'>").getColumn(0);
         if (links.length == 0) return null;
         for (String dl : links)
