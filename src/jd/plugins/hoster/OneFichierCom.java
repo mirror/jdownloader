@@ -259,10 +259,6 @@ public class OneFichierCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         String passCode = null;
-        if (maxPrem.get() == 1 && "FREE".equalsIgnoreCase(account.getStringProperty("type", null))) {
-            doFree(link);
-            return;
-        }
         String dllink = link.getStringProperty(PREMLINK, null);
         boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
         if (dllink != null) {
