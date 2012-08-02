@@ -94,7 +94,9 @@ public class RuTubeRu extends PluginForHost {
         String baseUrl = br.getRegex("<baseURL>(rtmp.?://.*?)</baseURL>").getMatch(0);
         String mediaUrl = br.getRegex("<media url=\"(/[^\"]+)").getMatch(0);
         if (baseUrl != null && mediaUrl != null) {
-            String app = "/rutube/";
+            String app = baseUrl.substring(baseUrl.lastIndexOf("/"));
+            app = app.endsWith("/") ? app : app + "/";
+            mediaUrl = mediaUrl.startsWith("/") ? mediaUrl.substring(1) : mediaUrl;
             if (!mediaUrl.startsWith("mp4:") && mediaUrl.contains("mp4:")) {
                 app = mediaUrl.split("mp4:")[0];
                 mediaUrl = mediaUrl.substring(mediaUrl.indexOf("mp4:"));
