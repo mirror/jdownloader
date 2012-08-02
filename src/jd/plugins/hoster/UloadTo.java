@@ -64,6 +64,7 @@ public class UloadTo extends PluginForHost {
     private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final Object  LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
+    private boolean              throwPremiumOnly    = false;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.9-raz
@@ -128,6 +129,18 @@ public class UloadTo extends PluginForHost {
                 }
             }
         }
+        if (filename == null && br.containsHTML("This file is available for Premium Users only")) {
+            filename = br.getRegex("CONTENT=\"uload\\.to - Download File (.*?)\">").getMatch(0);
+            if (filename != null) link.setName(filename);
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+                if (throwPremiumOnly) throw new PluginException(LinkStatus.ERROR_FATAL, "This file is available for Premium Users only");
+                link.getLinkStatus().setStatusText("Premium only");
+                return AvailableStatus.UNCHECKABLE;
+            }
+        }
         String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
@@ -154,6 +167,7 @@ public class UloadTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        throwPremiumOnly = true;
         requestFileInformation(downloadLink);
         doFree(downloadLink, true, -2, "freelink");
     }
@@ -582,6 +596,7 @@ public class UloadTo extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
+        throwPremiumOnly = false;
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);

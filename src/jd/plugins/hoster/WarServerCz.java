@@ -27,6 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -34,6 +35,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "warserver.cz" }, urls = { "http://(www\\.)?warserver\\.cz/stahnout/\\d+" }, flags = { 2 })
 public class WarServerCz extends PluginForHost {
+
+    private boolean pwProtected = false;
 
     public WarServerCz(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,6 +53,7 @@ public class WarServerCz extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage("http://www.warserver.cz/api/?action=file-info&fid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0));
         if (br.containsHTML("ERROR: File not found\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("ERROR: Password protected file")) pwProtected = true;
         final String filename = parseJson("filename");
         final String filesize = parseJson("size");
         final String md5Sum = parseJson("md5sum");
@@ -64,14 +68,33 @@ public class WarServerCz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
+        String passCode = null;
+        if (pwProtected) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            br.getPage("http://www.warserver.cz/api/?action=file-info&fid=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&filepass=" + Encoding.urlEncode(passCode));
+        }
         String dllink = parseJson("free-link");
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null || dllink.startsWith("ERROR")) {
+            if (br.containsHTML("ERROR: Password protected file")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("Ve free modu muzete stahovat pouze jeden soubor z jedne IP")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
         }
         dl.startDownload();
     }
@@ -107,9 +130,24 @@ public class WarServerCz extends PluginForHost {
         requestFileInformation(link);
         login(account);
         br.setFollowRedirects(false);
-        br.getPage("http://www.warserver.cz/api/?action=generate-premium-link&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&fid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "&redirect=1");
+        String passCode = null;
+        if (pwProtected) {
+            if (link.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput("Password?", link);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = link.getStringProperty("pass", null);
+            }
+            br.getPage("http://www.warserver.cz/api/?action=generate-premium-link&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&fid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "&redirect=1" + "&filepass=" + Encoding.urlEncode(passCode));
+        } else {
+            br.getPage("http://www.warserver.cz/api/?action=generate-premium-link&username=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&fid=" + new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + "&redirect=1");
+        }
         String dllink = br.getRedirectLocation();
-        if (dllink == null) {
+        if (dllink == null || dllink.startsWith("ERROR") || br.containsHTML("ERROR: Password protected file")) {
+            if (br.containsHTML("ERROR: Password protected file")) {
+                link.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password wrong");
+            }
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -118,6 +156,9 @@ public class WarServerCz extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) {
+            link.setProperty("pass", passCode);
         }
         dl.startDownload();
     }

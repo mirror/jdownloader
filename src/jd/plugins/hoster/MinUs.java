@@ -60,6 +60,7 @@ public class MinUs extends PluginForHost {
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            /* linkrefresh is needed here */
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
