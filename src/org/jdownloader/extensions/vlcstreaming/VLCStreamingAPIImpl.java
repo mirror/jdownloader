@@ -11,6 +11,7 @@ import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
+import org.appwork.utils.Files;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
@@ -68,13 +69,14 @@ public class VLCStreamingAPIImpl implements VLCStreamingAPI {
     public static final int DLNA_ORG_FLAG_DLNA_V15                   = (1 << 20);
 
     @Override
-    public void video(RemoteAPIRequest request, RemoteAPIResponse response, String format) {
+    public void video(RemoteAPIRequest request, RemoteAPIResponse response, String path) {
 
         try {
+            File fileToServe = new File(path);
+            System.out.println(path);
+            String format = Files.getExtension(fileToServe.getName());
             // seeking
             String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
-
-            File fileToServe = new File("g:\\test." + format);
 
             String ct = "video/" + format;
             if (format.equals("mp3")) {

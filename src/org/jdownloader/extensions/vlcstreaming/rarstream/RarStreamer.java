@@ -105,55 +105,58 @@ public class RarStreamer implements Runnable, StreamingInterface {
         exec.start();
     }
 
+    public void openArchive(Archive archive, ExtractionExtension extractor) throws ExtractionException, DialogClosedException, DialogCanceledException, InterruptedException {
+        open();
+        if (archive.isProtected()) {
+
+            HashSet<String> spwList = archive.getSettings().getPasswords();
+            HashSet<String> passwordList = new HashSet<String>();
+            if (spwList != null) {
+                passwordList.addAll(spwList);
+            }
+            passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
+            passwordList.add(archive.getName());
+            ArrayList<String> pwList = extractor.getSettings().getPasswordList();
+            if (pwList == null) pwList = new ArrayList<String>();
+            passwordList.addAll(pwList);
+
+            logger.info("Start password finding for " + archive);
+
+            String correctPW = null;
+
+            for (String password : passwordList) {
+                if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                if (checkPassword(password)) {
+                    correctPW = password;
+                    break;
+                }
+            }
+
+            if (correctPW == null) {
+                String password = askPassword();
+                while (true) {
+                    if (checkPassword(password)) {
+                        break;
+                    } else {
+                        Dialog.getInstance().showMessageDialog(T._.wrong_password());
+                    }
+                }
+            }
+
+            logger.info("Found password for " + archive + "->" + archive.getPassword());
+            /* avoid duplicates */
+            pwList.remove(archive.getPassword());
+            pwList.add(0, archive.getPassword());
+            extractor.getSettings().setPasswordList(pwList);
+        }
+    }
+
     protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
         ProgressGetter pg = new ProgressDialog.ProgressGetter() {
 
             @Override
             public void run() throws Exception {
-
-                open();
-                if (archive.isProtected()) {
-
-                    HashSet<String> spwList = archive.getSettings().getPasswords();
-                    HashSet<String> passwordList = new HashSet<String>();
-                    if (spwList != null) {
-                        passwordList.addAll(spwList);
-                    }
-                    passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
-                    passwordList.add(archive.getName());
-                    ArrayList<String> pwList = extractor.getSettings().getPasswordList();
-                    if (pwList == null) pwList = new ArrayList<String>();
-                    passwordList.addAll(pwList);
-
-                    logger.info("Start password finding for " + archive);
-
-                    String correctPW = null;
-
-                    for (String password : passwordList) {
-                        if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-                        if (checkPassword(password)) {
-                            correctPW = password;
-                            break;
-                        }
-                    }
-
-                    if (correctPW == null) {
-                        String password = askPassword();
-                        while (true) {
-                            if (checkPassword(password)) {
-                                break;
-                            } else {
-                                Dialog.getInstance().showMessageDialog(T._.wrong_password());
-                            }
-                        }
-                    }
-
-                    logger.info("Found password for " + archive + "->" + archive.getPassword());
-                    /* avoid duplicates */
-                    pwList.remove(archive.getPassword());
-                    pwList.add(0, archive.getPassword());
-                    extractor.getSettings().setPasswordList(pwList);
-                }
+                openArchive(archive, extractor);
 
             }
 

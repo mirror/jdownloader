@@ -1,29 +1,28 @@
-package org.jdownloader.extensions.vlcstreaming.upnp;
+package org.jdownloader.extensions.vlcstreaming.upnp.content;
 
 import java.util.List;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging.Log;
-import org.teleal.cling.support.contentdirectory.AbstractContentDirectoryService;
-import org.teleal.cling.support.contentdirectory.ContentDirectoryErrorCode;
-import org.teleal.cling.support.contentdirectory.ContentDirectoryException;
-import org.teleal.cling.support.contentdirectory.DIDLParser;
-import org.teleal.cling.support.model.BrowseFlag;
-import org.teleal.cling.support.model.BrowseResult;
-import org.teleal.cling.support.model.DIDLContent;
-import org.teleal.cling.support.model.SortCriterion;
+import org.fourthline.cling.model.message.UpnpHeaders;
+import org.fourthline.cling.support.contentdirectory.AbstractContentDirectoryService;
+import org.fourthline.cling.support.contentdirectory.ContentDirectoryErrorCode;
+import org.fourthline.cling.support.contentdirectory.ContentDirectoryException;
+import org.fourthline.cling.support.contentdirectory.DIDLParser;
+import org.fourthline.cling.support.model.BrowseFlag;
+import org.fourthline.cling.support.model.BrowseResult;
+import org.fourthline.cling.support.model.DIDLContent;
+import org.fourthline.cling.support.model.SortCriterion;
+import org.jdownloader.extensions.vlcstreaming.upnp.ContentFactory;
 
 public class ContentDirectory extends AbstractContentDirectoryService {
 
-    private static final String ID_ROOT         = "0";
-    private static final String ID_DOWNLOADLIST = "1";
-    private static final String ID_LINKGRABBER  = "2";
-
-    private ContentProvider     contentProvider;
+    private ContentProvider defaultProvider;
 
     public ContentDirectory() {
 
-        contentProvider = ContentFactory.create();
+        defaultProvider = ContentFactory.create();
+
     }
 
     @Override
@@ -33,7 +32,8 @@ public class ContentDirectory extends AbstractContentDirectoryService {
             // This is just an example... you have to create the DIDL content dynamically!
             System.out.println(objectID + " - browseFlag:" + browseFlag + " filter:" + filter + " firstResult:" + firstResult + " maxResults:" + maxResults + " orderby:" + orderby);
             DIDLContent didl = new DIDLContent();
-            System.out.println(1);
+            ContentProvider contentProvider = getContentProvider(org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders());
+
             ContentNode node = contentProvider.getNode(objectID);
             if (node == null) {
                 String didlStrng = new DIDLParser().generate(didl);
@@ -44,7 +44,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
 
                     // ps3
                     didl.addContainer(((ContainerNode) node).getImpl());
-                    String didlStrng = postEditDidl(new DIDLParser().generate(didl));
+                    String didlStrng = contentProvider.toDidlString(didl);
 
                     return new BrowseResult(didlStrng, 1, 1);
 
@@ -59,7 +59,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
                             }
 
                         }
-                        String didlStrng = postEditDidl(new DIDLParser().generate(didl));
+                        String didlStrng = contentProvider.toDidlString(didl);
                         return new BrowseResult(didlStrng, children.size(), children.size());
                     } else {
                         throw new WTFException();
@@ -73,9 +73,8 @@ public class ContentDirectory extends AbstractContentDirectoryService {
         }
     }
 
-    private String postEditDidl(String didlStrng) {
-        return didlStrng.replace("\"true\"", "\"1\"").replace("\"false\"", "\"0\"");
-
+    private ContentProvider getContentProvider(UpnpHeaders upnpHeaders) {
+        return defaultProvider;
     }
 
     @Override

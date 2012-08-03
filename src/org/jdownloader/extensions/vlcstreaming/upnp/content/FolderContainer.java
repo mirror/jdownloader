@@ -1,18 +1,18 @@
-package org.jdownloader.extensions.vlcstreaming.upnp;
+package org.jdownloader.extensions.vlcstreaming.upnp.content;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.teleal.cling.support.model.container.Container;
+import org.fourthline.cling.support.model.container.Container;
 
 public class FolderContainer implements ContainerNode {
 
     private List<ContentNode> children = new ArrayList<ContentNode>();
     private String            title;
     private ContainerNode     parent;
-    private int               id;
+    private String            id;
 
-    public FolderContainer(int id, String title) {
+    public FolderContainer(String id, String title) {
         this.title = title;
         this.id = id;
     }
@@ -28,7 +28,7 @@ public class FolderContainer implements ContainerNode {
         if (parent != null) con.setParentID(parent.getID() + "");
         con.setId(getID() + "");
         con.setChildCount(children.size());
-        con.setClazz(new org.teleal.cling.support.model.DIDLObject.Class("object.container"));
+        con.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
         con.setRestricted(true);
         con.setSearchable(false);
         con.setTitle(title);
@@ -36,7 +36,7 @@ public class FolderContainer implements ContainerNode {
     }
 
     @Override
-    public int getID() {
+    public String getID() {
         return id;
     }
 
@@ -49,6 +49,16 @@ public class FolderContainer implements ContainerNode {
     public void addChildren(ContentNode child) {
         children.add(child);
         child.setParent(this);
+    }
+
+    @Override
+    public ContainerNode getParent() {
+        return parent;
+    }
+
+    @Override
+    public String getTitle() {
+        return title;
     }
 
 }

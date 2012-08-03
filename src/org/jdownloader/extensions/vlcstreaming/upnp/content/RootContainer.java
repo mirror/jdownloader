@@ -1,10 +1,10 @@
-package org.jdownloader.extensions.vlcstreaming.upnp;
+package org.jdownloader.extensions.vlcstreaming.upnp.content;
 
-import org.teleal.cling.support.model.container.Container;
+import org.fourthline.cling.support.model.container.Container;
 
 public class RootContainer extends FolderContainer {
     public RootContainer() {
-        super(0, "Root");
+        super("0", "Root");
     }
 
     @Override

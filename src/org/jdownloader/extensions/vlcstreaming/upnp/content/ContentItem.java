@@ -1,12 +1,17 @@
-package org.jdownloader.extensions.vlcstreaming.upnp;
+package org.jdownloader.extensions.vlcstreaming.upnp.content;
 
 public abstract class ContentItem implements ItemNode {
 
     protected ContainerNode parent;
-    private int             id;
+    private String          id;
 
-    public ContentItem(int id) {
+    public ContentItem(String id) {
         this.id = id;
+    }
+
+    @Override
+    public ContainerNode getParent() {
+        return parent;
     }
 
     @Override
@@ -15,7 +20,7 @@ public abstract class ContentItem implements ItemNode {
     }
 
     @Override
-    public int getID() {
+    public String getID() {
         return id;
     }
 

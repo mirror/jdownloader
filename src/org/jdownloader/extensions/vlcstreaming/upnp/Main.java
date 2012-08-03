@@ -1,20 +1,20 @@
 package org.jdownloader.extensions.vlcstreaming.upnp;
 
-import org.teleal.cling.UpnpService;
-import org.teleal.cling.UpnpServiceImpl;
-import org.teleal.cling.controlpoint.ActionCallback;
-import org.teleal.cling.model.action.ActionInvocation;
-import org.teleal.cling.model.message.UpnpResponse;
-import org.teleal.cling.model.message.header.STAllHeader;
-import org.teleal.cling.model.meta.RemoteDevice;
-import org.teleal.cling.model.meta.Service;
-import org.teleal.cling.model.types.ServiceId;
-import org.teleal.cling.model.types.UDAServiceId;
-import org.teleal.cling.registry.DefaultRegistryListener;
-import org.teleal.cling.registry.Registry;
-import org.teleal.cling.registry.RegistryListener;
-import org.teleal.cling.support.avtransport.callback.Play;
-import org.teleal.cling.support.avtransport.callback.SetAVTransportURI;
+import org.fourthline.cling.UpnpService;
+import org.fourthline.cling.UpnpServiceImpl;
+import org.fourthline.cling.controlpoint.ActionCallback;
+import org.fourthline.cling.model.action.ActionInvocation;
+import org.fourthline.cling.model.message.UpnpResponse;
+import org.fourthline.cling.model.message.header.STAllHeader;
+import org.fourthline.cling.model.meta.RemoteDevice;
+import org.fourthline.cling.model.meta.Service;
+import org.fourthline.cling.model.types.ServiceId;
+import org.fourthline.cling.model.types.UDAServiceId;
+import org.fourthline.cling.registry.DefaultRegistryListener;
+import org.fourthline.cling.registry.Registry;
+import org.fourthline.cling.registry.RegistryListener;
+import org.fourthline.cling.support.avtransport.callback.Play;
+import org.fourthline.cling.support.avtransport.callback.SetAVTransportURI;
 
 public class Main implements Runnable {
     public static void main(String[] args) throws Exception {

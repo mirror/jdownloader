@@ -36,6 +36,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.vlcstreaming.gui.VLCGui;
+import org.jdownloader.extensions.vlcstreaming.upnp.MediaServer;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
@@ -56,11 +57,14 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
     private String                  vlcBinary   = null;
     private VLCStreamingConfigPanel configPanel = null;
     protected VLCGui                tab;
+    private MediaServer             mediaServer;
 
     @Override
     protected void stop() throws StopException {
         try {
             streamProvider = null;
+
+            if (mediaServer != null) mediaServer.shutdown();
             MenuFactoryEventSender.getInstance().removeListener(this);
             if (vlcstreamingAPI != null) {
                 RemoteAPIController.getInstance().unregister(vlcstreamingAPI);
@@ -82,6 +86,8 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
         }
         streamProvider = new VLCStreamingProvider(this);
         vlcstreamingAPI = new VLCStreamingAPIImpl(this);
+
+        startMediaServer();
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
         new EDTRunner() {
@@ -91,6 +97,13 @@ public class VLCStreamingExtension extends AbstractExtension<VLCStreamingConfig,
                 tab = new VLCGui(VLCStreamingExtension.this);
             }
         }.waitForEDT();
+    }
+
+    private void startMediaServer() {
+
+        Thread serverThread = new Thread(mediaServer = new MediaServer());
+        serverThread.setDaemon(false);
+        serverThread.start();
     }
 
     public VLCStreamingAPIImpl getVlcstreamingAPI() {
