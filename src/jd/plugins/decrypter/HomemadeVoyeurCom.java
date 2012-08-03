@@ -35,21 +35,26 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.homemade-voyeur.com/")) {
+        String tempID = br.getRedirectLocation();
+        if ("http://www.homemade-voyeur.com/".equals(br.getRedirectLocation())) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (tempID != null) {
+            decryptedLinks.add(createDownloadlink(tempID));
             return decryptedLinks;
         }
         String filename = br.getRegex("class=\"he2\"><span>(.*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Daily Free Homemade and Voyeur Videos - Beach Sex \\- Hidden Sex \\- Public Sex \\- Voyeur Videos  \\- (.*?)</title>").getMatch(0);
-        String tempID = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?\\.flv)\\'").getMatch(0);
+        tempID = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?\\.flv)\\'").getMatch(0);
         if (tempID == null) tempID = br.getRegex("(\\'|\")(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)(\\'|\")").getMatch(1);
         if (tempID == null || filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
         dl.setFinalFileName(filename.trim() + ".flv");
         decryptedLinks.add(dl);
 

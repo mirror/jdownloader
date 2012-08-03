@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -29,7 +28,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedlounge.in" }, urls = { "http://(www\\.)?speedlounge\\.in/detail\\.php\\?cat=.*?\\&id=[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedlounge.in" }, urls = { "http://(www\\.)?speedlounge\\.in/download/\\d+/.{1}" }, flags = { 0 })
 public class SpeedLngN extends PluginForDecrypt {
 
     public SpeedLngN(PluginWrapper wrapper) {
@@ -47,15 +46,13 @@ public class SpeedLngN extends PluginForDecrypt {
         if (pass != null) {
             passwords.add(pass.trim());
         }
-        String fpname = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String fpname = br.getRegex("<title>(.*?) \\- Speedlounge\\.in</title>").getMatch(0);
         if (br.containsHTML("Entry NOT found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex("name=\"go\" value=\"Go\\.swf\\?ID=(.*?)\\&amp;").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("<embed src=\"Go\\.swf\\?ID=(.*?)\\&amp;").getColumn(0);
+        String[] links = br.getRegex("href=\"(http://[^<>\"]*?)\" target=\"_blank\" style=\"text\\-decoration:none;\" title=\"Download via").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String cryptedlink : links) {
             if (cryptedlink.contains("=")) {
-                String finallink = "http://linksave.in/" + Encoding.Base64Decode(cryptedlink);
-                DownloadLink dl = createDownloadlink(finallink);
+                final DownloadLink dl = createDownloadlink(cryptedlink);
                 dl.setSourcePluginPasswordList(passwords);
                 decryptedLinks.add(dl);
             }

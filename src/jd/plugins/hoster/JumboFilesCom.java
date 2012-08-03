@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
@@ -53,6 +52,38 @@ public class JumboFilesCom extends PluginForHost {
         enablePremium("http://jumbofiles.com/premium.html");
     }
 
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.setCookie("http://www.jumbofiles.com", "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = new Regex(BRBEFORE, "Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        String filesize = new Regex(BRBEFORE, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
+        // They got different pages for stream, normal and pw-protected files so
+        // we need special handling
+        if (filesize == null) filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
+        if (filesize == null) filesize = new Regex(BRBEFORE, "You have requested.*?>http.*?font> \\((.*?)\\)").getMatch(0);
+
+        if (filename == null) filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
+        if (filename == null) filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
+        if (filename == null) filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
+
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        filename = filename.replace("&nbsp;", "");
+        filename = filename.trim();
+        link.setName(filename);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
+    }
+
     // Removed fake messages which can kill the plugin
     public void doSomething() throws NumberFormatException, PluginException {
         BRBEFORE = br.toString();
@@ -83,31 +114,10 @@ public class JumboFilesCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = br.getRegex(Pattern.compile("<td>You are using:</td><td><b>(.*?)of.*?Mb</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have:</td><td><b>(.*?)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            // Who needs half points ? If we have a dot in the points, just
-            // remove it
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
-        }
         account.setValid(true);
-        String availabletraffic = new Regex(br.toString(), "Monthly hotlink traffic remaining:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (availabletraffic != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
+        ai.setUnlimitedTraffic();
         String expire = br.getRegex("<TD>Premium-Account expire:</TD><TD><b>(.*?)</b>").getMatch(0);
-        if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        } else {
+        if (expire != null) {
             expire = expire.replaceAll("(<b>|</b>)", "");
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
         }
@@ -298,39 +308,6 @@ public class JumboFilesCom extends PluginForHost {
         br.submitForm(loginform);
         br.getPage(COOKIE_HOST + "/?op=my_account");
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!br.containsHTML("Premium-Account expire") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        setBrowserExclusive();
-        br.setCookie("http://www.jumbofiles.com", "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if (BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(BRBEFORE, "Filename:.*?</TD><TD>(.*?)</TD>").getMatch(0);
-        String filesize = new Regex(BRBEFORE, "Filesize:.*?</TD><TD>(.*?)</TD>").getMatch(0);
-        // They got different pages for stream, normal and pw-protected files so
-        // we need special handling
-        if (filesize == null) filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filesize == null) filesize = new Regex(BRBEFORE, "F<TD><center>.*?<br>(.*?)<br>").getMatch(0);
-        if (filesize == null) filesize = new Regex(BRBEFORE, "You have requested.*?>http.*?font> \\((.*?)\\)").getMatch(0);
-
-        if (filename == null) filename = new Regex(BRBEFORE, "down_direct\" value=.*?<input type=\"image\" src=.*?</TD></TR>.*?<TR><TD>(.*?)<small").getMatch(0);
-        if (filename == null) filename = new Regex(BRBEFORE, "<TD><center>(.*?)<br>").getMatch(0);
-        if (filename == null) filename = new Regex(BRBEFORE, "fname\" value=\"(.*?)\"").getMatch(0);
-
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        filename = filename.replace("&nbsp;", "");
-        filename = filename.trim();
-        link.setName(filename);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
