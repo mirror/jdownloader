@@ -3,14 +3,14 @@ addons_jdshutdown_statusmessage_disabled=JDownloader ya NO apagará su sistema.
 addons_jdshutdown_statusmessage_enabled=JDownloader apagará su sistema cuando todas las descargas hayan finalizado!
 config_toolbarbutton=Mostrar botón en la barra principal
 gui_config_jdshutdown_close=Cerrar JDownloader
-gui_config_jdshutdown_enabledOnStart=Habilitar al inicio
 gui_config_jdshutdown_forceshutdown=Forzar Apagado (No para todos los SO)
 gui_config_jdshutdown_hibernate=Hibernar (No para todos los Sistemas Operativos)
 gui_config_jdshutdown_mode=Modo:
-gui_config_jdshutdown_osx_force_long=Instalar complemento para Forzar Apagado (solo Mac OSX)
-gui_config_jdshutdown_osx_force_short=Instalar
 gui_config_jdshutdown_shutdown=Apagar  (No para todos los Sistemas Operativos)
 gui_config_jdshutdown_standby=Suspender (No para todos los Sistemas Operativos)
+install_force=Instalar Forzar Apagado
+install_msg=Desea preparar su sistema para la característica de Forzar Apagado?
+install_title=Instalar Forzar Apagado
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se cerrará!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Atencion! El sistema se pondrá en modo de Hibernación!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Atencion! El sistema será apagado!</font></h2>
@@ -22,3 +22,4 @@ interaction_shutdown_dialog_title_standby=Suspender?
 jd_plugins_optional_jdshutdown=Apagado Automático
 jd_plugins_optional_jdshutdown_description=Apaga, suspende, hiberna, o cierra JDownloader automáticamente cuando las descargas hayan terminado.
 lit_shutdownn=Apagado Automático
+show_admin=Se requieren derechos de Administrador para configurar JDownloader para Hibernar o Suspender
