@@ -1,5 +1,6 @@
 AutoDetectAction_run_failed=JDownloader ha pogut trobar un script de reconnexió LiveHeader funcional. Si us plau assegureu-vos d'haver ingressat les dades correctament i que té una connexió amb IP dinàmica.
 DataCompareDialog_DataCompareDialog_=Comparar informació del router
+DataCompareDialog_layoutDialogContent__desc=Si us plau comprova la informació següent i intenta omplir els camps buits tan acuradament com sigui possible.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Versió
 DataCompareDialog_layoutDialogContent_firmware_help=Entra la versió del Firmware del teu router... deixar-ho en blanc si la desconeixes
 DataCompareDialog_layoutDialogContent_ip=IP o nom de allotjament
@@ -26,6 +27,7 @@ LiveHeaderDetectionWizard_runOnlineScan_collect=Escanejant informació de la con
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servei no disponible
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=LA IP '%s1' del router és invàlida!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Sembla que no hi ha cap Interfície web en http://%s1.\nLa IP del router podria ser invàlida.\n\nVoleu continuar de totes maneres?
+LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Reconnexió fallada. Només pts compartir scripts de reconnexió funcionals.
 LiveHeaderDetectionWizard_userConfirm_loginstext=Els inicis de sessió NO es carregaran. Si us plau, introdueixils igualment. Es necessiten per eliminar qualsevol tipus d'informació referent a ells despres de pujar l'script. Si no els coneixes: pots deixar-los en blanc o preguntar-los a l'administrador de la xarxa.
 LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Elntra la IP del router, o prem [Trobar la IP del router]...

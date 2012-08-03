@@ -1,4 +1,6 @@
 UpdateException_SignatureViolation=L'origen d'aquesta actualització no ha set verificat!
+UpdateException_notavailable=Els nostres servidors d'actualitzacions estan copupats. Intenta-ho més tard.
+UpdateException_notavailable2=Descripció del problema:\n                        -> "%s1"
 UpdateException_proxyauth=Autentificació de proxi invàlida: %s1
 UpdateException_proxyconnect=Connexió amb proxy fallada: %s1
 UpdateException_socket=No hi ha connexió a internet pel servidor d'actualització: %s1
@@ -54,6 +56,7 @@ error_locked=El servidor d'actualitzacions %s1 está ocupet. Intenta-ho mé tard
 error_occured=Ha succeït un error
 error_occured_detailed=No s'ha pogut completar l'actualització.
 error_occured_start_reverting=L'actualització ha set interrompuda. Revertint els canvis...
+error_package_creation_failed=Paquet fallat. Intanta-ho més tard.
 error_unknown=%s1
 error_unknown_app=No és pot actualtizar %s1. Intenta-ho més tard!
 error_unknown_branch=Edició desconeguda: %s1
