@@ -19,8 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -114,7 +112,6 @@ public class DBankCom extends PluginForHost {
         /* fail */
         if (linkInfo.getMatches().length == 0 || key == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-        downloadLink.setFinalFileName(Encoding.htmlDecode(decodeUnicode(downloadLink.getStringProperty("name"))));
         downloadLink.setProperty("downloadurl", linkInfo.getMatch(0));
         downloadLink.setProperty("encryKey", key);
         return AvailableStatus.TRUE;
@@ -254,16 +251,6 @@ public class DBankCom extends PluginForHost {
             return null;
         }
         return ret.equals("") ? null : ret;
-    }
-
-    private String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
     }
 
 }

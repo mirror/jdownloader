@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -84,7 +86,6 @@ public class DBankComFolder extends PluginForDecrypt {
         for (String[] all : new Regex(links, "\\{(.*?)\\}").getMatches()) {
             if (passCode != null) linkParameter.put("password", passCode);
             for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
-                if ("downloadurl".equals(single[0])) System.out.println(single[1]);
                 linkParameter.put(single[0], single[1]);
             }
             DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
@@ -96,7 +97,7 @@ public class DBankComFolder extends PluginForDecrypt {
                 dl.setDownloadSize(SizeFormatter.getSize(dl.getStringProperty("size") + "b"));
             } catch (Throwable e) {
             }
-            dl.setName(dl.getStringProperty("name", "UnknownTitle" + System.currentTimeMillis()));
+            dl.setName(Encoding.htmlDecode(decodeUnicode(dl.getStringProperty("name", "UnknownTitle" + System.currentTimeMillis()))));
             dl.setAvailable(true);
             try {
                 distribute(dl);
@@ -113,6 +114,16 @@ public class DBankComFolder extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String decodeUnicode(final String s) {
+        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
+        String res = s;
+        final Matcher m = p.matcher(res);
+        while (m.find()) {
+            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
+        }
+        return res;
     }
 
 }
