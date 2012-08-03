@@ -9,6 +9,7 @@ import java.util.HashSet;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Files;
+import org.appwork.utils.logging.Log;
 import org.fourthline.cling.support.contentdirectory.DIDLParser;
 import org.fourthline.cling.support.model.DIDLContent;
 import org.fourthline.cling.support.model.PersonWithRole;
@@ -20,8 +21,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
-import org.jdownloader.extensions.streaming.upnp.content.mediainfo.AudioMediaInfo;
-import org.jdownloader.extensions.streaming.upnp.content.mediainfo.VideoMediaInfo;
+import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.jdownloader.settings.GeneralSettings;
 import org.seamless.util.MimeType;
 
@@ -37,7 +37,7 @@ public class BasicContentProvider implements ContentProvider {
         addChildren(root, downloadlist = new FolderContainer("1", "DownloadList"));
         //
         try {
-            mountHDFolder(new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()), root);
+            mountHDFolder(new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()), downloadlist);
         } catch (UnsupportedEncodingException e) {
             throw new WTFException(e);
         }
@@ -198,37 +198,47 @@ public class BasicContentProvider implements ContentProvider {
                     final String url = "http://192.168.2.122:3128/vlcstreaming/video?\"" + URLEncoder.encode(pp, "UTF-8") + "\"";
                     String ext = Files.getExtension(f.getName());
                     if ("mp3".equals(ext)) {
-                        addChildren(root2, new ContentItem(f.getAbsolutePath()) {
+                        try {
+                            final MediaInfo mi = new MediaInfo(f).load();
 
-                            @Override
-                            public Item getImpl() {
+                            addChildren(root2, new ContentItem(f.getAbsolutePath()) {
 
-                                AudioMediaInfo mi = new AudioMediaInfo(f);
-                                PersonWithRole artist = new PersonWithRole(mi.getArtist(), "Performer");
-                                MimeType mimeType = mi.getMimeType();
-                                Res res;
+                                @Override
+                                public Item getImpl() {
 
-                                res = new Res(mimeType, mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                                    PersonWithRole artist = new PersonWithRole(mi.getArtist(), "Performer");
+                                    MimeType mimeType = mi.getMimeType();
+                                    Res res;
 
-                                return new MusicTrack(getID(), parent.getID(), mi.getTitle(), mi.getArtist(), mi.getAlbum(), artist, res);
-                            }
+                                    res = new Res(mimeType, mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
 
-                        });
+                                    return new MusicTrack(getID(), parent.getID(), mi.getTitle(), mi.getArtist(), mi.getAlbum(), artist, res);
+                                }
 
-                    } else if ("mkv".equals(ext) || "mp4".equals(ext) || "avi".equals(ext)) {
-                        addChildren(root2, new ContentItem(f.getAbsolutePath()) {
+                            });
+                        } catch (Throwable e) {
+                            Log.exception(e);
+                            continue;
+                        }
 
-                            @Override
-                            public Item getImpl() {
+                    } else if ("mkv".equals(ext) || "mp4".equals(ext) || "avi".equals(ext) || "flv".equals(ext)) {
+                        try {
+                            final MediaInfo mi = new MediaInfo(f).load();
+                            addChildren(root2, new ContentItem(f.getAbsolutePath()) {
 
-                                VideoMediaInfo mi = new VideoMediaInfo(f);
-                                Res res = new Res(mi.getMimeType(), mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
-                                //
-                                return (new VideoItem(getID(), getParent().getID(), mi.getTitle(), null, res));
-                            }
+                                @Override
+                                public Item getImpl() {
 
-                        });
+                                    Res res = new Res(mi.getMimeType(), mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                                    //
+                                    return (new VideoItem(getID(), getParent().getID(), mi.getTitle(), null, res));
+                                }
 
+                            });
+                        } catch (Throwable e) {
+                            Log.exception(e);
+                            continue;
+                        }
                     }
                     System.out.println(ext);
                 }
@@ -243,7 +253,7 @@ public class BasicContentProvider implements ContentProvider {
 
     }
 
-    private String formatDuration(int ms) {
+    private String formatDuration(long ms) {
         long days, hours, minutes, seconds, milliseconds;
         final StringBuilder string = new StringBuilder();
         milliseconds = ms % 1000;
