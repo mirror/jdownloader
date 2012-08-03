@@ -1,5 +1,4 @@
 AutoDetectAction_run_failed=Pronađeni UPNP uređaji, ali rekonekcija se nemože obaviti. Umjesto toga pokušajte rekonekciju sa Live Header!
-AutoDetectAction_run_optimize=Optimiziraj: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Pokušava pronaći sve UPNP rekonekt uređaje u Vašoj mreži. Većina FritzBox rutera se može rekonektirati na ovaj način.
 UPNPReconnectInvoker_getName_=UPNP ruter rekonekcija
 UPNPRouterPlugin_run_error=Niti jedan UPNP uređaj nije pronađen. Umjesto toga pokušajte rekonekciju sa Live Header!
@@ -10,10 +9,6 @@ auto=UPNP Automatsko postavljanje
 controlURLTxt_help=Unos kontrolne URL adrese ...
 interaction_UpnpReconnect_wanservice_ip=Internet protokol
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point protokol
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Niti jedan UPNP ruter koji radi nije pronađen
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Neuspješno
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=JD je uspješno postavio postavke rekonekcije! Vaš ruter je '%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Uspješno
 literally_choose_router=Odabir uređaja
 literally_control_url=Kontrolna URL adresa
 literally_router=UPNP ruter
