@@ -31,6 +31,7 @@ DIALOG_FILECHOOSER_fileNameLabelText=Nom de l'arxiu:
 DIALOG_FILECHOOSER_filesOfTypeLabelText=Axius del tipus:
 DIALOG_FILECHOOSER_folderNameLabelText=Nom de la carpeta:
 DIALOG_FILECHOOSER_helpButtonText=Ajuda
+DIALOG_FILECHOOSER_helpButtonToolTipText=Ajuda del sel·lector d'arxius
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Casa
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Llista
 DIALOG_FILECHOOSER_lookInLabelText=Vegeu:

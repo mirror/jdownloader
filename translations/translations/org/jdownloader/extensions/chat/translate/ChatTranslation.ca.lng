@@ -6,6 +6,7 @@ jd_plugins_optional_jdchat_JDChat_topic_default=Carregant missatge del dia
 jd_plugins_optional_jdchat_JDChat_topic_tooltip=Missatge del dia
 jd_plugins_optional_jdchat_jdchat=JDChat
 plugins_optional_jdchat_enternick=Nom d’usuari desitjat?
+settings_enabled_userlist_colors=Noms de diferents colors
 settings_nick=El teu nom
 settings_perform=Fes aquestes accións despres d'entrar al xat:
 settings_userlist_position_left=Banda esquerra

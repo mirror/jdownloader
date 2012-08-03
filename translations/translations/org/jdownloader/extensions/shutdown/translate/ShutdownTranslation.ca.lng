@@ -1,3 +1,4 @@
+action_tooltip=Habilita l'apagat automàtic del sistema cuan les descàrregues hagin finalitzat
 addons_jdshutdown_statusmessage_disabled=JDownloader NO apagarà el sistema
 addons_jdshutdown_statusmessage_enabled=JDownloader apagarà l’equip en finalitzar las descàrregues
 config_toolbarbutton=Barra de botons bisible
