@@ -59,9 +59,11 @@ public class BasicContentProvider implements ContentProvider {
         //
         // PersonWithRole artist = new PersonWithRole("MyArtist", "Performer");
         // MimeType mimeType = new MimeType("audio", "mpeg");
-        // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l, "http://192.168.2.122:3128/vlcstreaming/video?mp3");
+        // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l,
+        // "http://192.168.2.122:3128/vlcstreaming/video?mp3");
         // dl.get
-        // return new MusicTrack(getID() + "", parent.getID() + "", "MyTitle.mp3", artist.getName(), "MyAlbum", artist, res);
+        // return new MusicTrack(getID() + "", parent.getID() + "",
+        // "MyTitle.mp3", artist.getName(), "MyAlbum", artist, res);
         // }
         //
         // });
@@ -80,12 +82,14 @@ public class BasicContentProvider implements ContentProvider {
     // // audio.setSearchable(false);
     // //
     // // audio.setChildCount(2);
-    // // audio.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+    // // audio.setClazz(new
+    // org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
     //
     // } else if (node instanceof ItemNode) {
     // didl.addContainer(((ItemNode) node).getImpl());
     // String didlStrng = new DIDLParser().generate(didl);
-    // didlStrng = didlStrng.replace("\"true\"", "\"1\"").replace("\"false\"", "\"0\"");
+    // didlStrng = didlStrng.replace("\"true\"", "\"1\"").replace("\"false\"",
+    // "\"0\"");
     // System.out.println("-->" + didlStrng);
     // return new BrowseResult(didlStrng, 1, 1);
     // Container audio = new Container();
@@ -97,7 +101,8 @@ public class BasicContentProvider implements ContentProvider {
     // audio.setSearchable(true);
     // audio.setWriteStatus(WriteStatus.NOT_WRITABLE);
     // audio.setChildCount(3);
-    // audio.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+    // audio.setClazz(new
+    // org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
     // didl.addContainer(audio);
     // String didlStrng = new DIDLParser().generate(didl);
     // System.out.println("-->" + didlStrng);
@@ -112,7 +117,8 @@ public class BasicContentProvider implements ContentProvider {
     // movie.setSearchable(true);
     // movie.setWriteStatus(WriteStatus.NOT_WRITABLE);
     // movie.setChildCount(0);
-    // movie.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+    // movie.setClazz(new
+    // org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
     // didl.addContainer(movie);
     // String didlStrng = new DIDLParser().generate(didl);
     // System.out.println("-->" + didlStrng);
@@ -132,7 +138,8 @@ public class BasicContentProvider implements ContentProvider {
     // audio.setSearchable(true);
     // audio.setWriteStatus(WriteStatus.NOT_WRITABLE);
     // audio.setChildCount(3);
-    // audio.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+    // audio.setClazz(new
+    // org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
     // didl.addContainer(audio);
     //
     // Container movie = new Container();
@@ -144,7 +151,8 @@ public class BasicContentProvider implements ContentProvider {
     // movie.setSearchable(true);
     // movie.setWriteStatus(WriteStatus.NOT_WRITABLE);
     // movie.setChildCount(0);
-    // movie.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+    // movie.setClazz(new
+    // org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
     // didl.addContainer(movie);
     //
     // String didlStrng = new DIDLParser().generate(didl);
@@ -154,17 +162,23 @@ public class BasicContentProvider implements ContentProvider {
     //
     // PersonWithRole artist = new PersonWithRole("MYArtist", "Performer");
     // MimeType mimeType = new MimeType("audio", "mpeg");
-    // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l, "http://192.168.2.122:3128/vlcstreaming/video?mp3");
-    // didl.addItem(new MusicTrack("101", ID_DOWNLOADLIST, "MyTitle.mp3", artist.getName(), "MyAlbum", artist, res));
+    // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l,
+    // "http://192.168.2.122:3128/vlcstreaming/video?mp3");
+    // didl.addItem(new MusicTrack("101", ID_DOWNLOADLIST, "MyTitle.mp3",
+    // artist.getName(), "MyAlbum", artist, res));
     //
-    // res = new Res(new MimeType("video", "mp4"), 123456l, "00:03:25,000", 8192l,
+    // res = new Res(new MimeType("video", "mp4"), 123456l, "00:03:25,000",
+    // 8192l,
     // "http://192.168.2.122:3128/vlcstreaming/video?mp4");
     //
-    // didl.addItem(new VideoItem("102", ID_DOWNLOADLIST, "MyMovie.mp4", "My Creator", res));
+    // didl.addItem(new VideoItem("102", ID_DOWNLOADLIST, "MyMovie.mp4",
+    // "My Creator", res));
     //
-    // res = new Res(new MimeType("video", "mkv"), 123456l, "00:00:01", 8192l, "http://192.168.2.122:3128/vlcstreaming/video?mkv");
+    // res = new Res(new MimeType("video", "mkv"), 123456l, "00:00:01", 8192l,
+    // "http://192.168.2.122:3128/vlcstreaming/video?mkv");
     //
-    // didl.addItem(new VideoItem("103", ID_DOWNLOADLIST, "MyMovie.mkv", "My Creator", res));
+    // didl.addItem(new VideoItem("103", ID_DOWNLOADLIST, "MyMovie.mkv",
+    // "My Creator", res));
     // String didlStrng = new DIDLParser().generate(didl);
     // System.out.println("-->" + didlStrng);
     // return new BrowseResult(didlStrng, 3, 3);
@@ -244,9 +258,9 @@ public class BasicContentProvider implements ContentProvider {
                 }
             } else {
 
-                // FolderContainer dir = new FolderContainer(f.getAbsolutePath(), f.getName());
-                // addChildren(root2, dir);
-                // mountHDFolder(f, dir);
+                FolderContainer dir = new FolderContainer(f.getAbsolutePath(), f.getName());
+                addChildren(root2, dir);
+                mountHDFolder(f, dir);
             }
 
         }
