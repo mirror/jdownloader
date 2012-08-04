@@ -2,3 +2,4 @@ gui_config_antistandby_whiledl2=Pobieranie w toku
 gui_config_antistandby_whilejd2=JDownloader pobiera pliki
 jd_plugins_optional_antistandby_jdantistandby=JD anty-hibernacja
 jd_plugins_optional_antistandby_jdantistandby_description=Po prostu zapobiega przejściu komputera w stan wstrzymania lub jego wyłączenia, aby pozostawić pobierania aktywne.
+mode=Nie włączaj trybu wstrzymania/uśpienia gdy

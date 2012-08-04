@@ -61,6 +61,7 @@ error_locked=Serwer aktualizacji %s1 jest obecnie niedostępny. Proszę spróbow
 error_occured=Błąd
 error_occured_detailed=Nie można zakończyć aktualizacji.
 error_occured_start_reverting=Aktualizacja została przerwana. Wycofywanie zmian...
+error_package_creation_failed=Tworzenie pakietu nieudane. Proszę spróbować później.
 error_unknown=%s1
 error_unknown_app=Nie można zaktualizować %s1.\r Proszę spróbować później.
 error_unknown_branch=Nieokreślona Edycja: %s1

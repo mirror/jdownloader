@@ -14,7 +14,7 @@ install_title=Zainstaluj Wymuszenie Zamykania Systemu
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader zostanie zamknięty!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Stwój system wejdzie w Stan Hibernacji!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Uwaga! Twój system jest w trakcie wyłączania!</font></h2>
-interaction_shutdown_dialog_msg_standby=<h2><font color="red">Stwój system wejdzie w Stan Wstrzymania!</font></h2>
+interaction_shutdown_dialog_msg_standby=<h2><font color="red">Twój system wejdzie w Stan Wstrzymania!</font></h2>
 interaction_shutdown_dialog_title_closejd=Zamknąć JD?
 interaction_shutdown_dialog_title_hibernate=Hibernacja?
 interaction_shutdown_dialog_title_shutdown=Zamknąć system?

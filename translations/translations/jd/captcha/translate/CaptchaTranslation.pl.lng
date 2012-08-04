@@ -23,6 +23,7 @@ easycaptcha_loadcaptchas_loaddirect=Pobieraj bezpośrednio, jeśli to możliwe (
 easycaptcha_loadcaptchas_threaded=wielowątkowe pobieranie obrazów (bardzo szybkie)
 easycaptcha_loadcaptchas_title=Ładowanie obrazków
 easycaptcha_mask=Maska:
+easycaptcha_needCaptchas=Najpierw potrzebne są kody Captcha!
 easycaptcha_openCaptchaFolder=Otwórz katalog Captcha
 easycaptcha_orginal=Oryginalny:
 easycaptcha_remove=Usuń:

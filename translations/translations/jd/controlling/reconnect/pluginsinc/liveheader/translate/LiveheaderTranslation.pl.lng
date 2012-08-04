@@ -61,6 +61,7 @@ gui_config_reconnect_selectrouter_example=Przykład: 3Com ADSL
 gui_config_routeripfinder_notfound=Nie można odnaleźć nazwy hosta twojego routera
 gui_config_routeripfinder_ready=Znalezione IP: %s1
 gui_fengshuiconfig_routerip=IP routera
+ipcheckreverted=Sprawdzanie adresu IP (IP Check) zostało wyłączone.\r\nZalecamy włączenie tej opcji.\r\nW przeciwnym wypadku Ponowne Połączenie może działać niepoprawnie.
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderDetectionWizard_runTests=Skrypt testowy: %s1/%s2: %s3
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=Zapisz
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Wyłączyłeś sprawdzanie adresu IP. Zdecydowanie zwiększy to ilość prób ponownego połączenia!\n\n\n\nNiektóre moduły, takie jak Nagrywanie Ponownego Połączenia przestaną funkcjonować.

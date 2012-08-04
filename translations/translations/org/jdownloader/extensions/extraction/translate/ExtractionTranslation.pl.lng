@@ -27,6 +27,7 @@ downloadedok=Plik już istnieje
 dummyarchivedialog_title=Archiwum %s1
 exists=Status linku
 extract_to2=Wypakuj archiwum(-a) do...
+extracting=Wył
 extraction_failed=Rozpakowywanie %s1 nieudane
 failed=Wypakowywanie niepomyślne: %s1
 failed_no_details=Wypakowywanie niepomyślne
