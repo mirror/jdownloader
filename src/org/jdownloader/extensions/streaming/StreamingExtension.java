@@ -50,7 +50,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     protected StreamingProvider streamProvider = null;
 
     public StreamingExtension() {
-        logger = LogController.CL(getClass());
+        logger = LogController.getInstance().getLogger("Streaming");
     }
 
     private HttpApiImpl          vlcstreamingAPI;
