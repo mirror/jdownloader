@@ -1,0 +1,11 @@
+enter_password=%s1 açmak için Parolayı girin
+enter_passwordfor=Lütfen Parolaları girin: Bunlardan bir tanesini deneyin:%s1
+enter_passwordfor2=Lütfen Parolaları girin.
+gui_title=Duraksız veri iletimi
+gui_tooltip=Duraksız veri iletimi bağlantılarını yönetin
+open_rar=Rar Arşivini Aç
+open_rar_msg=JDownloader duraksız veri iletimini hazırlarken lütfen bekleyin
+popup_streaming=Duraksız veri iletimi
+popup_streaming_playvlc=Oynat
+unraraction=Arşivi Oynat
+wrong_password=Yanlış Parola!

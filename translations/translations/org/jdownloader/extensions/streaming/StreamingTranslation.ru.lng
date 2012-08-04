@@ -1,0 +1,4 @@
+gui_title=Потоковое видео
+gui_tooltip=Управляйте своими ссылками потокового видео
+popup_streaming=Потоковое видео
+popup_streaming_playvlc=Воспроизвести
