@@ -21,7 +21,6 @@ import jd.plugins.FilePackage;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
@@ -51,8 +50,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     protected StreamingProvider streamProvider = null;
 
     public StreamingExtension() {
-        System.out.println(1);
-        Log.L.info(" CL " + getClass().getClassLoader());
+
         logger = LogController.getInstance().getLogger("Streaming");
 
     }

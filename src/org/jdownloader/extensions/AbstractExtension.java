@@ -34,7 +34,6 @@ import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -178,9 +177,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         this.name = getClass().getSimpleName();
         version = readVersion(getClass());
         store = buildStore();
-        Log.L.info(" CL " + getClass().getClassLoader());
         AdvancedConfigManager.getInstance().register(store);
-        LogController.CL().info("Loaded");
+        LogController.getInstance().getLogger(name);
         initTranslation();
     }
 
