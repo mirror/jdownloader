@@ -34,6 +34,7 @@ import org.appwork.txtresource.TranslateInterface;
 import org.appwork.txtresource.TranslationFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
+import org.appwork.utils.logging.Log;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -122,7 +123,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Returns the internal storage. Most of the configvalues are for internal use only. This config only contains values which are valid for all extensions
+     * Returns the internal storage. Most of the configvalues are for internal
+     * use only. This config only contains values which are valid for all
+     * extensions
      * 
      * @return
      */
@@ -165,7 +168,9 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
      * 
      * @param translationInterface
      * @param name
-     *            name of this plugin. Until JD 2.* we should use null here to use the old defaultname. we used to sue this localized name as config key.
+     *            name of this plugin. Until JD 2.* we should use null here to
+     *            use the old defaultname. we used to sue this localized name as
+     *            config key.
      * @throws
      * @throws StartException
      */
@@ -173,12 +178,16 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         this.name = getClass().getSimpleName();
         version = readVersion(getClass());
         store = buildStore();
+        Log.L.info(" CL " + getClass().getClassLoader());
         AdvancedConfigManager.getInstance().register(store);
         LogController.CL().info("Loaded");
         initTranslation();
     }
 
-    /* Dirty workaround for old Extensions to save primitive data inside the new ConfigSystem */
+    /*
+     * Dirty workaround for old Extensions to save primitive data inside the new
+     * ConfigSystem
+     */
     /* Those Plugins should be rewritten to use new ConfigSystem correct! */
     @Deprecated
     protected Property getPropertyConfig() {
@@ -192,7 +201,10 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                 private static final long serialVersionUID = -7487373530144101894L;
 
                 {
-                    /* Workaround to make sure the internal HashMap of JSonStorage is set to Property HashMap */
+                    /*
+                     * Workaround to make sure the internal HashMap of
+                     * JSonStorage is set to Property HashMap
+                     */
                     store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().put("addWorkaround", true);
                     this.setProperties(store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap());
                     store.getStorageHandler().getPrimitiveStorage().getInternalStorageMap().remove("addWorkaround");
@@ -201,7 +213,10 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
                 @Override
                 public void setProperty(String key, Object value) {
                     super.setProperty(key, value);
-                    /* this changes changeFlag in JSonStorage to signal that it must be saved */
+                    /*
+                     * this changes changeFlag in JSonStorage to signal that it
+                     * must be saved
+                     */
                     store.getStorageHandler().getPrimitiveStorage().put("saveWorkaround", System.currentTimeMillis());
                 }
 
@@ -254,7 +269,8 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
     }
 
     /**
-     * Gets called once per session as soon as the extension gets loaded the first time
+     * Gets called once per session as soon as the extension gets loaded the
+     * first time
      * 
      * @throws StartException
      */
