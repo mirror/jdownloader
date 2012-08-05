@@ -17,22 +17,19 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://[\\w\\.]*?gametrailers\\.com/(video|user\\-movie)/.*?/[0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|videos)/\\w+/[\\w\\-]+)" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
     private static final String ua = RandomUserAgent.generate();
 
@@ -44,147 +41,62 @@ public class GameTrailersCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
-        final ArrayList<String> damnedIDs = new ArrayList<String>();
         br.getHeaders().put("User-Agent", ua);
-        br.getPage(parameter);
+
         br.setFollowRedirects(true);
-        // you must logged in for mov/wmv download
-        boolean newFormat = false;
-        String[] httpLinks = br.getRegex("<a href=\"(http://www.gamerailers\\.com/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
-        if (httpLinks == null || httpLinks.length == 0) {
-            /* new format */
-            newFormat = true;
-            httpLinks = br.getRegex("<a href=\"(/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
-        }
-        final ArrayList<String> finallinks = new ArrayList<String>(Arrays.asList(httpLinks));
-        if (newFormat) {
-            String otherQ = br.getRegex("class=\"hdButton\".*?href=\"(.*?)\"").getMatch(0);
-            if (otherQ != null) {
-                Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("User-Agent", ua);
-                brc.setCookiesExclusive(true);
-                brc.getPage(otherQ);
-                String[] httpLinks2 = brc.getRegex("<a href=\"(/download/\\d+/[\\w-\\.\\_]+mp4)\"").getColumn(0);
-                finallinks.addAll(Arrays.asList(httpLinks2));
-            }
-        }
-        String videoTitle = br.getRegex("<title>(.*?)Video Game, Review Pod").getMatch(0);
+        br.getPage(parameter);
+
+        String videoTitle = br.getRegex("<title>(.*?)\\s?\\|\\s?Gametrailers</title>").getMatch(0);
         if (videoTitle == null) {
-            videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\"").getMatch(0);
-            if (videoTitle == null) {
-                videoTitle = br.getRegex("var gamename = \"(.*?)\"").getMatch(0);
-            }
+            videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\\s?\\|\\s?Gametrailers\"").getMatch(0);
         }
-        final String title = new Regex(videoTitle, "(.+?) - ").getMatch(0);
-        final String subject = new Regex(videoTitle, ".*? - (.+)").getMatch(0);
-        if (title != null && subject != null) {
-            /* reformat the filename */
-            videoTitle = subject + " - " + title;
-        }
-        final String hdid = br.getRegex("class=\"hdButton\"><a href=\"/video/.*?/(\\d+)\\?type").getMatch(0);
-        if (hdid != null) {
-            damnedIDs.add(hdid);
-        }
-        final String neoplayermovieid = br.getRegex("NeoPlayer\\.movieId=(\\d+)").getMatch(0);
-        if (neoplayermovieid != null) {
-            damnedIDs.add(neoplayermovieid);
-        }
-        if (damnedIDs == null || damnedIDs.size() == 0) { return null; }
-        for (final String damnedID : damnedIDs) {
-            final Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("User-Agent", ua);
-            if (parameter.contains("user-movie")) {
-                br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID + "&hd=1&um=1");
-            } else {
-                br2.getPage("http://www.gametrailers.com/neo/?page=xml.mediaplayer.Mediagen&movieId=" + damnedID);
-            }
-            String finallink = br2.getRegex("<src>(.*?)</src>").getMatch(0);
-            if (finallink != null) {
-                // If we got the wrong link it's a long way to get the real
-                // link!
-                if (finallink.matches(".*?\\.gametrailers\\.com/gt_vault/\\.flv")) {
-                    final String configPage = br.getRegex("var config_url = \"(.*?)\"").getMatch(0);
-                    if (configPage == null) { return null; }
-                    br.getPage("http://www.gametrailers.com" + Encoding.htmlDecode(configPage));
-                    String infoPage = br.getRegex("<player>.*?<feed>(.*?)</feed>").getMatch(0);
-                    if (infoPage == null) { return null; }
-                    infoPage = infoPage.trim().replace("amp;", "");
-                    br.getPage(infoPage);
-                    String lastPage = br.getRegex("medium=\"video\".*?url=\"(http.*?)\"").getMatch(0);
-                    if (lastPage == null) { return null; }
-                    lastPage = lastPage.replace("amp;", "");
-                    br.getPage(lastPage);
-                    finallink = br.getRegex("<src>(.*?)</src>").getMatch(0);
-                    if (finallink == null) { return null; }
-                }
-                finallinks.add(finallink);
-            } else {
-                logger.warning("Decrypter failed to get finallink from id " + damnedID + " from link: " + parameter);
-            }
-        }
-        String[] extensions = { "flv", "mov", "wmv", "mp4" };
-        if (newFormat) extensions = new String[] { "mp4" };
-        ArrayList<String> done = new ArrayList<String>();
-        for (String ext : extensions) {
-            for (String finallink : finallinks) {
-                if (parameter.contains("user-movie") && !"flv".equals(ext)) {
-                    /* user movies only have flv files */
-                    continue;
-                }
-                if (!finallink.startsWith("http:")) {
-                    finallink = "http://www.gametrailers.com" + finallink;
-                }
-                String ext2 = new Regex(finallink, ".+(\\....)$").getMatch(0);
-                String link = finallink.replace(ext2, "." + ext);
-                String check = new Regex(link, ".+/(.*?\\....)$").getMatch(0);
-                if (done.contains(check)) continue;
-                done.add(check);
+
+        String contentId = br.getRegex("data\\-contentId=(\'|\")([^\'\"]+)").getMatch(1);
+        if (contentId == null) return decryptedLinks;
+        Browser br2 = br.cloneBrowser();
+        /* episodes */
+        if (parameter.contains("/full-episodes/")) {
+            br2.getPage("/feeds/mrss?uri=" + Encoding.urlEncode(contentId));
+            String[] contentIds = br2.getRegex("<guid isPermaLink=\"(true|false)\">(.*?)</guid>").getColumn(1);
+            String episodesTitle = br2.getRegex("<media:title><\\!\\[CDATA\\[(.*?)\\]\\]></media:title>").getMatch(0);
+            if (contentIds == null || contentIds.length == 0) return decryptedLinks;
+            int i = 1;
+            for (String cId : contentIds) {
+                br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(cId) + "&forceProgressive=true");
+                String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+                if (link == null) continue;
                 DownloadLink dl = createDownloadlink("directhttp://" + link);
-                URLConnectionAdapter con = null;
-                long size = 0;
-                try {
-                    Browser br3 = new Browser();
-                    br3.getHeaders().put("User-Agent", ua);
-                    br3.setFollowRedirects(true);
-                    con = br3.openGetConnection(link);
-                    if (!con.isOK() || (con.getContentType() != null && con.getContentType().contains("text"))) {
-                        done.remove(check);
-                        continue;
-                    }
-                    size = con.getLongContentLength();
-                } catch (Throwable e) {
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-                dl.setDownloadSize(size);
-                dl.setAvailable(true);
-                if (videoTitle != null) {
-                    // correct title without "HD" or "SD"
-                    videoTitle = videoTitle.trim().replaceAll(" [SH]D ?", "");
-                    if (newFormat) {
-                        String vsize = new Regex(finallink, "_(\\d+x\\d+)").getMatch(0);
-                        dl.setFinalFileName(videoTitle.trim() + " [" + vsize + "]." + ext);
-                    } else {
-                        if (finallink.contains("_hd")) {
-                            dl.setFinalFileName(videoTitle.trim() + " [HD-" + ext.toUpperCase() + "]." + ext);
-                        } else {
-                            dl.setFinalFileName(videoTitle.trim() + " [SD-" + ext.toUpperCase() + "]." + ext);
-                        }
-                    }
-                }
+                dl.setFinalFileName(getVideoTitle(episodesTitle + "_Part" + i++));
                 decryptedLinks.add(dl);
             }
+            if (videoTitle.startsWith(" |")) {
+                String tmpVideoTitle = br.getRegex("<meta itemprop=\"name\" content=\"([^\"]+)").getMatch(0);
+                videoTitle = tmpVideoTitle != null ? tmpVideoTitle + videoTitle : "unknownTitle" + videoTitle;
+            }
+        } else {
+            /* single video file */
+            br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(contentId) + "&forceProgressive=true");
+            String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+            if (link == null) return decryptedLinks;
 
+            DownloadLink dl = createDownloadlink("directhttp://" + link);
+            dl.setFinalFileName(getVideoTitle(videoTitle));
+            decryptedLinks.add(dl);
         }
-
         if (videoTitle != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(videoTitle.trim());
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(videoTitle.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
+
+    private String getVideoTitle(String s) {
+        if (s == null) s = "UnknownTitle";
+        s = s.replace("._Part", "_Part");
+        String ext = br.getRegex("type=\"video/([0-9a-zA-Z]{3,5})\"").getMatch(0);
+        ext = ext != null ? ext : "mp4";
+        return s.trim() + "." + ext;
+    }
+
 }
