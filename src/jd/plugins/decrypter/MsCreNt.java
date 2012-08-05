@@ -22,12 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "musicore.net" }, urls = { "http(s)?://(www\\.)?(r\\.)?musicore\\.net/forums/index\\.php\\?(/topic/\\d+\\-|showtopic=\\d+|\\?id=[A-Za-z0-9]+\\&url=[a-zA-Z0-9=\\+/\\-]+|/forum/\\d+\\-[A-Za-z0-9]+/(page_.+)?)" }, flags = { 0 })
 public class MsCreNt extends PluginForDecrypt {
@@ -49,29 +48,40 @@ public class MsCreNt extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.setFollowRedirects(true);
             br.getPage("http://musicore.net/ajax/release.php?id=" + topicID);
-            br.setFollowRedirects(false);
-            String[] redirectlinks = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
-            if (redirectlinks == null || redirectlinks.length == 0) redirectlinks = br.getRegex("<a href=\"(/redirect/.*?)\"").getColumn(0);
-            if (redirectlinks == null || redirectlinks.length == 0) return null;
-            br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
-            String[] ftpLinks = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
-            progress.setRange(redirectlinks.length);
-            for (String redirectlink : redirectlinks) {
-                redirectlink = Encoding.htmlDecode(redirectlink);
-                if (!redirectlink.contains("musicore.net")) redirectlink = "https://musicore.net" + redirectlink;
-                br.getPage(redirectlink);
-                String finallink = br.getRedirectLocation();
-                if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+            if (br.containsHTML(">Release is being uploaded to")) {
+                // Try getting links without "API"
+                br.getPage(parameter);
+                final String[] allLinks = HTMLParser.getHttpLinks(br.toString(), "");
+                for (String singleLink : allLinks) {
+                    singleLink = Encoding.htmlDecode(singleLink);
+                    if (!singleLink.contains("musicore.net/")) decryptedLinks.add(createDownloadlink(singleLink));
                 }
-                decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
-            }
-            if (ftpLinks != null && ftpLinks.length != 0) {
-                for (String ftpLink : ftpLinks) {
-                    decryptedLinks.add(createDownloadlink(ftpLink));
+            } else {
+                br.setFollowRedirects(false);
+                String[] redirectlinks = br.getRegex("(\\'|\")(http://r\\.musicore\\.net/\\?id=.*?url=.*?)(\\'|\")").getColumn(1);
+                if (redirectlinks == null || redirectlinks.length == 0) redirectlinks = br.getRegex("<a href=\"(/redirect/.*?)\"").getColumn(0);
+                if (redirectlinks == null || redirectlinks.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                br.getPage("http://musicore.net/ajax/ftp.php?id=" + topicID);
+                String[] ftpLinks = br.getRegex("\"(ftp://\\d+:[a-z0-9]+@ftp\\.musicore\\.ru/.*?)\"").getColumn(0);
+                for (String redirectlink : redirectlinks) {
+                    redirectlink = Encoding.htmlDecode(redirectlink);
+                    if (!redirectlink.contains("musicore.net")) redirectlink = "https://musicore.net" + redirectlink;
+                    br.getPage(redirectlink);
+                    String finallink = br.getRedirectLocation();
+                    if (finallink == null) finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                    if (finallink == null) {
+                        logger.warning("Decrypter broken for link: " + parameter);
+                        finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
+                    }
+                    decryptedLinks.add(createDownloadlink(finallink));
+                }
+                if (ftpLinks != null && ftpLinks.length != 0) {
+                    for (String ftpLink : ftpLinks) {
+                        decryptedLinks.add(createDownloadlink(ftpLink));
+                    }
                 }
             }
         } else if (parameter.contains("musicore.net/forums/index.php?/forum/")) {
@@ -86,7 +96,10 @@ public class MsCreNt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(forumLink));
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("(An error occurred|We\\'re sorry for the inconvenience)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML("(An error occurred|We\\'re sorry for the inconvenience)")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -97,5 +110,4 @@ public class MsCreNt extends PluginForDecrypt {
         return decryptedLinks;
 
     }
-
 }

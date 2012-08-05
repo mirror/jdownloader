@@ -29,7 +29,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/(download-free-loop-[0-9]+|download\\.php\\?id=[0-9]+|audio\\.php\\?term=((bass|drum kit|drum loop|instrument|midi|pad|sound effect|synth|vocal)\\&page=[0-9]+|(bass|drum kit|drum loop|instrument|midi|pad|sound effect|synth|vocal)))" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-loops.com" }, urls = { "http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html" }, flags = { 0 })
 public class FreeLoopsCom extends PluginForDecrypt {
 
     public FreeLoopsCom(PluginWrapper wrapper) {
@@ -39,9 +39,8 @@ public class FreeLoopsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        if (parameter.contains("download-free-loop-") || parameter.contains("download.php?id=")) {
-            String fileid = new Regex(parameter, "download-free-loop-(\\d+)").getMatch(0);
-            if (fileid == null) fileid = new Regex(parameter, "download\\.php\\?id=(\\d+)").getMatch(0);
+        if (parameter.matches("http://(www\\.)?free\\-loops\\.com/\\d+[a-z0-9\\-]+\\.html")) {
+            String fileid = new Regex(parameter, "free\\-loops\\.com/(\\d+)").getMatch(0);
             String finallink = "http://free-loops.com/force-audio.php?id=" + fileid;
             URLConnectionAdapter con = br.openGetConnection(finallink);
             if ((con.getContentType().contains("html"))) {
@@ -53,10 +52,10 @@ public class FreeLoopsCom extends PluginForDecrypt {
                 }
                 return null;
             } else {
-                DownloadLink l;
-                decryptedLinks.add(l = createDownloadlink("directhttp://" + finallink));
+                final DownloadLink l = createDownloadlink("directhttp://" + finallink);
                 l.setFinalFileName(Plugin.getFileNameFromHeader(con));
                 l.setDownloadSize(con.getLongContentLength());
+                decryptedLinks.add(l);
                 con.disconnect();
             }
         } else {

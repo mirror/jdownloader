@@ -39,39 +39,62 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         String decrypted = null;
-        String externalID = br.getRegex("name=\"FlashVars\" value=\"id=(\\d+)\\&style=redtube\"").getMatch(0);
-        if (externalID == null) externalID = br.getRegex("\"http://embed\\.redtube\\.com/player/\\?id=(\\d+)\\&style=").getMatch(0);
-        if (externalID != null) {
-            decrypted = "http://www.redtube.com/" + externalID;
+        String externID = br.getRegex("name=\"FlashVars\" value=\"id=(\\d+)\\&style=redtube\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("\"http://embed\\.redtube\\.com/player/\\?id=(\\d+)\\&style=").getMatch(0);
+        if (externID != null) {
+            decrypted = "http://www.redtube.com/" + externID;
             decryptedLinks.add(createDownloadlink(decrypted));
             return decryptedLinks;
         }
-        externalID = br.getRegex("freeviewmovies\\.com/flv/skin/ofconfig\\.php\\?id=(\\d+)\"").getMatch(0);
-        if (externalID != null) {
-            decrypted = "http://www.freeviewmovies.com/porn/" + externalID + "/blabla.html";
+        externID = br.getRegex("freeviewmovies\\.com/flv/skin/ofconfig\\.php\\?id=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decrypted = "http://www.freeviewmovies.com/porn/" + externID + "/blabla.html";
             decryptedLinks.add(createDownloadlink(decrypted));
             return decryptedLinks;
         }
-        externalID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
-        if (externalID != null) {
-            decrypted = "http://www.xvideos.com/video" + externalID;
+        externID = br.getRegex("id_video=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decrypted = "http://www.xvideos.com/video" + externID;
             decryptedLinks.add(createDownloadlink(decrypted));
             return decryptedLinks;
         }
-        externalID = br.getRegex("\"http://(www\\.)?cyberporn\\.com/embed/(\\d+)").getMatch(0);
-        if (externalID != null) {
-            decryptedLinks.add(createDownloadlink("http://www.cyberporn.com/video/" + externalID));
+        externID = br.getRegex("\"http://(www\\.)?cyberporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.cyberporn.com/video/" + externID));
             return decryptedLinks;
         }
-        externalID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
-        if (externalID != null) {
+        externID = br.getRegex("shufuni\\.com/Flash/.*?flashvars=\"VideoCode=(.*?)\"").getMatch(0);
+        if (externID != null) {
             if (filename == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externalID);
+            DownloadLink dl = createDownloadlink("http://www.shufuni.com/handlers/FLVStreamingv2.ashx?videoCode=" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // pornhub handling number 2
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            if (br.containsHTML("<link_url>N/A</link_url>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         decrypted = parameter.replace("badjojo.com", "decryptedbadjojo.com");

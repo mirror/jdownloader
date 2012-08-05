@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -57,13 +60,15 @@ public class BMp3Cm extends PluginForDecrypt {
         }
         /* Decrypt part */
         for (int i = 0; i <= 1; i++) {
-            Form captchaForm = br.getFormbyKey("captcha");
+            final Form captchaForm = br.getFormbyKey("captcha");
             if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String captchalink = null;
             if (br.containsHTML("image\\.php")) captchalink = "http://www.bomb-mp3.com/image.php";
             if (captchalink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            String code = getCaptchaCode(captchalink, param);
+            final File cf = downloadCaptcha(this.getLocalCaptchaFile(), captchalink);
+            String code = getCaptchaCode(cf, param);
             captchaForm.put("captcha", code);
+            captchaForm.setAction(parameter);
             br.submitForm(captchaForm);
             if (br.containsHTML(">Wrong code<")) continue;
             break;
@@ -85,6 +90,17 @@ public class BMp3Cm extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(finallink));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private File downloadCaptcha(final File captchaFile, final String captchaAddress) throws IOException, PluginException {
+        this.br.setFollowRedirects(true);
+        try {
+            Browser.download(captchaFile, this.br.openGetConnection(captchaAddress));
+        } catch (IOException e) {
+            captchaFile.delete();
+            throw e;
+        }
+        return captchaFile;
     }
 
 }

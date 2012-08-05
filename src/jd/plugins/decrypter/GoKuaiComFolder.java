@@ -38,7 +38,8 @@ public class GoKuaiComFolder extends PluginForDecrypt {
         String parameter = param.toString();
         this.setBrowserExclusive();
 
-        // if link is a file within (directory|folder) we only have to return link to hoster plugin via gokuais?://
+        // if link is a file within (directory|folder) we only have to return
+        // link to hoster plugin via gokuais?://
         if (parameter.matches("https?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}/[a-z0-9]{40}")) {
             if (parameter.contains("https://")) {
                 parameter = parameter.replace("https://", "gokuais://");
@@ -51,6 +52,7 @@ public class GoKuaiComFolder extends PluginForDecrypt {
 
         // if link is a folder, find links within.
         if (parameter.matches("https?://(www\\.)?gokuai\\.com/a/[a-zA-Z0-9]{16}")) {
+            br.setFollowRedirects(true);
             br.getPage(parameter);
             br.setFollowRedirects(false);
 
@@ -60,7 +62,8 @@ public class GoKuaiComFolder extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            // find a package name, set null value to prevent unnamed packages breaking plugin
+            // find a package name, set null value to prevent unnamed packages
+            // breaking plugin
             String fpName = br.getRegex("<h2><i class=\"icon_folder\"></i><span>(.*?)</span></h2>").getMatch(0);
             if (fpName == null) fpName = "Untitled";
 

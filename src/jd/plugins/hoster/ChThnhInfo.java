@@ -47,17 +47,6 @@ public class ChThnhInfo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == 0) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
@@ -71,6 +60,18 @@ public class ChThnhInfo extends PluginForHost {
         dllink = "http://chauthanh.info" + dllink;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        br.setReadTimeout(3 * 60 * 60 * 1000);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == 0) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
