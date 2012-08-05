@@ -125,6 +125,7 @@ public class FileBlazeNetA extends PluginForDecrypt {
             amf.loadConnection(null);
         } catch (Throwable e) {
             /* does not exist in 09581 */
+            logger.warning("Not working in JDownloader 0.9581. Please update to JDownloader2!");
         }
     }
 

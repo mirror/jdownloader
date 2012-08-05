@@ -112,7 +112,7 @@ public class GameOneDeA extends PluginForDecrypt {
                 }
             }
             if (pictureOrAudio == null || pictureOrAudio.length == 0) {
-                logger.warning("Decrypter out of date for link: " + parameter);
+                logger.warning("Decrypter out of date or no downloadable content found for link: " + parameter + ". Please check the Website!");
                 return null;
             }
             if (pictureOrAudio.length <= 10) {
