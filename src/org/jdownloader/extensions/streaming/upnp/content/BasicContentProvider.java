@@ -22,6 +22,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
 import org.seamless.util.MimeType;
 
@@ -38,8 +39,9 @@ public class BasicContentProvider implements ContentProvider {
         //
         try {
             mountHDFolder(new File(JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder()), downloadlist);
-        } catch (UnsupportedEncodingException e) {
-            throw new WTFException(e);
+        } catch (Throwable e) {
+            LogController.getInstance().getLogger("Streaming");
+
         }
         // for (DownloadLink dl : ) {
         // String ext = Files.getExtension(dl.getFinalFileName());
