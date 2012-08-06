@@ -1,5 +1,5 @@
-gui_config_antistandby_mode=Modus:
-gui_config_antistandby_whiledl=StandBy beim Downloaden verhindern
-gui_config_antistandby_whilejd=StandBy generell verhindern
+gui_config_antistandby_whiledl2=Download ist in Arbeit
+gui_config_antistandby_whilejd2=JDownloader läuft
 jd_plugins_optional_antistandby_jdantistandby=Standby-Verzögerer
 jd_plugins_optional_antistandby_jdantistandby_description=Verhindert den automatischen Standby-Modus während laufenden Downloads.
+mode=Verhindere Standby/Schlafen wenn
