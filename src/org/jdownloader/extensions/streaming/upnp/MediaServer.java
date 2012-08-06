@@ -31,6 +31,8 @@ import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.spi.NetworkAddressFactory;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.upnp.content.ContentDirectory;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -58,7 +60,11 @@ public class MediaServer implements Runnable {
 
     public void run() {
         try {
-
+            logger.info("Wait for extraction Module");
+            while (ExtensionController.getInstance().getExtension(ExtractionExtension.class) == null || !ExtensionController.getInstance().getExtension(ExtractionExtension.class)._isEnabled()) {
+                Thread.sleep(1000);
+            }
+            logger.info("Wait for extraction Module: Done");
             // final UpnpService upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(8895) {
             // // Override using Apache Http instead of sun http
             // // This could be used to implement our own http stack instead
@@ -82,9 +88,12 @@ public class MediaServer implements Runnable {
             upnpService.getRegistry().addDevice(createDevice());
 
         } catch (Exception ex) {
-            System.err.println("Exception occured: " + ex);
-            ex.printStackTrace(System.err);
-            System.exit(1);
+            try {
+                upnpService.shutdown();
+            } catch (Throwable e) {
+
+            }
+            logger.log(ex);
         }
     }
 
@@ -100,10 +109,10 @@ public class MediaServer implements Runnable {
         // Windows Media Player Device Details
         // seem like windows mediaplayer needs a special device description
         // http://4thline.org/projects/mailinglists.html#nabble-td3827350
-        DeviceDetails wmpDetails = new DeviceDetails(host + ": JDMedia", manufacturer, new ModelDetails("Windows Media Player Sharing", "Windows Media Player Sharing", "12.0"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
+        DeviceDetails wmpDetails = new DeviceDetails("JDMedia@" + host, manufacturer, new ModelDetails("Windows Media Player Sharing", "Windows Media Player Sharing", "12.0"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
 
         // Common Details
-        DeviceDetails ownDetails = new DeviceDetails(host + ": JDMedia", manufacturer, new ModelDetails("JDownloader Media Server", "JDownloader Media Server", "1"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
+        DeviceDetails ownDetails = new DeviceDetails("JDMedia@" + host, manufacturer, new ModelDetails("JDownloader Media Server", "JDownloader Media Server", "1"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
 
         // Device Details Provider
         Map<HeaderDeviceDetailsProvider.Key, DeviceDetails> headerDetails = new HashMap<HeaderDeviceDetailsProvider.Key, DeviceDetails>();

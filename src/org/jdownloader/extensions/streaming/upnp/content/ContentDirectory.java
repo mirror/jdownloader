@@ -60,6 +60,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
 
                         }
                         String didlStrng = contentProvider.toDidlString(didl);
+                        System.out.println(didlStrng);
                         return new BrowseResult(didlStrng, children.size(), children.size());
                     } else {
                         throw new WTFException();

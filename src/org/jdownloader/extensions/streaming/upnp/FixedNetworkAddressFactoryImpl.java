@@ -70,8 +70,8 @@ public class FixedNetworkAddressFactoryImpl extends NetworkAddressFactoryImpl {
                     e.printStackTrace();
                 }
             }
+            logger.info("Result: " + networkInterface + " - " + ret);
         }
-        logger.info("Result: " + networkInterface + " - " + ret);
 
         return ret;
     }

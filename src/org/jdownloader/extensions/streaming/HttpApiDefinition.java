@@ -14,6 +14,10 @@ public interface HttpApiDefinition extends RemoteAPIInterface {
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public void play(RemoteAPIResponse response, RemoteAPIRequest request);
 
+    @ApiMethodName("stream")
+    @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
+    public void streamByUrlHash(RemoteAPIResponse response, RemoteAPIRequest request, String id);
+
     @ApiMethodName("video")
     @ApiRawMethod(/* this method does not use json, it uses raw parameters */)
     public void video(RemoteAPIRequest request, RemoteAPIResponse response, String format);

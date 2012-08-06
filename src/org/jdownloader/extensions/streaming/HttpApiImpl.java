@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.HashMap;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.parser.Regex;
+import jd.plugins.DownloadLink;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
@@ -12,17 +14,26 @@ import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
 
 public class HttpApiImpl implements HttpApiDefinition {
 
     private HashMap<String, StreamingInterface> interfaceMap = new HashMap<String, StreamingInterface>();
+    private StreamingExtension                  extension;
 
     public HttpApiImpl(StreamingExtension extension) {
+        this.extension = extension;
+
     }
 
     @Override
@@ -44,6 +55,98 @@ public class HttpApiImpl implements HttpApiDefinition {
         } catch (final Throwable e) {
             if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;
             throw new RemoteAPIException(e);
+        }
+    }
+
+    @Override
+    public void streamByUrlHash(RemoteAPIResponse response, RemoteAPIRequest request, String id) {
+
+        try {
+
+            DownloadLink dlink = null;
+            for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
+                if (Hash.getMD5(dl.getDownloadURL()).equals(id)) {
+                    dlink = dl;
+                    break;
+                }
+            }
+
+            StreamingInterface streamingInterface = null;
+            streamingInterface = interfaceMap.get(id);
+            if (streamingInterface == null) {
+                ExtractionExtension archiver = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+
+                DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dlink);
+                Archive archive = archiver.getArchiveByFactory(fac);
+                if (archive != null) {
+                    streamingInterface = new RarStreamer(archive, extension);
+                    addHandler(id, streamingInterface);
+
+                } else {
+
+                    streamingInterface = new DirectStreamingImpl(extension, dlink);
+                    addHandler(id, streamingInterface);
+
+                }
+            }
+            System.out.println(dlink);
+            String format = Files.getExtension(dlink.getFinalFileName());
+            // seeking
+            String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
+
+            String ct = "video/" + format;
+            if (format.equals("mp3")) {
+                ct = "audio/mpeg";
+                dlnaFeatures = "DLNA.ORG_PN=MP3";
+            }
+            if (format.equals("flac")) {
+                ct = "audio/flac";
+                dlnaFeatures = null;
+            }
+
+            if (format.equals("mkv")) {
+                ct = "video/x-mkv";
+                // dlnaFeatures = null;
+
+            }
+
+            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
+
+            if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
+            response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
+            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
+            switch (request.getRequestType()) {
+            case HEAD:
+                System.out.println("HEAD " + request.getRequestHeaders());
+                response.setResponseCode(ResponseCode.SUCCESS_OK);
+                if (streamingInterface instanceof RarStreamer) {
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (((RarStreamer) streamingInterface).getFinalFileSize()) + ""));
+                } else {
+                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (dlink.getDownloadSize()) + ""));
+                }
+
+                response.getOutputStream();
+                response.closeConnection();
+                return;
+            case GET:
+                System.out.println("GET " + request.getRequestHeaders());
+
+                try {
+
+                    response.setResponseAsync(true);
+                    dlink.setVerifiedFileSize(dlink.getDownloadSize());
+                    new StreamingThread(response, request, streamingInterface).start();
+
+                } catch (final Throwable e) {
+                    if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;
+                    throw new RemoteAPIException(e);
+                }
+            }
+        } catch (final Throwable e) {
+            if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;
+            throw new RemoteAPIException(e);
+        } finally {
+            System.out.println("Resp: " + response.getResponseHeaders().toString());
         }
     }
 
