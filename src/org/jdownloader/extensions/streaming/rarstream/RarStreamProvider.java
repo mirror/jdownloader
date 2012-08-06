@@ -46,16 +46,16 @@ import org.jdownloader.logging.LogController;
  * 
  */
 class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
-    private Map<String, RandomAccessStream> openStreamMap   = new HashMap<String, RandomAccessStream>();
-    private String                          name;
-    private String                          password;
-    private Archive                         archive;
-    private HashMap<String, ArchiveFile>    map;
-    private String                          firstName;
-    private Logger                          logger;
-    private RandomAccessStream              latestAccessedStream;
-    private StreamingProvider               streamProvider;
-    private boolean                         readyForExtract = false;
+    private Map<String, IInStream>       openStreamMap   = new HashMap<String, IInStream>();
+    private String                       name;
+    private String                       password;
+    private Archive                      archive;
+    private HashMap<String, ArchiveFile> map;
+    private String                       firstName;
+    private Logger                       logger;
+    private RandomAccessStreaming        latestAccessedStream;
+    private StreamingProvider            streamProvider;
+    private boolean                      readyForExtract = false;
 
     public boolean isReadyForExtract() {
         return readyForExtract;
@@ -125,7 +125,7 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
         try {
 
             if (logger != null) logger.info("Stream request: " + filename);
-            RandomAccessStream stream = openStreamMap.get(filename);
+            IInStream stream = openStreamMap.get(filename);
             ArchiveFile af = map.get(filename);
             if (stream != null) {
 
@@ -137,9 +137,17 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
             name = filename;
             ArchiveFile archiveFile = af == null ? archive.getArchiveFileByPath(filename) : af;
             if (archiveFile == null) return null;
-            Streaming streaming = streamProvider.getStreamingProvider(((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0));
-            stream = new RandomAccessStream(archiveFile, filename, this, streaming);
-            openStreamMap.put(filename, stream);
+            if (archiveFile instanceof DownloadLinkArchiveFile) {
+                Streaming streaming = streamProvider.getStreamingProvider(((DownloadLinkArchiveFile) archiveFile).getDownloadLinks().get(0));
+
+                stream = new RandomAccessStreaming(archiveFile, filename, this, streaming);
+                openStreamMap.put(filename, stream);
+
+            } else {
+
+                stream = new ExtRandomAccessFileInStream(archiveFile, filename, this);
+                openStreamMap.put(filename, stream);
+            }
             return stream;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -152,12 +160,14 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
      * @throws IOException
      */
     void close() throws IOException {
-        Iterator<Entry<String, RandomAccessStream>> it = openStreamMap.entrySet().iterator();
+        Iterator<Entry<String, IInStream>> it = openStreamMap.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<String, RandomAccessStream> next = it.next();
-            try {
-                next.getValue().close();
-            } catch (final Throwable e) {
+            Entry<String, IInStream> next = it.next();
+            if (next.getValue() instanceof RandomAccessStreaming) {
+                try {
+                    ((RandomAccessStreaming) next.getValue()).close();
+                } catch (final Throwable e) {
+                }
             }
             it.remove();
         }
@@ -176,14 +186,14 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
         return password;
     }
 
-    public void setLatestAccessedStream(RandomAccessStream extRandomAccessFileInStream) {
+    public void setLatestAccessedStream(RandomAccessStreaming extRandomAccessFileInStream) {
         if (extRandomAccessFileInStream != latestAccessedStream) {
             logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
             latestAccessedStream = extRandomAccessFileInStream;
         }
     }
 
-    public RandomAccessStream getLatestAccessedStream() {
+    public RandomAccessStreaming getLatestAccessedStream() {
         return latestAccessedStream;
     }
 
@@ -192,8 +202,8 @@ class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallb
 
     }
 
-    public RandomAccessStream getPart1Stream() throws SevenZipException {
-        return (RandomAccessStream) getStream(getArchive().getFirstArchiveFile());
+    public RandomAccessStreaming getPart1Stream() throws SevenZipException {
+        return (RandomAccessStreaming) getStream(getArchive().getFirstArchiveFile());
 
     }
 

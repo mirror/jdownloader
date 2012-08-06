@@ -8,6 +8,7 @@ import java.util.Map;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
+import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.model.DefaultServiceManager;
@@ -29,6 +30,7 @@ import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.fourthline.cling.transport.spi.NetworkAddressFactory;
 import org.jdownloader.extensions.streaming.upnp.content.ContentDirectory;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -38,7 +40,9 @@ public class MediaServer implements Runnable {
     private static final int SERVER_VERSION = 1;
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("java.net.preferIPv4Stack", "true");
         Application.setApplication(".jd_home");
+
         // Start a user thread that runs the UPnP stack
         Thread serverThread = new Thread(new MediaServer());
         serverThread.setDaemon(false);
@@ -68,7 +72,11 @@ public class MediaServer implements Runnable {
             // return new StreamServerImpl(new StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
             // }
             // }, new RegistryListener[0]);
-            upnpService = new UpnpServiceImpl();
+            upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration() {
+                protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort) {
+                    return new FixedNetworkAddressFactoryImpl(streamListenPort);
+                }
+            });
 
             // Add the bound local device to the registry
             upnpService.getRegistry().addDevice(createDevice());

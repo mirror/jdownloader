@@ -11,7 +11,7 @@ import org.appwork.utils.io.streamingio.Streaming;
 import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
-public class RandomAccessStream implements IInStream {
+public class RandomAccessStreaming implements IInStream {
 
     private ArchiveFile archiveFile;
     private String      filename;
@@ -32,7 +32,7 @@ public class RandomAccessStream implements IInStream {
         this.filename = filename;
     }
 
-    public RandomAccessStream(ArchiveFile archiveFile, String filename, RarStreamProvider rarOpener, Streaming streaming) throws SevenZipException {
+    public RandomAccessStreaming(ArchiveFile archiveFile, String filename, RarStreamProvider rarOpener, Streaming streaming) throws SevenZipException {
         this.archiveFile = archiveFile;
         this.filename = filename;
         owner = rarOpener;
