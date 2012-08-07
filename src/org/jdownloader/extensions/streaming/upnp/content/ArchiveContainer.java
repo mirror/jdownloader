@@ -1,11 +1,14 @@
 package org.jdownloader.extensions.streaming.upnp.content;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.fourthline.cling.support.model.PersonWithRole;
@@ -22,6 +25,7 @@ import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
+import org.jdownloader.logging.LogController;
 import org.seamless.util.MimeType;
 
 public class ArchiveContainer extends FolderContainer {
@@ -34,12 +38,14 @@ public class ArchiveContainer extends FolderContainer {
     private Throwable           exception       = null;
     private ListContentProvider listContentProvider;
     private FolderContainer     empty;
+    private LogSource           logger;
 
     public ArchiveContainer(String id, ListContentProvider listContentProvider, ExtractionExtension archiver, StreamingExtension streamingExtension, Archive archive) {
         super(id, "[ARCHIVE] " + archive.getName());
         this.extractionExtension = archiver;
         this.streamingExtension = streamingExtension;
         this.archive = archive;
+        logger = LogController.getInstance().getLogger("streaming");
         this.listContentProvider = listContentProvider;
         listContentProvider.addChildren(this, empty = new FolderContainer(id + ".empty", "[Opening rar...]"));
     }
@@ -92,8 +98,10 @@ public class ArchiveContainer extends FolderContainer {
             triedToOpen = true;
         } catch (DialogClosedException e) {
             // password unknown
+            logger.log(e);
             this.unknownPassword = true;
         } catch (Throwable e) {
+            logger.log(e);
             exception = e;
         }
 
@@ -108,14 +116,23 @@ public class ArchiveContainer extends FolderContainer {
         } else {
 
             ContentView cv = archive.getContentView();
-            mountFolder(this, cv);
+            try {
+                mountFolder(this, cv);
+            } catch (Throwable e) {
+                exception = e;
+                listContentProvider.addChildren(this, new ErrorEntry(exception.getClass().getSimpleName() + ": " + exception.getMessage()));
+                logger.log(e);
+            }
         }
 
     }
 
-    private void mountFile(FolderContainer parent, final PackedFile archiveFile) {
+    private void mountFile(FolderContainer parent, final PackedFile archiveFile) throws UnsupportedEncodingException {
 
-        String id = parent.getID() + "/" + archiveFile.getName();
+        String id;
+
+        id = parent.getID() + "/" + URLEncoder.encode(archiveFile.getName(), "UTF-8");
+
         final String url = "http://" + listContentProvider.getHost() + ":3128/vlcstreaming/stream?" + id;
         if (archiveFile.isDirectory()) {
             FolderContainer dir = new FolderContainer(id, archiveFile.getName());
@@ -202,7 +219,7 @@ public class ArchiveContainer extends FolderContainer {
 
     }
 
-    private void mountFolder(FolderContainer dir, PackedFile file) {
+    private void mountFolder(FolderContainer dir, PackedFile file) throws UnsupportedEncodingException {
         for (Entry<String, PackedFile> e : file.getChildren().entrySet()) {
             mountFile(dir, e.getValue());
         }

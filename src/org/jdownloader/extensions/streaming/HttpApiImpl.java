@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.URLDecoder;
 import java.util.HashMap;
 
 import jd.controlling.downloadcontroller.DownloadController;
@@ -67,9 +68,11 @@ public class HttpApiImpl implements HttpApiDefinition {
 
         try {
 
-            String subpath = id.substring(32);
-            while (subpath.startsWith("/") || subpath.startsWith("\\"))
+            String subpath = URLDecoder.decode(id.substring(32), "UTF-8");
+            while (subpath.startsWith("/") || subpath.startsWith("\\")) {
                 subpath = subpath.substring(1);
+            }
+
             id = id.substring(0, 32);
             DownloadLink dlink = null;
             for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
@@ -91,7 +94,8 @@ public class HttpApiImpl implements HttpApiDefinition {
                     streamingInterface = new RarStreamer(archive, extension) {
                         protected String askPassword() throws DialogClosedException, DialogCanceledException {
 
-                            // if password is not in list, we cannot open the archive.
+                            // if password is not in list, we cannot open the
+                            // archive.
                             throw new DialogClosedException(0);
                         }
 
