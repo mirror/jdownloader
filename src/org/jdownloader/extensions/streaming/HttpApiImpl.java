@@ -78,7 +78,7 @@ public class HttpApiImpl implements HttpApiDefinition {
                     break;
                 }
             }
-
+            final DownloadLink link = dlink;
             StreamingInterface streamingInterface = null;
             streamingInterface = interfaceMap.get(id);
             boolean archiveIsOpen = true;
@@ -114,7 +114,14 @@ public class HttpApiImpl implements HttpApiDefinition {
 
                 } else {
 
-                    streamingInterface = new DirectStreamingImpl(extension, dlink);
+                    streamingInterface = new DirectStreamingImpl(extension, dlink) {
+
+                        @Override
+                        public long getFinalFileSize() {
+                            return link.getDownloadSize();
+                        }
+
+                    };
                     addHandler(id, streamingInterface);
 
                 }
@@ -152,13 +159,14 @@ public class HttpApiImpl implements HttpApiDefinition {
                 while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
                     Thread.sleep(100);
                 }
-            }
-            if (((RarStreamer) streamingInterface).getException() != null) {
-                response.setResponseCode(ResponseCode.ERROR_BAD_REQUEST);
-                response.getOutputStream();
-                response.closeConnection();
-                return;
 
+                if (((RarStreamer) streamingInterface).getException() != null) {
+                    response.setResponseCode(ResponseCode.ERROR_BAD_REQUEST);
+                    response.getOutputStream();
+                    response.closeConnection();
+                    return;
+
+                }
             }
             switch (request.getRequestType()) {
             case HEAD:
@@ -179,7 +187,7 @@ public class HttpApiImpl implements HttpApiDefinition {
                 try {
 
                     response.setResponseAsync(true);
-                    dlink.setVerifiedFileSize(dlink.getDownloadSize());
+
                     new StreamingThread(response, request, streamingInterface).start();
 
                 } catch (final Throwable e) {

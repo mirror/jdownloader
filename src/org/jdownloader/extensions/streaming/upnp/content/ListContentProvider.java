@@ -91,7 +91,6 @@ public class ListContentProvider implements ContentProvider {
         for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
             final Archive archive = extractionExtension.getArchiveByFactory(fac);
-            System.out.println(archive);
             final String id = Hash.getMD5(dl.getDownloadURL());
             final String url = "http://192.168.2.122:3128/vlcstreaming/stream?" + id;
             if (archive != null) {
@@ -177,7 +176,7 @@ public class ListContentProvider implements ContentProvider {
                         continue;
                     }
                 }
-                System.out.println(ext);
+
             }
         }
     }

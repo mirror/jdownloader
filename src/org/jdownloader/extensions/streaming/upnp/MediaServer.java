@@ -6,7 +6,6 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.utils.Application;
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
@@ -20,12 +19,16 @@ import org.fourthline.cling.model.meta.LocalDevice;
 import org.fourthline.cling.model.meta.LocalService;
 import org.fourthline.cling.model.meta.ManufacturerDetails;
 import org.fourthline.cling.model.meta.ModelDetails;
+import org.fourthline.cling.model.meta.RemoteDevice;
+import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.model.profile.HeaderDeviceDetailsProvider;
 import org.fourthline.cling.model.types.DLNACaps;
 import org.fourthline.cling.model.types.DLNADoc;
 import org.fourthline.cling.model.types.DeviceType;
 import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDN;
+import org.fourthline.cling.registry.DefaultRegistryListener;
+import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
@@ -41,21 +44,15 @@ public class MediaServer implements Runnable {
 
     private static final int SERVER_VERSION = 1;
 
-    public static void main(String[] args) throws Exception {
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        Application.setApplication(".jd_home");
-
-        // Start a user thread that runs the UPnP stack
-        Thread serverThread = new Thread(new MediaServer());
-        serverThread.setDaemon(false);
-        serverThread.start();
-    }
-
-    private LogSource       logger;
-    private UpnpServiceImpl upnpService;
+    private LogSource        logger;
+    private UpnpServiceImpl  upnpService;
 
     public MediaServer() {
-        logger = LogController.getInstance().getLogger("UPNP Media Server");
+        logger = LogController.getInstance().getLogger("streaming");
+    }
+
+    public void getProtocolInfo(InetAddress adr) {
+
     }
 
     public void run() {
@@ -86,7 +83,40 @@ public class MediaServer implements Runnable {
 
             // Add the bound local device to the registry
             upnpService.getRegistry().addDevice(createDevice());
+            DefaultRegistryListener listener = new DefaultRegistryListener() {
 
+                @Override
+                public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
+
+                    Service switchPower;
+
+                    if ("MediaRenderer".equals(device.getType().getType())) {
+                        logger.info("New MediaRenderer Device:" + device.getDisplayString());
+                        logger.info("IP: " + device.getIdentity().getDescriptorURL().getHost());
+                        logger.info(device.toString());
+                        for (Service s : device.getServices()) {
+                            logger.info("Service: " + s);
+                        }
+                        addRenderer(new MediaRenderer(upnpService, device));
+                    }
+
+                }
+
+                @Override
+                public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
+                    Service switchPower;
+                    if ("MediaRenderer".equals(device.getType().getType())) {
+                        removeRenderer(new MediaRenderer(upnpService, device));
+
+                    }
+                }
+
+            };
+
+            // upnpService.getRegistry().addListener(listener);
+            //
+            // // Broadcast a search message for all devices
+            // upnpService.getControlPoint().search(new STAllHeader());
         } catch (Exception ex) {
             try {
                 upnpService.shutdown();
@@ -95,6 +125,16 @@ public class MediaServer implements Runnable {
             }
             logger.log(ex);
         }
+    }
+
+    private HashMap<String, MediaRenderer> renderer = new HashMap<String, MediaRenderer>();
+
+    protected void removeRenderer(MediaRenderer mediaRenderer) {
+        renderer.remove(mediaRenderer.getUniqueId());
+    }
+
+    protected void addRenderer(MediaRenderer mediaRenderer) {
+        renderer.put(mediaRenderer.getUniqueId(), mediaRenderer);
     }
 
     private LocalDevice createDevice() throws IOException, ValidationException {
@@ -163,7 +203,7 @@ public class MediaServer implements Runnable {
         LocalService<ContentDirectory> mp3ContentService = new AnnotationLocalServiceBinder().read(ContentDirectory.class);
 
         // init here to bypass the lazy init.
-        final ContentDirectory library = new ContentDirectory();
+        final ContentDirectory library = new ContentDirectory(this);
         mp3ContentService.setManager(new DefaultServiceManager<ContentDirectory>(mp3ContentService, ContentDirectory.class) {
 
             @Override
