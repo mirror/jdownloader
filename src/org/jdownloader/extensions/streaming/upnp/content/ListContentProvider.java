@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.streaming.upnp.content;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -25,6 +26,7 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
+import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.seamless.util.MimeType;
 
 public class ListContentProvider implements ContentProvider {
@@ -32,12 +34,13 @@ public class ListContentProvider implements ContentProvider {
     private DIDLParser          didlParser;
     private ExtractionExtension extractionExtension;
     private StreamingExtension  streamingExtension;
+    private InetAddress         address;
 
-    public ListContentProvider() {
+    public ListContentProvider(MediaServer mediaServer) {
         didlParser = new DIDLParser();
         extractionExtension = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
         streamingExtension = (StreamingExtension) ExtensionController.getInstance().getExtension(StreamingExtension.class)._getExtension();
-
+        address = mediaServer.getRouter().getNetworkAddressFactory().getBindAddresses()[0];
         refresh();
         DownloadController.getInstance().addListener(new DownloadControllerListener() {
 
@@ -69,7 +72,7 @@ public class ListContentProvider implements ContentProvider {
         // PersonWithRole artist = new PersonWithRole("MyArtist", "Performer");
         // MimeType mimeType = new MimeType("audio", "mpeg");
         // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l,
-        // "http://192.168.2.122:3128/vlcstreaming/video?mp3");
+        // "http://"+address.getHostAddress()+":3128/vlcstreaming/video?mp3");
         // dl.get
         // return new MusicTrack(getID() + "", parent.getID() + "",
         // "MyTitle.mp3", artist.getName(), "MyAlbum", artist, res);
@@ -92,7 +95,7 @@ public class ListContentProvider implements ContentProvider {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
             final Archive archive = extractionExtension.getArchiveByFactory(fac);
             final String id = Hash.getMD5(dl.getDownloadURL());
-            final String url = "http://192.168.2.122:3128/vlcstreaming/stream?" + id;
+            final String url = "http://" + address.getHostAddress() + ":3128/vlcstreaming/stream?" + id;
             if (archive != null) {
 
                 if (archive.getFirstArchiveFile().getName().endsWith(".rar")) {

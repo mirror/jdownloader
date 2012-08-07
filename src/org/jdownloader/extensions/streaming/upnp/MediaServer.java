@@ -33,6 +33,7 @@ import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.spi.NetworkAddressFactory;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -62,17 +63,21 @@ public class MediaServer implements Runnable {
                 Thread.sleep(1000);
             }
             logger.info("Wait for extraction Module: Done");
-            // final UpnpService upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(8895) {
+            // final UpnpService upnpService = new UpnpServiceImpl(new
+            // DefaultUpnpServiceConfiguration(8895) {
             // // Override using Apache Http instead of sun http
             // // This could be used to implement our own http stack instead
             // @Override
-            // public StreamClient<StreamClientConfigurationImpl> createStreamClient() {
+            // public StreamClient<StreamClientConfigurationImpl>
+            // createStreamClient() {
             // return new StreamClientImpl(new StreamClientConfigurationImpl());
             // }
             //
             // @Override
-            // public StreamServer createStreamServer(NetworkAddressFactory networkAddressFactory) {
-            // return new StreamServerImpl(new StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
+            // public StreamServer createStreamServer(NetworkAddressFactory
+            // networkAddressFactory) {
+            // return new StreamServerImpl(new
+            // StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
             // }
             // }, new RegistryListener[0]);
             upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration() {
@@ -218,6 +223,10 @@ public class MediaServer implements Runnable {
 
     public void shutdown() {
         upnpService.shutdown();
+    }
+
+    public Router getRouter() {
+        return upnpService.getRouter();
     }
 
 }

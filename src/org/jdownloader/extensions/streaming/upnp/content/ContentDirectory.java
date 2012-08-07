@@ -30,7 +30,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
 
     public ContentDirectory(MediaServer mediaServer) {
 
-        defaultProvider = ContentFactory.create();
+        defaultProvider = ContentFactory.create(mediaServer);
         this.mediaServer = mediaServer;
         logger = LogController.getInstance().getLogger("streaming");
     }
@@ -39,7 +39,8 @@ public class ContentDirectory extends AbstractContentDirectoryService {
     public BrowseResult browse(String objectID, BrowseFlag browseFlag, String filter, long firstResult, long maxResults, SortCriterion[] orderby) throws ContentDirectoryException {
         try {
 
-            // This is just an example... you have to create the DIDL content dynamically!
+            // This is just an example... you have to create the DIDL content
+            // dynamically!
             System.out.println(objectID + " - browseFlag:" + browseFlag + " filter:" + filter + " firstResult:" + firstResult + " maxResults:" + maxResults + " orderby:" + orderby);
             DIDLContent didl = new DIDLContent();
             ContentProvider contentProvider = getContentProvider(org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders());
