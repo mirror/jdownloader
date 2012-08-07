@@ -147,6 +147,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
             }
             try {
                 if (bestItem == null) {
+                    logger.info("Path: " + pathToStream);
                     for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                         if (pathToStream == null) {
                             if (bestItem == null && !item.isFolder()) {
@@ -157,9 +158,11 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                 bestItemSize = item.getSize();
                             }
                         } else {
-                            if (pathToStream.equals(item.getPath())) {
+                            if (pathToStream.replace("/", "\\").equals(item.getPath().replace("/", "\\"))) {
                                 bestItem = item;
                                 bestItemSize = item.getSize();
+                            } else {
+                                logger.info(pathToStream + "!=" + item.getPath());
                             }
                         }
 
@@ -289,7 +292,8 @@ public class RarStreamer implements Runnable, StreamingInterface {
             for (final ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
-                     * we also check for items with size ==0, they should have a packedsize>0
+                     * we also check for items with size ==0, they should have a
+                     * packedsize>0
                      */
                     continue;
                 }
@@ -319,11 +323,17 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                 public int write(byte[] data) throws SevenZipException {
                                     int toWrite = Math.min(signatureBuffer.free(), data.length);
                                     if (toWrite > 0) {
-                                        /* we still have enough buffer left to write the data */
+                                        /*
+                                         * we still have enough buffer left to
+                                         * write the data
+                                         */
                                         signatureBuffer.write(data, 0, toWrite);
                                     }
                                     if (signatureBuffer.size() >= signatureMinLength) {
-                                        /* we have enough data available for a signature check */
+                                        /*
+                                         * we have enough data available for a
+                                         * signature check
+                                         */
                                         StringBuilder sigger = new StringBuilder();
                                         for (int i = 0; i < signatureBuffer.size() - 1; i++) {
                                             String s = Integer.toHexString(signatureBuffer.getInternalBuffer()[i]);
@@ -334,14 +344,20 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                         Signature signature = getFileSignatures().getSignature(sigger.toString());
                                         if (signature != null) {
                                             if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
-                                                /* signature matches, lets abort PWFinding now */
+                                                /*
+                                                 * signature matches, lets abort
+                                                 * PWFinding now
+                                                 */
                                                 passwordfound.found();
                                                 return 0;
                                             }
                                         }
                                     }
                                     if (item.getSize() <= maxPWCheckSize) {
-                                        /* we still allow further extraction as the itemSize <= maxPWCheckSize */
+                                        /*
+                                         * we still allow further extraction as
+                                         * the itemSize <= maxPWCheckSize
+                                         */
                                         return data.length;
                                     } else {
                                         /* this will throw SevenZipException */
