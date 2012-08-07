@@ -16,6 +16,7 @@ public class FolderContainer implements ContainerNode {
     private String        title;
     private ContainerNode parent;
     private String        id;
+    private RootContainer root;
 
     public FolderContainer(String id, String title) {
         this.title = title;
@@ -70,6 +71,16 @@ public class FolderContainer implements ContainerNode {
     public void removeChildren(FolderContainer child) {
         children.remove(child);
         child.setParent(null);
+    }
+
+    @Override
+    public RootContainer getRoot() {
+        return root;
+    }
+
+    @Override
+    public void setRoot(RootContainer root) {
+        this.root = root;
     }
 
 }

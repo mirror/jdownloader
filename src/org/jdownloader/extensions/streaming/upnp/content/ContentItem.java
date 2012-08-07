@@ -4,9 +4,20 @@ public abstract class ContentItem implements ItemNode {
 
     protected ContainerNode parent;
     private String          id;
+    private RootContainer   root;
 
     public ContentItem(String id) {
         this.id = id;
+    }
+
+    @Override
+    public RootContainer getRoot() {
+        return root;
+    }
+
+    @Override
+    public void setRoot(RootContainer root) {
+        this.root = root;
     }
 
     @Override

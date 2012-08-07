@@ -1,12 +1,9 @@
 package org.jdownloader.extensions.streaming.upnp.content;
 
 import java.net.InetAddress;
-import java.util.HashMap;
 import java.util.HashSet;
 
 import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadControllerEvent;
-import jd.controlling.downloadcontroller.DownloadControllerListener;
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
@@ -41,18 +38,21 @@ public class ListContentProvider implements ContentProvider {
         extractionExtension = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
         streamingExtension = (StreamingExtension) ExtensionController.getInstance().getExtension(StreamingExtension.class)._getExtension();
         address = mediaServer.getRouter().getNetworkAddressFactory().getBindAddresses()[0];
-        refresh();
-        DownloadController.getInstance().addListener(new DownloadControllerListener() {
+        root = refresh();
+        new Thread("Refresher Contentprovider") {
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(5 * 60 * 1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
 
-            @Override
-            public void onDownloadControllerEvent(DownloadControllerEvent event) {
-                switch (event.getType()) {
-                case REFRESH_STRUCTURE:
-                case REMOVE_CONTENT:
-                    refresh();
+                    root = refresh();
                 }
+
             }
-        });
+        }.start();
         // for (DownloadLink dl : ) {
         // String ext = Files.getExtension(dl.getFinalFileName());
         //
@@ -83,8 +83,8 @@ public class ListContentProvider implements ContentProvider {
 
     }
 
-    public void refresh() {
-        createRoot();
+    public RootContainer refresh() {
+        RootContainer root = new RootContainer();
         FolderContainer downloadlist;
 
         addChildren(root, downloadlist = new FolderContainer("1", "DownloadList"));
@@ -100,7 +100,7 @@ public class ListContentProvider implements ContentProvider {
 
                 if (archive.getFirstArchiveFile().getName().endsWith(".rar")) {
                     if (archives.add(extractionExtension.createArchiveID(fac))) {
-                        addChildren(downloadlist, new ArchiveContainer(id, this, extractionExtension, streamingExtension, archive));
+                        addChildren(downloadlist, new ArchiveContainer(root, id, this, extractionExtension, streamingExtension, archive));
                     }
                 }
             } else {
@@ -182,6 +182,7 @@ public class ListContentProvider implements ContentProvider {
 
             }
         }
+        return root;
     }
 
     String formatDuration(long ms) {
@@ -198,18 +199,10 @@ public class ListContentProvider implements ContentProvider {
         return hours + ":" + minutes + ":" + seconds;
     }
 
-    private HashMap<String, ContentNode> map = new HashMap<String, ContentNode>();
-
-    private void createRoot() {
-        root = new RootContainer();
-        map.clear();
-        map.put(root.getID() + "", root);
-    }
-
     public void addChildren(ContainerNode parent, ContentNode child) {
         parent.addChildren(child);
-
-        if (map.put(child.getID() + "", child) != null)
+        child.setRoot(parent.getRoot());
+        if (parent.getRoot().getMap().put(child.getID() + "", child) != null)
 
         //
             throw new WTFException("ID DUPES");
@@ -217,7 +210,7 @@ public class ListContentProvider implements ContentProvider {
 
     @Override
     public ContentNode getNode(String objectID) {
-        return map.get(objectID);
+        return root.getMap().get(objectID);
     }
 
     @Override
@@ -233,7 +226,7 @@ public class ListContentProvider implements ContentProvider {
 
     public void removeChildren(ContainerNode parent, FolderContainer child) {
         parent.removeChildren(child);
-        map.remove(child.getID());
+        parent.getRoot().getMap().remove(child.getID());
     }
 
     public String getHost() {

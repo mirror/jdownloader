@@ -40,14 +40,16 @@ public class ArchiveContainer extends FolderContainer {
     private FolderContainer     empty;
     private LogSource           logger;
 
-    public ArchiveContainer(String id, ListContentProvider listContentProvider, ExtractionExtension archiver, StreamingExtension streamingExtension, Archive archive) {
+    public ArchiveContainer(RootContainer root, String id, ListContentProvider listContentProvider, ExtractionExtension archiver, StreamingExtension streamingExtension, Archive archive) {
         super(id, "[ARCHIVE] " + archive.getName());
+        this.setRoot(root);
         this.extractionExtension = archiver;
         this.streamingExtension = streamingExtension;
         this.archive = archive;
         logger = LogController.getInstance().getLogger("streaming");
         this.listContentProvider = listContentProvider;
         listContentProvider.addChildren(this, empty = new FolderContainer(id + ".empty", "[Opening rar...]"));
+        getChildren();
     }
 
     public List<ContentNode> getChildren() {
