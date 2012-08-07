@@ -8,9 +8,14 @@ import org.fourthline.cling.support.model.container.Container;
 public class FolderContainer implements ContainerNode {
 
     private List<ContentNode> children = new ArrayList<ContentNode>();
-    private String            title;
-    private ContainerNode     parent;
-    private String            id;
+
+    public void setChildren(List<ContentNode> children) {
+        this.children = children;
+    }
+
+    private String        title;
+    private ContainerNode parent;
+    private String        id;
 
     public FolderContainer(String id, String title) {
         this.title = title;
@@ -59,6 +64,12 @@ public class FolderContainer implements ContainerNode {
     @Override
     public String getTitle() {
         return title;
+    }
+
+    @Override
+    public void removeChildren(FolderContainer child) {
+        children.remove(child);
+        child.setParent(null);
     }
 
 }

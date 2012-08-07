@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.streaming.rarstream;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.concurrent.atomic.AtomicLong;
 
 import net.sf.sevenzipjbinding.IInStream;
@@ -64,18 +63,18 @@ public class RandomAccessStreaming implements IInStream {
 
             }
             if (ret > 0) {
-                if (!owner.isReadyForExtract()) {
-                    StringBuffer hexString = new StringBuffer();
-                    for (int i = 0; i < ret; i++) {
-                        String hex = Integer.toHexString(0xFF & abyte0[i]);
-                        if (hex.length() == 1) hexString.append("0");
-                        hexString.append(hex);
-                    }
-                    owner.getLogger().finer("Read at " + currentPosition + " " + ret + " bytes: " + hexString);
-                    if (ret > 100) {
-                        owner.getLogger().finer(URLEncoder.encode(new String(abyte0), "UTF-8"));
-                    }
-                }
+                // if (!owner.isReadyForExtract()) {
+                // StringBuffer hexString = new StringBuffer();
+                // for (int i = 0; i < ret; i++) {
+                // String hex = Integer.toHexString(0xFF & abyte0[i]);
+                // if (hex.length() == 1) hexString.append("0");
+                // hexString.append(hex);
+                // }
+                // owner.getLogger().finer("Read at " + currentPosition + " " + ret + " bytes: " + hexString);
+                // if (ret > 100) {
+                // owner.getLogger().finer(URLEncoder.encode(new String(abyte0), "UTF-8"));
+                // }
+                // }
                 currentPosition.addAndGet(ret);
 
             }
@@ -112,9 +111,9 @@ public class RandomAccessStreaming implements IInStream {
         default:
             throw new RuntimeException((new StringBuilder()).append("Seek: unknown origin: ").append(i).toString());
         }
-        if (!owner.isReadyForExtract()) {
-            owner.getLogger().finer("Seek " + currentPosition.get() + " " + filename + " i " + i + " L " + l);
-        }
+        // if (!owner.isReadyForExtract()) {
+        // owner.getLogger().finer("Seek " + currentPosition.get() + " " + filename + " i " + i + " L " + l);
+        // }
         return currentPosition.get();
     }
 

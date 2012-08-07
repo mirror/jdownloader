@@ -16,6 +16,10 @@ public interface ArchiveSettings extends ConfigInterface {
 
     public void setPasswords(HashSet<String> passwords);
 
+    public void setFinalPassword(String password);
+
+    public String getFinalPassword();
+
     public String getExtractPath();
 
     public void setExtractPath(String extractPath);

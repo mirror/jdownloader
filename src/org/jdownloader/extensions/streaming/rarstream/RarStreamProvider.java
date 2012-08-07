@@ -45,7 +45,7 @@ import org.jdownloader.logging.LogController;
  * @author botzi
  * 
  */
-class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
+public class RarStreamProvider implements IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
     private Map<String, IInStream>       openStreamMap   = new HashMap<String, IInStream>();
     private String                       name;
     private String                       password;

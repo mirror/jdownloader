@@ -38,15 +38,14 @@ public class Archive {
      * Encrypted archive
      */
     private boolean protect = false;
-    private String  password;
 
     /**
      * returns null or the correct password
      * 
      * @return
      */
-    public String getPassword() {
-        return password;
+    public String getFinalPassword() {
+        return getSettings().getFinalPassword();
     }
 
     /**
@@ -55,8 +54,9 @@ public class Archive {
      * 
      * @param password
      */
-    public void setPassword(String password) {
-        this.password = password;
+    public void setFinalPassword(String password) {
+
+        getSettings().setFinalPassword(password);
     }
 
     /**

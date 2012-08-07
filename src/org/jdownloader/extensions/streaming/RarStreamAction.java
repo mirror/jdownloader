@@ -6,18 +6,23 @@ import java.util.Locale;
 
 import javax.swing.ImageIcon;
 
+import jd.Launcher;
+import jd.nutils.Executer;
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
+import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.logging.LogController;
 
 public class RarStreamAction extends AppAction {
 
-    private Archive               archive;
+    private Archive            archive;
     private StreamingExtension extension;
 
     public RarStreamAction(Archive archive, ExtractionExtension extractor, StreamingExtension extension) {
@@ -38,8 +43,18 @@ public class RarStreamAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        new RarStreamer(archive, extension).start();
+        RarStreamer rs = new RarStreamer(archive, extension);
+        rs.start();
+        open(rs.getID());
 
     }
 
+    protected void open(String ID) {
+        Executer exec = new Executer(extension.getVLCBinary());
+        exec.setLogger(LogController.CL());
+        exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID });
+        exec.setRunin(Application.getRoot(Launcher.class));
+        exec.setWaitTimeout(0);
+        exec.start();
+    }
 }

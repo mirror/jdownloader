@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import jd.Launcher;
-import jd.nutils.Executer;
 import jd.nutils.io.FileSignatures;
 import jd.nutils.io.Signature;
 import net.sf.sevenzipjbinding.ArchiveFormat;
@@ -18,6 +16,7 @@ import net.sf.sevenzipjbinding.ISequentialOutStream;
 import net.sf.sevenzipjbinding.ISevenZipInArchive;
 import net.sf.sevenzipjbinding.SevenZip;
 import net.sf.sevenzipjbinding.SevenZipException;
+import net.sf.sevenzipjbinding.simple.ISimpleInArchive;
 import net.sf.sevenzipjbinding.simple.ISimpleInArchiveItem;
 
 import org.appwork.utils.Application;
@@ -33,11 +32,12 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
-import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.content.ContentView;
+import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.StreamingInterface;
 import org.jdownloader.extensions.streaming.StreamingProvider;
@@ -49,20 +49,27 @@ public class RarStreamer implements Runnable, StreamingInterface {
     private Archive              archive;
     private ISevenZipInArchive   rarArchive;
     private LogSource            logger;
-    private StreamingProvider    streamProvider;
+    protected StreamingProvider  streamProvider;
     private StreamingExtension   extension;
-    private ISimpleInArchiveItem bestItem = null;
-    private RarStreamProvider    rarStreamProvider;
+    private ISimpleInArchiveItem bestItem     = null;
+    protected RarStreamProvider  rarStreamProvider;
     private StreamingChunk       streamingChunk;
     private Thread               extractionThread;
     private ExtractionExtension  extractor;
     private FileSignatures       fileSignatures;
+    private String               pathToStream = null;
+    private Throwable            exception;
+    private long                 bestItemSize = -1l;
 
     public RarStreamer(Archive archive, StreamingExtension extension) {
+        this(archive, extension, (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension());
+    }
+
+    public RarStreamer(Archive archive, StreamingExtension extension, ExtractionExtension extractionExtension) {
         this.archive = archive;
         this.extension = extension;
         this.streamProvider = extension.getStreamProvider();
-        extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+        extractor = extractionExtension;
         logger = LogController.CL();
     }
 
@@ -74,13 +81,8 @@ public class RarStreamer implements Runnable, StreamingInterface {
     public void run() {
         try {
 
-            String ID = "extract" + archive.getFactory().getID();
-            StreamingInterface streamingInterface = extension.getVlcstreamingAPI().getStreamingInterface(ID);
-            if (streamingInterface != null) {
-                open(ID);
+            String ID = getID();
 
-                return;
-            }
             openArchiveInDialog();
 
             extension.getVlcstreamingAPI().addHandler(ID, this);
@@ -88,24 +90,24 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
             extract();
 
-            open(ID);
         } catch (Throwable e) {
             logger.log(e);
-            Dialog.getInstance().showExceptionDialog("Error occured", e.getMessage(), e);
+            exception = e;
+            showWarning(e.getMessage());
+
         }
 
     }
 
-    protected void open(String ID) {
-        Executer exec = new Executer(extension.getVLCBinary());
-        exec.setLogger(LogController.CL());
-        exec.addParameters(new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID });
-        exec.setRunin(Application.getRoot(Launcher.class));
-        exec.setWaitTimeout(0);
-        exec.start();
+    public Throwable getException() {
+        return exception;
     }
 
-    public void openArchive(Archive archive, ExtractionExtension extractor) throws ExtractionException, DialogClosedException, DialogCanceledException, InterruptedException {
+    public String getID() {
+        return "extract" + archive.getFactory().getID();
+    }
+
+    public void openArchive() throws ExtractionException, DialogClosedException, DialogCanceledException, InterruptedException {
         open();
         if (archive.isProtected()) {
 
@@ -138,17 +140,51 @@ public class RarStreamer implements Runnable, StreamingInterface {
                     if (checkPassword(password)) {
                         break;
                     } else {
-                        Dialog.getInstance().showMessageDialog(T._.wrong_password());
+                        showWarning(T._.wrong_password());
+
                     }
                 }
             }
+            try {
+                if (bestItem == null) {
+                    for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
+                        if (pathToStream == null) {
+                            if (bestItem == null && !item.isFolder()) {
+                                bestItem = item;
+                                bestItemSize = item.getSize();
+                            } else if (!item.isFolder() && bestItem != null && bestItem.getSize() < item.getSize()) {
+                                bestItem = item;
+                                bestItemSize = item.getSize();
+                            }
+                        } else {
+                            if (pathToStream.equals(item.getPath())) {
+                                bestItem = item;
+                                bestItemSize = item.getSize();
+                            }
+                        }
 
-            logger.info("Found password for " + archive + "->" + archive.getPassword());
+                        if (item.isEncrypted()) {
+                            archive.setProtected(true);
+                        }
+                    }
+                    logger.info("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
+                }
+
+            } catch (Throwable e) {
+                logger.log(e);
+                throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
+            }
+            logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
             /* avoid duplicates */
-            pwList.remove(archive.getPassword());
-            pwList.add(0, archive.getPassword());
+            pwList.remove(archive.getFinalPassword());
+            pwList.add(0, archive.getFinalPassword());
+
             extractor.getSettings().setPasswordList(pwList);
         }
+    }
+
+    protected void showWarning(String wrong_password) {
+        Dialog.getInstance().showMessageDialog(wrong_password);
     }
 
     protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
@@ -156,7 +192,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
             @Override
             public void run() throws Exception {
-                openArchive(archive, extractor);
+                openArchive();
 
             }
 
@@ -330,7 +366,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
                 // if (filter(item.getPath())) continue;
             }
             if (!passwordfound.getBoolean()) return false;
-            archive.setPassword(password);
+            archive.setFinalPassword(password);
 
             return true;
         } catch (SevenZipException e) {
@@ -356,7 +392,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
         // password0
 
-        String password = archive.getPassword();
+        String password = archive.getFinalPassword();
         if (password == null) password = "";
         // }
 
@@ -365,16 +401,26 @@ public class RarStreamer implements Runnable, StreamingInterface {
             IInStream rarStream = rarStreamProvider.getStream(archive.getFirstArchiveFile());
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, rarStreamProvider);
             for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
-                if (bestItem == null && !item.isFolder()) {
-                    bestItem = item;
-                } else if (!item.isFolder() && bestItem != null && bestItem.getSize() < item.getSize()) {
-                    bestItem = item;
+                if (pathToStream == null) {
+                    if (bestItem == null && !item.isFolder()) {
+                        bestItem = item;
+                        bestItemSize = item.getSize();
+                    } else if (!item.isFolder() && bestItem != null && bestItem.getSize() < item.getSize()) {
+                        bestItem = item;
+                        bestItemSize = item.getSize();
+                    }
+                } else {
+                    if (pathToStream.replace("/", "\\").equals(item.getPath().replace("/", "\\"))) {
+                        bestItem = item;
+                        bestItemSize = item.getSize();
+                    }
                 }
+
                 if (item.isEncrypted()) {
                     archive.setProtected(true);
                 }
             }
-            logger.info("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
+            if (bestItem != null) logger.info("best item: " + bestItem.getPath() + " size: " + bestItem.getSize());
             return;
         } catch (SevenZipException e) {
             logger.log(e);
@@ -403,14 +449,14 @@ public class RarStreamer implements Runnable, StreamingInterface {
         if (passwords.size() == 1) {
             password = passwords.iterator().next();
         }
-        if (!StringUtils.isEmpty(archive.getPassword())) {
-            password = archive.getPassword();
+        if (!StringUtils.isEmpty(archive.getFinalPassword())) {
+            password = archive.getFinalPassword();
         }
         // if (StringUtils.isEmpty(password)) {
         if (passwords.size() > 0) {
-            password = Dialog.getInstance().showInputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
+            password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor(passwords.toString()), password, null, null, null);
         } else {
-            password = Dialog.getInstance().showInputDialog(0, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
+            password = Dialog.getInstance().showInputDialog(Dialog.LOGIC_COUNTDOWN, T._.enter_password(archive.getName()), T._.enter_passwordfor2(), password, null, null, null);
         }
         return password;
     }
@@ -437,7 +483,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                     throw new SevenZipException(e);
                                 }
                             }
-                        }, archive.getPassword());
+                        }, archive.getFinalPassword());
                     } else {
                         rarArchive.extractSlow(bestItem.getItemIndex(), new ISequentialOutStream() {
 
@@ -464,6 +510,10 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
     }
 
+    public Thread getExtractionThread() {
+        return extractionThread;
+    }
+
     public void close() {
         try {
             rarArchive.close();
@@ -482,11 +532,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
     @Override
     public long getFinalFileSize() {
-        try {
-            return bestItem.getSize();
-        } catch (final Throwable e) {
-            return -1;
-        }
+        return bestItemSize;
     }
 
     @Override
@@ -531,5 +577,32 @@ public class RarStreamer implements Runnable, StreamingInterface {
                 return false;
             }
         };
+    }
+
+    private void updateContentView(ISimpleInArchive simpleInterface) {
+        try {
+            ContentView newView = new ContentView();
+            for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
+                try {
+                    String p = item.getPath();
+                    if (item.getPath().trim().equals("")) continue;
+                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
+                } catch (SevenZipException e) {
+                    logger.log(e);
+                }
+            }
+            archive.setContentView(newView);
+        } catch (SevenZipException e) {
+            logger.log(e);
+        }
+    }
+
+    public void updateContentView() throws ExtractionException {
+        if (rarArchive == null) throw new ExtractionException("Archive is not open");
+        updateContentView(rarArchive.getSimpleInterface());
+    }
+
+    public void setPath(String subpath) {
+        this.pathToStream = subpath;
     }
 }

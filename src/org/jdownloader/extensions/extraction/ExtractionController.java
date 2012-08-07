@@ -138,7 +138,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (gotKilled()) return null;
             if (extractor.prepare()) {
                 extractToFolder = extension.getFinalExtractToFolder(archive);
-                if (archive.isProtected() && StringUtils.isEmpty(archive.getPassword())) {
+                if (archive.isProtected() && StringUtils.isEmpty(archive.getFinalPassword())) {
                     HashSet<String> spwList = archive.getSettings().getPasswords();
                     if (spwList != null) {
                         passwordList.addAll(spwList);
@@ -168,7 +168,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                         fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
                         logger.info("Found no password in passwordlist " + archive);
                         if (gotKilled()) return null;
-                        if (!checkPassword(archive.getPassword(), false)) {
+                        if (!checkPassword(archive.getFinalPassword(), false)) {
                             fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
                             logger.info("No password found for " + archive);
                             return null;
@@ -176,10 +176,10 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
 
                     fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive + "->" + archive.getPassword());
+                    logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
                     /* avoid duplicates */
-                    pwList.remove(archive.getPassword());
-                    pwList.add(0, archive.getPassword());
+                    pwList.remove(archive.getFinalPassword());
+                    pwList.add(0, archive.getFinalPassword());
                     extractor.config.setPasswordList(pwList);
                 }
 

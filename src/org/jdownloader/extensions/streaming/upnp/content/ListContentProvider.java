@@ -23,15 +23,21 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.seamless.util.MimeType;
 
 public class ListContentProvider implements ContentProvider {
-    private RootContainer root;
-    private DIDLParser    didlParser;
+    private RootContainer       root;
+    private DIDLParser          didlParser;
+    private ExtractionExtension extractionExtension;
+    private StreamingExtension  streamingExtension;
 
     public ListContentProvider() {
         didlParser = new DIDLParser();
+        extractionExtension = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+        streamingExtension = (StreamingExtension) ExtensionController.getInstance().getExtension(StreamingExtension.class)._getExtension();
+
         refresh();
         DownloadController.getInstance().addListener(new DownloadControllerListener() {
 
@@ -80,30 +86,19 @@ public class ListContentProvider implements ContentProvider {
 
         addChildren(root, downloadlist = new FolderContainer("1", "DownloadList"));
         //
-        ExtractionExtension archiver = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
         HashSet<String> archives = new HashSet<String>();
 
         for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
-            final Archive archive = archiver.getArchiveByFactory(fac);
+            final Archive archive = extractionExtension.getArchiveByFactory(fac);
             System.out.println(archive);
             final String id = Hash.getMD5(dl.getDownloadURL());
             final String url = "http://192.168.2.122:3128/vlcstreaming/stream?" + id;
             if (archive != null) {
 
                 if (archive.getFirstArchiveFile().getName().endsWith(".rar")) {
-                    if (archives.add(archiver.createArchiveID(fac))) {
-                        addChildren(downloadlist, new ContentItem(id) {
-
-                            @Override
-                            public Item getImpl() {
-
-                                Res res = new Res(new MimeType("video", "mp4"), archive.getExtractedFilesSize(), "", -1l, url);
-                                //
-                                return (new VideoItem(getID(), getParent().getID(), "[Archive] " + archive.getName(), null, res));
-                            }
-
-                        });
+                    if (archives.add(extractionExtension.createArchiveID(fac))) {
+                        addChildren(downloadlist, new ArchiveContainer(id, this, extractionExtension, streamingExtension, archive));
                     }
                 }
             } else {
@@ -187,7 +182,7 @@ public class ListContentProvider implements ContentProvider {
         }
     }
 
-    private String formatDuration(long ms) {
+    String formatDuration(long ms) {
         long days, hours, minutes, seconds, milliseconds;
         final StringBuilder string = new StringBuilder();
         milliseconds = ms % 1000;
@@ -209,10 +204,13 @@ public class ListContentProvider implements ContentProvider {
         map.put(root.getID() + "", root);
     }
 
-    private void addChildren(ContainerNode parent, ContentNode child) {
+    public void addChildren(ContainerNode parent, ContentNode child) {
         parent.addChildren(child);
 
-        if (map.put(child.getID() + "", child) != null) throw new WTFException("ID DUPES");
+        if (map.put(child.getID() + "", child) != null)
+
+        //
+            throw new WTFException("ID DUPES");
     }
 
     @Override
@@ -229,6 +227,11 @@ public class ListContentProvider implements ContentProvider {
 
         }
 
+    }
+
+    public void removeChildren(ContainerNode parent, FolderContainer child) {
+        parent.removeChildren(child);
+        map.remove(child.getID());
     }
 
 }

@@ -26,7 +26,7 @@ public class ExtractionException extends Exception {
     private static final long serialVersionUID = -5064334224764462157L;
     private ArchiveFile       latestAccessedArchiveFile;
 
-    ExtractionException(String string) {
+    public ExtractionException(String string) {
         super(string);
     }
 

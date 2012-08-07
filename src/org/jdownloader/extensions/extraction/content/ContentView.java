@@ -28,10 +28,16 @@ public class ContentView extends PackedFile {
     @Override
     public void add(PackedFile packedFile) {
         ContentNode p = mkParent(packedFile.getParent());
+
         if (!packedFile.isDirectory()) {
             totalFileCount++;
             if (packedFile.getSize() > 0) totalSize += packedFile.getSize();
         } else {
+            if (p.getChildren().containsKey(packedFile.getName())) {
+                // we already created this folder;
+                return;
+
+            }
             totalFolderCount++;
         }
         if (p == this) {

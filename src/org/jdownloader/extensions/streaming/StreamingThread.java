@@ -105,6 +105,7 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
                     }
                     getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, completeSize + ""));
                 }
+                System.out.println("Streaming Response: " + getResponse().getResponseHeaders().toString().replace(",", ", \r\n"));
                 Input2OutputStreamForwarder forwarder = new Input2OutputStreamForwarder(sis, getResponse().getOutputStream());
                 doCleanup = false;
                 forwarder.forward(cleanup);

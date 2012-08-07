@@ -14,4 +14,6 @@ public interface ContainerNode extends ContentNode {
 
     public void addChildren(ContentNode child);
 
+    void removeChildren(FolderContainer child);
+
 }

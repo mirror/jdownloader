@@ -15,11 +15,15 @@ import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
@@ -63,6 +67,10 @@ public class HttpApiImpl implements HttpApiDefinition {
 
         try {
 
+            String subpath = id.substring(32);
+            while (subpath.startsWith("/") || subpath.startsWith("\\"))
+                subpath = subpath.substring(1);
+            id = id.substring(0, 32);
             DownloadLink dlink = null;
             for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
                 if (Hash.getMD5(dl.getDownloadURL()).equals(id)) {
@@ -73,13 +81,35 @@ public class HttpApiImpl implements HttpApiDefinition {
 
             StreamingInterface streamingInterface = null;
             streamingInterface = interfaceMap.get(id);
+            boolean archiveIsOpen = true;
             if (streamingInterface == null) {
                 ExtractionExtension archiver = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
 
                 DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dlink);
                 Archive archive = archiver.getArchiveByFactory(fac);
                 if (archive != null) {
-                    streamingInterface = new RarStreamer(archive, extension);
+                    streamingInterface = new RarStreamer(archive, extension) {
+                        protected String askPassword() throws DialogClosedException, DialogCanceledException {
+
+                            // if password is not in list, we cannot open the archive.
+                            throw new DialogClosedException(0);
+                        }
+
+                        protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
+                            try {
+                                openArchive();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                                throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
+                            } finally {
+
+                            }
+
+                        }
+                    };
+                    ((RarStreamer) streamingInterface).setPath(subpath);
+                    ((RarStreamer) streamingInterface).start();
+                    // Thread.sleep(5000);
                     addHandler(id, streamingInterface);
 
                 } else {
@@ -91,6 +121,9 @@ public class HttpApiImpl implements HttpApiDefinition {
             }
             System.out.println(dlink);
             String format = Files.getExtension(dlink.getFinalFileName());
+            if (!StringUtils.isEmpty(subpath)) {
+                format = Files.getExtension(subpath);
+            }
             // seeking
             String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
 
@@ -115,6 +148,18 @@ public class HttpApiImpl implements HttpApiDefinition {
             if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
             response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
             response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
+            if (streamingInterface instanceof RarStreamer) {
+                while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
+                    Thread.sleep(100);
+                }
+            }
+            if (((RarStreamer) streamingInterface).getException() != null) {
+                response.setResponseCode(ResponseCode.ERROR_BAD_REQUEST);
+                response.getOutputStream();
+                response.closeConnection();
+                return;
+
+            }
             switch (request.getRequestType()) {
             case HEAD:
                 System.out.println("HEAD " + request.getRequestHeaders());
