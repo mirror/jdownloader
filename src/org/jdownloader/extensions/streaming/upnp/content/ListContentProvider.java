@@ -72,7 +72,7 @@ public class ListContentProvider implements ContentProvider {
         // PersonWithRole artist = new PersonWithRole("MyArtist", "Performer");
         // MimeType mimeType = new MimeType("audio", "mpeg");
         // Res res = new Res(mimeType, 123456l, "00:03:25", 8192l,
-        // "http://"+address.getHostAddress()+":3128/vlcstreaming/video?mp3");
+        // "http://"+address.getHost()+":3128/vlcstreaming/video?mp3");
         // dl.get
         // return new MusicTrack(getID() + "", parent.getID() + "",
         // "MyTitle.mp3", artist.getName(), "MyAlbum", artist, res);
@@ -95,7 +95,7 @@ public class ListContentProvider implements ContentProvider {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
             final Archive archive = extractionExtension.getArchiveByFactory(fac);
             final String id = Hash.getMD5(dl.getDownloadURL());
-            final String url = "http://" + address.getHostAddress() + ":3128/vlcstreaming/stream?" + id;
+            final String url = "http://" + getHost() + ":3128/vlcstreaming/stream?" + id;
             if (archive != null) {
 
                 if (archive.getFirstArchiveFile().getName().endsWith(".rar")) {
@@ -234,6 +234,10 @@ public class ListContentProvider implements ContentProvider {
     public void removeChildren(ContainerNode parent, FolderContainer child) {
         parent.removeChildren(child);
         map.remove(child.getID());
+    }
+
+    public String getHost() {
+        return address.getHostAddress();
     }
 
 }

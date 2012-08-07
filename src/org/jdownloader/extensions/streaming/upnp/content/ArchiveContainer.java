@@ -116,7 +116,7 @@ public class ArchiveContainer extends FolderContainer {
     private void mountFile(FolderContainer parent, final PackedFile archiveFile) {
 
         String id = parent.getID() + "/" + archiveFile.getName();
-        final String url = "http://192.168.2.122:3128/vlcstreaming/stream?" + id;
+        final String url = "http://" + listContentProvider.getHost() + ":3128/vlcstreaming/stream?" + id;
         if (archiveFile.isDirectory()) {
             FolderContainer dir = new FolderContainer(id, archiveFile.getName());
             listContentProvider.addChildren(parent, dir);
