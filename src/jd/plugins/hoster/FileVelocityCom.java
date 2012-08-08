@@ -184,16 +184,31 @@ public class FileVelocityCom extends PluginForHost {
         /**
          * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
+        boolean finalFormFound = false;
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
-                doSomething();
-                checkErrors(downloadLink, false, passCode);
+                // for free download - correct final link is availablem after submitting form with <input type="hidden" name="method_free" value="Free Download">
+                if (new Regex(correctedBR, "<form action=\"(.*?)\" method=\"post\" target=\"freedl_frame\">").getMatch(0) == null) {
+                    br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
+                    doSomething();
+                    checkErrors(downloadLink, false, passCode);
+                } else {
+                    // check for and submit form for free download to get final page with Form named "F1"
+                    Form dlForm = br.getFormbyKey("method_free");
+                    if (dlForm != null) {
+
+                        br.submitForm(dlForm);
+                        logger.info("Submitted DLForm for free download");
+                        doSomething();
+                        checkErrors(downloadLink, false, passCode);
+                        finalFormFound = true;
+                    }
+                }
             }
             dllink = getDllink();
         }
-        if (dllink == null) {
+        if (dllink == null || finalFormFound) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final long timeBefore = System.currentTimeMillis();
