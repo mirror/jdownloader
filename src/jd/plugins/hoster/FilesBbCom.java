@@ -31,6 +31,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -66,7 +67,7 @@ public class FilesBbCom extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static String        agent                        = null;
+    private static String        agent                        = RandomUserAgent.generate();
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static final Object  LOCK                         = new Object();
 
@@ -110,14 +111,17 @@ public class FilesBbCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
-        br.setReadTimeout(3 * 30 * 1000);
-        br.setConnectTimeout(3 * 30 * 1000);
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
+        br.setReadTimeout(8 * 30 * 1000);
+        br.setConnectTimeout(8 * 30 * 1000);
+
+        // if (agent == null) {
+        // we first have to load the plugin, before we can reference it */
+        //
+        // JDUtilities.getPluginForHost("mediafire.com");
+        // agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        //
+        // }
+        br.getHeaders().put("User-Agent", FilesBbCom.agent);
     }
 
     @Override
@@ -135,9 +139,12 @@ public class FilesBbCom extends PluginForHost {
         if (filename == null) {
             filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "You have requested</font>   <font style=\"font-size:18px;\">(.*?)</font>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    if (filename == null) {
+                        filename = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    }
                 }
             }
         }
@@ -158,7 +165,7 @@ public class FilesBbCom extends PluginForHost {
         }
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) link.setMD5Hash(md5hash.trim());
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "").trim();
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -503,19 +510,24 @@ public class FilesBbCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+            if (correctedBR.contains("center><h3>File Download Link Generated</h3></center>")) {
+                dllink = new Regex(correctedBR, "<FORM METHOD=\"LINK\" ACTION=\"(.*?)\"</a>").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                         if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
+                            dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                            if (dllink == null) {
+                                dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                                if (dllink == null) {
+                                    String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                    if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                        for (String crypted : cryptedScripts) {
+                                            dllink = decodeDownloadLink(crypted);
+                                            if (dllink != null) break;
+                                        }
+                                    }
                                 }
                             }
                         }
