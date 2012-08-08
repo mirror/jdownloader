@@ -148,7 +148,7 @@ public class PutLockerCom extends PluginForHost {
             br.followConnection();
             // My experience was that such files just don't work, i wasn't able to download a link with this error in 3 days!
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
-            if (br.containsHTML(">This link has expired\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

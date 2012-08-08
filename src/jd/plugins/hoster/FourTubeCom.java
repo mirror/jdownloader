@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4tube.com" }, urls = { "http://(www\\.)?4tube\\.com/videos/\\d+/?([\\w-]+)?" }, flags = { 32 })
 public class FourTubeCom extends PluginForHost {
 
-    public FourTubeCom(final PluginWrapper wrapper) {
+    public FourTubeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -45,24 +45,27 @@ public class FourTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String configUrl = br.getRegex("'flashvars','config=(.*?)'\\)").getMatch(0);
         if (configUrl == null) configUrl = br.getRegex("addVariable\\('config',.*?'(.*?)'").getMatch(0);
         if (configUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        br.getPage("http://" + br.getHost() + configUrl);
 
-        final String playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
-        final String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
-        final String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
+        String playpath = br.getRegex("var videoUrl = (\'|\")([^\'\"]+)").getMatch(1);
+        if (playpath == null) {
+            br.getPage("http://" + br.getHost() + configUrl);
+            playpath = br.getRegex("<file>(.*?)</file>").getMatch(0);
+        }
+        String token = br.getRegex("<token>(.*?)</token>").getMatch(0);
+        String url = br.getRegex("<streamer>(.*?)</streamer>").getMatch(0);
         if (playpath == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         if (!playpath.startsWith("http")) {
             dl = new RTMPDownload(this, downloadLink, url + "/" + playpath);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+            jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-            final String host = url.substring(0, url.lastIndexOf("/") + 1);
-            final String app = url.replace(host, "");
+            String host = url.substring(0, url.lastIndexOf("/") + 1);
+            String app = url.replace(host, "");
             if (host == null || app == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
             if (app.equals("vod/")) {
@@ -89,9 +92,9 @@ public class FourTubeCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         setBrowserExclusive();
-        final String dllink = downloadLink.getDownloadURL();
+        String dllink = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.getPage(dllink);
         if (br.containsHTML("Page not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -109,10 +112,11 @@ public class FourTubeCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
+
 }
