@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming.upnp;
 
-import org.fourthline.cling.UpnpServiceImpl;
+import org.fourthline.cling.UpnpService;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.RemoteDevice;
@@ -14,13 +14,13 @@ public class MediaRenderer {
 
     private RemoteDevice              device;
     private RemoteService             connectionManager;
-    private UpnpServiceImpl           service;
+    private UpnpService               service;
     protected ProtocolInfos           sinkProtocolInfos;
     protected ProtocolInfos           sourceProtocolInfos;
     protected String                  errorMessage;
     private static final UDAServiceId CONNECTIONMANAGER_ID = new UDAServiceId("ConnectionManager");
 
-    public MediaRenderer(UpnpServiceImpl upnpService, RemoteDevice device) {
+    public MediaRenderer(UpnpService upnpService, RemoteDevice device) {
 
         this.device = device;
         this.service = upnpService;

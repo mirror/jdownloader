@@ -36,7 +36,7 @@ public class FolderContainer implements ContainerNode {
         con.setChildCount(children.size());
         con.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
         con.setRestricted(true);
-        con.setSearchable(false);
+        con.setSearchable(true);
         con.setTitle(title);
         return con;
     }

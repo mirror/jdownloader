@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.jdownloader.extensions.extraction.content.ContentView;
+import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
 import org.jdownloader.extensions.extraction.multi.CheckException;
 import org.jdownloader.logging.LogController;
@@ -256,7 +257,21 @@ public class Archive {
         return getFactory().getFolder();
     }
 
-    public ContentView getContentView() {
+    public synchronized ContentView getContentView() {
+        if (contents == null || (contents.getTotalFileCount() + contents.getTotalFolderCount() == 0)) {
+
+            ArrayList<ArchiveItem> files = getSettings().getArchiveItems();
+            if (files != null && files.size() > 0) {
+                ContentView newView = new ContentView();
+                for (ArchiveItem item : files) {
+                    if (item.getPath().trim().equals("")) continue;
+                    newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
+
+                }
+                contents = newView;
+            }
+
+        }
         return contents;
     }
 

@@ -33,7 +33,7 @@ public class ListContentProvider implements ContentProvider {
     private StreamingExtension  streamingExtension;
     private InetAddress         address;
 
-    public ListContentProvider(MediaServer mediaServer) {
+    public ListContentProvider(final ContentDirectory contentDirectory, MediaServer mediaServer) {
         didlParser = new DIDLParser();
         extractionExtension = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
         streamingExtension = (StreamingExtension) ExtensionController.getInstance().getExtension(StreamingExtension.class)._getExtension();
@@ -49,6 +49,7 @@ public class ListContentProvider implements ContentProvider {
                     }
 
                     root = refresh();
+                    contentDirectory.onUpdate();
                 }
 
             }
@@ -218,7 +219,8 @@ public class ListContentProvider implements ContentProvider {
         synchronized (didlParser) {
             // didlParser is not thread safe
             // ps3 seems to prefer 1/0 instead of true/false
-            return didlParser.generate(didl).replace("\"true\"", "\"1\"").replace("\"false\"", "\"0\"");
+            // .replace("\"true\"", "\"1\"").replace("\"false\"", "\"0\"")
+            return didlParser.generate(didl);
 
         }
 

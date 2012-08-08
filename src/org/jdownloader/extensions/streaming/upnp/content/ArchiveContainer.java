@@ -56,17 +56,9 @@ public class ArchiveContainer extends FolderContainer {
         synchronized (ArchiveContainer.this) {
             if (!triedToOpen) {
                 triedToOpen = true;
-                Thread th = new Thread("RarOpener " + archive.getName()) {
-                    public void run() {
-                        readRarContents();
-                    }
-                };
-                th.start();
-                try {
-                    th.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+
+                readRarContents();
+
             }
         }
         return super.getChildren();
@@ -75,38 +67,8 @@ public class ArchiveContainer extends FolderContainer {
     protected void readRarContents() {
 
         List<ContentNode> children = new ArrayList<ContentNode>();
-        try {
-            RarStreamer rartream = new RarStreamer(archive, streamingExtension, extractionExtension) {
-                protected String askPassword() throws DialogClosedException, DialogCanceledException {
 
-                    // if password is not in list, we cannot open the archive.
-                    throw new DialogClosedException(0);
-                }
-
-                protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
-                    try {
-                        openArchive();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
-                    }
-
-                }
-
-            };
-
-            rartream.openArchive();
-            rartream.updateContentView();
-            triedToOpen = true;
-        } catch (DialogClosedException e) {
-            // password unknown
-            logger.log(e);
-            this.unknownPassword = true;
-        } catch (Throwable e) {
-            logger.log(e);
-            exception = e;
-        }
-
+        buildContentView();
         setChildren(children);
         listContentProvider.removeChildren(this, empty);
         if (unknownPassword) {
@@ -127,6 +89,44 @@ public class ArchiveContainer extends FolderContainer {
             }
         }
 
+    }
+
+    private void buildContentView() {
+
+        if (archive.getContentView() == null || (archive.getContentView().getTotalFileCount() + archive.getContentView().getTotalFolderCount() == 0)) {
+            try {
+                RarStreamer rartream = new RarStreamer(archive, streamingExtension, extractionExtension) {
+                    protected String askPassword() throws DialogClosedException, DialogCanceledException {
+
+                        // if password is not in list, we cannot open the archive.
+                        throw new DialogClosedException(0);
+                    }
+
+                    protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
+                        try {
+                            openArchive();
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                            throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
+                        }
+
+                    }
+
+                };
+
+                rartream.openArchive();
+                rartream.updateContentView();
+                triedToOpen = true;
+            } catch (DialogClosedException e) {
+                // password unknown
+                logger.log(e);
+                this.unknownPassword = true;
+            } catch (Throwable e) {
+                logger.log(e);
+                exception = e;
+            }
+
+        }
     }
 
     private void mountFile(FolderContainer parent, final PackedFile archiveFile) throws UnsupportedEncodingException {

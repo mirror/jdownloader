@@ -34,6 +34,7 @@ import org.appwork.utils.swing.dialog.ProgressDialog;
 import org.appwork.utils.swing.dialog.ProgressDialog.ProgressGetter;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.content.ContentView;
@@ -292,8 +293,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
             for (final ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
-                     * we also check for items with size ==0, they should have a
-                     * packedsize>0
+                     * we also check for items with size ==0, they should have a packedsize>0
                      */
                     continue;
                 }
@@ -324,15 +324,13 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                     int toWrite = Math.min(signatureBuffer.free(), data.length);
                                     if (toWrite > 0) {
                                         /*
-                                         * we still have enough buffer left to
-                                         * write the data
+                                         * we still have enough buffer left to write the data
                                          */
                                         signatureBuffer.write(data, 0, toWrite);
                                     }
                                     if (signatureBuffer.size() >= signatureMinLength) {
                                         /*
-                                         * we have enough data available for a
-                                         * signature check
+                                         * we have enough data available for a signature check
                                          */
                                         StringBuilder sigger = new StringBuilder();
                                         for (int i = 0; i < signatureBuffer.size() - 1; i++) {
@@ -345,8 +343,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                         if (signature != null) {
                                             if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
                                                 /*
-                                                 * signature matches, lets abort
-                                                 * PWFinding now
+                                                 * signature matches, lets abort PWFinding now
                                                  */
                                                 passwordfound.found();
                                                 return 0;
@@ -355,8 +352,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
                                     }
                                     if (item.getSize() <= maxPWCheckSize) {
                                         /*
-                                         * we still allow further extraction as
-                                         * the itemSize <= maxPWCheckSize
+                                         * we still allow further extraction as the itemSize <= maxPWCheckSize
                                          */
                                         return data.length;
                                     } else {
@@ -598,8 +594,10 @@ public class RarStreamer implements Runnable, StreamingInterface {
     private void updateContentView(ISimpleInArchive simpleInterface) {
         try {
             ContentView newView = new ContentView();
+            ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
             for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                 try {
+                    files.add(ArchiveItem.create(item));
                     String p = item.getPath();
                     if (item.getPath().trim().equals("")) continue;
                     newView.add(new PackedFile(item.isFolder(), item.getPath(), item.getSize()));
@@ -608,6 +606,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
                 }
             }
             archive.setContentView(newView);
+            archive.getSettings().setArchiveItems(files);
         } catch (SevenZipException e) {
             logger.log(e);
         }

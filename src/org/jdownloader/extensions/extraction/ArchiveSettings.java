@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.extraction;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.appwork.storage.config.ConfigInterface;
@@ -47,4 +48,8 @@ public interface ArchiveSettings extends ConfigInterface {
     public void setExtractionInfo(ExtractionInfo extractionInfo);
 
     public ExtractionInfo getExtractionInfo();
+
+    public ArrayList<ArchiveItem> getArchiveItems();
+
+    public void setArchiveItems(ArrayList<ArchiveItem> files);
 }

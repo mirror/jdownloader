@@ -1,17 +1,26 @@
 package org.jdownloader.extensions.streaming.upnp;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.DefaultUpnpServiceConfiguration;
 import org.fourthline.cling.UpnpServiceImpl;
 import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
+import org.fourthline.cling.model.Command;
 import org.fourthline.cling.model.DefaultServiceManager;
 import org.fourthline.cling.model.ValidationException;
+import org.fourthline.cling.model.message.StreamRequestMessage;
+import org.fourthline.cling.model.message.StreamResponseMessage;
 import org.fourthline.cling.model.meta.DeviceDetails;
 import org.fourthline.cling.model.meta.DeviceIdentity;
 import org.fourthline.cling.model.meta.Icon;
@@ -21,6 +30,7 @@ import org.fourthline.cling.model.meta.ManufacturerDetails;
 import org.fourthline.cling.model.meta.ModelDetails;
 import org.fourthline.cling.model.meta.RemoteDevice;
 import org.fourthline.cling.model.meta.Service;
+import org.fourthline.cling.model.profile.ControlPointInfo;
 import org.fourthline.cling.model.profile.HeaderDeviceDetailsProvider;
 import org.fourthline.cling.model.types.DLNACaps;
 import org.fourthline.cling.model.types.DLNADoc;
@@ -29,17 +39,28 @@ import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDN;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
+import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.Router;
+import org.fourthline.cling.transport.impl.StreamClientConfigurationImpl;
+import org.fourthline.cling.transport.impl.StreamClientImpl;
+import org.fourthline.cling.transport.impl.StreamServerConfigurationImpl;
+import org.fourthline.cling.transport.impl.StreamServerImpl;
+import org.fourthline.cling.transport.spi.InitializationException;
 import org.fourthline.cling.transport.spi.NetworkAddressFactory;
+import org.fourthline.cling.transport.spi.StreamClient;
+import org.fourthline.cling.transport.spi.StreamServer;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.upnp.content.ContentDirectory;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
+import org.seamless.http.Headers;
+
+import com.sun.net.httpserver.HttpServer;
 
 public class MediaServer implements Runnable {
 
@@ -50,6 +71,14 @@ public class MediaServer implements Runnable {
 
     public MediaServer() {
         logger = LogController.getInstance().getLogger("streaming");
+
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void run() {
+                shutdown();
+            }
+        });
     }
 
     public void getProtocolInfo(InetAddress adr) {
@@ -63,28 +92,67 @@ public class MediaServer implements Runnable {
                 Thread.sleep(1000);
             }
             logger.info("Wait for extraction Module: Done");
-            // final UpnpService upnpService = new UpnpServiceImpl(new
-            // DefaultUpnpServiceConfiguration(8895) {
-            // // Override using Apache Http instead of sun http
-            // // This could be used to implement our own http stack instead
-            // @Override
-            // public StreamClient<StreamClientConfigurationImpl>
-            // createStreamClient() {
-            // return new StreamClientImpl(new StreamClientConfigurationImpl());
-            // }
-            //
-            // @Override
-            // public StreamServer createStreamServer(NetworkAddressFactory
-            // networkAddressFactory) {
-            // return new StreamServerImpl(new
-            // StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort()));
-            // }
-            // }, new RegistryListener[0]);
-            upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration() {
+            upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(8895) {
+                // Override using Apache Http instead of sun http
+                // This could be used to implement our own http stack instead
+                @Override
+                public StreamClient<StreamClientConfigurationImpl> createStreamClient() {
+                    return new StreamClientImpl(new StreamClientConfigurationImpl()) {
+
+                        @Override
+                        public StreamResponseMessage sendRequest(StreamRequestMessage requestMessage) {
+                            return super.sendRequest(requestMessage);
+                        }
+
+                        @Override
+                        protected void applyRequestProperties(HttpURLConnection urlConnection, StreamRequestMessage requestMessage) {
+                            super.applyRequestProperties(urlConnection, requestMessage);
+                        }
+
+                        @Override
+                        protected void applyHeaders(HttpURLConnection urlConnection, Headers headers) {
+                            super.applyHeaders(urlConnection, headers);
+                        }
+
+                        @Override
+                        protected void applyRequestBody(HttpURLConnection urlConnection, StreamRequestMessage requestMessage) throws IOException {
+                            super.applyRequestBody(urlConnection, requestMessage);
+                        }
+
+                        @Override
+                        protected StreamResponseMessage createResponse(HttpURLConnection urlConnection, InputStream inputStream) throws Exception {
+                            logger.info(urlConnection.toString());
+                            StreamResponseMessage ret = super.createResponse(urlConnection, inputStream);
+                            logger.info(ret + "\r\n" + ret.getBodyString());
+                            return ret;
+                        }
+
+                    };
+                }
+
+                @Override
+                public StreamServer<StreamServerConfigurationImpl> createStreamServer(NetworkAddressFactory networkAddressFactory) {
+                    return new StreamServerImpl(new StreamServerConfigurationImpl(networkAddressFactory.getStreamListenPort())) {
+                        synchronized public void init(InetAddress bindAddress, Router router) throws InitializationException {
+                            try {
+                                InetSocketAddress socketAddress = new InetSocketAddress(bindAddress, configuration.getListenPort());
+
+                                server = HttpServer.create(socketAddress, configuration.getTcpConnectionBacklog());
+                                server.createContext("/", new ServerRequestHttpHandler(router, logger));
+
+                                logger.info("Created server (for receiving TCP streams) on: " + server.getAddress());
+
+                            } catch (Exception ex) {
+                                throw new InitializationException("Could not initialize " + getClass().getSimpleName() + ": " + ex.toString(), ex);
+                            }
+                        }
+                    };
+                }
+
                 protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort) {
                     return new FixedNetworkAddressFactoryImpl(streamListenPort);
                 }
-            });
+            }, new RegistryListener[0]);
 
             // Add the bound local device to the registry
             upnpService.getRegistry().addDevice(createDevice());
@@ -163,9 +231,17 @@ public class MediaServer implements Runnable {
         Map<HeaderDeviceDetailsProvider.Key, DeviceDetails> headerDetails = new HashMap<HeaderDeviceDetailsProvider.Key, DeviceDetails>();
         // WDTV?
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "FDSSDP"), wmpDetails);
+        // headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", ".*Windows\\-Media\\-Player.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "Xbox.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("X-AV-Client-Info", ".*PLAYSTATION 3.*"), ownDetails);
-        HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails);
+        HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails) {
+            public DeviceDetails provide(ControlPointInfo info) {
+                logger.info("Requesting Device Details:\r\n " + JSonStorage.toString(info));
+                DeviceDetails ret = super.provide(info);
+                logger.info("Response Device Details:\r\n " + JSonStorage.toString(ret));
+                return ret;
+            }
+        };
 
         Icon icon = new Icon("image/png", 64, 64, 32, NewTheme.I().getImageUrl("logo/jd_logo_64_64"));
 
@@ -176,7 +252,14 @@ public class MediaServer implements Runnable {
 
     private LocalService<MediaReceiverRegistrar> createMediaReceiverRegistrar() {
         LocalService<MediaReceiverRegistrar> mediaReceiverRegistrar = new AnnotationLocalServiceBinder().read(MediaReceiverRegistrar.class);
-        mediaReceiverRegistrar.setManager(new DefaultServiceManager<MediaReceiverRegistrar>(mediaReceiverRegistrar, MediaReceiverRegistrar.class));
+        mediaReceiverRegistrar.setManager(new DefaultServiceManager<MediaReceiverRegistrar>(mediaReceiverRegistrar, MediaReceiverRegistrar.class) {
+            public void execute(Command<MediaReceiverRegistrar> cmd) throws Exception {
+
+                super.execute(cmd);
+                logger.info("Exceuted: " + cmd);
+            }
+
+        });
         return mediaReceiverRegistrar;
     }
 
