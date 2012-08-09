@@ -139,7 +139,7 @@ public class MyVideo extends PluginForHost {
             next = next + valuePair.getKey() + "=" + valuePair.getValue();
         }
         SWFURL = br.getRegex("SWFObject\\(\'(.*?)\',").getMatch(0);
-        SWFURL = SWFURL == null ? "http://is2.myvideo.de/de/player/mingR10i/ming.swf" : SWFURL;
+        SWFURL = SWFURL == null ? "http://is4.myvideo.de/de/player/mingR11q/ming.swf" : SWFURL;
         br.getPage(next);
         final String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -166,7 +166,7 @@ public class MyVideo extends PluginForHost {
         }
         ext = ext == null ? ".mp4" : ext;
         if (filename == null) filename = "unknown_myvideo_title__ID(" + p.get("ID") + ")_" + System.currentTimeMillis();
-        filename = filename.trim() + ext;
+        filename = filename.replaceAll("\t", "").trim() + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
     }

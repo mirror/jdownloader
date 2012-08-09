@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.InterruptedIOException;
 import java.lang.reflect.Field;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -79,8 +78,8 @@ public class RtmpDump extends RTMPDownload {
     }
 
     /**
-     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path will is saved to the
-     * variable RTMPDUMP.
+     * Attempt to locate a rtmpdump executable. The local tools folder is searched first, then *nix /usr bin folders. If found, the path
+     * will is saved to the variable RTMPDUMP.
      * 
      * @return Whether or not rtmpdump executable was found
      */
@@ -241,39 +240,37 @@ public class RtmpDump extends RTMPDownload {
                     this.R = new InputStreamReader(this.P.getErrorStream());
                 }
                 final BufferedReader br = new BufferedReader(this.R);
-                int sizeCalulateBuffer = 0;
                 float progressFloat = 0;
                 while ((line = br.readLine()) != null) {
                     if (!line.equals("")) {
                         error = line;
                     }
                     if (!new Regex(line, "^[0-9]").matches()) {
-                        if (line.contains("length")) {
-                            final String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
+                        if (line.contains("length") || line.contains("lastkeyframelocation")) {
+                            String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
                             iSize += SizeFormatter.getSize(size);
                         }
                     } else {
                         if (this.downloadLink.getDownloadSize() == 0) {
                             this.downloadLink.setDownloadSize(iSize);
                         }
-                        final int pos1 = line.indexOf("(");
-                        final int pos2 = line.indexOf(")");
-                        if (pos1 != -1 && pos2 != -1 && line.toUpperCase().contains("KB")) {
-                            progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
-                            this.BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toLowerCase().indexOf("kb") + 2));
+                        // is resumed
+                        if (iSize == 0) iSize = downloadLink.getDownloadSize();
+
+                        if (line.toUpperCase().matches("\\d+\\.\\d+\\sKB\\s/\\s\\d+\\.\\d+\\sSEC(\\s\\(\\d+\\.\\d%\\))?")) {
+                            this.BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
+                            progressFloat = (float) (Math.round(this.BYTESLOADED * 100.0F / (float) iSize * 10) / 10.0F);
+
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
                                     this.NP.sendCtrlCSignal();
                                 } else {
                                     this.sendSIGINT();
                                 }
-                                throw new InterruptedIOException();
+                                // throw new InterruptedIOException();
+                                return true;
                             }
-                            if (sizeCalulateBuffer > 6) {
-                                this.downloadLink.setDownloadSize((long) (this.BYTESLOADED * 100.0F / progressFloat));
-                            } else {
-                                sizeCalulateBuffer++;
-                            }
+
                             if (System.currentTimeMillis() - lastTime > 1000) {
                                 this.SPEED = (this.BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
