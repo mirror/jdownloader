@@ -872,3 +872,5 @@ jd/plugins/decrypter/HdrthCx.class
 jd/plugins/decrypter/CeVanaTv.class
 jd/plugins/decrypter/OronComFolder.class
 jd/plugins/hoster/OronCom.class
+jd/plugins/decrypter/AdJoinMe.class
+jd/plugins/decrypter/TopFilesOrg.class

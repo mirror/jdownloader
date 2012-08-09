@@ -79,7 +79,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
-        if (this.br.containsHTML("(Sorry, this file can only be downloaded by Premium members|Please purchase a FileFactory Premium membership if you wish to download this file\\.)") || this.br.containsHTML("Please purchase an account in order to instantly download this file") || this.br.containsHTML("Currently only Premium Members can download files larger")) {
+        if (this.br.containsHTML(">This file is only available to Premium Members") || this.br.containsHTML("Please purchase an account in order to instantly download this file") || this.br.containsHTML("Currently only Premium Members can download files larger")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -552,7 +552,7 @@ public class FileFactory extends PluginForHost {
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (this.br.containsHTML("Sorry, this file can only be downloaded by Premium members") || this.br.containsHTML("Currently only Premium Members can download files larger") || br.containsHTML("Please purchase an account in order to instantly download this file")) {
+            if (this.br.containsHTML(">This file is only available to Premium Members")) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
                 downloadLink.getLinkStatus().setStatusText("This file is only available to Premium Members");
             } else if (this.br.containsHTML(NO_SLOT)) {

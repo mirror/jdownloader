@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -56,18 +58,20 @@ public class RapidGatorNet extends PluginForHost {
     public RapidGatorNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://rapidgator.net/article/premium");
+        setConfigElements();
     }
 
-    private static final String  MAINPAGE   = "http://rapidgator.net/";
-    private static final Object  LOCK       = new Object();
-    private static String        agent      = null;
-    private static boolean       hasDled    = false;
-    private static long          timeBefore = 0;
-    private final static String  LASTIP     = "LASTIP";
-    private static String        lastIP     = null;
-    static private final Pattern IPREGEX    = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static final String  MAINPAGE             = "http://rapidgator.net/";
+    private static final Object  LOCK                 = new Object();
+    private static String        agent                = null;
+    private static boolean       hasDled              = false;
+    private static long          timeBefore           = 0;
+    private final static String  LASTIP               = "LASTIP";
+    private static String        lastIP               = null;
+    static private final Pattern IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static final String  EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
 
-    private static String[]      IPCHECK    = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static String[]      IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     @Override
     public String getAGBLink() {
@@ -131,15 +135,19 @@ public class RapidGatorNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         // experimental code - raz
-        // so called 15mins between your last download, ends up with your IP blocked for the day.. Trail and error until we find the sweet
+        // so called 15mins between your last download, ends up with your IP
+        // blocked for the day.. Trail and error until we find the sweet
         // spot.
+        final boolean useExperimentalHandling = getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false);
         String currentIP = getIP();
-        logger.info("New Download: currentIP = " + currentIP);
-        if (hasDled && ipChanged(currentIP, downloadLink) == false) {
-            long result = System.currentTimeMillis() - timeBefore;
-            // 35 minute wait less time since last download.
-            logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
-            if (result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", 2100000 - result);
+        if (useExperimentalHandling) {
+            logger.info("New Download: currentIP = " + currentIP);
+            if (hasDled && ipChanged(currentIP, downloadLink) == false) {
+                long result = System.currentTimeMillis() - timeBefore;
+                // 35 minute wait less time since last download.
+                logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
+                if (result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", 2100000 - result);
+            }
         }
         try {
             // far as I can tell it's not needed.
@@ -450,6 +458,11 @@ public class RapidGatorNet extends PluginForHost {
                 return true;
             }
         }
+    }
+
+    private void setConfigElements() {
+        final ConfigEntry cond = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.rapidgatornet.useExperimentalWaittimeHandling", "Activate experimental waittime handling")).setDefaultValue(false);
+        getConfig().addEntry(cond);
     }
 
     @Override

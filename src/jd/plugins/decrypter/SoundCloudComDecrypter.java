@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings)[^\"\\'\\&]+(\\?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?(soundcloud\\.com/(?!you/|tour|signup|logout|login|premium|messages|settings)[^\"\\'\\&]+(\\?page=\\d+)?|snd\\.sc/[A-Za-z09]+)" }, flags = { 0 })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
@@ -36,6 +36,16 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replaceAll("(/download|\\\\)", "").replace("www.", "");
+        if (parameter.matches("http://(www\\.)?snd\\.sc/[A-Za-z09]+")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            final String newparameter = br.getRedirectLocation();
+            if (newparameter == null) {
+                logger.warning("Decrypter failed on redirect link: " + parameter);
+                return null;
+            }
+            parameter = newparameter;
+        }
         br.setFollowRedirects(true);
         boolean decryptList = parameter.matches(".*?soundcloud\\.com/[a-z\\-_0-9]+/(tracks|favorites)(\\?page=\\d+)?");
         if (!decryptList) {

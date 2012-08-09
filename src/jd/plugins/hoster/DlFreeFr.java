@@ -88,6 +88,8 @@ public class DlFreeFr extends PluginForHost {
         switch (CaptchaTyp.valueOf(cType)) {
         case image:
             instructions = c.get("instructions_visual");
+            // Captcha also broken via browser
+            if (c.get("token") == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "No captcha shown, please contact the dl.free.fr support!"); }
             final String responseUrl = "http://api-ayl.appspot.com/resource?token=" + c.get("token") + "&env=" + c.get("env");
             if (instructions != null) {
                 cCode = new Regex(instructions, "Recopiez « (.*?) » ci\\-dessous").getMatch(0);

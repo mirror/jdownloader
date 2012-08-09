@@ -31,7 +31,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 // "old style" , "new style", "redirect url shorting service" 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://([\\w\\-]+\\.(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))/(?!top100|podsafe)(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|((acapellas|foto|music|mixes|podcasts|radioshows|realtones|remixes|samples|tracks|video)/))|(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))/(?!top100|podsafe)[\\w\\-]+/(foto/(all|\\d+)/?(#(foto|full|list|biglist|middlelist)\\d+)?(\\d+(\\.html)?(#(foto|full|list|biglist|middlelist)\\d+)?)?|(acapellas|groups|mixes|podcasts|radioshows|realtones|remixes|samples|tracks|videos)/\\d+|((acapellas|foto|music|mixes|podcasts|radioshows|realtones|remixes|samples|tracks|video)/))|pdj\\.cc/\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "promodj.com" }, urls = { "https?://(([\\w\\-]+\\.)?(djkolya\\.net|pdj\\.ru|promodeejay\\.(net|ru)|promodj\\.(ru|com))/[\\w\\-/]+|(www\\.)?pdj\\.cc/\\w+)" }, flags = { 0 })
 public class ProDjCm extends PluginForDecrypt {
 
     // DEV NOTES - by raztoki
@@ -138,6 +138,25 @@ public class ProDjCm extends PluginForDecrypt {
                     passItOn(ret, parameter, link);
                 }
             }
+        } else {
+            final String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            String dllink = br.getRegex("\"(http://promodj\\.com/prelisten[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return;
+            }
+            br.setFollowRedirects(false);
+            br.getPage(dllink + "?hq=1");
+            dllink = br.getRedirectLocation();
+            if (dllink == null) dllink = br.getRegex("#EXTINF:\\-1,[\t\n\r ]+(http[^<>\"]*?\\.mp3)").getMatch(0);
+            if (dllink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + dllink);
+            if (filename != null) dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+            ret.add(dl);
+
         }
         if (fpName != null) {
             fpName = fpName.replaceAll("\\&quot\\;", "'");

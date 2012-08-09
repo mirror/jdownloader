@@ -104,7 +104,7 @@ public class GorillaVidIn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         prepBrowser();
@@ -138,7 +138,14 @@ public class GorillaVidIn extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(fileInfo[0].trim());
+        link.setProperty("plainfilename", fileInfo[0]);
+        fileInfo[0] = Encoding.htmlDecode(fileInfo[0].trim());
+        String ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
+        if (ext != null && ext.length() < 5) {
+            link.setFinalFileName(fileInfo[0].replace(ext, ".flv"));
+        } else {
+            link.setFinalFileName(fileInfo[0]);
+        }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
     }
@@ -187,21 +194,23 @@ public class GorillaVidIn extends PluginForHost {
         doFree(downloadLink, true, -2, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
+        // Check if we can get the stream link directly
+        br.getPage("http://gorillavid.in/vidembed-" + fid);
+        dllink = getDllink();
         // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) {
+            br.getPage(downloadLink.getDownloadURL());
+            dllink = getDllink();
+        }
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                sendForm(download1);
-                checkErrors(downloadLink, false, passCode);
-            }
+            br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + downloadLink.getStringProperty("plainfilename") + "&referer=&channel=&method_free=Free+Download");
             dllink = getDllink();
         }
         if (dllink == null) {
@@ -373,25 +382,13 @@ public class GorillaVidIn extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "file ?:\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        if (dllink == null) {
-                            dllink = new Regex(correctedBR, "file ?:\"(https?://[^\"]+)\",").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
+                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }

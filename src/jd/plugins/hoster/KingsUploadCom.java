@@ -237,6 +237,10 @@ public class KingsUploadCom extends PluginForHost {
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
             if (!skipWaittime) waitTime(timeBefore, downloadLink);
+            final URLConnectionAdapter con = br.openFormConnection(dlForm);
+            if (con.getResponseCode() == 500) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            br.followConnection();
+            con.disconnect();
             br.submitForm(dlForm);
             logger.info("Submitted DLForm");
             doSomething();

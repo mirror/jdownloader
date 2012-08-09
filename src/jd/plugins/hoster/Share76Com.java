@@ -61,7 +61,8 @@ public class Share76Com extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
-    // XfileSharingProBasic Version 2.5.4.6
+    // XfileSharingProBasic Version 2.5.4.6, added special "premiumonly"
+    // errorhandling
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -90,12 +91,16 @@ public class Share76Com extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
+        if (br.getURL().contains("?op=login&redirect=")) {
+            link.getLinkStatus().setStatusText("Only downloadable via premium");
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
@@ -131,6 +136,7 @@ public class Share76Com extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+        if (br.getURL().contains("?op=login&redirect=")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {

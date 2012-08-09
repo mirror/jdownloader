@@ -95,7 +95,6 @@ public class BayFilesCom extends PluginForHost {
         // unlimited chunks)
         int chunks = 0;
         String dllink = br.getRegex("<div style=\"text\\-align: center;\">[\t\n\r ]+<a class=\"highlighted\\-btn\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        dllink = null;
         if (dllink == null) dllink = getExactDllink();
         if (dllink == null) {
             chunks = 1;
@@ -164,7 +163,11 @@ public class BayFilesCom extends PluginForHost {
             if (dllink == null) dllink = getExactDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
+        } catch (final Exception e) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(<div id=\"ol\\-limited\">|class=\"page\\-download|>404 Not Found<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);

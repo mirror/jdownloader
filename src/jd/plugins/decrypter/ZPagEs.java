@@ -38,7 +38,6 @@ public class ZPagEs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // Plugin has structure like AdJoinMe
     /* must be static so all plugins share same lock */
     private static final Object LOCK         = new Object();
     private static final String LINKREGEX    = "window\\.location = \"(http://.*?)\"";

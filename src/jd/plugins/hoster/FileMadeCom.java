@@ -80,11 +80,12 @@ public class FileMadeCom extends PluginForHost {
     // protocol: no https
     // captchatype: 4dignum
     // other: no redirects
-    // other: sister site holderfile.com, links not interchangeable. Holderfile now dead...
+    // other: sister site holderfile.com, links not interchangeable. Holderfile
+    // now dead...
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("filemade.com/", "filemade.co/"));
     }
 
     @Override
@@ -94,7 +95,7 @@ public class FileMadeCom extends PluginForHost {
 
     public FileMadeCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://filemade.com/premium.html");
+        this.enablePremium("http://filemade.co/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -110,7 +111,6 @@ public class FileMadeCom extends PluginForHost {
     public void prepBrowser() {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie("http://filemade.com", "lang", "english");
         br.setCookie("http://filemade.co", "lang", "english");
     }
 
@@ -304,14 +304,19 @@ public class FileMadeCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
-     * singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
-     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
-     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
-     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
-     * begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -563,8 +568,7 @@ public class FileMadeCom extends PluginForHost {
     private Map<String, String> login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
             try {
-                if (domainHost == null) domainHost = "filemade.com";
-                if (domain == null) domain = "http://filemade.com";
+                domain = "http://filemade.com";
                 /** Load cookies */
                 br.setCookiesExclusive(true);
                 prepBrowser();

@@ -37,7 +37,7 @@ import jd.plugins.hoster.MediafireCom;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(?!select_account_type\\.php)(imageview|i/\\?|\\\\?sharekey=|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php)).+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(?!select_account_type\\.php)(imageview|i/\\?|\\\\?sharekey=|view/\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php)).+" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
     private static boolean pluginloaded = false;
@@ -49,6 +49,7 @@ public class MdfrFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("mfi.re/", "mediafire.com/").trim();
+        if (parameter.matches("http://(\\w+\\.)?mediafire\\.com/view/\\?.+")) parameter = parameter.replace("/view", "");
         if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) return decryptedLinks;
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
         String fpName = null;

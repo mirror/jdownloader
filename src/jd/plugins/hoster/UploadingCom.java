@@ -361,12 +361,19 @@ public class UploadingCom extends PluginForHost {
         // First Password-Errorhandling (old not tested)
         if (passCode != null && (br.containsHTML(PASSWORDTEXT) || "The%20entered%20password%20is%20incorrect".equals(br.getCookie(MAINPAGE, "error")))) throw new PluginException(LinkStatus.ERROR_RETRY, "Invalid password");
         checkErrors(ajax);
-        String dllink = ajax.getRegex("link\":\"(https?.+/get_file[^\"]+)").getMatch(0);
+        String dllink = ajax.getRegex("link\":\"(https?[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            logger.warning("Can not find dllink");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dllink = dllink.replaceAll("\\\\/", "/");
+        br.getPage(dllink);
+        dllink = br.getRegex("<form id=\"file_form\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://fs\\d+\\.uploading\\.com/get_file/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.warning("Can not find final dllink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = dllink.replaceAll("\\\\/", "/");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleDownloadErrors();
         dl.setFilenameFix(true);

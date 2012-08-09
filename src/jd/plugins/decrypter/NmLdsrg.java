@@ -37,7 +37,8 @@ public class NmLdsrg extends PluginForDecrypt {
     }
 
     /*
-     * Note: FilePackage gets overridden when crypt-it.com (link protection service) used. Old posts + streaming links still get caught.
+     * Note: FilePackage gets overridden when crypt-it.com (link protection
+     * service) used. Old posts + streaming links still get caught.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -63,9 +64,12 @@ public class NmLdsrg extends PluginForDecrypt {
                 }
             }
         }
-        progress.setRange(links.size());
-        for (String link : links) {
+        for (final String link : links) {
             br.getPage(link);
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Link offline: " + link);
+                continue;
+            }
             String dllink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("redirect=(http://.*?)\"").getMatch(0);
@@ -74,23 +78,29 @@ public class NmLdsrg extends PluginForDecrypt {
                     if (dllink == null) {
                         dllink = br.getRegex("(https?://(www\\.)?crypt\\-it\\.com/[^\"]+)").getMatch(0);
                         if (dllink == null) {
-                            logger.warning("Can not find redirect final link");
+                            logger.warning("Decrypter broken for link: " + parameter);
                             return null;
                         }
                     }
                 }
             }
-            DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
+            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
             dl.setSourcePluginPasswordList(passwords);
             decryptedLinks.add(dl);
-            progress.increase(1);
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
         }
-        if (links.size() > 0 && decryptedLinks.size() == 0) return null;
+        if (links.size() > 0 && decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
 

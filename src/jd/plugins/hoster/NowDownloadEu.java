@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu" }, urls = { "http://(www\\.)?nowdownload\\.eu/dl/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nowdownload.eu" }, urls = { "http://(www\\.)?nowdownload\\.(eu|co)/dl/[a-z0-9]+" }, flags = { 0 })
 public class NowDownloadEu extends PluginForHost {
 
     public NowDownloadEu(PluginWrapper wrapper) {
@@ -48,6 +48,10 @@ public class NowDownloadEu extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.nowdownload.eu";
     private static final String ua       = RandomUserAgent.generate();
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("nowdownload.co/", "nowdownload.eu/"));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
