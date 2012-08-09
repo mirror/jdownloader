@@ -136,7 +136,7 @@ public class MediaServer implements Runnable {
                         synchronized public void init(InetAddress bindAddress, Router router) throws InitializationException {
                             try {
                                 InetSocketAddress socketAddress = new InetSocketAddress(bindAddress, configuration.getListenPort());
-
+                                logger.info("HTTPServer: " + bindAddress + ":" + configuration.getListenPort());
                                 server = HttpServer.create(socketAddress, configuration.getTcpConnectionBacklog());
                                 server.createContext("/", new ServerRequestHttpHandler(router, logger));
 
@@ -231,7 +231,8 @@ public class MediaServer implements Runnable {
         Map<HeaderDeviceDetailsProvider.Key, DeviceDetails> headerDetails = new HashMap<HeaderDeviceDetailsProvider.Key, DeviceDetails>();
         // WDTV?
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "FDSSDP"), wmpDetails);
-        // headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", ".*Windows\\-Media\\-Player.*"), wmpDetails);
+        // headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent",
+        // ".*Windows\\-Media\\-Player.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "Xbox.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("X-AV-Client-Info", ".*PLAYSTATION 3.*"), ownDetails);
         HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails) {
