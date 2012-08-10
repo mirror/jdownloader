@@ -32,32 +32,32 @@ import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 
 // Altes Decrypterplugin bis Revision 14394 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "http://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myvideo.de" }, urls = { "fromDecrypter://(www\\.)?myvideo\\.(de|at)/watch/\\d+(/\\w+)?" }, flags = { 32 })
 public class MyVideo extends PluginForHost {
 
-    private String       CLIPURL  = null;
-    private String       CLIPPATH = null;
-    private String       SWFURL   = null;
-    private final String KEY      = "Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==";
+    private String CLIPURL  = null;
+    private String CLIPPATH = null;
+    private String SWFURL   = null;
+    private String KEY      = "Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==";
 
-    public MyVideo(final PluginWrapper wrapper) {
+    public MyVideo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/"));
+    public void correctDownloadLink(DownloadLink link) throws Exception {
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/").replaceFirst("fromDecrypter", "http"));
     }
 
-    private String decrypt(final String cipher, final String id) {
-        final String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
-        final byte[] ciphertext = JDHexUtils.getByteArray(cipher);
-        final jd.crypt.RC4 rc4 = new jd.crypt.RC4();
-        final byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
+    private String decrypt(String cipher, String id) {
+        String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
+        byte[] ciphertext = JDHexUtils.getByteArray(cipher);
+        jd.crypt.RC4 rc4 = new jd.crypt.RC4();
+        byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
         return Encoding.htmlDecode(new String(plain));
     }
 
-    private void download(final DownloadLink downloadLink) throws Exception {
+    private void download(DownloadLink downloadLink) throws Exception {
         if (CLIPURL.startsWith("rtmp")) {
             dl = new RTMPDownload(this, downloadLink, CLIPURL);
             setupRTMPConnection(dl);
@@ -88,13 +88,13 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         download(downloadLink);
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.setCustomCharset("utf8");
@@ -105,7 +105,7 @@ public class MyVideo extends PluginForHost {
         br.setFollowRedirects(true);
 
         if (br.containsHTML("Dieser Film ist für Zuschauer unter \\d+ Jahren nicht geeignet")) {
-            final String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
+            String ageCheck = br.getRegex("class=\'btnMiddle\'><a href=\'(/iframe.*?)\'").getMatch(0);
             if (ageCheck != null) {
                 br.getPage("http://www.myvideo.de" + Encoding.htmlDecode(ageCheck));
             } else {
@@ -120,10 +120,9 @@ public class MyVideo extends PluginForHost {
             if (filename != null) filename = filename.substring(filename.lastIndexOf("/") + 1);
         }
         // get encUrl
-        final HashMap<String, String> p = new HashMap<String, String>();
-        final String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
-        final String[][] encUrl = new Regex(values, "(.*?):\'(.*?)\',").getMatches();
-        for (final String[] tmp : encUrl) {
+        HashMap<String, String> p = new HashMap<String, String>();
+        String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
+        for (String[] tmp : new Regex(values == null ? "NPE" : values, "(.*?):\'(.*?)\',").getMatches()) {
             if (tmp.length != 2) {
                 continue;
             }
@@ -132,7 +131,7 @@ public class MyVideo extends PluginForHost {
         if (p.isEmpty() || !p.containsKey("_encxml") || !p.containsKey("ID")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String next = Encoding.htmlDecode(p.get("_encxml")) + "?";
         p.remove("_encxml");
-        for (final Entry<String, String> valuePair : p.entrySet()) {
+        for (Entry<String, String> valuePair : p.entrySet()) {
             if (!next.endsWith("?")) {
                 next = next + "&";
             }
@@ -141,12 +140,12 @@ public class MyVideo extends PluginForHost {
         SWFURL = br.getRegex("SWFObject\\(\'(.*?)\',").getMatch(0);
         SWFURL = SWFURL == null ? "http://is4.myvideo.de/de/player/mingR11q/ming.swf" : SWFURL;
         br.getPage(next);
-        final String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
+        String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         String result;
         try {
             result = decrypt(input, p.get("ID"));
-        } catch (final Throwable e) {
+        } catch (Throwable e) {
             return AvailableStatus.UNCHECKABLE;
         }
         CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
@@ -176,16 +175,16 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    public void resetDownloadlink(DownloadLink link) {
     }
 
     @Override
     public void resetPluginGlobals() {
     }
 
-    private void setupRTMPConnection(final DownloadInterface dl) {
-        final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        final String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
+    private void setupRTMPConnection(DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        String app = CLIPURL.replaceAll("\\w+://[\\w\\.]+/", "");
         if (!CLIPURL.contains("token")) {
             rtmp.setProtocol(0);
         }
