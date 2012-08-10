@@ -19,8 +19,11 @@ import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.model.Command;
 import org.fourthline.cling.model.DefaultServiceManager;
 import org.fourthline.cling.model.ValidationException;
+import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.StreamRequestMessage;
 import org.fourthline.cling.model.message.StreamResponseMessage;
+import org.fourthline.cling.model.message.UpnpRequest;
+import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.DeviceDetails;
 import org.fourthline.cling.model.meta.DeviceIdentity;
 import org.fourthline.cling.model.meta.Icon;
@@ -37,8 +40,13 @@ import org.fourthline.cling.model.types.DLNADoc;
 import org.fourthline.cling.model.types.DeviceType;
 import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDN;
+import org.fourthline.cling.protocol.ProtocolCreationException;
 import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.protocol.ProtocolFactoryImpl;
+import org.fourthline.cling.protocol.ReceivingAsync;
+import org.fourthline.cling.protocol.async.ReceivingNotification;
+import org.fourthline.cling.protocol.async.ReceivingSearch;
+import org.fourthline.cling.protocol.async.ReceivingSearchResponse;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
@@ -95,7 +103,7 @@ public class MediaServer implements Runnable {
             }
 
             logger.info("Wait for extraction Module: Done");
-            upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(8895) {
+            upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(0) {
                 // Override using Apache Http instead of sun http
                 // This could be used to implement our own http stack instead
                 @Override
@@ -158,7 +166,33 @@ public class MediaServer implements Runnable {
             }, new RegistryListener[0]) {
                 protected ProtocolFactory createProtocolFactory() {
                     return new ProtocolFactoryImpl(this) {
+                        public ReceivingAsync createReceivingAsync(IncomingDatagramMessage message) throws ProtocolCreationException {
+                            logger.fine("Creating protocol for incoming asynchronous: " + message);
 
+                            if (message.getOperation() instanceof UpnpRequest) {
+                                IncomingDatagramMessage<UpnpRequest> incomingRequest = message;
+
+                                switch (incomingRequest.getOperation().getMethod()) {
+                                case NOTIFY:
+                                    return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ReceivingNotification(getUpnpService(), incomingRequest) : null;
+                                case MSEARCH:
+                                    return new ReceivingSearch(getUpnpService(), incomingRequest) {
+                                        @Override
+                                        protected boolean waitBeforeExecution() throws InterruptedException {
+                                            // this may help to find the server faster
+                                            return true;
+                                        }
+                                    };
+                                }
+
+                            } else if (message.getOperation() instanceof UpnpResponse) {
+                                IncomingDatagramMessage<UpnpResponse> incomingResponse = message;
+
+                                return isSupportedServiceAdvertisement(incomingResponse) ? new ReceivingSearchResponse(getUpnpService(), incomingResponse) : null;
+                            }
+
+                            throw new ProtocolCreationException("Protocol for incoming datagram message not found: " + message);
+                        }
                     };
                 }
             };
@@ -222,19 +256,19 @@ public class MediaServer implements Runnable {
     private LocalDevice createDevice() throws IOException, ValidationException {
 
         String host = getHostName();
-        DeviceIdentity identity = new DeviceIdentity(UDN.uniqueSystemIdentifier("org.jdownloader.extensions.vlcstreaming.upnp.MediaServer"));
-        DeviceType type = new UDADeviceType("MediaServer", SERVER_VERSION);
 
-        DeviceDetails details = new DeviceDetails("AppWork UPNP Media Server", new ManufacturerDetails("AppWorkGmbH"), new ModelDetails("AppWorkMediaServer", "A Upnp MediaServer to access the Downloadlist and Linkgrabberlist of JDownloader", "v1"));
+        DeviceIdentity identity = new DeviceIdentity(UDN.uniqueSystemIdentifier("org.jdownloader.extensions.vlcstreaming.upnp.MediaServer.new"));
+        DeviceType type = new UDADeviceType("MediaServer", SERVER_VERSION);
 
         ManufacturerDetails manufacturer = new ManufacturerDetails("AppWork GmbH", "http://appwork.org");
         // Windows Media Player Device Details
         // seem like windows mediaplayer needs a special device description
         // http://4thline.org/projects/mailinglists.html#nabble-td3827350
-        DeviceDetails wmpDetails = new DeviceDetails("JDMedia@" + host, manufacturer, new ModelDetails("Windows Media Player Sharing", "Windows Media Player Sharing", "12.0"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
-
+        DeviceDetails wmpDetails = new DeviceDetails("JDMedia " + host, manufacturer, new ModelDetails("Windows Media Player Sharing", "Windows Media Player Sharing", "12.0"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
+        ModelDetails model = new ModelDetails("JDownloader Media Server", "JDownloader Media Server", "1");
         // Common Details
-        DeviceDetails ownDetails = new DeviceDetails("JDMedia@" + host, manufacturer, new ModelDetails("JDownloader Media Server", "JDownloader Media Server", "1"), "000da201238c", "100000000001", "http://appwork.org/mediaserver", new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), }, new DLNACaps(new String[] { "av-upload", "image-upload", "audio-upload" }));
+
+        DeviceDetails ownDetails = new DeviceDetails("JDMedia " + host, manufacturer, model, (String) null, (String) null, new DLNADoc[] { new DLNADoc("DMS", DLNADoc.Version.V1_5), new DLNADoc("M-DMS", DLNADoc.Version.V1_5) }, new DLNACaps(new String[] {}));
 
         // Device Details Provider
         Map<HeaderDeviceDetailsProvider.Key, DeviceDetails> headerDetails = new HashMap<HeaderDeviceDetailsProvider.Key, DeviceDetails>();
