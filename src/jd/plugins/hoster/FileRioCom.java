@@ -279,10 +279,8 @@ public class FileRioCom extends PluginForHost {
     }
 
     public String getDllink() {
-        System.out.println(br.toString());
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -290,11 +288,18 @@ public class FileRioCom extends PluginForHost {
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "<span style=\"width:915px; height:67px; font\\-family:\"Tahoma\"; font\\-size:12px; color:#356186; border:1px solid #bbb; padding:7px;\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
                         if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
+                            // Try to find crypted link
+                            dllink = br.getRegex(">eval\\(unescape\\(\\'([^<>\"]*?)\\'\\)\\)").getMatch(0);
+                            if (dllink != null) {
+                                dllink = new Regex(Encoding.htmlDecode(dllink), "location\\.href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                            }
+                            if (dllink == null) {
+                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
+                                    }
                                 }
                             }
                         }

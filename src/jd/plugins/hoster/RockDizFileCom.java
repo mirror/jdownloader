@@ -63,7 +63,7 @@ public class RockDizFileCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.3.6
-    // mods: filename, dofree(extra getDllink, pre form)
+    // mods: filename, dofree(extra getDllink, pre form), fnf
     // free: 2 chunk, 1 max dl
     // premium:
     // protocol: no https
@@ -101,7 +101,7 @@ public class RockDizFileCom extends PluginForHost {
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
         doSomething();
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>File does not exist on this server<)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -158,7 +158,8 @@ public class RockDizFileCom extends PluginForHost {
         // previous download saved final dllink
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         // they have public final dllink on the first page!
         if (dllink == null) dllink = getDllink();

@@ -874,3 +874,6 @@ jd/plugins/decrypter/OronComFolder.class
 jd/plugins/hoster/OronCom.class
 jd/plugins/decrypter/AdJoinMe.class
 jd/plugins/decrypter/TopFilesOrg.class
+jd/plugins/decrypter/Lnkshld.class
+jd/plugins/decrypter/QckLnkM.class
+jd/plugins/decrypter/SurfMvsOrg.class

@@ -43,12 +43,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(www\\.|w\\.)?hulkfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkfile.com" }, urls = { "https?://(www\\.|w\\.)?hulkfile\\.(com|eu)/[a-z0-9]{12}" }, flags = { 0 })
 public class HulkFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String COOKIE_HOST         = "http://w.hulkfile.com";
+    private static final String COOKIE_HOST         = "http://hulkfile.eu";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -56,16 +56,16 @@ public class HulkFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.1-raz
     // mods: waitTime
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account:
     // premium account:
     // protocol: no https
     // captchatype: 4dignum
-    // other: redirects -> w.hulkfile
+    // other:
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replaceAll("//(www\\.)?hulkfile", "//w.hulkfile"));
+        link.setUrlDownload("http://hulkfile.eu/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override
@@ -147,7 +147,8 @@ public class HulkFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -463,8 +464,7 @@ public class HulkFileCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt == null) ttt = new Regex(correctedBR, "id=\"countdown_str\" [^>]+>Wait <span id=\"[^>]+>(\\d+)</span> seconds</span>").getMatch(0);
+        String ttt = new Regex(correctedBR, "Wait<br /> <span style=\"[^<>\"]*?\" id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

@@ -30,7 +30,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "http(s)?://(www\\.)?picasaweb\\.google\\.com/.*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "picasaweb.google.com" }, urls = { "http(s)?://(www\\.)?picasaweb\\.google\\.com/(?!accounts|lh/explore).*?/.*?(\\?feat=(featured#[0-9]+|featured#)|#[0-9]+|#|\\?authkey=[A-Za-z0-9\\-]+)" }, flags = { 0 })
 public class PcsaGgleCom extends PluginForDecrypt {
 
     public PcsaGgleCom(PluginWrapper wrapper) {

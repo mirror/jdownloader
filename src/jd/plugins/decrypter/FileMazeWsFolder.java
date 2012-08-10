@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemaze.ws" }, urls = { "http://(www\\.)?filemaze\\.ws/users/[a-z0-9]+/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemaze.ws" }, urls = { "http://(www\\.)?filemaze\\.ws/users/[a-z0-9]+/\\d+/[^<>\"/]+" }, flags = { 0 })
 public class FileMazeWsFolder extends PluginForDecrypt {
 
     public FileMazeWsFolder(PluginWrapper wrapper) {
@@ -40,11 +40,24 @@ public class FileMazeWsFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
-        if (br.containsHTML("No such user exist")) return decryptedLinks;
-        String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        if (br.containsHTML("No such user exist")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
+        final String[] folders = br.getRegex("<TD><a href=\"(http://(www\\.)?filemaze\\.ws/users/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getColumn(0);
+        if ((links == null || links.length == 0) && folders == null || folders.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (links != null && links.length != 0) {
+            for (final String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+        }
+        if (folders != null && folders.length != 0) {
+            for (final String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+        }
         return decryptedLinks;
     }
 

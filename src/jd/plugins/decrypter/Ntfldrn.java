@@ -17,9 +17,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,9 +43,9 @@ public class Ntfldrn extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        if (parameter.matches(patternSupported_2)) {
+        if (new Regex(parameter, Pattern.compile(patternSupported_2, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-        } else if (parameter.matches(patternSupported_1)) {
+        } else if (new Regex(parameter, Pattern.compile(patternSupported_1, Pattern.CASE_INSENSITIVE)).matches()) {
             String password = "";
             for (int retrycounter = 1; retrycounter <= 5; ++retrycounter) {
                 int check = br.getRegex("input type=\"password\" name=\"password\"").count();
@@ -55,17 +57,17 @@ public class Ntfldrn extends PluginForDecrypt {
                 }
             }
 
-            String[] links = br.getRegex("href=\"http://netload\\.in/(.*?)\"").getColumn(0);
-            progress.setRange(links.length);
-            for (String element : links) {
+            final String[] links = br.getRegex("href=\"http://netload\\.in/(.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String element : links) {
                 decryptedLinks.add(createDownloadlink("http://netload.in/" + element));
-                progress.increase(1);
             }
         }
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

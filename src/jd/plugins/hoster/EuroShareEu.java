@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/\\d+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/\\d+/[^<>\"/]+" }, flags = { 2 })
 public class EuroShareEu extends PluginForHost {
 
     private static final String TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
@@ -121,7 +121,7 @@ public class EuroShareEu extends PluginForHost {
         }
 
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex(">Premium účet do<.*?type=\"text\" name=\"premium\" value=\"(.*?)\"").getMatch(0);
+        String expire = br.getRegex(">Prémium účet máte aktívny do: ([^<>\"]*?)</a>").getMatch(0);
         if (expire == null) {
             ai.setExpired(true);
             account.setValid(false);
@@ -172,15 +172,7 @@ public class EuroShareEu extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\\'(http://euroshare\\.eu/download/\\d+/.*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("onClick=\"location\\.href=\\'(http://euroshare.eu/.*?)\\'\"").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "/download/", true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -191,14 +183,13 @@ public class EuroShareEu extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage("http://euroshare.eu/");
-        br.postPage("http://euroshare.eu/", "login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        br.getPage("http://euroshare.eu/customer-zone/login/");
+        br.postPage("http://euroshare.eu/customer-zone/login/", "trvale=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         // There are no cookies so we can only check via text on the website
-        if (!br.containsHTML(">Môj profil<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        if (!br.containsHTML("title=\"Môj profil\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.containsHTML(">Nesprávne prihlasovacie meno alebo heslo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.getPage("http://euroshare.eu/my-profile");
-        if (br.containsHTML("Nemáte premium účet")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
