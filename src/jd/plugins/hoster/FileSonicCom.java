@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -46,91 +47,96 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesonic.com" }, urls = { "http://[\\w\\.]*?(sharingmatrix|filesonic)\\..*?/.*?file/([a-zA-Z0-9]+(/.+)?|[a-z0-9]+/[0-9]+(/.+)?|[0-9]+(/.+)?)" }, flags = { 2 })
 public class FileSonicCom extends PluginForHost {
 
-    private static final Object LOCK          = new Object();
-    private static String       geoDomain     = null;
+    private static final Object LOCK                = new Object();
+    private static String       geoDomain           = null;
 
-    private static final String ua            = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
-    private static final String uaf           = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
-    private static final String uap           = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String ua                  = "Mozilla/5.0 (JD; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String uaf                 = "Mozilla/5.0 (JDF; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
+    private static final String uap                 = "Mozilla/5.0 (JDP; X11; U; Linux i686; en-US; rv:1.9.0.10) Gecko/2009042523 Ubuntu/9.04 (jaunty) Firefox/3.0.10";
 
-    private static final String RECAPTCHATEXT = "Recaptcha\\.create";
+    private static final String RECAPTCHATEXT       = "Recaptcha\\.create";
 
-    private static final String COLLABORATE   = "COLLABORATE";
+    private static final String COLLABORATE         = "COLLABORATE";
+    private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
 
     public FileSonicCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.filesonic.com/premium");
     }
 
-    // @Override
-    // public boolean checkLinks(final DownloadLink[] urls) {
-    // if (urls == null || urls.length == 0) { return false; }
-    // try {
-    // final Browser br = new Browser();
-    // br.getHeaders().put("User-Agent", ua);
-    // br.setCookie(getDomain(), "lang", "en");
-    // br.setCookiesExclusive(true);
-    // final StringBuilder sb = new StringBuilder();
-    // final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-    // int index = 0;
-    // while (true) {
-    // links.clear();
-    // while (true) {
-    // /* we test 80 links at once */
-    // if (index == urls.length || links.size() > 80) {
-    // break;
-    // }
-    // links.add(urls[index]);
-    // index++;
-    // }
-    // sb.delete(0, sb.capacity());
-    // sb.append("ids=");
-    // int c = 0;
-    // for (final DownloadLink dl : links) {
-    // if (c > 0) {
-    // sb.append(",");
-    // }
-    // sb.append(getPureID(dl));
-    // c++;
-    // }
-    // try {
-    // br.setCustomCharset("UTF-8");
-    // } catch (final Throwable e) {
-    // }
-    // br.postPage("http://api.filesonic.com/link?method=getInfo",
-    // sb.toString());
-    // for (final DownloadLink dllink : links) {
-    // final String id = this.getPureID(dllink);
-    // final String hit = br.getRegex("link><id>" + id +
-    // "(.*?)</link>").getMatch(0);
-    // if (hit == null || hit.contains("status>NOT_AVAILABLE")) {
-    // dllink.setAvailable(false);
-    // } else {
-    // String name = new Regex(hit, "filename>(.*?)</filename").getMatch(0);
-    // if (name.startsWith("<![CDATA")) {
-    // name = new Regex(name, "CDATA\\[(.*?)\\]\\]>").getMatch(0);
-    // }
-    // String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
-    // dllink.setAvailable(true);
-    // dllink.setFinalFileName(name);
-    // if (size != null) dllink.setDownloadSize(Long.parseLong(size));
-    // if ("1".equals(new Regex(hit,
-    // "<is_collaborate>(1)</is_collaborate>").getMatch(0))) {
-    // dllink.setProperty(COLLABORATE, true);
-    // } else {
-    // dllink.setProperty(COLLABORATE, Property.NULL);
-    // }
-    // }
-    // }
-    // if (index == urls.length) {
-    // break;
-    // }
-    // }
-    // } catch (final Exception e) {
-    // return false;
-    // }
-    // return true;
-    // }
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (true) {
+            for (DownloadLink aLink : urls) {
+                aLink.getLinkStatus().setStatusText(DLYOURFILESUSERTEXT);
+                aLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+            }
+            return true;
+        }
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.getHeaders().put("User-Agent", ua);
+            br.setCookie(getDomain(), "lang", "en");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 80 links at once */
+                    if (index == urls.length || links.size() > 80) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("ids=");
+                int c = 0;
+                for (final DownloadLink dl : links) {
+                    if (c > 0) {
+                        sb.append(",");
+                    }
+                    sb.append(getPureID(dl));
+                    c++;
+                }
+                try {
+                    br.setCustomCharset("UTF-8");
+                } catch (final Throwable e) {
+                }
+                br.postPage("http://api.filesonic.com/link?method=getInfo", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String id = this.getPureID(dllink);
+                    final String hit = br.getRegex("link><id>" + id + "(.*?)</link>").getMatch(0);
+                    if (hit == null || hit.contains("status>NOT_AVAILABLE")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        String name = new Regex(hit, "filename>(.*?)</filename").getMatch(0);
+                        if (name.startsWith("<![CDATA")) {
+                            name = new Regex(name, "CDATA\\[(.*?)\\]\\]>").getMatch(0);
+                        }
+                        String size = new Regex(hit, "size>(\\d+)</size").getMatch(0);
+                        dllink.setAvailable(true);
+                        dllink.setFinalFileName(name);
+                        if (size != null) dllink.setDownloadSize(Long.parseLong(size));
+                        if ("1".equals(new Regex(hit, "<is_collaborate>(1)</is_collaborate>").getMatch(0))) {
+                            dllink.setProperty(COLLABORATE, true);
+                        } else {
+                            dllink.setProperty(COLLABORATE, Property.NULL);
+                        }
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
 
     /* converts id and filename */
     @Override
@@ -440,6 +446,7 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, DLYOURFILESUSERTEXT);
         String downloadUrl = null;
         String passCode = null;
         passCode = null;
@@ -660,7 +667,10 @@ public class FileSonicCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (true) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (true) {
+            downloadLink.getLinkStatus().setStatusText(DLYOURFILESUSERTEXT);
+            return AvailableStatus.UNCHECKABLE;
+        }
         this.correctDownloadLink(downloadLink);
         this.checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) return AvailableStatus.UNCHECKED;

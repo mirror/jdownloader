@@ -65,7 +65,10 @@ public class WUploadCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        if (true) return AvailableStatus.FALSE;
+        if (true) {
+            downloadLink.getLinkStatus().setStatusText(DLYOURFILESUSERTEXT);
+            return AvailableStatus.UNCHECKABLE;
+        }
         correctDownloadLink(downloadLink);
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }

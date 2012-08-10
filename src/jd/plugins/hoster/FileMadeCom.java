@@ -68,7 +68,7 @@ public class FileMadeCom extends PluginForHost {
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static final Object  LOCK                         = new Object();
     private String               domain                       = null;
-    private String               domainHost;
+    private static final String  domainHost                   = "filemade.co";
     private boolean              freshLogin                   = false;
 
     // DEV NOTES
@@ -119,7 +119,6 @@ public class FileMadeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         domain = new Regex(link.getDownloadURL(), "(https?://.*?/)").getMatch(0);
-        domainHost = new Regex(link.getDownloadURL(), "https?://(.*?)/").getMatch(0);
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -592,7 +591,7 @@ public class FileMadeCom extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
-                if (br.getCookie("http://" + domainHost, "login") == null || br.getCookie(domain, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie("http://" + domainHost, "login") == null || br.getCookie("http://" + domainHost, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage("http://" + domainHost + "/?op=my_account");
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);

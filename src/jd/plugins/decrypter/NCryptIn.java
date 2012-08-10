@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ncrypt.in" }, urls = { "http://(www\\.)?(ncrypt\\.in/(folder|link)\\-.{3,}|urlcrypt\\.com/open\\-[A-Za-z0-9]+)" }, flags = { 0 })
 public class NCryptIn extends PluginForDecrypt {
 
     private static final String            RECAPTCHA      = "recaptcha/api/challenge";
@@ -215,12 +215,13 @@ public class NCryptIn extends PluginForDecrypt {
                     logger.warning("Didn't find anything to decrypt, stopping...");
                     return null;
                 }
-                progress.setRange(links.length);
                 for (final String singleLink : links) {
                     final String finallink = decryptSingle(singleLink);
-                    if (finallink == null) { return null; }
+                    if (finallink == null) {
+                        logger.info("Found a broken link for link: " + parameter);
+                        continue;
+                    }
                     decryptedLinks.add(createDownloadlink(finallink));
-                    progress.increase(1);
                 }
             }
             if (fpName != null) {

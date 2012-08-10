@@ -53,8 +53,8 @@ public class HdPlayOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.postPage(downloadLink.getDownloadURL(), "agree=");
-        String dllink = br.getRegex("var movieURL  = \"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://srv\\.hdplay\\.org:\\d+/storage/flv/[^<>\"]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<div id=\"playerHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://srv\\.hdplay\\.org:\\d+/storage/flv/[A-Za-z0-9]+\\.mp4\\?key=[a-z0-9]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
