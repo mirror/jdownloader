@@ -18,7 +18,11 @@
 package jd;
 
 import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Enumeration;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
@@ -48,8 +52,48 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         // }
 
-        System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
-        ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
+        try {
+            // the logmanager should not be initialized here. so setting the property should tell the logmanager to init a ExtLogManager
+            // instance.
+            System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
+            ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
+        } catch (Throwable e) {
+            e.printStackTrace();
+            LogManager lm = LogManager.getLogManager();
+            System.err.println("Logmanager: " + lm);
+            try {
+                if (lm != null) {
+                    // seems like the logmanager has already been set, and is not of type ExtLogManager. try to fix this here
+                    // we experiences this bug once on a mac system. may be caused by mac jvm, or the mac install4j launcher
+                    Field field = LogManager.class.getDeclaredField("manager");
+                    field.setAccessible(true);
+                    ExtLogManager manager = new ExtLogManager();
+
+                    field.set(null, manager);
+                    Field rootLogger = LogManager.class.getDeclaredField("rootLogger");
+                    rootLogger.setAccessible(true);
+                    Logger rootLoggerInstance = (Logger) rootLogger.get(lm);
+                    rootLogger.set(manager, rootLoggerInstance);
+                    manager.addLogger(rootLoggerInstance);
+
+                    // Adding the global Logger. Doing so in the Logger.<clinit>
+                    // would deadlock with the LogManager.<clinit>.
+
+                    Method setLogManager = Logger.class.getDeclaredMethod("setLogManager", new Class[] { LogManager.class });
+                    setLogManager.setAccessible(true);
+                    setLogManager.invoke(Logger.global, manager);
+
+                    Enumeration<String> names = lm.getLoggerNames();
+                    while (names.hasMoreElements()) {
+                        manager.addLogger(lm.getLogger(names.nextElement()));
+
+                    }
+                }
+            } catch (Throwable e1) {
+                e1.printStackTrace();
+            }
+
+        }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
         IO.setErrorHandler(new IOErrorHandler() {
