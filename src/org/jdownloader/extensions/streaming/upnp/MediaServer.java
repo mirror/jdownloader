@@ -19,8 +19,11 @@ import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.model.Command;
 import org.fourthline.cling.model.DefaultServiceManager;
 import org.fourthline.cling.model.ValidationException;
+import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.StreamRequestMessage;
 import org.fourthline.cling.model.message.StreamResponseMessage;
+import org.fourthline.cling.model.message.UpnpRequest;
+import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.DeviceDetails;
 import org.fourthline.cling.model.meta.DeviceIdentity;
 import org.fourthline.cling.model.meta.Icon;
@@ -37,6 +40,13 @@ import org.fourthline.cling.model.types.DLNADoc;
 import org.fourthline.cling.model.types.DeviceType;
 import org.fourthline.cling.model.types.UDADeviceType;
 import org.fourthline.cling.model.types.UDN;
+import org.fourthline.cling.protocol.ProtocolCreationException;
+import org.fourthline.cling.protocol.ProtocolFactory;
+import org.fourthline.cling.protocol.ProtocolFactoryImpl;
+import org.fourthline.cling.protocol.ReceivingAsync;
+import org.fourthline.cling.protocol.async.ReceivingNotification;
+import org.fourthline.cling.protocol.async.ReceivingSearch;
+import org.fourthline.cling.protocol.async.ReceivingSearchResponse;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 import org.fourthline.cling.registry.RegistryListener;
@@ -91,6 +101,7 @@ public class MediaServer implements Runnable {
             while (ExtensionController.getInstance().getExtension(ExtractionExtension.class) == null || !ExtensionController.getInstance().getExtension(ExtractionExtension.class)._isEnabled()) {
                 Thread.sleep(1000);
             }
+
             logger.info("Wait for extraction Module: Done");
             upnpService = new UpnpServiceImpl(new DefaultUpnpServiceConfiguration(8895) {
                 // Override using Apache Http instead of sun http
@@ -152,7 +163,38 @@ public class MediaServer implements Runnable {
                 protected NetworkAddressFactory createNetworkAddressFactory(int streamListenPort) {
                     return new FixedNetworkAddressFactoryImpl(streamListenPort);
                 }
-            }, new RegistryListener[0]);
+            }, new RegistryListener[0]) {
+                protected ProtocolFactory createProtocolFactory() {
+                    return new ProtocolFactoryImpl(this) {
+                        public ReceivingAsync createReceivingAsync(IncomingDatagramMessage message) throws ProtocolCreationException {
+                            logger.fine("Creating protocol for incoming asynchronous: " + message);
+
+                            if (message.getOperation() instanceof UpnpRequest) {
+                                IncomingDatagramMessage<UpnpRequest> incomingRequest = message;
+
+                                switch (incomingRequest.getOperation().getMethod()) {
+                                case NOTIFY:
+                                    return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ReceivingNotification(getUpnpService(), incomingRequest) : null;
+                                case MSEARCH:
+                                    return new ReceivingSearch(getUpnpService(), incomingRequest) {
+                                        @Override
+                                        protected boolean waitBeforeExecution() throws InterruptedException {
+                                            return true;
+                                        }
+                                    };
+                                }
+
+                            } else if (message.getOperation() instanceof UpnpResponse) {
+                                IncomingDatagramMessage<UpnpResponse> incomingResponse = message;
+
+                                return isSupportedServiceAdvertisement(incomingResponse) ? new ReceivingSearchResponse(getUpnpService(), incomingResponse) : null;
+                            }
+
+                            throw new ProtocolCreationException("Protocol for incoming datagram message not found: " + message);
+                        }
+                    };
+                }
+            };
 
             // Add the bound local device to the registry
             upnpService.getRegistry().addDevice(createDevice());

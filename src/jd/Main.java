@@ -18,6 +18,7 @@
 package jd;
 
 import java.io.File;
+import java.util.logging.LogManager;
 
 import jd.gui.swing.jdgui.menu.actions.sendlogs.LogAction;
 
@@ -37,8 +38,7 @@ public class Main {
     static {
         // only use ipv4, because debian changed default stack to ipv6
         /*
-         * we have to make sure that this property gets set before any network
-         * stuff gets loaded!!
+         * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
         // if (CrossSystem.isLinux()) {
 
@@ -47,6 +47,9 @@ public class Main {
         // do we even need this under windows?
         System.setProperty("java.net.preferIPv4Stack", "true");
         // }
+
+        System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
+        ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
         IO.setErrorHandler(new IOErrorHandler() {
@@ -124,6 +127,7 @@ public class Main {
         try {
             // USe Jacksonmapper in this project
             JSonStorage.setMapper(new JacksonMapper());
+
             checkLanguageSwitch(args);
             try {
                 /* set D3D Property if not already set by user */
@@ -137,6 +141,7 @@ public class Main {
             } catch (final Throwable e) {
                 e.printStackTrace();
             }
+
             ShutdownController.getInstance().addShutdownEvent(RunUpdaterOnEndAtLeastOnceDaily.getInstance());
             jd.Launcher.mainStart(args);
             if (CrossSystem.isWindows()) {

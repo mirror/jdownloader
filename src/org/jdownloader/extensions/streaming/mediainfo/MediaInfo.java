@@ -58,7 +58,7 @@ public class MediaInfo extends MediaInfoTrack {
     public MediaInfo load() throws IOException, InterruptedException, SAXException, ParserConfigurationException {
         String exec = null;
         if (CrossSystem.isWindows()) {
-            if (CrossSystem.is64Bit()) {
+            if (CrossSystem.is64BitOperatingSystem()) {
                 exec = Application.getResource("tools/Windows/mediainfo/x64/MediaInfo.exe").getAbsolutePath();
             } else {
                 exec = Application.getResource("tools/Windows/mediainfo/i386/MediaInfo.exe").getAbsolutePath();
