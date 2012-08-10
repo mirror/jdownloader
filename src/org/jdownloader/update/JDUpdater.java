@@ -42,6 +42,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.JDRestartController;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.settings.GeneralSettings;
@@ -165,6 +166,7 @@ public class JDUpdater extends AppUpdater {
      */
     private JDUpdater() {
         super();
+        setLogger(LogController.getInstance().getLogger("Updater"));
         setRestartArgs(Launcher.PARAMETERS);
         setRestartAfterUpdaterUpdateAction(RestartViaUpdaterEvent.getInstance());
         icon = new UpdateProgress();
