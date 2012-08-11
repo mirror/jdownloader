@@ -100,7 +100,7 @@ public class SharpFileCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile(">The file you requested does not exist", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;

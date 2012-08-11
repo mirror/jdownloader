@@ -72,6 +72,7 @@ public class FileFactory extends PluginForHost {
     private static final Object  LOCK             = new Object();
     private static final String  COOKIE_HOST      = "http://www.filefactory.com";
     private String               dlUrl            = null;
+    private static final String  TRAFFICSHARELINK = "filefactory.com/trafficshare/";
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -156,7 +157,7 @@ public class FileFactory extends PluginForHost {
         // set trafficshare links like 'normal', this allows downloads to
         // continue living if the uploader doesn't sponsor uid as
         // trafficshare any longer.
-        if (link.getDownloadURL().contains("filefactory.com/trafficshare/")) {
+        if (link.getDownloadURL().contains(TRAFFICSHARELINK)) {
             String[][] uid = new Regex(link.getDownloadURL(), "(https?://.*?filefactory\\.com/)trafficshare/[a-z0-9]{32}/([^/]+)/?").getMatches();
             if (uid != null && (uid[0][0] != null || uid[0][1] != null)) {
                 link.setUrlDownload(uid[0][0] + "file/" + uid[0][1]);
@@ -283,7 +284,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink parameter) throws Exception {
         this.requestFileInformation(parameter);
-        if (this.br.getURL().contains("filefactory.com/trafficshare/")) {
+        if (this.br.getURL().contains(TRAFFICSHARELINK)) {
             handleTrafficShare(parameter);
         } else {
             this.handleFree0(parameter);
@@ -293,7 +294,6 @@ public class FileFactory extends PluginForHost {
     public void handleFree0(final DownloadLink parameter) throws Exception {
         try {
             long waittime;
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             if (dlUrl != null) {
                 logger.finer("DIRECT free-download");
                 this.br.setFollowRedirects(true);
@@ -310,7 +310,6 @@ public class FileFactory extends PluginForHost {
                     logger.warning("getUrl is broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                this.br.setFollowRedirects(true);
                 this.br.getPage(urlWithFilename);
                 String wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                 if (wait != null) {
@@ -375,16 +374,17 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.requestFileInformation(downloadLink);
-        if (this.br.getURL().contains("filefactory.com/trafficshare/")) {
+        if (this.br.getURL().contains(TRAFFICSHARELINK)) {
             handleTrafficShare(downloadLink);
         } else {
             this.login(account, false);
-            this.br.setFollowRedirects(false);
-            this.br.getPage(downloadLink.getDownloadURL());
             if (account.getBooleanProperty("freeAccount")) {
+                this.br.setFollowRedirects(true);
+                this.br.getPage(downloadLink.getDownloadURL());
                 this.handleFree0(downloadLink);
             } else {
-                this.br.setFollowRedirects(true);
+                this.br.setFollowRedirects(false);
+                this.br.getPage(downloadLink.getDownloadURL());
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 0);
                 if (!this.dl.getConnection().isContentDisposition()) {
                     this.br.followConnection();
@@ -562,11 +562,11 @@ public class FileFactory extends PluginForHost {
                 String fileName = null;
                 String fileSize = null;
                 if (this.br.containsHTML("File Not Found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                if (this.br.getURL().contains("filefactory.com/trafficshare/")) {
-                    fileName = this.br.getRegex("\"file\">[\r\n\t ]+<h2>(.*?)</h2>").getMatch(0);
+                if (this.br.getURL().contains(TRAFFICSHARELINK)) {
+                    fileName = this.br.getRegex("<section class=\"file\" style=\"margin\\-top:20px;\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
                     fileSize = this.br.getRegex("<p class=\"size\">[\r\n\t ]+([\\d\\.]+ (KB|MB|GB|TB))").getMatch(0);
                 } else {
-                    fileName = this.br.getRegex("<title>(.*?) - download now for free").getMatch(0);
+                    fileName = this.br.getRegex("<title>([^<>\"]*?) \\- download now for free").getMatch(0);
                     fileSize = this.br.getRegex(FileFactory.FILESIZE).getMatch(0);
                     if (fileSize == null) fileSize = this.br.getRegex("downloadFileData.*?h2>(.*?) file uploaded").getMatch(0);
                 }
@@ -576,7 +576,6 @@ public class FileFactory extends PluginForHost {
             }
 
         }
-        this.br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 

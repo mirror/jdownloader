@@ -38,7 +38,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://[\\w\\d\\.]*?(easy\\-share|crocko)\\.com/(?!us|pt|accounts|billing)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://(www\\.)?(easy\\-share|crocko)\\.com/(?!us|pt|accounts|billing|f/)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
 public class CrockoCom extends PluginForHost {
 
     private static Boolean      longwait     = null;

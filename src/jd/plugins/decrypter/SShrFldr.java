@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 // this plugin supports 'folders' and 'other files of this uploader'.
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crocko.com" }, urls = { "https?://(www\\.)?(easy\\-share|crocko)\\.com/(f/[A-Z0-9]+/.+|o/[0-9]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crocko.com" }, urls = { "https?://(www\\.)?(easy\\-share|crocko)\\.com/(f/[A-Z0-9]+/(.+)?|o/[0-9]+)" }, flags = { 0 })
 public class SShrFldr extends PluginForDecrypt {
 
     public SShrFldr(PluginWrapper wrapper) {
@@ -45,9 +45,18 @@ public class SShrFldr extends PluginForDecrypt {
         br.setCookie("http://www.crocko.com", "language", "en");
         br.setCustomCharset("utf-8");
         br.getPage(parameter);
-        if (br.containsHTML(">Error 404: Page not found<|No files in this folder|Folder not found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Either incorrect URL, folder or owner no longer exists, empty folder."));
+        if (br.containsHTML(">Error 404: Page not found<|No files in this folder|Folder not found|>the page you\\'re looking for <")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Either incorrect URL, folder or owner no longer exists, empty folder."));
         if (br.containsHTML("Please wait a few seconds and try again")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Server error, please try again."));
-        String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+        if (br.containsHTML("<label>Password:</label> <input")) {
+            for (int i = 0; i <= 3; i++) {
+                final String passCode = getUserInput("Enter password for: " + parameter, param);
+                br.postPage(br.getURL(), "f=%7Bf%7D&pass=" + passCode);
+                if (br.containsHTML("<label>Password:</label> <input")) continue;
+                break;
+            }
+            if (br.containsHTML("<label>Password:</label> <input")) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        final String fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("class=\"w331 fl h18 l \"><a href=\"(.*?)\">").getColumn(0);
         if (links == null || links.length == 0) {
             links = br.getRegex("\"(https?://(www\\.)?crocko\\.com/f/[A-Z0-9]+/[^\"\\'<>]+)\"").getColumn(0);
