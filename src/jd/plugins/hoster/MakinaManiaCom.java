@@ -69,7 +69,12 @@ public class MakinaManiaCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
+        }
+        throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
     }
 
     @SuppressWarnings("unchecked")
@@ -92,14 +97,6 @@ public class MakinaManiaCom extends PluginForHost {
                         return;
                     }
                 }
-
-                /* Code with valid hashvalue */
-                // String phpsessId = br.getCookie(br.getHost(), "PHPSESSID");
-                // br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                // br.postPage("http://www.makinamania.com/index.php?PHPSESSID=" + phpsessId + "&action=login2", "&user=" +
-                // Encoding.urlEncode(account.getUser()) + "&passwrd=&cookielength=999&hash_passwrd=" +
-                // JDHash.getSHA1(JDHash.getSHA1(account.getUser().toLowerCase() + account.getPass()) + phpsessId));
-
                 br.postPage("http://www.makinamania.com/index.php?action=login2", "&user=" + Encoding.urlEncode(account.getUser()) + "&passwrd=" + Encoding.urlEncode(account.getPass()) + "&cookielength=999&hash_passwrd=");
                 if (br.getRedirectLocation() == null || !br.getRedirectLocation().contains("sa=check")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies

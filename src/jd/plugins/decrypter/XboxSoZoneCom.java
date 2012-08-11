@@ -47,16 +47,25 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);
         }
-        String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        final String[] links = br.getRegex("\"(/dl\\-start/\\d+/(\\d+/)?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         String host = new Regex(parameter, "(http://.*?\\.com)").getMatch(0);
         for (String finallink : links) {
-            DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
+            final DownloadLink finaldownloadlink = createDownloadlink(host + finallink);
             finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));
             // Needed to download it later
             finaldownloadlink.setProperty("mainlink", parameter);
             decryptedLinks.add(finaldownloadlink);
         }
+        final DownloadLink finaldownloadlink = createDownloadlink(parameter.replace("http://", "xboxisopremiumonly://"));
+        finaldownloadlink.setProperty("premiumonly", true);
+        finaldownloadlink.setName(String.valueOf(new Random().nextInt(100000)));
+        // Needed to download it later
+        finaldownloadlink.setProperty("mainlink", parameter);
+        decryptedLinks.add(finaldownloadlink);
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

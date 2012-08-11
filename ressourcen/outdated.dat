@@ -834,7 +834,6 @@ jd/plugins/hoster/FourUsTo.class
 jd/plugins/hoster/DigloCom.class
 jd/plugins/hoster/YabaDabaRu.class
 jd/plugins/hoster/Hundred63PanCom.class
-jd/plugins/decrypter/XXXBlg.class
 jd/plugins/hoster/MadShareCom.class
 jd/plugins/hoster/ImageHostOrg.class
 jd/captcha/methods/lttbt
@@ -877,3 +876,4 @@ jd/plugins/decrypter/TopFilesOrg.class
 jd/plugins/decrypter/Lnkshld.class
 jd/plugins/decrypter/QckLnkM.class
 jd/plugins/decrypter/SurfMvsOrg.class
+jd/plugins/hoster/UploadBoostCom.class

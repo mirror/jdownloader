@@ -18,11 +18,18 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,16 +39,22 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "(http://(www\\.)?((xboxisozone|dcisozone|gcisozone|psisozone|theisozone)\\.com|romgamer\\.com/download)/dl\\-start/\\d+/(\\d+/)?|xboxisopremiumonly://.+)" }, flags = { 2 })
 public class XboxIsoZoneCom extends PluginForHost {
 
     public XboxIsoZoneCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.theisozone.com/subscribe/");
     }
+
+    private static final Object LOCK     = new Object();
+    private final String        MAINPAGE = "http://theisozone.com/";
 
     public void correctDownloadLink(DownloadLink link) {
         if (!link.getDownloadURL().contains("www.")) link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));
+        link.setUrlDownload(link.getDownloadURL().replace("xboxisopremiumonly://", "http://"));
     }
 
     @Override
@@ -55,8 +68,34 @@ public class XboxIsoZoneCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        if (link.getBooleanProperty("premiumonly")) {
+            br.getPage(link.getDownloadURL());
+            final String filesize = br.getRegex(">Premium Download</span>[\t\n\r ]+<center style=\"margin\\-top:3px;\">[\t\n\r ]+1 File download, Total size ([^<>\"]*?) <br").getMatch(0);
+            final String filename = br.getRegex("<title>([^<>\"]*?) \\&bull; Xbox Isos \\&bull; Downloads @ The Iso Zone</title>").getMatch(0);
+            if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.getLinkStatus().setStatusText("Only downloadable for premium users");
+        } else {
+            link.getLinkStatus().setStatusText("Only downloadable for freeusers");
+        }
+        // No available check possible because this tells the server that i
+        // started a download
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (downloadLink.getBooleanProperty("premiumonly")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Premium Members");
+        }
         String mainlink = downloadLink.getStringProperty("mainlink");
         if (mainlink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "mainlink missing, please delete and re-add this link to your downloadlist!");
         br.getPage(mainlink);
@@ -97,22 +136,99 @@ public class XboxIsoZoneCom extends PluginForHost {
         dl.startDownload();
     }
 
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasAutoCaptcha() {
-        return false;
-    }
-
-    // do not add @Override here to keep 0.* compatibility
-    public boolean hasCaptcha() {
-        return true;
+    @SuppressWarnings("unchecked")
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getPage("http://www.theisozone.com/");
+                br.postPage("http://www.theisozone.com/sub-login/", "sub_login=&login=Login&sub_user=" + Encoding.urlEncode(account.getUser()) + "&sub_pass=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("Account Status: <span style=\"color:green\">Active</span>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        // No available check possible because this tells the server that i
-        // started a download
-        return AvailableStatus.TRUE;
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.theisozone.com/subscribers/control-panel/");
+        ai.setUnlimitedTraffic();
+        final String expire = br.getRegex("Next payment due on:</strong> (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        // We can only download "premium only" links!
+        if (!link.getBooleanProperty("premiumonly")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available for Free Users");
+        }
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(link.getDownloadURL());
+        final Form dlform = br.getFormbyProperty("class", "dl_form");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

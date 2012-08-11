@@ -207,6 +207,7 @@ public class ShareOnlineBiz extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 5 * 60 * 1000l);
         }
+        if (br.containsHTML("nput invalid, halting. please avoid more of these requests")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
     }
 
     @Override
@@ -270,7 +271,8 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
-         * because of You have got max allowed threads from same download session
+         * because of You have got max allowed threads from same download
+         * session
          */
         return 10;
     }
@@ -286,7 +288,8 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitNoFreeSlot) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to stop
+                             * reset counter this error does not cause plugin to
+                             * stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -302,7 +305,8 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitOverloadedServer) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to stop
+                             * reset counter this error does not cause plugin to
+                             * stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -466,7 +470,8 @@ public class ShareOnlineBiz extends PluginForHost {
             if (valid == false) valid = a != null && !"not_available".equalsIgnoreCase(a);
             if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
-             * check expire date, expire >0 (normal handling) expire<0 (never expire)
+             * check expire date, expire >0 (normal handling) expire<0 (never
+             * expire)
              */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
             if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
