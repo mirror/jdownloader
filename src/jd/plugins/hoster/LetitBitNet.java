@@ -34,7 +34,6 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -61,7 +60,6 @@ public class LetitBitNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
-    private static String        AGENT                             = RandomUserAgent.generate();
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -605,7 +603,7 @@ public class LetitBitNet extends PluginForHost {
                                 UserIO.getInstance().requestMessageDialog("Error occured", msg);
                                 return;
                             } else if (skymonk.containsHTML("status:\'ok\'")) {
-                                if (skymonk.containsHTML("activation code has been sent to your e\\-mail")) {
+                                if (skymonk.containsHTML("(activation code has been sent to your e\\-mail|Код активации SkyMonk выслан на Ваш мобильный телефон)")) {
                                     getPluginConfig().setProperty("APPID", appId);
                                     getPluginConfig().setProperty("APPIDVALIDATE", true);
                                     getPluginConfig().setProperty("SKYMONKEMAIL", email);

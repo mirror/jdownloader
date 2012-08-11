@@ -351,7 +351,7 @@ public class ShareFlareNet extends PluginForHost {
                                 UserIO.getInstance().requestMessageDialog("Error occured", msg);
                                 return;
                             } else if (skymonk.containsHTML("status:\'ok\'")) {
-                                if (skymonk.containsHTML("activation code has been sent to your e\\-mail")) {
+                                if (skymonk.containsHTML("(activation code has been sent to your e\\-mail|Код активации SkyMonk выслан на Ваш мобильный телефон)")) {
                                     getPluginConfig().setProperty("APPID", appId);
                                     getPluginConfig().setProperty("APPIDVALIDATE", true);
                                     getPluginConfig().setProperty("SKYMONKEMAIL", email);
