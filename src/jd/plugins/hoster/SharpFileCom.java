@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/[a-z0-9]{6,12}" }, flags = { 2 })
 public class SharpFileCom extends PluginForHost {
 
     private String               correctedBR         = "";
@@ -467,7 +467,6 @@ public class SharpFileCom extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (passCode != null) link.setProperty("pass", passCode);
             link.setProperty("premlink", dllink);
             dl.startDownload();
         }
@@ -504,7 +503,7 @@ public class SharpFileCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "sf_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/account.php");
-                if (!new Regex(correctedBR, "(Upgrade to premium|>Extend Premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "(>Buy Premium</a>|>Extend Premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!new Regex(correctedBR, ">Extend Premium<").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
