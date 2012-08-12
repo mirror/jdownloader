@@ -45,6 +45,7 @@ public class OneThousandEbCom extends PluginForHost {
 
     private String fortyTwo(String s) {
         s = Encoding.Base64Decode(s);
+        JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s));
     }
 
@@ -62,10 +63,10 @@ public class OneThousandEbCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
-        final String js = br.getRegex(fortyTwo("RkM4QkZBRjFGQTAwQzhCMjFGOTZCMjk1REU1RDQzRkMyODkwNzBCRjBEMEFEQzk4MUU0QzVFMzgxNDY4ODY4NTU4OEZGQzMzODgwQUUxNkYyNTQ2NTVCREVBNzUxQzI2RTE3NzJEOUNDNUNDNjU2MkE4NzREMkU1NkY1QTM2Njg1RUExQ0Q3OTVDNzlGQjk5MjRGODJBRUY1MjNFQ0ZCMzQyRkE4QkRFNkJBRDlGRkQ5Q0Q4MkI5MjJDMzU3QzRFQzcyMDNFNTc2RkQ5ODUzNzNBMTMwNEZDMTg2NTEyN0UwMEU2OEE3MjMxRkE3M0M2ODA5NzYwN0E0QTZGNThDNDhCMzI=")).getMatch(0);
+        final String js = br.getRegex(fortyTwo(tb(0))).getMatch(0);
         final String dllink = requestDownloadLink(js);
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -81,9 +82,9 @@ public class OneThousandEbCom extends PluginForHost {
         try {
             engine.eval(fun);
             if (b) {
-                result = engine.get(fortyTwo("RkM4QkZCRjZGQjAxQ0NFMDE4OTFCNTlGREMwNg=="));
+                result = engine.get(fortyTwo(tb(1)));
             } else {
-                result = inv.invokeFunction(fortyTwo("RkQ4RkZCRjZGQjA3Q0ZFMjFCQzJCNzlBREUwMDQwQUIyOTlENzFFQTA4MDk="), engine.get("srv"));
+                result = inv.invokeFunction(fortyTwo(tb(2)), engine.get("srv"));
             }
         } catch (final Throwable e) {
             return null;
@@ -96,39 +97,35 @@ public class OneThousandEbCom extends PluginForHost {
         final Browser jsBr = br.cloneBrowser();
         // js Funktion vorbereiten. Leider recht statisch.
         final StringBuilder sb = new StringBuilder();
-        sb.append(br.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNUNCREY1NjQyRkIyODk2NzFCQTA4NThEOUNBMTkxRTVGMzIxNTM4ODY4MTVEREVGODZCOEQ1RkU3NkUyNTFB")).getMatch(0));
-        sb.append(br.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjk5REUwMzQzRkYyOUMxNzFFQzA4MEREOENGMUExRTVDMzgxNTY5ODc4MDU4OEZGQzMzODg1Q0UyM0IyMDEwNTVFOEVCMjAxRDc3RTEyMTI4Q0JDMUM3")).getMatch(0));
+        sb.append(br.getRegex(fortyTwo(tb(3))).getMatch(0));
+        sb.append(br.getRegex(fortyTwo(tb(4))).getMatch(0));
         jsBr.getPage(js);
-        String dlUrl = jsBr.getRegex(fortyTwo("Rjk4MEZCRjVGQjA2Q0RCMzFCOTdCNzk5REU1QzQyQUUyOUMxNzVCRjA4NUNEOENCMUIxRTVEM0YxNTNBODc4MzU5REVGRTY5ODgwMEUyNjkyMTQxNTNFRUVDMjAxQzc1RTEyMjJFQ0RDMTlDNjU2MkFENzVENkVG")).getMatch(0);
-        String servUrl = jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1MDQzRkEyODkyNzJCQTBCNTlEQTlEMUU0RjVCNkExMDNBODNENjVEODI=")).getMatch(0);
+        String dlUrl = jsBr.getRegex(fortyTwo(tb(5))).getMatch(0);
+        String servUrl = jsBr.getRegex(fortyTwo(tb(6))).getMatch(0);
         if (servUrl == null || dlUrl == null) { return null; }
-        dlUrl = dlUrl.replaceAll(fortyTwo("RkVEQkZGRjdGOTA2Q0VCNTFGQzFCNjk4REUwMDQzRkUyOTlENzBCRDA4MEREODlCMUE0RTVGM0UxNTM5ODc4MDVBRDhGODZGODgwRkUyMzUyMTQwNTBCOUVDMjYxRDcz"), "");
-        servUrl = servUrl.replaceAll(fortyTwo("RkVEQkZGRjdGOTA2Q0VCNTFGQzFCNjk4REUwMDQzRkUyOTlENzBCRDA4MEREODlCMUE0RTVGM0UxNTM5ODc4MDVBRDhGODZGODgwRkUyMzUyMTQwNTBCOUVDMjYxRDcz"), "");
-        servUrl = servUrl.replaceAll(fortyTwo("RkVEQkZGRjdGQTA3Q0NFNQ=="), fortyTwo("RkQ4Q0ZCQTVGQjA0Q0RCMzFCQzdCNkNCREU1NDQyRkMyQTk3NzFCQTA5NUZEOUNBMUExMzVGNkUxNTZCODc4Nw=="));
+        dlUrl = dlUrl.replaceAll(fortyTwo(tb(7)), "");
+        servUrl = servUrl.replaceAll(fortyTwo(tb(7)), "");
+        servUrl = servUrl.replaceAll(fortyTwo(tb(8)), fortyTwo(tb(9)));
         sb.append(dlUrl + ";");
-        sb.append(jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1NjQzRkEyOTkxNzFCQzA5NUZEQkNBMUExMzVGNkYxNTY5ODJEMTVEREFGOTZDOEQ1QkU2MzU=")).getMatch(0));
-        sb.append(jsBr.getRegex(fortyTwo("Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjlDREU1NjQyRkMyOUMyNzBCQzBDMEVEQzlGMUY0QzVBNjkxMTY1")).getMatch(0));
-        sb.append(fortyTwo("RkM4RUZCRjJGQjAxQzlFNjFCOTJCNjk0REU1MTQ3QUMyOTkyNzFCNjA4MDhEOENCMTgxMzVGNkUxNTZBODZEMjVCOERGQzMzODg1QUUyMzkyMjEwNTBCNEVGMjMxODI0RTU3MzI5Q0FDNUM4NjY2NEFDMjBEMkIyNkYwOTMzNjg1QUYxQ0Q3MzVDN0NGQkM4MjZGMzJBRUM1NjZFQ0NCNzQzQTk4RTg0NkVBQjlDQUM5QURGMkZDNTJDNjc3QzQyQzMyMDNGNTE2QzgzODAzMzNBNDcwMEFCMUEzNjE2NzkwMkIyOEE3NTM0QUI3MjlDODBDNjY1MkM0QTZFNUNDMDhFNkU0OEI3QzkzMERBQ0UzMjFBMDhENDcyNTlDMUI0RDgzODAzNEI1N0M3QjJBOTFERDgzOUY1NkQ2QjcyOUYxQzcw"));
+        sb.append(jsBr.getRegex(fortyTwo(tb(10))).getMatch(0));
+        sb.append(jsBr.getRegex(fortyTwo(tb(11))).getMatch(0));
+        sb.append(fortyTwo(tb(12)));
         sb.append(servUrl);
-        final String bleistift = br.getRegex(fortyTwo("RkVEQkZGRjVGQjAwQ0RFMjFFQzBCMjk1REEwMDQ2QTkyQ0MyNzVCNjBDNUM=")).getMatch(0);
 
         // und ausführen ...
         final String result = jsExecute(sb.toString(), true);
         if (result == null) { return null; }
         br.getPage(result);
 
-        // ohne diesen Keks kein dl
-        br.setCookie(br.getHost(), fortyTwo("RkQ4QkZCQTVGOTU1Q0ZFNzFCQzdCNkNFREUwMzQzRkYyOTkxNzFCQjBBNUZEODk4MUIxRDVGNkU="), bleistift);
-
         // weitere Zutaten ...
-        final String query = br.getRegex(fortyTwo("RkM4OUZBRjZGQTA2Q0NFNDFBOURCNTlFREY1MTQzRkEyOTlENzFFQTA4NUNERDlGMTk0OTVFMzgxMDNBODI4QzVEOENGODZGOEM1OEU3NkEyNTE0NTRCNUVCMjY=")).getMatch(0);
-        String kugelschreiber = br.getRegex(fortyTwo("Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQ0M1NzJFQzA5NThERDk4MUUxRDVCMzMxNjNGODc4MzVERDlGODMzOEMwRUU2NkY=")).getMatch(0);
-        final String[] ks = br.getRegex(fortyTwo("Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQUM3NzBCQzBEMERERDlGMTk0OTVFMzgxMDNBODI4MzVEODNGRjY5ODkwRUU2NkUyNTFBNTRCQkVCMjY=")).getColumn(0);
+        final String query = br.getRegex(fortyTwo(tb(15))).getMatch(0);
+        String kugelschreiber = br.getRegex(fortyTwo(tb(16))).getMatch(0);
+        final String[] ks = br.getRegex(fortyTwo(tb(17))).getColumn(0);
         kugelschreiber = ks[ks.length - 1];
         if (kugelschreiber == null) { return null; }
         sb.append("var queryString=" + query + ";");
-        sb.append(fortyTwo("RkM4RUZCRjJGQjAxQzlFNjFBOTdCNzlGREY1MzQ2RjgyQ0MwNzVCOA==") + kugelschreiber + "\';");
-        sb.append(fortyTwo("RkQ4MUZCRjVGRTBCQ0NFNTFCOURCN0NDREU1MDQ3QUQyOTkwNzFFOTA5NUNEODlCMUE0OTVGNkQxNTZEODY4MDVBODhGQzNGODkwREUzMzgyMTFBNTBFOUVGNzIxODI1RTAyMjJDOURDNUM2NjczNEFDNzREMkUyNkYwOTM3M0U1RUEyQ0Q3QzVDMjZGQjlFMjRGRjJCQkE1NjYxQ0RCMDQxQUE4QURDNkJGOTk5QTk5RDg4MkFDMDI4M0E3RDE1QzY3MDNGNTA2RDhDODQzNjNCNDEwNEZEMUEzMDEyMkEwN0IyOEYyMzM0QUM3MDlDODA5NDYwMkE0QjM0NUQ5MjhCMzU="));
+        sb.append(fortyTwo(tb(18)) + kugelschreiber + "\';");
+        sb.append(fortyTwo(tb(19)));
 
         // finalen Link bauen
         return jsExecute(sb.toString(), false);
@@ -162,6 +159,31 @@ public class OneThousandEbCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    private String tb(final int i) {
+        final String[] s = new String[20];
+        s[0] = "RkM4QkZBRjFGQTAwQzhCMjFGOTZCMjk1REU1RDQzRkMyODkwNzBCRjBEMEFEQzk4MUU0QzVFMzgxNDY4ODY4NTU4OEZGQzMzODgwQUUxNkYyNTQ2NTVCREVBNzUxQzI2RTE3NzJEOUNDNUNDNjU2MkE4NzREMkU1NkY1QTM2Njg1RUExQ0Q3OTVDNzlGQjk5MjRGODJBRUY1MjNFQ0ZCMzQyRkE4QkRFNkJBRDlGRkQ5Q0Q4MkI5MjJDMzU3QzRFQzcyMDNFNTc2RkQ5ODUzNzNBMTMwNEZDMTg2NTEyN0UwMEU2OEE3MjMxRkE3M0M2ODA5NzYwN0E0QTZGNThDNDhCMzI=";
+        s[1] = "RkM4QkZCRjZGQjAxQ0NFMDE4OTFCNTlGREMwNg==";
+        s[2] = "RkQ4RkZCRjZGQjA3Q0ZFMjFCQzJCNzlBREUwMDQwQUIyOTlENzFFQTA4MDk=";
+        s[3] = "Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNUNCREY1NjQyRkIyODk2NzFCQTA4NThEOUNBMTkxRTVGMzIxNTM4ODY4MTVEREVGODZCOEQ1RkU3NkUyNTFB";
+        s[4] = "Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjk5REUwMzQzRkYyOUMxNzFFQzA4MEREOENGMUExRTVDMzgxNTY5ODc4MDU4OEZGQzMzODg1Q0UyM0IyMDEwNTVFOEVCMjAxRDc3RTEyMTI4Q0JDMUM3";
+        s[5] = "Rjk4MEZCRjVGQjA2Q0RCMzFCOTdCNzk5REU1QzQyQUUyOUMxNzVCRjA4NUNEOENCMUIxRTVEM0YxNTNBODc4MzU5REVGRTY5ODgwMEUyNjkyMTQxNTNFRUVDMjAxQzc1RTEyMjJFQ0RDMTlDNjU2MkFENzVENkVG";
+        s[6] = "Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1MDQzRkEyODkyNzJCQTBCNTlEQTlEMUU0RjVCNkExMDNBODNENjVEODI=";
+        s[7] = "RkVEQkZGRjdGOTA2Q0VCNTFGQzFCNjk4REUwMDQzRkUyOTlENzBCRDA4MEREODlCMUE0RTVGM0UxNTM5ODc4MDVBRDhGODZGODgwRkUyMzUyMTQwNTBCOUVDMjYxRDcz";
+        s[8] = "RkVEQkZGRjdGQTA3Q0NFNQ==";
+        s[9] = "RkQ4Q0ZCQTVGQjA0Q0RCMzFCQzdCNkNCREU1NDQyRkMyQTk3NzFCQTA5NUZEOUNBMUExMzVGNkUxNTZCODc4Nw==";
+        s[10] = "Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNzlFREU1NjQzRkEyOTkxNzFCQzA5NUZEQkNBMUExMzVGNkYxNTY5ODJEMTVEREFGOTZDOEQ1QkU2MzU=";
+        s[11] = "Rjk4MEZBRjVGQTAyQ0NFNDFGOTRCNjlDREU1NjQyRkMyOUMyNzBCQzBDMEVEQzlGMUY0QzVBNjkxMTY1";
+        s[12] = "RkM4RUZCRjJGQjAxQzlFNjFCOTJCNjk0REU1MTQ3QUMyOTkyNzFCNjA4MDhEOENCMTgxMzVGNkUxNTZBODZEMjVCOERGQzMzODg1QUUyMzkyMjEwNTBCNEVGMjMxODI0RTU3MzI5Q0FDNUM4NjY2NEFDMjBEMkIyNkYwOTMzNjg1QUYxQ0Q3MzVDN0NGQkM4MjZGMzJBRUM1NjZFQ0NCNzQzQTk4RTg0NkVBQjlDQUM5QURGMkZDNTJDNjc3QzQyQzMyMDNGNTE2QzgzODAzMzNBNDcwMEFCMUEzNjE2NzkwMkIyOEE3NTM0QUI3MjlDODBDNjY1MkM0QTZFNUNDMDhFNkU0OEI3QzkzMERBQ0UzMjFBMDhENDcyNTlDMUI0RDgzODAzNEI1N0M3QjJBOTFERDgzOUY1NkQ2QjcyOUYxQzcw";
+        s[13] = "RkVEQkZGRjVGQjAwQ0RFMjFFQzBCMjk1REEwMDQ2QTkyQ0MyNzVCNjBDNUM=";
+        s[14] = "RkQ4QkZCQTVGOTU1Q0ZFNzFCQzdCNkNFREUwMzQzRkYyOTkxNzFCQjBBNUZEODk4MUIxRDVGNkU=";
+        s[15] = "RkM4OUZBRjZGQTA2Q0NFNDFBOURCNTlFREY1MTQzRkEyOTlENzFFQTA4NUNERDlGMTk0OTVFMzgxMDNBODI4QzVEOENGODZGOEM1OEU3NkEyNTE0NTRCNUVCMjY=";
+        s[16] = "Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQ0M1NzJFQzA5NThERDk4MUUxRDVCMzMxNjNGODc4MzVERDlGODMzOEMwRUU2NkY=";
+        s[17] = "Rjk4RkZCRjdGQTU1Q0RCMjFCOTVCNjk0REUwMDQ2RkYyQUM3NzBCQzBEMERERDlGMTk0OTVFMzgxMDNBODI4MzVEODNGRjY5ODkwRUU2NkUyNTFBNTRCQkVCMjY=";
+        s[18] = "RkM4RUZCRjJGQjAxQzlFNjFBOTdCNzlGREY1MzQ2RjgyQ0MwNzVCOA==";
+        s[19] = "ZmQ4MWZiZjVmZTBiY2NlNTFiOWRiN2NjZGU1MDQ3YWQyOTkwNzFlOTA5NWNkODliMWE0OTVmNmQxNTZkODY4MDVhODhmYzNmODkwZGUzMzgyMTFhNTBlOWVmNzIxODI1ZTAyMjJjOWRjNWM2NjczNGFjNzRkMmUyNmYwOTM3M2U1ZWEyY2Q3YzVjMjZmYjllMjRmZjI5YmE1NjYxY2RiMDQxYWE4YWRjNmJmOTk5YTk5ZDg4MmFjMDI4M2E3ZDE1YzY3MDNmNTA2ZDhjODQzNjNiNDEwNGZkMWEzMDEyMmEwN2IyOGYyMzM0YWM3MDljODA5NDYwMmE0YjM0NWQ5MjhiMzU=";
+        return s[i];
     }
 
 }
