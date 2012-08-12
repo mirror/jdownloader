@@ -53,9 +53,17 @@ public class RemixShareCom extends PluginForHost {
 
     private String execJS() throws Exception {
         String fun = br.getRegex("/>Your Download has been started\\.[\t\n\r ]+</div>[\t\n\r ]+<script type=\"text/javascript\" language=\"Javascript\">(.*?)</script>").getMatch(0);
+        if (fun == null) {
+            String[] allJs = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
+            for (String s : allJs) {
+                if (!s.contains("downloadfinal")) continue;
+                fun = s;
+                break;
+            }
+        }
         if (fun == null) return null;
         fun = "var game = \"\";" + fun;
-        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.innerHTML)").getMatch(0);
+        String ah = new Regex(fun, "(document\\.getElementById\\((.*?)\\)\\.(innerHTML|href))").getMatch(0);
         if (ah != null) fun = fun.replace(ah, "game");
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
