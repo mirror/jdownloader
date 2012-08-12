@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -124,21 +125,28 @@ public class UlozTo extends PluginForHost {
             final String captchaKey = br.getRegex("id=\"captcha_key\" name=\"captcha_key\" value=\"([^<>\"]*?)\"").getMatch(0);
             if (captchaForm == null || captchaUrl == null || captchaKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
-            String key = null, code = null;
+            String key = null, code = null, ts = null, sign = null, cid = null;
             // Tries to read if property selected
             if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                 key = getPluginConfig().getStringProperty(CAPTCHA_ID);
                 code = getPluginConfig().getStringProperty(CAPTCHA_TEXT);
+                ts = getPluginConfig().getStringProperty("ts");
+                sign = getPluginConfig().getStringProperty("cid");
+                cid = getPluginConfig().getStringProperty("sign");
             }
 
             // If property not selected or read failed (no data), asks to solve
             if (key == null || code == null) {
                 code = getCaptchaCode(captchaUrl, downloadLink);
-                Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
+                final Matcher m = Pattern.compile("http://img\\.uloz\\.to/captcha/(\\d+)\\.png").matcher(captchaUrl);
                 if (m.find()) {
                     key = m.group(1);
                     getPluginConfig().setProperty(CAPTCHA_ID, key);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, code);
+                    getPluginConfig().setProperty("ts", new Regex(captchaForm.getHtmlCode(), "name=\"ts\" id=\"frmfreeDownloadForm\\-ts\" value=\"([^<>\"]*?)\"").getMatch(0));
+                    getPluginConfig().setProperty("cid", new Regex(captchaForm.getHtmlCode(), "name=\"cid\" id=\"frmfreeDownloadForm\\-cid\" value=\"([^<>\"]*?)\"").getMatch(0));
+                    getPluginConfig().setProperty("sign", new Regex(captchaForm.getHtmlCode(), "name=\"sign\" id=\"frmfreeDownloadForm\\-sign\" value=\"([^<>\"]*?)\"").getMatch(0));
+                    getPluginConfig().setProperty(REPEAT_CAPTCHA, true);
                 }
             }
 
@@ -149,14 +157,21 @@ public class UlozTo extends PluginForHost {
             captchaForm.put("captcha_value", code);
             captchaForm.put("captcha_key", captchaKey);
             captchaForm.remove(null);
+            if (ts != null) captchaForm.put("ts", ts);
+            if (cid != null) captchaForm.put("cid", cid);
+            if (sign != null) captchaForm.put("sign", sign);
             br.submitForm(captchaForm);
 
             // If captcha fails, throws exception
             // If in automatic mode, clears saved data
             if (br.containsHTML("Text je opsán špatně")) {
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
-                    getPluginConfig().setProperty(CAPTCHA_ID, null);
-                    getPluginConfig().setProperty(CAPTCHA_TEXT, null);
+                    getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
+                    getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
+                    getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
+                    getPluginConfig().setProperty("ts", Property.NULL);
+                    getPluginConfig().setProperty("cid", Property.NULL);
+                    getPluginConfig().setProperty("sign", Property.NULL);
                 }
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

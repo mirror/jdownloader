@@ -43,9 +43,8 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
         br.getPage(parameter);
-        final String mainid = new Regex(parameter, "minus\\.com/(.+)").getMatch(0);
         if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)")) {
-            DownloadLink dl = createDownloadlink("http://i.minusdecrypted.com/340609783585/VTjbgttT_QsH/" + mainid + ".offline");
+            DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -53,13 +52,17 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         // Get album name for package name
         String fpName = br.getRegex("<title>(.*?) - Minus</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
+        if (fpName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        fpName = decodeUnicode(Encoding.htmlDecode(fpName.trim()));
         // do not catch first "name", only items within array
-        final String singleLink = br.getRegex("<a class=\"btn\\-action btn\\-download\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/[^<>\"]*?)\"").getMatch(0);
         String[] items = br.getRegex("\\{([^}{]*?\"name\": \"[^\"]+?\"[^}{]*?)\\}").getColumn(0);
         // fail over for single items ?. Either that or they changed website yet
         // again and do not display the full gallery array.
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
-        if ((singleLink == null) && (items == null || items.length == 0)) {
+        if (!br.containsHTML("class=\"btn\\-action btn\\-download no\\-counter\"") && (items == null || items.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
@@ -75,29 +78,24 @@ public class MinUsComDecrypter extends PluginForDecrypt {
                 }
                 filename = decodeUnicode(Encoding.htmlDecode(filename.trim()));
                 if (!filename.startsWith("/")) filename = "/" + filename;
-                final String filelink = "http://i.minusdecrypted.com" + secureprefix + "/d" + linkid + filename;
+                final String filelink = "http://minusdecrypted.com/l" + linkid;
                 final DownloadLink dl = createDownloadlink(filelink);
                 dl.setFinalFileName(filename);
                 dl.setDownloadSize(Long.parseLong(filesize));
                 dl.setAvailable(true);
-                dl.setProperty("mainid", mainid);
                 decryptedLinks.add(dl);
             }
         }
         // Only one link available, add it!
-        if (singleLink != null) {
+        if (br.containsHTML("class=\"btn\\-action btn\\-download no\\-counter\"") && (items == null || items.length == 0)) {
             final String filesize = br.getRegex("<span class=\"text\">Download \\(([^<>\"]*?)\\)</span>").getMatch(0);
-            final String filelink = singleLink.replace("minus.com/", "minusdecrypted.com/");
-            final DownloadLink dl = createDownloadlink(filelink);
-            dl.setFinalFileName(new Regex(singleLink, "minus\\.com/\\d+/[A-Za-z0-9]+/[A-Za-z0-9]+/([^<>\"]*?)\"").getMatch(0));
+            final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            dl.setAvailable(true);
-            dl.setProperty("mainid", mainid);
             decryptedLinks.add(dl);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(decodeUnicode(Encoding.htmlDecode(fpName.trim())));
+            fp.setName(fpName);
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive)/.+?/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
     public static final String  PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
@@ -72,7 +72,10 @@ public class FourSharedCom extends PluginForHost {
             try {
                 final Browser br = new Browser();
                 if (agent == null) {
-                    /* we first have to load the plugin, before we can reference it */
+                    /*
+                     * we first have to load the plugin, before we can reference
+                     * it
+                     */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
                 }
@@ -162,7 +165,8 @@ public class FourSharedCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        // If file isn't available for freeusers we can still try to get the streamlink
+        // If file isn't available for freeusers we can still try to get the
+        // streamlink
         if (br.containsHTML("In order to download files bigger that 500MB you need to login at 4shared") && url == null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L(PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM, "Files over 500MB are only downloadable for premiumusers!"));
         if (url == null) {
             url = br.getRegex("<a href=\"(http://(www\\.)?4shared(\\-china)?\\.com/get[^\\;\"]+)\"  ?class=\".*?dbtn.*?\" tabindex=\"1\"").getMatch(0);
@@ -205,7 +209,9 @@ public class FourSharedCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         /**
-         * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct error message is shown
+         * Maybe download failed because we got a wrong directlink, disable
+         * getting directlinks first, if it then fails again the correct error
+         * message is shown
          */
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
@@ -292,7 +298,10 @@ public class FourSharedCom extends PluginForHost {
                 /** Load everything required login and fetchAccountInfo also! */
                 br.setCookiesExclusive(true);
                 if (agent == null) {
-                    /* we first have to load the plugin, before we can reference it */
+                    /*
+                     * we first have to load the plugin, before we can reference
+                     * it
+                     */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
                 }

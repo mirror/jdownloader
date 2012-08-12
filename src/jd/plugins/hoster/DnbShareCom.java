@@ -47,30 +47,6 @@ public class DnbShareCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
-        String payload = br.getRegex("name=\"payload\" value=\"(.*?)\"").getMatch(0);
-        if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Form dlform = new Form();
-        dlform.setMethod(MethodType.POST);
-        dlform.put("file", file);
-        dlform.put("payload", payload);
-        br.setFollowRedirects(false);
-        br.submitForm(dlform);
-        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -3);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
@@ -81,6 +57,33 @@ public class DnbShareCom extends PluginForHost {
         parameter.setName(filename.trim());
         parameter.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String file = br.getRegex("name=\"file\" value=\"(.*?)\"").getMatch(0);
+        final String payload = br.getRegex("name=\"payload\" value=\"(.*?)\"").getMatch(0);
+        if (file == null || payload == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        int wait = 10;
+        final String waittime = br.getRegex("var c = (\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, link);
+        final Form dlform = new Form();
+        dlform.setAction(link.getDownloadURL());
+        dlform.setMethod(MethodType.POST);
+        dlform.put("file", file);
+        dlform.put("payload", payload);
+        br.setFollowRedirects(false);
+        br.submitForm(dlform);
+        if (br.getRedirectLocation() == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, -2);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+
     }
 
     @Override

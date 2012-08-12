@@ -824,7 +824,6 @@ jd/plugins/hoster/BrsBoxCom.class
 jd/plugins/hoster/MandamaisComBr.class
 jd/plugins/hoster/VideoMsnCom.class
 jd/plugins/hoster/YourFileHostCom.class
-jd/plugins/hoster/TuDouCom.class
 jd/plugins/hoster/TunaBoxNet.class
 jd/plugins/hoster/TubeLoadTo.class
 jd/plugins/hoster/Dataupde.class
@@ -877,3 +876,5 @@ jd/plugins/decrypter/Lnkshld.class
 jd/plugins/decrypter/QckLnkM.class
 jd/plugins/decrypter/SurfMvsOrg.class
 jd/plugins/hoster/UploadBoostCom.class
+jd/plugins/decrypter/Frdwnldzs.class
+jd/plugins/decrypter/TelonaBiz.class

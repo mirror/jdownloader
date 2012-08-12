@@ -27,8 +27,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 /** Links always come rom a decrypter */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?i\\.minus(decrypted)?\\.com/\\d+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/.+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "min.us", "minus.com" }, urls = { "cvj84ezu45gj0wojgHZiF238ß3üpj5uUNUSED_REGEX", "http://(www\\.)?minusdecrypted\\.com/[A-Za-z0-9\\-_]+" }, flags = { 0, 0 })
 public class MinUs extends PluginForHost {
 
     public MinUs(final PluginWrapper wrapper) {
@@ -48,17 +50,39 @@ public class MinUs extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         /**
-         * More will work fine for pictures but will cause server errors for other links
+         * More will work fine for pictures but will cause server errors for
+         * other links
          */
         return 2;
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("\\'name\\': \\'([^<>\"]*?)\\'").getMatch(0);
+        if (filename == null) filename = br.getRegex("<meta name=\"title\" content=\"([^<>\"]*?) \\- Minus\"").getMatch(0);
+        final String filesize = br.getRegex("<div class=\"item\\-actions\\-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
         /**
-         * Resume/Chunks depends on link and/or fileserver so to prevent errors we deactivate it
+         * Resume/Chunks depends on link and/or fileserver so to prevent errors
+         * we deactivate it
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+        // Sometimes servers are pretty slow
+        br.setReadTimeout(3 * 60);
+        String finallink = br.getRegex("class=\"btn\\-action btn\\-download no\\-counter\"[\t\n\r ]+target=\"_blank\"[\t\n\r ]+href=\"(http://i\\.minus\\.com/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http://i\\.minus\\.com/\\d+/[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             /* linkrefresh is needed here */
             br.followConnection();
@@ -66,13 +90,6 @@ public class MinUs extends PluginForHost {
         }
         if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        setBrowserExclusive();
-        if (link.getDownloadURL().endsWith(".offline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
     }
 
     @Override

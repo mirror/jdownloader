@@ -28,8 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonbonme.com" }, urls = { "http://(www\\.)(av|dl)\\.bonbonme\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonbonme.com" }, urls = { "http://(www\\.)?((av|dl)\\.)?bonbonme\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\.html" }, flags = { 0 })
 public class BonBonmeCom extends PluginForDecrypt {
 
     public BonBonmeCom(PluginWrapper wrapper) {
@@ -40,7 +39,7 @@ public class BonBonmeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
+        String filename = br.getRegex("<div class=\"title\">[\t\n\r ]+<h2>([^<>\"]*?)(</h2>| 觀看次數:<script)").getMatch(0);
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID == null) externID = br.getRegex("bonbonme_player_[A-Za-z0-9\\-_]+\\.php\\?vid=video(\\d+)\\&").getMatch(0);
         if (externID != null) {
@@ -59,7 +58,12 @@ public class BonBonmeCom extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("redtube\\.com/player/\"><param name=\"FlashVars\" value=\"id=(\\d+)\\&").getMatch(0);
-        if (externID == null) externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+        if (externID == null) {
+            externID = br.getRegex("embed\\.redtube\\.com/player/\\?id=(\\d+)\\&").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("\\.com/player/redtube_\\.php\\?vid=(\\d+)\\&amp;").getMatch(0);
+            }
+        }
         if (externID != null) {
             DownloadLink dl = createDownloadlink("http://www.redtube.com/" + externID);
             decryptedLinks.add(dl);
