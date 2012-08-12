@@ -61,6 +61,7 @@ public class ZdfDeMediathek extends PluginForHost {
         String dllink = br.getRegex("<li>DSL 2000 <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://rodl\\.zdf\\.de/de/zdf/\\d+/\\d+/[^<>\"/]*?_vh\\.mp4)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.contains("hinweis_fsk")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
