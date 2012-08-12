@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com/[A-Za-z0-9\\-_]+\\.htm" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com/?([A-Za-z0-9\\-_]+\\.htm)?" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public OneThousandEbComFolder(final PluginWrapper wrapper) {
@@ -38,7 +38,8 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        final String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
+        String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<meta name=\"keywords\" content=\"([^,\"]+)").getMatch(0);
         final String[] links = br.getRegex("class=\"li\\-name\"><a title=\"[^<>\"\\']+\" href=\\'(http://1000eb\\.com/[a-z0-9]+)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
