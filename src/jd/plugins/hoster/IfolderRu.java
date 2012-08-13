@@ -33,12 +33,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.-]*?\\.)?((yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rusfolder.ru", "ifolder.ru" }, urls = { "http://([a-z0-9\\.\\-]*?\\.)?((yapapka|rusfolder|ifolder)\\.(net|ru|com)|files\\.metalarea\\.org)/(files/)?\\d+", "IFOLDERISNOWRUSFOLDER" }, flags = { 0, 0 })
 public class IfolderRu extends PluginForHost {
 
     private String              ua      = RandomUserAgent.generate();
 
-    private static final String PWTEXT  = "type=\"password\" name=\"pswd\"";
+    private static final String PWTEXT  = "Введите пароль:<br";
 
     private static final String CAPTEXT = "/random/images/";
 
@@ -86,7 +86,7 @@ public class IfolderRu extends PluginForHost {
                     logger.info("third watchad equals null, trying to get sessioncode");
                     String sessioncode = br.getRegex("session=([a-z0-9]+)\"").getMatch(0);
                     if (sessioncode == null) sessioncode = br.getRegex("type=hidden name=\"session\" value=([a-z0-9]+)>").getMatch(0);
-                    if (sessioncode != null) watchAd = "http://ints.ifolder.ru/?session=" + sessioncode;
+                    if (sessioncode != null) watchAd = "http://ints.rusfolder.ru/?session=" + sessioncode;
                 }
                 if (watchAd == null) {
                     logger.warning("third watchad equals null");
@@ -124,9 +124,9 @@ public class IfolderRu extends PluginForHost {
             }
             captchaForm.put("ints_session", ints_session);
             captchaForm.setAction(br.getURL());
-            if (!captchaurl.contains(br.getHost())) captchaurl = "http://ints.ifolder.ru" + captchaurl;
+            if (!captchaurl.startsWith("http://")) captchaurl = "http://ints.rusfolder.com" + captchaurl;
             /* Captcha */
-            String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
+            String captchaCode = getCaptchaCode("rusfolder.ru", captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
             /* this hoster checks content encoding */
             captchaForm.setEncoding("application/x-www-form-urlencoded");
@@ -147,10 +147,10 @@ public class IfolderRu extends PluginForHost {
         if (br.containsHTML(CAPTEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         /* Is the file password protected ? */
         if (br.containsHTML(PWTEXT)) {
-            for (int passwordRetry = 1; passwordRetry <= 5; passwordRetry++) {
+            for (int passwordRetry = 1; passwordRetry <= 3; passwordRetry++) {
                 logger.info("This file is password protected");
-                String session = br.getRegex("name=\"session\" value=\"(.*?)\"").getMatch(0);
-                String fileID = new Regex(downloadLink.getDownloadURL(), "ifolder\\.ru/(\\d+)").getMatch(0);
+                final String session = br.getRegex("name=\"session\" value=\"(.*?)\"").getMatch(0);
+                final String fileID = new Regex(downloadLink.getDownloadURL(), "rusfolder\\.ru/(\\d+)").getMatch(0);
                 if (session == null || fileID == null) {
                     logger.warning("The string 'session' or 'fileID' equals null, throwing exception...");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -68,7 +69,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
-                 * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
+                 * Retry if login failed Those are 2 different errormessages but
+                 * refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
                 if (br.containsHTML(">Security Check<") || cookie == null || "deleted".equals(cookie)) {
@@ -81,6 +83,15 @@ public class VKontakteRu extends PluginForDecrypt {
                         return null;
                     }
                     logger.info("Cookies refreshed successfully, continuing to decrypt...");
+                    br.getPage(parameter);
+                }
+                if (br.getURL().contains("login.php?act=security_check")) {
+                    final boolean hasPassed = handleSecurityCheck(parameter);
+                    if (!hasPassed) {
+                        logger.warning("Security check failed for link: " + parameter);
+                        return null;
+                    }
+                    br.getPage(parameter);
                 }
                 /** Decryption process START */
                 br.setFollowRedirects(false);
@@ -92,22 +103,28 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?(tag|album(\\-)?\\d+_|photos|id)\\d+")) {
                     /**
-                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
+                     * Photo album Examples: http://vk.com/photos575934598
+                     * http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
                 } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
                     /**
-                     * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
+                     * Single photo links, those are just passed to the
+                     * hosterplugin!
+                     * Example:http://vk.com/photo125005168_269986868
                      */
                     decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)")) {
                     /**
-                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
+                     * Photo albums lists/overviews Example:
+                     * http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
                 } else {
                     /**
-                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
+                     * Video-Albums Example: http://vk.com/videos575934598
+                     * Example2:
+                     * http://vk.com/video?section=tagged&id=46468795637
                      */
                     decryptedLinks = decryptVideoAlbum(decryptedLinks, parameter, progress);
                 }
@@ -164,7 +181,7 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        DownloadLink finallink = findVideolink(parameter);
+        final DownloadLink finallink = findVideolink(parameter);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter + "\n");
             return null;
@@ -333,8 +350,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we don't do that we get
-         * wrong links
+         * Find the highest possible quality, also every video is only available
+         * in 1-2 formats so we HAVE to use the highest one, if we don't do that
+         * we get wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {
@@ -451,6 +469,26 @@ public class VKontakteRu extends PluginForDecrypt {
         // Account is valid, let's just add it
         AccountController.getInstance().addAccount(vkPlugin, aa);
         return true;
+    }
+
+    private boolean handleSecurityCheck(final String parameter) throws IOException {
+        final Browser ajaxBR = br.cloneBrowser();
+        boolean hasPassed = false;
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (int i = 0; i <= 3; i++) {
+            logger.info("Entering security check...");
+            final String to = br.getRegex("to: \\'([^<>\"]*?)\\'").getMatch(0);
+            final String hash = br.getRegex("hash: \\'([^<>\"]*?)\\'").getMatch(0);
+            if (to == null || hash == null) { return false; }
+            final String code = UserIO.getInstance().requestInputDialog("Enter the last 4 digits of your phone number for vkontakte.ru :");
+            ajaxBR.postPage("http://vk.com/login.php", "act=security_check&al=1&al_page=3&code=" + code + "&hash=" + Encoding.urlEncode(hash) + "&to=" + Encoding.urlEncode(to));
+            // TODO: Add russian lang support here
+            if (!ajaxBR.containsHTML(">Leider sind die von Ihnen eingegebenen Zahlen nicht richtig")) {
+                hasPassed = true;
+                break;
+            }
+        }
+        return hasPassed;
     }
 
 }
