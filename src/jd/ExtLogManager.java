@@ -23,10 +23,8 @@ public class ExtLogManager extends LogManager {
         if (logController == null) {
             // Init Loop!!!
             System.out.println("Could not redirect Logger: " + name);
-
             return super.getLogger(name);
         } else {
-
             if (name.startsWith("org.fourthline")) {
                 System.out.println("Redirect Logger: " + name);
                 return logController.getLogger(name);

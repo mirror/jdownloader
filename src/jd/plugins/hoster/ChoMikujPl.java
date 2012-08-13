@@ -147,7 +147,7 @@ public class ChoMikujPl extends PluginForHost {
             br.postPage("http://chomikuj.pl/action/License/Download", "fileId=" + fid + "&__RequestVerificationToken=" + Encoding.urlEncode(theLink.getStringProperty("requestverificationtoken")));
             if (br.containsHTML(PREMIUMONLY)) return false;
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
         }
         br.setFollowRedirects(redirectsSetting);
@@ -200,7 +200,7 @@ public class ChoMikujPl extends PluginForHost {
             // it with "YES" here ;)
             br.postPage("http://chomikuj.pl/action/License/acceptLargeTransfer?fileId=" + link.getStringProperty("fileid"), "orgFile=" + Encoding.urlEncode(argh1) + "&userSelection=" + Encoding.urlEncode(argh2) + "&__RequestVerificationToken=" + Encoding.urlEncode(link.getStringProperty("requestverificationtoken")));
             DLLINK = br.getRegex("redirectUrl\":\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"(.*?)\\\\\"").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("\\\\u003ca href=\\\\\"([^\"]*?)\\\\\" title").getMatch(0);
             if (DLLINK != null) DLLINK = Encoding.htmlDecode(DLLINK);
             if (DLLINK == null) getDllink(link, br, true);
         }
