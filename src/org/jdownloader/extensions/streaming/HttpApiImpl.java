@@ -17,6 +17,7 @@ import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
@@ -30,15 +31,17 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
+import org.jdownloader.logging.LogController;
 
 public class HttpApiImpl implements HttpApiDefinition {
 
     private HashMap<String, StreamingInterface> interfaceMap = new HashMap<String, StreamingInterface>();
     private StreamingExtension                  extension;
+    private LogSource                           logger;
 
     public HttpApiImpl(StreamingExtension extension) {
         this.extension = extension;
-
+        logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
     @Override
@@ -131,7 +134,8 @@ public class HttpApiImpl implements HttpApiDefinition {
                 }
             }
             System.out.println(dlink);
-            String format = Files.getExtension(dlink.getFinalFileName());
+
+            String format = Files.getExtension(dlink.getName());
             if (!StringUtils.isEmpty(subpath)) {
                 format = Files.getExtension(subpath);
             }
@@ -200,7 +204,10 @@ public class HttpApiImpl implements HttpApiDefinition {
                 }
             }
         } catch (final Throwable e) {
-            if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;
+            logger.log(e);
+            if (e instanceof RemoteAPIException) {
+
+            throw (RemoteAPIException) e; }
             throw new RemoteAPIException(e);
         } finally {
             System.out.println("Resp: " + response.getResponseHeaders().toString());

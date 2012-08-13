@@ -86,6 +86,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         vlcstreamingAPI = new HttpApiImpl(this);
         vlcBinary = findVLCBinary();
         wmpBinary = findWindowsMediaPlayer();
+
         startMediaServer();
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);

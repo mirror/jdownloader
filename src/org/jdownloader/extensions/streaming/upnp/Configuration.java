@@ -16,7 +16,6 @@ import org.fourthline.cling.transport.impl.StreamClientImpl;
 import org.fourthline.cling.transport.impl.StreamServerConfigurationImpl;
 import org.fourthline.cling.transport.impl.StreamServerImpl;
 import org.fourthline.cling.transport.spi.InitializationException;
-import org.fourthline.cling.transport.spi.MulticastReceiver;
 import org.fourthline.cling.transport.spi.NetworkAddressFactory;
 import org.fourthline.cling.transport.spi.StreamClient;
 import org.fourthline.cling.transport.spi.StreamServer;
@@ -68,11 +67,6 @@ public class Configuration extends DefaultUpnpServiceConfiguration {
             }
 
         };
-    }
-
-    @Override
-    public MulticastReceiver createMulticastReceiver(NetworkAddressFactory networkAddressFactory) {
-        return new MulticastReceiverImpl2(networkAddressFactory);
     }
 
     @Override
