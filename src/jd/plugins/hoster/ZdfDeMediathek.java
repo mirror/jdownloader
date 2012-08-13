@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/(hauptnavigation/startseite(/[a-z0-9\\-_]+)?#?/)?beitrag/video/\\d+/[^<>\"/\\?#]{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zdf.de" }, urls = { "http://(www\\.)?zdf\\.de/ZDFmediathek#?/[^<>\"]*?beitrag/video/\\d+/[^<>\"/\\?#]{1}" }, flags = { 0 })
 public class ZdfDeMediathek extends PluginForHost {
 
     public ZdfDeMediathek(PluginWrapper wrapper) {
