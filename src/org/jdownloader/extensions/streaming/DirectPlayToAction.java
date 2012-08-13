@@ -7,6 +7,7 @@ import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Hash;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
@@ -40,7 +41,7 @@ public class DirectPlayToAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        device.play(link);
+        device.play(link, Hash.getMD5(link.getDownloadURL()));
 
     }
 

@@ -18,18 +18,26 @@ import jd.Launcher;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
+import org.jdownloader.extensions.ExtensionController;
+import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
+import org.jdownloader.extensions.extraction.Archive;
+import org.jdownloader.extensions.extraction.ArchiveItem;
+import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
@@ -236,11 +244,11 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         SUPPORTED_DIRECT_PLAY_FORMATS.add("wav");
     }
 
-    private void onExtendDownloadTableLinkContext(MenuContext<?> context, JMenu menu) {
+    private void onExtendDownloadTableLinkContext(final MenuContext<?> context, final JMenu menu) {
         DownloadLink link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
         String filename = link.getName().toLowerCase(Locale.ENGLISH);
 
-        List<PlayToDevice> renderer = getPlayToRenderer();
+        final List<PlayToDevice> renderer = getPlayToRenderer();
 
         if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(filename))) {
 
@@ -248,33 +256,63 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
                 menu.add(new DirectPlayToAction(this, d, link));
 
             }
-        }
+        } else {
 
-        // // Rar
-        // new Thread("MenuCreator") {
-        // public void run() {
-        // try {
-        // LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-        // if (plg._isEnabled()) {
-        // final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
-        //
-        // final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage,
-        // DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
-        // final Archive archive = validation.getArchives().get(0);
-        // new EDTRunner() {
-        //
-        // @Override
-        // protected void runInEDT() {
-        // menu.add(new RarStreamAction(archive, extractor, StreamingExtension.this));
-        // }
-        // };
-        // }
-        // } catch (Throwable e) {
-        // logger.log(e);
-        // }
-        //
-        // }
-        // }.start();
+            // Rar
+            new Thread("MenuCreator") {
+                public void run() {
+                    try {
+                        LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+                        if (plg._isEnabled()) {
+                            final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
+
+                            final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
+                            final Archive archive = validation.getArchives().get(0);
+                            ArrayList<ArchiveItem> ais = archive.getSettings().getArchiveItems();
+
+                            if (ais != null && ais.size() > 0) {
+
+                                for (final ArchiveItem ai : ais) {
+
+                                    new EDTRunner() {
+
+                                        @Override
+                                        protected void runInEDT() {
+
+                                            for (PlayToDevice d : renderer) {
+
+                                                menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, ai));
+
+                                            }
+
+                                        }
+                                    };
+                                }
+                            } else {
+                                new EDTRunner() {
+
+                                    @Override
+                                    protected void runInEDT() {
+
+                                        for (PlayToDevice d : renderer) {
+
+                                            menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, null));
+
+                                        }
+
+                                    }
+                                };
+
+                            }
+                        }
+                    } catch (Throwable e) {
+                        logger.log(e);
+                    }
+
+                }
+            }.start();
+
+        }
 
     }
 

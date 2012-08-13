@@ -6,6 +6,6 @@ public interface PlayToDevice {
 
     String getDisplayName();
 
-    void play(DownloadLink link);
+    void play(DownloadLink link, String id);
 
 }

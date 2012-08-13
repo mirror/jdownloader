@@ -5,7 +5,6 @@ import jd.nutils.Executer;
 import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.logging.LogController;
@@ -26,12 +25,12 @@ public abstract class PlayToLocalBinary implements PlayToDevice {
     }
 
     @Override
-    public void play(final DownloadLink link) {
+    public void play(final DownloadLink link, final String id) {
 
         new Thread() {
             public void run() {
                 try {
-                    final String id = Hash.getMD5(link.getDownloadURL());
+
                     final String url = "http://" + extension.getHost() + ":3128/vlcstreaming/stream?" + id;
 
                     Executer exec = new Executer(getBinaryPath());
