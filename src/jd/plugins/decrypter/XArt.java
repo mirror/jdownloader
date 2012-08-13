@@ -58,24 +58,18 @@ public class XArt extends PluginForDecrypt {
             }
         }
         String links[] = br.getRegex("href=\"([a-zA-Z0-9\\_\\-]*)\\.(mp4|wmv|mov)\"").getColumn(0);
-
         String ext[] = br.getRegex("href=\"([a-zA-Z0-9\\_\\-]*)\\.(mp4|wmv|mov)\"").getColumn(1);
-
-        String title = br.getRegex("<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
-
-        int n = 0;
-        for (String link : links) {
-            String fulllink = parameter.toString() + link + "." + ext[n];
+        for (int n = 0; n < links.length; n++) {
+            String fulllink = parameter.toString() + links[n] + "." + ext[n];
             DownloadLink dl = createDownloadlink(Encoding.htmlDecode(fulllink));
             ret.add(dl);
-            n++;
         }
+        String title = br.getRegex("<h1>([a-zA-Z0-9\\_\\-\\ ]*)<\\/h1>").getMatch(0);
         if (title != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName("XArt Movie: " + title);
             fp.addLinks(ret);
         }
-        int wtf = 1;
         return ret;
     }
 }

@@ -349,6 +349,10 @@ public class OldRAFDownload extends DownloadInterface {
                 setChunkNum(1);
             } else if (verifiedSize && range[1] > (part - 1)) {
                 /* response range is bigger than requested range */
+                if (verifiedSize && range[1] == part) {
+                    logger.severe("Workaround for buggy http server: rangeEND=contentEND, it must be rangeEND-1=contentEND as 0 is first byte!");
+                    return;
+                }
                 throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
             }
         }

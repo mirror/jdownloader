@@ -157,8 +157,7 @@ public class FiberUploadCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -621,8 +620,9 @@ public class FiberUploadCom extends PluginForHost {
                 account.setProperty("nopremium", false);
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(0);
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                Form loginform = br.getForm(1);
+                if (loginform == null) loginform = br.getForm(0);
+                if (loginform == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
