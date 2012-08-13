@@ -37,4 +37,7 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Wrong Password!" })
     String wrong_password();
+
+    @Default(lngs = { "en" }, values = { "Play to %s1" })
+    String playto(String displayName);
 }

@@ -4,9 +4,7 @@ import javax.swing.JTextArea;
 
 import jd.gui.swing.jdgui.views.settings.components.TextInput;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 
 public class StreamingConfigPanel extends ExtensionConfigPanel<StreamingExtension> {
@@ -18,15 +16,15 @@ public class StreamingConfigPanel extends ExtensionConfigPanel<StreamingExtensio
         layoutPanel();
     }
 
-    private static final long        serialVersionUID = 1L;
+    private static final long     serialVersionUID = 1L;
 
     private final StreamingConfig config;
 
-    private TextInput                vlcPath;
-    private TextInput                brokerTopic;
+    private TextInput             vlcPath;
+    private TextInput             brokerTopic;
 
-    private JTextArea                revision         = null;
-    private String                   vlcRevision      = null;
+    private JTextArea             revision         = null;
+    private String                vlcRevision      = null;
 
     private void initComponents() {
         vlcPath = new TextInput();
@@ -51,30 +49,7 @@ public class StreamingConfigPanel extends ExtensionConfigPanel<StreamingExtensio
     @Override
     protected void onShow() {
         super.onShow();
-        updateVLCRevision();
-    }
 
-    private void updateVLCRevision() {
-        if (vlcRevision == null && revision != null) {
-            new Thread() {
-
-                @Override
-                public void run() {
-                    vlcRevision = getExtension().getVLCRevision(getExtension().getVLCBinary());
-                    if (StringUtils.isEmpty(vlcRevision)) {
-                        vlcRevision = "unknown";
-                    }
-                    new EDTRunner() {
-
-                        @Override
-                        protected void runInEDT() {
-                            revision.setText("VLC Revision: " + vlcRevision);
-                        }
-                    };
-                }
-
-            }.start();
-        }
     }
 
     @Override

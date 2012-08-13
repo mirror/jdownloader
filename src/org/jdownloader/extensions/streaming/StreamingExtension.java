@@ -1,8 +1,10 @@
 package org.jdownloader.extensions.streaming;
 
-import java.awt.Image;
-import java.awt.event.ActionEvent;
+import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.prefs.Preferences;
 
@@ -16,27 +18,22 @@ import jd.Launcher;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
 import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.api.RemoteAPIController;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
-import org.jdownloader.extensions.ExtensionController;
-import org.jdownloader.extensions.LazyExtension;
 import org.jdownloader.extensions.StartException;
 import org.jdownloader.extensions.StopException;
-import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionExtension;
-import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
+import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
+import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
@@ -56,10 +53,12 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     private HttpApiImpl          vlcstreamingAPI;
-    private String               vlcBinary   = null;
+
     private StreamingConfigPanel configPanel = null;
     protected VLCGui             tab;
     private MediaServer          mediaServer;
+    private String               wmpBinary;
+    private String               vlcBinary;
 
     @Override
     protected void stop() throws StopException {
@@ -82,13 +81,11 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     @Override
     protected void start() throws StartException {
-        if (vlcBinary == null) {
-            vlcBinary = getVLCBinary();
-            if (StringUtils.isEmpty(vlcBinary)) { throw new StartException("Could not find vlc binary"); }
-        }
+
         streamProvider = new StreamingProvider(this);
         vlcstreamingAPI = new HttpApiImpl(this);
-
+        vlcBinary = findVLCBinary();
+        wmpBinary = findWindowsMediaPlayer();
         startMediaServer();
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
@@ -99,6 +96,36 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         // tab = new VLCGui(StreamingExtension.this);
         // }
         // }.waitForEDT();
+    }
+
+    private String findVLCBinary() {
+        String ret = getSettings().getVLCCommand();
+        if (!StringUtils.isEmpty(ret)) return ret;
+        if (CrossSystem.isWindows()) {
+            return getVLCBinaryFromWindowsRegistry();
+        } else if (CrossSystem.isMac()) {
+            if (new File("/Applications/VLC.app/Contents/MacOS/VLC").exists()) { return "/Applications/VLC.app/Contents/MacOS/VLC"; }
+        } else if (CrossSystem.isLinux()) { return "vlc"; }
+        return null;
+
+    }
+
+    private String findWindowsMediaPlayer() {
+        if (CrossSystem.isWindows()) {
+            String path86 = System.getenv("ProgramFiles(x86)");
+            String path = System.getenv("ProgramFiles");
+            if (path86 != null) {
+                File file = new File(new File(path86), "Windows Media Player/wmplayer.exe");
+                if (file.exists()) return file.getAbsolutePath();
+            }
+
+            if (path != null) {
+                File file = new File(new File(path), "Windows Media Player/wmplayer.exe");
+                if (file.exists()) return file.getAbsolutePath();
+            }
+
+        }
+        return null;
     }
 
     private void startMediaServer() {
@@ -159,17 +186,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     public String getVLCBinary() {
-        String ret = getSettings().getVLCCommand();
-        if (!StringUtils.isEmpty(ret)) return ret;
-        if (CrossSystem.isWindows()) {
-            return getVLCBinaryFromWindowsRegistry();
-        } else if (CrossSystem.isMac()) {
-            return "/Applications/VLC.app/Contents/MacOS/VLC";
-        } else if (CrossSystem.isLinux()) {
-            return "vlc";
-        } else {
-            return null;
-        }
+        return vlcBinary;
     }
 
     @Override
@@ -192,87 +209,92 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             ((DownloadTableContext) context).getMenu().add(menu);
             menu.setIcon(getIcon(18));
             menu.setEnabled(((DownloadTableContext) context).getSelectionInfo().isLinkContext());
-            menu.add(new AppAction() {
-                DownloadLink              link             = null;
+            if (((DownloadTableContext) context).getSelectionInfo().isLinkContext()) {
+                onExtendDownloadTableLinkContext(context, menu);
 
-                private static final long serialVersionUID = 1375146705091555054L;
-
-                {
-                    setName(T._.popup_streaming_playvlc());
-                    Image front = NewTheme.I().getImage("media-playback-start", 20, true);
-                    setSmallIcon(new ImageIcon(ImageProvider.merge(getIcon(20).getImage(), front, 0, 0, 5, 5)));
-                    if (((DownloadTableContext) context).getSelectionInfo().isLinkContext()) link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
-                    setEnabled(isDirectPlaySupported(link));
-                }
-
-                public boolean isDirectPlaySupported(DownloadLink link) {
-                    if (link == null) return false;
-                    String filename = link.getName().toLowerCase(Locale.ENGLISH);
-                    if (filename.endsWith("mkv")) return true;
-                    if (filename.endsWith("mov")) return true;
-                    if (filename.endsWith("avi")) return true;
-                    if (filename.endsWith("mp4")) return true;
-                    if (filename.endsWith("flac")) return true;
-                    if (filename.endsWith("mp3")) return true;
-                    if (filename.endsWith("wav")) return true;
-                    return false;
-                }
-
-                public void actionPerformed(ActionEvent e) {
-                    new Thread() {
-                        public void run() {
-                            try {
-                                String ID = link.getUniqueID().toString();
-                                StreamingInterface streamingInterface = getVlcstreamingAPI().getStreamingInterface(ID);
-                                if (streamingInterface == null) {
-                                    getVlcstreamingAPI().addHandler(ID, new DirectStreamingImpl(StreamingExtension.this, link));
-                                }
-                                String[] params = new String[] { "http://127.0.0.1:" + RemoteAPIController.getInstance().getApiPort() + "/vlcstreaming/play?id=" + ID };
-                                if (false) {
-                                    System.out.println(params[0]);
-                                    return;
-                                }
-                                Executer exec = new Executer(getVLCBinary());
-                                exec.setLogger(LogController.CL());
-                                exec.addParameters(params);
-                                exec.setRunin(Application.getRoot(Launcher.class));
-                                exec.setWaitTimeout(0);
-                                exec.start();
-                            } catch (final Throwable e) {
-                                logger.log(e);
-                            }
-                        };
-                    }.start();
-
-                }
-            });
-
-            // Rar
-            new Thread("MenuCreator") {
-                public void run() {
-                    try {
-                        LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
-                        if (plg._isEnabled()) {
-                            final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
-
-                            final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
-                            final Archive archive = validation.getArchives().get(0);
-                            new EDTRunner() {
-
-                                @Override
-                                protected void runInEDT() {
-                                    menu.add(new RarStreamAction(archive, extractor, StreamingExtension.this));
-                                }
-                            };
-                        }
-                    } catch (Throwable e) {
-                        logger.log(e);
-                    }
-
-                }
-            }.start();
+            } else {
+                onExtendDownloadTablePackageContext(context, menu);
+            }
 
         }
+    }
+
+    private void onExtendDownloadTablePackageContext(MenuContext<?> context, JMenu menu) {
+    }
+
+    private static final HashSet<String> SUPPORTED_DIRECT_PLAY_FORMATS = new HashSet<String>();
+    static {
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("mkv");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("mov");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("avi");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("mp4");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("flac");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("flv");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("flac");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("mp3");
+        SUPPORTED_DIRECT_PLAY_FORMATS.add("wav");
+    }
+
+    private void onExtendDownloadTableLinkContext(MenuContext<?> context, JMenu menu) {
+        DownloadLink link = ((DownloadTableContext) context).getSelectionInfo().getContextLink();
+        String filename = link.getName().toLowerCase(Locale.ENGLISH);
+
+        List<PlayToDevice> renderer = getPlayToRenderer();
+
+        if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(filename))) {
+
+            for (PlayToDevice d : renderer) {
+                menu.add(new DirectPlayToAction(this, d, link));
+
+            }
+        }
+
+        // // Rar
+        // new Thread("MenuCreator") {
+        // public void run() {
+        // try {
+        // LazyExtension plg = ExtensionController.getInstance().getExtension(ExtractionExtension.class);
+        // if (plg._isEnabled()) {
+        // final ExtractionExtension extractor = (ExtractionExtension) plg._getExtension();
+        //
+        // final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage,
+        // DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
+        // final Archive archive = validation.getArchives().get(0);
+        // new EDTRunner() {
+        //
+        // @Override
+        // protected void runInEDT() {
+        // menu.add(new RarStreamAction(archive, extractor, StreamingExtension.this));
+        // }
+        // };
+        // }
+        // } catch (Throwable e) {
+        // logger.log(e);
+        // }
+        //
+        // }
+        // }.start();
+
+    }
+
+    private List<PlayToDevice> getPlayToRenderer() {
+        ArrayList<PlayToDevice> ret = new ArrayList<PlayToDevice>();
+        for (PlayToUpnpRendererDevice mr : mediaServer.getPlayToRenderer()) {
+            ret.add(mr);
+        }
+        if (!StringUtils.isEmpty(getVLCBinary())) {
+            ret.add(new PlayToVLCDevice(this, getVLCBinary()));
+        }
+        if (!StringUtils.isEmpty(getWMPBinary())) {
+            ret.add(new PlayToWMPDevice(this, getWMPBinary()));
+        }
+
+        return ret;
+    }
+
+    private String getWMPBinary() {
+
+        return wmpBinary;
     }
 
     private String getVLCBinaryFromWindowsRegistry() {
@@ -321,5 +343,14 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         }
         result[str.length()] = 0;
         return result;
+    }
+
+    public String getHost() {
+        try {
+            return mediaServer.getHost();
+        } catch (Throwable e) {
+            logger.log(e);
+        }
+        return "127.0.0.1";
     }
 }
