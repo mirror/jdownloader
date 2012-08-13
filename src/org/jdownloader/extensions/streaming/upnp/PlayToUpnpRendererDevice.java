@@ -1,8 +1,5 @@
 package org.jdownloader.extensions.streaming.upnp;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 import jd.plugins.DownloadLink;
 
 import org.appwork.storage.config.JsonConfig;
@@ -150,11 +147,9 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
 
     public String getDisplayName() {
         if (rendererDevice.getIdentity() instanceof RemoteDeviceIdentity) {
-            try {
-                return rendererDevice.getDetails().getFriendlyName() + " @ " + InetAddress.getByName(address).getHostName();
-            } catch (UnknownHostException e) {
 
-            }
+        return rendererDevice.getDetails().getFriendlyName();
+
         }
         return rendererDevice.getDetails().getFriendlyName();
 
