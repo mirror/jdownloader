@@ -16,7 +16,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x-art\\.com/members/videos/[a-zA0-9\\-\\_]+/$" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/videos/[a-zA0-9\\-\\_]+/$" }, flags = { 0 })
 public class XArt extends PluginForDecrypt {
 
     public XArt(PluginWrapper wrapper) {

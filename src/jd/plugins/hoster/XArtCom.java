@@ -13,7 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x-art\\.com/members/(videos/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
 
     private String HTTP_Auth = "";
@@ -58,9 +58,14 @@ public class XArtCom extends PluginForHost {
         parameter.setName(name);
 
         /*
-         * this.setBrowserExclusive(); br.getHeaders().put("Authorization", "Basic " + this.getAuthHeader()); br.setFollowRedirects(true); int res_code =
-         * br.openGetConnection(parameter.getDownloadURL()).getResponseCode(); if (res_code == 200) { return AvailableStatus.TRUE; } else if (res_code == 404) {
-         * throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); } else if (res_code == 401) { throw new PluginException(LinkStatus.ERROR_PREMIUM); } else
+         * this.setBrowserExclusive(); br.getHeaders().put("Authorization",
+         * "Basic " + this.getAuthHeader()); br.setFollowRedirects(true); int
+         * res_code =
+         * br.openGetConnection(parameter.getDownloadURL()).getResponseCode();
+         * if (res_code == 200) { return AvailableStatus.TRUE; } else if
+         * (res_code == 404) { throw new
+         * PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); } else if (res_code
+         * == 401) { throw new PluginException(LinkStatus.ERROR_PREMIUM); } else
          * {
          */
         return AvailableStatus.UNCHECKABLE;
