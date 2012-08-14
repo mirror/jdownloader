@@ -85,6 +85,9 @@ public class UpstoRe extends PluginForHost {
             br.postPage(downloadLink.getDownloadURL(), "free=Slow+download&hash=" + fid);
             if (br.containsHTML(">This file is available only for Premium users<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("hoster.upstore.premiumonly", "Only downloadable for premium users"));
             if (br.containsHTML(">Sorry, but server with file is overloaded")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded", 30 * 60 * 1000l);
+            // Same server error (displayed differently) also exists for premium
+            // users
+            if (br.containsHTML(">Server with file not found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             // Waittime can be skipped
             // final long timeBefore = System.currentTimeMillis();
             final String rcID = br.getRegex("Recaptcha\\.create\\(\\'([^<>\"]*?)\\'").getMatch(0);
@@ -172,6 +175,8 @@ public class UpstoRe extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        // Make sure that the language is correct
+        br.getPage("http://upsto.re/?lang=en");
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
         if (expire == null) {
@@ -208,6 +213,9 @@ public class UpstoRe extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            // Same server error (displayed differently) also exists for free
+            // users
+            if (br.containsHTML("not found")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

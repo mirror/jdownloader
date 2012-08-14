@@ -315,7 +315,8 @@ public class LetitBitNet extends PluginForHost {
         Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage("http://letitbit.net/ajax/download3.php", "");
@@ -359,8 +360,15 @@ public class LetitBitNet extends PluginForHost {
         }
         // Downloadlimit is per day so let's just wait 3 hours
         if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
-        String url = br2.getRegex("\\[\"http:[^<>\"\\']+\",\"(http:[^<>\"\\']+)\"\\]").getMatch(0);
-        if (url == null) url = br2.getRegex("\\[\"(http:[^<>\"\\']+)\"").getMatch(0);
+        ArrayList<String> finallinksx = new ArrayList<String>();
+        final String[] finallinks = br2.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
+        if (finallinks == null || finallinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (final String finallink : finallinks)
+            if (!finallinksx.contains(finallink)) finallinksx.add(finallink);
+        // Grab last links, this might changes and has to be fixed if users get
+        // "server error" in JD while it's working via browser. If this is
+        // changed often we should consider trying the whole list of finallinks.
+        final String url = finallinksx.get(finallinksx.size() - 1);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
             logger.warning("url couldn't be found!");
@@ -421,7 +429,8 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and
+                     * retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -446,7 +455,8 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with username/password
+                 * premium code is bound to a registered account,must login with
+                 * username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -496,7 +506,8 @@ public class LetitBitNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
+                 * we must save the cookies, because letitbit only allows 100
+                 * logins per 24hours
                  */
                 br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie("http://letitbit.net/", "log");
@@ -520,7 +531,8 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff below ;)
+         * last time they did not block the useragent, we just need this stuff
+         * below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
