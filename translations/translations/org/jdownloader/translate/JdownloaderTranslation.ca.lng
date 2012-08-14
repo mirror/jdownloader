@@ -92,6 +92,7 @@ gui_settings__gui_title=Interfície
 gui_settings_basicauth_title=Autentificació bàsica
 gui_settings_downloadcontroll_title=Administració de descàrrega
 gui_settings_extensions_description=Mòduls d'extensió
+gui_settings_filewriting_description=Utilitzant la opció de comprovació de hash, JDownloader comprovarà la integritat de les descàrregues al finalitzar-les
 gui_settings_general_title=General
 gui_settings_linkgrabber_title=Filtra del linkgrabber
 gui_settings_plugins_description=JDownloader utilitza 'Plugins' per %s1 llocs per automatitzar descàrregues que d'altre manera ens portaría molt més temps si descareguem sense JDownloader. Alguns d'aquests Plugins contenen opcions per personalitzar el seu comportament.
