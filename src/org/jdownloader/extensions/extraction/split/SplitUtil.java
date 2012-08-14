@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import jd.nutils.io.FileSignatures;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.Regex;
@@ -40,6 +39,7 @@ import org.jdownloader.extensions.extraction.CPUPriority;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionController;
 import org.jdownloader.extensions.extraction.ExtractionControllerConstants;
+import org.jdownloader.extensions.extraction.FileSignatures;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 
 /**

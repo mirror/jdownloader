@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 import jd.controlling.IOEQ;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
-import jd.nutils.io.FileSignatures;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;

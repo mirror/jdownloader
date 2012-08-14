@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import jd.nutils.io.FileSignatures;
-import jd.nutils.io.Signature;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
 import net.sf.sevenzipjbinding.IInStream;
@@ -37,6 +35,8 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.FileSignatures;
+import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.StreamingExtension;

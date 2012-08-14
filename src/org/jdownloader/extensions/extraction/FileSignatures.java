@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.nutils.io;
+package org.jdownloader.extensions.extraction;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,19 +58,26 @@ public class FileSignatures {
         if (SIGNATURES != null) return SIGNATURES;
         synchronized (this) {
             if (SIGNATURES != null) return SIGNATURES;
-            String[] m = Regex.getLines(JDIO.readFileToString(Application.getResource("jd/mime.type")));
-            SIGNATURES = new Signature[m.length];
+            String[] m;
+            try {
+                m = Regex.getLines(org.appwork.utils.IO.readURLToString(Application.getRessourceURL("org/jdownloader/extensions/extraction/mime.type")));
+            } catch (IOException e1) {
+                LogController.CL().log(e1);
+                return new Signature[0];
+            }
+            Signature[] ret = new Signature[m.length];
             int i = 0;
             for (String e : m) {
                 String[] entry = e.split(":::");
                 if (entry.length >= 5) {
-                    SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3], entry[4]);
+                    ret[i++] = new Signature(entry[0], entry[1], entry[2], entry[3], entry[4]);
                 } else if (entry.length >= 4) {
-                    SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
+                    ret[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
                 } else {
                     LogController.CL().warning("Signature " + e + " invalid!");
                 }
             }
+            SIGNATURES = ret;
         }
         return SIGNATURES;
     }
