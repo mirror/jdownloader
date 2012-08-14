@@ -9,7 +9,7 @@ import net.sf.sevenzipjbinding.impl.RandomAccessFileInStream;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
 
-public class ExtRandomAccessFileInStream extends RandomAccessFileInStream {
+public class RarFromFileStream extends RandomAccessFileInStream {
 
     private ArchiveFile archiveFile;
     private String      filename;
@@ -30,7 +30,7 @@ public class ExtRandomAccessFileInStream extends RandomAccessFileInStream {
         this.filename = filename;
     }
 
-    public ExtRandomAccessFileInStream(ArchiveFile archiveFile, String filename, RarFileProvider rarFileProvider) throws FileNotFoundException {
+    public RarFromFileStream(ArchiveFile archiveFile, String filename, RarArchiveDataProvider rarFileProvider) throws FileNotFoundException {
         super(new RandomAccessFile(archiveFile == null ? filename : archiveFile.getFilePath(), "r"));
         this.archiveFile = archiveFile;
         this.filename = filename;

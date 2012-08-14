@@ -13,12 +13,12 @@ import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
 import org.jdownloader.extensions.streaming.dataprovider.DownloadLinkProvider;
 import org.jdownloader.extensions.streaming.dataprovider.LocalFileProvider;
 
-public class ArchiveFileProvider implements DataProvider<ArchiveFile> {
+public class PartFileDataProvider implements DataProvider<ArchiveFile> {
 
     private DownloadLinkProvider downloadLinkProvider;
     private LocalFileProvider    localFileProvider;
 
-    public ArchiveFileProvider(DownloadLinkProvider downloadLinkProvider) {
+    public PartFileDataProvider(DownloadLinkProvider downloadLinkProvider) {
 
         this.downloadLinkProvider = downloadLinkProvider;
         localFileProvider = new LocalFileProvider();

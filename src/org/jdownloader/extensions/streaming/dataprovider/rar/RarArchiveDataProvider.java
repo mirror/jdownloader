@@ -50,13 +50,13 @@ import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
 import org.jdownloader.logging.LogController;
 
-public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
+public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
 
     private String           file;
     private DataProvider[]   dataProviders;
     private ExtractionConfig extractionSettings;
 
-    public RarFileProvider(Archive archive, String subpath, DataProvider... dataProviders) {
+    public RarArchiveDataProvider(Archive archive, String subpath, DataProvider... dataProviders) {
         this.archive = archive;
         this.file = subpath;
         this.dataProviders = dataProviders;
@@ -64,7 +64,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
         if (password == null) password = "";
 
         map = new HashMap<String, ArchiveFile>();
-        logger = LogController.getInstance().getLogger(RarFileProvider.class.getName());
+        logger = LogController.getInstance().getLogger(RarArchiveDataProvider.class.getName());
         // support for test.part01-blabla.tat archives.
         // we have to create a rename matcher map in this case because 7zip cannot handle this type
         logger.info("Init Map:");
@@ -93,7 +93,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
     private HashMap<String, ArchiveFile> map;
     private String                       firstName;
     private LogSource                    logger;
-    private RarInputstream               latestAccessedStream;
+    private RarFromDataproviderStream               latestAccessedStream;
 
     private boolean                      readyForExtract = false;
     private ISevenZipInArchive           rarArchive;
@@ -144,7 +144,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
             if (archiveFile == null) return null;
             for (DataProvider dp : dataProviders) {
                 if (dp.canHandle(archiveFile, dataProviders)) {
-                    stream = new RarInputstream(archiveFile, filename, this, dp);
+                    stream = new RarFromDataproviderStream(archiveFile, filename, this, dp);
                     openStreamMap.put(filename, stream);
                     break;
                 }
@@ -169,14 +169,14 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
         return password;
     }
 
-    public void setLatestAccessedStream(RarInputstream extRandomAccessFileInStream) {
+    public void setLatestAccessedStream(RarFromDataproviderStream extRandomAccessFileInStream) {
         if (extRandomAccessFileInStream != latestAccessedStream) {
             logger.info("Extract from: " + extRandomAccessFileInStream.getFilename());
             latestAccessedStream = extRandomAccessFileInStream;
         }
     }
 
-    public RarInputstream getLatestAccessedStream() {
+    public RarFromDataproviderStream getLatestAccessedStream() {
         return latestAccessedStream;
     }
 
@@ -185,8 +185,8 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
 
     }
 
-    public RarInputstream getPart1Stream() throws SevenZipException {
-        return (RarInputstream) getStream(getArchive().getFirstArchiveFile());
+    public RarFromDataproviderStream getPart1Stream() throws SevenZipException {
+        return (RarFromDataproviderStream) getStream(getArchive().getFirstArchiveFile());
 
     }
 
@@ -676,9 +676,9 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
         Iterator<Entry<String, IInStream>> it = openStreamMap.entrySet().iterator();
         while (it.hasNext()) {
             Entry<String, IInStream> next = it.next();
-            if (next.getValue() instanceof RarInputstream) {
+            if (next.getValue() instanceof RarFromDataproviderStream) {
                 try {
-                    ((RarInputstream) next.getValue()).close();
+                    ((RarFromDataproviderStream) next.getValue()).close();
                 } catch (final Throwable e) {
                 }
             }

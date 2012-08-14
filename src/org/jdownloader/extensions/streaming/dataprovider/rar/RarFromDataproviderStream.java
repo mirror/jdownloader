@@ -10,7 +10,7 @@ import net.sf.sevenzipjbinding.SevenZipException;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
 
-public class RarInputstream implements IInStream {
+public class RarFromDataproviderStream implements IInStream {
 
     private ArchiveFile               archiveFile;
     private String                    filename;
@@ -32,7 +32,7 @@ public class RarInputstream implements IInStream {
         this.filename = filename;
     }
 
-    public RarInputstream(ArchiveFile archiveFile, String filename, RarFileProvider rarFileProvider, DataProvider<ArchiveFile> dp) {
+    public RarFromDataproviderStream(ArchiveFile archiveFile, String filename, RarArchiveDataProvider rarFileProvider, DataProvider<ArchiveFile> dp) {
         this.archiveFile = archiveFile;
         this.filename = filename;
         owner = rarFileProvider;
@@ -42,7 +42,7 @@ public class RarInputstream implements IInStream {
 
     protected AtomicLong      currentPosition = new AtomicLong(0);
 
-    protected RarFileProvider owner           = null;
+    protected RarArchiveDataProvider owner           = null;
     private int               seekMode;
     private InputStream       inputStream;
 

@@ -26,8 +26,8 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
-import org.jdownloader.extensions.streaming.dataprovider.rar.ArchiveFileProvider;
-import org.jdownloader.extensions.streaming.dataprovider.rar.RarFileProvider;
+import org.jdownloader.extensions.streaming.dataprovider.rar.PartFileDataProvider;
+import org.jdownloader.extensions.streaming.dataprovider.rar.RarArchiveDataProvider;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
@@ -95,7 +95,7 @@ public class HttpApiImpl implements HttpApiDefinition {
                 Archive archive = archiver.getArchiveByFactory(fac);
                 if (archive != null) {
 
-                    streamingInterface = new PipeStreamingInterface(null, new RarFileProvider(archive, subpath, new ArchiveFileProvider(extension.getDownloadLinkDataProvider())));
+                    streamingInterface = new PipeStreamingInterface(null, new RarArchiveDataProvider(archive, subpath, new PartFileDataProvider(extension.getDownloadLinkDataProvider())));
                     // Thread.sleep(5000);
                     addHandler(id, streamingInterface);
 
