@@ -24,6 +24,7 @@ GetIPAction_actionPerformed_d_msg=Buscant la IP del router
 GetIPAction_actionPerformed_d_title=Busca IP del router
 GetIPAction_getString_progress=Escanejant la xarxa
 LiveHeaderDetectionWizard_runOnlineScan_collect=Escanejant informació de la connexió
+LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Aquest servei no está disponible actualment. Si us plau intenta-ho més tard!
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Servei no disponible
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=LA IP '%s1' del router és invàlida!
 LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Sembla que no hi ha cap Interfície web en http://%s1.\nLa IP del router podria ser invàlida.\n\nVoleu continuar de totes maneres?

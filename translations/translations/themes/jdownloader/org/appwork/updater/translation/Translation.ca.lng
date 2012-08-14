@@ -13,6 +13,7 @@ udpates_found=Actualització(ns) trobada(es)!
 update_already_running=L'actualització està funcionant actualment
 update_dialog_cancel=Cancel·lar
 update_dialog_later=Pregunta'm després
+update_dialog_msg_x_updates_available=Hi ha actualitzacions llestes per ser instal·lades. Vols executar l'atualitzador?
 update_dialog_news_button=Obrir registre de canvis
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Actualització(no) disponible(s)
