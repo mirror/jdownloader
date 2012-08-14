@@ -40,7 +40,7 @@ public class StreamingProvider {
     public Streaming getStreamingProvider(final DownloadLink remoteLink) throws IOException {
         synchronized (streaming) {
             Streaming stream = streaming.get(remoteLink);
-            if (stream == null) {
+            if (stream == null || stream.isClosed()) {
                 File tmp = Application.getResource("/tmp/streaming/" + remoteLink.getUniqueID());
                 tmp.getParentFile().mkdirs();
                 stream = new Streaming(tmp.getAbsolutePath()) {

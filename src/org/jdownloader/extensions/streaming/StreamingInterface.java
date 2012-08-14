@@ -11,6 +11,6 @@ public interface StreamingInterface {
 
     InputStream getInputStream(long startPosition, long stopPosition) throws IOException;
 
-    public void close();
+    public void close() throws IOException;
 
 }

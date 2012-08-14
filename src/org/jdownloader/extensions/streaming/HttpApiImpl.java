@@ -21,13 +21,12 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
-import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
+import org.jdownloader.extensions.streaming.dataprovider.rar.RarFileProvider;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
@@ -94,41 +93,14 @@ public class HttpApiImpl implements HttpApiDefinition {
                 DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dlink);
                 Archive archive = archiver.getArchiveByFactory(fac);
                 if (archive != null) {
-                    streamingInterface = new RarStreamer(archive, extension) {
-                        protected String askPassword() throws DialogClosedException, DialogCanceledException {
 
-                            // if password is not in list, we cannot open the
-                            // archive.
-                            throw new DialogClosedException(0);
-                        }
-
-                        protected void openArchiveInDialog() throws DialogClosedException, DialogCanceledException, ExtractionException {
-                            try {
-                                openArchive();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                                throw new ExtractionException(e, streamProvider != null ? rarStreamProvider.getLatestAccessedStream().getArchiveFile() : null);
-                            } finally {
-
-                            }
-
-                        }
-                    };
-                    ((RarStreamer) streamingInterface).setPath(subpath);
-                    ((RarStreamer) streamingInterface).start();
+                    streamingInterface = new PipeStreamingInterface(null, new RarFileProvider(archive, subpath, new ArchiveFileProvider(extension.getDownloadLinkDataProvider())));
                     // Thread.sleep(5000);
                     addHandler(id, streamingInterface);
 
                 } else {
 
-                    streamingInterface = new DirectStreamingImpl(extension, dlink) {
-
-                        @Override
-                        public long getFinalFileSize() {
-                            return link.getDownloadSize();
-                        }
-
-                    };
+                    streamingInterface = new PipeStreamingInterface(dlink, extension.getDownloadLinkDataProvider());
                     addHandler(id, streamingInterface);
 
                 }
@@ -140,6 +112,7 @@ public class HttpApiImpl implements HttpApiDefinition {
                 format = Files.getExtension(subpath);
             }
             // seeking
+
             String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
 
             String ct = "video/" + format;
@@ -180,11 +153,7 @@ public class HttpApiImpl implements HttpApiDefinition {
             case HEAD:
                 System.out.println("HEAD " + request.getRequestHeaders());
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
-                if (streamingInterface instanceof RarStreamer) {
-                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (((RarStreamer) streamingInterface).getFinalFileSize()) + ""));
-                } else {
-                    response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, (dlink.getDownloadSize()) + ""));
-                }
+                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, streamingInterface.getFinalFileSize() + ""));
 
                 response.getOutputStream();
                 response.closeConnection();
@@ -194,9 +163,7 @@ public class HttpApiImpl implements HttpApiDefinition {
 
                 try {
 
-                    response.setResponseAsync(true);
-
-                    new StreamingThread(response, request, streamingInterface).start();
+                    new StreamingThread(response, request, streamingInterface).run();
 
                 } catch (final Throwable e) {
                     if (e instanceof RemoteAPIException) throw (RemoteAPIException) e;

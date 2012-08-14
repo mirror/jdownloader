@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.streaming;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
@@ -20,6 +22,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class StreamingThread extends Thread implements BrowserSettings, DownloadInterfaceFactory {
@@ -85,8 +88,19 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
                 getResponse().getOutputStream();
                 return;
             }
-            sis = streamingInterface.getInputStream(startPosition, stopPosition);
             long completeSize = streamingInterface.getFinalFileSize();
+            try {
+
+                sis = streamingInterface.getInputStream(startPosition, stopPosition);
+            } catch (final Throwable e) {
+                logger.log(e);
+                File f = new File(NewTheme.I().getURL("videos/", "streaming/wrong_password", ".mp4").getFile());
+                sis = new FileInputStream(f);
+                completeSize = f.length();
+                startPosition = 0;
+                stopPosition = -1;
+            }
+
             if (sis == null) {
                 getResponse().setResponseCode(ResponseCode.ERROR_NOT_FOUND);
                 getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
@@ -113,6 +127,7 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
         } catch (final Throwable e) {
             logger.log(e);
             logger.flush();
+
             getResponse().setResponseCode(ResponseCode.SERVERERROR_INTERNAL);
             try {
                 getResponse().getOutputStream();
