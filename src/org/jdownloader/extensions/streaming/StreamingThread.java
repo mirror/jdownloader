@@ -92,6 +92,13 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
             try {
 
                 sis = streamingInterface.getInputStream(startPosition, stopPosition);
+            } catch (final IOException e) {
+                logger.log(e);
+                File f = new File(NewTheme.I().getURL("videos/", "streaming/unknown", ".mp4").getFile());
+                sis = new FileInputStream(f);
+                completeSize = f.length();
+                startPosition = 0;
+                stopPosition = -1;
             } catch (final Throwable e) {
                 logger.log(e);
                 File f = new File(NewTheme.I().getURL("videos/", "streaming/wrong_password", ".mp4").getFile());

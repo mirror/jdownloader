@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming;
+package org.jdownloader.extensions.streaming.dataprovider.rar;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,7 @@ public class ArchiveFileProvider implements DataProvider<ArchiveFile> {
     }
 
     @Override
-    public boolean canHandle(ArchiveFile link, DataProvider... dataProviders) {
+    public boolean canHandle(ArchiveFile link, DataProvider<?>... dataProviders) {
         return link instanceof ArchiveFile;
     }
 
@@ -68,6 +68,11 @@ public class ArchiveFileProvider implements DataProvider<ArchiveFile> {
             if (t == null) t = e;
         }
         if (t != null) throw new IOException(t);
+    }
+
+    @Override
+    public Throwable getException() {
+        return null;
     }
 
 }

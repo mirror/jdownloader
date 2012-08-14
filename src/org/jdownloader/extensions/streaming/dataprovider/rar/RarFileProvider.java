@@ -196,6 +196,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
     private boolean              silent              = true;
     private Thread               extractionThread;
     private StreamingChunk       streamingChunk;
+    private IOException          exception;
 
     public void setSilent(boolean silent) {
         this.silent = silent;
@@ -377,6 +378,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
 
     public void openArchive() throws ExtractionException, InterruptedException, PasswordNotFoundException {
         open();
+        checkException();
         if (archive.isProtected()) {
 
             HashSet<String> spwList = archive.getSettings().getPasswords();
@@ -396,6 +398,8 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
 
             for (String password : passwordList) {
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
+                checkException();
+                checkException();
                 if (checkIfPasswordIsCorrect(password)) {
                     correctPW = password;
                     break;
@@ -411,6 +415,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
                         onWarning(T._.wrong_password());
 
                     }
+                    checkException();
                 }
             }
             try {
@@ -443,7 +448,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
 
             } catch (Throwable e) {
                 logger.log(e);
-                throw new ExtractionException(e, getLatestAccessedStream() != null ? getLatestAccessedStream().getArchiveFile() : null);
+                throwException(e);
             }
             logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
             /* avoid duplicates */
@@ -452,6 +457,15 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
 
             extractionSettings.setPasswordList(pwList);
         }
+    }
+
+    private void checkException() throws ExtractionException {
+        Throwable e = getException();
+        if (e != null) throwException(e);
+    }
+
+    private void throwException(Throwable e) throws ExtractionException {
+        throw new ExtractionException(e, getLatestAccessedStream() != null ? getLatestAccessedStream().getArchiveFile() : null);
     }
 
     private void open() throws ExtractionException {
@@ -490,6 +504,7 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
             return;
         } catch (SevenZipException e) {
             logger.log(e);
+
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
                 archive.setProtected(true);
@@ -672,6 +687,19 @@ public class RarFileProvider implements DataProvider<Archive>, IArchiveOpenVolum
         for (DataProvider<?> dp : dataProviders) {
             dp.close();
         }
+    }
+
+    @Override
+    public Throwable getException() {
+        if (exception != null) return exception;
+        for (DataProvider<?> db : dataProviders) {
+            if (db.getException() != null) { return db.getException(); }
+        }
+        return null;
+    }
+
+    public void setException(IOException e) {
+        this.exception = e;
     }
 
 }

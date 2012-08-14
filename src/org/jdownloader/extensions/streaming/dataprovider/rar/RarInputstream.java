@@ -74,6 +74,7 @@ public class RarInputstream implements IInStream {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            owner.setException(e);
             throw new SevenZipException(e);
         }
     }

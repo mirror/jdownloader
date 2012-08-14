@@ -26,6 +26,7 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
+import org.jdownloader.extensions.streaming.dataprovider.rar.ArchiveFileProvider;
 import org.jdownloader.extensions.streaming.dataprovider.rar.RarFileProvider;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;

@@ -14,7 +14,7 @@ public class LocalFileProvider implements DataProvider<File> {
     }
 
     @Override
-    public boolean canHandle(File link, DataProvider... dataProviders) {
+    public boolean canHandle(File link, DataProvider<?>... dataProviders) {
         return link instanceof File;
     }
 
@@ -52,6 +52,11 @@ public class LocalFileProvider implements DataProvider<File> {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public Throwable getException() {
+        return null;
     }
 
 }
