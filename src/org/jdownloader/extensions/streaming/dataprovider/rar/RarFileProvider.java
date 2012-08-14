@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import jd.nutils.io.FileSignatures;
-import jd.nutils.io.Signature;
 import jd.parser.Regex;
 import net.sf.sevenzipjbinding.ArchiveFormat;
 import net.sf.sevenzipjbinding.ExtractOperationResult;
@@ -44,6 +42,8 @@ import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionConfig;
 import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.extraction.FileSignatures;
+import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.T;
