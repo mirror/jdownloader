@@ -66,7 +66,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         map = new HashMap<String, ArchiveFile>();
         logger = LogController.getInstance().getLogger(RarArchiveDataProvider.class.getName());
         // support for test.part01-blabla.tat archives.
-        // we have to create a rename matcher map in this case because 7zip cannot handle this type
+        // we have to create a rename matcher map in this case because 7zip
+        // cannot handle this type
         logger.info("Init Map:");
         if (archive.getFirstArchiveFile().getFilePath().matches("(?i).*\\.pa?r?t?\\.?\\d+\\D.*?\\.rar$")) {
             for (ArchiveFile af : archive.getArchiveFiles()) {
@@ -93,7 +94,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     private HashMap<String, ArchiveFile> map;
     private String                       firstName;
     private LogSource                    logger;
-    private RarFromDataproviderStream               latestAccessedStream;
+    private RarFromDataproviderStream    latestAccessedStream;
 
     private boolean                      readyForExtract = false;
     private ISevenZipInArchive           rarArchive;
@@ -233,7 +234,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             for (final ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                 if (item.isFolder() || (item.getSize() == 0 && item.getPackedSize() == 0)) {
                     /*
-                     * we also check for items with size ==0, they should have a packedsize>0
+                     * we also check for items with size ==0, they should have a
+                     * packedsize>0
                      */
                     continue;
                 }
@@ -264,13 +266,15 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                                     int toWrite = Math.min(signatureBuffer.free(), data.length);
                                     if (toWrite > 0) {
                                         /*
-                                         * we still have enough buffer left to write the data
+                                         * we still have enough buffer left to
+                                         * write the data
                                          */
                                         signatureBuffer.write(data, 0, toWrite);
                                     }
                                     if (signatureBuffer.size() >= signatureMinLength) {
                                         /*
-                                         * we have enough data available for a signature check
+                                         * we have enough data available for a
+                                         * signature check
                                          */
                                         StringBuilder sigger = new StringBuilder();
                                         for (int i = 0; i < signatureBuffer.size() - 1; i++) {
@@ -283,7 +287,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                                         if (signature != null) {
                                             if (signature.getExtensionSure() != null && signature.getExtensionSure().matcher(path).matches()) {
                                                 /*
-                                                 * signature matches, lets abort PWFinding now
+                                                 * signature matches, lets abort
+                                                 * PWFinding now
                                                  */
                                                 passwordfound[0] = true;
                                                 return 0;
@@ -292,7 +297,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                                     }
                                     if (item.getSize() <= maxPWCheckSize) {
                                         /*
-                                         * we still allow further extraction as the itemSize <= maxPWCheckSize
+                                         * we still allow further extraction as
+                                         * the itemSize <= maxPWCheckSize
                                          */
                                         return data.length;
                                     } else {
@@ -399,7 +405,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             for (String password : passwordList) {
                 if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
                 checkException();
-                checkException();
+
                 if (checkIfPasswordIsCorrect(password)) {
                     correctPW = password;
                     break;
@@ -422,7 +428,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                 if (itemToExtract == null) {
                     logger.info("Path: " + file);
                     for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
-                        if (file == null) {
+                        if (StringUtils.isEmpty(file)) {
                             if (itemToExtract == null && !item.isFolder()) {
                                 itemToExtract = item;
                                 sizeOfItemToExtract = item.getSize();
@@ -552,6 +558,15 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     @Override
     public long getFinalFileSize(Archive archive) {
+        if (sizeOfItemToExtract <= 0) {
+
+            ArrayList<ArchiveItem> items = this.archive.getSettings().getArchiveItems();
+            if (items != null) {
+                for (ArchiveItem ai : items) {
+                    if (ai.getPath().equals(file)) { return ai.getSize(); }
+                }
+            }
+        }
         return sizeOfItemToExtract;
     }
 

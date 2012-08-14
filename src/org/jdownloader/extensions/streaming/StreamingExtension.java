@@ -92,11 +92,13 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     protected void start() throws StartException {
 
         streamProvider = new StreamingProvider(this);
-        vlcstreamingAPI = new HttpApiImpl(this);
+
         vlcBinary = findVLCBinary();
         wmpBinary = findWindowsMediaPlayer();
 
         startMediaServer();
+
+        vlcstreamingAPI = new HttpApiImpl(this, this.mediaServer);
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
         // new EDTRunner() {

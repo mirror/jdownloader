@@ -50,7 +50,12 @@ public class RarPlayToAction extends AppAction {
         DownloadLink link = ((DownloadLinkArchiveFactory) archive.getFactory()).getDownloadLinks().get(0);
         String id;
         try {
-            id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL()) + "/" + item.getPath()), "UTF-8");
+            if (item != null) {
+                id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL()) + "/" + item.getPath()), "UTF-8");
+            } else {
+                id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL())), "UTF-8");
+
+            }
 
             device.play(link, id);
 

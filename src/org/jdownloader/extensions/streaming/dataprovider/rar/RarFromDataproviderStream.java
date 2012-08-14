@@ -40,11 +40,11 @@ public class RarFromDataproviderStream implements IInStream {
 
     }
 
-    protected AtomicLong      currentPosition = new AtomicLong(0);
+    protected AtomicLong             currentPosition = new AtomicLong(0);
 
     protected RarArchiveDataProvider owner           = null;
-    private int               seekMode;
-    private InputStream       inputStream;
+    private int                      seekMode;
+    private InputStream              inputStream;
 
     @Override
     public synchronized int read(byte[] abyte0) throws SevenZipException {
@@ -58,16 +58,20 @@ public class RarFromDataproviderStream implements IInStream {
             }
 
             int ret = inputStream.read(abyte0);
-
+            System.out.println("REad " + ret + " at " + currentPosition.get());
             if (ret > 0) {
                 currentPosition.addAndGet(ret);
 
             }
             // if (ret >= 0) {
-            // currentPosition.set(currentInputStream.getCurrentPosition());
+            // currentPosition.set(inputStream.);
             // }
             if (ret <= 0) {
-                /* map EOF to 0, according to http://sevenzipjbind.sourceforge.net/javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html */
+                /*
+                 * map EOF to 0, according to
+                 * http://sevenzipjbind.sourceforge.net
+                 * /javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html
+                 */
                 return 0;
             } else {
                 return ret;
@@ -100,7 +104,8 @@ public class RarFromDataproviderStream implements IInStream {
                 throw new RuntimeException((new StringBuilder()).append("Seek: unknown origin: ").append(i).toString());
             }
             // if (!owner.isReadyForExtract()) {
-            // owner.getLogger().finer("Seek " + currentPosition.get() + " " + filename + " i " + i + " L " + l);
+            // owner.getLogger().finer("Seek " + currentPosition.get() + " " +
+            // filename + " i " + i + " L " + l);
             // }
             return currentPosition.get();
 

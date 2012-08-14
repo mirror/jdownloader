@@ -31,16 +31,21 @@ import org.jdownloader.extensions.streaming.dataprovider.rar.RarArchiveDataProvi
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
+import org.jdownloader.extensions.streaming.upnp.MediaServer;
+import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
 import org.jdownloader.logging.LogController;
 
 public class HttpApiImpl implements HttpApiDefinition {
 
-    private HashMap<String, StreamingInterface> interfaceMap = new HashMap<String, StreamingInterface>();
-    private StreamingExtension                  extension;
-    private LogSource                           logger;
+    private HashMap<String, StreamingInterface>   interfaceMap   = new HashMap<String, StreamingInterface>();
+    private StreamingExtension                    extension;
+    private LogSource                             logger;
+    private MediaServer                           mediaServer;
+    private static final PlayToUpnpRendererDevice UNKNOWN_DEVICE = new UnknownUPNPDevice();
 
-    public HttpApiImpl(StreamingExtension extension) {
+    public HttpApiImpl(StreamingExtension extension, MediaServer mediaServer) {
         this.extension = extension;
+        this.mediaServer = mediaServer;
         logger = LogController.getInstance().getLogger(getClass().getName());
     }
 
@@ -84,6 +89,14 @@ public class HttpApiImpl implements HttpApiDefinition {
                     break;
                 }
             }
+            PlayToUpnpRendererDevice callingDevice = UNKNOWN_DEVICE;
+            for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
+                if (dev.getAddress().equals(request.getRemoteAdress().getHostAddress())) {
+                    callingDevice = dev;
+                    break;
+                }
+            }
+            logger.info("Call from " + callingDevice);
             final DownloadLink link = dlink;
             StreamingInterface streamingInterface = null;
             streamingInterface = interfaceMap.get(id);
@@ -150,11 +163,13 @@ public class HttpApiImpl implements HttpApiDefinition {
 
                 }
             }
+            long length;
             switch (request.getRequestType()) {
             case HEAD:
                 System.out.println("HEAD " + request.getRequestHeaders());
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, streamingInterface.getFinalFileSize() + ""));
+                length = streamingInterface.getFinalFileSize();
+                if (length > 0) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
 
                 response.getOutputStream();
                 response.closeConnection();

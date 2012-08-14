@@ -52,12 +52,18 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
         this.avtransportService = avtransport;
         this.mediaServer = mediaServer;
         logger = LogController.getInstance().getLogger(PlayToUpnpRendererDevice.class.getName());
-        settings = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + d.getIdentity().getUdn().toString().substring(5)), RendererDeviceSettings.class);
-        address = ((RemoteDeviceIdentity) rendererDevice.getIdentity()).getDescriptorURL().getHost();
         init();
     }
 
-    private void init() {
+    public String getAddress() {
+        return address;
+    }
+
+    protected void init() {
+
+        settings = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + rendererDevice.getIdentity().getUdn().toString().substring(5)), RendererDeviceSettings.class);
+        address = ((RemoteDeviceIdentity) rendererDevice.getIdentity()).getDescriptorURL().getHost();
+
         if (!StringUtils.isEmpty(settings.getProtocolInfos())) {
             protocolInfos = new ProtocolInfos(settings.getProtocolInfos());
             return;
