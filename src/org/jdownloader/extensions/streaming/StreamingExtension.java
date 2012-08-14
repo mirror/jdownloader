@@ -274,20 +274,22 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
                             if (ais != null && ais.size() > 0) {
 
                                 for (final ArchiveItem ai : ais) {
+                                    if (SUPPORTED_DIRECT_PLAY_FORMATS.contains(Files.getExtension(ai.getPath()))) {
+                                        new EDTRunner() {
 
-                                    new EDTRunner() {
+                                            @Override
+                                            protected void runInEDT() {
 
-                                        @Override
-                                        protected void runInEDT() {
+                                                for (PlayToDevice d : renderer) {
 
-                                            for (PlayToDevice d : renderer) {
+                                                    menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, ai));
 
-                                                menu.add(new RarPlayToAction(StreamingExtension.this, d, archive, extractor, ai));
+                                                }
 
                                             }
+                                        };
+                                    }
 
-                                        }
-                                    };
                                 }
                             } else {
                                 new EDTRunner() {

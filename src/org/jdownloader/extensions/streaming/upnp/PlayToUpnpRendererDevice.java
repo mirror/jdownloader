@@ -21,6 +21,7 @@ import org.fourthline.cling.model.types.ServiceId;
 import org.fourthline.cling.model.types.UDAServiceId;
 import org.fourthline.cling.support.avtransport.callback.Play;
 import org.fourthline.cling.support.avtransport.callback.SetAVTransportURI;
+import org.fourthline.cling.support.avtransport.callback.Stop;
 import org.fourthline.cling.support.connectionmanager.callback.GetProtocolInfo;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
@@ -162,17 +163,7 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
                 logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + settings.getProtocolInfos());
 
                 final String url = "http://" + mediaServer.getHost() + ":3128/vlcstreaming/stream?" + id;
-
-                ActionCallback setAVTransportURIAction = new SetAVTransportURI(avtransportService, url, "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
-                    @Override
-                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                        // Something was wrong
-                        System.out.println("WRONG SETURI" + defaultMsg);
-                        logger.severe("SetAVTransportURI: " + defaultMsg);
-                        Dialog.getInstance().showErrorDialog(defaultMsg);
-                    }
-                };
-                ActionCallback playAction = new Play(avtransportService) {
+                final ActionCallback playAction = new Play(avtransportService) {
                     @Override
                     public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
                         // Something was wrong
@@ -181,9 +172,42 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
                         Dialog.getInstance().showErrorDialog(defaultMsg);
                     }
                 };
+                final ActionCallback setAVTransportURIAction = new SetAVTransportURI(avtransportService, url, "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
+                    @Override
+                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                        // Something was wrong
+                        System.out.println("WRONG SETURI" + defaultMsg);
+                        logger.severe("SetAVTransportURI: " + defaultMsg);
+                        Dialog.getInstance().showErrorDialog(defaultMsg);
 
-                mediaServer.getControlPoint().execute(setAVTransportURIAction);
-                mediaServer.getControlPoint().execute(playAction);
+                    }
+
+                    @Override
+                    public void success(ActionInvocation invocation) {
+                        super.success(invocation);
+                        mediaServer.getControlPoint().execute(playAction);
+                    }
+                };
+
+                final ActionCallback stopAction = new Stop(avtransportService) {
+                    @Override
+                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                        // Something was wrong
+                        System.out.println("WRONG Stop " + defaultMsg);
+                        logger.severe("Stop Action: " + defaultMsg);
+                        Dialog.getInstance().showErrorDialog(defaultMsg);
+                        mediaServer.getControlPoint().execute(setAVTransportURIAction);
+                    }
+
+                    @Override
+                    public void success(ActionInvocation invocation) {
+                        super.success(invocation);
+                        mediaServer.getControlPoint().execute(setAVTransportURIAction);
+                    }
+
+                };
+                mediaServer.getControlPoint().execute(stopAction);
+
                 System.out.println("Played");
             }
         }.start();

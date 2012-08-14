@@ -40,4 +40,7 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Play to %s1" })
     String playto(String displayName);
+
+    @Default(lngs = { "en" }, values = { "Play %s1 to %s2" })
+    String playto2(String path, String displayName);
 }

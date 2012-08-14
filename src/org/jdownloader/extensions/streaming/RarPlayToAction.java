@@ -9,6 +9,7 @@ import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Hash;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
@@ -36,7 +37,11 @@ public class RarPlayToAction extends AppAction {
         this.item = ai;
         device = d;
         extension = streamingExtension;
-        setName(T._.playto(device.getDisplayName()));
+        if (ai != null) {
+            setName(T._.playto2(ai.getPath(), device.getDisplayName()));
+        } else {
+            setName(T._.playto(device.getDisplayName()));
+        }
         Image front = NewTheme.I().getImage("media-playback-start", 20, true);
         setSmallIcon(new ImageIcon(ImageProvider.merge(streamingExtension.getIcon(20).getImage(), front, 0, 0, 5, 5)));
     }
@@ -45,7 +50,7 @@ public class RarPlayToAction extends AppAction {
         DownloadLink link = ((DownloadLinkArchiveFactory) archive.getFactory()).getDownloadLinks().get(0);
         String id;
         try {
-            id = Hash.getMD5(link.getDownloadURL()) + "/" + URLEncoder.encode(item.getPath(), "UTF-8");
+            id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL()) + "/" + item.getPath()), "UTF-8");
 
             device.play(link, id);
 
