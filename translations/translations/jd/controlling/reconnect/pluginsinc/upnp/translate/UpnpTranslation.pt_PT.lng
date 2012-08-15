@@ -12,4 +12,5 @@ literally_router=Router UPNP
 literally_service_type=Tipo serviço
 malformedservicetype=Tipo de serviço inválido. Tentar UPNP.
 malformedurl=Endereço de controlo inválido. Tentar Auto-configurador de UPNP.
+servicetype_help=Introduzir tipo de serviço (i.e. urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=Tentar Reconectar usando UPNP: %s1

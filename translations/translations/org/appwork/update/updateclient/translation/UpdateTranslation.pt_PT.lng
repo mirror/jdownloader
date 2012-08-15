@@ -50,6 +50,7 @@ dialog_branch_resetted_msg=%s2 Edição %s1 já não existe.  Redefinido para a 
 dialog_rly_cancel=Cancelar actualização?
 download_failed_resume=Descarga falhou. Tentar retomar...
 download_failed_retry=Descarga falhou. Tentar reiniciar...
+end_list=Parar Actualizador agora.\nUsar -install id1,id2,... para instalar pacotes.
 ensureThatUpdaterExists_msg=Por favor descarregue a última versão da nossa página web e instale-a!
 ensureThatUpdaterExists_title=Instalação corrompida!
 error_app_disabled=Impossível actualizar %s1 de momento. Tente mais tarde.
