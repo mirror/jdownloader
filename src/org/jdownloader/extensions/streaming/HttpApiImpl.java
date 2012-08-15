@@ -91,7 +91,7 @@ public class HttpApiImpl implements HttpApiDefinition {
             }
             PlayToUpnpRendererDevice callingDevice = UNKNOWN_DEVICE;
             for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
-                if (dev.getAddress().equals(request.getRemoteAdress().getHostAddress())) {
+                if (request.getRemoteAdress().contains(dev.getAddress())) {
                     callingDevice = dev;
                     break;
                 }
