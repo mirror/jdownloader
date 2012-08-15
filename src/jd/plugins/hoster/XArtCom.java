@@ -1,6 +1,10 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -13,7 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
 
     private String HTTP_Auth = "";
@@ -57,19 +61,42 @@ public class XArtCom extends PluginForHost {
         }
         parameter.setName(name);
 
-        /*
-         * this.setBrowserExclusive(); br.getHeaders().put("Authorization",
-         * "Basic " + this.getAuthHeader()); br.setFollowRedirects(true); int
-         * res_code =
-         * br.openGetConnection(parameter.getDownloadURL()).getResponseCode();
-         * if (res_code == 200) { return AvailableStatus.TRUE; } else if
-         * (res_code == 404) { throw new
-         * PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); } else if (res_code
-         * == 401) { throw new PluginException(LinkStatus.ERROR_PREMIUM); } else
-         * {
-         */
-        return AvailableStatus.UNCHECKABLE;
-        /* } */
+        ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("x-art.com");
+        Account account = null;
+        if (accounts != null && accounts.size() != 0) {
+            Iterator<Account> it = accounts.iterator();
+            while (it.hasNext()) {
+                Account n = it.next();
+                if (n.isEnabled() && n.isValid()) {
+                    account = n;
+                    break;
+                }
+            }
+        }
+
+        this.setBrowserExclusive();
+
+        if (this.getAuthHeader() == "") {
+            this.setAuthHeader(Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+        }
+
+        br.getHeaders().put("Authorization", "Basic " + this.getAuthHeader());
+        br.setFollowRedirects(true);
+
+        URLConnectionAdapter urlcon = br.openGetConnection(parameter.getDownloadURL());
+        int res_code = urlcon.getResponseCode();
+        long dlsize = urlcon.getCompleteContentLength();
+
+        if (res_code == 200) {
+            parameter.setDownloadSize(dlsize);
+            return AvailableStatus.TRUE;
+        } else if (res_code == 404) {
+            return AvailableStatus.FALSE;
+        } else if (res_code == 401) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM);
+        } else {
+            return AvailableStatus.UNCHECKABLE;
+        }
     }
 
     @Override
