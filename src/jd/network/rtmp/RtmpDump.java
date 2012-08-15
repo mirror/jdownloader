@@ -240,15 +240,19 @@ public class RtmpDump extends RTMPDownload {
                     this.R = new InputStreamReader(this.P.getErrorStream());
                 }
                 final BufferedReader br = new BufferedReader(this.R);
+                int sizeCalulateBuffer = 0;
                 float progressFloat = 0;
+                boolean runTimeSize = false;
+                long tmplen = 0, fixedlen = 0, calc = 0;
                 while ((line = br.readLine()) != null) {
                     if (!line.equals("")) {
                         error = line;
                     }
                     if (!new Regex(line, "^[0-9]").matches()) {
                         if (line.contains("length") || line.contains("lastkeyframelocation")) {
+                            if (line.contains("length")) runTimeSize = true;
                             String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
-                            iSize += SizeFormatter.getSize(size);
+                            iSize = SizeFormatter.getSize(size);
                         }
                     } else {
                         if (this.downloadLink.getDownloadSize() == 0) {
@@ -257,9 +261,14 @@ public class RtmpDump extends RTMPDownload {
                         // is resumed
                         if (iSize == 0) iSize = downloadLink.getDownloadSize();
 
+                        int pos1 = line.indexOf("(");
+                        int pos2 = line.indexOf(")");
                         if (line.toUpperCase().matches("\\d+\\.\\d+\\sKB\\s/\\s\\d+\\.\\d+\\sSEC(\\s\\(\\d+\\.\\d%\\))?")) {
-                            this.BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
                             progressFloat = (float) (Math.round(this.BYTESLOADED * 100.0F / (float) iSize * 10) / 10.0F);
+                            if (runTimeSize && pos1 != -1 && pos2 != -1) {
+                                progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
+                            }
+                            this.BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
 
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
@@ -267,8 +276,18 @@ public class RtmpDump extends RTMPDownload {
                                 } else {
                                     this.sendSIGINT();
                                 }
-                                // throw new InterruptedIOException();
                                 return true;
+                            }
+
+                            if (sizeCalulateBuffer > 6 && runTimeSize) {
+                                tmplen = (long) (this.BYTESLOADED * 100.0F / progressFloat);
+                                fixedlen = this.downloadLink.getDownloadSize();
+                                calc = Math.abs(((fixedlen / 1024) - (tmplen / 1024)) % 1024);
+                                if (calc > 768 && calc < 960) {
+                                    this.downloadLink.setDownloadSize(tmplen);
+                                }
+                            } else {
+                                sizeCalulateBuffer++;
                             }
 
                             if (System.currentTimeMillis() - lastTime > 1000) {
@@ -285,7 +304,7 @@ public class RtmpDump extends RTMPDownload {
                     }
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
-                    if (progressFloat < 99.8) {
+                    if (progressFloat < 99.8 && !line.toLowerCase().contains("download complete")) {
                         System.out.println("Versuch Nr.: " + this.downloadLink.getLinkStatus().getRetryCount() + " ::: " + this.plugin.getMaxRetries(this.downloadLink, null));
                         if (this.downloadLink.getLinkStatus().getRetryCount() >= this.plugin.getMaxRetries(this.downloadLink, null)) {
                             this.downloadLink.getLinkStatus().setRetryCount(0);

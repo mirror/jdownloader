@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?ardmediathek\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+\\?documentId=\\d+" }, flags = { 32 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ardmediathek.de" }, urls = { "http://(www\\.)?(ardmediathek|mediathek\\.daserste)\\.de/[\\w\\-]+/([\\w\\-]+/)?[\\w\\-]+(\\?documentId=\\d+)?" }, flags = { 32 })
 public class RDMdthk extends PluginForDecrypt {
 
     public RDMdthk(final PluginWrapper wrapper) {
@@ -46,7 +46,11 @@ public class RDMdthk extends PluginForDecrypt {
         }
         final String[][] streams = br.getRegex("mediaCollection\\.addMediaStream\\((\\d+), (\\d+), \"(.*?)\", \"(.*?)\"\\);").getMatches();
 
-        final String title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        String title = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
+        if (parameter.contains("mediathek.daserste.de")) {
+            title = br.getRegex("<span class=\"boxHeadline\">([^<]+)").getMatch(0);
+            title += "_" + br.getRegex("<span class=\"boxSubHeadline\">([^<]+)").getMatch(0);
+        }
         final FilePackage filePackage = FilePackage.getInstance();
         filePackage.setName(Encoding.htmlDecode(title));
         for (final String[] stream : streams) {
@@ -57,6 +61,7 @@ public class RDMdthk extends PluginForDecrypt {
             // create link
             // replace http with hrtmp to differ hoster links from
             final DownloadLink link = createDownloadlink(param.toString().replace("http://", "hrtmp://") + "&q=" + q + "&t=" + t);
+            link.setProperty("ORIGLINK", parameter);
             filePackage.add(link);
             // parse file extension
             String ext = new Regex(stream[stream.length - 1], "(\\.\\w{3})$").getMatch(0);
