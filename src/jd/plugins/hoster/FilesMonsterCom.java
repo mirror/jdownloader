@@ -86,8 +86,7 @@ public class FilesMonsterCom extends PluginForHost {
                 synchronized (LOCK) {
                     if (loaded == false) {
                         /*
-                         * we only have to load this once, to make sure its
-                         * loaded
+                         * we only have to load this once, to make sure its loaded
                          */
                         JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
                     }
@@ -285,7 +284,11 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        if (!downloadLink.getDownloadURL().contains("download.php?id=")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
+        if (!downloadLink.getDownloadURL().contains("download.php?id=")) {
+            logger.info(downloadLink.getDownloadURL());
+
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
+        }
         login(account);
         br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
