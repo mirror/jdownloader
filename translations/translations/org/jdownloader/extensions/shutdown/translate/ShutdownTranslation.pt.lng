@@ -1,0 +1,9 @@
+gui_config_jdshutdown_close=Fechar JD
+gui_config_jdshutdown_forceshutdown=Forçar Encerramento (apenas alguns S.O.)
+gui_config_jdshutdown_hibernate=Hibernar (apenas alguns S.O.)
+gui_config_jdshutdown_shutdown=Desligar
+install_msg=Deseja preparar o seu PC para forçar o encerramento?
+interaction_shutdown_dialog_title_closejd=Fechar JD?
+interaction_shutdown_dialog_title_hibernate=Hibernar?
+interaction_shutdown_dialog_title_shutdown=Desligar?
+lit_shutdownn=Desligar
