@@ -1,5 +1,7 @@
-sys_warning_loguploadfailed=Falhou o envio do ficheiro de Diário!
-jd_plugins_optional_jdchat_newmessage=Nova mensagem de %s1: <hr> %s2
-plugins_optional_jdchat_enternick=O seu nick desejado
+gui_tab_title=Canal %s1
+jd_plugins_optional_jdchat_JDChat_topic_default=Carregando a Mensagem do dia
+jd_plugins_optional_jdchat_JDChat_topic_tooltip=Mensagem do dia
+jd_plugins_optional_jdchat_closeTab=Fechar separador
 jd_plugins_optional_jdchat_jdchat=JD Conversa
-plugin_optional_jdchat_getlog=%s1 necessita um registo para resolver o seu problema. Deseja enviar o registo?
+plugins_optional_jdchat_enternick=Nickname (Alcunha)
+settings_nick=Nome

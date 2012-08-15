@@ -1,4 +1,4 @@
 jd_plugins_optional_infobar_docking=Activar "Íman" nos cantos
-jd_plugins_optional_infobar_jdinfobar_description=Uma pequena janela flutuante com o estado das descargas em tempo real, caixa de arrastar e largar endereços, URL's ou ficheiros DLC.
 jd_plugins_optional_infobar_jdinfobar=JD Barra Informações Rápidas
-jd_plugins_optional_infobar_opacity=Opacidade da barra [em %]
+jd_plugins_optional_infobar_jdinfobar_description=Uma pequena janela flutuante com o estado das descargas em tempo real, caixa de arrastar e largar endereços, URL's ou ficheiros DLC.
+jd_plugins_optional_infobar_opacity=Opacidade da janela [em %]
