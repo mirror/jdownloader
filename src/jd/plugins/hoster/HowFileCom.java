@@ -58,7 +58,17 @@ public class HowFileCom extends PluginForHost {
         br.setCookie(MAINPAGE, "vid1", vid1);
         String dllink = br.getRegex("width=0 height=0></iframe>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dl\\d+\\.howfile\\.com/downfile/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            if (br.containsHTML("This is only for our premium member")) {
+                try {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                } catch (final Throwable e) {
+                    if (e instanceof PluginException) throw (PluginException) e;
+                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, "X-Art members only!");
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
