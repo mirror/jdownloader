@@ -15,6 +15,4 @@ public interface DataProvider<T> {
 
     public void close() throws IOException;
 
-    Throwable getException();
-
 }

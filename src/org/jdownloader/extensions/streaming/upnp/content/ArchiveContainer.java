@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.streaming.upnp.content;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -22,6 +21,7 @@ import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
+import org.jdownloader.extensions.streaming.IDFactory;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
@@ -133,7 +133,7 @@ public class ArchiveContainer extends FolderContainer {
 
         String id;
 
-        id = parent.getID() + "/" + URLEncoder.encode(archiveFile.getName(), "UTF-8");
+        id = IDFactory.create(parent.getID(), archiveFile.getName());
 
         final String url = "http://" + listContentProvider.getHost() + ":3128/vlcstreaming/stream?" + id;
         if (archiveFile.isDirectory()) {

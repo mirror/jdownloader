@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.streaming;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
@@ -22,8 +20,6 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.extensions.streaming.dataprovider.rar.PasswordNotFoundException;
-import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class StreamingThread extends Thread implements BrowserSettings, DownloadInterfaceFactory {
@@ -90,33 +86,8 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
                 return;
             }
             long completeSize = streamingInterface.getFinalFileSize();
-            try {
 
-                sis = streamingInterface.getInputStream(startPosition, stopPosition);
-            } catch (final IOException e) {
-                if (e.getCause() != null && e.getCause() instanceof PasswordNotFoundException) {
-                    logger.log(e);
-                    File f = new File(NewTheme.I().getURL("videos/", "streaming/wrong_password", ".mp4").getFile());
-                    sis = new FileInputStream(f);
-                    completeSize = f.length();
-                    startPosition = 0;
-                    stopPosition = -1;
-                } else {
-                    logger.log(e);
-                    File f = new File(NewTheme.I().getURL("videos/", "streaming/unknown", ".mp4").getFile());
-                    sis = new FileInputStream(f);
-                    completeSize = f.length();
-                    startPosition = 0;
-                    stopPosition = -1;
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                File f = new File(NewTheme.I().getURL("videos/", "streaming/unknown", ".mp4").getFile());
-                sis = new FileInputStream(f);
-                completeSize = f.length();
-                startPosition = 0;
-                stopPosition = -1;
-            }
+            sis = streamingInterface.getInputStream(startPosition, stopPosition);
 
             if (sis == null) {
                 getResponse().setResponseCode(ResponseCode.ERROR_NOT_FOUND);

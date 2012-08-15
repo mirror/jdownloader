@@ -10,8 +10,10 @@ import java.util.List;
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.logging2.LogSource;
 import org.fourthline.cling.model.message.UpnpHeaders;
+import org.fourthline.cling.model.message.control.IncomingActionRequestMessage;
 import org.fourthline.cling.model.types.UnsignedIntegerFourBytes;
 import org.fourthline.cling.model.types.csv.CSV;
+import org.fourthline.cling.protocol.sync.ReceivingAction;
 import org.fourthline.cling.support.contentdirectory.AbstractContentDirectoryService;
 import org.fourthline.cling.support.contentdirectory.ContentDirectoryErrorCode;
 import org.fourthline.cling.support.contentdirectory.ContentDirectoryException;
@@ -78,11 +80,13 @@ public class ContentDirectory extends AbstractContentDirectoryService {
             System.out.println(objectID + " - browseFlag:" + browseFlag + " filter:" + filterString + " firstResult:" + firstResult + " maxResults:" + maxResults + " orderby:" + orderby);
             DIDLContent didl = new DIDLContent();
             ContentProvider contentProvider = getContentProvider(org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders());
-
+            UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+            IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
             Filter filter = Filter.create(filterString);
             ContentNode node = contentProvider.getNode(objectID);
             if (node == null) {
                 String didlStrng = new DIDLParser().generate(didl);
+
                 System.out.println("-->" + didlStrng);
                 return new BrowseResult(didlStrng, 0, 0);
             } else {
@@ -110,7 +114,10 @@ public class ContentDirectory extends AbstractContentDirectoryService {
                             }
 
                         }
+
+                        //
                         String didlStrng = contentProvider.toDidlString(didl);
+
                         System.out.println(didlStrng);
                         return new BrowseResult(didlStrng, children.size(), children.size());
                     } else {

@@ -54,9 +54,4 @@ public class DownloadLinkProvider implements DataProvider<DownloadLink> {
         return link instanceof DownloadLink;
     }
 
-    @Override
-    public Throwable getException() {
-        return null;
-    }
-
 }

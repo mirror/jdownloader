@@ -49,7 +49,9 @@ public class PartFileDataProvider implements DataProvider<ArchiveFile> {
 
         } else if (link instanceof FileArchiveFile) {
 
-        return localFileProvider.getInputStream(((FileArchiveFile) link).getFile(), startPosition, stopPosition); }
+        return localFileProvider.getInputStream(((FileArchiveFile) link).getFile(), startPosition, stopPosition);
+        //
+        }
 
         throw new IOException("Not SUpported: " + link);
     }
@@ -68,11 +70,6 @@ public class PartFileDataProvider implements DataProvider<ArchiveFile> {
             if (t == null) t = e;
         }
         if (t != null) throw new IOException(t);
-    }
-
-    @Override
-    public Throwable getException() {
-        return null;
     }
 
 }

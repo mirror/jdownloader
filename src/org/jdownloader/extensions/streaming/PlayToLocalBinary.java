@@ -31,7 +31,7 @@ public abstract class PlayToLocalBinary implements PlayToDevice {
             public void run() {
                 try {
 
-                    final String url = "http://" + extension.getHost() + ":3128/vlcstreaming/stream?" + id;
+                    final String url = "http://" + extension.getHost() + ":3128/vlcstreaming/stream?" + id + "&uid=" + getUniqueDeviceID();
 
                     Executer exec = new Executer(getBinaryPath());
                     exec.setLogger(LogController.CL());

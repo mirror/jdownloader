@@ -2,15 +2,11 @@ package org.jdownloader.extensions.streaming;
 
 import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 import javax.swing.ImageIcon;
 
 import jd.plugins.DownloadLink;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.Hash;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.extraction.Archive;
@@ -49,19 +45,15 @@ public class RarPlayToAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         DownloadLink link = ((DownloadLinkArchiveFactory) archive.getFactory()).getDownloadLinks().get(0);
         String id;
-        try {
-            if (item != null) {
-                id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL()) + "/" + item.getPath()), "UTF-8");
-            } else {
-                id = URLEncoder.encode(JSonStorage.serializeToJson(Hash.getMD5(link.getDownloadURL())), "UTF-8");
 
-            }
+        if (item != null) {
+            id = IDFactory.create(link, item.getPath());
+        } else {
+            id = IDFactory.create(link, null);
 
-            device.play(link, id);
-
-        } catch (UnsupportedEncodingException e1) {
-            e1.printStackTrace();
         }
+
+        device.play(link, id);
 
     }
 }

@@ -86,7 +86,7 @@ public class StreamingProvider {
                             final URLConnectionAdapter con = mirror.getDownloadInstance().getConnection();
                             if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
                                 if (fileSize == -1) fileSize = con.getCompleteContentLength();
-                                new Thread() {
+                                new Thread("HTTP Reader Stream") {
                                     public void run() {
                                         ReusableByteArrayOutputStream buffer = null;
                                         long read = 0;

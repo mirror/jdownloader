@@ -8,7 +8,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
 import org.appwork.utils.logging.Log;
 import org.fourthline.cling.support.contentdirectory.DIDLParser;
 import org.fourthline.cling.support.model.DIDLContent;
@@ -21,6 +20,7 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
+import org.jdownloader.extensions.streaming.IDFactory;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
@@ -95,7 +95,7 @@ public class ListContentProvider implements ContentProvider {
         for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
             final Archive archive = extractionExtension.getArchiveByFactory(fac);
-            final String id = Hash.getMD5(dl.getDownloadURL());
+            final String id = IDFactory.create(dl, null);
             final String url = "http://" + getHost() + ":3128/vlcstreaming/stream?" + id;
             if (archive != null) {
 

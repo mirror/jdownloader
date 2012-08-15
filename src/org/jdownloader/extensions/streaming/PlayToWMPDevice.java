@@ -25,4 +25,9 @@ public class PlayToWMPDevice extends PlayToLocalBinary {
     protected String getBinaryPath() {
         return path;
     }
+
+    @Override
+    public String getUniqueDeviceID() {
+        return "wmp";
+    }
 }

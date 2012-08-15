@@ -6,6 +6,8 @@ public interface PlayToDevice {
 
     String getDisplayName();
 
+    String getUniqueDeviceID();
+
     void play(DownloadLink link, String id);
 
 }

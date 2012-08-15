@@ -68,15 +68,13 @@ public class RarFromDataproviderStream implements IInStream {
             // }
             if (ret <= 0) {
                 /*
-                 * map EOF to 0, according to
-                 * http://sevenzipjbind.sourceforge.net
-                 * /javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html
+                 * map EOF to 0, according to http://sevenzipjbind.sourceforge.net /javadoc/net/sf/sevenzipjbinding/ISequentialInStream.html
                  */
                 return 0;
             } else {
                 return ret;
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             owner.setException(e);
             throw new SevenZipException(e);

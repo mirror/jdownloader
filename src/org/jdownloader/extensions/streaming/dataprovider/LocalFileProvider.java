@@ -54,9 +54,4 @@ public class LocalFileProvider implements DataProvider<File> {
         }
     }
 
-    @Override
-    public Throwable getException() {
-        return null;
-    }
-
 }

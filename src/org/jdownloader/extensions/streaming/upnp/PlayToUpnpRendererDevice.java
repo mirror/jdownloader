@@ -168,7 +168,7 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
             public void run() {
                 logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + settings.getProtocolInfos());
 
-                final String url = "http://" + mediaServer.getHost() + ":3128/vlcstreaming/stream?" + id;
+                final String url = "http://" + mediaServer.getHost() + ":3128/vlcstreaming/stream?" + id + "&uid=" + getUniqueDeviceID();
                 final ActionCallback playAction = new Play(avtransportService) {
                     @Override
                     public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
@@ -218,6 +218,11 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
             }
         }.start();
 
+    }
+
+    @Override
+    public String getUniqueDeviceID() {
+        return this.rendererDevice.getIdentity().getUdn().toString();
     }
 
 }

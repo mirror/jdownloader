@@ -24,4 +24,9 @@ public class PlayToVLCDevice extends PlayToLocalBinary {
         return vlcPath;
     }
 
+    @Override
+    public String getUniqueDeviceID() {
+        return "vlc";
+    }
+
 }
