@@ -130,33 +130,47 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         // use the English page, less support required
-        br.getPage(downloadLink.getDownloadURL() + "en/index.html");
-        if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-        if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+        boolean retried = false;
         String passCode = null;
-        if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
-            if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput("Password?", downloadLink);
+        while (true) {
+            br.getPage(downloadLink.getDownloadURL() + "en/index.html");
+            if (br.containsHTML(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            if (br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Short wait period, Reconnection not necessary", 90 * 1000l);
+            if (br.containsHTML(PASSWORDTEXT) || pwProtected) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput("Password?", downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                br.postPage(br.getURL(), "pass=" + passCode);
+                if (br.containsHTML(PASSWORDTEXT)) {
+                    downloadLink.setProperty("pass", Property.NULL);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+                } else {
+                    if (passCode != null) downloadLink.setProperty("pass", passCode);
+                }
             } else {
-                /* gespeicherten PassCode holen */
-                passCode = downloadLink.getStringProperty("pass", null);
+                // ddlink is within the ?e=1 page request! but it seems you need to
+                // do the following posts to be able to use the link
+                // dllink = br.getRegex("(http.+/get/" + new
+                // Regex(downloadLink.getDownloadURL(),
+                // "https?://([^\\.]+)").getMatch(0) +
+                // "[^;]+)").getMatch(0);
+                br.postPage(downloadLink.getDownloadURL() + "en/", "submit=Download+the+file");
             }
-            br.postPage(br.getURL(), "pass=" + passCode);
-            if (br.containsHTML(PASSWORDTEXT)) {
-                downloadLink.setProperty("pass", Property.NULL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, JDL.L("plugins.hoster.onefichiercom.wrongpassword", "Password wrong!"));
+            if (dllink == null) dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                String wait = br.getRegex(" var count = (\\d+);").getMatch(0);
+                if (wait != null && retried == false) {
+                    retried = true;
+                    sleep(1000 * Long.parseLong(wait), downloadLink);
+                    continue;
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            // ddlink is within the ?e=1 page request! but it seems you need to
-            // do the following posts to be able to use the link
-            // dllink = br.getRegex("(http.+/get/" + new
-            // Regex(downloadLink.getDownloadURL(),
-            // "https?://([^\\.]+)").getMatch(0) +
-            // "[^;]+)").getMatch(0);
-            br.postPage(downloadLink.getDownloadURL() + "en/", "submit=Download+the+file");
+            break;
         }
-        if (dllink == null) dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {

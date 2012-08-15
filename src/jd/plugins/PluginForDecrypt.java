@@ -310,7 +310,13 @@ public abstract class PluginForDecrypt extends Plugin {
     protected String getCaptchaCode(String method, File file, int flag, CryptedLink link, String defaultValue, String explain) throws DecrypterException {
         CaptchaResult suggest = new CaptchaResult();
         suggest.setCaptchaText(defaultValue);
-        CaptchaResult cc = new CaptchaController(ioPermission, method, file, suggest, explain, this).getCode(flag);
+        String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
+        ArrayList<File> captchaFiles = new ArrayList<File>();
+        if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
+            captchaFiles.add(new File(orgCaptchaImage));
+        }
+        captchaFiles.add(file);
+        CaptchaResult cc = new CaptchaController(ioPermission, method, captchaFiles, suggest, explain, this).getCode(flag);
         if (cc == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return cc.getCaptchaText();
     }

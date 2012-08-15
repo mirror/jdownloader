@@ -49,18 +49,18 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
 
     public void get(RemoteAPIRequest request, RemoteAPIResponse response, long id, final boolean returnAsDataURL) {
         CaptchaDialogQueueEntry captcha = CaptchaDialogQueue.getInstance().getCaptchabyID(id);
-        if (captcha == null || captcha.getFile() == null || !captcha.getFile().exists()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
+        if (captcha == null || captcha.getCaptchaFile() == null || !captcha.getCaptchaFile().exists()) { throw new RemoteAPIException(ResponseCode.ERROR_NOT_FOUND, "Captcha no longer available"); }
         try {
             if (returnAsDataURL) {
                 OutputStream out = RemoteAPI.getOutputStream(response, request, RemoteAPI.gzip(request), true);
-                String mime = FileResponse.getMimeType(captcha.getFile().getName());
+                String mime = FileResponse.getMimeType(captcha.getCaptchaFile().getName());
                 String header = "{\r\n\"data\":\"" + mime + ";base64,";
                 out.write(header.getBytes("UTF-8"));
                 Base64OutputStream b64os = new Base64OutputStream(out);
                 FileInputStream fis = null;
                 ReusableByteArrayOutputStream ros = null;
                 try {
-                    fis = new FileInputStream(captcha.getFile());
+                    fis = new FileInputStream(captcha.getCaptchaFile());
                     ros = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(1024);
                     int read = 0;
                     while ((read = fis.read(ros.getInternalBuffer())) >= 0) {
@@ -96,7 +96,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
                     }
                 }
             } else {
-                final FileResponse fr = new FileResponse(request, response, captcha.getFile()) {
+                final FileResponse fr = new FileResponse(request, response, captcha.getCaptchaFile()) {
 
                     protected boolean useContentDisposition() {
                         /* we want the image to be displayed in browser */

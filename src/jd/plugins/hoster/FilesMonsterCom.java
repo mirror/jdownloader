@@ -63,6 +63,19 @@ public class FilesMonsterCom extends PluginForHost {
         return "http://filesmonster.com/rules.php";
     }
 
+    // @Override to keep compatible to stable
+    public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink.getStringProperty("PREMIUMONLY") != null && account == null) {
+            /* premium only */
+            return false;
+        }
+        if (downloadLink.getDownloadURL().contains("/free/2/") && account != null) {
+            /* free only */
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         br.setReadTimeout(3 * 60 * 1000);
@@ -286,7 +299,6 @@ public class FilesMonsterCom extends PluginForHost {
         requestFileInformation(downloadLink);
         if (!downloadLink.getDownloadURL().contains("download.php?id=")) {
             logger.info(downloadLink.getDownloadURL());
-
             throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4freeusers", "This file is only available for freeusers"));
         }
         login(account);

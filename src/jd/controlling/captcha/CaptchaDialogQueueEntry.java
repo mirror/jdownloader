@@ -67,8 +67,12 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
         return captchaController.getHost();
     }
 
-    public File getFile() {
-        return captchaController.getCaptchafile();
+    public File getCaptchaFile() {
+        return captchaController.getCaptchaFile();
+    }
+
+    public File getPreparedCaptchaFile() {
+        return captchaController.getPreparedCaptchaFile();
     }
 
     public void setResponse(CaptchaResult resp) {
@@ -119,19 +123,14 @@ public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeE
             if (CaptchaSettings.CFG.isCountdownEnabled() && CaptchaSettings.CFG.getCountdown() > 0) {
                 f = f | Dialog.LOGIC_COUNTDOWN;
             }
-            Image[] images = null;
-            if (captchaController.getCaptchafile().getName().toLowerCase().endsWith("gif")) {
-                images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
-            } else {
-                BufferedImage img = IconIO.getImage(captchaController.getCaptchafile().toURI().toURL());
-                if (img != null && img.getType() == BufferedImage.TYPE_BYTE_BINARY) {
-                    /* some png also are this type but fail to get read by gifimages */
-                    images = CaptchaDialog.getGifImages(captchaController.getCaptchafile().toURI().toURL());
-                }
-                if (images == null || images.length == 0 || images[0] == null) images = new Image[] { img };
+            Image[] images = CaptchaDialog.getGifImages(captchaController.getCaptchaFile().toURI().toURL());
+            if (images == null || images.length == 0) {
+                BufferedImage img = IconIO.getImage(captchaController.getCaptchaFile().toURI().toURL());
+                if (img != null) images = new Image[] { img };
             }
+
             if (images == null || images.length == 0 || images[0] == null) {
-                getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchafile().getAbsolutePath());
+                getLogger().severe("Could not load CaptchaImage! " + captchaController.getCaptchaFile().getAbsolutePath());
                 return null;
             }
             CaptchaDialogInterface answer = null;

@@ -80,7 +80,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void checkErrors() throws PluginException {
-        if (this.br.containsHTML(">This file is only available to Premium Members") || this.br.containsHTML("Please purchase an account in order to instantly download this file") || this.br.containsHTML("Currently only Premium Members can download files larger")) {
+        if (this.isPremiumOnly(br)) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {
@@ -416,9 +416,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess
-         * what we call public premium links. This might replace dlUrl, Unknown
-         * until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl, Unknown until proven
+         * otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = this.br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"[^>]+>Download</a>").getMatch(0);
@@ -552,7 +551,7 @@ public class FileFactory extends PluginForHost {
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
-            if (this.br.containsHTML(">This file is only available to Premium Members")) {
+            if (isPremiumOnly(br)) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");
                 downloadLink.getLinkStatus().setStatusText("This file is only available to Premium Members");
             } else if (this.br.containsHTML(NO_SLOT)) {
@@ -577,6 +576,10 @@ public class FileFactory extends PluginForHost {
 
         }
         return AvailableStatus.TRUE;
+    }
+
+    private boolean isPremiumOnly(Browser br) {
+        return this.br.containsHTML(">This file is only available to Premium Members") || this.br.containsHTML("Sorry, this file can only be downloaded by Premium members") || br.containsHTML("Please purchase an account in order to instantly download this file") || br.containsHTML("Currently only Premium Members can download files larger");
     }
 
     @Override

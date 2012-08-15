@@ -126,7 +126,7 @@ public class IfolderRu extends PluginForHost {
             captchaForm.setAction(br.getURL());
             if (!captchaurl.startsWith("http://")) captchaurl = "http://ints.rusfolder.com" + captchaurl;
             /* Captcha */
-            String captchaCode = getCaptchaCode("rusfolder.ru", captchaurl, downloadLink);
+            String captchaCode = getCaptchaCode("ifolder.ru", captchaurl, downloadLink);
             captchaForm.put("confirmed_number", captchaCode);
             /* this hoster checks content encoding */
             captchaForm.setEncoding("application/x-www-form-urlencoded");

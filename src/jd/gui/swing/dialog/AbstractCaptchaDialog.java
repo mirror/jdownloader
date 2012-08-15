@@ -237,10 +237,16 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
      * @return
      */
     public static Image[] getGifImages(URL url) {
+        InputStream stream = null;
         try {
-            return getGifImages(url.openStream());
+            return getGifImages(stream = url.openStream());
         } catch (IOException e) {
             Log.exception(e);
+        } finally {
+            try {
+                stream.close();
+            } catch (final Throwable e) {
+            }
         }
         return null;
     }
@@ -249,7 +255,6 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
 
         try {
             GifDecoder decoder = new GifDecoder();
-
             decoder.read(openStream);
             BufferedImage[] ret = new BufferedImage[decoder.getFrameCount()];
             for (int i = 0; i < decoder.getFrameCount(); i++) {

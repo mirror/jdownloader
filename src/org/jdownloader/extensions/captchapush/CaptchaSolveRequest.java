@@ -15,7 +15,7 @@ public class CaptchaSolveRequest {
     public CaptchaSolveRequest(CaptchaController controller) throws Exception {
         this.id = controller.getId();
         this.explain = (controller.getExplain() == null) ? "" : controller.getExplain();
-        this.captchaBytes = IO.readFile(controller.getCaptchafile());
+        this.captchaBytes = IO.readFile(controller.getCaptchaFile());
     }
 
     public CaptchaSolveRequest(byte[] data) {

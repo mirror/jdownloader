@@ -149,8 +149,12 @@ public class MdfrFldr extends PluginForDecrypt {
             ID = br.getRegex("var afI= '(.*?)'").getMatch(0);
         }
         if (ID != null) {
-            br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=1");
+            br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=2");
             fpName = br.getRegex("name\":\"([^\"]+)").getMatch(0);
+            /* folder */
+            // br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=nuul&content_type=folders&order_by=name&order_direction=asc&version=2.6&folder_key="
+            // + ID + "&response_format=json");
+            br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&version=2.6&folder_key=" + ID + "&response_format=json");
             String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
             progress.setRange(links.length);
 

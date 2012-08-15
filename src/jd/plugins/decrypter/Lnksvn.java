@@ -30,6 +30,7 @@ import jd.http.ext.BasicBrowserEnviroment;
 import jd.http.ext.ExtBrowser;
 import jd.http.ext.ExtBrowserException;
 import jd.nutils.encoding.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -236,9 +237,12 @@ public class Lnksvn extends PluginForDecrypt {
             }
             final String url = "captcha/cap.php?hsh=" + form.getRegex("\\/captcha\\/cap\\.php\\?hsh=([^\"]+)").getMatch(0);
             final File captchaFile = this.getLocalCaptchaFile();
+            final File orgCaptchaFile = this.getLocalCaptchaFile();
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(url));
+            JDIO.copyFile(captchaFile, orgCaptchaFile);
             Linksave.prepareCaptcha(captchaFile);
-            final String captchaCode = this.getCaptchaCode(captchaFile, param);
+            param.setProperty("orgCaptchaFile", orgCaptchaFile.getAbsolutePath());
+            final String captchaCode = this.getCaptchaCode("blabla", captchaFile, param);
             form.put("code", captchaCode);
             br.submitForm(form);
             if (br.containsHTML("Falscher Code") || br.containsHTML("Captcha-code ist falsch") || br.containsHTML("Besucherpasswort ist falsch")) {

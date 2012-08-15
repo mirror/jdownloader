@@ -18,6 +18,7 @@ package jd.controlling.captcha;
 
 import java.awt.Image;
 import java.io.File;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
@@ -42,7 +43,7 @@ public class CaptchaController {
 
     private final int                          id;
     private final String                       methodname;
-    private final File                         captchafile;
+    private final List<File>                   captchafile;
     private final String                       explain;
     private final CaptchaResult                suggest;
     private final DomainInfo                   host;
@@ -61,7 +62,7 @@ public class CaptchaController {
         return plugin;
     }
 
-    public CaptchaController(IOPermission ioPermission, final String method, final File file, final CaptchaResult suggest, final String explain, Plugin plugin) {
+    public CaptchaController(IOPermission ioPermission, final String method, final List<File> file, final CaptchaResult suggest, final String explain, Plugin plugin) {
         this.id = captchaCounter.getAndIncrement();
         this.host = DomainInfo.getInstance(plugin.getHost());
         this.methodname = method;
@@ -81,8 +82,13 @@ public class CaptchaController {
         return methodname;
     }
 
-    public File getCaptchafile() {
-        return captchafile;
+    public File getCaptchaFile() {
+        return captchafile.get(0);
+    }
+
+    public File getPreparedCaptchaFile() {
+        if (captchafile.size() > 1) { return captchafile.get(1); }
+        return getCaptchaFile();
     }
 
     public String getExplain() {
@@ -112,9 +118,9 @@ public class CaptchaController {
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
         CaptchaResult captchaResult = new CaptchaResult();
         try {
-            final Image captchaImage = ImageIO.read(captchafile);
+            final Image captchaImage = ImageIO.read(getPreparedCaptchaFile());
             final Captcha captcha = jac.createCaptcha(captchaImage);
-            String captchaCode = jac.checkCaptcha(captchafile, captcha);
+            String captchaCode = jac.checkCaptcha(getPreparedCaptchaFile(), captcha);
             captchaResult.setCaptchaText(captchaCode);
             if (jac.isExtern()) {
                 if ((flag & UserIO.NO_USER_INTERACTION) == 0 && captchaCode == null || captchaCode.trim().length() == 0) {

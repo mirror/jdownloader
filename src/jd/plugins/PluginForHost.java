@@ -155,7 +155,13 @@ public abstract class PluginForHost extends Plugin {
             }
             CaptchaResult suggest = new CaptchaResult();
             suggest.setCaptchaText(defaultValue);
-            final CaptchaResult cc = new CaptchaController(ioPermission, method, file, suggest, explain, this).getCode(flag);
+            ArrayList<File> captchaFiles = new ArrayList<File>();
+            String orgCaptchaImage = link.getStringProperty("orgCaptchaFile", null);
+            if (orgCaptchaImage != null && new File(orgCaptchaImage).exists()) {
+                captchaFiles.add(new File(orgCaptchaImage));
+            }
+            captchaFiles.add(file);
+            final CaptchaResult cc = new CaptchaController(ioPermission, method, captchaFiles, suggest, explain, this).getCode(flag);
             if (cc == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             return cc.getCaptchaText();
         } finally {
