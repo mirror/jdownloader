@@ -368,7 +368,7 @@ public class LetitBitNet extends PluginForHost {
         // Grab last links, this might changes and has to be fixed if users get
         // "server error" in JD while it's working via browser. If this is
         // changed often we should consider trying the whole list of finallinks.
-        final String url = finallinksx.get(finallinksx.size() - 1);
+        final String url = finallinksx.get(finallinksx.size() - 2);
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
             logger.warning("url couldn't be found!");

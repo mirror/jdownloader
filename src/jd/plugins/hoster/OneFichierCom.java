@@ -151,7 +151,8 @@ public class OneFichierCom extends PluginForHost {
                     if (passCode != null) downloadLink.setProperty("pass", passCode);
                 }
             } else {
-                // ddlink is within the ?e=1 page request! but it seems you need to
+                // ddlink is within the ?e=1 page request! but it seems you need
+                // to
                 // do the following posts to be able to use the link
                 // dllink = br.getRegex("(http.+/get/" + new
                 // Regex(downloadLink.getDownloadURL(),
@@ -187,39 +188,36 @@ public class OneFichierCom extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
-        br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
-        String timeStamp = br.getRegex("(\\d+)").getMatch(0);
-        String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
-        if (timeStamp == null || "error".equalsIgnoreCase(timeStamp)) {
+        // br.getPage("https://www.1fichier.com/en/login.pl");
+        br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
+        final String logincheck = br.getCookie("http://1fichier.com/", "SID");
+        if (logincheck == null || logincheck.equals("")) {
             ai.setStatus("Username/Password invalid");
             account.setProperty("type", Property.NULL);
             account.setValid(false);
             return ai;
-        } else if ("0".equalsIgnoreCase(timeStamp)) {
-            if (freeCredits != null && Float.parseFloat(freeCredits) > 0) {
-                /* not finished yet */
-                account.setValid(true);
-                account.setProperty("type", "FREE");
-                ai.setStatus("Free User (Credits available)");
-                ai.setTrafficLeft(SizeFormatter.getSize(freeCredits + " GB"));
-                try {
-                    maxPrem.set(1);
-                    account.setMaxSimultanDownloads(-1);
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
-                }
-            } else {
-                ai.setStatus("Free User (No credits left)");
-                account.setProperty("type", Property.NULL);
-                account.setValid(false);
-                return ai;
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getPage("https://www.1fichier.com/en/console/details.pl");
+        String freeCredits = br.getRegex(">Your account have ([^<>\"]*?) of direct download credits").getMatch(0);
+        if (freeCredits != null) {
+            /* not finished yet */
+            account.setValid(true);
+            account.setProperty("type", "FREE");
+            ai.setStatus("Free Account (Credits available)");
+            ai.setTrafficLeft(SizeFormatter.getSize(freeCredits));
+            try {
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
             }
             return ai;
         } else {
+            /** This might be broken... */
             account.setValid(true);
             account.setProperty("type", "PREMIUM");
             ai.setStatus("Premium User");
-            ai.setValidUntil(Long.parseLong(timeStamp) * 1000l + (24 * 60 * 60 * 1000l));
             ai.setUnlimitedTraffic();
             try {
                 maxPrem.set(20);
@@ -270,60 +268,64 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         String passCode = null;
-        String dllink = link.getStringProperty(PREMLINK, null);
-        boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
-        if (dllink != null) {
-            /* try to resume existing file */
-            if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
-            br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                /* could not resume, fetch new link */
-                br.followConnection();
-                link.setProperty(PREMLINK, Property.NULL);
-                dllink = null;
-            } else {
-                /* resume download */
-                dl.startDownload();
-                return;
+        if ("FREE".equals(account.getProperty("type"))) {
+            doFree(link);
+        } else {
+            String dllink = link.getStringProperty(PREMLINK, null);
+            boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
+            if (dllink != null) {
+                /* try to resume existing file */
+                if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
+                br.setFollowRedirects(true);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+                if (dl.getConnection().getContentType().contains("html")) {
+                    /* could not resume, fetch new link */
+                    br.followConnection();
+                    link.setProperty(PREMLINK, Property.NULL);
+                    dllink = null;
+                } else {
+                    /* resume download */
+                    dl.startDownload();
+                    return;
+                }
             }
-        }
-        br.setFollowRedirects(false);
-        sleep(2 * 1000l, link);
-        String url = link.getDownloadURL().replace("en/index.html", "");
-        url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
-        URLConnectionAdapter con = br.openGetConnection(url);
-        if (con.getResponseCode() == 401) {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            br.setFollowRedirects(false);
+            sleep(2 * 1000l, link);
+            String url = link.getDownloadURL().replace("en/index.html", "");
+            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
+            URLConnectionAdapter con = br.openGetConnection(url);
+            if (con.getResponseCode() == 401) {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        br.followConnection();
-        if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
-        dllink = br.getRedirectLocation();
-        if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String useDllink = dllink;
-        if (useSSL) useDllink = useDllink.replaceFirst("http://", "https://");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (pwProtected || br.containsHTML("password")) passCode = handlePassword(link, passCode);
+            dllink = br.getRedirectLocation();
+            if (dllink != null && br.containsHTML(IPBLOCKEDTEXTS)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 45 * 1000l);
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String useDllink = dllink;
+            if (useSSL) useDllink = useDllink.replaceFirst("http://", "https://");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, useDllink, true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (passCode != null) {
+                link.setProperty("pass", passCode);
+            }
+            link.setProperty(PREMLINK, dllink);
+            dl.startDownload();
         }
-        if (passCode != null) {
-            link.setProperty("pass", passCode);
-        }
-        link.setProperty(PREMLINK, dllink);
-        dl.startDownload();
     }
 
     private void setConfigElements() {

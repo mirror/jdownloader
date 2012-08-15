@@ -456,6 +456,7 @@ public class GlumboUploadsCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = br.getRegex(Pattern.compile("Traffic available.*?:</TD><TD.*?><b>([^<>\"\\']+)</b></TD></TR>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+            if (!availabletraffic.contains(" Mb")) availabletraffic += " Mb";
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
