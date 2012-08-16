@@ -82,10 +82,6 @@ public class MediaServer implements Runnable {
         });
     }
 
-    public void getProtocolInfo(InetAddress adr) {
-
-    }
-
     public void run() {
         try {
             logger.info("Wait for extraction Module");

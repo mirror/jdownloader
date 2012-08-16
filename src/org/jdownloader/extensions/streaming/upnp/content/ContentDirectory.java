@@ -1,9 +1,5 @@
 package org.jdownloader.extensions.streaming.upnp.content;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,9 +17,11 @@ import org.fourthline.cling.support.contentdirectory.DIDLParser;
 import org.fourthline.cling.support.model.BrowseFlag;
 import org.fourthline.cling.support.model.BrowseResult;
 import org.fourthline.cling.support.model.DIDLContent;
+import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.support.model.SortCriterion;
 import org.jdownloader.extensions.streaming.upnp.ContentFactory;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
+import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
 import org.jdownloader.logging.LogController;
 
 public class ContentDirectory extends AbstractContentDirectoryService {
@@ -84,6 +82,10 @@ public class ContentDirectory extends AbstractContentDirectoryService {
             String useragent = headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null;
             IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
             Filter filter = Filter.create(filterString);
+            ProtocolInfos protocolInfos = null;
+            for (PlayToUpnpRendererDevice r : mediaServer.getPlayToRenderer()) {
+                protocolInfos = r.getProtocolInfos();
+            }
             ContentNode node = contentProvider.getNode(objectID);
             if (node == null) {
                 String didlStrng = new DIDLParser().generate(didl);
@@ -147,17 +149,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
     }
 
     private ContentProvider getContentProvider(UpnpHeaders upnpHeaders) {
-        logger.info("UPNP Headers: " + upnpHeaders);
-        String host = upnpHeaders.getFirstHeader("Host");
-        try {
-            host = new URL("http://" + host).getHost();
-            mediaServer.getProtocolInfo(InetAddress.getByName("192.168.2.53"));
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
         // mediaServer
         return defaultProvider;
     }

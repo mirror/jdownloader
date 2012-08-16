@@ -55,7 +55,7 @@ public class ListContentProvider implements ContentProvider {
             }
         }.start();
         // for (DownloadLink dl : ) {
-        // String ext = Files.getExtension(dl.getFinalFileName());
+        // String ext = Files.getExtension(dl.getName());
         //
         // if("jpg".equals(ext)){
         //
@@ -106,7 +106,7 @@ public class ListContentProvider implements ContentProvider {
                 }
             } else {
 
-                String ext = Files.getExtension(dl.getFinalFileName());
+                String ext = Files.getExtension(dl.getName());
                 if ("mp3".equals(ext)) {
                     try {
                         final MediaInfo mi = new MediaInfo(null) {
@@ -123,7 +123,7 @@ public class ListContentProvider implements ContentProvider {
 
                             @Override
                             public String getTitle() {
-                                return dl.getFinalFileName();
+                                return dl.getName();
                             }
 
                         };
@@ -160,7 +160,7 @@ public class ListContentProvider implements ContentProvider {
 
                             @Override
                             public String getTitle() {
-                                return dl.getFinalFileName();
+                                return dl.getName();
                             }
 
                         };

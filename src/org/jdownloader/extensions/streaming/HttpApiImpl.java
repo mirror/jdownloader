@@ -20,6 +20,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpserver.requests.HttpRequest;
+import org.fourthline.cling.support.model.ProtocolInfo;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
@@ -101,6 +102,7 @@ public class HttpApiImpl implements HttpApiDefinition {
                 }
             }
             logger.info("Call from " + callingDevice);
+
             final DownloadLink link = dlink;
             StreamingInterface streamingInterface = null;
             streamingInterface = interfaceMap.get(id);
@@ -142,11 +144,27 @@ public class HttpApiImpl implements HttpApiDefinition {
                 ct = "audio/flac";
                 dlnaFeatures = null;
             }
+            if (format.equals("flv")) {
+                ct = "video/x-flv";
+                // dlnaFeatures = null;
 
+            }
             if (format.equals("mkv")) {
                 ct = "video/x-mkv";
                 // dlnaFeatures = null;
 
+            }
+            if (callingDevice.getProtocolInfos() != null) {
+                for (ProtocolInfo pi : callingDevice.getProtocolInfos()) {
+
+                    if (pi.getContentFormatMimeType().getSubtype().contains(format)) {
+
+                        System.out.println(1);
+                        ct = pi.getContentFormat();
+                        dlnaFeatures = pi.getAdditionalInfo();
+                        break;
+                    }
+                }
             }
 
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
