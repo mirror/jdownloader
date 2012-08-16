@@ -15,7 +15,7 @@ import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.appwork.storage.config.annotations.ValidatorFactory;
 import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.View;
-import org.jdownloader.gui.views.components.SearchCategory;
+import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 
 public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
@@ -84,7 +84,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     @AboutConfig
     public String getPassword();
 
-    SearchCategory getSelectedDownloadSearchCategory();
+    LinktablesSearchCategory getSelectedDownloadSearchCategory();
 
     @DefaultStringValue("standard")
     @AboutConfig
@@ -320,7 +320,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     void setSaveDownloadViewCrossSessionEnabled(boolean b);
 
     @DefaultEnumValue("FILENAME")
-    void setSelectedDownloadSearchCategory(SearchCategory selectedCategory);
+    void setSelectedDownloadSearchCategory(LinktablesSearchCategory selectedCategory);
 
     void setShowMoveDownButton(boolean b);
 
@@ -378,4 +378,5 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
     boolean isFileCountInSizeColumnVisible();
 
     void setFileCountInSizeColumnVisible(boolean b);
+
 }

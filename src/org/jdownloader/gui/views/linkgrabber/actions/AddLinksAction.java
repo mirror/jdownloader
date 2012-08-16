@@ -20,9 +20,13 @@ public class AddLinksAction extends AppAction {
      */
     private static final long serialVersionUID = -1824957567580275989L;
 
-    public AddLinksAction() {
+    public AddLinksAction(String string) {
         setIconKey("add");
-        putValue(NAME, _GUI._.AddLinksAction_());
+        putValue(NAME, string);
+    }
+
+    public AddLinksAction() {
+        this(_GUI._.AddLinksAction_());
 
     }
 

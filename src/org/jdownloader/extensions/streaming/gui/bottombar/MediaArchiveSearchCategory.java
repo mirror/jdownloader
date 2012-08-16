@@ -1,21 +1,19 @@
-package org.jdownloader.gui.views.components;
+package org.jdownloader.extensions.streaming.gui.bottombar;
 
 import javax.swing.ImageIcon;
 
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 
-public enum SearchCategory {
-
-    FILENAME(_GUI._.searchcategory_filename(), "text", _GUI._.searchcategory_filename_help()),
-    HOSTER(_GUI._.searchcategory_hoster(), "browse", _GUI._.searchcategory_hoster_help()),
-    PACKAGE(_GUI._.searchcategory_package(), "archive", _GUI._.searchcategory_package_help());
+public enum MediaArchiveSearchCategory implements SearchCatInterface {
+    FILENAME(_GUI._.searchcategory_filename(), "text", _GUI._.searchcategory_filename_help());
 
     private String label;
     private String iconKey;
     private String helptext;
 
-    private SearchCategory(String searchcategory_filename, String iconKey, String helptext) {
+    private MediaArchiveSearchCategory(String searchcategory_filename, String iconKey, String helptext) {
         label = searchcategory_filename;
         this.iconKey = iconKey;
         this.helptext = helptext;

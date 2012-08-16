@@ -17,7 +17,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.SearchCategory;
+import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModelFilter;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.downloads.action.ClearAction;
@@ -30,14 +30,14 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 public class BottomBar extends MigPanel {
 
-    private GraphicalUserInterfaceSettings         config;
-    private JButton                                addLinks;
+    private GraphicalUserInterfaceSettings                         config;
+    private JButton                                                addLinks;
 
-    private JButton                                clearAll;
-    private JButton                                popup;
-    private JButton                                popupRemove;
-    private SearchField<FilePackage, DownloadLink> searchField;
-    private PseudoCombo                            combo;
+    private JButton                                                clearAll;
+    private JButton                                                popup;
+    private JButton                                                popupRemove;
+    private SearchField<LinktablesSearchCategory, FilePackage, DownloadLink> searchField;
+    private PseudoCombo                                            combo;
 
     // private JToggleButton showHideSidebar;
 
@@ -69,17 +69,17 @@ public class BottomBar extends MigPanel {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        searchField = new SearchField<FilePackage, DownloadLink>(table) {
+        searchField = new SearchField<LinktablesSearchCategory, FilePackage, DownloadLink>(table, LinktablesSearchCategory.FILENAME) {
 
             @Override
-            public void setSelectedCategory(SearchCategory selectedCategory) {
+            public void setSelectedCategory(LinktablesSearchCategory selectedCategory) {
                 super.setSelectedCategory(selectedCategory);
                 JsonConfig.create(GraphicalUserInterfaceSettings.class).setSelectedDownloadSearchCategory(selectedCategory);
             }
 
             @Override
             public boolean isFiltered(FilePackage e) {
-                if (SearchCategory.PACKAGE == selectedCategory) {
+                if (LinktablesSearchCategory.PACKAGE == selectedCategory) {
 
                     for (Pattern filterPattern : filterPatterns) {
                         if (filterPattern.matcher(e.getName()).find()) return false;
@@ -109,7 +109,7 @@ public class BottomBar extends MigPanel {
 
         };
         searchField.setSelectedCategory(JsonConfig.create(GraphicalUserInterfaceSettings.class).getSelectedDownloadSearchCategory());
-        searchField.setCategories(new SearchCategory[] { SearchCategory.FILENAME, SearchCategory.HOSTER, SearchCategory.PACKAGE });
+        searchField.setCategories(new LinktablesSearchCategory[] { LinktablesSearchCategory.FILENAME, LinktablesSearchCategory.HOSTER, LinktablesSearchCategory.PACKAGE });
         searchField.addKeyListener(new KeyListener() {
 
             public void keyTyped(KeyEvent e) {

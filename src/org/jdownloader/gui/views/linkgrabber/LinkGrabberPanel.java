@@ -38,6 +38,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
+import org.jdownloader.gui.views.components.LinktablesSearchCategory;
 import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
@@ -52,25 +53,25 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
     /**
      * 
      */
-    private static final long                        serialVersionUID = 1L;
-    private LinkGrabberTableModel                    tableModel;
-    private LinkGrabberTable                         table;
-    private JScrollPane                              tableScrollPane;
-    private LinkGrabberSidebar                       sidebar;
-    private JButton                                  addLinks;
-    private JButton                                  confirmAll;
-    private JButton                                  clearAll;
-    private JButton                                  popup;
-    private JButton                                  popupConfirm;
-    private HeaderScrollPane                         sidebarScrollPane;
-    private MigPanel                                 leftBar;
-    private MigPanel                                 rightBar;
-    private SearchField<CrawledPackage, CrawledLink> searchField;
-    private ExtButton                                filteredAdd;
+    private static final long                                                  serialVersionUID = 1L;
+    private LinkGrabberTableModel                                              tableModel;
+    private LinkGrabberTable                                                   table;
+    private JScrollPane                                                        tableScrollPane;
+    private LinkGrabberSidebar                                                 sidebar;
+    private JButton                                                            addLinks;
+    private JButton                                                            confirmAll;
+    private JButton                                                            clearAll;
+    private JButton                                                            popup;
+    private JButton                                                            popupConfirm;
+    private HeaderScrollPane                                                   sidebarScrollPane;
+    private MigPanel                                                           leftBar;
+    private MigPanel                                                           rightBar;
+    private SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink> searchField;
+    private ExtButton                                                          filteredAdd;
 
-    private JButton                                  popupRemove;
-    private JToggleButton                            showHideSidebar;
-    private AutoConfirmButton                        autoConfirm;
+    private JButton                                                            popupRemove;
+    private JToggleButton                                                      showHideSidebar;
+    private AutoConfirmButton                                                  autoConfirm;
 
     public LinkGrabberPanel() {
         super(new MigLayout("ins 0, wrap 2", "[grow,fill]2[fill]", "[grow, fill]2[]"));
@@ -208,7 +209,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
             }
         });
         showHideSidebar.setSelected(org.jdownloader.settings.staticreferences.CFG_GUI.LINKGRABBER_SIDEBAR_ENABLED.getValue());
-        leftBar = new MigPanel("ins 0", "[]1[][]1[][grow,fill]0[]", "[]");
+        leftBar = new MigPanel("ins 0", "[]1[]3[]1[]3[grow,fill]0[]", "[]");
         rightBar = new MigPanel("ins 0", "[]0[]1[]0[]0", "[]");
 
         leftBar.add(addLinks, "height 24!,aligny top");
@@ -216,7 +217,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
         leftBar.add(popup, "height 24!,width 12!,aligny top");
         leftBar.add(clearAll, "width 24!,height 24!,aligny top");
         leftBar.add(popupRemove, "height 24!,width 12!,aligny top");
-        searchField = new SearchField<CrawledPackage, CrawledLink>(table) {
+        searchField = new SearchField<LinktablesSearchCategory, CrawledPackage, CrawledLink>(table, LinktablesSearchCategory.FILENAME) {
 
             @Override
             public boolean isFiltered(CrawledLink v) {

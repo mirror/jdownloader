@@ -37,11 +37,11 @@ import org.appwork.utils.logging.Log;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.controlling.filter.LinkgrabberFilterRuleWrapper;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.SearchCategory;
+import org.jdownloader.gui.views.components.SearchCatInterface;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GeneralSettings;
 
-public class SearchField<PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements PackageControllerTableModelFilter<PackageType, ChildType>, MouseMotionListener, MouseListener {
+public class SearchField<SearchCat extends SearchCatInterface, PackageType extends AbstractPackageNode<ChildType, PackageType>, ChildType extends AbstractPackageChildrenNode<PackageType>> extends ExtTextField implements PackageControllerTableModelFilter<PackageType, ChildType>, MouseMotionListener, MouseListener {
     /**
      * 
      */
@@ -54,12 +54,12 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     private JLabel                                         label;
     private int                                            labelWidth;
     private Color                                          bgColor;
-    private SearchCategory[]                               searchCategories;
+    private SearchCat[]                                    searchCategories;
     private Image                                          popIcon;
     private int                                            iconGap          = 38;
     private Border                                         orgBorder;
 
-    public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter) {
+    public SearchField(PackageControllerTable<PackageType, ChildType> table2Filter, SearchCat defCategory) {
         super();
         this.table2Filter = table2Filter;
         img = NewTheme.I().getImage("search", SIZE);
@@ -208,10 +208,10 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
 
         JPopupMenu popup = new JPopupMenu();
 
-        for (final SearchCategory sc : searchCategories) {
+        for (final SearchCat sc : searchCategories) {
             if (sc == selectedCategory) continue;
             popup.add(new AppAction() {
-                private SearchCategory category;
+                private SearchCat category;
                 {
                     category = sc;
                     setName(sc.getLabel());
@@ -247,13 +247,13 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
     public void mouseExited(MouseEvent e) {
     }
 
-    protected SearchCategory selectedCategory = SearchCategory.FILENAME;
+    protected SearchCat selectedCategory = null;
 
-    public SearchCategory getSelectedCategory() {
+    public SearchCat getSelectedCategory() {
         return selectedCategory;
     }
 
-    public void setSelectedCategory(SearchCategory selectedCategory) {
+    public void setSelectedCategory(SearchCat selectedCategory) {
         if (selectedCategory == null) {
             Log.exception(Level.WARNING, new NullPointerException("selectedCategory null"));
         }
@@ -265,7 +265,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
         }
     }
 
-    public void setCategories(SearchCategory[] searchCategories) {
+    public void setCategories(SearchCat[] searchCategories) {
         this.searchCategories = searchCategories;
         label = new JLabel() {
             public boolean isShowing() {
@@ -278,7 +278,7 @@ public class SearchField<PackageType extends AbstractPackageNode<ChildType, Pack
             }
         };
 
-        for (SearchCategory sc : searchCategories) {
+        for (SearchCat sc : searchCategories) {
             label.setText(sc.getLabel());
             labelWidth = Math.max(label.getPreferredSize().width, labelWidth);
         }

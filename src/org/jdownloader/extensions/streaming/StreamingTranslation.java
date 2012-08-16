@@ -11,7 +11,7 @@ public interface StreamingTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Play" })
     String popup_streaming_playvlc();
 
-    @Default(lngs = { "en" }, values = { "Streaming" })
+    @Default(lngs = { "en" }, values = { "Media Streaming Archive" })
     String gui_title();
 
     @Default(lngs = { "en" }, values = { "Manage all your Streaming Links" })
@@ -43,4 +43,19 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Play %s1 to %s2" })
     String playto2(String path, String displayName);
+
+    @Default(lngs = { "en" }, values = { "Video" })
+    String SettingsSidebarModel_video();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String SettingsSidebarModel_audio();
+
+    @Default(lngs = { "en" }, values = { "Images" })
+    String SettingsSidebarModel_images();
+
+    @Default(lngs = { "en" }, values = { "Categories" })
+    String categories();
+
+    @Default(lngs = { "en" }, values = { "Add Media" })
+    String add_files_action();
 }
