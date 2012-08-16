@@ -47,6 +47,7 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     private ImageIcon         iconArchive;
     private ImageIcon         iconArchiveOpen;
     protected Border          normalBorder;
+    private boolean           selectAll        = false;
 
     public FileColumn() {
         super(_GUI._.filecolumn_title());
@@ -200,8 +201,10 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     public void configureEditorComponent(AbstractNode value, boolean isSelected, int row, int column) {
         super.configureEditorComponent(value, isSelected, row, column);
         if (value instanceof AbstractPackageNode) {
+            selectAll = true;
             editor.setBorder(normalBorder);
         } else {
+            selectAll = false;
             editor.setBorder(leftGapBorder);
         }
 
@@ -209,17 +212,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     public void focusLost(FocusEvent e) {
-
         super.focusLost(e);
     }
 
     @Override
     public void focusGained(final FocusEvent e) {
-
         String txt = editorField.getText();
         int point = txt.lastIndexOf(".");
         /* select filename only, try to keep the extension/filetype */
-        if (point > 0) {
+        if (point > 0 && selectAll == false) {
             editorField.select(0, point);
         } else {
             this.editorField.selectAll();

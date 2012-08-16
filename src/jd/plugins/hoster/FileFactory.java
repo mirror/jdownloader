@@ -182,7 +182,7 @@ public class FileFactory extends PluginForHost {
         if (!br.containsHTML("\"greenText\">(Premium member until<|Lifetime Member<)")) {
             ai.setStatus("Registered (free) User");
             ai.setUnlimitedTraffic();
-            account.setProperty("freeAccount", true);
+            account.setProperty("freeAcc", "yes");
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(1);
@@ -190,7 +190,7 @@ public class FileFactory extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            account.setProperty("freeAccount", false);
+            account.setProperty("freeAcc", "no");
             if (br.containsHTML("\"greenText\">Lifetime Member<")) {
                 ai.setValidUntil(-1);
             } else {
@@ -378,13 +378,14 @@ public class FileFactory extends PluginForHost {
             handleTrafficShare(downloadLink);
         } else {
             this.login(account, false);
-            if (account.getBooleanProperty("freeAccount")) {
+            if ("yes".equalsIgnoreCase(account.getStringProperty("freeAcc", "yes"))) {
                 this.br.setFollowRedirects(true);
                 this.br.getPage(downloadLink.getDownloadURL());
                 this.handleFree0(downloadLink);
             } else {
                 this.br.setFollowRedirects(false);
                 this.br.getPage(downloadLink.getDownloadURL());
+                this.br.setFollowRedirects(true);
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, this.br.getRedirectLocation(), true, 0);
                 if (!this.dl.getConnection().isContentDisposition()) {
                     this.br.followConnection();
@@ -500,6 +501,7 @@ public class FileFactory extends PluginForHost {
                 account.setProperty("pass", Encoding.urlEncode(account.getPass()));
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
+                account.setProperty("freeAcc", null);
                 account.setProperty("cookies", null);
                 throw e;
             }

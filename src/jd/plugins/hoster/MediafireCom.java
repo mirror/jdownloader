@@ -397,8 +397,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -465,8 +465,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -797,26 +797,12 @@ public class MediafireCom extends PluginForHost {
                 this.fileID = getID(downloadLink);
                 br.setFollowRedirects(false);
                 br.getPage("http://www.mediafire.com/?" + fileID);
+                if ((br.containsHTML("Enter Password") && br.containsHTML("display:block;\">This file is"))) {
+                    this.handlePremiumPassword(downloadLink, account);
+                    return;
+                }
                 /* url should be downloadlink when directDownload is enabled */
-                url = br.getRedirectLocation();
-                if (url == null) {
-                    url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
-                }
-                if (url == null) {
-                    /* try the same */
-                    Browser brc = br.cloneBrowser();
-                    brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
-                    url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
-                    if (url != null) {
-                        url = url.replaceAll("\\\\", "");
-                    }
-                    if (url == null && brc.containsHTML("Unable to access")) {
-                        this.handlePremiumPassword(downloadLink, account);
-                        return;
-                    } else {
-
-                    }
-                }
+                url = getURL(br);
             }
             if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             this.br.setFollowRedirects(true);
@@ -846,7 +832,7 @@ public class MediafireCom extends PluginForHost {
         String url = br.getRedirectLocation();
         if (url != null) br.getPage(url);
         this.handlePW(downloadLink);
-        url = br.getRedirectLocation();
+        url = getURL(br);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.br.setFollowRedirects(true);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
@@ -858,6 +844,23 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         this.dl.startDownload();
+    }
+
+    private String getURL(Browser br) throws IOException {
+        String url = br.getRedirectLocation();
+        if (url == null) {
+            url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
+        }
+        if (url == null) {
+            /* try the same */
+            Browser brc = br.cloneBrowser();
+            brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+            url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
+            if (url != null) {
+                url = url.replaceAll("\\\\", "");
+            }
+        }
+        return url;
     }
 
     private void handlePW(final DownloadLink downloadLink) throws Exception {

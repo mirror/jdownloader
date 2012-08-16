@@ -117,6 +117,14 @@ public class SharpFileCom extends PluginForHost {
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
+        if (link.getDownloadSize() <= 0) {
+            Browser brc = br.cloneBrowser();
+            brc.postPage(br.getURL(), "free=Free+Download&referer=");
+            String size = brc.getRegex("<b>Size:</b></td><td>.*?<small>.*?\\((\\d+) bytes").getMatch(0);
+            if (size != null) {
+                link.setDownloadSize(Long.parseLong(size));
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -137,8 +145,7 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
