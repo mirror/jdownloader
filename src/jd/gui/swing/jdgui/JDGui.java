@@ -31,7 +31,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -67,8 +66,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.utils.Application;
-import org.appwork.utils.Hash;
-import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
@@ -172,37 +169,6 @@ public class JDGui extends SwingGui {
         Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
 
             public void run() {
-                new EDTRunner() {
-
-                    @Override
-                    protected void runInEDT() {
-                        JDGui.this.mainFrame.setEnabled(true);
-                        new Thread() {
-                            public void run() {
-
-                                try {
-                                    Thread.sleep(10000);
-                                    if (Application.getResource("latest.txt").exists()) {
-
-                                        if (mainFrame.isActive()) {
-
-                                            Point pos = mainFrame.getLocation();
-                                            pos.x += mainFrame.getWidth() / 2;
-                                            pos.y += mainFrame.getHeight() / 2;
-                                            HelpDialog.show(pos, "changes1 " + Hash.getMD5(Application.getResource("latest.txt")), 0, "Latest Changes", IO.readFileToString(Application.getResource("latest.txt")), NewTheme.I().getIcon("updatericon", 48));
-
-                                        }
-                                    }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }.start();
-
-                    }
-                };
 
                 ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 

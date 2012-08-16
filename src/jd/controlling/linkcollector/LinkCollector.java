@@ -54,7 +54,7 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.LinkFilterController;
 import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerController;
@@ -385,7 +385,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
             protected Void run() throws RuntimeException {
                 try {
                     PackageInfo dpi = link.getDesiredPackageInfo();
-                    UniqueSessionID uID = null;
+                    UniqueAlltimeID uID = null;
 
                     String packageName = null;
                     String packageID = null;

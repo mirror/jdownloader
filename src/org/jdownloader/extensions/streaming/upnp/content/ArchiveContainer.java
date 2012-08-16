@@ -135,7 +135,6 @@ public class ArchiveContainer extends FolderContainer {
 
         id = IDFactory.create(parent.getID(), archiveFile.getName());
 
-        final String url = "http://" + listContentProvider.getHost() + ":3128/vlcstreaming/stream?" + id;
         if (archiveFile.isDirectory()) {
             FolderContainer dir = new FolderContainer(id, archiveFile.getName());
             listContentProvider.addChildren(parent, dir);
@@ -168,13 +167,13 @@ public class ArchiveContainer extends FolderContainer {
                     listContentProvider.addChildren(parent, new ContentItem(id) {
 
                         @Override
-                        public Item getImpl() {
+                        public Item getImpl(String deviceID) {
 
                             PersonWithRole artist = new PersonWithRole(mi.getArtist(), "Performer");
                             MimeType mimeType = mi.getMimeType();
                             Res res;
 
-                            res = new Res(mimeType, mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                            res = new Res(mimeType, mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(getID(), deviceID));
 
                             return new MusicTrack(getID(), parent.getID(), mi.getTitle(), mi.getArtist(), mi.getAlbum(), artist, res);
                         }
@@ -204,9 +203,9 @@ public class ArchiveContainer extends FolderContainer {
                     listContentProvider.addChildren(parent, new ContentItem(id) {
 
                         @Override
-                        public Item getImpl() {
+                        public Item getImpl(String deviceID) {
 
-                            Res res = new Res(mi.getMimeType(), mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                            Res res = new Res(mi.getMimeType(), mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(getID(), deviceID));
                             //
                             return (new VideoItem(getID(), getParent().getID(), mi.getTitle(), null, res));
                         }
@@ -228,14 +227,14 @@ public class ArchiveContainer extends FolderContainer {
     }
 
     @Override
-    public Container getImpl() {
+    public Container getImpl(String deviceID) {
         Container con = new Container();
         con.setParentID(getParent().getID());
         con.setId(getID());
         con.setChildCount(getChildren().size() == 0 ? 1 : getChildren().size());
         con.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container.storageFolder"));
         con.setRestricted(true);
-        con.setSearchable(false);
+        con.setSearchable(true);
         con.setTitle(getTitle());
         return con;
     }

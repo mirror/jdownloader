@@ -33,7 +33,7 @@ import jd.controlling.packagecontroller.PackageController;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -68,7 +68,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
             }
 
             @Override
-            public UniqueSessionID getUniqueID() {
+            public UniqueAlltimeID getUniqueID() {
                 return null;
             }
         };
@@ -132,14 +132,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     private transient Boolean                                      isExpanded        = null;
 
     private transient PackageController<FilePackage, DownloadLink> controlledby      = null;
-    private transient UniqueSessionID                              uniqueID          = new UniqueSessionID(); ;
+    private transient UniqueAlltimeID                              uniqueID          = new UniqueAlltimeID(); ;
     public static final String                                     PROPERTY_EXPANDED = "EXPANDED";
     private static final String                                    PROPERTY_COMMENT  = "COMMENT";
 
     /**
      * @return the uniqueID
      */
-    public UniqueSessionID getUniqueID() {
+    public UniqueAlltimeID getUniqueID() {
         return uniqueID;
     }
 
@@ -206,7 +206,7 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
         } catch (final Throwable e) {
             isExpanded = false;
         }
-        uniqueID = new UniqueSessionID();
+        uniqueID = new UniqueAlltimeID();
     }
 
     /**

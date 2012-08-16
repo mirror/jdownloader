@@ -16,11 +16,14 @@ import org.jdownloader.logging.LogController;
 
 public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListener {
 
-    private static final String ID = "VLCGUI";
-    private SwitchPanel         panel;
+    private static final String    ID = "VLCGUI";
+    private SwitchPanel            panel;
 
-    private LogSource           logger;
+    private LogSource              logger;
+    private MediaArchiveTableModel model;
+    private MediaArchiveTable      table;
 
+    @SuppressWarnings("serial")
     public VLCGui(StreamingExtension plg) {
         super(plg);
         logger = LogController.getInstance().getLogger("VLCGUI");
@@ -35,6 +38,9 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
             protected void onHide() {
             }
         };
+
+        model = new MediaArchiveTableModel(plg.getMediaArchiveController());
+        table = new MediaArchiveTable(model);
         // layout all contents in panel
         this.setContent(panel);
 

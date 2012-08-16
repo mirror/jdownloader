@@ -27,6 +27,8 @@ public interface StatisticsInterface extends RemoteCallInterface {
      */
     void onFreshInstall(String id, long time);
 
+    String info();
+
     /**
      * JD has been closed
      * 

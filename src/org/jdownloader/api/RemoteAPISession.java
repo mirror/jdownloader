@@ -2,7 +2,7 @@ package org.jdownloader.api;
 
 import org.appwork.utils.net.httpserver.session.HttpSession;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class RemoteAPISession implements HttpSession {
 
@@ -11,7 +11,7 @@ public class RemoteAPISession implements HttpSession {
     private HttpSessionController<? extends HttpSession> controller = null;
 
     protected RemoteAPISession(HttpSessionController<? extends HttpSession> controller) {
-        this.sessionID = "" + new UniqueSessionID() + ("_" + System.currentTimeMillis()).hashCode() + System.currentTimeMillis();
+        this.sessionID = "" + new UniqueAlltimeID() + ("_" + System.currentTimeMillis()).hashCode() + System.currentTimeMillis();
         this.controller = controller;
     }
 

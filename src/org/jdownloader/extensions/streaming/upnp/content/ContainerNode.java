@@ -8,7 +8,7 @@ public interface ContainerNode extends ContentNode {
 
     List<ContentNode> getChildren();
 
-    Container getImpl();
+    Container getImpl(String deviceID);
 
     public String getTitle();
 

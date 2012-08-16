@@ -23,8 +23,8 @@ public class RootContainer extends FolderContainer {
     private HashMap<String, ContentNode> map = new HashMap<String, ContentNode>();
 
     @Override
-    public Container getImpl() {
-        Container ret = super.getImpl();
+    public Container getImpl(String deviceID) {
+        Container ret = super.getImpl(deviceID);
         ret.setParentID("-1");
 
         return ret;

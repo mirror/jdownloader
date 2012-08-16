@@ -3,7 +3,7 @@ package org.jdownloader.extensions.streaming.upnp.content;
 import org.fourthline.cling.support.model.DIDLObject;
 
 public interface ContentNode {
-    DIDLObject getImpl();
+    DIDLObject getImpl(String deviceID);
 
     RootContainer getRoot();
 

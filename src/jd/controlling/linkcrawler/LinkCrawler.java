@@ -32,7 +32,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
@@ -73,7 +73,7 @@ public class LinkCrawler implements IOPermission {
 
     public static final String          PACKAGE_ALLOW_MERGE         = "ALLOW_MERGE";
     public static final String          PACKAGE_CLEANUP_NAME        = "CLEANUP_NAME";
-    public static final UniqueSessionID PERMANENT_OFFLINE_ID        = new UniqueSessionID();
+    public static final UniqueAlltimeID PERMANENT_OFFLINE_ID        = new UniqueAlltimeID();
     private boolean                     doDuplicateFinderFinalCheck = true;
     private List<LazyHostPlugin>        pHosts;
 
@@ -184,7 +184,8 @@ public class LinkCrawler implements IOPermission {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
+     * child
      * 
      * @param thisGeneration
      * @return
@@ -246,8 +247,8 @@ public class LinkCrawler implements IOPermission {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideDecrypterPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
-                 * results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
+                 * for linkcrawler results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -447,8 +448,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -489,8 +490,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
-                                             * waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
+                                             * deadlocks on plugin waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -564,7 +565,8 @@ public class LinkCrawler implements IOPermission {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
+                         * by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);

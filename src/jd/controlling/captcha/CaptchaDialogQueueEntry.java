@@ -24,19 +24,19 @@ import org.appwork.utils.swing.dialog.ComboBoxDialogInterface;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.translate._JDT;
 
 public class CaptchaDialogQueueEntry extends QueueAction<CaptchaResult, RuntimeException> {
 
-    private final UniqueSessionID id = new UniqueSessionID();
+    private final UniqueAlltimeID id = new UniqueAlltimeID();
 
     /**
      * @return the iD
      */
-    public UniqueSessionID getID() {
+    public UniqueAlltimeID getID() {
         return id;
     }
 

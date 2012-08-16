@@ -15,7 +15,6 @@ import org.appwork.remoteapi.RemoteAPIException;
 import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
@@ -72,19 +71,24 @@ public class HttpApiImpl implements HttpApiDefinition {
     }
 
     @Override
-    public void streamByUrlHash(RemoteAPIResponse response, RemoteAPIRequest request, String id) {
+    public void streamByLinkID(RemoteAPIResponse response, RemoteAPIRequest request, String id, String deviceID) {
 
         try {
 
-            String subpath = URLDecoder.decode(id.substring(32), "UTF-8");
+            String subpath = "";
+            id = URLDecoder.decode(id, "UTF-8");
+            int i = id.indexOf("/");
+            if (i > 0) {
+                subpath = id.substring(i);
+                id = id.substring(0, i);
+            }
             while (subpath.startsWith("/") || subpath.startsWith("\\")) {
                 subpath = subpath.substring(1);
             }
 
-            id = id.substring(0, 32);
             DownloadLink dlink = null;
             for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
-                if (Hash.getMD5(dl.getDownloadURL()).equals(id)) {
+                if (dl.getUniqueID().toString().equals(id)) {
                     dlink = dl;
                     break;
                 }

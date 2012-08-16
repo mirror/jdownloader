@@ -13,7 +13,7 @@ import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -87,12 +87,12 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     private boolean                                        downloadFolderSet = false;
 
     private boolean                                        expanded          = false;
-    private transient UniqueSessionID                      uniqueID          = new UniqueSessionID();
+    private transient UniqueAlltimeID                      uniqueID          = new UniqueAlltimeID();
     protected CrawledPackageView                           view;
 
     private ChildComparator<CrawledLink>                   sorter;
 
-    public UniqueSessionID getUniqueID() {
+    public UniqueAlltimeID getUniqueID() {
         return uniqueID;
     }
 
@@ -163,8 +163,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
-     * downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
+     * return the actuall downloadloadfolder
      * 
      * @return
      */

@@ -21,7 +21,7 @@ import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
 
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class Account extends Property {
 
@@ -52,7 +52,7 @@ public class Account extends Property {
         return tmpDisabledTimeout;
     }
 
-    private transient UniqueSessionID   ID           = new UniqueSessionID();
+    private transient UniqueAlltimeID   ID           = new UniqueAlltimeID();
 
     /* keep for comp. reasons */
     private String                      hoster       = null;
@@ -158,10 +158,10 @@ public class Account extends Property {
         /* nach dem deserialisieren sollen die transienten neu geholt werden */
         stream.defaultReadObject();
         tmpDisabledTimeout = -1;
-        ID = new UniqueSessionID();
+        ID = new UniqueAlltimeID();
     }
 
-    public UniqueSessionID getID() {
+    public UniqueAlltimeID getID() {
         return ID;
     }
 

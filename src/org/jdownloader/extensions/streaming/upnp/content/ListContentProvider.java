@@ -96,7 +96,7 @@ public class ListContentProvider implements ContentProvider {
             DownloadLinkArchiveFactory fac = new DownloadLinkArchiveFactory(dl);
             final Archive archive = extractionExtension.getArchiveByFactory(fac);
             final String id = IDFactory.create(dl, null);
-            final String url = "http://" + getHost() + ":3128/vlcstreaming/stream?" + id;
+
             if (archive != null) {
 
                 if (archive.getFirstArchiveFile().getName().endsWith(".rar")) {
@@ -131,13 +131,13 @@ public class ListContentProvider implements ContentProvider {
                         addChildren(downloadlist, new ContentItem(id) {
 
                             @Override
-                            public Item getImpl() {
+                            public Item getImpl(String deviceID) {
 
                                 PersonWithRole artist = new PersonWithRole(mi.getArtist(), "Performer");
                                 MimeType mimeType = mi.getMimeType();
                                 Res res;
 
-                                res = new Res(mimeType, mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                                res = new Res(mimeType, mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(id, deviceID));
 
                                 return new MusicTrack(getID(), parent.getID(), mi.getTitle(), mi.getArtist(), mi.getAlbum(), artist, res);
                             }
@@ -167,9 +167,9 @@ public class ListContentProvider implements ContentProvider {
                         addChildren(downloadlist, new ContentItem(id) {
 
                             @Override
-                            public Item getImpl() {
+                            public Item getImpl(String deviceID) {
 
-                                Res res = new Res(mi.getMimeType(), mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), url);
+                                Res res = new Res(mi.getMimeType(), mi.getContentLength(), formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(id, deviceID));
                                 //
                                 return (new VideoItem(getID(), getParent().getID(), mi.getTitle(), null, res));
                             }

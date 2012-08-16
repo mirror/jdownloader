@@ -41,7 +41,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
@@ -138,7 +138,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
 
     private long                                                        created                   = -1l;
 
-    private transient UniqueSessionID                                   uniqueID                  = new UniqueSessionID();
+    private transient UniqueAlltimeID                                   uniqueID                  = new UniqueAlltimeID();
     transient private AbstractNodeNotifier<AbstractPackageChildrenNode> propertyListener;
     transient DomainInfo                                                domainInfo                = null;
     transient Boolean                                                   resumeable                = null;
@@ -200,10 +200,10 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         /* deserialize object and then fill other stuff(transient..) */
         stream.defaultReadObject();
-        uniqueID = new UniqueSessionID();
+        uniqueID = new UniqueAlltimeID();
     }
 
-    public UniqueSessionID getUniqueID() {
+    public UniqueAlltimeID getUniqueID() {
         return uniqueID;
     }
 

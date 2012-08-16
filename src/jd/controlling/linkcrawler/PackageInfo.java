@@ -3,18 +3,18 @@ package jd.controlling.linkcrawler;
 import jd.controlling.linkcollector.LinknameCleaner;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.UniqueSessionID;
+import org.jdownloader.controlling.UniqueAlltimeID;
 
 public class PackageInfo {
-    private UniqueSessionID uniqueId              = null;
+    private UniqueAlltimeID uniqueId              = null;
 
     private boolean         packagizerRuleMatched = false;
 
-    public UniqueSessionID getUniqueId() {
+    public UniqueAlltimeID getUniqueId() {
         return uniqueId;
     }
 
-    public void setUniqueId(UniqueSessionID uniqueId) {
+    public void setUniqueId(UniqueAlltimeID uniqueId) {
         this.uniqueId = uniqueId;
     }
 

@@ -29,7 +29,7 @@ public class FolderContainer implements ContainerNode {
     }
 
     @Override
-    public Container getImpl() {
+    public Container getImpl(String deviceID) {
         Container con = new Container();
         if (parent != null) con.setParentID(parent.getID() + "");
         con.setId(getID() + "");

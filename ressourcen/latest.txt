@@ -1,8 +1,0 @@
-Thank you for testing the JDownloader 2 BETA Version.
-
-What you really should know about the latest Updates...
-
-     1.) You will get important changes here from now on.
-     2.) You can change the language now in Settings -> Look And Feel
-
-

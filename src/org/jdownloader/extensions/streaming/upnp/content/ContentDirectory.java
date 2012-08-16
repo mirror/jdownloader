@@ -81,6 +81,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
             DIDLContent didl = new DIDLContent();
             ContentProvider contentProvider = getContentProvider(org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders());
             UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+            String useragent = headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null;
             IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
             Filter filter = Filter.create(filterString);
             ContentNode node = contentProvider.getNode(objectID);
@@ -94,11 +95,11 @@ public class ContentDirectory extends AbstractContentDirectoryService {
 
                     // ps3
                     if (node instanceof ContainerNode) {
-                        didl.addContainer(((ContainerNode) node).getImpl());
+                        didl.addContainer(((ContainerNode) node).getImpl(useragent));
                         String didlStrng = contentProvider.toDidlString(didl);
                         return new BrowseResult(didlStrng, 1, 1);
                     } else {
-                        didl.addItem(((ItemNode) node).getImpl());
+                        didl.addItem(((ItemNode) node).getImpl(useragent));
                         String didlStrng = contentProvider.toDidlString(didl);
                         return new BrowseResult(didlStrng, 1, 1);
                     }
@@ -106,20 +107,33 @@ public class ContentDirectory extends AbstractContentDirectoryService {
                 } else {
                     if (node instanceof ContainerNode) {
                         List<ContentNode> children = ((ContainerNode) node).getChildren();
-                        for (ContentNode c : children) {
+                        long to = children.size();
+                        if (useragent.contains("Portable SDK for UPnP devices/1.6.16")) {
+                            // vlc/libupnp bug in
+                            // http://git.videolan.org/?p=vlc.git;a=commitdiff;h=794557eea63853456cf3120cdb1bdc88ca44ad9f.
+                            // should be fixed in libupnp 1.6.17
+                            maxResults = 5;
+                        }
+                        if (maxResults > 0) {
+                            to = Math.min(to, firstResult + maxResults);
+                        }
+
+                        int count = 0;
+                        for (long i = firstResult; i < to; i++) {
+                            ContentNode c = children.get((int) i);
                             if (c instanceof ItemNode) {
-                                didl.addItem(((ItemNode) c).getImpl());
+                                didl.addItem(((ItemNode) c).getImpl(useragent));
                             } else {
-                                didl.addContainer(((ContainerNode) c).getImpl());
+                                didl.addContainer(((ContainerNode) c).getImpl(useragent));
                             }
+                            count++;
 
                         }
 
-                        //
                         String didlStrng = contentProvider.toDidlString(didl);
 
                         System.out.println(didlStrng);
-                        return new BrowseResult(didlStrng, children.size(), children.size());
+                        return new BrowseResult(didlStrng, count, children.size());
                     } else {
                         throw new WTFException();
                     }
@@ -153,6 +167,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
         try {
             logger.info(String.format("ContentDirectory receive search request with ContainerID:%s, SearchCriteria:%s, Filter:%s, FirstResult:%s, MaxResults:%s, SortCriterion:%s.", containerId, searchCriteriaString, filterString, firstResult, maxResults, orderBy));
             UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+            String useragent = headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null;
             SearchCriteria searchCriterion = SearchCriteria.create(searchCriteriaString);
 
             Filter filter = Filter.create(filterString);
@@ -184,9 +199,9 @@ public class ContentDirectory extends AbstractContentDirectoryService {
 
                     }
                     if (c instanceof ItemNode) {
-                        didl.addItem(((ItemNode) c).getImpl());
+                        didl.addItem(((ItemNode) c).getImpl(useragent));
                     } else {
-                        didl.addContainer(((ContainerNode) c).getImpl());
+                        didl.addContainer(((ContainerNode) c).getImpl(useragent));
                     }
 
                 }

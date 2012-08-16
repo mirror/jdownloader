@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -20,6 +21,8 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -61,13 +64,14 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     }
 
-    private HttpApiImpl          vlcstreamingAPI;
+    private HttpApiImpl            vlcstreamingAPI;
 
-    private StreamingConfigPanel configPanel = null;
-    protected VLCGui             tab;
-    private MediaServer          mediaServer;
-    private String               wmpBinary;
-    private String               vlcBinary;
+    private StreamingConfigPanel   configPanel = null;
+    protected VLCGui               tab;
+    private MediaServer            mediaServer;
+    private String                 wmpBinary;
+    private String                 vlcBinary;
+    private MediaArchiveController mediaArchive;
 
     @Override
     protected void stop() throws StopException {
@@ -91,8 +95,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     @Override
     protected void start() throws StartException {
 
+        mediaArchive = new MediaArchiveController(this);
         streamProvider = new StreamingProvider(this);
-
+        tab = new VLCGui(this);
         vlcBinary = findVLCBinary();
         wmpBinary = findWindowsMediaPlayer();
 
@@ -400,5 +405,20 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     public DownloadLinkProvider getDownloadLinkDataProvider() {
         return new DownloadLinkProvider(this);
+    }
+
+    public String createStreamUrl(String id, String deviceID) {
+
+        try {
+            return "http://" + getHost() + ":3128/vlcstreaming/stream?" + URLEncoder.encode(JSonStorage.serializeToJson(id), "UTF-8") + "&" + URLEncoder.encode(JSonStorage.serializeToJson(deviceID), "UTF-8");
+
+        } catch (Throwable e) {
+            throw new WTFException(e);
+        }
+
+    }
+
+    public MediaArchiveController getMediaArchiveController() {
+        return mediaArchive;
     }
 }

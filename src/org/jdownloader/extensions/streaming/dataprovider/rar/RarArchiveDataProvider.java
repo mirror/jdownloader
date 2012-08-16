@@ -191,13 +191,14 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     }
 
-    private ISimpleInArchiveItem itemToExtract       = null;
-    private long                 sizeOfItemToExtract = -1l;
+    private ISimpleInArchiveItem itemToExtract                         = null;
+    private long                 sizeOfItemToExtract                   = -1l;
     private FileSignatures       fileSignatures;
-    private boolean              silent              = true;
+    private boolean              silent                                = true;
     private Thread               extractionThread;
     private StreamingChunk       streamingChunk;
     private Throwable            exception;
+    private boolean              archiveThrowsExceptionWithoutPassword = false;
 
     public void setSilent(boolean silent) {
         this.silent = silent;
@@ -209,7 +210,8 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     }
 
     protected boolean checkIfPasswordIsCorrect(String password) throws ExtractionException {
-
+        logger.info("Try Password: " + password);
+        this.password = password;
         ReusableByteArrayOutputStream buffer = null;
         try {
             buffer = ReusableByteArrayOutputStreamPool.getReusableByteArrayOutputStream(64 * 1024, false);
@@ -228,7 +230,11 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             }
             IInStream rarStream = getStream(archive.getFirstArchiveFile());
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, this);
-
+            if (archiveThrowsExceptionWithoutPassword) {
+                // no exception? that's fine. password is probably correct
+                archive.setFinalPassword(password);
+                return true;
+            }
             final boolean[] passwordfound = new boolean[] { false };
             HashSet<String> checkedExtensions = new HashSet<String>();
             for (final ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
@@ -323,12 +329,22 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
             return true;
         } catch (SevenZipException e) {
+            try {
+                close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
                 return false;
             }
             throw new ExtractionException(e, getLatestAccessedStream() == null ? null : getLatestAccessedStream().getArchiveFile());
         } catch (Throwable e) {
+            try {
+                close();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
             throw new ExtractionException(e, getLatestAccessedStream() == null ? null : getLatestAccessedStream().getArchiveFile());
         } finally {
             try {
@@ -435,6 +451,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
                             if (file.replace("/", "\\").equals(item.getPath().replace("/", "\\"))) {
                                 itemToExtract = item;
                                 sizeOfItemToExtract = item.getSize();
+                                break;
                             } else {
                                 logger.info(file + "!=" + item.getPath());
                             }
@@ -476,6 +493,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         try {
             IInStream rarStream = getStream(archive.getFirstArchiveFile());
             rarArchive = SevenZip.openInArchive(ArchiveFormat.RAR, rarStream, this);
+            System.out.println("Items: " + rarArchive.getSimpleInterface().getNumberOfItems());
             for (ISimpleInArchiveItem item : rarArchive.getSimpleInterface().getArchiveItems()) {
                 if (file == null) {
                     if (itemToExtract == null && !item.isFolder()) {
@@ -504,6 +522,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
             if (e.getMessage().contains("HRESULT: 0x80004005") || e.getMessage().contains("HRESULT: 0x1 (FALSE)") || e.getMessage().contains("can't be opened") || e.getMessage().contains("No password was provided")) {
                 /* password required */
+                archiveThrowsExceptionWithoutPassword = true;
                 archive.setProtected(true);
                 return;
             } else {
@@ -729,7 +748,9 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
                 }
                 openStreamMap.clear();
-                streamingChunk.close();
+
+                if (streamingChunk != null) streamingChunk.close();
+
             }
 
             for (DataProvider<?> dp : dataProviders) {
