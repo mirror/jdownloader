@@ -18,7 +18,7 @@ import org.jdownloader.gui.views.components.packagetable.PackageControllerTable;
 public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
 
     private static List<AbstractNode> pack(AbstractNode clicked) {
-        ArrayList<AbstractNode> ret = new ArrayList<AbstractNode>();
+        java.util.List<AbstractNode> ret = new ArrayList<AbstractNode>();
         ret.add(clicked);
         return ret;
     }
@@ -84,7 +84,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
 
     @SuppressWarnings("unchecked")
     public void agregate() {
-        ArrayList<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
+        java.util.List<AbstractNode> raw = new ArrayList<AbstractNode>(rawSelection);
         HashSet<AbstractNode> has = rawSelection == null ? new HashSet<AbstractNode>() : new HashSet<AbstractNode>(rawSelection);
         // HashSet<AbstractNode> notSelectedParents = new HashSet<AbstractNode>();
         // if we selected a link, and not its parent, this parent will not be agregated. That's why we add them here.
@@ -131,7 +131,7 @@ public class SelectionInfo<PackageType extends AbstractPackageNode<ChildrenType,
                     List<ChildrenType> childs = ((PackageType) node).getChildren();
                     boolean containsNone = true;
                     boolean containsAll = true;
-                    ArrayList<ChildrenType> selected = new ArrayList<ChildrenType>();
+                    java.util.List<ChildrenType> selected = new ArrayList<ChildrenType>();
                     for (ChildrenType l : childs) {
                         if (has.contains(l)) {
                             selected.add(l);

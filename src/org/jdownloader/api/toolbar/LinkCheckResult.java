@@ -16,13 +16,13 @@ public class LinkCheckResult implements Storable {
     }
 
     protected STATUS                status = STATUS.NA;
-    protected ArrayList<LinkStatus> links  = null;
+    protected java.util.List<LinkStatus> links  = null;
 
-    public ArrayList<LinkStatus> getLinks() {
+    public java.util.List<LinkStatus> getLinks() {
         return links;
     }
 
-    public void setLinks(ArrayList<LinkStatus> links) {
+    public void setLinks(java.util.List<LinkStatus> links) {
         this.links = links;
     }
 

@@ -24,7 +24,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
         return BalancedWebIPCheck.INSTANCE;
     }
 
-    private static final ArrayList<String>  SERVICES = new ArrayList<String>();
+    private static final java.util.List<String>  SERVICES = new ArrayList<String>();
     static {
         SERVICES.add("http://ipcheck3.jdownloader.org");
         SERVICES.add("http://ipcheck2.jdownloader.org");
@@ -34,7 +34,7 @@ public class BalancedWebIPCheck implements IPCheckProvider {
     /**
      * All registered ip check urls
      */
-    private final ArrayList<String>         servicesInUse;
+    private final java.util.List<String>         servicesInUse;
 
     private final Browser                   br;
 

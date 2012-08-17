@@ -35,9 +35,9 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultJsonObject("[]")
     @AboutConfig
     @DescriptionForConfigEntry("A List of passwords for automatic extraction of password protected archives.")
-    ArrayList<String> getPasswordList();
+    java.util.List<String> getPasswordList();
 
-    void setPasswordList(ArrayList<String> list);
+    void setPasswordList(java.util.List<String> list);
 
     @DefaultBooleanValue(false)
     boolean isOldPWListImported();

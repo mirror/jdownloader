@@ -84,7 +84,7 @@ public class AutoDetectUpnpAction extends BasicAction {
             @Override
             public void run() throws InterruptedException {
 
-                final ArrayList<ReconnectResult> scripts = plugin.runDetectionWizard(new ProcessCallBack() {
+                final java.util.List<ReconnectResult> scripts = plugin.runDetectionWizard(new ProcessCallBack() {
 
                     public void showDialog(Object caller, String title, String message, ImageIcon icon) {
                         try {

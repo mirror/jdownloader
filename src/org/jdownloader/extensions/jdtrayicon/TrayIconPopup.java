@@ -73,7 +73,7 @@ public final class TrayIconPopup extends JFrame implements MouseListener {
     private boolean                   hideThreadrunning = false;
 
     private JPanel                    exitPanel;
-    private ArrayList<AbstractButton> resizecomps;
+    private java.util.List<AbstractButton> resizecomps;
 
     private transient Thread          hideThread;
 

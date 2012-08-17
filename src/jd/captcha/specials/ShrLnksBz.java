@@ -110,7 +110,7 @@ public class ShrLnksBz {
         setDotsInDigits(captcha, grid);
         setDotsInDigits(captcha, grid);
         captcha.resizetoHeight(100);
-        ArrayList<PixelObject> coLetters = getFastObjects(captcha, 1, 3, 1, 3, 200);
+        java.util.List<PixelObject> coLetters = getFastObjects(captcha, 1, 3, 1, 3, 200);
 
         Letter[] letters = new Letter[coLetters.size()];
         int i = 0;
@@ -131,7 +131,7 @@ public class ShrLnksBz {
         return letters;
     }
 
-    private static ArrayList<PixelObject> getFastObjects(PixelGrid captcha, int xDistance, int yDistance, int distx2, int disty2, int minAnzahl) {
+    private static java.util.List<PixelObject> getFastObjects(PixelGrid captcha, int xDistance, int yDistance, int distx2, int disty2, int minAnzahl) {
         int i = -2;
 
         for (int x = 0; x < captcha.getWidth(); x++) {
@@ -150,7 +150,7 @@ public class ShrLnksBz {
             }
         }
 
-        ArrayList<PixelObject> coLetters = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> coLetters = new ArrayList<PixelObject>();
         for (int x = 0; x < captcha.getWidth(); x++) {
             outerY: for (int y = 0; y < captcha.getHeight(); y++) {
                 if (captcha.grid[x][y] != 0xffffff) {
@@ -175,7 +175,7 @@ public class ShrLnksBz {
         return coLetters;
     }
 
-    private static ArrayList<ArrayList<PixelObject>> getSmallLetters(Captcha captcha) {
+    private static java.util.List<ArrayList<PixelObject>> getSmallLetters(Captcha captcha) {
         int[][] grid = PixelGrid.getGridCopy(captcha.grid);
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
@@ -185,10 +185,10 @@ public class ShrLnksBz {
                 }
             }
         }
-        ArrayList<PixelObject> coLetters = getFastObjects(captcha, 2, 1, 9, 2, 8);
+        java.util.List<PixelObject> coLetters = getFastObjects(captcha, 2, 1, 9, 2, 8);
         int i = 0;
 
-        ArrayList<ArrayList<PixelObject>> coLetters2 = new ArrayList<ArrayList<PixelObject>>();
+        java.util.List<ArrayList<PixelObject>> coLetters2 = new ArrayList<ArrayList<PixelObject>>();
 
         while (coLetters.size() > 0) {
             coLetters2.add(new ArrayList<PixelObject>());
@@ -221,7 +221,7 @@ public class ShrLnksBz {
             i++;
         }
 
-        for (ArrayList<PixelObject> arrayList : coLetters2) {
+        for (java.util.List<PixelObject> arrayList : coLetters2) {
             Collections.sort(arrayList);
         }
         captcha.grid = grid;
@@ -245,7 +245,7 @@ public class ShrLnksBz {
         }
         // System.out.println("c:" + c + "" + numorg);
         // System.out.println("b:" + b);
-        ArrayList<ArrayList<PixelObject>> letterList = getSmallLetters(captcha);
+        java.util.List<ArrayList<PixelObject>> letterList = getSmallLetters(captcha);
         int last = -1;
         PixelObject lastObje = null;
         int x = -1;
@@ -255,9 +255,9 @@ public class ShrLnksBz {
                 if (pixelObject.getSize() > 8) {
                     Letter let = pixelObject.toColoredLetter();
                     toBlack(let);
-                    ArrayList<Letter> lets3 = new ArrayList<Letter>();
+                    java.util.List<Letter> lets3 = new ArrayList<Letter>();
 
-                    ArrayList<PixelObject> lets2 = getFastObjects(let, 1, 1, 1, 1, 1);
+                    java.util.List<PixelObject> lets2 = getFastObjects(let, 1, 1, 1, 1, 1);
                     for (PixelObject pixelObject2 : lets2) {
                         if (pixelObject2.getSize() > 5) {
                             Letter let2 = pixelObject2.toColoredLetter();

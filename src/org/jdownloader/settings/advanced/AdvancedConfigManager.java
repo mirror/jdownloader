@@ -35,7 +35,7 @@ public class AdvancedConfigManager {
         return AdvancedConfigManager.INSTANCE;
     }
 
-    private ArrayList<AdvancedConfigEntry> configInterfaces;
+    private java.util.List<AdvancedConfigEntry> configInterfaces;
     private AdvancedConfigEventSender      eventSender;
 
     private AdvancedConfigManager() {
@@ -95,7 +95,7 @@ public class AdvancedConfigManager {
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));
     }
 
-    public ArrayList<AdvancedConfigEntry> list() {
+    public java.util.List<AdvancedConfigEntry> list() {
         synchronized (configInterfaces) {
             return new ArrayList<AdvancedConfigEntry>(configInterfaces);
         }

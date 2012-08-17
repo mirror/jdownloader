@@ -28,8 +28,8 @@ public class FileArchiveFactory extends FileArchiveFile implements ArchiveFactor
         super(archiveStartFile);
     }
 
-    public ArrayList<ArchiveFile> createPartFileList(String file, String pattern) {
-        ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
+    public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
+        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
 
         if (getFile().getParentFile() != null && getFile().getParentFile().exists()) {
             for (File f : getFile().getParentFile().listFiles()) {

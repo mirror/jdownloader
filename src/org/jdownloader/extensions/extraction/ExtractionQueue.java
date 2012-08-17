@@ -15,8 +15,8 @@ public class ExtractionQueue extends Queue {
         return (ExtractionController) this.getCurrentJob();
     }
 
-    public ArrayList<ExtractionController> getJobs() {
-        ArrayList<ExtractionController> ret = new ArrayList<ExtractionController>();
+    public java.util.List<ExtractionController> getJobs() {
+        java.util.List<ExtractionController> ret = new ArrayList<ExtractionController>();
 
         for (QueueAction<?, ?> e : getEntries()) {
             ret.add((ExtractionController) e);
@@ -26,7 +26,7 @@ public class ExtractionQueue extends Queue {
 
     @Override
     public boolean isEmpty() {
-        return this.getCurrentJob() == null && "if conflict ".contains("conflict") && super.isEmpty();
+        return this.getCurrentJob() == null && super.isEmpty();
     }
 
     public boolean isInProgress(ExtractionController p) {

@@ -264,7 +264,7 @@ public class MediaServer implements Runnable {
     public List<PlayToUpnpRendererDevice> getPlayToRenderer() {
 
         Collection<Device> devices = upnpService.getRegistry().getDevices(new UDAServiceType("AVTransport", 1));
-        ArrayList<PlayToUpnpRendererDevice> ret = new ArrayList<PlayToUpnpRendererDevice>();
+        java.util.List<PlayToUpnpRendererDevice> ret = new ArrayList<PlayToUpnpRendererDevice>();
         ServiceId serviceId = new UDAServiceId("AVTransport");
         for (Device d : devices) {
             try {

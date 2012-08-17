@@ -80,11 +80,11 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
     /**
      * List of all available languages
      */
-    private ArrayList<TLocale>             translations;
+    private java.util.List<TLocale>             translations;
     /**
      * If a translation is loaded, this list contains all it's entries
      */
-    private ArrayList<TranslateEntry>      translationEntries;
+    private java.util.List<TranslateEntry>      translationEntries;
     /**
      * currently loaded Language
      */
@@ -234,7 +234,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      * 
      * @return {@link #translations}
      */
-    public ArrayList<TLocale> getTranslations() {
+    public java.util.List<TLocale> getTranslations() {
         return translations;
     }
 
@@ -294,7 +294,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
             getSettings().setLastLoaded(locale.getId());
 
-            ArrayList<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
+            java.util.List<TranslateEntry> tmp = new ArrayList<TranslateEntry>();
             if (updateSVN) {
                 Subversion s = new Subversion("svn://svn.jdownloader.org/jdownloader/trunk/translations/translations/", getSettings().getSVNUser(), getSettings().getSVNPassword());
                 try {
@@ -370,7 +370,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
         getEventSender().fireEvent(new TranslatorExtensionEvent(this, org.jdownloader.extensions.translator.TranslatorExtensionEvent.Type.LOADED_TRANSLATION));
     }
 
-    private <T extends TranslateInterface> T load(ArrayList<TranslateEntry> tmp, TLocale locale, Class<T> class1) {
+    private <T extends TranslateInterface> T load(java.util.List<TranslateEntry> tmp, TLocale locale, Class<T> class1) {
         logger.info("Load Translation " + locale + " " + class1);
 
         TranslateInterface t = (TranslateInterface) Proxy.newProxyInstance(class1.getClassLoader(), new Class[] { class1 }, new TranslationHandler(class1, locale.getId()));
@@ -386,7 +386,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
      * 
      * @return {@link #translationEntries}
      */
-    public ArrayList<TranslateEntry> getTranslationEntries() {
+    public java.util.List<TranslateEntry> getTranslationEntries() {
         return translationEntries;
     }
 
@@ -520,7 +520,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    public void setDefault(ArrayList<TranslateEntry> selection) {
+    public void setDefault(java.util.List<TranslateEntry> selection) {
 
         for (TranslateEntry te : selection) {
             te.setTranslation(te.getDirect());
@@ -530,7 +530,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
 
     }
 
-    public void setTranslation(ArrayList<TranslateEntry> selection, TLocale sel) {
+    public void setTranslation(java.util.List<TranslateEntry> selection, TLocale sel) {
         int failed = 0;
         for (TranslateEntry te : selection) {
             Class<? extends TranslateInterface> class1 = (Class<? extends TranslateInterface>) te.getInterface().getClass().getInterfaces()[0];

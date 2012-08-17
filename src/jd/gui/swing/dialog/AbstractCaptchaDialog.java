@@ -91,7 +91,7 @@ public abstract class AbstractCaptchaDialog extends AbstractDialog<Object> imple
             setLocator(new RememberAbsoluteLocator("CaptchaDialog"));
         }
         // if we have gif images, but read them as non indexed images, we try to fix this here.
-        ArrayList<Image> ret = new ArrayList<Image>();
+        java.util.List<Image> ret = new ArrayList<Image>();
         for (int i = 0; i < images.length; i++) {
             if (images[i] instanceof BufferedImage) {
                 if (((BufferedImage) images[i]).getColorModel() instanceof IndexColorModel) {

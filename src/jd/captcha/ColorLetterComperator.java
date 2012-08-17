@@ -206,8 +206,8 @@ public class ColorLetterComperator {
      * @return
      */
     public static PixelObject[] getObjects(final PixelGrid grid) {
-        final ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+        final java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
 
         final int gridWidth = grid.getWidth();
         final int gridHeight = grid.getHeight();

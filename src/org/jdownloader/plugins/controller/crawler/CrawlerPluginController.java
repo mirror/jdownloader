@@ -123,7 +123,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
     }
 
     private List<LazyCrawlerPlugin> loadFromCache() {
-        ArrayList<AbstractCrawlerPlugin> l = null;
+        java.util.List<AbstractCrawlerPlugin> l = null;
         synchronized (INITLOCK) {
             l = JSonStorage.restoreFrom(Application.getResource(getCache()), false, KEY, new TypeRef<ArrayList<AbstractCrawlerPlugin>>() {
             }, new ArrayList<AbstractCrawlerPlugin>());
@@ -231,7 +231,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
             }
         }
 
-        ArrayList<AbstractCrawlerPlugin> saveList = new ArrayList<AbstractCrawlerPlugin>();
+        java.util.List<AbstractCrawlerPlugin> saveList = new ArrayList<AbstractCrawlerPlugin>();
         for (LinkedList<AbstractCrawlerPlugin> crawler : ret.values()) {
             saveList.addAll(crawler);
         }

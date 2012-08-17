@@ -77,7 +77,7 @@ public abstract class FilterRule implements Storable {
 
     public String toString(CrawledLink link) {
         StringBuilder sb = new StringBuilder();
-        ArrayList<String> cond = new ArrayList<String>();
+        java.util.List<String> cond = new ArrayList<String>();
         if (getMatchAlwaysFilter().isEnabled()) {
             cond.add(getMatchAlwaysFilter().toString());
         } else {

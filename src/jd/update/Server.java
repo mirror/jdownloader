@@ -61,7 +61,7 @@ public class Server implements Serializable {
      * @param list
      * @return
      */
-    public static Server selectServer(ArrayList<Server> list) {
+    public static Server selectServer(java.util.List<Server> list) {
 
         int rand = (int) (Math.random() * 100);
         int total = 0;
@@ -83,7 +83,7 @@ public class Server implements Serializable {
      * @param list
      * @return
      */
-    private static Server selectServerByRequestTime(ArrayList<Server> list) {
+    private static Server selectServerByRequestTime(java.util.List<Server> list) {
 
         Server ret = null;
         for (Server s : list) {

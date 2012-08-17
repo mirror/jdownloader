@@ -58,7 +58,7 @@ public class LinkChecker<E extends CheckableLink> {
     private final static int                                                        MAX_THREADS;
     private final static int                                                        KEEP_ALIVE;
     private static HashMap<String, Thread>                                          CHECK_THREADS          = new HashMap<String, Thread>();
-    private static HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>> LINKCHECKER            = new HashMap<String, ArrayList<LinkChecker<? extends CheckableLink>>>();
+    private static HashMap<String, java.util.List<LinkChecker<? extends CheckableLink>>> LINKCHECKER            = new HashMap<String, java.util.List<LinkChecker<? extends CheckableLink>>>();
     private static final Object                                                     LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
@@ -162,7 +162,7 @@ public class LinkChecker<E extends CheckableLink> {
             EVENTSENDER.fireEvent(new LinkCheckerEvent(this, LinkCheckerEvent.Type.STARTED));
         }
         synchronized (LOCK) {
-            ArrayList<LinkChecker<? extends CheckableLink>> checker = LINKCHECKER.get(host);
+            java.util.List<LinkChecker<? extends CheckableLink>> checker = LINKCHECKER.get(host);
             if (checker == null) {
                 checker = new ArrayList<LinkChecker<? extends CheckableLink>>();
                 checker.add(this);
@@ -227,10 +227,10 @@ public class LinkChecker<E extends CheckableLink> {
                         /*
                          * arraylist to hold the current checkable links
                          */
-                        ArrayList<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
+                        java.util.List<InternCheckableLink> roundComplete = new ArrayList<InternCheckableLink>();
                         try {
                             synchronized (LOCK) {
-                                ArrayList<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
+                                java.util.List<LinkChecker<? extends CheckableLink>> map = LINKCHECKER.get(threadHost);
                                 if (map != null) {
                                     for (LinkChecker<? extends CheckableLink> lc : map) {
                                         synchronized (lc) {
@@ -263,7 +263,7 @@ public class LinkChecker<E extends CheckableLink> {
                                 List<InternCheckableLink> roundSplit = roundComplete.subList(i, Math.min(n, i + SPLITSIZE));
                                 if (roundSplit.size() > 0) {
                                     stopDelay = 1;
-                                    ArrayList<DownloadLink> massLinkCheck = new ArrayList<DownloadLink>(roundSplit.size());
+                                    java.util.List<DownloadLink> massLinkCheck = new ArrayList<DownloadLink>(roundSplit.size());
                                     for (InternCheckableLink link : roundSplit) {
                                         if (link.linkCheckAllowed()) massLinkCheck.add(link.getCheckableLink().getDownloadLink());
                                     }
@@ -332,7 +332,7 @@ public class LinkChecker<E extends CheckableLink> {
                             }
                         }
                         synchronized (LOCK) {
-                            ArrayList<LinkChecker<? extends CheckableLink>> stopCheck = LINKCHECKER.get(threadHost);
+                            java.util.List<LinkChecker<? extends CheckableLink>> stopCheck = LINKCHECKER.get(threadHost);
                             if (stopCheck == null || stopCheck.size() == 0) {
                                 stopDelay--;
                                 if (stopDelay < 0) {
@@ -367,8 +367,8 @@ public class LinkChecker<E extends CheckableLink> {
     /* start new linkCheckThreads until max is reached or no left to start */
     private static void startNewThreads() {
         synchronized (LOCK) {
-            Set<Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>>> sets = LINKCHECKER.entrySet();
-            for (Entry<String, ArrayList<LinkChecker<? extends CheckableLink>>> set : sets) {
+            Set<Entry<String, java.util.List<LinkChecker<? extends CheckableLink>>>> sets = LINKCHECKER.entrySet();
+            for (Entry<String, java.util.List<LinkChecker<? extends CheckableLink>>> set : sets) {
                 String host = set.getKey();
                 Thread thread = CHECK_THREADS.get(host);
                 if (thread == null || !thread.isAlive()) {

@@ -14,10 +14,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class SendLogDialog extends AbstractDialog<Object> {
 
-    private ArrayList<LogFolder> folders;
+    private java.util.List<LogFolder> folders;
     private LogModel             model;
 
-    public SendLogDialog(ArrayList<LogFolder> folders) {
+    public SendLogDialog(java.util.List<LogFolder> folders) {
         super(0, _GUI._.SendLogDialog_SendLogDialog_title_(), null, _GUI._.literally_continue(), null);
         this.folders = folders;
     }
@@ -52,8 +52,8 @@ public class SendLogDialog extends AbstractDialog<Object> {
         return p;
     }
 
-    public ArrayList<LogFolder> getSelectedFolders() {
-        ArrayList<LogFolder> list = new ArrayList<LogFolder>();
+    public java.util.List<LogFolder> getSelectedFolders() {
+        java.util.List<LogFolder> list = new ArrayList<LogFolder>();
         for (LogFolder lf : model.getTableData()) {
             if (lf.isSelected()) {
                 list.add(lf);

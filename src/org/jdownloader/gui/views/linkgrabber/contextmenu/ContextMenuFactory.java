@@ -42,7 +42,7 @@ public class ContextMenuFactory {
         this.table = linkGrabberTable;
     }
 
-    public JPopupMenu createPopup(AbstractNode context, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
+    public JPopupMenu createPopup(AbstractNode context, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent event) {
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(context, selection, event, null, table);
 
@@ -110,9 +110,9 @@ public class ContextMenuFactory {
         return p;
     }
 
-    public static ArrayList<JMenuItem> fillPropertiesMenu(SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
+    public static java.util.List<JMenuItem> fillPropertiesMenu(SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
 
-        ArrayList<JMenuItem> ret = new ArrayList<JMenuItem>();
+        java.util.List<JMenuItem> ret = new ArrayList<JMenuItem>();
         ret.add(new JMenuItem(new CheckStatusAction<CrawledPackage, CrawledLink>(si).toContextMenuAction()));
 
         ret.add(new JMenuItem(new URLEditorAction(si)));

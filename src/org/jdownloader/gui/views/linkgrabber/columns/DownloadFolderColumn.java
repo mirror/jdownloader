@@ -131,7 +131,7 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             pkg.setComment(p.getComment());
             pkg.setDownloadFolder(value);
 
-            final ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
+            final java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
             links.add((CrawledLink) object);
             IOEQ.getQueue().add(new QueueAction<Object, RuntimeException>(org.appwork.utils.event.queue.Queue.QueuePriority.HIGH) {
 

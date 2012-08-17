@@ -121,7 +121,7 @@ public class ConfigContainer implements Serializable {
      */
     public static final int              TYPE_COMBOBOX_INDEX = 15;
 
-    private final ArrayList<ConfigEntry> content;
+    private final java.util.List<ConfigEntry> content;
     private String                       title;
     private ConfigGroup                  group;
     private ImageIcon                    icon;
@@ -153,7 +153,7 @@ public class ConfigContainer implements Serializable {
      * 
      * @return Liste aller gespeicherten Konfigurationseinträge
      */
-    public ArrayList<ConfigEntry> getEntries() {
+    public java.util.List<ConfigEntry> getEntries() {
         return content;
     }
 

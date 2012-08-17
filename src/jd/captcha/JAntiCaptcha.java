@@ -219,7 +219,7 @@ public class JAntiCaptcha {
     /**
      * Vector mit den Buchstaben aus der MTHO File
      */
-    public ArrayList<Letter>         letterDB;
+    public java.util.List<Letter>         letterDB;
 
     private int[][]                  letterMap    = null;
 
@@ -628,7 +628,7 @@ public class JAntiCaptcha {
         int y = 0;
         int i = 0;
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
-        final ArrayList<Integer> rem = new ArrayList<Integer>();
+        final java.util.List<Integer> rem = new ArrayList<Integer>();
         while (iter.hasPrevious()) {
             final Letter tmp = iter.previous();
             list[i] = tmp;
@@ -673,7 +673,7 @@ public class JAntiCaptcha {
 
             public void actionPerformed(ActionEvent e) {
                 // System.out.println(rem + "");
-                ArrayList<Letter> list = new ArrayList<Letter>();
+                java.util.List<Letter> list = new ArrayList<Letter>();
                 int s = letterDB.size();
                 for (Integer i : rem) {
                     try {
@@ -1908,7 +1908,7 @@ public class JAntiCaptcha {
     }
 
     public void cleanLibrary(double d) {
-        ArrayList<Letter> newDB = new ArrayList<Letter>();
+        java.util.List<Letter> newDB = new ArrayList<Letter>();
         main: for (Letter let : letterDB) {
 
             for (Letter n : newDB) {

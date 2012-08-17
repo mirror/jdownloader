@@ -31,13 +31,13 @@ public class CllCtRnT {
         Object[] cl = EasyCaptcha.clean(captcha);
         int[] pixels = new int[] { (Integer) cl[0], (Integer) cl[1], (Integer) cl[2] };
         @SuppressWarnings("unchecked")
-        ArrayList<PixelObject> os = (ArrayList<PixelObject>) cl[3];
+        java.util.List<PixelObject> os = (java.util.List<PixelObject>) cl[3];
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
         int[] mergeInfos = EasyCaptcha.mergeObjectsBasic(os, captcha, gab);
         EasyCaptcha.getRightletters(os, captcha, pixels, mergeInfos, 0);
         Collections.sort(os);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
             Letter let = pixelObject.toLetter();
             let.toBlackAndWhite();

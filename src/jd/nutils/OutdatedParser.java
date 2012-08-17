@@ -101,7 +101,7 @@ public class OutdatedParser {
                         if (!delete.exists() || !delete.isDirectory()) {
                             continue;
                         }
-                        final ArrayList<String> hashes = OutdatedParser.parseHashList(new File(outdated.getParentFile(), "tmp/hashlist.lst"));
+                        final java.util.List<String> hashes = OutdatedParser.parseHashList(new File(outdated.getParentFile(), "tmp/hashlist.lst"));
                         if (hashes == null) {
                             continue;
                         }
@@ -138,7 +138,7 @@ public class OutdatedParser {
         return ret;
     }
 
-    private static ArrayList<String> parseHashList(final File file) {
+    private static java.util.List<String> parseHashList(final File file) {
         if (!file.exists()) {
             System.out.println("HashList not available");
             return null;
@@ -148,13 +148,13 @@ public class OutdatedParser {
          */
         final Matcher matcher = Pattern.compile("[\r\n\\;]*([^=]+)=(.*?)\\;", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(OutdatedParser.getLocalFile(file));
 
-        final ArrayList<String> ar = new ArrayList<String>();
+        final java.util.List<String> ar = new ArrayList<String>();
         while (matcher.find()) {
             ar.add(matcher.group(1));
         }
         final String[] matches = ar.toArray(new String[ar.size()]);
 
-        final ArrayList<String> result = new ArrayList<String>();
+        final java.util.List<String> result = new ArrayList<String>();
         for (final String match : matches) {
             result.add(match);
         }

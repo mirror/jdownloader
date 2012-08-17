@@ -91,9 +91,9 @@ public class PpscnRg {
         }
     }
 
-    public static ArrayList<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    public static java.util.List<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 int c = grid.grid[x][y];
@@ -161,7 +161,7 @@ public class PpscnRg {
         // clearlines2(captcha);
 
         // BasicWindow.showImage(captcha.getImage());
-        ArrayList<PixelObject> os = getObjects(captcha, 2);
+        java.util.List<PixelObject> os = getObjects(captcha, 2);
         merge(os);
         Collections.sort(os);
         Letter[] letters = new Letter[os.size()];

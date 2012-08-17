@@ -145,7 +145,7 @@ public class StreamingProvider {
 
                                 @Override
                                 public void delayedrun() {
-                                    ArrayList<StreamingInputStream> all = findAllStreamingInputStreamsFor(outputStream);
+                                    java.util.List<StreamingInputStream> all = findAllStreamingInputStreamsFor(outputStream);
                                     if (all.size() == 0) {
                                         System.out.println("Last input closed, close output");
                                         outputStream.close();

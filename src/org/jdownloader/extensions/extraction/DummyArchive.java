@@ -13,9 +13,9 @@ public class DummyArchive {
         return incompleteCount;
     }
 
-    private ArrayList<DummyArchiveFile> list;
+    private java.util.List<DummyArchiveFile> list;
 
-    public ArrayList<DummyArchiveFile> getList() {
+    public java.util.List<DummyArchiveFile> getList() {
         return list;
     }
 

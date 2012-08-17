@@ -11,7 +11,7 @@ import org.appwork.storage.Storable;
 public class FilePackageStorable implements Storable {
 
     private FilePackage                     filePackage;
-    private ArrayList<DownloadLinkStorable> links;
+    private java.util.List<DownloadLinkStorable> links;
 
     @SuppressWarnings("unused")
     private FilePackageStorable(/* Storable */) {
@@ -71,11 +71,11 @@ public class FilePackageStorable implements Storable {
         filePackage.setDownloadDirectory(dest);
     }
 
-    public ArrayList<DownloadLinkStorable> getLinks() {
+    public java.util.List<DownloadLinkStorable> getLinks() {
         return links;
     }
 
-    public void setLinks(ArrayList<DownloadLinkStorable> links) {
+    public void setLinks(java.util.List<DownloadLinkStorable> links) {
         if (links != null) {
             this.links = links;
             synchronized (filePackage) {

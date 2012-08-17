@@ -143,7 +143,7 @@ public class LiveHeaderDetectionWizard {
 
     // public int runOfflineScan() throws InterruptedException {
     // int ret = -1;
-    // // final ArrayList<String[]> scripts =
+    // // final java.util.List<String[]> scripts =
     // // LiveHeaderReconnect.getLHScripts();
     //
     // this.txtName = new JTextField();
@@ -203,7 +203,7 @@ public class LiveHeaderDetectionWizard {
     // }
     // String man = this.txtManufactor.getText().trim();
     // String name = this.txtName.getText().trim();
-    // ArrayList<RouterData> tests = this.scanOfflineRouters(name.length() > 0 ?
+    // java.util.List<RouterData> tests = this.scanOfflineRouters(name.length() > 0 ?
     // ".*" + name.toLowerCase().replaceAll("\\W", ".*?") + ".*" : null,
     // man.toLowerCase().length() > 0 ? ".*" +
     // man.toLowerCase().replaceAll("\\W", ".*?") + ".*" : null);
@@ -231,7 +231,7 @@ public class LiveHeaderDetectionWizard {
     //
     // }
 
-    private ArrayList<ReconnectResult> runTests(ArrayList<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
+    private java.util.List<ReconnectResult> runTests(java.util.List<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
 
         boolean pre = JsonConfig.create(ReconnectConfig.class).isIPCheckGloballyDisabled();
         try {
@@ -242,8 +242,8 @@ public class LiveHeaderDetectionWizard {
 
             }
 
-            ArrayList<RouterData> bestMatches = filterBestMatches(tests);
-            ArrayList<ReconnectResult> ret = testList(bestMatches, processCallBack);
+            java.util.List<RouterData> bestMatches = filterBestMatches(tests);
+            java.util.List<ReconnectResult> ret = testList(bestMatches, processCallBack);
             if (ret != null && ret.size() > 0 && JsonConfig.create(LiveHeaderReconnectSettings.class).isAutoSearchBestMatchFilterEnabled()) { return ret; }
             // test all if best matches did not succeed
             ret = testList(tests, processCallBack);
@@ -259,13 +259,13 @@ public class LiveHeaderDetectionWizard {
 
     }
 
-    private ArrayList<RouterData> filterBestMatches(ArrayList<RouterData> tests) {
+    private java.util.List<RouterData> filterBestMatches(java.util.List<RouterData> tests) {
         int total = 0;
         for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
             total += it.next().getPriorityIndicator();
         }
         float avg = total / (float) tests.size();
-        ArrayList<RouterData> ret = new ArrayList<RouterData>();
+        java.util.List<RouterData> ret = new ArrayList<RouterData>();
         for (Iterator<RouterData> it = tests.iterator(); it.hasNext();) {
             RouterData next = it.next();
 
@@ -321,7 +321,7 @@ public class LiveHeaderDetectionWizard {
         return true;
     }
 
-    public ArrayList<ReconnectResult> testList(ArrayList<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
+    public java.util.List<ReconnectResult> testList(java.util.List<RouterData> tests, ProcessCallBack processCallBack) throws InterruptedException, DialogClosedException, DialogCanceledException {
 
         if (username.trim().length() < 2 || password.trim().length() < 2) {
             for (int i = 0; i < tests.size(); i++) {
@@ -338,7 +338,7 @@ public class LiveHeaderDetectionWizard {
                 }
             }
         }
-        ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
+        java.util.List<ReconnectResult> ret = new ArrayList<ReconnectResult>();
 
         for (int i = 0; i < tests.size(); i++) {
 
@@ -401,7 +401,7 @@ public class LiveHeaderDetectionWizard {
         return ret;
     }
 
-    public ArrayList<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) throws InterruptedException, UnknownHostException {
+    public java.util.List<ReconnectResult> runOnlineScan(ProcessCallBack processCallBack) throws InterruptedException, UnknownHostException {
         try {
             // wait until we are online
             processCallBack.setStatusString(this, _GUI._.LiveaheaderDetection_wait_for_online());
@@ -428,7 +428,7 @@ public class LiveHeaderDetectionWizard {
             }
             scanRemoteInfo();
             specials();
-            ArrayList<RouterData> list = downloadRouterDatasByAutoDetectValues();
+            java.util.List<RouterData> list = downloadRouterDatasByAutoDetectValues();
 
             return runTests(list, processCallBack);
         } catch (RemoteCallCommunicationException e) {
@@ -621,21 +621,21 @@ public class LiveHeaderDetectionWizard {
         return str;
     }
 
-    private ArrayList<RouterData> downloadRouterDatasByAutoDetectValues() {
+    private java.util.List<RouterData> downloadRouterDatasByAutoDetectValues() {
 
         RouterData rd = getRouterData();
         // debug
         // rd.setMac(null);
 
-        ArrayList<RouterData> scripts = recoll.findRouter(rd, null);
+        java.util.List<RouterData> scripts = recoll.findRouter(rd, null);
 
-        final ArrayList<RouterData> unique = toUnique(scripts);
+        final java.util.List<RouterData> unique = toUnique(scripts);
 
         return unique;
 
     }
 
-    public static ArrayList<RouterData> toUnique(ArrayList<RouterData> scripts) {
+    public static ArrayList<RouterData> toUnique(java.util.List<RouterData> scripts) {
         final HashMap<String, RouterData> helper = new HashMap<String, RouterData>();
         final ArrayList<RouterData> unique = new ArrayList<RouterData>(scripts.size());
         for (final RouterData e : scripts) {
@@ -739,7 +739,7 @@ public class LiveHeaderDetectionWizard {
     private void collectInfo() throws UnknownHostException, InterruptedException {
         final UPNPRouterPlugin upnp = (UPNPRouterPlugin) ReconnectPluginController.getInstance().getPluginByID(UPNPRouterPlugin.ID);
 
-        ArrayList<UpnpRouterDevice> devices = upnp.getDevices();
+        java.util.List<UpnpRouterDevice> devices = upnp.getDevices();
 
         String gatewayIP = JsonConfig.create(LiveHeaderReconnectSettings.class).getRouterIP();
 

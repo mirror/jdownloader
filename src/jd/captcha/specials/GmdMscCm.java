@@ -65,9 +65,9 @@ public class GmdMscCm {
      * @param grid
      * @return
      */
-    public ArrayList<PixelObject> getObjects(Captcha grid) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    public java.util.List<PixelObject> getObjects(Captcha grid) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 int c = grid.getGrid()[x][y];
@@ -109,7 +109,7 @@ public class GmdMscCm {
         Captcha captcha = jac.createCaptcha(captchaImage);
         captcha.setCaptchaFile(captchafile);
         captcha.crop(2, 2, 2, 2);
-        ArrayList<PixelObject> ob = getObjects(captcha);
+        java.util.List<PixelObject> ob = getObjects(captcha);
         // merge(ob);
         // delete the lines
 

@@ -31,7 +31,7 @@ import org.jdownloader.translate._JDT;
 public abstract class AbstractConfigPanel extends SwitchPanel {
 
     private static final long  serialVersionUID = -8483438886830392777L;
-    private ArrayList<Pair<?>> pairs;
+    private java.util.List<Pair<?>> pairs;
 
     public AbstractConfigPanel() {
         super(new MigLayout("ins 15, wrap 2", "[][grow,fill]", "[]"));

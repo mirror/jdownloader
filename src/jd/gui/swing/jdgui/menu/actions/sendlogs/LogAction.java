@@ -96,7 +96,7 @@ public class LogAction extends AppAction {
     protected void create() {
 
         File[] logs = Application.getResource("logs").listFiles();
-        final ArrayList<LogFolder> folders = new ArrayList<LogFolder>();
+        final java.util.List<LogFolder> folders = new ArrayList<LogFolder>();
 
         LogFolder latest = null;
 
@@ -135,7 +135,7 @@ public class LogAction extends AppAction {
         try {
             Dialog.getInstance().showDialog(d);
 
-            final ArrayList<LogFolder> selection = d.getSelectedFolders();
+            final java.util.List<LogFolder> selection = d.getSelectedFolders();
 
             final ProgressDialog p = new ProgressDialog(new ProgressGetter() {
                 private int total;

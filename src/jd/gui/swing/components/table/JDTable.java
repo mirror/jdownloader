@@ -231,7 +231,7 @@ public class JDTable extends JXTable {
         return this.defaultSortMenuItem;
     }
 
-    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
+    public java.util.List<JDRowHighlighter> getJDRowHighlighter() {
         return this.model.getJDRowHighlighter();
     }
 

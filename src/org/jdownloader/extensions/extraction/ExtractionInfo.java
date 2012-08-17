@@ -16,15 +16,15 @@ public class ExtractionInfo implements Storable {
         this.extractToFolder = extractToFolder;
     }
 
-    public ArrayList<String> getFiles() {
+    public java.util.List<String> getFiles() {
         return files;
     }
 
-    public void setFiles(ArrayList<String> files) {
+    public void setFiles(java.util.List<String> files) {
         this.files = files;
     }
 
-    private ArrayList<String> files;
+    private java.util.List<String> files;
 
     public ExtractionInfo(/* storable */) {
     }

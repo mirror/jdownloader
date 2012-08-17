@@ -63,7 +63,7 @@ public class Main {
     private static StringBuilder    log;
     private static JFrame           frame;
     private static JTextArea        logWindow;
-    public static ArrayList<Server> clonePrefix = new ArrayList<Server>();
+    public static java.util.List<Server> clonePrefix = new ArrayList<Server>();
     public static boolean           clone       = false;
     public static boolean           GUILESS     = false;
     public static boolean           NORESTART   = false;
@@ -201,7 +201,7 @@ public class Main {
                 // Remove.extracts
                 JDIO.removeByPattern(JDUtilities.getResourceFile("jd").getParentFile(), Pattern.compile(".*\\.extract", Pattern.CASE_INSENSITIVE));
             }
-            ArrayList<FileUpdate> files;
+            java.util.List<FileUpdate> files;
             try {
                 files = updater.getAvailableFiles();
             } catch (Exception e) {
@@ -253,8 +253,8 @@ public class Main {
 
     // public static void installAddons(File root) {
     // SubConfiguration jdus = WebUpdater.getConfig("JDU");
-    // ArrayList<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new
-    // ArrayList<PackageData>());
+    // java.util.List<PackageData> data = jdus.getGenericProperty("PACKAGEDATA", new
+    // java.util.List<PackageData>());
     //
     // for (PackageData pa : data) {
     // if (!pa.isDownloaded()) continue;

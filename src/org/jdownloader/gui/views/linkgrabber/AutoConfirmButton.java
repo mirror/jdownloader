@@ -170,7 +170,7 @@ public class AutoConfirmButton extends ExtButton implements ChangeListener, Tabl
                         IOEQ.add(new Runnable() {
 
                             public void run() {
-                                ArrayList<AbstractNode> list = new ArrayList<AbstractNode>();
+                                java.util.List<AbstractNode> list = new ArrayList<AbstractNode>();
                                 boolean autoStart = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_AUTO_START_ENABLED.getValue();
 
                                 for (CrawledLink l : LinkGrabberTableModel.getInstance().getAllChildrenNodes()) {

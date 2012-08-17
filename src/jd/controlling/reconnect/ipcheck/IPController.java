@@ -25,15 +25,15 @@ public class IPController extends ArrayList<IPConnectionState> {
     /**
      * true, if the current ip has no use. we need a new one
      */
-    private boolean                          invalidated  = false;
-    private IPConnectionState                latestConnectionState;
-    private final Object                     LOCK         = new Object();
+    private boolean                               invalidated  = false;
+    private IPConnectionState                     latestConnectionState;
+    private final Object                          LOCK         = new Object();
     /**
      * blacklist for not working ip check providers
      */
-    private final ArrayList<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
-    private IPConnectionState                invalidState = null;
-    private IPControllEventSender            eventSender;
+    private final java.util.List<IPCheckProvider> badProviders = new ArrayList<IPCheckProvider>();
+    private IPConnectionState                     invalidState = null;
+    private IPControllEventSender                 eventSender;
 
     public IPControllEventSender getEventSender() {
         return eventSender;

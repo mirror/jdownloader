@@ -49,7 +49,7 @@ public class ReconnectPluginController {
         return ReconnectPluginController.INSTANCE;
     }
 
-    private ArrayList<RouterPlugin> plugins;
+    private java.util.List<RouterPlugin> plugins;
 
     private final ReconnectConfig   storage;
 
@@ -69,16 +69,16 @@ public class ReconnectPluginController {
 
     }
 
-    public ArrayList<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
+    public java.util.List<ReconnectResult> autoFind(final ProcessCallBack feedback) throws InterruptedException {
 
-        final ArrayList<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
+        final java.util.List<ReconnectResult> scripts = new ArrayList<ReconnectResult>();
 
         for (final RouterPlugin plg : ReconnectPluginController.this.plugins) {
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             try {
 
                 feedback.setStatus(plg, null);
-                ArrayList<ReconnectResult> founds = plg.runDetectionWizard(feedback);
+                java.util.List<ReconnectResult> founds = plg.runDetectionWizard(feedback);
                 if (founds != null) scripts.addAll(founds);
                 if (scripts.size() > 0) break;
             } catch (InterruptedException e) {
@@ -251,7 +251,7 @@ public class ReconnectPluginController {
      * 
      * @return
      */
-    public ArrayList<RouterPlugin> getPlugins() {
+    public java.util.List<RouterPlugin> getPlugins() {
         return this.plugins;
     }
 
@@ -286,7 +286,7 @@ public class ReconnectPluginController {
             plugins.add(new UPNPRouterPlugin());
             plugins.add(new LiveHeaderReconnect());
 
-            final ArrayList<URL> urls = new ArrayList<URL>();
+            final java.util.List<URL> urls = new ArrayList<URL>();
             if (files != null) {
                 final int length = files.length;
 

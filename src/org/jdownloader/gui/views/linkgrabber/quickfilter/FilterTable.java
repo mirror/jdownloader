@@ -50,7 +50,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
      * 
      */
     private static final long   serialVersionUID = -5917220196056769905L;
-    protected ArrayList<Filter> filters          = new ArrayList<Filter>();
+    protected java.util.List<Filter> filters          = new ArrayList<Filter>();
     protected volatile boolean  enabled          = false;
     private HeaderInterface     header;
     private LinkGrabberTable    linkgrabberTable;
@@ -149,17 +149,17 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
             // org.jdownloader.settings.statics.LINKFILTER.CFG
             if (org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.QUICK_VIEW_SELECTION_ENABLED.getValue()) {
-                ArrayList<Filter> selection = getSelectedFilters();
-                ArrayList<AbstractNode> newSelection = getMatches(selection);
+                java.util.List<Filter> selection = getSelectedFilters();
+                java.util.List<AbstractNode> newSelection = getMatches(selection);
 
                 getLinkgrabberTable().getExtTableModel().setSelectedObjects(newSelection);
             }
         }
     }
 
-    private ArrayList<Filter> getSelectedFilters() {
-        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
-        ArrayList<Filter> ret = new ArrayList<Filter>();
+    private java.util.List<Filter> getSelectedFilters() {
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<Filter> ret = new ArrayList<Filter>();
         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
             if (f instanceof FilterTable) {
                 ret.addAll(((FilterTable) f).getExtTableModel().getSelectedObjects());
@@ -169,7 +169,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         return ret;
     }
 
-    public ArrayList<AbstractNode> getMatches(ArrayList<Filter> selection) {
+    public java.util.List<AbstractNode> getMatches(java.util.List<Filter> selection) {
         List<CrawledLink> all = getVisibleLinks();
         HashSet<CrawledPackage> packages = new HashSet<CrawledPackage>();
         CrawledLink link;
@@ -186,20 +186,20 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
             it.remove();
         }
 
-        ArrayList<AbstractNode> newSelection = new ArrayList<AbstractNode>(all);
+        java.util.List<AbstractNode> newSelection = new ArrayList<AbstractNode>(all);
         newSelection.addAll(packages);
         return newSelection;
     }
 
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final ArrayList<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final Filter contextObject, final java.util.List<Filter> selection, final ExtColumn<Filter> column, final MouseEvent mouseEvent) {
 
-        ArrayList<String> ret = new ArrayList<String>();
+        java.util.List<String> ret = new ArrayList<String>();
         for (Filter f : selection) {
             ret.add(f.getName());
         }
 
         popup.add(new EnabledAllAction(getExtTableModel().getSelectedObjects()));
-        ArrayList<Filter> nonSel = new ArrayList<Filter>(getExtTableModel().getTableData());
+        java.util.List<Filter> nonSel = new ArrayList<Filter>(getExtTableModel().getTableData());
         for (Filter f : getExtTableModel().getSelectedObjects()) {
             nonSel.remove(f);
         }
@@ -245,7 +245,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     @Override
     protected boolean onSingleClick(MouseEvent e, Filter obj) {
-        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
 
         if (!e.isControlDown()) {
             for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
@@ -275,7 +275,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     protected void updateNow() {
 
         reset();
-        ArrayList<Filter> newData = updateQuickFilerTableData();
+        java.util.List<Filter> newData = updateQuickFilerTableData();
         // for (Iterator<Filter> it = newData.iterator(); it.hasNext();) {
         // if (it.next().getCounter() == 0) {
         // it.remove();
@@ -290,8 +290,8 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
 
     }
 
-    protected int getCountWithout(Filter filter, ArrayList<CrawledLink> filteredLinks) {
-        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+    protected int getCountWithout(Filter filter, java.util.List<CrawledLink> filteredLinks) {
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
         int ret = 0;
         main: for (CrawledLink l : filteredLinks) {
             if (filter.isFiltered(l)) {
@@ -318,7 +318,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         return linkgrabberTable;
     }
 
-    protected abstract ArrayList<Filter> updateQuickFilerTableData();
+    protected abstract java.util.List<Filter> updateQuickFilerTableData();
 
     public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
     }
@@ -360,7 +360,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     protected void updateAllFiltersInstant() {
-        ArrayList<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
+        java.util.List<PackageControllerTableModelFilter<CrawledPackage, CrawledLink>> tableFilters = getLinkgrabberTable().getPackageControllerTableModel().getTableFilters();
 
         for (PackageControllerTableModelFilter<CrawledPackage, CrawledLink> f : tableFilters) {
             if (f instanceof FilterTable) {
@@ -376,7 +376,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     // */
     // if (enabled == false) return false;
     // String ext = Files.getExtension(v.getName());
-    // ArrayList<Filter> lfilters = filters;
+    // java.util.List<Filter> lfilters = filters;
     // for (Filter filter : lfilters) {
     // if (filter.isEnabled()) continue;
     // if (((ExtensionFilter) filter).isFiltered(ext)) {
@@ -389,7 +389,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     // }
     public boolean isFiltered(CrawledLink e) {
         if (enabled == false) return false;
-        ArrayList<Filter> lfilters = getAllFilters();
+        java.util.List<Filter> lfilters = getAllFilters();
         for (Filter filter : lfilters) {
             if (filter == filterException) continue;
             if (filter.isEnabled()) {
@@ -402,7 +402,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
         return false;
     }
 
-    abstract ArrayList<Filter> getAllFilters();
+    abstract java.util.List<Filter> getAllFilters();
 
     public boolean isFiltered(CrawledPackage v) {
 
@@ -410,7 +410,7 @@ public abstract class FilterTable extends ExtTable<Filter> implements PackageCon
     }
 
     public void reset() {
-        ArrayList<Filter> lfilters = filters;
+        java.util.List<Filter> lfilters = filters;
         for (Filter filter : lfilters) {
 
             filter.setCounter(0);

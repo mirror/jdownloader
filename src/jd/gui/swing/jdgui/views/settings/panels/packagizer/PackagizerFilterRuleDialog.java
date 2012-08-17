@@ -141,7 +141,7 @@ public class PackagizerFilterRuleDialog extends ConditionDialog<PackagizerRule> 
 
             };
             d.setPackagizer(packagizer);
-            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d);
+            java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d);
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

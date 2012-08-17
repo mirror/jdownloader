@@ -49,7 +49,7 @@ public interface ArchiveSettings extends ConfigInterface {
 
     public ExtractionInfo getExtractionInfo();
 
-    public ArrayList<ArchiveItem> getArchiveItems();
+    public java.util.List<ArchiveItem> getArchiveItems();
 
-    public void setArchiveItems(ArrayList<ArchiveItem> files);
+    public void setArchiveItems(java.util.List<ArchiveItem> files);
 }

@@ -26,7 +26,7 @@ public class ExportAction extends AppAction {
      * 
      */
     private static final long                serialVersionUID = 1L;
-    private ArrayList<LinkgrabberFilterRule> rules;
+    private java.util.List<LinkgrabberFilterRule> rules;
 
     private LinkgrabberFilter                linkgrabberFilter;
 
@@ -42,7 +42,7 @@ public class ExportAction extends AppAction {
         return rules == null || rules.size() > 0;
     }
 
-    public ExportAction(ArrayList<LinkgrabberFilterRule> selection) {
+    public ExportAction(java.util.List<LinkgrabberFilterRule> selection) {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
         setIconKey("export");
         setTooltipText(_JDT._.ExportAction_ExportAction_tt());
@@ -52,7 +52,7 @@ public class ExportAction extends AppAction {
     public void actionPerformed(ActionEvent e) {
         try {
 
-            ArrayList<LinkgrabberFilterRule> exportList = rules;
+            java.util.List<LinkgrabberFilterRule> exportList = rules;
 
             if (exportList == null) {
                 if (linkgrabberFilter == null) return;

@@ -15,9 +15,9 @@ public class PackageDirectoryAction extends ContextMenuAction {
 
     private static final long            serialVersionUID = -4322266872775860673L;
 
-    private final ArrayList<FilePackage> packages;
+    private final java.util.List<FilePackage> packages;
 
-    public PackageDirectoryAction(ArrayList<FilePackage> packages) {
+    public PackageDirectoryAction(java.util.List<FilePackage> packages) {
         this.packages = packages;
 
         init();

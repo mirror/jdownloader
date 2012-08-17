@@ -18,8 +18,8 @@ import org.appwork.utils.os.CrossSystem;
 
 public class LinkTreeUtils {
 
-    public static ArrayList<CrawledLink> getChildren(ArrayList<AbstractNode> selection) {
-        ArrayList<CrawledLink> ret = new ArrayList<CrawledLink>();
+    public static java.util.List<CrawledLink> getChildren(java.util.List<AbstractNode> selection) {
+        java.util.List<CrawledLink> ret = new ArrayList<CrawledLink>();
         for (AbstractNode a : selection) {
             if (a instanceof CrawledLink) {
                 ret.add((CrawledLink) a);
@@ -33,7 +33,7 @@ public class LinkTreeUtils {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static <T extends AbstractNode> ArrayList<T> getPackages(AbstractNode contextObject, ArrayList<AbstractNode> selection, ArrayList<T> container) {
+    public static <T extends AbstractNode> java.util.List<T> getPackages(AbstractNode contextObject, java.util.List<AbstractNode> selection, java.util.List<T> container) {
         HashSet<T> ret = new HashSet<T>();
         if (contextObject != null) {
             if (contextObject instanceof AbstractPackageNode) {
@@ -56,7 +56,7 @@ public class LinkTreeUtils {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static <T extends AbstractNode> ArrayList<T> getSelectedChildren(List<AbstractNode> selection2, ArrayList<T> container) {
+    public static <T extends AbstractNode> java.util.List<T> getSelectedChildren(List<AbstractNode> selection2, java.util.List<T> container) {
         HashSet<AbstractNode> has = new HashSet<AbstractNode>(selection2);
         HashSet<T> ret = new HashSet<T>();
         for (AbstractNode node : selection2) {

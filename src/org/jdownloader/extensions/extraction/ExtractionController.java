@@ -41,7 +41,7 @@ import org.jdownloader.logging.LogController;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private ArrayList<String>   passwordList;
+    private java.util.List<String>   passwordList;
     private int                 passwordListSize = 0;
     private Exception           exception;
     private boolean             removeAfterExtraction;
@@ -144,7 +144,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
                     }
                     passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
                     passwordList.add(archive.getName());
-                    ArrayList<String> pwList = extractor.config.getPasswordList();
+                    java.util.List<String> pwList = extractor.config.getPasswordList();
                     if (pwList == null) pwList = new ArrayList<String>();
                     passwordList.addAll(pwList);
 
@@ -289,7 +289,7 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
      * Deletes the archive files.
      */
     private void removeArchiveFiles() {
-        ArrayList<File> removed = new ArrayList<File>();
+        java.util.List<File> removed = new ArrayList<File>();
         for (ArchiveFile link : archive.getArchiveFiles()) {
             if (removeAfterExtraction) {
                 if (!link.deleteFile()) {

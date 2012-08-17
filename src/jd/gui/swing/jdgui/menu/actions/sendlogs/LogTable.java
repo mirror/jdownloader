@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.menu.actions.sendlogs;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 
@@ -19,7 +18,7 @@ public class LogTable extends BasicJDTable<LogFolder> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, LogFolder contextObject, final ArrayList<LogFolder> selection, ExtColumn<LogFolder> column, MouseEvent mouseEvent) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, LogFolder contextObject, final java.util.List<LogFolder> selection, ExtColumn<LogFolder> column, MouseEvent mouseEvent) {
         popup.add(new AppAction() {
             {
                 setName(_GUI._.LogTable_onContextMenu_enable_());

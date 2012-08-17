@@ -159,11 +159,11 @@ public class FilterTableModel extends ExtTableModel<PackagizerRule> implements C
     }
 
     @Override
-    public boolean move(ArrayList<PackagizerRule> transferData, int dropRow) {
+    public boolean move(java.util.List<PackagizerRule> transferData, int dropRow) {
 
         try {
-            ArrayList<PackagizerRule> list = PackagizerController.getInstance().list();
-            final ArrayList<PackagizerRule> newdata = new ArrayList<PackagizerRule>();
+            java.util.List<PackagizerRule> list = PackagizerController.getInstance().list();
+            final java.util.List<PackagizerRule> newdata = new ArrayList<PackagizerRule>();
             List<PackagizerRule> before = new ArrayList<PackagizerRule>(list.subList(0, dropRow));
             List<PackagizerRule> after = new ArrayList<PackagizerRule>(list.subList(dropRow, list.size()));
             before.removeAll(transferData);

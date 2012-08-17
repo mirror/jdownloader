@@ -94,9 +94,9 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
         return sb.toString();
     }
 
-    public static ArrayList<String> getRestartParameters() {
+    public static java.util.List<String> getRestartParameters() {
 
-        final ArrayList<String> nativeParameters = new ArrayList<String>();
+        final java.util.List<String> nativeParameters = new ArrayList<String>();
         if (OS == WINDOWS) {
             /*
              * windows starts exe launcher
@@ -139,8 +139,8 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
         return getJVMParameters();
     }
 
-    private static ArrayList<String> getJVMParameters() {
-        final ArrayList<String> jvmParameter = new ArrayList<String>();
+    private static java.util.List<String> getJVMParameters() {
+        final java.util.List<String> jvmParameter = new ArrayList<String>();
 
         jvmParameter.add(getJavaBinary());
         jvmParameter.add("-jar");
@@ -247,7 +247,7 @@ public class RunUpdaterOnEndAtLeastOnceDaily extends ShutdownEvent {
         if (ShutdownController.getInstance().hasShutdownEvent(SilentUpdaterEvent.getInstance())) return;
 
         if (System.getProperty("noBetaUpdater") != null) return;
-        ArrayList<String> command = new ArrayList<String>();
+        java.util.List<String> command = new ArrayList<String>();
         command.add(getJavaBinary());
         command.add("-jar");
         command.add("Updater.jar");

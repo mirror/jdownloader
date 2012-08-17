@@ -19,7 +19,7 @@ public class DownloadSpeedManager {
         protected long lastTimeStamp = 0;
     }
 
-    ArrayList<ManagedThrottledConnectionHandler> connectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>();
+    java.util.List<ManagedThrottledConnectionHandler> connectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>();
     private final Object                         watchDogLOCK       = new Object();
     private Thread                               watchDog           = null;
     protected volatile int                       limit              = 0;
@@ -38,7 +38,7 @@ public class DownloadSpeedManager {
     public void addConnectionHandler(ManagedThrottledConnectionHandler handler) {
         if (this.connectionHandlers.contains(handler)) { return; }
         synchronized (this) {
-            final ArrayList<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
+            final java.util.List<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
             newConnectionHandlers.add(handler);
             handler.setManagedBy(this);
             this.connectionHandlers = newConnectionHandlers;
@@ -52,7 +52,7 @@ public class DownloadSpeedManager {
     public void removeConnectionHandler(ManagedThrottledConnectionHandler handler) {
         if (!this.connectionHandlers.contains(handler)) { return; }
         synchronized (this) {
-            final ArrayList<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
+            final java.util.List<ManagedThrottledConnectionHandler> newConnectionHandlers = new ArrayList<ManagedThrottledConnectionHandler>(connectionHandlers);
             newConnectionHandlers.remove(handler);
             handler.setManagedBy(null);
             this.connectionHandlers = newConnectionHandlers;
@@ -71,7 +71,7 @@ public class DownloadSpeedManager {
                     speedMeter.resetSpeedMeter();
                     final HashMap<ThrottledConnection, SpeedAssignHelp> speedAssignHelpMap = new HashMap<ThrottledConnection, SpeedAssignHelp>();
                     while (true) {
-                        final ArrayList<ManagedThrottledConnectionHandler> lconnectionHandlers = connectionHandlers;
+                        final java.util.List<ManagedThrottledConnectionHandler> lconnectionHandlers = connectionHandlers;
                         if (lconnectionHandlers.size() == 0) {
                             break;
                         }
@@ -85,7 +85,7 @@ public class DownloadSpeedManager {
                         int newBandwidth = 0;
                         long lastRound = 0;
                         long lastRoundTraffic = 0;
-                        ArrayList<ThrottledConnection> allCons = new ArrayList<ThrottledConnection>();
+                        java.util.List<ThrottledConnection> allCons = new ArrayList<ThrottledConnection>();
                         /* fetch live stats from all connections */
                         for (final ManagedThrottledConnectionHandler conH : lconnectionHandlers) {
                             List<ThrottledConnection> lconnections = conH.getConnections();

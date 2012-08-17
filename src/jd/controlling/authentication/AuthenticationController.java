@@ -17,8 +17,7 @@ public class AuthenticationController {
     private static final AuthenticationController INSTANCE = new AuthenticationController();
 
     /**
-     * get the only existing instance of AuthenticationController. This is a
-     * singleton
+     * get the only existing instance of AuthenticationController. This is a singleton
      * 
      * @return
      */
@@ -31,8 +30,8 @@ public class AuthenticationController {
     private ChangeEventSender                eventSender = new ChangeEventSender();
 
     /**
-     * Create a new instance of AuthenticationController. This is a singleton
-     * class. Access the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of AuthenticationController. This is a singleton class. Access the only existing instance by using
+     * {@link #getInstance()}.
      */
     private AuthenticationController() {
         config = JsonConfig.create(AuthenticationControllerSettings.class);
@@ -55,7 +54,7 @@ public class AuthenticationController {
         return eventSender;
     }
 
-    public synchronized ArrayList<AuthenticationInfo> list() {
+    public synchronized java.util.List<AuthenticationInfo> list() {
         return new ArrayList<AuthenticationInfo>(list);
     }
 
@@ -93,7 +92,7 @@ public class AuthenticationController {
         eventSender.fireEvent(new ChangeEvent(this));
     }
 
-    public void remove(ArrayList<AuthenticationInfo> selectedObjects) {
+    public void remove(java.util.List<AuthenticationInfo> selectedObjects) {
         if (selectedObjects == null) return;
         synchronized (this) {
             ArrayList<AuthenticationInfo> newList = new ArrayList<AuthenticationInfo>(list);
@@ -115,7 +114,7 @@ public class AuthenticationController {
             Log.L.info("Unknown Protocoll: " + url);
             return null;
         }
-        ArrayList<AuthenticationInfo> llist = list;
+        java.util.List<AuthenticationInfo> llist = list;
         AuthenticationInfo bestMatch = null;
         String urlHost = Browser.getHost(url, true);
         for (AuthenticationInfo info : llist) {
@@ -136,8 +135,7 @@ public class AuthenticationController {
                         bestMatch = info;
                     } else if (authHost.length() <= urlHost.length() && info.getHostmask().length() > bestMatch.getHostmask().length()) {
                         /*
-                         * best match in case we have a longer contains length
-                         * but the authHost must not be longer than urlHost
+                         * best match in case we have a longer contains length but the authHost must not be longer than urlHost
                          */
                         bestMatch = info;
                     }

@@ -42,25 +42,25 @@ public class ProxyTable extends BasicJDTable<ProxyInfo> {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, ArrayList<ProxyInfo> selection, ExtColumn<ProxyInfo> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, ProxyInfo contextObject, java.util.List<ProxyInfo> selection, ExtColumn<ProxyInfo> column, MouseEvent ev) {
         popup.add(new JMenuItem(new ProxyAddAction()));
         popup.add(new JMenuItem(new ProxyDeleteAction(selection, false)));
         return popup;
     }
 
     @Override
-    protected boolean onShortcutDelete(final ArrayList<ProxyInfo> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final java.util.List<ProxyInfo> selectedObjects, final KeyEvent evt, final boolean direct) {
 
         new ProxyDeleteAction(selectedObjects, direct).actionPerformed(null);
         return true;
     }
 
-    protected boolean onShortcutCopy(final ArrayList<ProxyInfo> selectedObjects, final KeyEvent evt) {
+    protected boolean onShortcutCopy(final java.util.List<ProxyInfo> selectedObjects, final KeyEvent evt) {
         export(selectedObjects);
         return true;
     }
 
-    public static void export(ArrayList<ProxyInfo> selectedObjects) {
+    public static void export(java.util.List<ProxyInfo> selectedObjects) {
         StringBuilder sb = new StringBuilder();
         for (ProxyInfo pi : selectedObjects) {
             if (sb.length() > 0) sb.append("\r\n");

@@ -27,7 +27,7 @@ public class ExportAction extends AppAction {
      * 
      */
     private static final long         serialVersionUID = 1L;
-    private ArrayList<PackagizerRule> rules;
+    private java.util.List<PackagizerRule> rules;
 
     public ExportAction() {
         setName(_GUI._.LinkgrabberFilter_LinkgrabberFilter_export());
@@ -40,7 +40,7 @@ public class ExportAction extends AppAction {
         return rules != null && rules.size() > 0;
     }
 
-    public ExportAction(ArrayList<PackagizerRule> selection) {
+    public ExportAction(java.util.List<PackagizerRule> selection) {
         this();
 
         rules = selection;

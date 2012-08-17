@@ -14,7 +14,7 @@ public class AdvancedConfigManagerAPIImpl implements AdvancedConfigManagerAPI {
 
     public ArrayList<AdvancedConfigAPIEntry> list() {
         ArrayList<AdvancedConfigAPIEntry> ret = new ArrayList<AdvancedConfigAPIEntry>();
-        ArrayList<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
+        java.util.List<AdvancedConfigEntry> entries = AdvancedConfigManager.getInstance().list();
         for (AdvancedConfigEntry entry : entries) {
             ret.add(new AdvancedConfigAPIEntry(entry));
         }

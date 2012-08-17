@@ -11,9 +11,9 @@ import org.jdownloader.extensions.translator.TranslatorExtensionEvent;
 public class ResetTranslationAction extends AppAction {
 
     private TranslatorExtension       owner;
-    private ArrayList<TranslateEntry> selection;
+    private java.util.List<TranslateEntry> selection;
 
-    public ResetTranslationAction(TranslatorExtension owner, ArrayList<TranslateEntry> selection) {
+    public ResetTranslationAction(TranslatorExtension owner, java.util.List<TranslateEntry> selection) {
         this.owner = owner;
         this.selection = selection;
         setName("Reset Changes");

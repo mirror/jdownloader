@@ -43,6 +43,8 @@ import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.streaming.dataprovider.DownloadLinkProvider;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
+import org.jdownloader.extensions.streaming.gui.actions.AddToLibraryAction;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
@@ -50,6 +52,7 @@ import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryEventSender;
 import org.jdownloader.gui.menu.eventsender.MenuFactoryListener;
 import org.jdownloader.gui.views.downloads.table.DownloadTableContext;
+import org.jdownloader.gui.views.linkgrabber.contextmenu.LinkgrabberTableContext;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -233,6 +236,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
                 onExtendDownloadTablePackageContext(context, menu);
             }
 
+        } else if (context instanceof LinkgrabberTableContext) {
+            ((LinkgrabberTableContext) context).getMenu().add(new JMenuItem(new AddToLibraryAction(this, ((LinkgrabberTableContext) context).getSelectionInfo())), null, 1);
+
         }
     }
 
@@ -276,7 +282,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
                             final ValidateArchiveAction<FilePackage, DownloadLink> validation = new ValidateArchiveAction<FilePackage, DownloadLink>(extractor, ((DownloadTableContext) context).getSelectionInfo());
                             final Archive archive = validation.getArchives().get(0);
-                            ArrayList<ArchiveItem> ais = archive.getSettings().getArchiveItems();
+                            java.util.List<ArchiveItem> ais = archive.getSettings().getArchiveItems();
 
                             if (ais != null && ais.size() > 0) {
 
@@ -327,7 +333,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     }
 
     private List<PlayToDevice> getPlayToRenderer() {
-        ArrayList<PlayToDevice> ret = new ArrayList<PlayToDevice>();
+        java.util.List<PlayToDevice> ret = new ArrayList<PlayToDevice>();
         for (PlayToUpnpRendererDevice mr : mediaServer.getPlayToRenderer()) {
             ret.add(mr);
         }

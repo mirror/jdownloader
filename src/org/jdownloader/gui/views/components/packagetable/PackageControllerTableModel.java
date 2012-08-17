@@ -36,18 +36,18 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     private abstract class TableDataModifier {
-        public abstract void modifyTableData(ArrayList<PackageType> packages);
+        public abstract void modifyTableData(java.util.List<PackageType> packages);
     }
 
-    private static final String                                                     SORT_ORIGINAL  = "ORIGINAL";
+    private static final String                                                          SORT_ORIGINAL  = "ORIGINAL";
 
-    private DelayedRunnable                                                         asyncRefresh;
-    protected PackageController<PackageType, ChildrenType>                          pc;
-    private DelayedRunnable                                                         asyncRecreate  = null;
-    private ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters   = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
-    private LinkedList<TableDataModifier>                                           tableModifiers = new LinkedList<TableDataModifier>();
+    private DelayedRunnable                                                              asyncRefresh;
+    protected PackageController<PackageType, ChildrenType>                               pc;
+    private DelayedRunnable                                                              asyncRecreate  = null;
+    private java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> tableFilters   = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>();
+    private LinkedList<TableDataModifier>                                                tableModifiers = new LinkedList<TableDataModifier>();
 
-    public ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
+    public java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> getTableFilters() {
         return tableFilters;
     }
 
@@ -147,7 +147,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
             tableModifiers.add(new TableDataModifier() {
 
                 @Override
-                public void modifyTableData(ArrayList<PackageType> packages) {
+                public void modifyTableData(java.util.List<PackageType> packages) {
                     final boolean cur = !fp2.isExpanded();
                     boolean doToggle = true;
                     switch (mode) {
@@ -162,7 +162,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                         break;
                     }
                     if (mode != TOGGLEMODE.CURRENT) {
-                        ArrayList<PackageType> selectedPackages = PackageControllerTableModel.this.getPackageTable().getSelectedPackages();
+                        java.util.List<PackageType> selectedPackages = PackageControllerTableModel.this.getPackageTable().getSelectedPackages();
                         if (selectedPackages.size() > 1) {
                             for (PackageType fp : selectedPackages) {
                                 fp.setExpanded(cur);
@@ -191,7 +191,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         synchronized (tableModifiers) {
             tableModifiers.add(new TableDataModifier() {
                 @Override
-                public void modifyTableData(ArrayList<PackageType> packages) {
+                public void modifyTableData(java.util.List<PackageType> packages) {
                     fp2.setExpanded(expanded);
                 }
             });
@@ -202,7 +202,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     public void addFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
         synchronized (LOCK) {
             if (tableFilters.contains(filter)) return;
-            ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
+            java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
             newfilters.add(filter);
             tableFilters = newfilters;
         }
@@ -211,14 +211,14 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     public void removeFilter(PackageControllerTableModelFilter<PackageType, ChildrenType> filter) {
         synchronized (LOCK) {
             if (!tableFilters.contains(filter)) return;
-            ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
+            java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> newfilters = new ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>>(tableFilters);
             newfilters.remove(filter);
             tableFilters = newfilters;
         }
     }
 
     public boolean isFilteredView() {
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = tableFilters;
+        java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = tableFilters;
         for (PackageControllerTableModelFilter<PackageType, ChildrenType> filter : filters) {
             if (filter.highlightFilter()) return true;
         }
@@ -234,7 +234,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
      * the new ArrayList
      */
     @Override
-    public ArrayList<AbstractNode> sort(final ArrayList<AbstractNode> data, ExtColumn<AbstractNode> column) {
+    public java.util.List<AbstractNode> sort(final java.util.List<AbstractNode> data, ExtColumn<AbstractNode> column) {
         boolean hideSingleChildPackages = CFG_GUI.HIDE_SINGLE_CHILD_PACKAGES.isEnabled();
         if (column == null || column.getSortOrderIdentifier() == SORT_ORIGINAL) {
             /* RESET sorting to nothing,tri-state */
@@ -255,7 +255,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 Log.exception(e);
             }
         }
-        ArrayList<PackageType> packages = null;
+        java.util.List<PackageType> packages = null;
         final boolean readL = pc.readLock();
         try {
             /* get all packages from controller */
@@ -264,7 +264,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
         } finally {
             pc.readUnlock(readL);
         }
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+        java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
 
         /* filter packages */
         for (int index = packages.size() - 1; index >= 0; index--) {
@@ -286,7 +286,7 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
                 modifier.modifyTableData(packages);
             }
         }
-        ArrayList<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
+        java.util.List<AbstractNode> newData = new ArrayList<AbstractNode>(Math.max(data.size(), packages.size()));
         for (PackageType node : packages) {
             ArrayList<ChildrenType> files = null;
             synchronized (node) {
@@ -339,12 +339,12 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public List<ChildrenType> getAllChildrenNodes() {
-        ArrayList<AbstractNode> data = this.getTableData();
+        java.util.List<AbstractNode> data = this.getTableData();
         return getAllChildrenNodes(data);
     }
 
-    public List<ChildrenType> getAllChildrenNodes(ArrayList<AbstractNode> data) {
-        ArrayList<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
+    public List<ChildrenType> getAllChildrenNodes(java.util.List<AbstractNode> data) {
+        java.util.List<PackageControllerTableModelFilter<PackageType, ChildrenType>> filters = this.tableFilters;
         HashSet<ChildrenType> ret = new HashSet<ChildrenType>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
@@ -373,8 +373,8 @@ public abstract class PackageControllerTableModel<PackageType extends AbstractPa
     }
 
     public List<PackageType> getAllPackageNodes() {
-        ArrayList<AbstractNode> data = this.getTableData();
-        ArrayList<PackageType> ret = new ArrayList<PackageType>(data.size());
+        java.util.List<AbstractNode> data = this.getTableData();
+        java.util.List<PackageType> ret = new ArrayList<PackageType>(data.size());
         for (AbstractNode node : data) {
             if (node instanceof AbstractPackageNode) {
                 ret.add((PackageType) node);

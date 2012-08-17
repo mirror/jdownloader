@@ -11,7 +11,7 @@ import org.appwork.utils.speedmeter.SpeedMeterInterface;
 
 public class ManagedThrottledConnectionHandler implements ThrottledConnectionHandler {
 
-    private ArrayList<ThrottledConnection> connections = new ArrayList<ThrottledConnection>();
+    private java.util.List<ThrottledConnection> connections = new ArrayList<ThrottledConnection>();
     private int                            limit       = 0;
     private volatile long                  traffic     = 0;
     final private DownloadLink             link;
@@ -28,7 +28,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     public void addThrottledConnection(ThrottledConnection con) {
         if (this.connections.contains(con)) return;
         synchronized (this) {
-            ArrayList<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
+            java.util.List<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
             newConnections.add(con);
             connections = newConnections;
         }
@@ -46,7 +46,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     }
 
     public int getSpeed() {
-        ArrayList<ThrottledConnection> lconnections = connections;
+        java.util.List<ThrottledConnection> lconnections = connections;
         int ret = 0;
         for (ThrottledConnection con : lconnections) {
             ret += ((SpeedMeterInterface) con).getSpeedMeter();
@@ -55,7 +55,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     }
 
     public long getTraffic() {
-        ArrayList<ThrottledConnection> lconnections = null;
+        java.util.List<ThrottledConnection> lconnections = null;
         long ret = 0;
         synchronized (this) {
             ret = traffic;
@@ -70,7 +70,7 @@ public class ManagedThrottledConnectionHandler implements ThrottledConnectionHan
     public void removeThrottledConnection(ThrottledConnection con) {
         if (!this.connections.contains(con)) return;
         synchronized (this) {
-            ArrayList<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
+            java.util.List<ThrottledConnection> newConnections = new ArrayList<ThrottledConnection>(connections);
             newConnections.remove(con);
             connections = newConnections;
             traffic += con.transfered();

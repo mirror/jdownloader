@@ -280,7 +280,7 @@ public class UserIO {
             } else if (explain != null) {
                 e = e + " - " + explain;
             }
-            ArrayList<File> captchaFiles = new ArrayList<File>();
+            java.util.List<File> captchaFiles = new ArrayList<File>();
             captchaFiles.add(imagefile);
             CaptchaController captchaController = new CaptchaController(linkCrawler, null, captchaFiles, null, e, plugin);
             captchaController.setCaptchaType(CaptchaDialogInterface.CaptchaType.CLICK);

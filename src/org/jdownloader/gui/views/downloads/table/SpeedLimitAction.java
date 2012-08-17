@@ -13,10 +13,10 @@ import org.jdownloader.gui.translate._GUI;
 
 public class SpeedLimitAction extends AppAction {
 
-    private ArrayList<AbstractNode> inteliSelect;
+    private java.util.List<AbstractNode> inteliSelect;
     private AbstractNode            context;
 
-    public SpeedLimitAction(AbstractNode contextObject, ArrayList<AbstractNode> inteliSelect) {
+    public SpeedLimitAction(AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
 
         setName(_GUI._.ContextMenuFactory_createPopup_speed());
         setIconKey("speed");

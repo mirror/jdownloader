@@ -81,7 +81,7 @@ public abstract class RouterPlugin {
      * @return returns the time the reconnect took. returns -1 if the action has not been successful
      * @throws InterruptedException
      */
-    public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
+    public java.util.List<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
         return null;
     }
 

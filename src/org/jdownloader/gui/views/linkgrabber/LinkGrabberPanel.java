@@ -93,7 +93,7 @@ public class LinkGrabberPanel extends SwitchPanel implements LinkCollectorListen
                 IOEQ.add(new Runnable() {
                     @Override
                     public void run() {
-                        ArrayList<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
+                        java.util.List<CrawledLink> filteredStuff = LinkCollector.getInstance().getFilteredStuff(true);
                         LinkCollector.getInstance().addCrawlerJob(filteredStuff);
                     }
                 });

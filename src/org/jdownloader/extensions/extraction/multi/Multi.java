@@ -135,7 +135,7 @@ public class Multi extends IExtraction {
     private static final String      REGEX_ZIP$                                                  = "(?i).*\\.zip$";
     private static final String      ZIP$                                                        = "\\.zip$";
     private int                      crack;
-    private ArrayList<String>        filter                                                      = new ArrayList<String>();
+    private java.util.List<String>        filter                                                      = new ArrayList<String>();
 
     private ArchiveFormat            format;
 
@@ -894,7 +894,7 @@ public class Multi extends IExtraction {
      * @throws SevenZipException
      */
     private List<ArchiveFile> getAffectedArchiveFileFromArchvieFiles(String path) throws FileNotFoundException, SevenZipException {
-        ArrayList<ArchiveFile> result = new ArrayList<ArchiveFile>();
+        java.util.List<ArchiveFile> result = new ArrayList<ArchiveFile>();
 
         if (archive.getType() == ArchiveType.MULTI || archive.getType() == ArchiveType.SINGLE_FILE) {
             result = archive.getArchiveFiles();

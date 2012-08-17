@@ -47,13 +47,13 @@ public class LinkCrawler implements IOPermission {
 
     private LazyHostPlugin              directHTTP                  = null;
     private LazyHostPlugin              ftp                         = null;
-    private ArrayList<CrawledLink>      crawledLinks                = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>      crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
-    private ArrayList<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
     private AtomicInteger               filteredLinksCounter        = new AtomicInteger(0);
-    private ArrayList<CrawledLink>      brokenLinks                 = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>      brokenLinks                 = new ArrayList<CrawledLink>();
     private AtomicInteger               brokenLinksCounter          = new AtomicInteger(0);
-    private ArrayList<CrawledLink>      unhandledLinks              = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink>      unhandledLinks              = new ArrayList<CrawledLink>();
     private AtomicInteger               unhandledLinksCounter       = new AtomicInteger(0);
     private AtomicInteger               crawler                     = new AtomicInteger(0);
     private static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
@@ -209,7 +209,7 @@ public class LinkCrawler implements IOPermission {
         try {
             if (StringUtils.isEmpty(text)) return;
             if (insideDecrypterPlugin()) {
-                ArrayList<CrawledLink> links = _crawl(text, url, allowDeep);
+                java.util.List<CrawledLink> links = _crawl(text, url, allowDeep);
                 crawl(links);
             } else {
                 if (!checkStartNotify()) return;
@@ -217,7 +217,7 @@ public class LinkCrawler implements IOPermission {
 
                     @Override
                     void crawling() {
-                        ArrayList<CrawledLink> links = _crawl(text, url, allowDeep);
+                        java.util.List<CrawledLink> links = _crawl(text, url, allowDeep);
                         crawl(links);
                     }
                 });
@@ -228,10 +228,10 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
-    private ArrayList<CrawledLink> _crawl(String text, String url, boolean allowDeep) {
+    private java.util.List<CrawledLink> _crawl(String text, String url, boolean allowDeep) {
         String[] possibleLinks = HTMLParser.getHttpLinks(text, url);
         if (possibleLinks == null || possibleLinks.length == 0) return null;
-        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
+        final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(possibleLinks.length);
         for (String possibleLink : possibleLinks) {
             CrawledLink link;
             possibleCryptedLinks.add(link = crawledLinkFactorybyURL(possibleLink));
@@ -240,7 +240,7 @@ public class LinkCrawler implements IOPermission {
         return possibleCryptedLinks;
     }
 
-    public void crawl(final ArrayList<CrawledLink> possibleCryptedLinks) {
+    public void crawl(final java.util.List<CrawledLink> possibleCryptedLinks) {
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
         try {
@@ -353,7 +353,7 @@ public class LinkCrawler implements IOPermission {
             }
             Browser br = null;
             try {
-                ArrayList<CrawledLink> possibleCryptedLinks = null;
+                java.util.List<CrawledLink> possibleCryptedLinks = null;
                 new URL(source.getURL());
                 if (this.isCrawledLinkFiltered(source)) {
                     /* link is filtered, stop here */
@@ -403,7 +403,7 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
-    protected void distribute(ArrayList<CrawledLink> possibleCryptedLinks) {
+    protected void distribute(java.util.List<CrawledLink> possibleCryptedLinks) {
         final int generation = this.getCrawlerGeneration(true);
         if (!checkStartNotify()) return;
         try {
@@ -433,7 +433,7 @@ public class LinkCrawler implements IOPermission {
                         for (final PluginsC pCon : ContainerPluginController.getInstance().list()) {
                             if (pCon.canHandle(url)) {
                                 try {
-                                    final ArrayList<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pCon.getSupportedLinks(), possibleCryptedLink, new CrawledLinkModifier() {
+                                    final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pCon.getSupportedLinks(), possibleCryptedLink, new CrawledLinkModifier() {
                                         /*
                                          * set new LinkModifier, hides the url if needed
                                          */
@@ -486,7 +486,7 @@ public class LinkCrawler implements IOPermission {
                         for (final LazyCrawlerPlugin pDecrypt : CrawlerPluginController.getInstance().list()) {
                             if (pDecrypt.canHandle(url)) {
                                 try {
-                                    final ArrayList<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
+                                    final java.util.List<CrawledLink> allPossibleCryptedLinks = getCrawlableLinks(pDecrypt.getPattern(), possibleCryptedLink, null);
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
@@ -586,7 +586,7 @@ public class LinkCrawler implements IOPermission {
                         if (dl != null) {
                             modifiedPossibleCryptedLink = new CrawledLink(new DownloadLink(dl.getDefaultPlugin(), dl.getName(), dl.getHost(), url, dl.isEnabled()));
                             /* forward downloadLink infos from source to dest */
-                            ArrayList<DownloadLink> dlLinks = new ArrayList<DownloadLink>();
+                            java.util.List<DownloadLink> dlLinks = new ArrayList<DownloadLink>();
                             dlLinks.add(modifiedPossibleCryptedLink.getDownloadLink());
                             forwardDownloadLinkInfos(dl, dlLinks);
                         } else {
@@ -674,12 +674,12 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
-    public ArrayList<CrawledLink> getCrawlableLinks(Pattern pattern, CrawledLink possibleCryptedLink, CrawledLinkModifier modifier) {
+    public java.util.List<CrawledLink> getCrawlableLinks(Pattern pattern, CrawledLink possibleCryptedLink, CrawledLinkModifier modifier) {
         /*
          * we dont need memory optimization here as downloadlink, crypted link itself take care of this
          */
         String[] hits = new Regex(possibleCryptedLink.getURL(), pattern).setMemoryOptimized(false).getColumn(-1);
-        ArrayList<CrawledLink> chits = null;
+        java.util.List<CrawledLink> chits = null;
         if (hits != null && hits.length > 0) {
             chits = new ArrayList<CrawledLink>(hits.length);
         } else {
@@ -775,7 +775,7 @@ public class LinkCrawler implements IOPermission {
                         }
                     }
                     long startTime = System.currentTimeMillis();
-                    ArrayList<DownloadLink> hosterLinks = null;
+                    java.util.List<DownloadLink> hosterLinks = null;
                     try {
                         hosterLinks = wplg.getDownloadLinks(url, sourcePackage);
                         /* in case the function returned without exceptions, we can clear log */
@@ -986,7 +986,7 @@ public class LinkCrawler implements IOPermission {
                 }
                 plg.setLogger(logger);
                 try {
-                    final ArrayList<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
+                    final java.util.List<CrawledLink> decryptedPossibleLinks = plg.decryptContainer(cryptedLink);
                     /* in case the function returned without exceptions, we can clear log */
                     logger.clear();
                     if (decryptedPossibleLinks != null && decryptedPossibleLinks.size() > 0) {
@@ -1071,9 +1071,9 @@ public class LinkCrawler implements IOPermission {
             DelayedRunnable distributeLinksDelayer = null;
             LinkCrawler previousCrawler = null;
             PluginForDecrypt previousPlugin = null;
-            ArrayList<DownloadLink> decryptedPossibleLinks = null;
+            java.util.List<DownloadLink> decryptedPossibleLinks = null;
             try {
-                final ArrayList<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
+                final java.util.List<CrawledLink> distributedLinks = new ArrayList<CrawledLink>();
                 final boolean useDelay = wplg.getDistributeDelayerMinimum() > 0;
                 int minimumDelay = Math.max(10, wplg.getDistributeDelayerMinimum());
                 int maximumDelay = wplg.getDistributeDelayerMaximum();
@@ -1085,20 +1085,20 @@ public class LinkCrawler implements IOPermission {
                     @Override
                     public void delayedrun() {
                         /* we are now in IOEQ, thats why we create copy and then push work back into LinkCrawler */
-                        ArrayList<CrawledLink> linksToDistribute = null;
+                        java.util.List<CrawledLink> linksToDistribute = null;
                         synchronized (distributedLinks) {
                             if (distributedLinks.size() == 0) return;
                             linksToDistribute = new ArrayList<CrawledLink>(distributedLinks);
                             distributedLinks.clear();
                         }
-                        final ArrayList<CrawledLink> linksToDistributeFinal = linksToDistribute;
+                        final java.util.List<CrawledLink> linksToDistributeFinal = linksToDistribute;
                         if (!checkStartNotify()) { return; }
                         /* enqueue distributing of the links */
                         threadPool.execute(new LinkCrawlerRunnable(LinkCrawler.this, generation) {
 
                             @Override
                             void crawling() {
-                                final ArrayList<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
+                                final java.util.List<CrawledLink> distributeThis = new ArrayList<CrawledLink>(linksToDistributeFinal);
                                 LinkCrawler.this.distribute(distributeThis);
                             }
                         });
@@ -1124,7 +1124,7 @@ public class LinkCrawler implements IOPermission {
 
                     public void distribute(DownloadLink... links) {
                         if (links == null || links.length == 0) return;
-                        final ArrayList<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
+                        final java.util.List<CrawledLink> possibleCryptedLinks = new ArrayList<CrawledLink>(links.length);
                         for (DownloadLink link : links) {
                             CrawledLink ret;
                             possibleCryptedLinks.add(ret = new CrawledLink(link));
@@ -1220,19 +1220,19 @@ public class LinkCrawler implements IOPermission {
         }
     }
 
-    public ArrayList<CrawledLink> getCrawledLinks() {
+    public java.util.List<CrawledLink> getCrawledLinks() {
         return crawledLinks;
     }
 
-    public ArrayList<CrawledLink> getFilteredLinks() {
+    public java.util.List<CrawledLink> getFilteredLinks() {
         return filteredLinks;
     }
 
-    public ArrayList<CrawledLink> getBrokenLinks() {
+    public java.util.List<CrawledLink> getBrokenLinks() {
         return brokenLinks;
     }
 
-    public ArrayList<CrawledLink> getUnhandledLinks() {
+    public java.util.List<CrawledLink> getUnhandledLinks() {
         return unhandledLinks;
     }
 
@@ -1262,7 +1262,7 @@ public class LinkCrawler implements IOPermission {
         /*
          * build history of this crawledlink so we can call each existing LinkModifier in correct order
          */
-        ArrayList<CrawledLink> history = new ArrayList<CrawledLink>();
+        java.util.List<CrawledLink> history = new ArrayList<CrawledLink>();
         CrawledLink source = link.getSourceLink();
         history.add(0, link);
         /* build history */

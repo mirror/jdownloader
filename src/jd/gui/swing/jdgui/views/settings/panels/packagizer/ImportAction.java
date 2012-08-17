@@ -64,9 +64,9 @@ public class ImportAction extends AppAction {
 
             File[] filterFiles = d.getSelection();
             if (filterFiles == null) return;
-            ArrayList<PackagizerRule> all = new ArrayList<PackagizerRule>();
+            java.util.List<PackagizerRule> all = new ArrayList<PackagizerRule>();
             for (File f : filterFiles) {
-                ArrayList<PackagizerRule> contents = null;
+                java.util.List<PackagizerRule> contents = null;
                 try {
                     contents = JSonStorage.restoreFromString(IO.readFileToString(f), new TypeRef<ArrayList<PackagizerRule>>() {
                     }, null);

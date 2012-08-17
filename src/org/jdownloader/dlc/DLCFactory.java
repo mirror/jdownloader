@@ -194,7 +194,7 @@ public class DLCFactory extends D {
 
     private String createContainerStringByCrawledLinks(List<CrawledLink> links) {
         HashMap<String, CrawledLink> map = new HashMap<String, CrawledLink>();
-        ArrayList<CrawledLink> filter = new ArrayList<CrawledLink>();
+        java.util.List<CrawledLink> filter = new ArrayList<CrawledLink>();
         // filter
         for (CrawledLink l : links) {
             String url = l.getDownloadLink().getBrowserUrl();
@@ -239,14 +239,14 @@ public class DLCFactory extends D {
 
             header_dlxxmlversion.appendChild(header.createTextNode(Encoding.Base64Encode("20_02_2008")));
 
-            ArrayList<CrawledPackage> packages = new ArrayList<CrawledPackage>();
-            HashMap<CrawledPackage, ArrayList<CrawledLink>> packageLinksMap = new HashMap<CrawledPackage, ArrayList<CrawledLink>>();
+            java.util.List<CrawledPackage> packages = new ArrayList<CrawledPackage>();
+            HashMap<CrawledPackage, java.util.List<CrawledLink>> packageLinksMap = new HashMap<CrawledPackage, java.util.List<CrawledLink>>();
             for (int i = 0; i < links.size(); i++) {
 
                 if (!packages.contains(links.get(i).getParentNode())) {
                     packages.add(links.get(i).getParentNode());
                 }
-                ArrayList<CrawledLink> list = packageLinksMap.get(links.get(i).getParentNode());
+                java.util.List<CrawledLink> list = packageLinksMap.get(links.get(i).getParentNode());
                 if (list == null) {
                     list = new ArrayList<CrawledLink>();
                     packageLinksMap.put(links.get(i).getParentNode(), list);
@@ -275,7 +275,7 @@ public class DLCFactory extends D {
 
                 content.getFirstChild().appendChild(pkg);
 
-                ArrayList<CrawledLink> tmpLinks = packageLinksMap.get(packages.get(i));
+                java.util.List<CrawledLink> tmpLinks = packageLinksMap.get(packages.get(i));
 
                 for (int x = 0; x < tmpLinks.size(); x++) {
                     Element file = content.createElement("file");

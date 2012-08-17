@@ -40,7 +40,7 @@ public class SplitPackagesByHost extends AppAction {
 
             @Override
             public void run() {
-                HashMap<String, ArrayList<CrawledLink>> splitMap = new HashMap<String, ArrayList<CrawledLink>>();
+                HashMap<String, java.util.List<CrawledLink>> splitMap = new HashMap<String, java.util.List<CrawledLink>>();
 
                 CrawledPackage samePkg = null;
                 boolean samePackage = true;
@@ -52,7 +52,7 @@ public class SplitPackagesByHost extends AppAction {
                         } else if (cL.getParentNode() != samePkg) {
                             samePackage = false;
                         }
-                        ArrayList<CrawledLink> map = splitMap.get(cL.getHost());
+                        java.util.List<CrawledLink> map = splitMap.get(cL.getHost());
                         if (map == null) {
                             map = new ArrayList<CrawledLink>();
                             splitMap.put(cL.getHost(), map);
@@ -63,11 +63,11 @@ public class SplitPackagesByHost extends AppAction {
                 if (!samePackage) {
                     samePkg = null;
                 }
-                Iterator<Entry<String, ArrayList<CrawledLink>>> it = splitMap.entrySet().iterator();
+                Iterator<Entry<String, java.util.List<CrawledLink>>> it = splitMap.entrySet().iterator();
                 while (it.hasNext()) {
-                    Entry<String, ArrayList<CrawledLink>> next = it.next();
+                    Entry<String, java.util.List<CrawledLink>> next = it.next();
                     String host = next.getKey();
-                    final ArrayList<CrawledLink> links = next.getValue();
+                    final java.util.List<CrawledLink> links = next.getValue();
                     final CrawledPackage newPkg = new CrawledPackage();
                     newPkg.setExpanded(true);
                     if (samePkg != null) {

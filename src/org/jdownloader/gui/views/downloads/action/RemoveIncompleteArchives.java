@@ -15,7 +15,7 @@ public class RemoveIncompleteArchives extends AppAction {
      */
     private static final long serialVersionUID = 2816227528827363428L;
 
-    public RemoveIncompleteArchives(ArrayList<AbstractNode> selection) {
+    public RemoveIncompleteArchives(java.util.List<AbstractNode> selection) {
         setName(_GUI._.RemoveIncompleteArchives_RemoveIncompleteArchives_object_());
         setIconKey("remove_packages");
     }

@@ -27,7 +27,7 @@ import org.jdownloader.images.NewTheme;
 public class ValidateArchiveAction<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> extends AppAction {
 
     private ExtractionExtension                      extractor;
-    private ArrayList<Archive>                       archives;
+    private java.util.List<Archive>                       archives;
     private SelectionInfo<PackageType, ChildrenType> si;
 
     public ValidateArchiveAction(ExtractionExtension extractionExtension, Archive... as) {
@@ -113,7 +113,7 @@ public class ValidateArchiveAction<PackageType extends AbstractPackageNode<Child
         }
     }
 
-    public ArrayList<Archive> getArchives() {
+    public java.util.List<Archive> getArchives() {
         return archives;
     }
 

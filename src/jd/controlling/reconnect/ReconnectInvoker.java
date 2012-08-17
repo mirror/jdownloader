@@ -121,7 +121,7 @@ public abstract class ReconnectInvoker {
     protected abstract void testRun() throws ReconnectException, InterruptedException;
 
     public void doOptimization(ReconnectResult res, ProcessCallBackAdapter processCallBackAdapter) throws InterruptedException {
-        ArrayList<ReconnectResult> list = new ArrayList<ReconnectResult>();
+        java.util.List<ReconnectResult> list = new ArrayList<ReconnectResult>();
         list.add(res);
         // int failed = 0;
         int success = 1;

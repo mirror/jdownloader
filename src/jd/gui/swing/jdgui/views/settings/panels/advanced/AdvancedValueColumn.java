@@ -29,7 +29,7 @@ public class AdvancedValueColumn extends ExtCompoundColumn<AdvancedConfigEntry> 
     private ExtTextColumn<AdvancedConfigEntry>        stringColumn;
     private ExtCheckColumn<AdvancedConfigEntry>       booleanColumn;
     private ExtTextAreaColumn<AdvancedConfigEntry>    defaultColumn;
-    private ArrayList<ExtColumn<AdvancedConfigEntry>> columns;
+    private java.util.List<ExtColumn<AdvancedConfigEntry>> columns;
     private ExtSpinnerColumn<AdvancedConfigEntry>     longColumn;
     private ExtComboColumn<AdvancedConfigEntry>       enumColumn;
 

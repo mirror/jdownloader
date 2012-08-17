@@ -20,14 +20,14 @@ public class RemoveAction extends AbstractRemoveAction {
     private static final long   serialVersionUID = 1L;
     private PremiumAccountTable table;
     private boolean             force            = false;
-    private ArrayList<Account>  selection        = null;
+    private java.util.List<Account>  selection        = null;
 
     public RemoveAction(PremiumAccountTable table) {
 
         this.table = table;
     }
 
-    public RemoveAction(ArrayList<Account> selection, boolean force) {
+    public RemoveAction(java.util.List<Account> selection, boolean force) {
 
         this.force = force;
         this.selection = selection;

@@ -48,7 +48,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
      */
     public static EasyMethodFile[] getMethodeList() {
         final File[] files = new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + "/" + JDUtilities.getJACMethodsDirectory()).listFiles();
-        final ArrayList<EasyMethodFile> ret = new ArrayList<EasyMethodFile>();
+        final java.util.List<EasyMethodFile> ret = new ArrayList<EasyMethodFile>();
         for (int i = 0; i < files.length; i++) {
             final EasyMethodFile ef = new EasyMethodFile(files[i]);
             if (ef.getScriptJas().exists()) {

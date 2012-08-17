@@ -9,10 +9,10 @@ import org.jdownloader.images.NewTheme;
 
 public class EnabledAllAction extends AppAction {
 
-    private ArrayList<Filter> selection;
+    private java.util.List<Filter> selection;
     private boolean           enableIt;
 
-    public EnabledAllAction(ArrayList<Filter> selection) {
+    public EnabledAllAction(java.util.List<Filter> selection) {
         super();
         this.selection = selection;
         int enabled = 0;

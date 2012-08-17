@@ -46,15 +46,15 @@ public class DownloadPath implements Storable {
     private String path;
     private long   time;
 
-    public static ArrayList<String> loadList(String pre) {
-        ArrayList<DownloadPath> history = JsonConfig.create(LinkgrabberSettings.class).getDownloadDestinationHistory();
+    public static java.util.List<String> loadList(String pre) {
+        java.util.List<DownloadPath> history = JsonConfig.create(LinkgrabberSettings.class).getDownloadDestinationHistory();
 
         if (history == null) {
             history = new ArrayList<DownloadPath>();
         }
         if (pre != null) history.add(0, new DownloadPath(pre));
         history = Lists.unique(history);
-        ArrayList<String> quickSelectionList = new ArrayList<String>();
+        java.util.List<String> quickSelectionList = new ArrayList<String>();
         for (DownloadPath dp : history) {
             quickSelectionList.add(dp.getPath());
         }
@@ -62,7 +62,7 @@ public class DownloadPath implements Storable {
     }
 
     public static void saveList(String absolutePath) {
-        ArrayList<DownloadPath> history = JsonConfig.create(LinkgrabberSettings.class).getDownloadDestinationHistory();
+        java.util.List<DownloadPath> history = JsonConfig.create(LinkgrabberSettings.class).getDownloadDestinationHistory();
         boolean found = false;
         for (DownloadPath pe : history) {
             if (pe != null && absolutePath != null && pe.getPath().equals(absolutePath)) {

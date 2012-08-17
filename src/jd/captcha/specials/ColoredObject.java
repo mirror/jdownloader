@@ -29,8 +29,8 @@ public class ColoredObject {
     public static List<PixelObject> getObjects(PixelGrid grid, double tollerance, int neighbourradius, int maxObjects) {
         double[][][] din99Grid = new double[grid.getWidth()][grid.getHeight()][];
         ColorSpaceConverter csc = new ColorSpaceConverter();
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         double tr = tollerance / 8;
         double trgb = tollerance * 3;
         for (int x = 0; x < grid.getWidth(); x++) {

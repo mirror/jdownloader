@@ -39,7 +39,7 @@ public class FileUpdate {
     private final String            localPath;
     private String                  url;
     private final String            hash;
-    private final ArrayList<Server> serverList        = new ArrayList<Server>();
+    private final java.util.List<Server> serverList        = new ArrayList<Server>();
 
     private Server                  currentServer;
 
@@ -111,7 +111,7 @@ public class FileUpdate {
         return (workingDir != null) ? new File(workingDir + getLocalPath()) : JDUtilities.getResourceFile(getLocalPath());
     }
 
-    public void reset(final ArrayList<Server> availableServers) {
+    public void reset(final java.util.List<Server> availableServers) {
         this.serverList.clear();
         serverList.addAll(availableServers);
     }
@@ -126,7 +126,7 @@ public class FileUpdate {
      * @return
      * @throws IOException
      */
-    public boolean update(final ArrayList<Server> availableServers) {
+    public boolean update(final java.util.List<Server> availableServers) {
         final Browser browser = new Browser();
         browser.setReadTimeout(20 * 1000);
         browser.setConnectTimeout(10 * 1000);

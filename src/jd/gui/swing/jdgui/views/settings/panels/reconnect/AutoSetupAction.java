@@ -63,7 +63,7 @@ public class AutoSetupAction extends BasicAction {
 
                     if (WizardUtils.modemCheck()) return;
                     if (WizardUtils.vpnCheck()) return;
-                    final ArrayList<ReconnectResult> scripts = ReconnectPluginController.getInstance().autoFind(new ProcessCallBackAdapter() {
+                    final java.util.List<ReconnectResult> scripts = ReconnectPluginController.getInstance().autoFind(new ProcessCallBackAdapter() {
 
                         public void setStatusString(Object caller, String string) {
 
@@ -81,7 +81,7 @@ public class AutoSetupAction extends BasicAction {
                             if (statusObject instanceof ArrayList) {
                                 try {
                                     @SuppressWarnings("unchecked")
-                                    ArrayList<LiveHeaderReconnectResult> foundScripts = (ArrayList<LiveHeaderReconnectResult>) statusObject;
+                                    java.util.List<LiveHeaderReconnectResult> foundScripts = (java.util.List<LiveHeaderReconnectResult>) statusObject;
                                     if (foundScripts.size() > 0) {
                                         setInterruptEnabled(foundScripts);
                                     }

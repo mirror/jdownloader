@@ -40,9 +40,9 @@ public class Lnkcrptws {
      * @param grid
      * @return
      */
-    public static ArrayList<PixelObject> getObjects(Captcha grid) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    public static java.util.List<PixelObject> getObjects(Captcha grid) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 int c = grid.getGrid()[x][y];
@@ -72,7 +72,7 @@ public class Lnkcrptws {
     }
 
     public static Letter[] getLetters(Captcha captcha) {
-        ArrayList<PixelObject> ob = getObjects(captcha);
+        java.util.List<PixelObject> ob = getObjects(captcha);
         // delete the lines
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
             PixelObject pixelObject = iterator.next();

@@ -10,7 +10,7 @@ public interface ArchiveFactory extends ArchiveFile {
     public static final String HOSTER      = "%HOSTER%";
     public static final String PACKAGENAME = "%PACKAGENAME%";
 
-    ArrayList<ArchiveFile> createPartFileList(String file, String pattern);
+    java.util.List<ArchiveFile> createPartFileList(String file, String pattern);
 
     // for (DownloadLink link1 : archive.getDownloadLinks()) {
     // link1.setProperty(ExtractionExtension.DOWNLOADLINK_KEY_EXTRACTEDPATH,

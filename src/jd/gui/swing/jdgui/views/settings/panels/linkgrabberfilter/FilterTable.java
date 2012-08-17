@@ -35,7 +35,7 @@ public class FilterTable extends AbstractFilterTable {
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, ArrayList<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, LinkgrabberFilterRule contextObject, java.util.List<LinkgrabberFilterRule> selection, ExtColumn<LinkgrabberFilterRule> column, MouseEvent ev) {
         popup.add(new JMenuItem(new NewAction(this).toContextMenuAction()));
         popup.add(new JMenuItem(new RemoveAction(this, selection, false).toContextMenuAction()));
 
@@ -70,7 +70,7 @@ public class FilterTable extends AbstractFilterTable {
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList , java.awt.event.KeyEvent, boolean)
      */
     @Override
-    protected boolean onShortcutDelete(ArrayList<LinkgrabberFilterRule> selectedObjects, KeyEvent evt, boolean direct) {
+    protected boolean onShortcutDelete(java.util.List<LinkgrabberFilterRule> selectedObjects, KeyEvent evt, boolean direct) {
         new RemoveAction(this, selectedObjects, direct).actionPerformed(null);
         return true;
     }

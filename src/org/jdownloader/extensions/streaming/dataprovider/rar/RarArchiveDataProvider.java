@@ -406,7 +406,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
             }
             passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
             passwordList.add(archive.getName());
-            ArrayList<String> pwList = extractionSettings.getPasswordList();
+            java.util.List<String> pwList = extractionSettings.getPasswordList();
             if (pwList == null) pwList = new ArrayList<String>();
             passwordList.addAll(pwList);
 
@@ -538,7 +538,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     private void updateContentView(ISimpleInArchive simpleInterface) {
         try {
             ContentView newView = new ContentView();
-            ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
+            java.util.List<ArchiveItem> files = new ArrayList<ArchiveItem>();
             for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                 try {
                     files.add(ArchiveItem.create(item));
@@ -570,7 +570,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
     public long getFinalFileSize(Archive archive) {
         if (sizeOfItemToExtract <= 0) {
 
-            ArrayList<ArchiveItem> items = this.archive.getSettings().getArchiveItems();
+            java.util.List<ArchiveItem> items = this.archive.getSettings().getArchiveItems();
             if (items != null) {
                 for (ArchiveItem ai : items) {
                     if (ai.getPath().equals(file)) { return ai.getSize(); }

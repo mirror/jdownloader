@@ -92,7 +92,7 @@ public class WebUpdater implements Serializable {
     }
 
     public static void randomizeMirrors() {
-        final ArrayList<String> mirrors = new ArrayList<String>();
+        final java.util.List<String> mirrors = new ArrayList<String>();
         for (final String m : WebUpdater.UPDATE_MIRROR) {
             mirrors.add(m);
         }
@@ -122,7 +122,7 @@ public class WebUpdater implements Serializable {
      * if this field !=null, the updater uses this branch and ignores any other branch settings
      */
     private String                   branch;
-    private static ArrayList<Server> SERVER_LIST;
+    private static java.util.List<Server> SERVER_LIST;
 
     /**
      * @param path
@@ -156,7 +156,7 @@ public class WebUpdater implements Serializable {
      * 
      * @param files
      */
-    public void filterAvailableUpdates(final ArrayList<FileUpdate> files) {
+    public void filterAvailableUpdates(final java.util.List<FileUpdate> files) {
         // log(files.toString());
 
         for (final Iterator<FileUpdate> it = files.iterator(); it.hasNext();) {
@@ -186,10 +186,10 @@ public class WebUpdater implements Serializable {
      * @return Vector mit allen verfügbaren files
      * @throws UnsupportedEncodingException
      */
-    public ArrayList<FileUpdate> getAvailableFiles() throws Exception {
+    public java.util.List<FileUpdate> getAvailableFiles() throws Exception {
 
         final HashMap<String, FileUpdate> plugins = new HashMap<String, FileUpdate>();
-        final ArrayList<FileUpdate> ret = new ArrayList<FileUpdate>();
+        final java.util.List<FileUpdate> ret = new ArrayList<FileUpdate>();
 
         this.updateAvailableServers();
         this.loadUpdateList();
@@ -199,7 +199,7 @@ public class WebUpdater implements Serializable {
         return ret;
     }
 
-    private ArrayList<Server> getAvailableServers() {
+    private java.util.List<Server> getAvailableServers() {
         if (Main.clone) { return Main.clonePrefix; }
         return SERVER_LIST;
     }
@@ -238,7 +238,7 @@ public class WebUpdater implements Serializable {
      * @return
      */
     private String[] getBranches() {
-        final ArrayList<String> mirrors = new ArrayList<String>();
+        final java.util.List<String> mirrors = new ArrayList<String>();
         for (final String m : WebUpdater.UPDATE_MIRROR) {
             mirrors.add(m);
         }
@@ -251,7 +251,7 @@ public class WebUpdater implements Serializable {
                 if (this.br.getRequest().getHttpConnection().isOK()) {
                     final String[] bs = org.appwork.utils.Regex.getLines(this.br.toString());
 
-                    final ArrayList<String> ret = new ArrayList<String>();
+                    final java.util.List<String> ret = new ArrayList<String>();
                     this.branches = new String[bs.length];
                     for (int ii = 0; ii < bs.length; ii++) {
 
@@ -391,7 +391,7 @@ public class WebUpdater implements Serializable {
         throw new Exception("could not load Updatelist");
     }
 
-    private void parseFileList(final File file, final ArrayList<FileUpdate> ret, final HashMap<String, FileUpdate> plugins) {
+    private void parseFileList(final File file, final java.util.List<FileUpdate> ret, final HashMap<String, FileUpdate> plugins) {
         String source;
         source = JDIO.readFileToString(file);
 
@@ -405,7 +405,7 @@ public class WebUpdater implements Serializable {
 
         final String[] os = new String[] { "windows", "mac", "linux" };
         final String[][] matches = new Regex(source, pattern).getMatches();
-        final ArrayList<Byte> sum = new ArrayList<Byte>();
+        final java.util.List<Byte> sum = new ArrayList<Byte>();
         for (final String[] m : matches) {
 
             if (this.workingdir != null) {
@@ -506,7 +506,7 @@ public class WebUpdater implements Serializable {
         return "Updater";
     }
 
-    private ArrayList<Server> updateAvailableServers() {
+    private java.util.List<Server> updateAvailableServers() {
 
         boolean fnf = true;
         for (int trycount = 0; trycount < 10; trycount++) {
@@ -528,7 +528,7 @@ public class WebUpdater implements Serializable {
                     continue;
                 }
                 int total = 0;
-                final ArrayList<Server> servers = new ArrayList<Server>();
+                final java.util.List<Server> servers = new ArrayList<Server>();
                 Server serv;
                 boolean auto = false;
                 for (final String[] match : this.br.getRegex("(\\-?\\d+)\\:([^\r^\n]*)").getMatches()) {
@@ -586,7 +586,7 @@ public class WebUpdater implements Serializable {
      *            TODO
      * @throws IOException
      */
-    public void updateFiles(final ArrayList<FileUpdate> files) throws IOException {
+    public void updateFiles(final java.util.List<FileUpdate> files) throws IOException {
 
         if (this.progressload != null) {
             this.progressload.setMaximum(files.size());

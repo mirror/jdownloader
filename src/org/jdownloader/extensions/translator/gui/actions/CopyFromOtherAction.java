@@ -16,10 +16,10 @@ import org.jdownloader.images.NewTheme;
 public class CopyFromOtherAction extends AppAction {
 
     private TranslatorExtension       owner;
-    private ArrayList<TranslateEntry> selection;
+    private java.util.List<TranslateEntry> selection;
     private static TLocale            PRE;
 
-    public CopyFromOtherAction(TranslatorExtension owner, ArrayList<TranslateEntry> selection) {
+    public CopyFromOtherAction(TranslatorExtension owner, java.util.List<TranslateEntry> selection) {
         this.owner = owner;
         this.selection = selection;
         setName("Get Translation from existing Translation");

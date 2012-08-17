@@ -174,7 +174,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
                 @Override
                 protected Void run() throws RuntimeException {
                     boolean removed = false;
-                    ArrayList<ChildType> remove = null;
+                    java.util.List<ChildType> remove = null;
                     PackageController<PackageType, ChildType> controller = pkg.getControlledBy();
                     if (controller == null) {
                         logger.log(new Throwable("NO CONTROLLER!!!"));
@@ -258,7 +258,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
     }
 
     public List<ChildType> getChildrenByFilter(AbstractPackageChildrenNodeFilter<ChildType> filter) {
-        ArrayList<ChildType> ret = new ArrayList<ChildType>();
+        java.util.List<ChildType> ret = new ArrayList<ChildType>();
         boolean readL = readLock();
         try {
             for (PackageType pkg : packages) {
@@ -280,7 +280,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         return ret;
     }
 
-    public void merge(final PackageType dest, final ArrayList<ChildType> srcLinks, final ArrayList<PackageType> srcPkgs, final MergePosition mergeposition) {
+    public void merge(final PackageType dest, final java.util.List<ChildType> srcLinks, final java.util.List<PackageType> srcPkgs, final MergePosition mergeposition) {
         if (dest == null) return;
         if (srcLinks == null && srcPkgs == null) return;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
@@ -526,7 +526,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
 
             @Override
             protected Void run() throws RuntimeException {
-                ArrayList<PackageType> clearList = null;
+                java.util.List<PackageType> clearList = null;
                 boolean readL = readLock();
                 try {
                     clearList = new ArrayList<PackageType>(packages);
@@ -541,7 +541,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void move(final ArrayList<PackageType> srcPkgs, final PackageType afterDest) {
+    public void move(final java.util.List<PackageType> srcPkgs, final PackageType afterDest) {
         if (srcPkgs == null || srcPkgs.size() == 0) return;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override
@@ -568,7 +568,7 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
         });
     }
 
-    public void move(final ArrayList<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
+    public void move(final java.util.List<ChildType> srcLinks, final PackageType dstPkg, final ChildType afterLink) {
         if (dstPkg == null || srcLinks == null || srcLinks.size() == 0) return;
         IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
             @Override

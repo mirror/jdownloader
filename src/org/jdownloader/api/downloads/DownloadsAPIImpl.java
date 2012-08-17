@@ -14,7 +14,7 @@ public class DownloadsAPIImpl implements DownloadsAPI {
         DownloadController dlc = DownloadController.getInstance();
         boolean b = dlc.readLock();
         try {
-            ArrayList<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
+            java.util.List<FilePackageAPIStorable> ret = new ArrayList<FilePackageAPIStorable>(dlc.size());
             for (FilePackage fpkg : dlc.getPackages()) {
                 FilePackageAPIStorable pkg;
                 ret.add(pkg = new FilePackageAPIStorable(fpkg));

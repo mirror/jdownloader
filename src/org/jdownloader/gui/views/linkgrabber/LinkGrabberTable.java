@@ -87,12 +87,12 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, final ExtColumn<AbstractNode> column, MouseEvent event) {
         return contextMenuFactory.createPopup(contextObject, selection, column, event);
     }
 
     @Override
-    protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         new RemoveSelectionAction(new SelectionInfo<CrawledPackage, CrawledLink>(selectedObjects)).actionPerformed(null);
         return true;
     }
@@ -103,19 +103,19 @@ public class LinkGrabberTable extends PackageControllerTable<CrawledPackage, Cra
     }
 
     @Override
-    protected boolean onShortcutCopy(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutCopy(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;
     }
 
     @Override
-    protected boolean onShortcutCut(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutCut(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
         return true;
     }
 
     @Override
-    protected boolean onShortcutPaste(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutPaste(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }

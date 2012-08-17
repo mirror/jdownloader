@@ -15,23 +15,23 @@ public class PackageControllerTableTransferableContent<PackageType extends Abstr
         return table;
     }
 
-    protected PackageControllerTableTransferableContent(PackageControllerTable<PackageType, ChildrenType> table, ArrayList<PackageType> packages, ArrayList<ChildrenType> links) {
+    protected PackageControllerTableTransferableContent(PackageControllerTable<PackageType, ChildrenType> table, java.util.List<PackageType> packages, java.util.List<ChildrenType> links) {
         this.packages = packages;
         this.links = links;
         this.table = table;
     }
 
-    protected ArrayList<PackageType> packages = null;
+    protected java.util.List<PackageType> packages = null;
 
-    public ArrayList<PackageType> getPackages() {
+    public java.util.List<PackageType> getPackages() {
         return packages;
     }
 
-    public ArrayList<ChildrenType> getLinks() {
+    public java.util.List<ChildrenType> getLinks() {
         return links;
     }
 
-    protected ArrayList<ChildrenType> links = null;
+    protected java.util.List<ChildrenType> links = null;
 
     protected void exportDone() {
         links = null;

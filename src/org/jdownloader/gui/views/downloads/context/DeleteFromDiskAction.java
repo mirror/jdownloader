@@ -13,10 +13,10 @@ public class DeleteFromDiskAction extends ContextMenuAction {
 
     private static final long             serialVersionUID = -508777637671504774L;
 
-    private final ArrayList<DownloadLink> links;
+    private final java.util.List<DownloadLink> links;
     private final int                     counter;
 
-    public DeleteFromDiskAction(ArrayList<DownloadLink> links) {
+    public DeleteFromDiskAction(java.util.List<DownloadLink> links) {
         this.links = links;
         int counter = 0;
         for (DownloadLink link : links) {

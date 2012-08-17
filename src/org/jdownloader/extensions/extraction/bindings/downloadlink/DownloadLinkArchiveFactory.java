@@ -96,7 +96,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         return null;
     }
 
-    public ArrayList<ArchiveFile> createPartFileList(final String file, String pattern) {
+    public java.util.List<ArchiveFile> createPartFileList(final String file, String pattern) {
 
         final Pattern pat = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         List<DownloadLink> links = DownloadController.getInstance().getChildrenByFilter(new AbstractPackageChildrenNodeFilter<DownloadLink>() {
@@ -110,7 +110,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
         });
         HashMap<String, DownloadLinkArchiveFile> map = new HashMap<String, DownloadLinkArchiveFile>();
-        ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
+        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         for (DownloadLink l : links) {
             DownloadLinkArchiveFile af = map.get(new File(l.getFileOutput()).getName());
             if (af == null) {
@@ -123,7 +123,7 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
             }
 
         }
-        ArrayList<ArchiveFile> filelist = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
+        java.util.List<ArchiveFile> filelist = new FileArchiveFactory(new File(getFilePath())).createPartFileList(file, pattern);
         for (ArchiveFile af : filelist) {
             DownloadLinkArchiveFile downloadLinkArchiveFile = map.get(af.getName());
             if (downloadLinkArchiveFile == null) {

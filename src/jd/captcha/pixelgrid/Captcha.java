@@ -611,8 +611,8 @@ public class Captcha extends PixelGrid {
         // Kleine Objekte ausfiltern
         /*
          * String removeObjectsContainingImage = "dog.png"; if (removeObjectsContainingImage != null && objects.size() > letterNum) { Captcha remImage =
-         * owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage))); ArrayList<Integer[]> blackPoints = new
-         * ArrayList<Integer[]>(); int avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) { if
+         * owner.createCaptcha(Utilities.loadImage(owner.getResourceFile (removeObjectsContainingImage))); java.util.List<Integer[]> blackPoints = new
+         * java.util.List<Integer[]>(); int avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) { for (int x = 0; x < remImage.getWidth(); x++) { if
          * (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new Integer[] { x, y }); } } } ListIterator<PixelObject> iter =
          * objects.listIterator(objects.size()); while (iter.hasPrevious() && objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
          * iter.previous(); if (objectContainCaptcha(pixelObject, remImage, blackPoints)) {
@@ -913,7 +913,7 @@ public class Captcha extends PixelGrid {
         Vector<PixelObject> letters = getBiggestObjects(letterNum, minArea, contrast, objectContrast);
         if (letters == null) { return null; }
         gaps = new boolean[getWidth() + 1];
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (int i = 0; i < letters.size(); i++) {
 
             PixelObject obj = letters.elementAt(i);
@@ -1505,7 +1505,7 @@ public class Captcha extends PixelGrid {
      *            Kontrast zur erkennung einens objektstartpunkte (z.B. 0.5 bei weißem Hintergrund)
      * @return Vector mit den gefundenen Objekten
      */
-    public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, ArrayList<Integer[]> blackPoints) {
+    public boolean objectContainCaptcha(PixelObject pixelObject, Captcha captcha, java.util.List<Integer[]> blackPoints) {
 
         // logger.info(mask.getWidth()+"/"+mask.getHeight()+" - "+getWidth()+" -
         // "+getHeight());

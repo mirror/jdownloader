@@ -113,7 +113,7 @@ public class GifDecoder {
 
     protected int frameCount;
 
-    protected ArrayList<GifFrame> frames; // frames read from current file
+    protected java.util.List<GifFrame> frames; // frames read from current file
 
     protected int[] gct; // global color table
 

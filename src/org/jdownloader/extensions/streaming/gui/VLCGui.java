@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
@@ -15,32 +16,39 @@ import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.logging.Log;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.gui.bottombar.BottomBar;
+import org.jdownloader.extensions.streaming.gui.bottombar.LeftBottomBar;
+import org.jdownloader.extensions.streaming.gui.bottombar.RightBottomBar;
 import org.jdownloader.extensions.streaming.gui.sidebar.Sidebar;
 import org.jdownloader.extensions.streaming.gui.sidebar.SidebarHeader;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveListener;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
 import org.jdownloader.logging.LogController;
 
-public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListener {
+public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListener, MediaArchiveListener {
 
-    private static final String    ID = "VLCGUI";
-    private SwitchPanel            panel;
+    private static final String           ID = "VLCGUI";
+    private SwitchPanel                   panel;
 
-    private LogSource              logger;
-    private MediaArchiveTableModel model;
-    private MediaArchiveTable      table;
-    private JScrollPane            tableScrollPane;
-    private BottomBar              bottomBar;
-    private Sidebar                sidebar;
-    private HeaderScrollPane       sidebarScrollPane;
+    private LogSource                     logger;
+    private MediaArchiveTableModel        model;
+    private MediaArchiveTable             table;
+    private JScrollPane                   tableScrollPane;
+
+    private Sidebar                       sidebar;
+    private HeaderScrollPane              sidebarScrollPane;
+    private MediaArchivePrepareTableModel prepareModel;
+    private MediaArchivePrepareTable      prepareTable;
+    private JScrollPane                   prepareTableScollPane;
 
     @SuppressWarnings("serial")
     public VLCGui(StreamingExtension plg) {
         super(plg);
         logger = LogController.getInstance().getLogger("VLCGUI");
 
-        this.panel = new SwitchPanel(new MigLayout("ins 0, wrap 2", "[80!,grow,fill]2[grow,fill]", "[grow, fill]2[]")) {
+        this.panel = new SwitchPanel(new MigLayout("ins 0, wrap 2", "[fill]2[grow,fill]", "[grow, fill]2[]0[]")) {
 
             @Override
             protected void onShow() {
@@ -57,7 +65,6 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);
-        bottomBar = new BottomBar(plg, table);
 
         sidebar = new Sidebar(table);
         sidebarScrollPane = new HeaderScrollPane(sidebar) {
@@ -81,16 +88,28 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
         sidebarScrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
         sidebarScrollPane.setColumnHeaderView(new SidebarHeader());
 
-        panel.add(sidebarScrollPane);
+        prepareModel = new MediaArchivePrepareTableModel(plg.getMediaArchiveController());
+        prepareTable = new MediaArchivePrepareTable(prepareModel);
+
+        tableScrollPane = new JScrollPane(table);
+        tableScrollPane.setBorder(null);
+
+        panel.add(sidebarScrollPane, "spany 2,gapbottom 2");
         panel.add(tableScrollPane, "pushx,growx,spanx");
+        panel.add(prepareTableScollPane = new JScrollPane(prepareTable), "hidemode 2");
+
+        prepareTableScollPane.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createEmptyBorder(0, 0, 2, 0), prepareTableScollPane.getBorder()));
+
         //
         // }
-
-        panel.add(bottomBar, "spanx,height 24!");
+        panel.add(new LeftBottomBar(plg, table), "height 24!");
+        panel.add(new RightBottomBar(plg, table), "height 24!");
         // layout all contents in panel
         this.setContent(panel);
 
         layoutPanel();
+        prepareTableScollPane.setVisible(false);
+        plg.getMediaArchiveController().getEventSender().addListener(this, true);
 
     }
 
@@ -170,6 +189,23 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
     @Override
     public void mouseExited(MouseEvent e) {
+    }
+
+    @Override
+    public void onPrepareQueueUpdated(final MediaArchiveController caller) {
+        new EDTRunner() {
+
+            @Override
+            protected void runInEDT() {
+                if (caller.isPreparerQueueEmpty()) {
+                    prepareTableScollPane.setVisible(false);
+
+                } else {
+                    prepareTableScollPane.setVisible(true);
+                }
+            }
+        };
+
     }
 
 }

@@ -59,7 +59,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
             }
 
             public void actionPerformed(ActionEvent e) {
-                ArrayList<PackagizerRule> pkgl = new ArrayList<PackagizerRule>();
+                java.util.List<PackagizerRule> pkgl = new ArrayList<PackagizerRule>();
                 pkgl.add(editing);
 
                 getModel().move(pkgl, editingRow - 1);
@@ -80,7 +80,7 @@ public class OrderColumn extends ExtComponentColumn<PackagizerRule> {
             }
 
             public void actionPerformed(ActionEvent e) {
-                ArrayList<PackagizerRule> pkgl = new ArrayList<PackagizerRule>();
+                java.util.List<PackagizerRule> pkgl = new ArrayList<PackagizerRule>();
                 pkgl.add(editing);
 
                 getModel().move(pkgl, editingRow + 2);

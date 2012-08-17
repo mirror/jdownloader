@@ -63,7 +63,7 @@ public class ExtBrowser {
 
         // br.getPage("http://ifile.it/uvkog7y");
         // br.getPage("http://jdownloader.net:8081/advert/jstest.html");
-        // ArrayList<HTMLFormElementImpl> forms = br.getForms(null);
+        // java.util.List<HTMLFormElementImpl> forms = br.getForms(null);
         // String text = br.getHtmlText();
         // HTMLSpanElementImpl button = (HTMLSpanElementImpl)
         // br.getElementByID(null, "req_btn2");
@@ -139,7 +139,7 @@ public class ExtBrowser {
     // return ret;
     // }
 
-    // private ArrayList<HTMLFormElementImpl> getForms(ExtHTMLFrameElement
+    // private java.util.List<HTMLFormElementImpl> getForms(ExtHTMLFrameElement
     // frame) {
     // if (frame == null) frame = this.getFrameController();
     // HTMLCollection forms = frame.getDocument().getForms();
@@ -147,7 +147,7 @@ public class ExtBrowser {
     // }
 
     // @SuppressWarnings("unchecked")
-    // private <E> ArrayList<E> getList(HTMLCollection forms, ArrayList<E>
+    // private <E> java.util.List<E> getList(HTMLCollection forms, java.util.List<E>
     // arrayList) {
     // for (int i = 0; i < forms.getLength(); i++) {
     // arrayList.add((E) forms.item(i));
@@ -278,10 +278,10 @@ public class ExtBrowser {
      * @param baseFrame
      * @return
      */
-    public ArrayList<ExtHTMLFrameImpl> getFrames(ExtHTMLFrameElement baseFrame) {
+    public java.util.List<ExtHTMLFrameImpl> getFrames(ExtHTMLFrameElement baseFrame) {
         if (baseFrame == null) baseFrame = getFrameController();
         HTMLCollection frames = baseFrame.getHtmlFrameController().getFrames();
-        ArrayList<ExtHTMLFrameImpl> ret = new ArrayList<ExtHTMLFrameImpl>();
+        java.util.List<ExtHTMLFrameImpl> ret = new ArrayList<ExtHTMLFrameImpl>();
         for (int i = 0; i < frames.getLength(); i++) {
             if (frames.item(i) instanceof HTMLFrameElementImpl) {
                 ret.add(new ExtHTMLFrameImpl((HTMLFrameElementImpl) frames.item(i)));

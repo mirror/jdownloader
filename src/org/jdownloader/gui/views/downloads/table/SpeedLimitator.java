@@ -28,9 +28,9 @@ public class SpeedLimitator extends AbstractDialog<Object> {
     private AbstractNode            contextObject;
     private ExtCheckBox             enabledBox;
     private SizeSpinner             spinner;
-    private ArrayList<AbstractNode> inteliSelect;
+    private java.util.List<AbstractNode> inteliSelect;
 
-    public SpeedLimitator(final AbstractNode contextObject, ArrayList<AbstractNode> inteliSelect) {
+    public SpeedLimitator(final AbstractNode contextObject, java.util.List<AbstractNode> inteliSelect) {
         super(0, _GUI._.SpeedLimitator_SpeedLimitator_object_(), null, null, null);
         this.contextObject = contextObject;
         this.inteliSelect = inteliSelect;

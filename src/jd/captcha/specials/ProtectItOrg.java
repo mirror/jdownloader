@@ -34,9 +34,9 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 
 public class ProtectItOrg {
-    static ArrayList<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    static java.util.List<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 if (grid.getGrid()[x][y] == -3151923) continue;
@@ -70,7 +70,7 @@ public class ProtectItOrg {
 
     public static Letter[] getLetters(Captcha captcha) throws Exception {
         captcha.crop(257, 140, 0, 0);
-        ArrayList<Letter> let = new ArrayList<Letter>();
+        java.util.List<Letter> let = new ArrayList<Letter>();
         Vector<PixelObject> objs = captcha.getObjects(0.7, 0.7);
         // EasyCaptcha.mergeObjectsBasic(objs, captcha, 3);
         Collections.sort(objs);
@@ -100,7 +100,7 @@ public class ProtectItOrg {
             BackGroundImageManager bgit = new BackGroundImageManager(captcha);
             bgit.clearCaptchaAll();
             captcha.crop(0, 0, 0, 10);
-            ArrayList<PixelObject> obj = getObjects(captcha, 3);
+            java.util.List<PixelObject> obj = getObjects(captcha, 3);
 
             ColorLetterComperator mainCLC = new ColorLetterComperator(l, l);
             double bestVal = 10000000.0;

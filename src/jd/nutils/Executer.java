@@ -204,16 +204,16 @@ public class Executer extends Thread implements Runnable {
 
     private String                           command;
 
-    private ArrayList<String>                parameter;
+    private java.util.List<String>                parameter;
 
     private String                           runIn;
 
     private final DynByteBuffer              inputStreamBuffer;
 
     private final DynByteBuffer              errorStreamBuffer;
-    private final ArrayList<ProcessListener> listener             = new ArrayList<ProcessListener>();
+    private final java.util.List<ProcessListener> listener             = new ArrayList<ProcessListener>();
 
-    private final ArrayList<ProcessListener> elistener            = new ArrayList<ProcessListener>();
+    private final java.util.List<ProcessListener> elistener            = new ArrayList<ProcessListener>();
 
     private int                              waitTimeout          = 60;
     private int                              exitValue            = -1;
@@ -319,7 +319,7 @@ public class Executer extends Thread implements Runnable {
         return this.inputStreamBuffer.toString(this.codepage);
     }
 
-    public ArrayList<String> getParameter() {
+    public java.util.List<String> getParameter() {
         return this.parameter;
     }
 
@@ -374,7 +374,7 @@ public class Executer extends Thread implements Runnable {
             return;
         }
 
-        final ArrayList<String> params = new ArrayList<String>();
+        final java.util.List<String> params = new ArrayList<String>();
         params.add(this.command);
         params.addAll(this.parameter);
         if (this.isDebug()) {
@@ -513,7 +513,7 @@ public class Executer extends Thread implements Runnable {
         this.logger = logger;
     }
 
-    public void setParameter(final ArrayList<String> parameter) {
+    public void setParameter(final java.util.List<String> parameter) {
         this.parameter = parameter;
     }
 

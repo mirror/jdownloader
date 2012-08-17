@@ -30,9 +30,9 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
         return getLinks().get(0);
     }
 
-    public ArrayList<ArchiveFile> createPartFileList(String file, String pattern) {
+    public java.util.List<ArchiveFile> createPartFileList(String file, String pattern) {
         final Pattern pat = Pattern.compile(pattern, CrossSystem.isWindows() ? Pattern.CASE_INSENSITIVE : 0);
-        ArrayList<ArchiveFile> ret = new ArrayList<ArchiveFile>();
+        java.util.List<ArchiveFile> ret = new ArrayList<ArchiveFile>();
         if (getFirstLink().getParentNode() == null) {
             // not yet packagized
             ret.add(this);

@@ -53,8 +53,8 @@ public class QuickFilterExceptionsTable extends FilterTable {
 
     protected void updateFilters() {
         filterMap = new HashMap<FilterRule, Filter>();
-        ArrayList<LinkgrabberFilterRuleWrapper> fileFilter = LinkFilterController.getInstance().getAcceptFileFilter();
-        ArrayList<LinkgrabberFilterRuleWrapper> urlFilter = LinkFilterController.getInstance().getAcceptUrlFilter();
+        java.util.List<LinkgrabberFilterRuleWrapper> fileFilter = LinkFilterController.getInstance().getAcceptFileFilter();
+        java.util.List<LinkgrabberFilterRuleWrapper> urlFilter = LinkFilterController.getInstance().getAcceptUrlFilter();
 
         setup(fileFilter);
         setup(urlFilter);
@@ -65,8 +65,8 @@ public class QuickFilterExceptionsTable extends FilterTable {
         updateFilters();
     }
 
-    protected ArrayList<Filter> updateQuickFilerTableData() {
-        ArrayList<Filter> newTableData = null;
+    protected java.util.List<Filter> updateQuickFilerTableData() {
+        java.util.List<Filter> newTableData = null;
         // synchronized (LOCK) {
         newTableData = new ArrayList<Filter>(0);
 
@@ -74,7 +74,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
         Entry<FilterRule, Filter> next;
         HashSet<Filter> filtersInUse = new HashSet<Filter>();
         HashSet<CrawledLink> map = new HashSet<CrawledLink>();
-        ArrayList<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
+        java.util.List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
 
         for (CrawledLink link : getVisibleLinks()) {
             map.add(link);
@@ -118,8 +118,8 @@ public class QuickFilterExceptionsTable extends FilterTable {
             }
         }
         /* update FilterTableModel */
-        // ArrayList<Filter> newfilters = new
-        // ArrayList<Filter>();
+        // java.util.List<Filter> newfilters = new
+        // java.util.List<Filter>();
 
         return new ArrayList<Filter>(filtersInUse);
 
@@ -155,7 +155,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
         return false;
     }
 
-    private void setup(ArrayList<LinkgrabberFilterRuleWrapper> fileFilter) {
+    private void setup(java.util.List<LinkgrabberFilterRuleWrapper> fileFilter) {
         for (final LinkgrabberFilterRuleWrapper rule : fileFilter) {
             Filter filter = filterMap.get(rule.getRule());
             if (filter == null) {
@@ -227,7 +227,7 @@ public class QuickFilterExceptionsTable extends FilterTable {
     }
 
     @Override
-    ArrayList<Filter> getAllFilters() {
+    java.util.List<Filter> getAllFilters() {
         return new ArrayList<Filter>(filterMap.values());
     }
 

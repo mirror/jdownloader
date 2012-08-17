@@ -175,7 +175,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * 
      * @param fps
      */
-    public void addAll(final ArrayList<FilePackage> fps) {
+    public void addAll(final java.util.List<FilePackage> fps) {
         addAllAt(fps, 0);
     }
 
@@ -187,7 +187,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param repos
      * @return
      */
-    public void addAllAt(final ArrayList<FilePackage> fps, final int index) {
+    public void addAllAt(final java.util.List<FilePackage> fps, final int index) {
         if (fps != null && fps.size() > 0) {
             IOEQ.getQueue().add(new QueueAction<Void, RuntimeException>() {
 
@@ -221,8 +221,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * 
      * @return
      */
-    public ArrayList<DownloadLink> getAllDownloadLinks() {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    public java.util.List<DownloadLink> getAllDownloadLinks() {
+        final java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean readL = readLock();
         try {
             for (final FilePackage fp : packages) {
@@ -251,8 +251,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param status
      * @return
      */
-    public ArrayList<DownloadLink> getDownloadLinksbyStatus(FilePackage fp, int status) {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    public java.util.List<DownloadLink> getDownloadLinksbyStatus(FilePackage fp, int status) {
+        final java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (fp != null) {
             synchronized (fp) {
                 for (DownloadLink dl : fp.getChildren()) {
@@ -514,10 +514,10 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         }
                     }
                     /* sort positions */
-                    ArrayList<Integer> positions = new ArrayList<Integer>(map.keySet());
+                    java.util.List<Integer> positions = new ArrayList<Integer>(map.keySet());
                     Collections.sort(positions);
                     /* build final ArrayList of FilePackages */
-                    ArrayList<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
+                    java.util.List<FilePackage> ret2 = new ArrayList<FilePackage>(positions.size());
                     for (Integer position : positions) {
                         ret2.add(map.get(position));
                     }
@@ -595,7 +595,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         } catch (final NoOldJDDataBaseFoundException e) {
             return null;
         }
-        if (obj != null && obj instanceof ArrayList && (((ArrayList<?>) obj).size() == 0 || ((ArrayList<?>) obj).size() > 0 && ((ArrayList<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>((ArrayList<FilePackage>) obj); }
+        if (obj != null && obj instanceof ArrayList && (((java.util.List<?>) obj).size() == 0 || ((java.util.List<?>) obj).size() > 0 && ((java.util.List<?>) obj).get(0) instanceof FilePackage)) { return new LinkedList<FilePackage>((java.util.List<FilePackage>) obj); }
         throw new Exception("Linklist incompatible");
     }
 
@@ -608,7 +608,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         FilePackage fp;
         while (iterator.hasNext()) {
             fp = iterator.next();
-            ArrayList<DownloadLink> removeList = new ArrayList<DownloadLink>();
+            java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
             it = fp.getChildren().iterator();
             while (it.hasNext()) {
                 localLink = it.next();
@@ -674,7 +674,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param packages
      * @param file
      */
-    private boolean save(ArrayList<FilePackage> packages, File file) {
+    private boolean save(java.util.List<FilePackage> packages, File file) {
         synchronized (SAVELOADLOCK) {
             boolean ret = false;
             if (packages != null && file != null) {
@@ -750,7 +750,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      */
     public void saveDownloadLinks() {
         if (isSaveAllowed() == false) return;
-        ArrayList<FilePackage> packages = null;
+        java.util.List<FilePackage> packages = null;
         final boolean readL = this.readLock();
         try {
             packages = new ArrayList<FilePackage>(this.packages);

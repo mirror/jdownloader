@@ -123,7 +123,7 @@ public class NeembuuExtension extends AbstractExtension<NeembuuConfig, NeembuuTr
         return number_of_retries == -1;
     }
 
-    public static boolean canHandle(ArrayList<FilePackage> fps) {
+    public static boolean canHandle(java.util.List<FilePackage> fps) {
         if (!isActive()) { return false; }
         NeembuuExtension ne = getInstance();
         if (!ne.isUsable()) { return false; }

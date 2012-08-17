@@ -20,7 +20,7 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
 
     public DownloadsTransferable(PackageControllerTableTransferable<FilePackage, DownloadLink> transferable) {
         super(transferable.getContent().getPackages(), transferable.getContent().getLinks(), transferable.getContent().getTable());
-        ArrayList<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
+        java.util.List<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
         availableFlavors.add(FLAVOR);
         availableFlavors.add(ClipboardUtils.stringFlavor);
         flavors = availableFlavors.toArray(new DataFlavor[] {});
@@ -48,7 +48,7 @@ public class DownloadsTransferable extends PackageControllerTableTransferable<Fi
     private HashSet<String> getURLs() {
         PackageControllerTableTransferableContent<FilePackage, DownloadLink> lcontent = content;
         if (lcontent == null) return null;
-        ArrayList<AbstractNode> nodes = new ArrayList<AbstractNode>();
+        java.util.List<AbstractNode> nodes = new ArrayList<AbstractNode>();
         if (lcontent.getLinks() != null) {
             nodes.addAll(lcontent.getLinks());
         }

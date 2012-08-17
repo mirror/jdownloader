@@ -44,7 +44,7 @@ public abstract class ConfigPanel extends SwitchPanel {
 
     public static final int           ICON_SIZE        = 32;
 
-    private ArrayList<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
+    private java.util.List<GUIConfigEntry> entries          = new ArrayList<GUIConfigEntry>();
 
     protected JPanel                  panel;
 

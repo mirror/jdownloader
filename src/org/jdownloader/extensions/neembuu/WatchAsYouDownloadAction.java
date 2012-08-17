@@ -32,10 +32,10 @@ import org.jdownloader.gui.translate._GUI;
  */
 public class WatchAsYouDownloadAction extends ContextMenuAction {
 
-    private final ArrayList<FilePackage> fps;
+    private final java.util.List<FilePackage> fps;
     private final boolean                canHandle;
 
-    public WatchAsYouDownloadAction(ArrayList<FilePackage> fps) {
+    public WatchAsYouDownloadAction(java.util.List<FilePackage> fps) {
         this.fps = fps;
         boolean canH = false;
         if (fps != null && fps.size() > 0) {
@@ -82,7 +82,7 @@ public class WatchAsYouDownloadAction extends ContextMenuAction {
                 }
             }
             
-            DownloadWatchDog.getInstance().forceDownload((ArrayList<DownloadLink>) fp.getChildren());
+            DownloadWatchDog.getInstance().forceDownload((java.util.List<DownloadLink>) fp.getChildren());
         }
     }
 

@@ -194,7 +194,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
 
                     }
                 });
-                ArrayList<CrawledLink> links = new ArrayList<CrawledLink>();
+                java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
                 links.add(link);
                 LinkCollector.getInstance().addCrawlerJob(links);
             }
@@ -374,7 +374,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 } else {
                     /* we got a linkID-URL map and will check only those links */
                     HashMap<String, String> linkMap = JSonStorage.restoreFromString(checkSession.completeDOM, new HashMap<String, String>().getClass());
-                    ArrayList<CrawledLink> links2Check = new ArrayList<CrawledLink>();
+                    java.util.List<CrawledLink> links2Check = new ArrayList<CrawledLink>();
                     Iterator<Entry<String, String>> it = linkMap.entrySet().iterator();
                     while (it.hasNext()) {
                         Entry<String, String> next = it.next();
@@ -406,7 +406,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
         if (session != null) {
             synchronized (session) {
                 boolean stillRunning = session.linkChecker.isRunning() || session.linkCrawler.isRunning();
-                ArrayList<CrawledLink> retL = null;
+                java.util.List<CrawledLink> retL = null;
                 synchronized (session.linkCrawler.getCrawledLinks()) {
                     retL = new ArrayList<CrawledLink>(session.linkCrawler.getCrawledLinks());
                     session.linkCrawler.getCrawledLinks().clear();
@@ -414,7 +414,7 @@ public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEv
                 result.setStatus(STATUS.PENDING);
                 if (retL.size() > 0) {
                     /* we have links to output */
-                    ArrayList<LinkStatus> linkStats = new ArrayList<LinkStatus>();
+                    java.util.List<LinkStatus> linkStats = new ArrayList<LinkStatus>();
                     for (CrawledLink link : retL) {
                         linkStats.add(new LinkStatus(link));
                     }

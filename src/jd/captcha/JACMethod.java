@@ -32,7 +32,7 @@ import org.w3c.dom.NodeList;
 
 public class JACMethod implements Comparable<JACMethod> {
 
-    private static ArrayList<JACMethod> methods = null;
+    private static java.util.List<JACMethod> methods = null;
 
     public static JACMethod forServiceName(String service) {
         for (JACMethod method : getMethods()) {
@@ -45,11 +45,11 @@ public class JACMethod implements Comparable<JACMethod> {
         return null;
     }
 
-    public static synchronized ArrayList<JACMethod> getMethods() {
+    public static synchronized java.util.List<JACMethod> getMethods() {
         if (methods != null) return methods;
-        ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
+        java.util.List<JACMethod> methods = new ArrayList<JACMethod>();
         for (File methodDir : getMethodDirs()) {
-            ArrayList<JACMethod> meths = parseJACInfo(methodDir);
+            java.util.List<JACMethod> meths = parseJACInfo(methodDir);
             if (meths != null) {
                 methods.addAll(meths);
             }
@@ -77,7 +77,7 @@ public class JACMethod implements Comparable<JACMethod> {
         return entries;
     }
 
-    public static ArrayList<JACMethod> parseJACInfo(File dir) {
+    public static java.util.List<JACMethod> parseJACInfo(File dir) {
         String filecontent = JDIO.readFileToString(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
         Document doc = JDUtilities.parseXmlString(filecontent, false);
         if (doc == null) return null;
@@ -100,7 +100,7 @@ public class JACMethod implements Comparable<JACMethod> {
             }
         }
 
-        ArrayList<JACMethod> methods = new ArrayList<JACMethod>();
+        java.util.List<JACMethod> methods = new ArrayList<JACMethod>();
         if (services != null) {
             for (String service : services) {
                 methods.add(new JACMethod(dir.getName(), service));

@@ -91,7 +91,7 @@ public class Badongo {
         Vector<PixelObject> os = captcha.getObjects(0.5, 0.5);
         Collections.sort(os);
         mergeObjects(os);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
             if (pixelObject.getArea() > 50) {
                 Letter let = pixelObject.toLetter();

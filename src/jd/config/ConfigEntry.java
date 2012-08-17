@@ -34,7 +34,7 @@ public class ConfigEntry implements Serializable {
         NEEDS_RESTART;
 
         public static PropertyType getMax(final PropertyType... changes) {
-            final ArrayList<PropertyType> sorter = new ArrayList<PropertyType>();
+            final java.util.List<PropertyType> sorter = new ArrayList<PropertyType>();
             for (final PropertyType type : changes) {
                 sorter.add(type);
             }
@@ -70,7 +70,7 @@ public class ConfigEntry implements Serializable {
      */
     private ConfigEntry                  conditionEntry;
     private Boolean                      compareValue;
-    private final ArrayList<ConfigEntry> listener         = new ArrayList<ConfigEntry>();
+    private final java.util.List<ConfigEntry> listener         = new ArrayList<ConfigEntry>();
 
     /**
      * Variablen fuer einen Button-Eintrag.

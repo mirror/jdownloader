@@ -15,7 +15,7 @@ import org.jdownloader.gui.translate._GUI;
 
 public class LogModel extends ExtTableModel<LogFolder> {
 
-    public LogModel(ArrayList<LogFolder> folders) {
+    public LogModel(java.util.List<LogFolder> folders) {
         super("LogModel");
         this.tableData = folders;
         Collections.sort(folders, new Comparator<LogFolder>() {

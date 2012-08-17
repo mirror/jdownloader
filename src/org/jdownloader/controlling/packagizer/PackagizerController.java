@@ -35,22 +35,22 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 
 public class PackagizerController implements PackagizerInterface, FileCreationListener {
-    private PackagizerSettings                  config;
-    private ArrayList<PackagizerRule>           list;
-    private ChangeEventSender                   eventSender;
-    private ArrayList<PackagizerRuleWrapper>    fileFilter;
-    private ArrayList<PackagizerRuleWrapper>    urlFilter;
+    private PackagizerSettings                    config;
+    private ArrayList<PackagizerRule>             list;
+    private ChangeEventSender                     eventSender;
+    private java.util.List<PackagizerRuleWrapper> fileFilter;
+    private java.util.List<PackagizerRuleWrapper> urlFilter;
 
-    public static final String                  ORGFILENAME  = "orgfilename";
-    public static final String                  ORGFILETYPE  = "orgfiletype";
-    public static final String                  HOSTER       = "hoster";
-    public static final String                  SOURCE       = "source";
-    public static final String                  PACKAGENAME  = "packagename";
-    public static final String                  SIMPLEDATE   = "simpledate";
+    public static final String                    ORGFILENAME  = "orgfilename";
+    public static final String                    ORGFILETYPE  = "orgfiletype";
+    public static final String                    HOSTER       = "hoster";
+    public static final String                    SOURCE       = "source";
+    public static final String                    PACKAGENAME  = "packagename";
+    public static final String                    SIMPLEDATE   = "simpledate";
 
-    private static final PackagizerController   INSTANCE     = new PackagizerController(false);
-    private HashMap<String, PackagizerReplacer> replacers    = new HashMap<String, PackagizerReplacer>();
-    private boolean                             testInstance = false;
+    private static final PackagizerController     INSTANCE     = new PackagizerController(false);
+    private HashMap<String, PackagizerReplacer>   replacers    = new HashMap<String, PackagizerReplacer>();
+    private boolean                               testInstance = false;
 
     public static PackagizerController getInstance() {
         return INSTANCE;
@@ -195,7 +195,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         return eventSender;
     }
 
-    public ArrayList<PackagizerRule> list() {
+    public java.util.List<PackagizerRule> list() {
         synchronized (this) {
             return new ArrayList<PackagizerRule>(list);
         }
@@ -211,7 +211,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     }
 
-    public void setList(ArrayList<PackagizerRule> tableData) {
+    public void setList(java.util.List<PackagizerRule> tableData) {
         synchronized (this) {
             list.clear();
             list.addAll(tableData);
@@ -261,7 +261,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
         getEventSender().fireEvent(new ChangeEvent(this));
     }
 
-    public void addAll(ArrayList<PackagizerRule> all) {
+    public void addAll(java.util.List<PackagizerRule> all) {
         if (all == null) return;
         synchronized (this) {
             list.addAll(all);
@@ -283,7 +283,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public void runByFile(CrawledLink link) {
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
-        ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
+        java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {
                 try {
@@ -310,7 +310,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     public void runByUrl(CrawledLink link) {
         if (isTestInstance() == false && !org.jdownloader.settings.staticreferences.CFG_PACKAGIZER.PACKAGIZER_ENABLED.isEnabled()) return;
-        ArrayList<PackagizerRuleWrapper> lurlFilter = urlFilter;
+        java.util.List<PackagizerRuleWrapper> lurlFilter = urlFilter;
         for (PackagizerRuleWrapper lgr : lurlFilter) {
             try {
                 if (!lgr.checkHoster(link)) continue;
@@ -427,7 +427,7 @@ public class PackagizerController implements PackagizerInterface, FileCreationLi
 
     private void runAfterExtraction(File f, CrawledLink link) {
 
-        ArrayList<PackagizerRuleWrapper> lfileFilter = fileFilter;
+        java.util.List<PackagizerRuleWrapper> lfileFilter = fileFilter;
         for (PackagizerRuleWrapper lgr : lfileFilter) {
             if (!StringUtils.isEmpty(lgr.getRule().getFilename()) || !StringUtils.isEmpty(lgr.getRule().getDownloadDestination())) {
                 if (lgr.getAlwaysFilter() == null || !lgr.getAlwaysFilter().isEnabled()) {

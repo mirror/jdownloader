@@ -105,7 +105,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
         BasicJDTable table = new BasicJDTable<AbstractNode>(model) {
 
             @Override
-            protected JPopupMenu onContextMenu(JPopupMenu popup, AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent mouseEvent) {
+            protected JPopupMenu onContextMenu(JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent mouseEvent) {
 
                 popup.add(new AppAction() {
                     {
@@ -121,7 +121,7 @@ public class LinkURLEditor<PackageType extends AbstractPackageNode<ChildrenType,
                 return popup;
             }
 
-            protected boolean onShortcutCopy(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt) {
+            protected boolean onShortcutCopy(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt) {
                 StringBuilder sb = new StringBuilder();
                 List<AbstractNode> links = new ArrayList<AbstractNode>();
                 if (selectedObjects.size() == 0) {

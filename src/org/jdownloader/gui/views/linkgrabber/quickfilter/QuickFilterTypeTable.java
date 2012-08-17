@@ -19,15 +19,15 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.images.NewTheme;
 
 public class QuickFilterTypeTable extends FilterTable {
-    private static final long serialVersionUID = 2109715691047942399L;
-    private ArrayList<Filter> allFilters;
+    private static final long      serialVersionUID = 2109715691047942399L;
+    private java.util.List<Filter> allFilters;
 
     public QuickFilterTypeTable(Header filetypeFilter, LinkGrabberTable table2Filter) {
         super(filetypeFilter, table2Filter, org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_FILETYPE_QUICKFILTER_ENABLED);
 
     }
 
-    protected ArrayList<Filter> updateQuickFilerTableData() {
+    protected java.util.List<Filter> updateQuickFilerTableData() {
 
         // synchronized (LOCK) {
         /* reset existing filter counters */
@@ -37,7 +37,7 @@ public class QuickFilterTypeTable extends FilterTable {
         /* update filter list */
         HashSet<Filter> filtersInUse = new HashSet<Filter>();
         HashSet<CrawledLink> map = new HashSet<CrawledLink>();
-        ArrayList<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
+        java.util.List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
         for (CrawledLink link : getVisibleLinks()) {
             map.add(link);
             /*
@@ -83,8 +83,8 @@ public class QuickFilterTypeTable extends FilterTable {
             }
         }
         /* update FilterTableModel */
-        // ArrayList<Filter> newfilters = new
-        // ArrayList<Filter>();
+        // java.util.List<Filter> newfilters = new
+        // java.util.List<Filter>();
 
         return new ArrayList<Filter>(filtersInUse);
 
@@ -150,8 +150,7 @@ public class QuickFilterTypeTable extends FilterTable {
         knownExtensionFilters.add(filter);
         knownExtensionFilters.trimToSize();
         /*
-         * now we add special extensionfilter which will handle all unknown
-         * extensions
+         * now we add special extensionfilter which will handle all unknown extensions
          */
         allFilters.add(new ExtensionFilter(_GUI._.settings_linkgrabber_filter_others(), NewTheme.I().getIcon("help", 16), false) {
             protected String getID() {
@@ -185,7 +184,7 @@ public class QuickFilterTypeTable extends FilterTable {
     }
 
     @Override
-    ArrayList<Filter> getAllFilters() {
+    java.util.List<Filter> getAllFilters() {
         return allFilters;
     }
 

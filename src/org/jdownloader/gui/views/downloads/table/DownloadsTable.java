@@ -98,13 +98,13 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
-    protected boolean onShortcutDelete(final ArrayList<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
+    protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
         new DeleteAction(new SelectionInfo<FilePackage, DownloadLink>(null, selectedObjects, null, evt)).actionPerformed(null);
         return true;
     }
 
     @Override
-    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(final JPopupMenu popup, final AbstractNode contextObject, final java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
         /* split selection into downloadlinks and filepackages */
         return DownloadTableContextMenuFactory.getInstance().create(this, popup, contextObject, selection, column, ev);
     }
@@ -145,19 +145,19 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     @Override
-    protected boolean onShortcutCopy(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutCopy(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getCopyAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "copy"));
         return true;
     }
 
     @Override
-    protected boolean onShortcutCut(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutCut(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getCutAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "cut"));
         return true;
     }
 
     @Override
-    protected boolean onShortcutPaste(ArrayList<AbstractNode> selectedObjects, KeyEvent evt) {
+    protected boolean onShortcutPaste(java.util.List<AbstractNode> selectedObjects, KeyEvent evt) {
         TransferHandler.getPasteAction().actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "paste"));
         return true;
     }

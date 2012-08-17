@@ -239,7 +239,7 @@ public class DiffMatchPatch {
         if (checkLines && (text1.length() < 100 || text2.length() < 100)) {
             checkLines = false; // Too trivial for the overhead.
         }
-        ArrayList<String> lineArray = null;
+        java.util.List<String> lineArray = null;
         if (checkLines) {
             // Scan the text on a line-by-line basis first.
             Object b[] = diffLinesToChars(text1, text2);
@@ -247,7 +247,7 @@ public class DiffMatchPatch {
             text2 = (String) b[1];
             // The following Java warning is harmless.
             // Suggestions for how to clear it would be appreciated.
-            lineArray = (ArrayList<String>) b[2];
+            lineArray = (java.util.List<String>) b[2];
         }
 
         diffs = diffMap(text1, text2);

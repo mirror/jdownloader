@@ -82,7 +82,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
 
                 try {
                     String txt = Dialog.getInstance().showInputDialog(Dialog.STYLE_LARGE, _GUI._.ProxyConfig_actionPerformed_import_title_(), _GUI._.ProxyConfig_actionPerformed_import_proxies_explain_(), null, NewTheme.I().getIcon("proxy", 32), null, null);
-                    final ArrayList<HTTPProxy> list = new ArrayList<HTTPProxy>();
+                    final java.util.List<HTTPProxy> list = new ArrayList<HTTPProxy>();
                     for (String s : Regex.getLines(txt)) {
                         try {
                             int i = s.indexOf("://");
@@ -161,7 +161,7 @@ public class ProxyConfig extends AbstractConfigPanel implements DefaultEventList
             @Override
             public void valueChanged(final ListSelectionEvent e) {
                 boolean canremove = false;
-                ArrayList<ProxyInfo> selected = ProxyConfig.this.table.getExtTableModel().getSelectedObjects();
+                java.util.List<ProxyInfo> selected = ProxyConfig.this.table.getExtTableModel().getSelectedObjects();
                 if (selected != null) {
                     for (ProxyInfo pi : selected) {
                         if (pi.isRemote()) {

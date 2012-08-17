@@ -20,7 +20,7 @@ public class AuthTable extends BasicJDTable<AuthenticationInfo> {
     }
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, AuthenticationInfo contextObject, ArrayList<AuthenticationInfo> selection, ExtColumn<AuthenticationInfo> col, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, AuthenticationInfo contextObject, java.util.List<AuthenticationInfo> selection, ExtColumn<AuthenticationInfo> col, MouseEvent ev) {
         popup.add(new NewAction(this));
         popup.add(new RemoveAction(this, selection, false));
         return popup;
@@ -34,7 +34,7 @@ public class AuthTable extends BasicJDTable<AuthenticationInfo> {
      * , java.awt.event.KeyEvent, boolean)
      */
     @Override
-    protected boolean onShortcutDelete(ArrayList<AuthenticationInfo> selectedObjects, KeyEvent evt, boolean direct) {
+    protected boolean onShortcutDelete(java.util.List<AuthenticationInfo> selectedObjects, KeyEvent evt, boolean direct) {
         new RemoveAction(this, selectedObjects, direct).actionPerformed(null);
         return true;
     }

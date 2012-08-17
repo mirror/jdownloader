@@ -1,7 +1,5 @@
 package org.jdownloader.gui.views.linkgrabber.contextmenu;
 
-import java.util.ArrayList;
-
 import javax.swing.JMenuItem;
 
 import jd.controlling.linkcrawler.CrawledLink;
@@ -12,12 +10,12 @@ import org.appwork.swing.exttable.ExtColumn;
 import org.jdownloader.gui.menu.MenuContext;
 import org.jdownloader.gui.views.SelectionInfo;
 
-public class LinkgrabberTablePropertiesContext extends MenuContext<ArrayList<JMenuItem>> {
+public class LinkgrabberTablePropertiesContext extends MenuContext<java.util.List<JMenuItem>> {
 
     private ExtColumn<AbstractNode>                    clickedColumn;
     private SelectionInfo<CrawledPackage, CrawledLink> selectionInfo;
 
-    public LinkgrabberTablePropertiesContext(ArrayList<JMenuItem> ret, SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
+    public LinkgrabberTablePropertiesContext(java.util.List<JMenuItem> ret, SelectionInfo<CrawledPackage, CrawledLink> si, ExtColumn<AbstractNode> column) {
         super(ret);
         selectionInfo = si;
         clickedColumn = column;

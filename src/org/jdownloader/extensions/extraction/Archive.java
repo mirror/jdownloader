@@ -63,7 +63,7 @@ public class Archive {
     /**
      * ArchiveFiles of the archive.
      */
-    private ArrayList<ArchiveFile> archives;
+    private java.util.List<ArchiveFile> archives;
 
     /**
      * First part of the archives.
@@ -98,12 +98,12 @@ public class Archive {
     /**
      * ArchiveFiles CRC error.
      */
-    private ArrayList<ArchiveFile> crcError;
+    private java.util.List<ArchiveFile> crcError;
 
     /**
      * List of the extracted files.
      */
-    private ArrayList<File>        extractedFiles;
+    private java.util.List<File>        extractedFiles;
 
     /**
      * The extractor for the archive.
@@ -150,11 +150,11 @@ public class Archive {
         this.exitCode = exitCode;
     }
 
-    public ArrayList<ArchiveFile> getArchiveFiles() {
+    public java.util.List<ArchiveFile> getArchiveFiles() {
         return archives;
     }
 
-    public void setArchiveFiles(ArrayList<ArchiveFile> collection) {
+    public void setArchiveFiles(java.util.List<ArchiveFile> collection) {
 
         this.archives = collection;
     }
@@ -210,7 +210,7 @@ public class Archive {
         this.crcError.add(crc);
     }
 
-    public ArrayList<ArchiveFile> getCrcError() {
+    public java.util.List<ArchiveFile> getCrcError() {
         return crcError;
     }
 
@@ -219,7 +219,7 @@ public class Archive {
         extracted += file.length();
     }
 
-    public ArrayList<File> getExtractedFiles() {
+    public java.util.List<File> getExtractedFiles() {
         return extractedFiles;
     }
 
@@ -260,7 +260,7 @@ public class Archive {
     public synchronized ContentView getContentView() {
         if (contents == null || (contents.getTotalFileCount() + contents.getTotalFolderCount() == 0)) {
 
-            ArrayList<ArchiveItem> files = getSettings().getArchiveItems();
+            java.util.List<ArchiveItem> files = getSettings().getArchiveItems();
             if (files != null && files.size() > 0) {
                 ContentView newView = new ContentView();
                 for (ArchiveItem item : files) {

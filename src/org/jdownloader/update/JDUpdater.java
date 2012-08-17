@@ -108,7 +108,7 @@ public class JDUpdater extends AppUpdater {
         return super.canUnInstallDirect(localFile, ifile);
     }
 
-    public ArrayList<File> getFilesToInstallDirect(ArrayList<File> filesToInstall) {
+    public java.util.List<File> getFilesToInstallDirect(java.util.List<File> filesToInstall) {
 
         // check if there are jars to update
         jars = false;
@@ -329,7 +329,7 @@ public class JDUpdater extends AppUpdater {
 
             }
 
-            public void onDirectInstalls(ArrayList<File> parameter) {
+            public void onDirectInstalls(java.util.List<File> parameter) {
                 boolean hasHostPlugins = false;
                 boolean hasCrawlPlugins = false;
                 for (File f : parameter) {

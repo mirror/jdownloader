@@ -34,9 +34,9 @@ import jd.nutils.Colors;
  */
 public class ColorObjects {
 
-    public static ArrayList<PixelObject> getObjects(PixelGrid grid, int tollerance, int neighbourradius) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    public static java.util.List<PixelObject> getObjects(PixelGrid grid, int tollerance, int neighbourradius) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 if (grid.getGrid()[x][y] == 0xffffff) continue;
@@ -70,7 +70,7 @@ public class ColorObjects {
 
     public static Letter[] getLetters(Captcha captcha) {
 
-        ArrayList<PixelObject> os = getObjects(captcha, 10, 10);
+        java.util.List<PixelObject> os = getObjects(captcha, 10, 10);
 
         Collections.sort(os, new Comparator<PixelObject>() {
             public int compare(PixelObject a, PixelObject b) {

@@ -225,7 +225,7 @@ public class ThreeDlTv {
         EasyCaptcha.mergeObjectsBasic(obj, captcha, 2);
 
         Collections.sort(obj);
-        final ArrayList<Letter> ret = new ArrayList<Letter>();
+        final java.util.List<Letter> ret = new ArrayList<Letter>();
         for (final ListIterator<PixelObject> iterator = obj.listIterator(); iterator.hasNext();) {
             final PixelObject pixelObject = iterator.next();
             ret.addAll(getSplitted(pixelObject, captcha, 0));
@@ -287,8 +287,8 @@ public class ThreeDlTv {
      * @param index
      * @return
      */
-    private static ArrayList<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, int index) {
-        final ArrayList<Letter> ret = new ArrayList<Letter>();
+    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, final Captcha captcha, int index) {
+        final java.util.List<Letter> ret = new ArrayList<Letter>();
         if (pixelObject.getArea() < 4) { return ret; }
         // durchschnittliche breite vom char
         final int lWith = 5;
@@ -302,7 +302,7 @@ public class ThreeDlTv {
             return ret;
         }
         // hier werden komplette Worte gesplittet
-        final ArrayList<Integer> splitMap = new ArrayList<Integer>();
+        final java.util.List<Integer> splitMap = new ArrayList<Integer>();
         final Hashtable<String, Vector<Integer>> testMap = new Hashtable<String, Vector<Integer>>();
         final Vector<Integer> one = new Vector<Integer>();
         final Vector<Integer> two = new Vector<Integer>();
@@ -425,7 +425,7 @@ public class ThreeDlTv {
      * 
      * @param lets
      */
-    private static void replaceLetters(final ArrayList<Letter> lets) {
+    private static void replaceLetters(final java.util.List<Letter> lets) {
         int i = 0;
         String add = null;
         for (final Letter letter : lets) {

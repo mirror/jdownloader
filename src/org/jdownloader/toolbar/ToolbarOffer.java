@@ -79,7 +79,7 @@ public class ToolbarOffer extends AbstractDialog<Object> implements Runnable {
 
     private void install(boolean search, boolean hp) {
 
-        final ArrayList<String> ret = new ArrayList<String>();
+        final java.util.List<String> ret = new ArrayList<String>();
         final StringBuilder sb = new StringBuilder();
         sb.append("toolbar.exe ");
         sb.append("-ie ");

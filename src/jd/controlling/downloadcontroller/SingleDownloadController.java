@@ -715,7 +715,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                     FileCreationManager.getInstance().getEventSender().fireEvent(new FileCreationEvent(this, FileCreationEvent.Type.NEW_FILES, new File[] { new File(downloadLink.getFileOutput()) }));
                     if (CleanAfterDownloadAction.CLEANUP_IMMEDIATELY.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {
                         LogController.GL.info("Remove Link " + downloadLink.getName() + " because Finished and CleanupImmediately!");
-                        ArrayList<DownloadLink> remove = new ArrayList<DownloadLink>();
+                        java.util.List<DownloadLink> remove = new ArrayList<DownloadLink>();
                         remove.add(downloadLink);
                         DownloadController.getInstance().removeChildren(remove);
                     } else if (CleanAfterDownloadAction.CLEANUP_AFTER_PACKAGE_HAS_FINISHED.equals(org.jdownloader.settings.staticreferences.CFG_GENERAL.CFG.getCleanupAfterDownloadAction())) {

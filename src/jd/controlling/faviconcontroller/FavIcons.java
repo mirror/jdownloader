@@ -47,17 +47,17 @@ import org.jdownloader.logging.LogController;
 
 public class FavIcons {
 
-    private static final ThreadPoolExecutor                                 threadPool;
-    private static final AtomicInteger                                      THREADCOUNTER = new AtomicInteger(0);
-    private static final Object                                             LOCK          = new Object();
-    private final static LinkedHashMap<String, ArrayList<FavIconRequestor>> queue         = new LinkedHashMap<String, ArrayList<FavIconRequestor>>();
-    private static ArrayList<String>                                        failed        = null;
-    private static final FavIconsConfig                                     CONFIG        = JsonConfig.create(FavIconsConfig.class);
+    private static final ThreadPoolExecutor                                      THREAD_POOL;
+    private static final AtomicInteger                                           THREADCOUNTER = new AtomicInteger(0);
+    private static final Object                                                  LOCK          = new Object();
+    private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE         = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
+    private static ArrayList<String>                                             FAILED_LIST        = null;
+    private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
     static {
         int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
         int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
 
-        threadPool = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+        THREAD_POOL = new ThreadPoolExecutor(0, maxThreads, keepAlive, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
 
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -74,35 +74,35 @@ public class FavIcons {
                 /*
                  * WORKAROUND for stupid SUN /ORACLE way of "how a threadpool should work" !
                  */
-                int working = threadPool.getActiveCount();
-                int active = threadPool.getPoolSize();
-                int max = threadPool.getMaximumPoolSize();
+                int working = THREAD_POOL.getActiveCount();
+                int active = THREAD_POOL.getPoolSize();
+                int max = THREAD_POOL.getMaximumPoolSize();
                 if (active < max) {
                     if (working == active) {
                         /*
                          * we can increase max pool size so new threads get started
                          */
-                        threadPool.setCorePoolSize(Math.min(max, active + 1));
+                        THREAD_POOL.setCorePoolSize(Math.min(max, active + 1));
                     }
                 }
             }
 
         };
-        threadPool.allowCoreThreadTimeOut(true);
+        THREAD_POOL.allowCoreThreadTimeOut(true);
 
         long lastRefresh = CONFIG.getLastRefresh();
         /* load failed hosts list */
-        failed = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
-        if (failed == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
+        FAILED_LIST = JsonConfig.create(FavIconsConfig.class).getFailedHosts();
+        if (FAILED_LIST == null || (System.currentTimeMillis() - lastRefresh) > (1000l * 60 * 60 * 24 * 7)) {
             /* timeout is over, lets try again the failed ones */
-            failed = new ArrayList<String>();
+            FAILED_LIST = new ArrayList<String>();
         }
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override
             public void run() {
                 CONFIG.setLastRefresh(System.currentTimeMillis());
-                CONFIG.setFailedHosts(failed);
+                CONFIG.setFailedHosts(FAILED_LIST);
             }
 
             @Override
@@ -137,27 +137,27 @@ public class FavIcons {
     private static void add(final String host, FavIconRequestor requestor) {
         synchronized (LOCK) {
             /* dont try this host again? */
-            if (failed.contains(host)) return;
+            if (FAILED_LIST.contains(host)) return;
             /* enqueu this host for favicon loading */
-            ArrayList<FavIconRequestor> ret = queue.get(host);
+            java.util.List<FavIconRequestor> ret = QUEUE.get(host);
             boolean enqueueFavIcon = false;
             if (ret == null) {
                 ret = new ArrayList<FavIconRequestor>();
-                queue.put(host, ret);
+                QUEUE.put(host, ret);
                 enqueueFavIcon = true;
             }
             /* add to queue */
             if (requestor != null) ret.add(requestor);
             if (enqueueFavIcon) {
-                threadPool.execute(new Runnable() {
+                THREAD_POOL.execute(new Runnable() {
 
                     public void run() {
                         BufferedImage favicon = downloadFavIcon(host);
                         synchronized (LOCK) {
-                            ArrayList<FavIconRequestor> requestors = queue.remove(host);
+                            java.util.List<FavIconRequestor> requestors = QUEUE.remove(host);
                             if (favicon == null) {
                                 /* favicon loader failed, add to failed list */
-                                if (!failed.contains(host)) failed.add(host);
+                                if (!FAILED_LIST.contains(host)) FAILED_LIST.add(host);
                             } else {
                                 try {
                                     /* buffer favicon to disk */

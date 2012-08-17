@@ -431,9 +431,9 @@ public class TranslateTableModel extends ExtTableModel<TranslateEntry> {
         }
     }
 
-    public void _fireTableStructureChanged(ArrayList<TranslateEntry> newtableData, final boolean refreshSort) {
+    public void _fireTableStructureChanged(java.util.List<TranslateEntry> newtableData, final boolean refreshSort) {
 
-        ArrayList<TranslateEntry> lst = new ArrayList<TranslateEntry>();
+        java.util.List<TranslateEntry> lst = new ArrayList<TranslateEntry>();
         for (TranslateEntry e : newtableData) {
             if (filter == null) {
                 lst.add(e);

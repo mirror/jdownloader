@@ -71,9 +71,9 @@ public class BinLetters {
         return number;
     }
 
-    public ArrayList<LevenshteinLetter> readAll() throws IOException {
+    public java.util.List<LevenshteinLetter> readAll() throws IOException {
         open();
-        final ArrayList<LevenshteinLetter> lets = new ArrayList<LevenshteinLetter>();
+        final java.util.List<LevenshteinLetter> lets = new ArrayList<LevenshteinLetter>();
         while (hasNext()) {
             lets.add(readNext());
         }

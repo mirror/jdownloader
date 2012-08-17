@@ -297,7 +297,7 @@ public class LiveHeaderReconnect extends RouterPlugin implements ConfigEventList
         }
     }
 
-    public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
+    public java.util.List<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
         final LiveHeaderDetectionWizard wizard = new LiveHeaderDetectionWizard();
         try {
             return wizard.runOnlineScan(processCallBack);

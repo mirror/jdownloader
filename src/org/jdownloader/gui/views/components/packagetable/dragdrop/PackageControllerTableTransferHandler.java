@@ -43,8 +43,8 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         /*
          * get all selected packages and children and create a transferable if possible
          */
-        ArrayList<PackageType> packages = table.getSelectedPackages();
-        ArrayList<ChildrenType> links = table.getSelectedChildren();
+        java.util.List<PackageType> packages = table.getSelectedPackages();
+        java.util.List<ChildrenType> links = table.getSelectedChildren();
         Transferable ret = null;
         if ((links != null && links.size() > 0) || (packages != null && packages.size() > 0)) {
             PackageControllerTableTransferable<PackageType, ChildrenType> ret2 = new PackageControllerTableTransferable<PackageType, ChildrenType>(packages, links, table);
@@ -58,7 +58,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         return ret2;
     }
 
-    protected boolean allowImport(ArrayList<PackageType> packages, ArrayList<ChildrenType> links) {
+    protected boolean allowImport(java.util.List<PackageType> packages, java.util.List<ChildrenType> links) {
         return true;
     }
 
@@ -139,7 +139,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                         } else {
                             fp = null;
                         }
-                        ArrayList<PackageType> packages = content.getPackages();
+                        java.util.List<PackageType> packages = content.getPackages();
                         ;
                         /*
                          * we do not allow drop on items that are part of our transferable
@@ -155,7 +155,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             }
         } else {
             /* Paste */
-            ArrayList<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
+            java.util.List<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
             if (firstSelected.size() > 0) {
                 onElement = firstSelected.get(0);
             }
@@ -165,7 +165,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             if (packagesAvailable) {
                 if (onElement instanceof AbstractPackageNode) {
                     /* only drop on packages is allowed */
-                    ArrayList<PackageType> packages = content.getPackages();
+                    java.util.List<PackageType> packages = content.getPackages();
                     /*
                      * we do not allow drop on items that are part of our transferable
                      */
@@ -186,7 +186,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
                      */
                     return false;
                 } else if (onElement instanceof AbstractPackageNode) {
-                    ArrayList<ChildrenType> links = content.getLinks();
+                    java.util.List<ChildrenType> links = content.getLinks();
                     /*
                      * children are not allowed to drop on their own packages
                      */
@@ -216,8 +216,8 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
         if (canImportPackageControllerTransferable(support) == false) return false;
         QueuePriority prio = org.appwork.utils.event.queue.Queue.QueuePriority.HIGH;
         PackageControllerTableTransferableContent<PackageType, ChildrenType> content = getContent(support);
-        ArrayList<ChildrenType> tmpLinks = null;
-        ArrayList<PackageType> tmpPackages = null;
+        java.util.List<ChildrenType> tmpLinks = null;
+        java.util.List<PackageType> tmpPackages = null;
         if (content != null) {
             tmpLinks = content.links;
             tmpPackages = content.packages;
@@ -225,8 +225,8 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             if (tmpPackages != null && tmpPackages.size() == 0) tmpPackages = null;
         }
         if (tmpLinks == null && tmpPackages == null) { return false; }
-        final ArrayList<ChildrenType> links = tmpLinks;
-        final ArrayList<PackageType> packages = tmpPackages;
+        final java.util.List<ChildrenType> links = tmpLinks;
+        final java.util.List<PackageType> packages = tmpPackages;
         boolean isInsert = false;
         Object afterElement = null;
         Object beforeElement = null;
@@ -241,7 +241,7 @@ public abstract class PackageControllerTableTransferHandler<PackageType extends 
             }
         } else {
             /* paste */
-            ArrayList<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
+            java.util.List<AbstractNode> firstSelected = table.getExtTableModel().getSelectedObjects(1);
             if (firstSelected.size() > 0) {
                 afterElement = firstSelected.get(0);
                 if (afterElement instanceof AbstractPackageChildrenNode) {

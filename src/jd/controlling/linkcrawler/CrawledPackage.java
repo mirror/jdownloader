@@ -74,7 +74,7 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                                                                                  }
                                                                              };
 
-    private ArrayList<CrawledLink>                         children;
+    private java.util.List<CrawledLink>                         children;
     private String                                         comment           = null;
     private PackageController<CrawledPackage, CrawledLink> controller        = null;
 

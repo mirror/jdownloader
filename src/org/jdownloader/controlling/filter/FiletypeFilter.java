@@ -17,7 +17,7 @@ public class FiletypeFilter extends Filter implements Storable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        ArrayList<String> cond = new ArrayList<String>();
+        java.util.List<String> cond = new ArrayList<String>();
         if (videoFilesEnabled) {
 
             cond.add(VideoExtensions.ASF.getDesc());

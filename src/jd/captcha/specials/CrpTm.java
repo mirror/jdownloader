@@ -41,9 +41,9 @@ public class CrpTm {
         return c < 0 || c == 0xffffff;
     }
 
-    static ArrayList<PixelObject> getObjects(Captcha grid) {
-        ArrayList<PixelObject> ret = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+    static java.util.List<PixelObject> getObjects(Captcha grid) {
+        java.util.List<PixelObject> ret = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         for (int x = 0; x < grid.getWidth(); x++) {
             for (int y = 0; y < grid.getHeight(); y++) {
                 int c = grid.getGrid()[x][y];
@@ -73,10 +73,10 @@ public class CrpTm {
         return ret;
     }
 
-    static void merge(ArrayList<PixelObject> list) {
+    static void merge(java.util.List<PixelObject> list) {
         for (PixelObject po : list) {
             if (po.getSize() < 20 || (po.getWidth() != po.getHeight() && po.getSize() < 180)) {
-                ArrayList<PixelObject> merge = new ArrayList<PixelObject>();
+                java.util.List<PixelObject> merge = new ArrayList<PixelObject>();
                 int most = po.getMostcolor();
                 int[] hsvC = Colors.rgb2hsv(most);
                 for (PixelObject po2 : list) {
@@ -120,7 +120,7 @@ public class CrpTm {
         BackGroundImageManager bgit = new BackGroundImageManager(captcha);
         bgit.clearCaptchaAll();
         BasicWindow.showImage(captcha.getImage());
-        ArrayList<PixelObject> ob = getObjects(captcha);
+        java.util.List<PixelObject> ob = getObjects(captcha);
         Circle circle = new Circle(captcha, ob);
         Letter best = circle.getOpenCircle();
         if (best != null) BasicWindow.showImage(best.getImage(), "best");

@@ -215,7 +215,7 @@ public class RouterUtils {
      * @throws InterruptedException
      */
     public static InetAddress getIpFormHostTable() throws InterruptedException {
-        ArrayList<String> hostNames = RouterUtils.getHostTable();
+        java.util.List<String> hostNames = RouterUtils.getHostTable();
         RouterUtils.ASYNCH_RETURN = null;
         final Object LOCK = new Object();
         final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(4, 4, 2000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
@@ -481,8 +481,8 @@ public class RouterUtils {
     /**
      * Updates the host table and adds the full ip range (0-255) of the local devices to the table.
      */
-    private static ArrayList<String> getHostTable() {
-        ArrayList<String> ret = new ArrayList<String>();
+    private static java.util.List<String> getHostTable() {
+        java.util.List<String> ret = new ArrayList<String>();
         ret.add("fritz.fonwlan.box");
         ret.add("speedport.ip");
         ret.add("fritz.box");

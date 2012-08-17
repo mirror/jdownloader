@@ -69,7 +69,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
     private Thread                               th;
     private Timer                                updateTimer;
     private long                                 startTime;
-    private ArrayList<? extends ReconnectResult> foundList;
+    private java.util.List<? extends ReconnectResult> foundList;
 
     public ReconnectFindDialog() {
 
@@ -204,7 +204,7 @@ public abstract class ReconnectFindDialog extends AbstractDialog<Object> impleme
         super.setReturnmask(b);
     }
 
-    public void setInterruptEnabled(ArrayList<? extends ReconnectResult> list) {
+    public void setInterruptEnabled(java.util.List<? extends ReconnectResult> list) {
         this.foundList = list;
         new EDTRunner() {
 

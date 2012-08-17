@@ -212,7 +212,7 @@ public class Dlm {
         EasyCaptcha.mergeObjectsBasic(obj, captcha, 2);
 
         Collections.sort(obj);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         PixelObject last = obj.get(0);
         for (ListIterator<PixelObject> iterator = obj.listIterator(); iterator.hasNext();) {
             PixelObject pixelObject = iterator.next();
@@ -234,7 +234,7 @@ public class Dlm {
      * 
      * @param lets
      */
-    private static void replaceLetters(ArrayList<Letter> lets) {
+    private static void replaceLetters(java.util.List<Letter> lets) {
         int i = 0;
         String add = null;
         for (Letter letter : lets) {
@@ -327,8 +327,8 @@ public class Dlm {
      * @param index
      * @return
      */
-    private static ArrayList<Letter> getSplitted(PixelObject pixelObject, Captcha captcha, int index) {
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+    private static java.util.List<Letter> getSplitted(PixelObject pixelObject, Captcha captcha, int index) {
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         if (pixelObject.getArea() < 4) return ret;
         Letter let1 = pixelObject.toLetter();
         let1.toBlackAndWhite();

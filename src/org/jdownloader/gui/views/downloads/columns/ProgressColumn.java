@@ -112,7 +112,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
     public void updateRanges(final AbstractNode obj, final MultiProgressBar mpb) {
         if (obj instanceof DownloadLink) {
             mpb.getModel().setMaximum(((DownloadLink) obj).getDownloadMax());
-            ArrayList<Range> ranges = new ArrayList<Range>();
+            java.util.List<Range> ranges = new ArrayList<Range>();
 
             long[] chunks = ((DownloadLink) obj).getChunksProgress();
             if (chunks != null) {
@@ -126,7 +126,7 @@ public class ProgressColumn extends ExtProgressColumn<AbstractNode> {
             synchronized (obj) {
                 long size = ((FilePackage) obj).getView().getSize();
                 mpb.getModel().setMaximum(size);
-                ArrayList<Range> ranges = new ArrayList<Range>();
+                java.util.List<Range> ranges = new ArrayList<Range>();
 
                 List<DownloadLink> children = ((FilePackage) obj).getChildren();
                 int count = children.size();

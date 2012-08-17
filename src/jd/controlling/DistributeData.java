@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.controlling.filter.LinkFilterController;
 
 /**
- * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen Treffer werden
- * ausgeschnitten.
+ * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage an (unter Umständen auch mehrere) Plugins Die gefundenen
+ * Treffer werden ausgeschnitten.
  * 
  * @author astaldo
  */

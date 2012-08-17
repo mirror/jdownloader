@@ -186,7 +186,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
     public JComponent layoutDialogContent() {
         final List<LazyHostPlugin> allPLugins = HostPluginController.getInstance().list();
         // Filter - only premium plugins should be here
-        final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
+        final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
         for (LazyHostPlugin lhp : allPLugins) {
             if (lhp.isPremium()) plugins.add(lhp);
         }

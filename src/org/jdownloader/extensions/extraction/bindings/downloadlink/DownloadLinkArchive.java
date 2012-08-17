@@ -13,7 +13,7 @@ import org.jdownloader.extensions.extraction.translate.T;
 
 public class DownloadLinkArchive extends Archive {
 
-    private ArrayList<DownloadLink> disabledLinks;
+    private java.util.List<DownloadLink> disabledLinks;
 
     public DownloadLinkArchive(ArchiveFactory link) {
         super(link);

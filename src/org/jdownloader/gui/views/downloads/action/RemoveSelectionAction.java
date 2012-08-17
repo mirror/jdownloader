@@ -15,10 +15,10 @@ public class RemoveSelectionAction extends AppAction {
      * 
      */
     private static final long       serialVersionUID = -3008851305036758872L;
-    private ArrayList<AbstractNode> selection;
+    private java.util.List<AbstractNode> selection;
     private DownloadsTable          table;
 
-    public RemoveSelectionAction(DownloadsTable table, ArrayList<AbstractNode> selection) {
+    public RemoveSelectionAction(DownloadsTable table, java.util.List<AbstractNode> selection) {
         setIconKey("remove");
         setName(_GUI._.RemoveSelectionAction_RemoveSelectionAction_object_());
         this.selection = selection;
@@ -37,7 +37,7 @@ public class RemoveSelectionAction extends AppAction {
         // IOEQ.add(new Runnable() {
         //
         // public void run() {
-        // ArrayList<CrawledLink> remove =
+        // java.util.List<CrawledLink> remove =
         // LinkTreeUtils.getSelectedChildren(selection);
         // LinkCollector.getInstance().removeChildren(remove);
         // }

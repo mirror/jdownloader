@@ -11,10 +11,10 @@ import org.jdownloader.extensions.translator.TranslatorExtension;
 public class UseDefaultAction extends AppAction {
 
     private TranslatorExtension       owner;
-    private ArrayList<TranslateEntry> selection;
+    private java.util.List<TranslateEntry> selection;
     private static TLocale            PRE;
 
-    public UseDefaultAction(TranslatorExtension owner, ArrayList<TranslateEntry> selection) {
+    public UseDefaultAction(TranslatorExtension owner, java.util.List<TranslateEntry> selection) {
         this.owner = owner;
         this.selection = selection;
         setName("Use Original/Default Translation");

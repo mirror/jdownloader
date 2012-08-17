@@ -176,7 +176,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
     public void mouseClicked(MouseEvent e) {
         if (table.isEditing()) table.getCellEditor().stopCellEditing();
         tModel.getTableData().clear();
-        ArrayList<ExtractionController> jpobs = extension.getJobQueue().getJobs();
+        java.util.List<ExtractionController> jpobs = extension.getJobQueue().getJobs();
         if (jpobs.size() > 0) {
             tModel.addAllElements(jpobs);
             ToolTipController.getInstance().unregister(this);
@@ -191,7 +191,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
             tooltip.update();
         }
 
-        ArrayList<ExtractionController> entries;
+        java.util.List<ExtractionController> entries;
         switch (type) {
         case EXTRACTING:
             setIndeterminate(false);

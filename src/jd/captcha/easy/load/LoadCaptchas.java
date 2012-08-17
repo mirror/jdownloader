@@ -64,7 +64,7 @@ public class LoadCaptchas {
     {
         br.setFollowRedirects(true);
     }
-    private ArrayList<LoadImage> images;
+    private java.util.List<LoadImage> images;
     private LoadImage            selectedImage;
     private JFrame               owner;
     public int                   maxHeight        = 500;
@@ -171,7 +171,7 @@ public class LoadCaptchas {
                     }
                 });
 
-                final ArrayList<JButton> bts = new ArrayList<JButton>();
+                final java.util.List<JButton> bts = new ArrayList<JButton>();
                 for (int j = 0; j < images.size(); j++) {
                     final LoadImage f = images.get(j);
                     if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
@@ -250,10 +250,10 @@ public class LoadCaptchas {
      * @return Form[]
      */
     static Form[] getForms(Browser browser) {
-        ArrayList<Form> retForms = new ArrayList<Form>();
+        java.util.List<Form> retForms = new ArrayList<Form>();
         Form[] forms = browser.getForms();
         for (Form form : forms) {
-            ArrayList<InputField> fi = form.getInputFieldsByType("submit");
+            java.util.List<InputField> fi = form.getInputFieldsByType("submit");
             if (fi.size() > 1) {
                 for (int i = 1; i < fi.size(); i++) {
                     Form fo = new Form(form.getHtmlCode());
@@ -275,7 +275,7 @@ public class LoadCaptchas {
      * @throws Exception
      */
     static String[] getImages(Browser br) throws Exception {
-        ArrayList<String> ret = new ArrayList<String>();
+        java.util.List<String> ret = new ArrayList<String>();
         Pattern[] basePattern = new Pattern[] { Pattern.compile("(?is)<[ ]?input[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s][^>]*?type=.?image[^>]*?", Pattern.CASE_INSENSITIVE), Pattern.compile("(?is)<[ ]?input[^>]*?type=.?image[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE), Pattern.compile("(?is)<[ ]?IMG[^>]*?src=['|\"]?([^>\\s'\"]*)['|\">\\s]", Pattern.CASE_INSENSITIVE) };
         for (Pattern element : basePattern) {
             Matcher m = element.matcher(br.toString());
@@ -555,10 +555,10 @@ public class LoadCaptchas {
      * LoadImageliste einer Seite (folgt Forms)
      * 
      * @param br
-     * @return ArrayList<LoadImage>
+     * @return java.util.List<LoadImage>
      */
-    private ArrayList<LoadImage> getAllImages(Browser br) {
-        ArrayList<LoadImage> images = new ArrayList<LoadImage>();
+    private java.util.List<LoadImage> getAllImages(Browser br) {
+        java.util.List<LoadImage> images = new ArrayList<LoadImage>();
         String[] imagea;
         try {
             imagea = getImages(br);
@@ -618,7 +618,7 @@ public class LoadCaptchas {
     }
 
     /**
-     * Läd die Bilder eines ArrayList<LoadImage> und zeigt den Fortschritt in einem Progressdialog an
+     * Läd die Bilder eines java.util.List<LoadImage> und zeigt den Fortschritt in einem Progressdialog an
      * 
      */
     private void loadImages() {

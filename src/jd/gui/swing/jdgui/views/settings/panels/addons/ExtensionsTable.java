@@ -49,7 +49,7 @@ public class ExtensionsTable extends BasicJDTable<LazyExtension> implements Sett
     private static class InternalTableModel extends ExtTableModel<LazyExtension> {
 
         private static final long        serialVersionUID = 5847076032639053531L;
-        private ArrayList<LazyExtension> pluginsOptional;
+        private java.util.List<LazyExtension> pluginsOptional;
 
         public InternalTableModel() {
             super("addonTable");

@@ -90,27 +90,27 @@ import org.jdownloader.translate._JDT;
 
 public class ExtractionExtension extends AbstractExtension<ExtractionConfig, ExtractionTranslation> implements FileCreationListener, MenuFactoryListener {
 
-    private ExtractionQueue              extractionQueue   = new ExtractionQueue();
+    private ExtractionQueue                   extractionQueue   = new ExtractionQueue();
 
-    private ExtractionEventSender        broadcaster       = new ExtractionEventSender();
+    private ExtractionEventSender             broadcaster       = new ExtractionEventSender();
 
-    private final ArrayList<IExtraction> extractors        = new ArrayList<IExtraction>();
+    private final java.util.List<IExtraction> extractors        = new ArrayList<IExtraction>();
 
-    private final ArrayList<Archive>     archives          = new ArrayList<Archive>();
+    private final java.util.List<Archive>     archives          = new ArrayList<Archive>();
 
-    private ExtractionConfigPanel        configPanel;
+    private ExtractionConfigPanel             configPanel;
 
-    private static ExtractionExtension   INSTANCE;
+    private static ExtractionExtension        INSTANCE;
 
-    private ExtractionListenerIcon       statusbarListener = null;
+    private ExtractionListenerIcon            statusbarListener = null;
 
-    private AbstractToolbarAction        extractFileAction;
+    private AbstractToolbarAction             extractFileAction;
 
-    private AppAction                    menuAction;
+    private AppAction                         menuAction;
 
-    private ShutdownVetoListener         listener          = null;
+    private ShutdownVetoListener              listener          = null;
 
-    private LogSource                    logger;
+    private LogSource                         logger;
 
     public ExtractionExtension() throws StartException {
         super();
@@ -463,7 +463,7 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
             if ((oldPWListImported = getSettings().isOldPWListImported()) == false) {
                 SubConfiguration oldConfig = SubConfiguration.getConfig("PASSWORDLIST", true);
                 Object oldList = oldConfig.getProperties().get("LIST2");
-                ArrayList<String> currentList = getSettings().getPasswordList();
+                java.util.List<String> currentList = getSettings().getPasswordList();
                 if (currentList == null) currentList = new ArrayList<String>();
                 if (oldList != null && oldList instanceof List) {
                     for (Object item : (List<?>) oldList) {
@@ -642,9 +642,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
     }
 
     @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-        ArrayList<JMenuItem> ret = new java.util.ArrayList<JMenuItem>();
+    public List<JMenuItem> getMenuAction() {
+        java.util.List<JMenuItem> ret = new java.util.ArrayList<JMenuItem>();
         ret.add(new JMenuItem(menuAction));
+
         return ret;
     }
 

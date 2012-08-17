@@ -548,7 +548,7 @@ public class JDGui extends SwingGui {
 
             public void run() {
                 if (Application.getJavaVersion() >= 16000000) {
-                    final ArrayList<Image> list = new ArrayList<Image>();
+                    final java.util.List<Image> list = new ArrayList<Image>();
                     list.add(NewTheme.I().getImage("logo/logo_14_14", -1));
                     list.add(NewTheme.I().getImage("logo/logo_15_15", -1));
                     list.add(NewTheme.I().getImage("logo/logo_16_16", -1));

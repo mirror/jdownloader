@@ -234,7 +234,7 @@ public class CompiledFiletypeFilter {
     }
 
     public CompiledFiletypeFilter(FiletypeFilter filetypeFilter) {
-        ArrayList<Pattern> list = new ArrayList<Pattern>();
+        java.util.List<Pattern> list = new ArrayList<Pattern>();
         if (filetypeFilter.isArchivesEnabled()) {
             for (ArchiveExtensions ae : ArchiveExtensions.values()) {
                 list.add(ae.getPattern());

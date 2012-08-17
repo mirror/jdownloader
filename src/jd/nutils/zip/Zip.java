@@ -66,7 +66,7 @@ public class Zip {
 
     }
 
-    private ArrayList<File> addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
+    private java.util.List<File> addFileToZip(String path, String srcFile, ZipOutputStream zip) throws Exception {
     	ArrayList<File> ret = new ArrayList<File>();
             if (srcFile.endsWith("Thumbs.db")) { return null; }
             if (excludeFilter != null) {
@@ -102,7 +102,7 @@ public class Zip {
       
     }
 
-    private ArrayList<File> addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
+    private java.util.List<File> addFolderToZip(String path, String srcFolder, ZipOutputStream zip) throws Exception {
     	ArrayList<File> ret = new ArrayList<File>();
         File folder = new File(srcFolder);
         if (excludeFiles.contains(folder)) { return ret; }
@@ -134,7 +134,7 @@ public class Zip {
      * 
      * @throws Exception
      */
-    public ArrayList<File>  zip() throws Exception {
+    public java.util.List<File>  zip() throws Exception {
     	ArrayList<File> ret = new ArrayList<File>();
         ZipOutputStream zip = null;
         FileOutputStream fileWriter = null;

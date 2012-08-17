@@ -28,9 +28,9 @@ public abstract class JDTableModel extends AbstractTableModel {
 
     protected SubConfiguration config;
 
-    protected ArrayList<Object> list = new ArrayList<Object>();
-    protected ArrayList<JDTableColumn> columns = new ArrayList<JDTableColumn>();
-    private ArrayList<JDRowHighlighter> highlighter = new ArrayList<JDRowHighlighter>();
+    protected java.util.List<Object> list = new ArrayList<Object>();
+    protected java.util.List<JDTableColumn> columns = new ArrayList<JDTableColumn>();
+    private java.util.List<JDRowHighlighter> highlighter = new ArrayList<JDRowHighlighter>();
     private JDTable table = null;
 
     public JDTableModel(String configname) {
@@ -73,7 +73,7 @@ public abstract class JDTableModel extends AbstractTableModel {
         return list.size();
     }
 
-    public ArrayList<JDRowHighlighter> getJDRowHighlighter() {
+    public java.util.List<JDRowHighlighter> getJDRowHighlighter() {
         return highlighter;
     }
 

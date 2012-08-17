@@ -18,9 +18,9 @@ public class SuperPriorityDownloadAction extends AppAction {
 
     private static final long             serialVersionUID = 7107840091963427544L;
 
-    private final ArrayList<DownloadLink> links;
+    private final java.util.List<DownloadLink> links;
 
-    public SuperPriorityDownloadAction(final ArrayList<DownloadLink> links) {
+    public SuperPriorityDownloadAction(final java.util.List<DownloadLink> links) {
         this.links = links;
         Image add = NewTheme.I().getImage("media-playback-start", 20);
         Image play = NewTheme.I().getImage("prio_1", 14);

@@ -50,7 +50,7 @@ public class CrawledPackageStorable implements Storable {
     }
 
     private CrawledPackage                 pkg;
-    private ArrayList<CrawledLinkStorable> links;
+    private java.util.List<CrawledLinkStorable> links;
 
     public String getComment() {
         return pkg.getComment();
@@ -164,7 +164,7 @@ public class CrawledPackageStorable implements Storable {
         return pkg.getRawDownloadFolder();
     }
 
-    public ArrayList<CrawledLinkStorable> getLinks() {
+    public java.util.List<CrawledLinkStorable> getLinks() {
         return links;
     }
 
@@ -184,7 +184,7 @@ public class CrawledPackageStorable implements Storable {
         this.pkg.setExpanded(expanded);
     }
 
-    public void setLinks(ArrayList<CrawledLinkStorable> links) {
+    public void setLinks(java.util.List<CrawledLinkStorable> links) {
         if (links != null) {
             this.links = links;
             synchronized (pkg) {

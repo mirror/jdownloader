@@ -89,7 +89,7 @@ public class WbShRnt {
             }
 
         }
-        ArrayList<colorD> colors = new ArrayList<colorD>();
+        java.util.List<colorD> colors = new ArrayList<colorD>();
         for (int x = 0; x < captcha.getWidth(); x++) {
             for (int y = 0; y < captcha.getHeight(); y++) {
                 if (captcha.grid[x][y] >= 0) {
@@ -119,7 +119,7 @@ public class WbShRnt {
                     captcha.grid[x][y] *= -500;
             }
         }
-        ArrayList<PixelObject> coLetters = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> coLetters = new ArrayList<PixelObject>();
         for (int x = 0; x < captcha.getWidth(); x++) {
             outerY: for (int y = 0; y < captcha.getHeight(); y++) {
                 if (captcha.grid[x][y] != 0xffffff) {

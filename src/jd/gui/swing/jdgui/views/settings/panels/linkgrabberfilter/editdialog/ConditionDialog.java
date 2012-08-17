@@ -479,7 +479,7 @@ public abstract class ConditionDialog<T> extends AbstractDialog<T> {
         panel.add(size, "pushx,growx,spanx");
         // Type
 
-        ArrayList<JComponent> comp = new ArrayList<JComponent>();
+        java.util.List<JComponent> comp = new ArrayList<JComponent>();
         JLabel lbl, ico;
         lbl = new JLabel(AudioExtensions.AA.getDesc());
         ico = new JLabel(NewTheme.I().getIcon(AudioExtensions.AA.getIconID(), 18));

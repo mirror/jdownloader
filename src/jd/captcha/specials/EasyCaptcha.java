@@ -411,8 +411,8 @@ public class EasyCaptcha {
         int lastgap = -1;
         int[][] grid = captcha.grid;
         boolean bw = captcha.owner.jas.getBoolean("easyCaptchaBW");
-        ArrayList<PixelObject> reto = new ArrayList<PixelObject>();
-        ArrayList<PixelObject> merge;
+        java.util.List<PixelObject> reto = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> merge;
         int nrx = (int) (captcha.getWidth() / (captcha.owner.getLetterNum() * 1.2));
         int nry = captcha.getHeight();
         // farbunterscheidung durch ebenen einbauen
@@ -503,7 +503,7 @@ public class EasyCaptcha {
             captcha.setOrgGrid(captcha.grid);
         }
         int gab = lastgap / (captcha.owner.getLetterNum());
-        ArrayList<PixelObject> reto2 = new ArrayList<PixelObject>();
+        java.util.List<PixelObject> reto2 = new ArrayList<PixelObject>();
         int osSize = 0;
         for (PixelObject pixelObject : reto) {
             osSize += pixelObject.getSize();
@@ -544,14 +544,14 @@ public class EasyCaptcha {
         Object[] cl = clean(captcha);
         int[] pixels = new int[] { (Integer) cl[0], (Integer) cl[1], (Integer) cl[2] };
         @SuppressWarnings("unchecked")
-        ArrayList<PixelObject> os = (ArrayList<PixelObject>) cl[3];
+        java.util.List<PixelObject> os = (java.util.List<PixelObject>) cl[3];
         Collections.sort(os);
         int gab = pixels[2] / (captcha.owner.getLetterNum());
 
         int[] mergeInfos = mergeObjectsBasic(os, captcha, gab);
         getRightletters(os, captcha, pixels, mergeInfos, 0);
         Collections.sort(os);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
             if (pixelObject.getArea() > (mergeInfos[0] / (captcha.owner.getLetterNum() * 3)) && pixelObject.getSize() > (mergeInfos[1] / (captcha.owner.getLetterNum() * 5))) {
 

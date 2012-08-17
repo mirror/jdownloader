@@ -13,9 +13,9 @@ import org.jdownloader.translate._JDT;
 
 public class RemoveAction extends AbstractRemoveAction {
     private static final long                serialVersionUID = -477419276505058907L;
-    private ArrayList<LinkgrabberFilterRule> selected;
+    private java.util.List<LinkgrabberFilterRule> selected;
 
-    private ArrayList<LinkgrabberFilterRule> remove;
+    private java.util.List<LinkgrabberFilterRule> remove;
     private boolean                          ignoreSelection  = false;
     private AbstractFilterTable              table;
     private LinkgrabberFilter                linkgrabberFilter;
@@ -26,7 +26,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     }
 
-    public RemoveAction(AbstractFilterTable table, ArrayList<LinkgrabberFilterRule> selected, boolean force) {
+    public RemoveAction(AbstractFilterTable table, java.util.List<LinkgrabberFilterRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
     }

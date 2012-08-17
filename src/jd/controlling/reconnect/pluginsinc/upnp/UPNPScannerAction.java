@@ -45,7 +45,7 @@ public class UPNPScannerAction extends BasicAction {
 
             public void run() throws Exception {
 
-                final ArrayList<UpnpRouterDevice> devices = UPNPScanner.scanDevices();
+                final java.util.List<UpnpRouterDevice> devices = UPNPScanner.scanDevices();
                 if (devices.size() == 0) {
                     Dialog.getInstance().showErrorDialog(T._.UPNPRouterPlugin_run_error());
 

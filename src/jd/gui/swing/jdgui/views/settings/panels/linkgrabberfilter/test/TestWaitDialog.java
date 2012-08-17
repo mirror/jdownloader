@@ -3,6 +3,7 @@ package jd.gui.swing.jdgui.views.settings.panels.linkgrabberfilter.test;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JComponent;
@@ -35,26 +36,26 @@ import org.jdownloader.controlling.packagizer.PackagizerController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
-public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
+public class TestWaitDialog extends AbstractDialog<List<CrawledLink>> {
 
-    private CircledProgressBar         progress;
+    private CircledProgressBar          progress;
 
-    private Thread                     recThread;
+    private Thread                      recThread;
 
-    private String                     url;
-    private ArrayList<CrawledLink>     found;
+    private String                      url;
+    private java.util.List<CrawledLink> found;
 
-    private JLabel                     lbl;
+    private JLabel                      lbl;
 
-    private int                        filtered;
+    private int                         filtered;
 
-    private ExtTableModel<CrawledLink> model;
+    private ExtTableModel<CrawledLink>  model;
 
-    private DelayedRunnable            delayer;
+    private DelayedRunnable             delayer;
 
-    private LinkFilterController       linkFilterController;
+    private LinkFilterController        linkFilterController;
 
-    private PackagizerController       packagizer;
+    private PackagizerController        packagizer;
 
     public TestWaitDialog(String string, String title, LinkFilterController controller) {
         super(Dialog.BUTTONS_HIDE_OK, title, null, null, _GUI._.literally_close());
@@ -75,7 +76,7 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
     }
 
     @Override
-    protected ArrayList<CrawledLink> createReturnValue() {
+    protected java.util.List<CrawledLink> createReturnValue() {
         return found;
     }
 
@@ -159,7 +160,7 @@ public class TestWaitDialog extends AbstractDialog<ArrayList<CrawledLink>> {
 
     }
 
-    public ArrayList<CrawledLink> getFound() {
+    public java.util.List<CrawledLink> getFound() {
         return found;
     }
 

@@ -54,7 +54,7 @@ public class PixelObject implements Comparable<PixelObject> {
     /**
      * key=color value=quantity
      */
-    public ArrayList<PixelObjectColor>                colors        = new ArrayList<PixelObjectColor>();
+    public java.util.List<PixelObjectColor>                colors        = new ArrayList<PixelObjectColor>();
     /**
      * Kontrastwert für die durchschnisserkennung
      */
@@ -70,7 +70,7 @@ public class PixelObject implements Comparable<PixelObject> {
     /**
      * Interner Vector
      */
-    private ArrayList<int[]>                          object;
+    private java.util.List<int[]>                          object;
 
     /**
      * captcha als owner. Über owner kann auf den Parameter Dump zugegriffen werden

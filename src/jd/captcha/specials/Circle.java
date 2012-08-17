@@ -150,7 +150,7 @@ public class Circle {
 
         } catch (Exception e) {
         }
-        ArrayList<int[]> best = new ArrayList<int[]>();
+        java.util.List<int[]> best = new ArrayList<int[]>();
         int h = let.getLocation()[1] + let.getHeight();
 
         for (int x = let.getLocation()[0]; x < let.getLocation()[0] + let.getWidth(); x++) {
@@ -204,7 +204,7 @@ public class Circle {
         }
     }
 
-    private void addCircles(PixelObject pixelObject, ArrayList<PixelObject> obnew) {
+    private void addCircles(PixelObject pixelObject, java.util.List<PixelObject> obnew) {
         if (pixelObject.getArea() < minArea) return;
         int[] bounds = getBounds(pixelObject);
         int r = 0;
@@ -243,8 +243,8 @@ public class Circle {
      * 
      * @return
      */
-    public ArrayList<PixelObject> getCircles() {
-        ArrayList<PixelObject> obnew = new ArrayList<PixelObject>();
+    public java.util.List<PixelObject> getCircles() {
+        java.util.List<PixelObject> obnew = new ArrayList<PixelObject>();
         for (PixelObject pixelObject : objectArray) {
 
             if (pixelObject.getArea() > minArea) {

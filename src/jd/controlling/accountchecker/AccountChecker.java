@@ -81,7 +81,7 @@ public class AccountChecker {
 
     private HashMap<String, Thread>                      checkThreads  = new HashMap<String, Thread>();
     private HashMap<String, LinkedList<AccountCheckJob>> jobs          = new HashMap<String, LinkedList<AccountCheckJob>>();
-    private ArrayList<Account>                           accountJobs   = new ArrayList<Account>();
+    private java.util.List<Account>                           accountJobs   = new ArrayList<Account>();
     private AtomicLong                                   jobsRequested = new AtomicLong(0);
     private AtomicLong                                   jobsDone      = new AtomicLong(0);
 

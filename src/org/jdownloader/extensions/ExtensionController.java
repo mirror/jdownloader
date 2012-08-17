@@ -65,7 +65,7 @@ public class ExtensionController {
 
     public void init() {
         synchronized (this) {
-            ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
+            java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
             final long t = System.currentTimeMillis();
             try {
                 if (JDInitFlags.REFRESH_CACHE) {
@@ -127,11 +127,11 @@ public class ExtensionController {
         getEventSender().fireEvent(new ExtensionControllerEvent(this, ExtensionControllerEvent.Type.UPDATED));
     }
 
-    private ArrayList<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
-        ArrayList<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
+    private java.util.List<LazyExtension> loadFromCache() throws InstantiationException, IllegalAccessException, ClassNotFoundException, StartException {
+        java.util.List<LazyExtension> cache = JSonStorage.restoreFrom(getCache(), true, null, new TypeRef<ArrayList<LazyExtension>>() {
         }, new ArrayList<LazyExtension>());
 
-        ArrayList<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
+        java.util.List<LazyExtension> lst = new ArrayList<LazyExtension>(cache);
         for (Iterator<LazyExtension> it = lst.iterator(); it.hasNext();) {
 
             LazyExtension l = it.next();
@@ -147,8 +147,8 @@ public class ExtensionController {
         return lst;
     }
 
-    private synchronized ArrayList<LazyExtension> load() {
-        ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
+    private synchronized java.util.List<LazyExtension> load() {
+        java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
         try {
             if (Application.isJared(ExtensionController.class)) {
                 ret = loadJared();
@@ -163,8 +163,8 @@ public class ExtensionController {
     }
 
     @SuppressWarnings("unchecked")
-    private ArrayList<LazyExtension> loadJared() {
-        ArrayList<LazyExtension> ret = new ArrayList<LazyExtension>();
+    private java.util.List<LazyExtension> loadJared() {
+        java.util.List<LazyExtension> ret = new ArrayList<LazyExtension>();
         File[] addons = Application.getResource("extensions").listFiles(new FilenameFilter() {
             public boolean accept(File dir, String name) {
                 return name.endsWith(".jar");
@@ -240,8 +240,8 @@ public class ExtensionController {
     }
 
     @SuppressWarnings("unchecked")
-    private ArrayList<LazyExtension> loadUnpacked() {
-        ArrayList<LazyExtension> retl = new ArrayList<LazyExtension>();
+    private java.util.List<LazyExtension> loadUnpacked() {
+        java.util.List<LazyExtension> retl = new ArrayList<LazyExtension>();
         URL ret = getClass().getResource("/");
         File root;
         if ("file".equalsIgnoreCase(ret.getProtocol())) {
@@ -298,7 +298,7 @@ public class ExtensionController {
         return retl;
     }
 
-    private ArrayList<LazyExtension> initModule(Class<AbstractExtension<?, ?>> cls, ArrayList<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
+    private java.util.List<LazyExtension> initModule(Class<AbstractExtension<?, ?>> cls, java.util.List<LazyExtension> list, File jarFile) throws InstantiationException, IllegalAccessException, StartException, IOException, ClassNotFoundException {
         if (list == null) list = new ArrayList<LazyExtension>();
         String id = cls.getName().substring(27);
 
@@ -332,8 +332,8 @@ public class ExtensionController {
      * 
      * @return
      */
-    public ArrayList<AbstractExtension<?, ?>> getEnabledExtensions() {
-        ArrayList<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
+    public java.util.List<AbstractExtension<?, ?>> getEnabledExtensions() {
+        java.util.List<AbstractExtension<?, ?>> ret = new ArrayList<AbstractExtension<?, ?>>();
         List<LazyExtension> llist = list;
         for (LazyExtension aew : llist) {
             if (aew._getExtension() != null && aew._getExtension().isEnabled()) ret.add(aew._getExtension());

@@ -34,7 +34,7 @@ public class QuickFilterHosterTable extends FilterTable {
     }
 
     @SuppressWarnings("unchecked")
-    protected ArrayList<Filter> updateQuickFilerTableData() {
+    protected java.util.List<Filter> updateQuickFilerTableData() {
 
         // synchronized (LOCK) {
         /* reset existing filter counters */
@@ -64,7 +64,7 @@ public class QuickFilterHosterTable extends FilterTable {
 
         }
 
-        ArrayList<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
+        java.util.List<CrawledLink> filteredLinks = new ArrayList<CrawledLink>();
         /* update filter list */
         boolean readL = LinkCollector.getInstance().readLock();
         try {
@@ -104,8 +104,8 @@ public class QuickFilterHosterTable extends FilterTable {
             }
         }
         /* update FilterTableModel */
-        // ArrayList<Filter> newfilters = new
-        // ArrayList<Filter>();
+        // java.util.List<Filter> newfilters = new
+        // java.util.List<Filter>();
 
         return new ArrayList<Filter>(filtersInUse);
     }
@@ -146,7 +146,7 @@ public class QuickFilterHosterTable extends FilterTable {
     }
 
     @Override
-    ArrayList<Filter> getAllFilters() {
+    java.util.List<Filter> getAllFilters() {
         return new ArrayList<Filter>(filterMap.values());
     }
 

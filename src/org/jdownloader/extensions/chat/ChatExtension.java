@@ -90,7 +90,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     private static final Pattern             CMD_TRANSLATE        = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
     private static final Pattern             CMD_VERSION          = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
 
-    private static final ArrayList<String>   COMMANDS             = new ArrayList<String>();
+    private static final java.util.List<String>   COMMANDS             = new ArrayList<String>();
 
     public static String                     STYLE;
     static {
@@ -128,7 +128,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     private long                             lastAction;
     private String                           lastCommand;
     private boolean                          loggedIn;
-    private ArrayList<User>                  NAMES;
+    private java.util.List<User>                  NAMES;
     private boolean                          nickaway;
     private int                              nickCount            = 0;
     private String                           orgNick;
@@ -500,9 +500,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
                     final String org = txt;
                     final int last = Math.max(0, txt.lastIndexOf(" "));
                     txt = txt.substring(last).trim();
-                    final ArrayList<String> users = new ArrayList<String>();
+                    final java.util.List<String> users = new ArrayList<String>();
 
-                    final ArrayList<String> strings = new ArrayList<String>();
+                    final java.util.List<String> strings = new ArrayList<String>();
                     strings.addAll(ChatExtension.COMMANDS);
                     for (final User user : ChatExtension.this.NAMES) {
                         strings.add(user.name);

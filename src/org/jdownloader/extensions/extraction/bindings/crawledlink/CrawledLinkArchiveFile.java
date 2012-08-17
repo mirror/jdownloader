@@ -12,7 +12,7 @@ import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 
 public class CrawledLinkArchiveFile implements ArchiveFile {
 
-    private ArrayList<CrawledLink> links;
+    private java.util.List<CrawledLink> links;
     private String                 name;
     private long                   size;
 
@@ -24,7 +24,7 @@ public class CrawledLinkArchiveFile implements ArchiveFile {
 
     }
 
-    public ArrayList<CrawledLink> getLinks() {
+    public java.util.List<CrawledLink> getLinks() {
         return links;
     }
 

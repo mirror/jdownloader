@@ -28,7 +28,7 @@ import jd.nutils.Colors;
 public class RmFrksNt {
 
     public static Letter[] getLetters(Captcha captcha) {
-        ArrayList<PixelObject> ob = ColorObjects.getObjects(captcha, 80, 15);
+        java.util.List<PixelObject> ob = ColorObjects.getObjects(captcha, 80, 15);
         // delete the lines
         for (Iterator<PixelObject> iterator = ob.iterator(); iterator.hasNext();) {
             PixelObject pixelObject = iterator.next();

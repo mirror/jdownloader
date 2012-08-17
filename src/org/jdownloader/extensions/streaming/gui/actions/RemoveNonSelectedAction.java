@@ -15,10 +15,10 @@ public class RemoveNonSelectedAction extends AppAction {
      * 
      */
     private static final long       serialVersionUID = 6855083561629297363L;
-    private ArrayList<AbstractNode> selection;
+    private java.util.List<AbstractNode> selection;
     private DownloadsTable          table;
 
-    public RemoveNonSelectedAction(DownloadsTable table, ArrayList<AbstractNode> selection) {
+    public RemoveNonSelectedAction(DownloadsTable table, java.util.List<AbstractNode> selection) {
         this.selection = selection;
         this.table = table;
         setName(_GUI._.RemoveNonSelectedAction_RemoveNonSelectedAction_object_());
@@ -38,7 +38,7 @@ public class RemoveNonSelectedAction extends AppAction {
         //
         // public void run() {
         //
-        // final ArrayList<CrawledLink> selected =
+        // final java.util.List<CrawledLink> selected =
         // LinkTreeUtils.getSelectedChildren(selection);
         // List<CrawledLink> nonselected =
         // LinkCollector.getInstance().getChildrenByFilter(new

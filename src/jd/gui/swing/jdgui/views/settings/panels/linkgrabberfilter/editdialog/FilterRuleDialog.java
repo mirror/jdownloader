@@ -43,7 +43,7 @@ public class FilterRuleDialog extends ConditionDialog<LinkgrabberFilterRule> {
             rule.setEnabled(true);
             lfc.add(rule);
 
-            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
+            java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(text, _GUI._.FilterRuleDialog_runTest_title_(rule.toString()), lfc) {
 
                 @Override
                 protected ExtTableModel<CrawledLink> createTableModel() {

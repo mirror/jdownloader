@@ -15,13 +15,13 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
     /**
      * 
      */
-    private static final long      serialVersionUID = 4415726693932960026L;
-    protected long                 fileSize;
-    private DomainInfo[]           domainInfos;
-    protected boolean              enabled          = false;
-    private int                    offline          = 0;
-    private int                    online           = 0;
-    private ArrayList<CrawledLink> items            = new ArrayList<CrawledLink>();
+    private static final long           serialVersionUID = 4415726693932960026L;
+    protected long                      fileSize;
+    private DomainInfo[]                domainInfos;
+    protected boolean                   enabled          = false;
+    private int                         offline          = 0;
+    private int                         online           = 0;
+    private java.util.List<CrawledLink> items            = new ArrayList<CrawledLink>();
 
     public CrawledPackageView() {
         this.fileSize = 0l;
@@ -39,7 +39,7 @@ public class CrawledPackageView extends ChildrenView<CrawledLink> {
         this.items = newl.items;
     }
 
-    private void _update(ArrayList<CrawledLink> links) {
+    private void _update(java.util.List<CrawledLink> links) {
         HashMap<String, Long> names = new HashMap<String, Long>();
         TreeSet<DomainInfo> domains = new TreeSet<DomainInfo>();
         for (CrawledLink item : links) {

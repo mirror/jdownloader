@@ -227,7 +227,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
                 }
                 blacklist.getComponent().setText(sb.toString());
                 sb = new StringBuilder();
-                ArrayList<String> pwList = s.getPasswordList();
+                java.util.List<String> pwList = s.getPasswordList();
                 if (pwList == null) pwList = new ArrayList<String>();
                 for (String line : pwList) {
                     if (sb.length() > 0) sb.append(System.getProperty("line.separator"));
@@ -265,7 +265,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         s.setSubpathEnabledIfAllFilesAreInAFolder(toggleUseSubpathOnlyIfNotFoldered.getComponent().isSelected());
         {
             String[] list = Regex.getLines(passwordlist.getComponent().getText());
-            ArrayList<String> passwords = new ArrayList<String>(list.length);
+            java.util.List<String> passwords = new ArrayList<String>(list.length);
             for (String ss : list) {
                 if (passwords.contains(ss)) continue;
                 passwords.add(ss);
@@ -274,7 +274,7 @@ public class ExtractionConfigPanel extends ExtensionConfigPanel<ExtractionExtens
         }
         {
             String[] list = Regex.getLines(blacklist.getComponent().getText());
-            ArrayList<String> ignoreList = new ArrayList<String>(list.length);
+            java.util.List<String> ignoreList = new ArrayList<String>(list.length);
             for (String ss : list) {
                 if (ignoreList.contains(ss)) continue;
                 ignoreList.add(ss);

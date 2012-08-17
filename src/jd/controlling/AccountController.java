@@ -58,7 +58,7 @@ public class AccountController implements AccountControllerListener {
 
     private static final long                                                    serialVersionUID = -7560087582989096645L;
 
-    private static HashMap<String, ArrayList<Account>>                           hosteraccounts   = null;
+    private static HashMap<String, java.util.List<Account>>                      HOSTER_ACCOUNTS  = null;
 
     private static HashMap<Account, Long>                                        blockedAccounts  = new HashMap<Account, Long>();
 
@@ -96,9 +96,9 @@ public class AccountController implements AccountControllerListener {
                 return "save accounts...";
             }
         });
-        hosteraccounts = loadAccounts();
-        final Collection<ArrayList<Account>> accsc = hosteraccounts.values();
-        for (final ArrayList<Account> accs : accsc) {
+        HOSTER_ACCOUNTS = loadAccounts();
+        final Collection<List<Account>> accsc = HOSTER_ACCOUNTS.values();
+        for (final java.util.List<Account> accs : accsc) {
             for (final Account acc : accs) {
                 acc.setAccountController(this);
             }
@@ -115,9 +115,9 @@ public class AccountController implements AccountControllerListener {
 
     protected void save() {
         HashMap<String, ArrayList<AccountData>> ret = new HashMap<String, ArrayList<AccountData>>();
-        synchronized (hosteraccounts) {
-            for (Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator(); it.hasNext();) {
-                Entry<String, ArrayList<Account>> next = it.next();
+        synchronized (HOSTER_ACCOUNTS) {
+            for (Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator(); it.hasNext();) {
+                Entry<String, java.util.List<Account>> next = it.next();
                 if (next.getValue().size() > 0) {
                     ArrayList<AccountData> list = new ArrayList<AccountData>();
                     ret.put(next.getKey(), list);
@@ -295,7 +295,7 @@ public class AccountController implements AccountControllerListener {
         return INSTANCE;
     }
 
-    private synchronized HashMap<String, ArrayList<Account>> loadAccounts() {
+    private synchronized HashMap<String, java.util.List<Account>> loadAccounts() {
         HashMap<String, ArrayList<AccountData>> dat = config.getAccounts();
         if (dat == null) {
             try {
@@ -307,11 +307,11 @@ public class AccountController implements AccountControllerListener {
         if (dat == null) {
             dat = new HashMap<String, ArrayList<AccountData>>();
         }
-        HashMap<String, ArrayList<Account>> ret = new HashMap<String, ArrayList<Account>>();
+        HashMap<String, java.util.List<Account>> ret = new HashMap<String, java.util.List<Account>>();
         for (Iterator<Entry<String, ArrayList<AccountData>>> it = dat.entrySet().iterator(); it.hasNext();) {
             Entry<String, ArrayList<AccountData>> next = it.next();
             if (next.getValue().size() > 0) {
-                ArrayList<Account> list = new ArrayList<Account>();
+                java.util.List<Account> list = new ArrayList<Account>();
                 ret.put(next.getKey(), list);
                 for (AccountData ad : next.getValue()) {
                     Account acc;
@@ -340,12 +340,12 @@ public class AccountController implements AccountControllerListener {
             for (Iterator<Entry<String, Object>> it = tree.entrySet().iterator(); it.hasNext();) {
                 Entry<String, Object> next = it.next();
                 if (next.getValue() instanceof ArrayList) {
-                    ArrayList<Object> accList = (ArrayList<Object>) next.getValue();
+                    java.util.List<Object> accList = (java.util.List<Object>) next.getValue();
                     if (accList.size() > 0) {
                         ArrayList<AccountData> list = new ArrayList<AccountData>();
                         ret.put(next.getKey(), list);
                         if (accList.get(0) instanceof Account) {
-                            ArrayList<Account> accList2 = (ArrayList<Account>) next.getValue();
+                            java.util.List<Account> accList2 = (java.util.List<Account>) next.getValue();
                             for (Account a : accList2) {
                                 AccountData ac;
                                 list.add(ac = new AccountData());
@@ -355,7 +355,7 @@ public class AccountController implements AccountControllerListener {
                                 ac.setEnabled(a.isEnabled());
                             }
                         } else if (accList.get(0) instanceof Map) {
-                            ArrayList<Map<String, Object>> accList2 = (ArrayList<Map<String, Object>>) next.getValue();
+                            java.util.List<Map<String, Object>> accList2 = (java.util.List<Map<String, Object>>) next.getValue();
                             for (Map<String, Object> a : accList2) {
                                 AccountData ac;
                                 list.add(ac = new AccountData());
@@ -417,16 +417,16 @@ public class AccountController implements AccountControllerListener {
     }
 
     /* returns a list of all available accounts for given host */
-    public List<Account> list(String host) {
+    public ArrayList<Account> list(String host) {
         ArrayList<Account> ret = new ArrayList<Account>();
-        synchronized (hosteraccounts) {
+        synchronized (HOSTER_ACCOUNTS) {
             if (StringUtils.isEmpty(host)) {
-                for (String hoster : hosteraccounts.keySet()) {
-                    ArrayList<Account> ret2 = hosteraccounts.get(hoster);
+                for (String hoster : HOSTER_ACCOUNTS.keySet()) {
+                    java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(hoster);
                     if (ret2 != null) ret.addAll(ret2);
                 }
             } else {
-                ArrayList<Account> ret2 = hosteraccounts.get(host);
+                java.util.List<Account> ret2 = HOSTER_ACCOUNTS.get(host);
                 if (ret2 != null) ret.addAll(ret2);
             }
         }
@@ -440,9 +440,9 @@ public class AccountController implements AccountControllerListener {
 
     /* do we have accounts for this host */
     public boolean hasAccounts(final String host) {
-        ArrayList<Account> ret = null;
-        synchronized (hosteraccounts) {
-            ret = hosteraccounts.get(host);
+        java.util.List<Account> ret = null;
+        synchronized (HOSTER_ACCOUNTS) {
+            ret = HOSTER_ACCOUNTS.get(host);
             if (ret != null) {
                 for (Account acc : ret) {
                     if (acc.isEnabled() && acc.isValid()) return true;
@@ -454,10 +454,10 @@ public class AccountController implements AccountControllerListener {
 
     /* do we have multihost accounts for this host */
     public boolean hasMultiHostAccounts(final String host) {
-        synchronized (hosteraccounts) {
-            Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator();
+        synchronized (HOSTER_ACCOUNTS) {
+            Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator();
             while (it.hasNext()) {
-                Entry<String, ArrayList<Account>> next = it.next();
+                Entry<String, java.util.List<Account>> next = it.next();
                 if (next.getKey().equalsIgnoreCase(host)) {
                     /* we dont't want account from same host */
                     continue;
@@ -484,7 +484,7 @@ public class AccountController implements AccountControllerListener {
                          * synchronized on list because plugins can change the list in runtime
                          */
                         if (supported instanceof ArrayList) {
-                            for (String sup : (ArrayList<String>) supported) {
+                            for (String sup : (java.util.List<String>) supported) {
                                 if (host.equalsIgnoreCase(sup)) { return true; }
                             }
                         }
@@ -497,11 +497,11 @@ public class AccountController implements AccountControllerListener {
 
     public void addAccount(final Account account) {
         if (account == null) return;
-        synchronized (hosteraccounts) {
-            ArrayList<Account> accs = hosteraccounts.get(account.getHoster());
+        synchronized (HOSTER_ACCOUNTS) {
+            java.util.List<Account> accs = HOSTER_ACCOUNTS.get(account.getHoster());
             if (accs == null) {
                 accs = new ArrayList<Account>();
-                hosteraccounts.put(account.getHoster(), accs);
+                HOSTER_ACCOUNTS.put(account.getHoster(), accs);
             }
             for (final Account acc : accs) {
                 if (acc.equals(account)) return;
@@ -517,10 +517,10 @@ public class AccountController implements AccountControllerListener {
         /* remove reference to AccountController */
         account.setAccountController(null);
         removeAccountBlocked(account);
-        synchronized (hosteraccounts) {
-            ArrayList<Account> accs = hosteraccounts.get(account.getHoster());
+        synchronized (HOSTER_ACCOUNTS) {
+            java.util.List<Account> accs = HOSTER_ACCOUNTS.get(account.getHoster());
             if (accs == null || !accs.remove(account)) return false;
-            if (accs.size() == 0) hosteraccounts.remove(account.getHoster());
+            if (accs.size() == 0) HOSTER_ACCOUNTS.remove(account.getHoster());
         }
         this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.REMOVED, account));
         return true;
@@ -553,8 +553,8 @@ public class AccountController implements AccountControllerListener {
 
     public LinkedList<Account> getValidAccounts(final String host) {
         LinkedList<Account> ret = null;
-        synchronized (hosteraccounts) {
-            final ArrayList<Account> accounts = hosteraccounts.get(host);
+        synchronized (HOSTER_ACCOUNTS) {
+            final java.util.List<Account> accounts = HOSTER_ACCOUNTS.get(host);
             if (accounts == null || accounts.size() == 0) return null;
             ret = new LinkedList<Account>(accounts);
         }
@@ -571,10 +571,10 @@ public class AccountController implements AccountControllerListener {
 
     public LinkedList<Account> getMultiHostAccounts(final String host) {
         LinkedList<Account> ret = new LinkedList<Account>();
-        synchronized (hosteraccounts) {
-            Iterator<Entry<String, ArrayList<Account>>> it = hosteraccounts.entrySet().iterator();
+        synchronized (HOSTER_ACCOUNTS) {
+            Iterator<Entry<String, java.util.List<Account>>> it = HOSTER_ACCOUNTS.entrySet().iterator();
             while (it.hasNext()) {
-                Entry<String, ArrayList<Account>> next = it.next();
+                Entry<String, java.util.List<Account>> next = it.next();
                 if (next.getKey().equalsIgnoreCase(host)) {
                     /* we dont't want account from same host */
                     continue;
@@ -601,7 +601,7 @@ public class AccountController implements AccountControllerListener {
                          * synchronized on list because plugins can change the list in runtime
                          */
                         if (supported instanceof ArrayList) {
-                            for (String sup : (ArrayList<String>) supported) {
+                            for (String sup : (java.util.List<String>) supported) {
                                 if (sup.equalsIgnoreCase(host)) {
                                     ret.add(acc);
                                     break;
@@ -617,7 +617,7 @@ public class AccountController implements AccountControllerListener {
 
     @Deprecated
     public ArrayList<Account> getAllAccounts(String string) {
-        return (ArrayList<Account>) list(string);
+        return list(string);
     }
 
     public static String createFullBuyPremiumUrl(String buyPremiumUrl, String id) {

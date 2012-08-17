@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class UPNPScanner implements Runnable {
-    private ArrayList<UpnpRouterDevice> foundDevices;
+    private java.util.List<UpnpRouterDevice> foundDevices;
 
     private UPNPScanner() {
         // ThreadGroup grp = new
@@ -40,7 +40,7 @@ public class UPNPScanner implements Runnable {
 
     final static String MSG = "M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nST: urn:schemas-upnp-org:device:InternetGatewayDevice:1\r\nMAN: \"ssdp:discover\"\r\nMX: 3\r\n\r\n";
 
-    public synchronized ArrayList<UpnpRouterDevice> scan() throws InterruptedException {
+    public synchronized java.util.List<UpnpRouterDevice> scan() throws InterruptedException {
 
         foundDevices = new ArrayList<UpnpRouterDevice>();
         /*
@@ -255,7 +255,7 @@ public class UPNPScanner implements Runnable {
 
     private static UPNPScanner INSTANCE = new UPNPScanner();
 
-    public static ArrayList<UpnpRouterDevice> scanDevices() throws InterruptedException {
+    public static java.util.List<UpnpRouterDevice> scanDevices() throws InterruptedException {
         return INSTANCE.scan();
     }
 

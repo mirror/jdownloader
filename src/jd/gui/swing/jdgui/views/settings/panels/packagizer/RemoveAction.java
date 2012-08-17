@@ -12,9 +12,9 @@ import org.jdownloader.translate._JDT;
 
 public class RemoveAction extends AbstractRemoveAction {
     private static final long         serialVersionUID = -477419276505058907L;
-    private ArrayList<PackagizerRule> selected;
+    private java.util.List<PackagizerRule> selected;
     private PackagizerFilterTable     table;
-    private ArrayList<PackagizerRule> remove;
+    private java.util.List<PackagizerRule> remove;
     private boolean                   ignoreSelection  = false;
 
     public RemoveAction(PackagizerFilterTable table) {
@@ -24,7 +24,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     }
 
-    public RemoveAction(PackagizerFilterTable table, ArrayList<PackagizerRule> selected, boolean force) {
+    public RemoveAction(PackagizerFilterTable table, java.util.List<PackagizerRule> selected, boolean force) {
         this.table = table;
         this.selected = selected;
     }

@@ -130,10 +130,10 @@ public class DeprecatedSubversion implements ISVNEventHandler {
      * @throws SVNException
      */
     @SuppressWarnings("unchecked")
-    public ArrayList<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
+    public java.util.List<SVNLogEntry> getChangeset(int start, int end) throws SVNException {
         Collection<SVNLogEntry> log = repository.log(new String[] { "" }, null, start, end, true, true);
 
-        ArrayList<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
+        java.util.List<SVNLogEntry> list = new ArrayList<SVNLogEntry>();
         list.addAll(log);
         return list;
     }
@@ -258,8 +258,8 @@ public class DeprecatedSubversion implements ISVNEventHandler {
      * @param file
      * @return
      */
-    public ArrayList<SVNInfo> getInfo(File file) {
-        final ArrayList<SVNInfo> ret = new ArrayList<SVNInfo>();
+    public java.util.List<SVNInfo> getInfo(File file) {
+        final java.util.List<SVNInfo> ret = new ArrayList<SVNInfo>();
         try {
             getWCClient().doInfo(file, SVNRevision.UNDEFINED, SVNRevision.WORKING, SVNDepth.getInfinityOrEmptyDepth(true), null, new ISVNInfoHandler() {
 

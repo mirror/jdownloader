@@ -73,13 +73,13 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
 
             public void run() {
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
-                ArrayList<FilePackage> fpkgs = new ArrayList<FilePackage>();
-                ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
+                java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
+                java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
                 for (AbstractNode node : values) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
-                        ArrayList<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
-                        ArrayList<FilePackage> packages = LinkCollector.getInstance().removeAndConvert(links);
+                        java.util.List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
+                        java.util.List<FilePackage> packages = LinkCollector.getInstance().convert(links, true);
                         if (packages != null) fpkgs.addAll(packages);
                     } else if (node instanceof CrawledLink) {
                         /* collect all CrawledLinks */
@@ -87,7 +87,7 @@ public class WatchAsYouDownloadLinkgrabberAction extends AppAction {
                     }
                 }
                 /* convert all selected CrawledLinks to FilePackages */
-                ArrayList<FilePackage> frets = LinkCollector.getInstance().removeAndConvert(clinks);
+                java.util.List<FilePackage> frets = LinkCollector.getInstance().convert(clinks, true);
                 boolean canHandle = false;
                 if (frets != null) fpkgs.addAll(frets);
                 if (fpkgs != null && fpkgs.size() > 0) {

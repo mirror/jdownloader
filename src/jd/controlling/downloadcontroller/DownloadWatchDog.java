@@ -128,7 +128,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     private final LinkedList<SingleDownloadController>                 DownloadControllers    = new LinkedList<SingleDownloadController>();
     private final LinkedList<DownloadLink>                             forcedLinks            = new LinkedList<DownloadLink>();
 
-    private final HashMap<String, ArrayList<SingleDownloadController>> activeDownloadsbyHost  = new HashMap<String, ArrayList<SingleDownloadController>>();
+    private final HashMap<String, java.util.List<SingleDownloadController>> activeDownloadsbyHost  = new HashMap<String, java.util.List<SingleDownloadController>>();
     private final HashMap<DownloadLink, DownloadControlHistory>        downloadControlHistory = new HashMap<DownloadLink, DownloadControlHistory>();
 
     private Object                                                     currentstopMark        = STOPMARK.NONE;
@@ -195,7 +195,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         synchronized (activeDownloadsbyHost) {
             String host = con.getDownloadLink().getHost();
             /* increase active counter for this hoster */
-            ArrayList<SingleDownloadController> active = this.activeDownloadsbyHost.get(host);
+            java.util.List<SingleDownloadController> active = this.activeDownloadsbyHost.get(host);
             if (active == null) {
                 active = new ArrayList<SingleDownloadController>();
                 this.activeDownloadsbyHost.put(host, active);
@@ -228,7 +228,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      */
     private int activeDownloadsbyHosts(final String host) {
         synchronized (activeDownloadsbyHost) {
-            final ArrayList<SingleDownloadController> ret = activeDownloadsbyHost.get(host);
+            final java.util.List<SingleDownloadController> ret = activeDownloadsbyHost.get(host);
             if (ret != null) return ret.size();
         }
         return 0;
@@ -252,7 +252,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         long spaceneeded = 1024l * 1024 * Math.max(0, config.getForcedFreeSpaceOnDisk());
         /* this HashSet contains all Path-parts of the File we want to download */
         File freeSpace = null;
-        ArrayList<String> pathes = new ArrayList<String>();
+        java.util.List<String> pathes = new ArrayList<String>();
         if (file2Root != null && file2Root.isFile()) {
             file2Root = file2Root.getParentFile();
         }
@@ -325,7 +325,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         synchronized (activeDownloadsbyHost) {
             String host = link.getHost();
             /* decrease active counter for this hoster */
-            ArrayList<SingleDownloadController> active = this.activeDownloadsbyHost.get(host);
+            java.util.List<SingleDownloadController> active = this.activeDownloadsbyHost.get(host);
             if (active == null) { throw new WTFException("no SingleDownloadController available for this host"); }
             active.remove(con);
             if (active.size() == 0) {
@@ -414,8 +414,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
      * 
      * @return
      */
-    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks, HashMap<String, ArrayList<Account>> accountCache, HashMap<String, PluginForHost> pluginCache, boolean forceDownload) {
-        if (accountCache == null) accountCache = new HashMap<String, ArrayList<Account>>();
+    public DownloadControlInfo getNextDownloadLink(List<DownloadLink> possibleLinks, HashMap<String, java.util.List<Account>> accountCache, HashMap<String, PluginForHost> pluginCache, boolean forceDownload) {
+        if (accountCache == null) accountCache = new HashMap<String, java.util.List<Account>>();
         if (pluginCache == null) pluginCache = new HashMap<String, PluginForHost>();
         try {
             retryLoop: while (true) {
@@ -444,7 +444,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         /* max downloads per host reached */
                         continue linkLoop;
                     }
-                    ArrayList<Account> usableAccounts = accountCache.get(nextDownloadLink.getHost());
+                    java.util.List<Account> usableAccounts = accountCache.get(nextDownloadLink.getHost());
                     if (usableAccounts == null) {
                         usableAccounts = new ArrayList<Account>();
                         if (org.jdownloader.settings.staticreferences.CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled()) {
@@ -857,7 +857,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
     public void abortAllSingleDownloadControllers() {
 
         while (true) {
-            ArrayList<SingleDownloadController> list = new ArrayList<SingleDownloadController>();
+            java.util.List<SingleDownloadController> list = new ArrayList<SingleDownloadController>();
             synchronized (DownloadControllers) {
                 list.addAll(DownloadControllers);
             }
@@ -920,9 +920,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         int ret = 0;
         int maxDownloads = config.getMaxSimultaneDownloads();
         int maxLoops = possibleLinks.size();
-        HashMap<String, ArrayList<Account>> accountCache = new HashMap<String, ArrayList<Account>>();
+        HashMap<String, java.util.List<Account>> accountCache = new HashMap<String, java.util.List<Account>>();
         HashMap<String, PluginForHost> pluginCache = new HashMap<String, PluginForHost>();
-        ArrayList<DownloadLink> forcedLink = new ArrayList<DownloadLink>(1);
+        java.util.List<DownloadLink> forcedLink = new ArrayList<DownloadLink>(1);
         startLoop: while (this.forcedLinksWaiting() || ((getActiveDownloads() < maxDownloads) && maxLoops >= 0)) {
             if (!this.newDLStartAllowed() || this.isStopMarkReached()) {
                 break;
@@ -1123,7 +1123,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                          * by doing this we don't have to walk through possible links multiple times to find next download link, as the list
                                          * itself will already be correct sorted
                                          */
-                                        HashMap<Long, ArrayList<DownloadLink>> optimizedList = new HashMap<Long, ArrayList<DownloadLink>>();
+                                        HashMap<Long, java.util.List<DownloadLink>> optimizedList = new HashMap<Long, java.util.List<DownloadLink>>();
                                         /*
                                          * changes in DownloadController available, refresh DownloadList
                                          */
@@ -1132,7 +1132,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                                 for (DownloadLink fpLink : fp.getChildren()) {
                                                     if (fpLink.getDefaultPlugin() == null || !fpLink.isEnabled() || (fpLink.getAvailableStatus() == AvailableStatus.FALSE) || fpLink.getLinkStatus().isFinished() || fpLink.getLinkStatus().hasStatus(LinkStatus.TEMP_IGNORE)) continue;
                                                     long prio = fpLink.getPriority();
-                                                    ArrayList<DownloadLink> list = optimizedList.get(prio);
+                                                    java.util.List<DownloadLink> list = optimizedList.get(prio);
                                                     if (list == null) {
                                                         list = new ArrayList<DownloadLink>();
                                                         optimizedList.put(prio, list);
@@ -1150,7 +1150,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                              * find next highest priority and add the links
                                              */
                                             Long highest = Collections.max(optimizedList.keySet());
-                                            ArrayList<DownloadLink> ret = optimizedList.remove(highest);
+                                            java.util.List<DownloadLink> ret = optimizedList.remove(highest);
                                             if (ret != null) links.addAll(ret);
                                         }
                                         lastStructureChange = currentStructure;

@@ -24,7 +24,7 @@ public enum DLNAOrg {
     }
 
     public static List<DLNAOrg> parse(int bitmask) {
-        ArrayList<DLNAOrg> ret = new ArrayList<DLNAOrg>();
+        java.util.List<DLNAOrg> ret = new ArrayList<DLNAOrg>();
 
         for (DLNAOrg v : values()) {
             if (v.isIn(bitmask)) {

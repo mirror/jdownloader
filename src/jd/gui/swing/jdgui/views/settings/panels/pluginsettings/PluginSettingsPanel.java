@@ -76,7 +76,7 @@ public class PluginSettingsPanel extends JPanel implements SettingsComponent, Ac
     }
 
     private void fill() {
-        ArrayList<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
+        java.util.List<LazyPlugin<?>> list = new ArrayList<LazyPlugin<?>>();
         if (list != null) {
             for (LazyHostPlugin plg : HostPluginController.getInstance().list()) {
                 if (plg.isHasConfig()) {

@@ -44,7 +44,7 @@ public class RemoveOptionsAction extends AbstractAction {
 
     public void actionPerformed(ActionEvent e) {
         JPopupMenu popup = new JPopupMenu();
-        ArrayList<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
+        java.util.List<AbstractNode> selection = table.getExtTableModel().getSelectedObjects();
 
         SelectionInfo<CrawledPackage, CrawledLink> si = new SelectionInfo<CrawledPackage, CrawledLink>(null, selection, null, null, table);
         popup.add(new RemoveAllAction().toContextMenuAction());

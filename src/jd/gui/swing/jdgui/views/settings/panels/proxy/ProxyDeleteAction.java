@@ -11,7 +11,7 @@ import org.jdownloader.gui.views.components.AbstractRemoveAction;
 
 public class ProxyDeleteAction extends AbstractRemoveAction {
 
-    private ArrayList<ProxyInfo> selected = null;
+    private java.util.List<ProxyInfo> selected = null;
     private ProxyTable           table;
 
     public ProxyDeleteAction(ProxyTable table) {
@@ -20,7 +20,7 @@ public class ProxyDeleteAction extends AbstractRemoveAction {
 
     }
 
-    public ProxyDeleteAction(final ArrayList<ProxyInfo> selected, boolean force) {
+    public ProxyDeleteAction(final java.util.List<ProxyInfo> selected, boolean force) {
         super();
         this.selected = selected;
         toContextMenuAction();

@@ -17,7 +17,7 @@ public class RendererUtilities {
      */
     public static boolean isVisible(HTMLElementImpl impl) {
 
-        ArrayList<HTMLElementImpl> styles = getPath(impl);
+        java.util.List<HTMLElementImpl> styles = getPath(impl);
         int x = 0;
         int y = 0;
         for (HTMLElementImpl p : styles) {
@@ -55,8 +55,8 @@ public class RendererUtilities {
         return Integer.parseInt(value);
     }
 
-    private static ArrayList<HTMLElementImpl> getPath(HTMLElementImpl impl) {
-        ArrayList<HTMLElementImpl> styles = new ArrayList<HTMLElementImpl>();
+    private static java.util.List<HTMLElementImpl> getPath(HTMLElementImpl impl) {
+        java.util.List<HTMLElementImpl> styles = new ArrayList<HTMLElementImpl>();
 
         HTMLElementImpl p = impl;
         while (p != null) {

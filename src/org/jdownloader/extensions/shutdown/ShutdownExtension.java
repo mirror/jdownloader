@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenuItem;
@@ -511,8 +512,8 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
     }
 
     @Override
-    public java.util.ArrayList<JMenuItem> getMenuAction() {
-        ArrayList<JMenuItem> menu = new ArrayList<JMenuItem>();
+    public List<JMenuItem> getMenuAction() {
+        java.util.List<JMenuItem> menu = new ArrayList<JMenuItem>();
         menu.add(new JCheckBoxMenuItem(menuAction));
         return menu;
     }

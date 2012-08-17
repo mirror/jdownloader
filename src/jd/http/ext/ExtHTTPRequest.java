@@ -23,7 +23,7 @@ public class ExtHTTPRequest implements HttpRequest {
 
     private ExtBrowser                          browser;
 
-    private ArrayList<ReadyStateChangeListener> listener;
+    private java.util.List<ReadyStateChangeListener> listener;
 
     private int                                 readyState = NetworkRequest.STATE_UNINITIALIZED;
 

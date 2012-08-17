@@ -184,7 +184,7 @@ public class DownloadLinkArchiveFile implements ArchiveFile {
 
     @Override
     public void deleteLink() {
-        ArrayList<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
+        java.util.List<DownloadLink> list = new ArrayList<DownloadLink>(downloadLinks);
         DownloadController.getInstance().removeChildren(list);
     }
 

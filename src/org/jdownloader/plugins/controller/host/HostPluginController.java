@@ -116,7 +116,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
     }
 
     private List<LazyHostPlugin> loadFromCache() {
-        ArrayList<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
+        java.util.List<AbstractHostPlugin> l = JSonStorage.restoreFrom(Application.getResource(getCache()), true, null, new TypeRef<ArrayList<AbstractHostPlugin>>() {
         }, new ArrayList<AbstractHostPlugin>());
         List<LazyHostPlugin> ret = new ArrayList<LazyHostPlugin>(l.size());
         LazyHostPlugin fallBackPlugin = null;
@@ -233,7 +233,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
             }
         }
         save(new ArrayList<AbstractHostPlugin>(ret.values()));
-        ArrayList<LazyHostPlugin> ret3 = new ArrayList<LazyHostPlugin>(ret2.values());
+        java.util.List<LazyHostPlugin> ret3 = new ArrayList<LazyHostPlugin>(ret2.values());
         for (LazyHostPlugin lhp : ret3) {
             /* set fallBackPlugin to all plugins */
             lhp.setFallBackPlugin(fallBackPlugin);

@@ -109,7 +109,7 @@ public class D extends PluginsC {
             return cs;
         }
         // Log.L.info(dlcString);
-        ArrayList<URL> s1;
+        java.util.List<URL> s1;
 
         try {
             s1 = new ArrayList<URL>();
@@ -232,7 +232,7 @@ public class D extends PluginsC {
     // f1.setIgnoringElementContentWhitespace(true);
     // f1.setIgnoringComments(true);
     // s = new InputSource(new StringReader(ds));
-    // ArrayList<String> dss = new ArrayList<String>();
+    // java.util.List<String> dss = new ArrayList<String>();
     // String k0, d0;
     // if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED) return
     // null;
@@ -523,15 +523,15 @@ public class D extends PluginsC {
                 Node f = uls.item(fc);
                 if (f != null) {
                     NodeList data = f.getChildNodes();
-                    ArrayList<String> ls = new ArrayList<String>();
-                    ArrayList<String> pws = new ArrayList<String>();
+                    java.util.List<String> ls = new ArrayList<String>();
+                    java.util.List<String> pws = new ArrayList<String>();
                     String pc = "";
                     for (int entry = 0; entry < data.getLength(); entry++) {
                         if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
                             ls.add(data.item(entry).getTextContent());
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
-                            ArrayList<String> ret = parsePassword(data.item(entry).getTextContent());
+                            java.util.List<String> ret = parsePassword(data.item(entry).getTextContent());
                             for (String pw : ret)
                                 if (!pws.contains(pw)) pws.add(pw);
                         }
@@ -598,8 +598,8 @@ public class D extends PluginsC {
                 Node file = uls.item(fc);
                 if (file != null) {
                     NodeList data = file.getChildNodes();
-                    ArrayList<String> ls = new ArrayList<String>();
-                    ArrayList<String> pws = new ArrayList<String>();
+                    java.util.List<String> ls = new ArrayList<String>();
+                    java.util.List<String> pws = new ArrayList<String>();
                     String pgc = "";
                     for (int entry = 0; entry < data.getLength(); entry++) {
 
@@ -607,7 +607,7 @@ public class D extends PluginsC {
                             ls.add(Encoding.Base64Decode(data.item(entry).getTextContent()));
                         }
                         if (data.item(entry).getNodeName().equalsIgnoreCase("password")) {
-                            ArrayList<String> ret = parsePassword(Encoding.Base64Decode(data.item(entry).getTextContent()));
+                            java.util.List<String> ret = parsePassword(Encoding.Base64Decode(data.item(entry).getTextContent()));
                             for (String pw : ret)
                                 if (!pws.contains(pw)) pws.add(pw);
                         }
@@ -648,8 +648,8 @@ public class D extends PluginsC {
 
     }
 
-    private static ArrayList<String> parsePassword(String password) {
-        ArrayList<String> pws = new ArrayList<String>();
+    private static java.util.List<String> parsePassword(String password) {
+        java.util.List<String> pws = new ArrayList<String>();
         if (password == null || password.length() == 0 || password.matches("[\\s]*")) return pws;
         if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
             password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
@@ -703,9 +703,9 @@ public class D extends PluginsC {
                 Node file = urls.item(fileCounter);
                 if (file != null) {
                     NodeList data = file.getChildNodes();
-                    ArrayList<String> ls2 = new ArrayList<String>();
-                    ArrayList<String> n5 = new ArrayList<String>();
-                    ArrayList<String> s7 = new ArrayList<String>();
+                    java.util.List<String> ls2 = new ArrayList<String>();
+                    java.util.List<String> n5 = new ArrayList<String>();
+                    java.util.List<String> s7 = new ArrayList<String>();
 
                     for (int entry = 0; entry < data.getLength(); entry++) {
                         if (data.item(entry).getNodeName().equalsIgnoreCase("url")) {
@@ -913,8 +913,8 @@ public class D extends PluginsC {
         return null;
     }
 
-    public ArrayList<DownloadLink> getPackageFiles(FilePackage filePackage, List<DownloadLink> links) {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    public java.util.List<DownloadLink> getPackageFiles(FilePackage filePackage, List<DownloadLink> links) {
+        java.util.List<DownloadLink> ret = new ArrayList<DownloadLink>();
         // ret.add(DownloadLink);
 
         Iterator<DownloadLink> iterator = links.iterator();
@@ -931,7 +931,7 @@ public class D extends PluginsC {
 
     public String createContainerString(List<DownloadLink> links) {
         HashMap<String, DownloadLink> map = new HashMap<String, DownloadLink>();
-        ArrayList<DownloadLink> filter = new ArrayList<DownloadLink>();
+        java.util.List<DownloadLink> filter = new ArrayList<DownloadLink>();
         // filter
         for (DownloadLink l : links) {
             String url = l.getBrowserUrl();
@@ -976,7 +976,7 @@ public class D extends PluginsC {
 
             header_dlxxmlversion.appendChild(header.createTextNode(Encoding.Base64Encode("20_02_2008")));
 
-            ArrayList<FilePackage> packages = new ArrayList<FilePackage>();
+            java.util.List<FilePackage> packages = new ArrayList<FilePackage>();
 
             for (int i = 0; i < links.size(); i++) {
                 if (!packages.contains(links.get(i).getFilePackage())) {
@@ -1004,7 +1004,7 @@ public class D extends PluginsC {
 
                 content.getFirstChild().appendChild(FilePackage);
 
-                ArrayList<DownloadLink> tmpLinks = getPackageFiles(packages.get(i), links);
+                java.util.List<DownloadLink> tmpLinks = getPackageFiles(packages.get(i), links);
 
                 for (int x = 0; x < tmpLinks.size(); x++) {
                     Element file = content.createElement("file");

@@ -14,7 +14,7 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 public class PluginController<T extends Plugin> {
 
     @SuppressWarnings("unchecked")
-    public ArrayList<PluginInfo<T>> scan(String hosterpath) {
+    public java.util.List<PluginInfo<T>> scan(String hosterpath) {
         boolean ownLogger = false;
         LogSource logger = LogController.getRebirthLogger();
         if (logger == null) {
@@ -22,7 +22,7 @@ public class PluginController<T extends Plugin> {
             logger = LogController.CL();
             logger.setAllowTimeoutFlush(false);
         }
-        final ArrayList<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
+        final java.util.List<PluginInfo<T>> ret = new ArrayList<PluginInfo<T>>();
         try {
             File path = null;
             PluginClassLoaderChild cl = null;

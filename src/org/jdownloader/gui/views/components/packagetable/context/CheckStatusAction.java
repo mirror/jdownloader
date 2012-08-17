@@ -37,7 +37,7 @@ public class CheckStatusAction<PackageType extends AbstractPackageNode<ChildrenT
 
             public void run() {
                 List<ChildrenType> children = si.getSelectedChildren();
-                ArrayList<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
+                java.util.List<CheckableLink> checkableLinks = new ArrayList<CheckableLink>(children.size());
                 for (AbstractPackageChildrenNode l : children) {
                     if (l instanceof DownloadLink) {
                         ((DownloadLink) l).setAvailableStatus(AvailableStatus.UNCHECKED);

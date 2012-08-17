@@ -137,7 +137,7 @@ public class SearchField<SearchCat extends SearchCatInterface, PackageType exten
         boolean enabled = filterRegex.length() > 0;
         if (enabled) {
 
-            ArrayList<Pattern> list = new ArrayList<Pattern>();
+            java.util.List<Pattern> list = new ArrayList<Pattern>();
             try {
                 if (JsonConfig.create(GeneralSettings.class).isFilterRegex()) {
                     list.add(LinkgrabberFilterRuleWrapper.createPattern(filterRegex, true));

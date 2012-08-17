@@ -19,7 +19,7 @@ public class AdvancedTableModel extends ExtTableModel<AdvancedConfigEntry> {
     }
 
     @Override
-    public void _fireTableStructureChanged(ArrayList<AdvancedConfigEntry> newtableData, boolean refreshSort) {
+    public void _fireTableStructureChanged(java.util.List<AdvancedConfigEntry> newtableData, boolean refreshSort) {
         String ltext = text;
         if (ltext != null) {
             ltext = ltext.toLowerCase();

@@ -31,7 +31,7 @@ public class FastDebridcom extends PluginForHost implements JDPremInterface {
     private String                         infostring   = null;
     private PluginForHost                  plugin       = null;
     private static boolean                 enabled      = false;
-    private static ArrayList<String>       premiumHosts = new ArrayList<String>();
+    private static java.util.List<String>       premiumHosts = new ArrayList<String>();
     private static final Object            LOCK         = new Object();
     private static HashMap<String, String> accDetails   = new HashMap<String, String>();
 

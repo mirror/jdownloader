@@ -327,7 +327,7 @@ public abstract class AbstractExtension<ConfigType extends ExtensionConfigInterf
         return version;
     }
 
-    public ArrayList<JMenuItem> getMenuAction() {
+    public java.util.List<JMenuItem> getMenuAction() {
         return null;
     }
 

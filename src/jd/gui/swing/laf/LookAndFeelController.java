@@ -95,7 +95,7 @@ public class LookAndFeelController {
     private LookAndFeelWrapper[] collectSupportedLookAndFeels() {
         LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
 
-        ArrayList<LookAndFeelWrapper> ret = new ArrayList<LookAndFeelWrapper>();
+        java.util.List<LookAndFeelWrapper> ret = new ArrayList<LookAndFeelWrapper>();
 
         if (Application.getJavaVersion() >= Application.JAVA16 && LookAndFeelController.class.getResource("/org/pushingpixels/substance") != null) {
             ret.add(new LookAndFeelWrapper(new LookAndFeelInfo("Substance Autumn", "org.pushingpixels.substance.api.skin.SubstanceAutumnLookAndFeel")));

@@ -47,7 +47,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
     private ExtTextField                  controlURLTxt;
     private JLabel                        wanType;
 
-    protected ArrayList<UpnpRouterDevice> devices;
+    protected java.util.List<UpnpRouterDevice> devices;
 
     private ImageIcon                     icon;
 
@@ -67,11 +67,11 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
      * @throws InterruptedException
      */
     @Override
-    public ArrayList<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
+    public java.util.List<ReconnectResult> runDetectionWizard(ProcessCallBack processCallBack) throws InterruptedException {
         LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
         try {
-            ArrayList<ReconnectResult> ret = new ArrayList<ReconnectResult>();
-            ArrayList<UpnpRouterDevice> devices = getDevices();
+            java.util.List<ReconnectResult> ret = new ArrayList<ReconnectResult>();
+            java.util.List<UpnpRouterDevice> devices = getDevices();
             logger.info("Found devices: " + devices);
             for (int i = 0; i < devices.size(); i++) {
                 UpnpRouterDevice device = devices.get(i);
@@ -286,7 +286,7 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
         return new UPNPReconnectInvoker(this, settings.getServiceType(), settings.getControlURL());
     }
 
-    public synchronized ArrayList<UpnpRouterDevice> getDevices() throws InterruptedException {
+    public synchronized java.util.List<UpnpRouterDevice> getDevices() throws InterruptedException {
         if (devices == null || devices.size() == 0) {
             // upnp somtimes works, sometimes not - no idea why. that's why we
             // do a scan if we have no responses

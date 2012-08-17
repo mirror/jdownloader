@@ -224,7 +224,7 @@ public class LinkbaseBiz {
 
         Collections.sort(os);
         mergeObjects2(os);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : os) {
         	if(pixelObject.getArea()>10)
         	{

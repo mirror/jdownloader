@@ -58,10 +58,10 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
         windows.setIcon(NewTheme.I().getIcon("tab", 22));
         add(windows);
         windows.add(new LogAction());
-        ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
-        ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
-        ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
-        ArrayList<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(ExtensionController.getInstance().getExtensions());
+        java.util.List<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
+        java.util.List<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
+        java.util.List<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
+        java.util.List<LazyExtension> pluginsOptional = new ArrayList<LazyExtension>(ExtensionController.getInstance().getExtensions());
         Collections.sort(pluginsOptional, new Comparator<LazyExtension>() {
 
             public int compare(LazyExtension o1, LazyExtension o2) {
@@ -74,7 +74,7 @@ public class AddonsMenu extends JMenu implements ExtensionControllerListener {
             if (wrapper._isEnabled()) {
                 final AbstractExtension<?, ?> plg = wrapper._getExtension();
 
-                ArrayList<JMenuItem> mis = plg.getMenuAction();
+                java.util.List<JMenuItem> mis = plg.getMenuAction();
                 if (mis != null) {
                     for (JMenuItem m : mis) {
                         if (m instanceof JMenu) {

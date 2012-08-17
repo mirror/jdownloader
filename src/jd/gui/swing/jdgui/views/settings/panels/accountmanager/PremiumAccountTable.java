@@ -2,7 +2,6 @@ package jd.gui.swing.jdgui.views.settings.panels.accountmanager;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 
@@ -23,12 +22,10 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.ArrayList
-     * , java.awt.event.KeyEvent, boolean)
+     * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.java.util.List , java.awt.event.KeyEvent, boolean)
      */
     @Override
-    protected boolean onShortcutDelete(ArrayList<Account> selectedObjects, KeyEvent evt, boolean direct) {
+    protected boolean onShortcutDelete(java.util.List<Account> selectedObjects, KeyEvent evt, boolean direct) {
         new RemoveAction(selectedObjects, direct).actionPerformed(null);
         return true;
     }
@@ -36,13 +33,11 @@ public class PremiumAccountTable extends BasicJDTable<Account> {
     /*
      * (non-Javadoc)
      * 
-     * @see
-     * org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu
-     * , java.lang.Object, java.util.ArrayList,
+     * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.java.util.List,
      * org.appwork.swing.exttable.ExtColumn)
      */
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, ArrayList<Account> selection, ExtColumn<Account> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, Account contextObject, java.util.List<Account> selection, ExtColumn<Account> column, MouseEvent ev) {
         if (popup != null) {
             if (selection == null) {
                 popup.add(new NewAction());

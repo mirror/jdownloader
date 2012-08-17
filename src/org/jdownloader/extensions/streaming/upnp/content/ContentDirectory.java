@@ -39,7 +39,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
     }
 
     private static List<String> getSort() {
-        ArrayList<String> ret = new ArrayList<String>();
+        java.util.List<String> ret = new ArrayList<String>();
         for (String s : "dc:title,upnp:genre,upnp:album,dc:creator,res@size,res@duration,res@bitrate,dc:publisher,dc:language,upnp:originalTrackNumber,dc:date,upnp:producer,upnp:rating,upnp:actor,upnp:director,upnp:toc,dc:description,microsoft:year,microsoft:userRatingInStars,microsoft:userEffectiveRatingInStars,microsoft:userRating,microsoft:userEffectiveRating,microsoft:serviceProvider,microsoft:artistAlbumArtist,microsoft:artistPerformer,microsoft:artistConductor,microsoft:authorComposer,microsoft:authorOriginalLyricist,microsoft:authorWriter,microsoft:sourceUrl,upnp:userAnnotation,upnp:channelName,upnp:longDescription,upnp:programTitle".split(",")) {
             ret.add(s);
         }
@@ -47,7 +47,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
     }
 
     private static List<String> getSearch() {
-        ArrayList<String> ret = new ArrayList<String>();
+        java.util.List<String> ret = new ArrayList<String>();
         for (String s : "@id,@refID,dc:title,upnp:class,upnp:genre,upnp:artist,upnp:author,upnp:author@role,upnp:album,dc:creator,res@size,res@duration,res@protocolInfo,res@protection,dc:publisher,dc:language,upnp:originalTrackNumber,dc:date,upnp:producer,upnp:rating,upnp:actor,upnp:director,upnp:toc,dc:description,microsoft:userRatingInStars,microsoft:userEffectiveRatingInStars,microsoft:userRating,microsoft:userEffectiveRating,microsoft:serviceProvider,microsoft:artistAlbumArtist,microsoft:artistPerformer,microsoft:artistConductor,microsoft:authorComposer,microsoft:authorOriginalLyricist,microsoft:authorWriter,upnp:userAnnotation,upnp:channelName,upnp:longDescription,upnp:programTitle".split(",")) {
             ret.add(s);
         }
@@ -178,7 +178,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
                 System.out.println("-->" + didlStrng);
                 return new BrowseResult(didlStrng, 0, 0);
             } else {
-                ArrayList<ContentNode> files = getFiles(node);
+                java.util.List<ContentNode> files = getFiles(node);
                 List<ContentNode> children = ((ContainerNode) node).getChildren();
                 for (ContentNode c : files) {
                     switch (searchCriterion.getSearchType()) {
@@ -208,12 +208,12 @@ public class ContentDirectory extends AbstractContentDirectoryService {
         }
     }
 
-    private ArrayList<ContentNode> getFiles(ContentNode node) {
+    private java.util.List<ContentNode> getFiles(ContentNode node) {
 
         return getFiles(node, new ArrayList<ContentNode>());
     }
 
-    private ArrayList<ContentNode> getFiles(ContentNode node, ArrayList<ContentNode> ret) {
+    private java.util.List<ContentNode> getFiles(ContentNode node, java.util.List<ContentNode> ret) {
 
         if (node instanceof ItemNode) {
             ret.add(node);

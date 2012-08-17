@@ -29,9 +29,9 @@ public class PackageControllerTableTransferable<PackageType extends AbstractPack
 
     protected DataFlavor[] flavors;
 
-    public PackageControllerTableTransferable(ArrayList<PackageType> packages, ArrayList<ChildrenType> links, PackageControllerTable<PackageType, ChildrenType> table) {
+    public PackageControllerTableTransferable(java.util.List<PackageType> packages, java.util.List<ChildrenType> links, PackageControllerTable<PackageType, ChildrenType> table) {
         this.content = new PackageControllerTableTransferableContent<PackageType, ChildrenType>(table, packages, links);
-        ArrayList<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
+        java.util.List<DataFlavor> availableFlavors = new ArrayList<DataFlavor>();
         availableFlavors.add(FLAVOR);
         this.flavors = availableFlavors.toArray(new DataFlavor[] {});
     }

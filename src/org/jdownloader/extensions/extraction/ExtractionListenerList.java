@@ -85,7 +85,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
 
                 }
-                ArrayList<File> removed = new ArrayList<File>();
+                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!f.delete()) {
@@ -172,7 +172,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setMessage(T._.plugins_optional_extraction_error_extrfailedcrc());
                     }
                 }
-                ArrayList<File> removed = new ArrayList<File>();
+                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!f.delete()) {
@@ -224,7 +224,7 @@ public class ExtractionListenerList implements ExtractionListener {
                     }
                 }
 
-                ArrayList<File> removed = new ArrayList<File>();
+                java.util.List<File> removed = new ArrayList<File>();
                 if (controller.gotKilled()) {
                     controller.getArchiv().getFirstArchiveFile().setMessage(null);
                     for (File f : controller.getArchiv().getExtractedFiles()) {
@@ -257,7 +257,7 @@ public class ExtractionListenerList implements ExtractionListener {
                         link.setMessage(T._.plugins_optional_extraction_filenotfound());
                     }
                 }
-                ArrayList<File> removed = new ArrayList<File>();
+                java.util.List<File> removed = new ArrayList<File>();
                 for (File f : controller.getArchiv().getExtractedFiles()) {
                     if (f.exists()) {
                         if (!f.delete()) {

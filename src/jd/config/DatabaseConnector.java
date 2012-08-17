@@ -331,10 +331,10 @@ public class DatabaseConnector implements Serializable {
      * 
      * @return
      */
-    public ArrayList<SubConfiguration> getSubConfigurationKeys() {
+    public java.util.List<SubConfiguration> getSubConfigurationKeys() {
         synchronized (LOCK) {
             if (isDatabaseShutdown()) return null;
-            final ArrayList<SubConfiguration> ret = new ArrayList<SubConfiguration>();
+            final java.util.List<SubConfiguration> ret = new ArrayList<SubConfiguration>();
             Statement statement = null;
             ResultSet rs = null;
 

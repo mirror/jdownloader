@@ -15,13 +15,13 @@ public class LogCollection implements Storable {
         this.id = id;
     }
 
-    private ArrayList<LogSession> list;
+    private java.util.List<LogSession> list;
 
-    public ArrayList<LogSession> getList() {
+    public java.util.List<LogSession> getList() {
         return list;
     }
 
-    public void setList(ArrayList<LogSession> list) {
+    public void setList(java.util.List<LogSession> list) {
         this.list = list;
     }
 

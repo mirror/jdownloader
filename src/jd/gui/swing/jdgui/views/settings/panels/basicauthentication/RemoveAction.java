@@ -15,7 +15,7 @@ public class RemoveAction extends AbstractRemoveAction {
      */
     private static final long             serialVersionUID = 1L;
     private AuthTable                     table;
-    private ArrayList<AuthenticationInfo> selection        = null;
+    private java.util.List<AuthenticationInfo> selection        = null;
     private boolean                       ignoreSelection  = false;
 
     public RemoveAction(AuthTable table) {
@@ -25,7 +25,7 @@ public class RemoveAction extends AbstractRemoveAction {
 
     }
 
-    public RemoveAction(AuthTable authTable, ArrayList<AuthenticationInfo> selection, boolean force) {
+    public RemoveAction(AuthTable authTable, java.util.List<AuthenticationInfo> selection, boolean force) {
         this.table = authTable;
         this.selection = selection;
         toContextMenuAction();

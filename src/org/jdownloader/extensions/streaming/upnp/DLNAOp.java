@@ -14,7 +14,7 @@ public enum DLNAOp {
     }
 
     public static List<DLNAOp> parse(int bitmask) {
-        ArrayList<DLNAOp> ret = new ArrayList<DLNAOp>();
+        java.util.List<DLNAOp> ret = new ArrayList<DLNAOp>();
 
         for (DLNAOp v : values()) {
             if (v.isIn(bitmask)) {

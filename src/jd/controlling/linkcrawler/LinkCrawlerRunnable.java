@@ -8,7 +8,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
 
     private final LinkCrawler                              crawler;
     private final int                                      generation;
-    static HashMap<Object, ArrayList<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, ArrayList<LinkCrawlerRunnable>>();
+    static HashMap<Object, java.util.List<LinkCrawlerRunnable>> SEQ_RUNNABLES = new HashMap<Object, java.util.List<LinkCrawlerRunnable>>();
     static HashMap<Object, AtomicInteger>                  SEQ_COUNTER   = new HashMap<Object, AtomicInteger>();
 
     protected LinkCrawlerRunnable(LinkCrawler crawler, int generation) {
@@ -33,7 +33,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
         Object lock = sequentialLockingObject();
         LinkCrawlerRunnable startRunnable = null;
         synchronized (SEQ_RUNNABLES) {
-            ArrayList<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
+            java.util.List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
             if (seqs == null) {
                 /* no queued sequential runnable */
                 seqs = new ArrayList<LinkCrawlerRunnable>();
@@ -56,7 +56,7 @@ public abstract class LinkCrawlerRunnable implements Runnable {
             this.run_now();
         } finally {
             synchronized (SEQ_RUNNABLES) {
-                ArrayList<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
+                java.util.List<LinkCrawlerRunnable> seqs = SEQ_RUNNABLES.get(lock);
                 AtomicInteger counter = SEQ_COUNTER.get(lock);
                 if (seqs != null) {
                     /* remove current Runnable */

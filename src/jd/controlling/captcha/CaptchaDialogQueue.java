@@ -55,7 +55,7 @@ public class CaptchaDialogQueue extends Queue {
     }
 
     public List<CaptchaDialogQueueEntry> getJobs() {
-        ArrayList<CaptchaDialogQueueEntry> ret = new ArrayList<CaptchaDialogQueueEntry>();
+        java.util.List<CaptchaDialogQueueEntry> ret = new ArrayList<CaptchaDialogQueueEntry>();
         synchronized (this.queueLock) {
             CaptchaDialogQueueEntry cur = currentItem;
             if (cur != null) {

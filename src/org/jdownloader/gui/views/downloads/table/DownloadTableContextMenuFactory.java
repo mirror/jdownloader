@@ -67,7 +67,7 @@ public class DownloadTableContextMenuFactory {
 
     }
 
-    public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, ArrayList<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
+    public JPopupMenu create(DownloadsTable downloadsTable, JPopupMenu popup, AbstractNode contextObject, java.util.List<AbstractNode> selection, ExtColumn<AbstractNode> column, MouseEvent ev) {
         if (selection == null && contextObject == null) return emtpy(popup);
 
         SelectionInfo<FilePackage, DownloadLink> si = new SelectionInfo<FilePackage, DownloadLink>(contextObject, selection, ev, null, downloadsTable);
@@ -174,9 +174,9 @@ public class DownloadTableContextMenuFactory {
         return ret;
     }
 
-    public static ArrayList<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
+    public static java.util.List<Component> fillPropertiesMenu(SelectionInfo<FilePackage, DownloadLink> si, ExtColumn<AbstractNode> column) {
 
-        ArrayList<Component> ret = new ArrayList<Component>();
+        java.util.List<Component> ret = new ArrayList<Component>();
 
         ret.add(new JMenuItem(new CheckStatusAction<FilePackage, DownloadLink>(si).toContextMenuAction()));
 

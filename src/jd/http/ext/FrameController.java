@@ -40,8 +40,7 @@ import org.w3c.dom.html2.HTMLElement;
 import org.w3c.dom.html2.HTMLLinkElement;
 
 /**
- * This class represents a single Frame, and thus a single rendercontext. A
- * frame may contain various subframes.
+ * This class represents a single Frame, and thus a single rendercontext. A frame may contain various subframes.
  * 
  * Subframes may work on the DOM of it's parentframe.
  * 
@@ -138,8 +137,7 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
     }
 
     /**
-     * For internal use only. Use {@link ExtBrowser#getFrames(FrameController)}
-     * or {@link ExtBrowser#getFrames(HTMLFrameElementImpl)}
+     * For internal use only. Use {@link ExtBrowser#getFrames(FrameController)} or {@link ExtBrowser#getFrames(HTMLFrameElementImpl)}
      */
     public HTMLCollection getFrames() {
         return htmlDocument.getFrames();
@@ -610,7 +608,7 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
     }
 
     public void removeEventListener(JSEventListener jsEventListener) {
-        ArrayList<JSEventListener> listener = this.getListenerList(jsEventListener.getName());
+        java.util.List<JSEventListener> listener = this.getListenerList(jsEventListener.getName());
         for (Iterator<JSEventListener> it = listener.iterator(); it.hasNext();) {
             JSEventListener l = it.next();
             if (l.getName().equals(jsEventListener.getName()) && (l.getCallback() == jsEventListener.getCallback()) && l.getOwner() == jsEventListener.getOwner()) {
@@ -627,7 +625,7 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
 
     @SuppressWarnings("unchecked")
     public boolean dispatch(BasicEvent basicEvent) {
-        ArrayList<JSEventListener> listener = (ArrayList<JSEventListener>) this.getListenerList(basicEvent.getType()).clone();
+        java.util.List<JSEventListener> listener = (ArrayList<JSEventListener>) this.getListenerList(basicEvent.getType()).clone();
         boolean ret = false;
         for (Iterator<JSEventListener> it = listener.iterator(); it.hasNext();) {
             ret |= it.next().dispatch(basicEvent);
@@ -728,7 +726,7 @@ public class FrameController implements HtmlRendererContext, ExtHTMLFrameElement
     //
     // public void removeEventListener(Object htmlElementImpl, String type,
     // BaseFunction listener, Object useCapture) {
-    // ArrayList<DOMEventListener> list = getEventListener(type);
+    // java.util.List<DOMEventListener> list = getEventListener(type);
     // for (Iterator<DOMEventListener> it = list.iterator(); it.hasNext();) {
     // DOMEventListener next = it.next();
     // if (next.getAction() == listener && next.getNode() == htmlElementImpl) {

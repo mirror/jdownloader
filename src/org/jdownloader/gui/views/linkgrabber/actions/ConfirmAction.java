@@ -125,13 +125,13 @@ public class ConfirmAction extends AppAction {
                     Log.exception(e);
                 }
                 boolean addTop = org.jdownloader.settings.staticreferences.CFG_LINKFILTER.LINKGRABBER_ADD_AT_TOP.getValue();
-                ArrayList<FilePackage> fpkgs = new ArrayList<FilePackage>();
-                ArrayList<CrawledLink> clinks = new ArrayList<CrawledLink>();
+                java.util.List<FilePackage> fpkgs = new ArrayList<FilePackage>();
+                java.util.List<CrawledLink> clinks = new ArrayList<CrawledLink>();
                 for (AbstractNode node : si.getRawSelection()) {
                     if (node instanceof CrawledPackage) {
                         /* first convert all CrawledPackages to FilePackages */
                         List<CrawledLink> links = new ArrayList<CrawledLink>(((CrawledPackage) node).getView().getItems());
-                        ArrayList<FilePackage> packages = LinkCollector.getInstance().removeAndConvert(links);
+                        java.util.List<FilePackage> packages = LinkCollector.getInstance().convert(links, true);
                         if (packages != null) fpkgs.addAll(packages);
                     } else if (node instanceof CrawledLink) {
                         /* collect all CrawledLinks */
@@ -140,7 +140,7 @@ public class ConfirmAction extends AppAction {
                 }
                 /* convert all selected CrawledLinks to FilePackages */
 
-                ArrayList<FilePackage> frets = LinkCollector.getInstance().removeAndConvert(clinks);
+                java.util.List<FilePackage> frets = LinkCollector.getInstance().convert(clinks, true);
                 if (frets != null) fpkgs.addAll(frets);
                 /* add the converted FilePackages to DownloadController */
                 DownloadController.getInstance().addAllAt(fpkgs, addTop ? 0 : -(fpkgs.size() + 10));

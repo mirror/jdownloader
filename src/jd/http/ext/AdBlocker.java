@@ -14,8 +14,8 @@ public class AdBlocker implements AdBlockerInterface {
         return INSTANCE;
     }
 
-    private ArrayList<Pattern> blackList;
-    private ArrayList<Pattern> whiteList;
+    private java.util.List<Pattern> blackList;
+    private java.util.List<Pattern> whiteList;
 
     private AdBlocker() {
         this.blackList = new ArrayList<Pattern>();

@@ -398,7 +398,7 @@ public class PremiumAccountTableModel extends ExtTableModel<Account> implements 
 
     protected void _refill() {
         if (accountManagerSettings.isShown()) {
-            final ArrayList<Account> newtableData = new ArrayList<Account>(this.getRowCount());
+            final java.util.List<Account> newtableData = new ArrayList<Account>(this.getRowCount());
             for (LazyHostPlugin plugin : HostPluginController.getInstance().list()) {
                 List<Account> accs = AccountController.getInstance().list(plugin.getDisplayName());
                 if (accs != null) {

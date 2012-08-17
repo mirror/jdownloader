@@ -40,8 +40,8 @@ public class ProxyController {
 
     private static final ProxyController              INSTANCE      = new ProxyController();
 
-    private ArrayList<ProxyInfo>                      proxies       = new ArrayList<ProxyInfo>();
-    private ArrayList<ProxyInfo>                      directs       = new ArrayList<ProxyInfo>();
+    private java.util.List<ProxyInfo>                 proxies       = new ArrayList<ProxyInfo>();
+    private java.util.List<ProxyInfo>                 directs       = new ArrayList<ProxyInfo>();
     private ProxyInfo                                 defaultproxy  = null;
     private ProxyInfo                                 none          = null;
 
@@ -130,7 +130,7 @@ public class ProxyController {
     }
 
     public static List<HTTPProxy> autoConfig() {
-        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         try {
             if (CrossSystem.isWindows()) { return ProxyController.checkReg(); }
             /* we enable systemproxies to query them for a test getPage */
@@ -185,7 +185,7 @@ public class ProxyController {
      * Checks windows registry for proxy settings
      */
     private static List<HTTPProxy> checkReg() {
-        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         try {
             final Preferences userRoot = Preferences.userRoot();
             final Class<?> clz = userRoot.getClass();
@@ -246,7 +246,7 @@ public class ProxyController {
     private List<HTTPProxy> getAvailableDirects() {
         List<InetAddress> ips = HTTPProxyUtils.getLocalIPs();
         LogController.CL().info(ips.toString());
-        ArrayList<HTTPProxy> directs = new ArrayList<HTTPProxy>(ips.size());
+        java.util.List<HTTPProxy> directs = new ArrayList<HTTPProxy>(ips.size());
         if (ips.size() > 1) {
             // we can use non if we have only one WAN ips anyway
             for (InetAddress ip : ips) {
@@ -261,7 +261,7 @@ public class ProxyController {
         {
             /* use own scope */
             ArrayList<ProxyData> ret = new ArrayList<ProxyData>(proxies.size());
-            ArrayList<ProxyInfo> lproxies = proxies;
+            java.util.List<ProxyInfo> lproxies = proxies;
             for (ProxyInfo proxy : lproxies) {
                 ProxyData pd = proxy.toProxyData();
                 pd.setDefaultProxy(proxy == ldefaultproxy);
@@ -272,7 +272,7 @@ public class ProxyController {
         {
             /* use own scope */
             ArrayList<ProxyData> ret = new ArrayList<ProxyData>();
-            ArrayList<ProxyInfo> ldirects = directs;
+            java.util.List<ProxyInfo> ldirects = directs;
             for (ProxyInfo proxy : ldirects) {
                 ProxyData pd = proxy.toProxyData();
                 pd.setDefaultProxy(proxy == ldefaultproxy);
@@ -285,7 +285,7 @@ public class ProxyController {
     }
 
     private List<HTTPProxy> restoreFromOldConfig() {
-        ArrayList<HTTPProxy> ret = new ArrayList<HTTPProxy>();
+        java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         SubConfiguration oldConfig = SubConfiguration.getConfig("DOWNLOAD", true);
         if (oldConfig.getBooleanProperty(UpdaterConstants.USE_PROXY, false)) {
             /* import old http proxy settings */
@@ -327,14 +327,14 @@ public class ProxyController {
     private void loadProxySettings() {
         ProxyInfo newDefaultProxy = null;
         boolean rotCheck = false;
-        ArrayList<ProxyInfo> proxies = new ArrayList<ProxyInfo>();
-        ArrayList<ProxyInfo> directs = new ArrayList<ProxyInfo>();
-        ArrayList<HTTPProxy> dupeCheck = new ArrayList<HTTPProxy>();
+        java.util.List<ProxyInfo> proxies = new ArrayList<ProxyInfo>();
+        java.util.List<ProxyInfo> directs = new ArrayList<ProxyInfo>();
+        java.util.List<HTTPProxy> dupeCheck = new ArrayList<HTTPProxy>();
         ProxyInfo proxy = null;
         {
             /* restore customs proxies */
             /* use own scope */
-            ArrayList<ProxyData> ret = config.getCustomProxyList();
+            java.util.List<ProxyData> ret = config.getCustomProxyList();
             if (ret != null) {
                 /* config available */
                 restore: for (ProxyData proxyData : ret) {
@@ -405,7 +405,7 @@ public class ProxyController {
         {
             /* use own scope */
             List<HTTPProxy> availableDirects = getAvailableDirects();
-            ArrayList<ProxyData> ret = config.getDirectGatewayList();
+            java.util.List<ProxyData> ret = config.getDirectGatewayList();
             if (ret != null) {
                 // restore directs
                 restore: for (ProxyData proxyData : ret) {
@@ -473,8 +473,8 @@ public class ProxyController {
      * 
      * @return
      */
-    public ArrayList<ProxyInfo> getList() {
-        ArrayList<ProxyInfo> ret = new ArrayList<ProxyInfo>(directs.size() + proxies.size() + 1);
+    public java.util.List<ProxyInfo> getList() {
+        java.util.List<ProxyInfo> ret = new ArrayList<ProxyInfo>(directs.size() + proxies.size() + 1);
         ret.add(none);
         ret.addAll(directs);
         ret.addAll(proxies);
@@ -515,7 +515,7 @@ public class ProxyController {
         if (proxy == null) return;
         ProxyInfo ret = null;
         synchronized (LOCK) {
-            ArrayList<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
+            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
             for (ProxyInfo info : nproxies) {
                 /* duplicate check */
                 if (info.sameProxy(proxy)) return;
@@ -530,7 +530,7 @@ public class ProxyController {
         if (proxy == null || proxy.size() == 0) return;
         int changes = 0;
         synchronized (LOCK) {
-            ArrayList<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
+            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
             changes = nproxies.size();
             main: for (HTTPProxy newP : proxy) {
                 for (ProxyInfo info : nproxies) {
@@ -567,7 +567,7 @@ public class ProxyController {
         if (proxy == null) return;
         boolean removed = false;
         synchronized (LOCK) {
-            ArrayList<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
+            java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
             if (nproxies.remove(proxy)) {
                 removed = true;
                 if (proxy == defaultproxy) {
@@ -600,7 +600,7 @@ public class ProxyController {
                 if (byPassMaxSimultanDownload || active < maxactive) return none;
             }
         }
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -611,7 +611,7 @@ public class ProxyController {
                 }
             }
         }
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -631,7 +631,7 @@ public class ProxyController {
             ret = none.getHostIPBlockTimeout(host);
         }
         if (ret == null) return null;
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -644,7 +644,7 @@ public class ProxyController {
 
             }
         }
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -666,7 +666,7 @@ public class ProxyController {
             ret = none.getHostBlockedTimeout(host);
         }
         if (ret == null) return null;
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -679,7 +679,7 @@ public class ProxyController {
 
             }
         }
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -698,14 +698,14 @@ public class ProxyController {
         if (none.isProxyRotationEnabled()) {
             if (none.getHostIPBlockTimeout(host) != null) return true;
         }
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
                 if (info.getHostIPBlockTimeout(host) != null) return true;
             }
         }
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -719,14 +719,14 @@ public class ProxyController {
         if (none.isProxyRotationEnabled()) {
             if (none.getHostBlockedTimeout(host) != null) return true;
         }
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo info : lproxies) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
                 if (info.getHostBlockedTimeout(host) != null) return true;
             }
         }
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             if (info.isProxyRotationEnabled()) {
                 /* only use enabled proxies */
@@ -738,12 +738,12 @@ public class ProxyController {
 
     public void removeHostBlockedTimeout(final String host, boolean onlyLocal) {
         none.removeHostBlockedWaittime(host);
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             info.removeHostBlockedWaittime(host);
         }
         if (!onlyLocal) {
-            ArrayList<ProxyInfo> lproxies = proxies;
+            java.util.List<ProxyInfo> lproxies = proxies;
             for (ProxyInfo info : lproxies) {
                 // if (onlyLocal && info.getProxy().isRemote()) continue;
                 info.removeHostBlockedWaittime(host);
@@ -753,12 +753,12 @@ public class ProxyController {
 
     public void removeIPBlockTimeout(final String host, boolean onlyLocal) {
         none.removeHostIPBlockTimeout(host);
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo info : ldirects) {
             info.removeHostIPBlockTimeout(host);
         }
         if (!onlyLocal) {
-            ArrayList<ProxyInfo> lproxies = proxies;
+            java.util.List<ProxyInfo> lproxies = proxies;
             for (ProxyInfo info : lproxies) {
                 info.removeHostIPBlockTimeout(host);
             }
@@ -767,11 +767,11 @@ public class ProxyController {
 
     public boolean hasRotation() {
         if (none.isProxyRotationEnabled()) return true;
-        ArrayList<ProxyInfo> ldirects = directs;
+        java.util.List<ProxyInfo> ldirects = directs;
         for (ProxyInfo pi : ldirects) {
             if (pi.isProxyRotationEnabled()) return true;
         }
-        ArrayList<ProxyInfo> lproxies = proxies;
+        java.util.List<ProxyInfo> lproxies = proxies;
         for (ProxyInfo pi : lproxies) {
             if (pi.isProxyRotationEnabled()) return true;
         }

@@ -68,9 +68,9 @@ public class ImportAction extends AppAction {
 
             File[] filterFiles = d.getSelection();
             if (filterFiles == null) return;
-            ArrayList<LinkgrabberFilterRule> all = new ArrayList<LinkgrabberFilterRule>();
+            java.util.List<LinkgrabberFilterRule> all = new ArrayList<LinkgrabberFilterRule>();
             for (File f : filterFiles) {
-                ArrayList<LinkgrabberFilterRule> contents = null;
+                java.util.List<LinkgrabberFilterRule> contents = null;
                 try {
                     contents = JSonStorage.restoreFromString(IO.readFileToString(f), new TypeRef<ArrayList<LinkgrabberFilterRule>>() {
                     }, null);

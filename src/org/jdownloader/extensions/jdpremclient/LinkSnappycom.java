@@ -32,7 +32,7 @@ public class LinkSnappycom extends PluginForHost implements JDPremInterface {
     private PluginForHost            plugin       = null;
     private static boolean           counted      = false;
     private static boolean           enabled      = false;
-    private static ArrayList<String> premiumHosts = new ArrayList<String>();
+    private static java.util.List<String> premiumHosts = new ArrayList<String>();
     private static final Object      LOCK         = new Object();
 
     public LinkSnappycom(PluginWrapper wrapper) {

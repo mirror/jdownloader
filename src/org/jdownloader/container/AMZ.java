@@ -54,7 +54,7 @@ public class AMZ extends PluginsC {
             byte[] decryptedbyteAMZ = dcipher.doFinal(byteAMZ);
             String decrytpedAMZ = new String(decryptedbyteAMZ);
             String[][] tracks = new Regex(decrytpedAMZ, "<location>(http://.*?)</.*?<album>(.*?)</album>.*?<title>(.*?)</title>.*?<trackNum>(\\d+)<.*?fileSize\">(\\d+)<.*?trackType\">(.*?)</met").getMatches();
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            java.util.List<DownloadLink> links = new ArrayList<DownloadLink>();
             HashMap<String, FilePackage> fps = new HashMap<String, FilePackage>();
             for (String track[] : tracks) {
                 PluginForHost plg = JDUtilities.getPluginForHost("DirectHTTP");

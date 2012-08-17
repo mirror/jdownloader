@@ -50,7 +50,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
 
     private Object                    LOCK                  = new Object();
 
-    private ArrayList<ActionListener> listenerList          = new ArrayList<ActionListener>();
+    private java.util.List<ActionListener> listenerList          = new ArrayList<ActionListener>();
 
     private JButton                   btnBrowse;
 

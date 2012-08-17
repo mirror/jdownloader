@@ -62,7 +62,7 @@ public class BuyAction extends AbstractAction {
         IOEQ.add(new Runnable() {
             public void run() {
                 final List<LazyHostPlugin> pluginsAll = HostPluginController.getInstance().list();
-                final ArrayList<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
+                final java.util.List<LazyHostPlugin> plugins = new ArrayList<LazyHostPlugin>();
                 /* only show plugins with account support */
                 for (LazyHostPlugin lhp : pluginsAll) {
                     if (lhp.isPremium()) plugins.add(lhp);
@@ -70,7 +70,7 @@ public class BuyAction extends AbstractAction {
                 final LazyHostPlugin[] options = plugins.toArray(new LazyHostPlugin[plugins.size()]);
                 LazyHostPlugin plg = preSelection;
                 if (table != null && plg == null) {
-                    ArrayList<Account> selection = table.getExtTableModel().getSelectedObjects();
+                    java.util.List<Account> selection = table.getExtTableModel().getSelectedObjects();
                     if (selection != null && selection.size() > 0) {
 
                         for (Iterator<?> iterator = plugins.iterator(); iterator.hasNext();) {

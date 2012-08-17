@@ -207,7 +207,7 @@ public class LinkgrabberFilter extends JPanel implements SettingsComponent {
     protected void startTest() {
         TestWaitDialog d;
         try {
-            ArrayList<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(txtTest.getText(), LinkFilterController.getInstance()));
+            java.util.List<CrawledLink> ret = Dialog.getInstance().showDialog(d = new TestWaitDialog(txtTest.getText(), LinkFilterController.getInstance()));
         } catch (DialogClosedException e) {
             e.printStackTrace();
         } catch (DialogCanceledException e) {

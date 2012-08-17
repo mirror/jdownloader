@@ -23,7 +23,7 @@ public class CaptchaPushService implements MqttCallback, CaptchaEventListener {
 
     private final String                       clientId;
 
-    private final ArrayList<CaptchaController> currentController;
+    private final java.util.List<CaptchaController> currentController;
     private Thread                             waiterThread;
 
     public CaptchaPushService(CaptchaPushExtension extension) {

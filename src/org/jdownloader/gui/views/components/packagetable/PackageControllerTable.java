@@ -73,8 +73,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
             moveTopAction.setEnabled(false);
             moveUpAction.setEnabled(false);
         } else {
-            ArrayList<ParentType> selectedPkgs = getSelectedPackages();
-            ArrayList<ChildrenType> selectedChld = getSelectedChildren();
+            java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+            java.util.List<ChildrenType> selectedChld = getSelectedChildren();
             boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
             boolean moveDownPossibe = moveDownPossible(selectedPkgs, selectedChld);
             moveTopAction.setEnabled(moveUpPossible);
@@ -89,7 +89,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return true;
     }
 
-    protected boolean moveUpPossible(ArrayList<ParentType> pkgs, ArrayList<ChildrenType> selectedChld) {
+    protected boolean moveUpPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
         if (getPackageControllerTableModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
@@ -115,7 +115,7 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return false;
     }
 
-    protected boolean moveDownPossible(ArrayList<ParentType> pkgs, ArrayList<ChildrenType> selectedChld) {
+    protected boolean moveDownPossible(java.util.List<ParentType> pkgs, java.util.List<ChildrenType> selectedChld) {
         if (getPackageControllerTableModel().isFilteredView()) return false;
         if (pkgs.size() > 0 && selectedChld.size() > 0) {
             /* we don't allow moving of packages/children at the same time */
@@ -160,8 +160,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 IOEQ.add(new Runnable() {
 
                     public void run() {
-                        ArrayList<ParentType> selectedPkgs = getSelectedPackages();
-                        ArrayList<ChildrenType> selectedChld = getSelectedChildren();
+                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
                         if (moveUpPossible == false) return;
                         PackageController<ParentType, ChildrenType> pc = getController();
@@ -195,8 +195,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 IOEQ.add(new Runnable() {
 
                     public void run() {
-                        ArrayList<ParentType> selectedPkgs = getSelectedPackages();
-                        ArrayList<ChildrenType> selectedChld = getSelectedChildren();
+                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
                         boolean moveUpPossible = moveUpPossible(selectedPkgs, selectedChld);
                         if (moveUpPossible == false) return;
                         PackageController<ParentType, ChildrenType> pc = getController();
@@ -256,8 +256,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 IOEQ.add(new Runnable() {
 
                     public void run() {
-                        ArrayList<ParentType> selectedPkgs = getSelectedPackages();
-                        ArrayList<ChildrenType> selectedChld = getSelectedChildren();
+                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
                         if (moveDownPossible == false) return;
                         PackageController<ParentType, ChildrenType> pc = getController();
@@ -312,8 +312,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                 IOEQ.add(new Runnable() {
 
                     public void run() {
-                        ArrayList<ParentType> selectedPkgs = getSelectedPackages();
-                        ArrayList<ChildrenType> selectedChld = getSelectedChildren();
+                        java.util.List<ParentType> selectedPkgs = getSelectedPackages();
+                        java.util.List<ChildrenType> selectedChld = getSelectedChildren();
                         boolean moveDownPossible = moveDownPossible(selectedPkgs, selectedChld);
                         if (moveDownPossible == false) return;
                         PackageController<ParentType, ChildrenType> pc = getController();
@@ -472,8 +472,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<ParentType> getSelectedPackages() {
-        final ArrayList<ParentType> ret = new ArrayList<ParentType>();
+    public java.util.List<ParentType> getSelectedPackages() {
+        final java.util.List<ParentType> ret = new ArrayList<ParentType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
             final AbstractNode node = getExtTableModel().getObjectbyRow(row);
@@ -485,8 +485,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<ChildrenType> getSelectedChildren() {
-        final ArrayList<ChildrenType> ret = new ArrayList<ChildrenType>();
+    public java.util.List<ChildrenType> getSelectedChildren() {
+        final java.util.List<ChildrenType> ret = new ArrayList<ChildrenType>();
         final int[] rows = this.getSelectedRows();
         for (final int row : rows) {
             final AbstractNode node = getExtTableModel().getObjectbyRow(row);
@@ -498,8 +498,8 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     }
 
     @SuppressWarnings("unchecked")
-    public ArrayList<ChildrenType> getAllSelectedChildren(ArrayList<AbstractNode> selectedObjects) {
-        final ArrayList<ChildrenType> links = new ArrayList<ChildrenType>();
+    public java.util.List<ChildrenType> getAllSelectedChildren(java.util.List<AbstractNode> selectedObjects) {
+        final java.util.List<ChildrenType> links = new ArrayList<ChildrenType>();
         for (final AbstractNode node : selectedObjects) {
             if (node instanceof AbstractPackageChildrenNode<?>) {
                 if (!links.contains(node)) links.add((ChildrenType) node);

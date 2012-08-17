@@ -73,7 +73,7 @@ public class FlDRR {
         merge(objects);
         split(objects, captcha);
         Collections.sort(objects);
-        ArrayList<Letter> ret = new ArrayList<Letter>();
+        java.util.List<Letter> ret = new ArrayList<Letter>();
         for (PixelObject pixelObject : objects) {
             Letter let = pixelObject.toLetter();
             let.toBlackAndWhite();

@@ -11,7 +11,7 @@ import jd.plugins.Account;
 public class AccountAPIImpl implements AccountAPI {
 
     public List<AccountStorable> list() {
-        ArrayList<AccountStorable> ret = new ArrayList<AccountStorable>();
+        java.util.List<AccountStorable> ret = new ArrayList<AccountStorable>();
         for (Account acc : AccountController.getInstance().list()) {
             if (acc != null) {
                 ret.add(new AccountStorable(acc));
@@ -21,16 +21,16 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     public boolean remove(Long[] ids) {
-        ArrayList<Account> removeACCs = getAccountbyIDs(ids);
+        java.util.List<Account> removeACCs = getAccountbyIDs(ids);
         for (Account acc : removeACCs) {
             AccountController.getInstance().removeAccount(acc);
         }
         return true;
     }
 
-    private ArrayList<Account> getAccountbyIDs(Long IDs[]) {
-        ArrayList<Long> todoIDs = new ArrayList<Long>(Arrays.asList(IDs));
-        ArrayList<Account> accs = new ArrayList<Account>();
+    private java.util.List<Account> getAccountbyIDs(Long IDs[]) {
+        java.util.List<Long> todoIDs = new ArrayList<Long>(Arrays.asList(IDs));
+        java.util.List<Account> accs = new ArrayList<Account>();
         for (Account lacc : AccountController.getInstance().list()) {
             if (lacc != null && todoIDs.size() > 0) {
                 Iterator<Long> it = todoIDs.iterator();
@@ -49,7 +49,7 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     public boolean setEnabledState(boolean enabled, Long[] ids) {
-        ArrayList<Account> accs = getAccountbyIDs(ids);
+        java.util.List<Account> accs = getAccountbyIDs(ids);
         for (Account acc : accs) {
             acc.setEnabled(enabled);
         }
@@ -57,7 +57,7 @@ public class AccountAPIImpl implements AccountAPI {
     }
 
     public AccountStorable getAccountInfo(long id) {
-        ArrayList<Account> accs = getAccountbyIDs(new Long[] { id });
+        java.util.List<Account> accs = getAccountbyIDs(new Long[] { id });
         if (accs.size() == 1) { return new AccountStorable(accs.get(0)); }
         return null;
     }

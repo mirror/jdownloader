@@ -26,7 +26,7 @@ public class ScreenDevices {
     private static DeviceInfo SCREENS[] = new DeviceInfo[0];
     static {
         try {
-            ArrayList<DeviceInfo> robint = new ArrayList<DeviceInfo>();
+            java.util.List<DeviceInfo> robint = new ArrayList<DeviceInfo>();
             for (GraphicsDevice dv : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
                 DeviceInfo tmp = new DeviceInfo();
                 tmp.dv = dv;

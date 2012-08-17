@@ -119,7 +119,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
             }
             passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
             passwordList.add(archive.getName());
-            ArrayList<String> pwList = extractor.getSettings().getPasswordList();
+            java.util.List<String> pwList = extractor.getSettings().getPasswordList();
             if (pwList == null) pwList = new ArrayList<String>();
             passwordList.addAll(pwList);
 
@@ -594,7 +594,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
     private void updateContentView(ISimpleInArchive simpleInterface) {
         try {
             ContentView newView = new ContentView();
-            ArrayList<ArchiveItem> files = new ArrayList<ArchiveItem>();
+            java.util.List<ArchiveItem> files = new ArrayList<ArchiveItem>();
             for (ISimpleInArchiveItem item : simpleInterface.getArchiveItems()) {
                 try {
                     files.add(ArchiveItem.create(item));

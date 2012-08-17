@@ -32,7 +32,7 @@ public class ToolbarManager {
     }
 
     private HashMap<String, AbstractToolbarAction> map;
-    private ArrayList<AbstractToolbarAction>       list;
+    private java.util.List<AbstractToolbarAction>       list;
 
     public AbstractToolbarAction[] getList() {
         return list.toArray(new AbstractToolbarAction[] {});
@@ -69,7 +69,7 @@ public class ToolbarManager {
 
     public void update() {
 
-        ArrayList<ActionConfig> order = config.getSetup();
+        java.util.List<ActionConfig> order = config.getSetup();
         if (order != null && order.size() > 0) {
             list.clear();
             for (ActionConfig ac : order) {

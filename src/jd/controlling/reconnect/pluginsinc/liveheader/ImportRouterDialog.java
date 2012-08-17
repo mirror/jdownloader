@@ -54,10 +54,10 @@ public class ImportRouterDialog extends AbstractDialog<Integer> {
 
     private static final long         serialVersionUID = 2043825047691368115L;
 
-    private final ArrayList<String[]> scripts;
+    private final java.util.List<String[]> scripts;
     private JList                     list;
 
-    public ImportRouterDialog(final ArrayList<String[]> scripts) {
+    public ImportRouterDialog(final java.util.List<String[]> scripts) {
         super(UserIO.NO_COUNTDOWN, T._.gui_config_liveheader_dialog_importrouter(), NewTheme.I().getIcon("search", 32), null, null);
 
         this.scripts = scripts;

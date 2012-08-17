@@ -33,7 +33,7 @@ public class TranslateTable extends BasicJDTable<TranslateEntry> {
     private TranslatorExtension      owner;
 
     @Override
-    protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, ArrayList<TranslateEntry> selection, ExtColumn<TranslateEntry> column, MouseEvent ev) {
+    protected JPopupMenu onContextMenu(JPopupMenu popup, TranslateEntry contextObject, java.util.List<TranslateEntry> selection, ExtColumn<TranslateEntry> column, MouseEvent ev) {
 
         popup.add(new CopyFromOtherAction(owner, selection));
         popup.add(new UseDefaultAction(owner, selection));

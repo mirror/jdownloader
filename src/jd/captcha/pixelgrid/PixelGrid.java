@@ -989,7 +989,7 @@ public class PixelGrid extends Property {
         }
 
         // int total = getWidth() * getHeight();
-        ArrayList<Object[]> els = new ArrayList<Object[]>();
+        java.util.List<Object[]> els = new ArrayList<Object[]>();
 
         Iterator<PixelObject> vals = map.values().iterator();
         Iterator<Integer[]> keys = map.keySet().iterator();
@@ -1070,7 +1070,7 @@ public class PixelGrid extends Property {
             }
         }
 
-        ArrayList<Integer[]> ar = new ArrayList<Integer[]>();
+        java.util.List<Integer[]> ar = new ArrayList<Integer[]>();
         ar.addAll(map.keySet());
         Collections.sort(ar, new Comparator<Integer[]>() {
             public int compare(Integer[] o1, Integer[] o2) {
