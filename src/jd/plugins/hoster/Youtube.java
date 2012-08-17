@@ -300,6 +300,8 @@ public class Youtube extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        // For streaming extension to tell her that these links can be streamed without account
+        downloadLink.setProperty("STREAMING", true);
         if (downloadLink.getBooleanProperty("valid", true)) {
             downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
             downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));

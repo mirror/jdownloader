@@ -4,6 +4,8 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.gui.swing.laf.LookAndFeelController;
 
@@ -12,31 +14,28 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.gui.MediaArchiveTable;
-import org.jdownloader.extensions.streaming.mediaarchive.MediaFolder;
-import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
+import org.jdownloader.extensions.streaming.gui.video.VideoTable;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.gui.views.components.packagetable.SearchField;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class RightBottomBar extends MigPanel {
 
-    private GraphicalUserInterfaceSettings                                  config;
+    private GraphicalUserInterfaceSettings          config;
 
-    private SearchField<MediaArchiveSearchCategory, MediaFolder, MediaItem> searchField;
+    private StreamingExtension                      extension;
 
-    private StreamingExtension                                              extension;
+    private SearchField<MediaArchiveSearchCategory> searchField;
 
     // private JToggleButton showHideSidebar;
 
-    public RightBottomBar(StreamingExtension plg, final MediaArchiveTable table) {
+    public RightBottomBar(StreamingExtension plg, final VideoTable table) {
         super("ins 0 0 1 0", "[grow,fill]1[]", "[]");
         extension = plg;
 
         config = JsonConfig.create(GraphicalUserInterfaceSettings.class);
 
-        searchField = new SearchField<MediaArchiveSearchCategory, MediaFolder, MediaItem>(table, MediaArchiveSearchCategory.FILENAME) {
+        searchField = new SearchField<MediaArchiveSearchCategory>(MediaArchiveSearchCategory.FILENAME) {
 
             @Override
             public void setSelectedCategory(MediaArchiveSearchCategory selectedCategory) {
@@ -45,15 +44,8 @@ public class RightBottomBar extends MigPanel {
             }
 
             @Override
-            public boolean isFiltered(MediaFolder e) {
-
-                return false;
-            }
-
-            @Override
-            public boolean isFiltered(MediaItem v) {
-
-                return false;
+            protected void onFiltering(List<Pattern> object) {
+                System.out.println("TODO: org.jdownloader.extensions.streaming.gui.bottombar.SearchField<MediaArchiveSearchCategory>");
             }
 
         };

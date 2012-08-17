@@ -2,46 +2,51 @@ package org.jdownloader.extensions.streaming.mediaarchive;
 
 import java.util.List;
 
-import jd.controlling.packagecontroller.PackageController;
 import jd.plugins.FilePackage;
 
-import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.MediaPreparerQueue;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareEntry;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareJob;
 
-public class MediaArchiveController extends PackageController<MediaFolder, MediaItem> {
+public class MediaArchiveController {
 
     private StreamingExtension      extension;
     private MediaArchiveEventSender eventSender;
     private MediaPreparerQueue      preparerQueue;
+    private VideoListController     videoController;
+    private AudioListController     audioController;
+    private ImageListController     imageController;
 
     public MediaArchiveController(StreamingExtension streamingExtension) {
         extension = streamingExtension;
         preparerQueue = new MediaPreparerQueue(this);
         eventSender = new MediaArchiveEventSender();
+        videoController = new VideoListController();
+        audioController = new AudioListController();
+        imageController = new ImageListController();
+
     }
 
-    @Override
-    protected void _controllerParentlessLinks(List<MediaItem> links, QueuePriority priority) {
+    public VideoListController getVideoController() {
+        return videoController;
     }
 
-    @Override
-    protected void _controllerPackageNodeRemoved(MediaFolder pkg, QueuePriority priority) {
+    public AudioListController getAudioController() {
+        return audioController;
     }
 
-    @Override
-    protected void _controllerStructureChanged(QueuePriority priority) {
+    public ImageListController getImageController() {
+        return imageController;
     }
 
-    @Override
-    protected void _controllerPackageNodeAdded(MediaFolder pkg, QueuePriority priority) {
+    public StreamingExtension getExtension() {
+        return extension;
     }
 
     public void mount(FilePackage fp) {
         PrepareEntry pe = new PrepareEntry(fp);
-        preparerQueue.addAsynch(new PrepareJob(pe));
+        preparerQueue.addAsynch(new PrepareJob(this, pe));
         firePreparerQueueUpdate();
     }
 
@@ -60,6 +65,16 @@ public class MediaArchiveController extends PackageController<MediaFolder, Media
     public List<PrepareJob> getPreparerJobs() {
 
         return preparerQueue.getJobs();
+    }
+
+    public void addMedia(MediaItem node) {
+        if (node instanceof VideoMediaItem) {
+            videoController.add((VideoMediaItem) node);
+        } else if (node instanceof AudioMediaItem) {
+            audioController.add((AudioMediaItem) node);
+        } else if (node instanceof ImageMediaItem) {
+            imageController.add((ImageMediaItem) node);
+        }
     }
 
 }

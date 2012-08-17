@@ -31,7 +31,7 @@ import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
-import org.jdownloader.extensions.streaming.gui.MediaArchiveTable;
+import org.jdownloader.extensions.streaming.gui.video.VideoTable;
 import org.jdownloader.translate._JDT;
 
 public class Sidebar extends JList implements MouseMotionListener, MouseListener {
@@ -67,7 +67,7 @@ public class Sidebar extends JList implements MouseMotionListener, MouseListener
 
     }
 
-    public Sidebar(MediaArchiveTable table) {
+    public Sidebar(VideoTable table) {
         super();
 
         addMouseMotionListener(this);

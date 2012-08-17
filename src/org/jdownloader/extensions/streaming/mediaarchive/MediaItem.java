@@ -1,47 +1,30 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import javax.swing.ImageIcon;
 
-import org.jdownloader.DomainInfo;
+import jd.plugins.DownloadLink;
 
-public class MediaItem implements MediaNode, AbstractPackageChildrenNode<MediaFolder> {
+import org.jdownloader.images.NewTheme;
+
+public abstract class MediaItem implements MediaNode {
+    private DownloadLink downloadLink;
+
+    public MediaItem(DownloadLink dl) {
+        this.downloadLink = dl;
+    }
 
     @Override
     public String getName() {
-        return null;
+        return downloadLink.getName();
     }
 
     @Override
-    public boolean isEnabled() {
-        return false;
+    public ImageIcon getIcon() {
+        return NewTheme.I().getIcon("video", 20);
     }
 
     @Override
-    public void setEnabled(boolean b) {
+    public long getFilesize() {
+        return downloadLink.getDownloadSize();
     }
-
-    @Override
-    public long getCreated() {
-        return 0;
-    }
-
-    @Override
-    public long getFinishedDate() {
-        return 0;
-    }
-
-    @Override
-    public MediaFolder getParentNode() {
-        return null;
-    }
-
-    @Override
-    public void setParentNode(MediaFolder parent) {
-    }
-
-    @Override
-    public DomainInfo getDomainInfo() {
-        return null;
-    }
-
 }

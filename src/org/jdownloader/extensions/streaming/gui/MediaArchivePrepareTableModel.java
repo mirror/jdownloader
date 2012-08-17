@@ -29,6 +29,7 @@ public class MediaArchivePrepareTableModel extends ExtTableModel<PrepareJob> imp
 
     @Override
     public void onPrepareQueueUpdated(MediaArchiveController caller) {
+        System.out.println("Jobs: " + caller.getPreparerJobs().size());
         this._fireTableStructureChanged(caller.getPreparerJobs(), true);
     }
 

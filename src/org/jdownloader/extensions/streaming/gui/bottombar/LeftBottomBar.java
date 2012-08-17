@@ -8,8 +8,8 @@ import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
-import org.jdownloader.extensions.streaming.gui.MediaArchiveTable;
 import org.jdownloader.extensions.streaming.gui.actions.RemoveOptionsAction;
+import org.jdownloader.extensions.streaming.gui.video.VideoTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -26,7 +26,7 @@ public class LeftBottomBar extends MigPanel {
 
     // private JToggleButton showHideSidebar;
 
-    public LeftBottomBar(StreamingExtension plg, final MediaArchiveTable table) {
+    public LeftBottomBar(StreamingExtension plg, final VideoTable table) {
         super("ins 0 0 1 0,debug", "[]1[]1[]", "[]");
         extension = plg;
 

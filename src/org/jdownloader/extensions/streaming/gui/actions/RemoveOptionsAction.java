@@ -11,7 +11,7 @@ import javax.swing.JPopupMenu;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.jdownloader.extensions.streaming.gui.MediaArchiveTable;
+import org.jdownloader.extensions.streaming.gui.video.VideoTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.NewTheme;
 
@@ -33,7 +33,7 @@ public class RemoveOptionsAction extends AbstractAction {
         this.table = table;
     }
 
-    public RemoveOptionsAction(MediaArchiveTable table2) {
+    public RemoveOptionsAction(VideoTable table2) {
     }
 
     public void actionPerformed(ActionEvent e) {

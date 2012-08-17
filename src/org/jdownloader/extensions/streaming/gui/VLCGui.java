@@ -22,6 +22,8 @@ import org.jdownloader.extensions.streaming.gui.bottombar.LeftBottomBar;
 import org.jdownloader.extensions.streaming.gui.bottombar.RightBottomBar;
 import org.jdownloader.extensions.streaming.gui.sidebar.Sidebar;
 import org.jdownloader.extensions.streaming.gui.sidebar.SidebarHeader;
+import org.jdownloader.extensions.streaming.gui.video.VideoTable;
+import org.jdownloader.extensions.streaming.gui.video.VideoTableModel;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveListener;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -33,8 +35,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     private SwitchPanel                   panel;
 
     private LogSource                     logger;
-    private MediaArchiveTableModel        model;
-    private MediaArchiveTable             table;
+    private VideoTableModel        model;
+    private VideoTable             table;
     private JScrollPane                   tableScrollPane;
 
     private Sidebar                       sidebar;
@@ -60,8 +62,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
             }
         };
 
-        model = new MediaArchiveTableModel(plg.getMediaArchiveController());
-        table = new MediaArchiveTable(model);
+        model = new VideoTableModel(plg.getMediaArchiveController());
+        table = new VideoTable(model);
 
         tableScrollPane = new JScrollPane(table);
         tableScrollPane.setBorder(null);

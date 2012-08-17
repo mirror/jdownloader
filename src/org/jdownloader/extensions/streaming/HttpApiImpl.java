@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.net.URLDecoder;
 import java.util.HashMap;
 
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 
@@ -77,6 +76,23 @@ public class HttpApiImpl implements HttpApiDefinition {
         try {
 
             String subpath = "";
+            // request.getRequestHeaders().get(")
+
+            final HTTPHeader rangeRequest = request.getRequestHeaders().get("Range");
+            long startPosition = 0;
+            long stopPosition = -1;
+            if (rangeRequest != null) {
+                String start = new Regex(rangeRequest.getValue(), "(\\d+).*?-").getMatch(0);
+                String stop = new Regex(rangeRequest.getValue(), "-.*?(\\d+)").getMatch(0);
+                if (start != null) startPosition = Long.parseLong(start);
+                if (stop != null) stopPosition = Long.parseLong(stop);
+            }
+
+            if (startPosition > 0) {
+                response.setResponseCode(ResponseCode.ERROR_RANGE_NOT_SUPPORTED);
+                return;
+            }
+
             id = URLDecoder.decode(id, "UTF-8");
             int i = id.indexOf("/");
             if (i > 0) {
@@ -87,13 +103,8 @@ public class HttpApiImpl implements HttpApiDefinition {
                 subpath = subpath.substring(1);
             }
 
-            DownloadLink dlink = null;
-            for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
-                if (dl.getUniqueID().toString().equals(id)) {
-                    dlink = dl;
-                    break;
-                }
-            }
+            DownloadLink dlink = extension.getLinkById(id);
+
             PlayToUpnpRendererDevice callingDevice = UNKNOWN_DEVICE;
             for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
                 if (request.getRemoteAdress().contains(dev.getAddress())) {
@@ -171,7 +182,7 @@ public class HttpApiImpl implements HttpApiDefinition {
 
             if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
             response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
-            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
+            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "none"));
             if (streamingInterface instanceof RarStreamer) {
                 while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
                     Thread.sleep(100);

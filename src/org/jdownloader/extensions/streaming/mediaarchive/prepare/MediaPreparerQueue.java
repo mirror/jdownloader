@@ -1,6 +1,8 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.event.queue.Queue;
@@ -20,6 +22,7 @@ public class MediaPreparerQueue extends Queue {
 
     @Override
     protected void onItemHandled(QueueAction<?, ? extends Throwable> item) {
+
         mediaArchiveController.firePreparerQueueUpdate();
     }
 
@@ -33,7 +36,7 @@ public class MediaPreparerQueue extends Queue {
     }
 
     public List<PrepareJob> getJobs() {
-        java.util.List<PrepareJob> ret = new ArrayList<PrepareJob>();
+        Collection<PrepareJob> ret = new HashSet<PrepareJob>();
         QueueAction<?, ?> cj = getCurrentJob();
         if (cj != null) {
             ret.add((PrepareJob) cj);
@@ -42,6 +45,6 @@ public class MediaPreparerQueue extends Queue {
             ret.add((PrepareJob) e);
         }
 
-        return ret;
+        return new ArrayList<PrepareJob>(ret);
     }
 }

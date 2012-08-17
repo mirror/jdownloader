@@ -4,6 +4,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -16,6 +17,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.Launcher;
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -109,6 +111,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         vlcstreamingAPI = new HttpApiImpl(this, this.mediaServer);
         RemoteAPIController.getInstance().register(vlcstreamingAPI);
         MenuFactoryEventSender.getInstance().addListener(this, true);
+
         // new EDTRunner() {
         //
         // @Override
@@ -426,5 +429,33 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     public MediaArchiveController getMediaArchiveController() {
         return mediaArchive;
+    }
+
+    public ExtractionExtension getExtractingExtension() {
+        return (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
+
+    }
+
+    private HashMap<String, DownloadLink> linkIdMap = new HashMap<String, DownloadLink>();
+
+    public void addDownloadLink(String id, DownloadLink link) {
+        linkIdMap.put(id, link);
+    }
+
+    public void removeDownloadLink(String id) {
+        linkIdMap.remove(id);
+    }
+
+    public DownloadLink getLinkById(String id) {
+
+        DownloadLink dlink = linkIdMap.get(id);
+        if (dlink != null) return dlink;
+        for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
+            if (dl.getUniqueID().toString().equals(id)) {
+                dlink = dl;
+                break;
+            }
+        }
+        return dlink;
     }
 }
