@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -29,7 +30,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -43,7 +43,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static String       agent            = null;
+    private static final String UA               = RandomUserAgent.generate();
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,12 +53,8 @@ public class UniBytesCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", UniBytesCom.UA);
         // Use the english language
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
@@ -116,7 +112,6 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         final String addedLink = downloadLink.getDownloadURL();
-        br.setFollowRedirects(false);
         br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
         br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
         String dllink = br.getRedirectLocation();
@@ -218,12 +213,8 @@ public class UniBytesCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-        if (agent == null) {
-            /* we first have to load the plugin, before we can reference it */
-            JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
-        }
-        br.getHeaders().put("User-Agent", agent);
+
+        br.getHeaders().put("User-Agent", UniBytesCom.UA);
         br.setCookie(MAINPAGE, "lang", "en");
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
