@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -192,7 +194,8 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
@@ -394,12 +397,33 @@ public class Uploadedto extends PluginForHost {
         }
         Browser brc = br.cloneBrowser();
         brc.getPage("http://uploaded.net/js/download.js");
-
-        String wait = br.getRegex("Aktuelle Wartezeit: <span>(\\d+)</span> Sekunden</span>").getMatch(0);
-        br.postPage("http://uploaded.net/io/ticket/captcha/" + getID(downloadLink), "");
+        final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
+        final String wait = br.getRegex("Aktuelle Wartezeit: <span>(\\d+)</span> Sekunden</span>").getMatch(0);
+        if (rcID == null || wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.postPage("http://uploaded.net/io/ticket/slot/" + getID(downloadLink), "");
+        if (!br.containsHTML("\\{succ:true\\}")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final long timebefore = System.currentTimeMillis();
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        for (int i = 0; i <= 5; i++) {
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            int passedTime = (int) ((System.currentTimeMillis() - timebefore) / 1000) - 1;
+            if (i == 0 && passedTime < Integer.parseInt(wait)) {
+                sleep((Integer.parseInt(wait) - passedTime) * 1001l, downloadLink);
+            }
+            br.postPage("http://uploaded.net/io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            if (br.containsHTML("\"err\":\"captcha\"")) {
+                rc.reload();
+                continue;
+            }
+            break;
+        }
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         if (br.containsHTML("err\":\"Ticket kann nicht")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-        if (br.containsHTML("\"?err\"?:\"captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML("err\":\"Leider sind derzeit all unsere")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 5 * 60 * 1000l);
         if (br.containsHTML("(limit\\-dl|\"err\":\"Sie haben die max\\. Anzahl an Free\\-Downloads)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", 60 * 60 * 1000l);
@@ -407,7 +431,6 @@ public class Uploadedto extends PluginForHost {
         String url = br.getRegex("url:\\'(http:.*?)\\'").getMatch(0);
         if (url == null) url = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (wait != null) this.sleep(Integer.parseInt(wait) * 1000l, downloadLink);
         dl = BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         try {
             /* remove next major update */
@@ -436,7 +459,8 @@ public class Uploadedto extends PluginForHost {
             if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("Datei herunterladen")) {
                 /*
-                 * we get fresh entry page after clicking download, means we have to start from beginning
+                 * we get fresh entry page after clicking download, means we
+                 * have to start from beginning
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
             }

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -37,7 +38,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/\\d+/[^<>\"/]+" }, flags = { 2 })
 public class EuroShareEu extends PluginForHost {
 
-    private static final String TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
+    private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
+    private static final Object  LOCK                     = new Object();
+    private static AtomicInteger maxPrem                  = new AtomicInteger(1);
 
     public EuroShareEu(PluginWrapper wrapper) {
         super(wrapper);
@@ -111,8 +114,10 @@ public class EuroShareEu extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account);
         } catch (PluginException e) {
@@ -121,16 +126,28 @@ public class EuroShareEu extends PluginForHost {
         }
 
         ai.setUnlimitedTraffic();
+        account.setValid(true);
         String expire = br.getRegex(">Prémium účet máte aktívny do: ([^<>\"]*?)</a>").getMatch(0);
         if (expire == null) {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
+            ai.setStatus("Free (registered) User");
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
+            account.setProperty("FREE", true);
         } else {
-            account.setValid(true);
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
+            ai.setStatus("Premium User");
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+            }
+            account.setProperty("FREE", false);
         }
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -146,20 +163,27 @@ public class EuroShareEu extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         if (br.containsHTML("(>Všetky sloty pre Free užívateľov sú obsadené|Skúste prosím neskôr\\.<br)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.euroshareeu.nofreeslots", "No free slots available"), 5 * 60 * 1000l);
-        br.setFollowRedirects(false);
-        String dllink = br.getRegex("iba jeden súbor\\.<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://euroshare\\.eu/download/\\d+/.*?/\\d+/.*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        // br.setFollowRedirects(false);
+        // String dllink =
+        // br.getRegex("iba jeden súbor\\.<a href=\"(http://.*?)\"").getMatch(0);
+        // if (dllink == null) dllink =
+        // br.getRegex("\"(http://euroshare\\.eu/download/\\d+/.*?/\\d+/.*?)\"").getMatch(0);
+        // if (dllink == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "/download/", false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
@@ -169,16 +193,20 @@ public class EuroShareEu extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "/download/", true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("FREE")) {
+            doFree(link);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "/download/", true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     private void login(Account account) throws Exception {

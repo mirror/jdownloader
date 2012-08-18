@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -55,12 +54,7 @@ public class FilesMapCom extends PluginForDecrypt {
             /** Handling for all others */
             String fpName = br.getRegex("property=\"og:title\" content=\"(.*?) \\(\\d+\\.?.{1,6}\\)").getMatch(0);
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\(\\d+\\.?.{1,6}\\)").getMatch(0);
-            final String pagePiece = br.getRegex("style=\"width:100%;overflow:auto;\" readonly=\"readonly\"(.*?)</textarea></td><td class=\"t1span\"").getMatch(0);
-            if (pagePiece == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            String[] links = HTMLParser.getHttpLinks(pagePiece, "");
+            final String[] links = br.getRegex("\"http://(www\\.)?((es|ar|en|pt|ru|ja|de|fr|tr|pl)?\\.)?filesmap\\.com/redirect/\\?url=(http[^<>\"]*?)\"").getColumn(3);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

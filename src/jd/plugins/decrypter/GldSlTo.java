@@ -61,17 +61,27 @@ public class GldSlTo extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(decryptIDs.length);
+        final String[] streamIDs = br.getRegex("onClick=\"load_Stream\\(\\'(\\d+)\\'\\)").getColumn(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        for (String cryptID : decryptIDs) {
-            br.postPage("http://goldesel.to/ajax/go2dl.php", "Download=" + cryptID);
+        for (final String cryptID : decryptIDs) {
+            br.postPage("http://goldesel.to/ajax/lddl.php", "ID=" + cryptID);
             String finallink = br.toString();
             if (!finallink.startsWith("http") || finallink.length() > 500) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
+        }
+        if (streamIDs != null && streamIDs.length != 0) {
+            for (final String streamID : streamIDs) {
+                br.postPage("http://goldesel.to/ajax/streams.php", "Stream=" + streamID);
+                String finallink = br.getRegex("<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null || finallink.length() > 500) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

@@ -37,11 +37,11 @@ public class TgfServicesComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         String fpName = null;
         // Decrypt folders
-        if (parameter.contains("tgf-services.com/downloads/")) {
+        if (br.getURL().contains("tgf-services.com/downloads/")) {
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/Warning/?err_num=15")) return decryptedLinks;
                 return null;

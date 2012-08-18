@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tinypaste.com" }, urls = { "http://[\\w\\.]*?tinypaste\\.com/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tny.cz" }, urls = { "http://(www\\.)?(tinypaste\\.com|tny\\.cz)/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
 
     private DownloadLink dl = null;
@@ -42,7 +42,7 @@ public class Tnypst extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String link = parameter.toString();
+        String link = parameter.toString().replace("tinypaste.com/", "tny.cz/");
         br.getPage(link);
         if (br.containsHTML("(Hello, my name is 404\\!<|The page you requested is no longer here)")) {
             logger.info("Link offline: " + parameter);
@@ -50,8 +50,8 @@ public class Tnypst extends PluginForDecrypt {
         }
         if (br.containsHTML("(Enter the correct password|has been password protected)")) {
             for (int i = 0; i <= 3; i++) {
-                String id = new Regex(link, "tinypaste\\.com/.*?id=([0-9a-z]+)").getMatch(0);
-                if (id == null) id = new Regex(link, "tinypaste\\.com/([0-9a-z]+)").getMatch(0);
+                String id = new Regex(link, "tny\\.cz/.*?id=([0-9a-z]+)").getMatch(0);
+                if (id == null) id = new Regex(link, "tny\\.cz/([0-9a-z]+)").getMatch(0);
                 Form pwform = br.getForm(0);
                 if (pwform == null || id == null) return null;
                 String pw = getUserInput(null, parameter);
@@ -62,8 +62,8 @@ public class Tnypst extends PluginForDecrypt {
             }
             if (br.containsHTML("(Enter the correct password|has been password protected)")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        String pasteFrame = br.getRegex("frameborder=\\'0\\' id=\\'pasteFrame\\' src=\"(http://tinypaste\\.com/.*?)\"").getMatch(0);
-        if (pasteFrame == null) pasteFrame = br.getRegex("\"(http://tinypaste\\.com/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
+        String pasteFrame = br.getRegex("frameborder=\\'0\\' id=\\'pasteFrame\\' src=\"(http://tny\\.cz/.*?)\"").getMatch(0);
+        if (pasteFrame == null) pasteFrame = br.getRegex("\"(http://tny\\.cz/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
         if (pasteFrame == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
@@ -74,7 +74,7 @@ public class Tnypst extends PluginForDecrypt {
         ArrayList<String> pws = HTMLParser.findPasswords(br.toString());
         for (String element : links) {
             /* prevent recursion */
-            if (element.contains("tinypaste.com")) continue;
+            if (element.contains("tny.cz")) continue;
             decryptedLinks.add(dl = createDownloadlink(element));
             if (pws != null && pws.size() > 0) dl.setSourcePluginPasswordList(pws);
         }

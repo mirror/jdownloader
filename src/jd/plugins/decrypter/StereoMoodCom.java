@@ -11,7 +11,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stereomood.com" }, urls = { "http://[\\w\\.]*?stereomood\\.com/(song/\\d+|artist/.+|activity/.+|mood/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "stereomood.com" }, urls = { "http://(www\\.)?stereomood\\.com/(song/\\d+|artist/.+|activity/.+|mood/.+)" }, flags = { 0 })
 public class StereoMoodCom extends PluginForDecrypt {
 
     public StereoMoodCom(PluginWrapper wrapper) {
@@ -41,7 +41,6 @@ public class StereoMoodCom extends PluginForDecrypt {
             }
             index++;
         }
-        progress.setRange(locations.size());
         for (String location : locations) {
             location = location.replaceAll("\\\\/", "/");
             Browser br2 = br.cloneBrowser();
@@ -49,8 +48,7 @@ public class StereoMoodCom extends PluginForDecrypt {
             br2.getPage(location);
             String url = br2.getRedirectLocation();
             if (url == null) continue;
-            decryptedLinks.add(this.createDownloadlink("directhttp://" + url));
-            progress.increase(1);
+            decryptedLinks.add(this.createDownloadlink(url));
         }
         return decryptedLinks;
     }

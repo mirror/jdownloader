@@ -56,10 +56,15 @@ public class Stlth extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("besucherpass.png")) {
-            final Form form = br.getFormBySubmitvalue("Weiter");
-            form.put("access_pass", Plugin.getUserInput(null, param));
-            br.submitForm(form);
+        if (br.containsHTML("besucherpass\\.png")) {
+            for (int i = 0; i <= 3; i++) {
+                final Form form = br.getFormBySubmitvalue("Weiter");
+                form.put("access_pass", Plugin.getUserInput(null, param));
+                br.submitForm(form);
+                if (br.containsHTML("besucherpass\\.png")) continue;
+                break;
+            }
+            if (br.containsHTML("besucherpass\\.png")) throw new DecrypterException(DecrypterException.PASSWORD);
         }
         // Captcha
         if (br.containsHTML("Sicherheitsabfrage")) {
