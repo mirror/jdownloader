@@ -26,12 +26,16 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.views.settings.sidebar.CheckBoxedEntry;
 
-import org.jdownloader.extensions.streaming.gui.video.VideoTable;
+import org.jdownloader.extensions.streaming.StreamingExtension;
+import org.jdownloader.extensions.streaming.gui.categories.AudioRootCategory;
+import org.jdownloader.extensions.streaming.gui.categories.ImagesRootCategory;
+import org.jdownloader.extensions.streaming.gui.categories.VideoRootCategory;
 import org.jdownloader.translate._JDT;
 
 public class Sidebar extends JList implements MouseMotionListener, MouseListener {
@@ -48,12 +52,15 @@ public class Sidebar extends JList implements MouseMotionListener, MouseListener
             g2.setComposite(ac5);
             int index = locationToIndex(lmouse);
 
-            // if (index >= 0 && getModel().getElementAt(index) instanceof ExtensionHeader) { return; }
-            // if (index >= 0 && getModel().getElementAt(index) instanceof AdvancedSettings) {
+            // if (index >= 0 && getModel().getElementAt(index) instanceof
+            // ExtensionHeader) { return; }
+            // if (index >= 0 && getModel().getElementAt(index) instanceof
+            // AdvancedSettings) {
             // Point p = indexToLocation(index);
             // if (p != null) {
             // g2.fillRect(0, p.y, getWidth(), 25);
-            // g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            // g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,
+            // 1.0f));
             // }
             // } else {
             Point p = indexToLocation(index);
@@ -67,12 +74,27 @@ public class Sidebar extends JList implements MouseMotionListener, MouseListener
 
     }
 
-    public Sidebar(VideoTable table) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public Sidebar(final StreamingExtension plg) {
         super();
 
         addMouseMotionListener(this);
         addMouseListener(this);
-        setModel(new SettingsSidebarModel());
+        setModel(new DefaultListModel() {
+            /**
+             * 
+             */
+            private static final long serialVersionUID = 1L;
+
+            {
+
+                addElement(new VideoRootCategory(plg));
+                addElement(new AudioRootCategory(plg));
+                addElement(new ImagesRootCategory(plg));
+
+            }
+
+        });
         setCellRenderer(new TreeRenderer());
 
         setOpaque(false);

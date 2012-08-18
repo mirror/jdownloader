@@ -2,7 +2,6 @@ package org.jdownloader.extensions.streaming.gui.actions;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -11,7 +10,7 @@ import javax.swing.JPopupMenu;
 import jd.controlling.packagecontroller.AbstractNode;
 import jd.gui.swing.laf.LookAndFeelController;
 
-import org.jdownloader.extensions.streaming.gui.video.VideoTable;
+import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.images.NewTheme;
 
@@ -28,12 +27,7 @@ public class RemoveOptionsAction extends AbstractAction {
 
     }
 
-    public RemoveOptionsAction(DownloadsTable table, JButton addLinks) {
-        positionComp = addLinks;
-        this.table = table;
-    }
-
-    public RemoveOptionsAction(VideoTable table2) {
+    public RemoveOptionsAction(VLCGui vlcGui) {
     }
 
     public void actionPerformed(ActionEvent e) {

@@ -1,10 +1,12 @@
-package org.jdownloader.extensions.streaming.mediaarchive.categories;
+package org.jdownloader.extensions.streaming.gui.categories;
 
 import javax.swing.Icon;
+import javax.swing.JComponent;
 
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.images.NewTheme;
 
-public class RootCategory {
+public abstract class RootCategory {
 
     private String iconKey;
 
@@ -24,15 +26,23 @@ public class RootCategory {
         this.label = label;
     }
 
-    private String label;
+    private String             label;
+    private StreamingExtension extension;
 
-    public RootCategory(String label, String iconKey) {
+    public RootCategory(StreamingExtension plg, String label, String iconKey) {
         this.label = label;
         this.iconKey = iconKey;
+        this.extension = plg;
+    }
+
+    public StreamingExtension getExtension() {
+        return extension;
     }
 
     public Icon getIcon() {
         return NewTheme.I().getIcon(getIconKey(), 32);
     }
+
+    public abstract JComponent getView();
 
 }

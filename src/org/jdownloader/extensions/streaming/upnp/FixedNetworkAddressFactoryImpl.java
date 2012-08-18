@@ -16,7 +16,8 @@ import org.jdownloader.logging.LogController;
 
 public class FixedNetworkAddressFactoryImpl extends NetworkAddressFactoryImpl {
 
-    private LogSource logger;
+    private LogSource              logger;
+    private List<InterfaceAddress> workaroundList;
 
     public FixedNetworkAddressFactoryImpl(int streamListenPort) {
         super(streamListenPort);
@@ -29,48 +30,56 @@ public class FixedNetworkAddressFactoryImpl extends NetworkAddressFactoryImpl {
         List<InterfaceAddress> ret = super.getInterfaceAddresses(networkInterface);
 
         if (ret == null || ret.size() == 0 || ret.get(0) == null) {
-            logger.info("Use getInterfaceAddresses workaround");
-            ret = new ArrayList<InterfaceAddress>();
-            // java bug create dummy addresses
+            synchronized (this) {
 
-            for (InetAddress adr : getInetAddresses(networkInterface)) {
-                try {
-                    Constructor<InterfaceAddress> con = InterfaceAddress.class.getDeclaredConstructor(new Class[] {});
-                    con.setAccessible(true);
-                    InterfaceAddress instance = con.newInstance(new Object[] {});
+                if (workaroundList == null) {
+                    logger.info("Use getInterfaceAddresses workaround");
+                    ret = new ArrayList<InterfaceAddress>();
+                    // java bug create dummy addresses
 
-                    Field address = InterfaceAddress.class.getDeclaredField("address");
-                    address.setAccessible(true);
-                    Field broadcast = InterfaceAddress.class.getDeclaredField("broadcast");
-                    broadcast.setAccessible(true);
-                    Field maskLength = InterfaceAddress.class.getDeclaredField("maskLength");
-                    maskLength.setAccessible(true);
+                    for (InetAddress adr : getInetAddresses(networkInterface)) {
+                        try {
+                            Constructor<InterfaceAddress> con = InterfaceAddress.class.getDeclaredConstructor(new Class[] {});
+                            con.setAccessible(true);
+                            InterfaceAddress instance = con.newInstance(new Object[] {});
 
-                    address.set(instance, adr);
-                    byte[] bytes = adr.getAddress();
+                            Field address = InterfaceAddress.class.getDeclaredField("address");
+                            address.setAccessible(true);
+                            Field broadcast = InterfaceAddress.class.getDeclaredField("broadcast");
+                            broadcast.setAccessible(true);
+                            Field maskLength = InterfaceAddress.class.getDeclaredField("maskLength");
+                            maskLength.setAccessible(true);
 
-                    broadcast.set(instance, InetAddress.getByAddress(new byte[] { bytes[0], bytes[1], bytes[2], (byte) 255 }));
-                    maskLength.set(instance, (short) 24);
-                    ret.add(instance);
-                } catch (NoSuchMethodException e) {
-                    e.printStackTrace();
-                } catch (SecurityException e) {
-                    e.printStackTrace();
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    e.printStackTrace();
-                } catch (NoSuchFieldException e) {
-                    e.printStackTrace();
-                } catch (UnknownHostException e) {
-                    e.printStackTrace();
+                            address.set(instance, adr);
+                            byte[] bytes = adr.getAddress();
+
+                            broadcast.set(instance, InetAddress.getByAddress(new byte[] { bytes[0], bytes[1], bytes[2], (byte) 255 }));
+                            maskLength.set(instance, (short) 24);
+                            ret.add(instance);
+                            workaroundList = ret;
+                        } catch (NoSuchMethodException e) {
+                            e.printStackTrace();
+                        } catch (SecurityException e) {
+                            e.printStackTrace();
+                        } catch (InstantiationException e) {
+                            e.printStackTrace();
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        } catch (IllegalArgumentException e) {
+                            e.printStackTrace();
+                        } catch (InvocationTargetException e) {
+                            e.printStackTrace();
+                        } catch (NoSuchFieldException e) {
+                            e.printStackTrace();
+                        } catch (UnknownHostException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    logger.info("Result: " + networkInterface + " - " + ret);
                 }
+
+                return workaroundList;
             }
-            logger.info("Result: " + networkInterface + " - " + ret);
         }
 
         return ret;

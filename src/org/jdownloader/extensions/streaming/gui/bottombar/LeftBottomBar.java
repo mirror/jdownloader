@@ -8,8 +8,8 @@ import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
+import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.gui.actions.RemoveOptionsAction;
-import org.jdownloader.extensions.streaming.gui.video.VideoTable;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddOptionsAction;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -26,7 +26,7 @@ public class LeftBottomBar extends MigPanel {
 
     // private JToggleButton showHideSidebar;
 
-    public LeftBottomBar(StreamingExtension plg, final VideoTable table) {
+    public LeftBottomBar(StreamingExtension plg, final VLCGui vlcGui) {
         super("ins 0 0 1 0,debug", "[]1[]1[]", "[]");
         extension = plg;
 
@@ -44,7 +44,7 @@ public class LeftBottomBar extends MigPanel {
                 super.setBounds(x - 2, y, width + 2, height);
             }
         };
-        popupRemove = new JButton(new RemoveOptionsAction(table));
+        popupRemove = new JButton(new RemoveOptionsAction(vlcGui));
 
         add(addLinks, "height 24!,aligny top");
 

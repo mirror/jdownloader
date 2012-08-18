@@ -31,7 +31,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import net.miginfocom.swing.MigLayout;
 
 import org.appwork.utils.ColorUtils;
-import org.jdownloader.extensions.streaming.mediaarchive.categories.RootCategory;
+import org.jdownloader.extensions.streaming.gui.categories.RootCategory;
 
 public class TreeRenderer extends JPanel implements ListCellRenderer {
 

@@ -95,7 +95,6 @@ public class MediaServer implements Runnable {
                 protected ProtocolFactory createProtocolFactory() {
                     return new ProtocolFactoryImpl(this) {
                         public ReceivingAsync createReceivingAsync(IncomingDatagramMessage message) throws ProtocolCreationException {
-                            logger.fine("Creating protocol for incoming asynchronous: " + message);
 
                             if (message.getOperation() instanceof UpnpRequest) {
                                 IncomingDatagramMessage<UpnpRequest> incomingRequest = message;
@@ -107,7 +106,8 @@ public class MediaServer implements Runnable {
                                     return new ReceivingSearch(getUpnpService(), incomingRequest) {
                                         @Override
                                         protected boolean waitBeforeExecution() throws InterruptedException {
-                                            // this may help to find the server faster
+                                            // this may help to find the server
+                                            // faster
                                             return true;
                                         }
                                     };

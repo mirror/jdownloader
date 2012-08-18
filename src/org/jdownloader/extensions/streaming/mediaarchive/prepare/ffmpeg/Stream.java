@@ -2,9 +2,19 @@ package org.jdownloader.extensions.streaming.mediaarchive.prepare.ffmpeg;
 
 import org.appwork.storage.Storable;
 
-public class FFProbeResult implements Storable {
-    public FFProbeResult(/* Storable */) {
+public class Stream implements Storable {
+    public Stream(/* Storable */) {
 
+    }
+
+    private int channels;
+
+    public int getChannels() {
+        return channels;
+    }
+
+    public void setChannels(int channels) {
+        this.channels = channels;
     }
 
     private String codec_name;
@@ -72,5 +82,21 @@ public class FFProbeResult implements Storable {
 
     private String duration;
     private String bit_rate;
+
+    public int parseDuration() {
+        try {
+            return (int) Double.parseDouble(getDuration());
+        } catch (Throwable e) {
+            return -1;
+        }
+    }
+
+    public int parseBitrate() {
+        try {
+            return (int) Integer.parseInt(getBit_rate());
+        } catch (Throwable e) {
+            return -1;
+        }
+    }
 
 }

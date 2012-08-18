@@ -8,6 +8,8 @@ import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 import jd.gui.swing.jdgui.interfaces.SwitchPanel;
 import jd.gui.swing.laf.LookAndFeelController;
@@ -20,10 +22,9 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.gui.bottombar.LeftBottomBar;
 import org.jdownloader.extensions.streaming.gui.bottombar.RightBottomBar;
+import org.jdownloader.extensions.streaming.gui.categories.RootCategory;
 import org.jdownloader.extensions.streaming.gui.sidebar.Sidebar;
 import org.jdownloader.extensions.streaming.gui.sidebar.SidebarHeader;
-import org.jdownloader.extensions.streaming.gui.video.VideoTable;
-import org.jdownloader.extensions.streaming.gui.video.VideoTableModel;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveListener;
 import org.jdownloader.gui.views.components.HeaderScrollPane;
@@ -35,8 +36,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     private SwitchPanel                   panel;
 
     private LogSource                     logger;
-    private VideoTableModel        model;
-    private VideoTable             table;
+
     private JScrollPane                   tableScrollPane;
 
     private Sidebar                       sidebar;
@@ -62,13 +62,18 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
             }
         };
 
-        model = new VideoTableModel(plg.getMediaArchiveController());
-        table = new VideoTable(model);
+        tableScrollPane = new JScrollPane();
 
-        tableScrollPane = new JScrollPane(table);
-        tableScrollPane.setBorder(null);
+        sidebar = new Sidebar(plg);
+        sidebar.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 
-        sidebar = new Sidebar(table);
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                tableScrollPane.getViewport().setView(((RootCategory) sidebar.getSelectedValue()).getView());
+                tableScrollPane.repaint();
+            }
+        });
+        tableScrollPane.getViewport().setView(((RootCategory) sidebar.getModel().getElementAt(0)).getView());
         sidebarScrollPane = new HeaderScrollPane(sidebar) {
 
             /**
@@ -81,7 +86,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
         // ScrollPaneUI udi = sp.getUI();
         int c = LookAndFeelController.getInstance().getLAFOptions().getPanelBackgroundColor();
         // LayoutManager lm = sp.getLayout();
-
+        sidebar.setSelectedIndex(0);
         if (c >= 0) {
             sidebarScrollPane.setBackground(new Color(c));
             sidebarScrollPane.setOpaque(true);
@@ -93,9 +98,6 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
         prepareModel = new MediaArchivePrepareTableModel(plg.getMediaArchiveController());
         prepareTable = new MediaArchivePrepareTable(prepareModel);
 
-        tableScrollPane = new JScrollPane(table);
-        tableScrollPane.setBorder(null);
-
         panel.add(sidebarScrollPane, "spany 2,gapbottom 2");
         panel.add(tableScrollPane, "pushx,growx,spanx");
         panel.add(prepareTableScollPane = new JScrollPane(prepareTable), "hidemode 2");
@@ -104,8 +106,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
         //
         // }
-        panel.add(new LeftBottomBar(plg, table), "height 24!");
-        panel.add(new RightBottomBar(plg, table), "height 24!");
+        panel.add(new LeftBottomBar(plg, this), "height 24!");
+        panel.add(new RightBottomBar(plg, this), "height 24!");
         // layout all contents in panel
         this.setContent(panel);
 
@@ -156,8 +158,9 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
-     * switched form a different tab to this one
+     * Is called if gui is visible now, and has not been visible before. For
+     * example, user starte the extension, opened the view, or switched form a
+     * different tab to this one
      */
     @Override
     protected void onShow() {
@@ -165,8 +168,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
-     * tab/view
+     * gets called of the extensiongui is not visible any more. for example
+     * because it has been closed or user switched to a different tab/view
      */
     @Override
     protected void onHide() {

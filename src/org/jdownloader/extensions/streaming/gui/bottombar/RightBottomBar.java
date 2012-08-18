@@ -14,7 +14,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtButton;
 import org.jdownloader.actions.AppAction;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.gui.video.VideoTable;
+import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.QuickSettingsPopup;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
@@ -29,7 +29,7 @@ public class RightBottomBar extends MigPanel {
 
     // private JToggleButton showHideSidebar;
 
-    public RightBottomBar(StreamingExtension plg, final VideoTable table) {
+    public RightBottomBar(StreamingExtension plg, final VLCGui vlcGui) {
         super("ins 0 0 1 0", "[grow,fill]1[]", "[]");
         extension = plg;
 
