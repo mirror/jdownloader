@@ -139,19 +139,20 @@ public class HttpApiImpl implements HttpRequestHandler {
                 // dlnaFeatures = null;
 
             }
-            if (callingDevice.getProtocolInfos() != null) {
-                for (ProtocolInfo pi : callingDevice.getProtocolInfos()) {
+            if (callingDevice != null) {
+                if (callingDevice.getProtocolInfos() != null) {
+                    for (ProtocolInfo pi : callingDevice.getProtocolInfos()) {
 
-                    if (pi.getContentFormatMimeType().getSubtype().contains(format)) {
+                        if (pi.getContentFormatMimeType().getSubtype().contains(format)) {
 
-                        System.out.println(1);
-                        ct = pi.getContentFormat();
-                        dlnaFeatures = pi.getAdditionalInfo();
-                        break;
+                            System.out.println(1);
+                            ct = pi.getContentFormat();
+                            dlnaFeatures = pi.getAdditionalInfo();
+                            break;
+                        }
                     }
                 }
             }
-
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
 
             if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
