@@ -36,11 +36,10 @@ import org.jdownloader.logging.LogController;
 
 public class HttpApiImpl implements HttpApiDefinition {
 
-    private HashMap<String, StreamingInterface>   interfaceMap   = new HashMap<String, StreamingInterface>();
-    private StreamingExtension                    extension;
-    private LogSource                             logger;
-    private MediaServer                           mediaServer;
-    private static final PlayToUpnpRendererDevice UNKNOWN_DEVICE = new UnknownUPNPDevice();
+    private HashMap<String, StreamingInterface> interfaceMap = new HashMap<String, StreamingInterface>();
+    private StreamingExtension                  extension;
+    private LogSource                           logger;
+    private MediaServer                         mediaServer;
 
     public HttpApiImpl(StreamingExtension extension, MediaServer mediaServer) {
         this.extension = extension;
@@ -105,7 +104,7 @@ public class HttpApiImpl implements HttpApiDefinition {
 
             DownloadLink dlink = extension.getLinkById(id);
 
-            PlayToUpnpRendererDevice callingDevice = UNKNOWN_DEVICE;
+            PlayToUpnpRendererDevice callingDevice = null;
             for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
                 if (request.getRemoteAdress().contains(dev.getAddress())) {
                     callingDevice = dev;
