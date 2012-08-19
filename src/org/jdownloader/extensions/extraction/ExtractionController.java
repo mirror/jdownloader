@@ -41,21 +41,21 @@ import org.jdownloader.logging.LogController;
  * 
  */
 public class ExtractionController extends QueueAction<Void, RuntimeException> {
-    private java.util.List<String>   passwordList;
-    private int                 passwordListSize = 0;
-    private Exception           exception;
-    private boolean             removeAfterExtraction;
-    private Archive             archive;
-    private IExtraction         extractor;
-    private ScheduledFuture<?>  timer;
-    private Type                latestEvent;
-    private double              progress;
-    private boolean             removeDownloadLinksAfterExtraction;
-    private ExtractionExtension extension;
-    private final LogSource     logger;
-    private FileSignatures      fileSignatures   = null;
-    private boolean             overwriteFiles;
-    private File                extractToFolder;
+    private java.util.List<String> passwordList;
+    private int                    passwordListSize = 0;
+    private Exception              exception;
+    private boolean                removeAfterExtraction;
+    private Archive                archive;
+    private IExtraction            extractor;
+    private ScheduledFuture<?>     timer;
+    private Type                   latestEvent;
+    private double                 progress;
+    private boolean                removeDownloadLinksAfterExtraction;
+    private ExtractionExtension    extension;
+    private final LogSource        logger;
+    private FileSignatures         fileSignatures   = null;
+    private boolean                overwriteFiles;
+    private File                   extractToFolder;
 
     public File getExtractToFolder() {
         return extractToFolder;
@@ -137,51 +137,58 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> {
             if (gotKilled()) return null;
             if (extractor.prepare()) {
                 extractToFolder = extension.getFinalExtractToFolder(archive);
-                if (archive.isProtected() && StringUtils.isEmpty(archive.getFinalPassword())) {
-                    HashSet<String> spwList = archive.getSettings().getPasswords();
-                    if (spwList != null) {
-                        passwordList.addAll(spwList);
+                if (archive.isProtected()) {
+                    if (!StringUtils.isEmpty(archive.getFinalPassword()) && !checkPassword(archive.getFinalPassword(), false)) {
+                        /* open archive with found pw */
+                        logger.info("Password " + archive.getFinalPassword() + " is invalid, try to find correct one");
+                        archive.setFinalPassword(null);
                     }
-                    passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
-                    passwordList.add(archive.getName());
-                    java.util.List<String> pwList = extractor.config.getPasswordList();
-                    if (pwList == null) pwList = new ArrayList<String>();
-                    passwordList.addAll(pwList);
-
-                    passwordListSize = passwordList.size() + 2;
-
-                    fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
-                    logger.info("Start password finding for " + archive);
-
-                    String correctPW = null;
-
-                    for (String password : passwordList) {
-                        if (gotKilled()) return null;
-                        if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
-                            correctPW = password;
-                            break;
+                    if (StringUtils.isEmpty(archive.getFinalPassword())) {
+                        /* pw unknown yet */
+                        HashSet<String> spwList = archive.getSettings().getPasswords();
+                        if (spwList != null) {
+                            passwordList.addAll(spwList);
                         }
-                    }
+                        passwordList.addAll(archive.getFactory().getGuessedPasswordList(archive));
+                        passwordList.add(archive.getName());
+                        java.util.List<String> pwList = extractor.config.getPasswordList();
+                        if (pwList == null) pwList = new ArrayList<String>();
+                        passwordList.addAll(pwList);
 
-                    if (correctPW == null) {
-                        fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
-                        logger.info("Found no password in passwordlist " + archive);
-                        if (gotKilled()) return null;
-                        if (!checkPassword(archive.getFinalPassword(), false)) {
-                            fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
-                            logger.info("No password found for " + archive);
-                            return null;
+                        passwordListSize = passwordList.size() + 2;
+
+                        fireEvent(ExtractionEvent.Type.START_CRACK_PASSWORD);
+                        logger.info("Start password finding for " + archive);
+
+                        String correctPW = null;
+
+                        for (String password : passwordList) {
+                            if (gotKilled()) return null;
+                            if (checkPassword(password, extension.getSettings().isPasswordFindOptimizationEnabled())) {
+                                correctPW = password;
+                                break;
+                            }
                         }
-                    }
 
-                    fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
-                    logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
-                    /* avoid duplicates */
-                    pwList.remove(archive.getFinalPassword());
-                    pwList.add(0, archive.getFinalPassword());
-                    extractor.config.setPasswordList(pwList);
+                        if (correctPW == null) {
+                            fireEvent(ExtractionEvent.Type.PASSWORD_NEEDED_TO_CONTINUE);
+                            logger.info("Found no password in passwordlist " + archive);
+                            if (gotKilled()) return null;
+                            if (!checkPassword(archive.getFinalPassword(), false)) {
+                                fireEvent(ExtractionEvent.Type.EXTRACTION_FAILED);
+                                logger.info("No password found for " + archive);
+                                return null;
+                            }
+                        }
+
+                        fireEvent(ExtractionEvent.Type.PASSWORD_FOUND);
+                        logger.info("Found password for " + archive + "->" + archive.getFinalPassword());
+                        /* avoid duplicates */
+                        pwList.remove(archive.getFinalPassword());
+                        pwList.add(0, archive.getFinalPassword());
+                        extractor.config.setPasswordList(pwList);
+                    }
                 }
-
                 DISKSPACECHECK check = DownloadWatchDog.getInstance().checkFreeDiskSpace(getExtractToFolder(), archive.getContentView().getTotalSize());
                 if (DISKSPACECHECK.FAILED.equals(check) || DISKSPACECHECK.INVALIDFOLDER.equals(check)) {
                     fireEvent(ExtractionEvent.Type.NOT_ENOUGH_SPACE);
