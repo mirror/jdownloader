@@ -59,20 +59,27 @@ import org.fourthline.cling.support.model.ProtocolInfos;
 import org.fourthline.cling.transport.Router;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.upnp.content.ContentDirectory;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class MediaServer implements Runnable {
 
-    private static final int SERVER_VERSION = 1;
+    private static final int   SERVER_VERSION = 1;
 
-    private LogSource        logger;
-    private UpnpServiceImpl  upnpService;
+    private LogSource          logger;
+    private UpnpServiceImpl    upnpService;
 
-    public MediaServer() {
+    private StreamingExtension extension;
+
+    public StreamingExtension getExtension() {
+        return extension;
+    }
+
+    public MediaServer(StreamingExtension streamingExtension) {
         logger = LogController.getInstance().getLogger("streaming");
-
+        extension = streamingExtension;
         ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
 
             @Override

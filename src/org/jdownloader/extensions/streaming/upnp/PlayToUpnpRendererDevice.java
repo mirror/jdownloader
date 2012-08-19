@@ -26,6 +26,7 @@ import org.fourthline.cling.support.connectionmanager.callback.GetProtocolInfo;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.logging.LogController;
 
 public class PlayToUpnpRendererDevice implements PlayToDevice {
@@ -46,11 +47,13 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     private RendererDeviceSettings settings;
     private ProtocolInfos          protocolInfos;
     private String                 address;
+    private StreamingExtension     extension;
 
     public PlayToUpnpRendererDevice(MediaServer mediaServer, Device d, Service avtransport) {
         this.rendererDevice = d;
         this.avtransportService = avtransport;
         this.mediaServer = mediaServer;
+        extension = mediaServer.getExtension();
         logger = LogController.getInstance().getLogger(PlayToUpnpRendererDevice.class.getName());
         init();
     }
@@ -168,7 +171,9 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
             public void run() {
                 logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + settings.getProtocolInfos());
 
-                final String url = "http://" + mediaServer.getHost() + ":3128/vlcstreaming/stream?" + id + "&uid=" + getUniqueDeviceID();
+                final String url = extension.createStreamUrl(id, getUniqueDeviceID());
+                // final String url =
+                // "http://192.168.2.102:3128/vlcstreaming/stream?%221344103042405%22&%226.1.7601+2%2FService+Pack+1%2C+UPnP%2F1.0%2C+Portable+SDK+for+UPnP+devices%2F1.6.16%22";
                 final ActionCallback playAction = new Play(avtransportService) {
                     @Override
                     public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {

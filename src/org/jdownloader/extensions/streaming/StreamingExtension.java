@@ -153,7 +153,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     private void startMediaServer() {
 
-        Thread serverThread = new Thread(mediaServer = new MediaServer());
+        Thread serverThread = new Thread(mediaServer = new MediaServer(this));
         serverThread.setDaemon(false);
         serverThread.start();
     }
