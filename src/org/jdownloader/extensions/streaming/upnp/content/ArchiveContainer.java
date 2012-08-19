@@ -21,7 +21,6 @@ import org.jdownloader.extensions.extraction.ExtractionException;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
-import org.jdownloader.extensions.streaming.IDFactory;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediainfo.MediaInfo;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
@@ -98,7 +97,8 @@ public class ArchiveContainer extends FolderContainer {
                 RarStreamer rartream = new RarStreamer(archive, streamingExtension, extractionExtension) {
                     protected String askPassword() throws DialogClosedException, DialogCanceledException {
 
-                        // if password is not in list, we cannot open the archive.
+                        // if password is not in list, we cannot open the
+                        // archive.
                         throw new DialogClosedException(0);
                     }
 
@@ -133,7 +133,7 @@ public class ArchiveContainer extends FolderContainer {
 
         String id;
 
-        id = IDFactory.create(parent.getID(), archiveFile.getName());
+        id = parent.getID() + "/" + archiveFile.getName();
 
         if (archiveFile.isDirectory()) {
             FolderContainer dir = new FolderContainer(id, archiveFile.getName());
@@ -173,7 +173,7 @@ public class ArchiveContainer extends FolderContainer {
                             MimeType mimeType = mi.getMimeType();
                             Res res;
 
-                            res = new Res(mimeType, mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(getID(), deviceID));
+                            res = new Res(mimeType, mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(ArchiveContainer.this.getID(), deviceID, archiveFile.getName()));
 
                             return new MusicTrack(getID(), parent.getID(), mi.getTitle(), mi.getArtist(), mi.getAlbum(), artist, res);
                         }
@@ -205,7 +205,7 @@ public class ArchiveContainer extends FolderContainer {
                         @Override
                         public Item getImpl(String deviceID) {
 
-                            Res res = new Res(mi.getMimeType(), mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(getID(), deviceID));
+                            Res res = new Res(mi.getMimeType(), mi.getContentLength(), listContentProvider.formatDuration(mi.getDuration()), mi.getBitrate(), streamingExtension.createStreamUrl(getID(), deviceID, archiveFile.getName()));
                             //
                             return (new VideoItem(getID(), getParent().getID(), mi.getTitle(), null, res));
                         }

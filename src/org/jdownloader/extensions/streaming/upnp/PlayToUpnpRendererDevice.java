@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming.upnp;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -166,60 +167,66 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     }
 
     @Override
-    public void play(final DownloadLink link, final String id) {
+    public void play(final DownloadLink link, final String id, final String subpath) {
         new Thread("PlayTpUpnpDevice") {
             public void run() {
                 logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + settings.getProtocolInfos());
+                try {
 
-                final String url = extension.createStreamUrl(id, getUniqueDeviceID());
-                // final String url =
-                // "http://192.168.2.102:3128/vlcstreaming/stream?%221344103042405%22&%226.1.7601+2%2FService+Pack+1%2C+UPnP%2F1.0%2C+Portable+SDK+for+UPnP+devices%2F1.6.16%22";
-                final ActionCallback playAction = new Play(avtransportService) {
-                    @Override
-                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                        // Something was wrong
-                        System.out.println("WRONG Play " + defaultMsg);
-                        logger.severe("Play Action: " + defaultMsg);
-                        Dialog.getInstance().showErrorDialog(defaultMsg);
-                    }
-                };
-                final ActionCallback setAVTransportURIAction = new SetAVTransportURI(avtransportService, url, "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
-                    @Override
-                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                        // Something was wrong
-                        System.out.println("WRONG SETURI" + defaultMsg);
-                        logger.severe("SetAVTransportURI: " + defaultMsg);
-                        Dialog.getInstance().showErrorDialog(defaultMsg);
+                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), subpath);
 
-                    }
+                    // final String url =
+                    // "http://192.168.2.102:3128/vlcstreaming/stream?%221344103042405%22&%226.1.7601+2%2FService+Pack+1%2C+UPnP%2F1.0%2C+Portable+SDK+for+UPnP+devices%2F1.6.16%22";
+                    final ActionCallback playAction = new Play(avtransportService) {
+                        @Override
+                        public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                            // Something was wrong
+                            System.out.println("WRONG Play " + defaultMsg);
+                            logger.severe("Play Action: " + defaultMsg);
+                            Dialog.getInstance().showErrorDialog(defaultMsg);
+                        }
+                    };
+                    final ActionCallback setAVTransportURIAction = new SetAVTransportURI(avtransportService, url, "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\"></DIDL-Lite>") {
+                        @Override
+                        public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                            // Something was wrong
+                            System.out.println("WRONG SETURI" + defaultMsg);
+                            logger.severe("SetAVTransportURI: " + defaultMsg);
+                            Dialog.getInstance().showErrorDialog(defaultMsg);
 
-                    @Override
-                    public void success(ActionInvocation invocation) {
-                        super.success(invocation);
-                        mediaServer.getControlPoint().execute(playAction);
-                    }
-                };
+                        }
 
-                final ActionCallback stopAction = new Stop(avtransportService) {
-                    @Override
-                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                        // Something was wrong
-                        System.out.println("WRONG Stop " + defaultMsg);
-                        logger.severe("Stop Action: " + defaultMsg);
-                        Dialog.getInstance().showErrorDialog(defaultMsg);
-                        mediaServer.getControlPoint().execute(setAVTransportURIAction);
-                    }
+                        @Override
+                        public void success(ActionInvocation invocation) {
+                            super.success(invocation);
+                            mediaServer.getControlPoint().execute(playAction);
+                        }
+                    };
 
-                    @Override
-                    public void success(ActionInvocation invocation) {
-                        super.success(invocation);
-                        mediaServer.getControlPoint().execute(setAVTransportURIAction);
-                    }
+                    final ActionCallback stopAction = new Stop(avtransportService) {
+                        @Override
+                        public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                            // Something was wrong
+                            System.out.println("WRONG Stop " + defaultMsg);
+                            logger.severe("Stop Action: " + defaultMsg);
+                            Dialog.getInstance().showErrorDialog(defaultMsg);
+                            mediaServer.getControlPoint().execute(setAVTransportURIAction);
+                        }
 
-                };
-                mediaServer.getControlPoint().execute(stopAction);
+                        @Override
+                        public void success(ActionInvocation invocation) {
+                            super.success(invocation);
+                            mediaServer.getControlPoint().execute(setAVTransportURIAction);
+                        }
 
-                System.out.println("Played");
+                    };
+                    mediaServer.getControlPoint().execute(stopAction);
+
+                    System.out.println("Played");
+                } catch (Throwable e) {
+                    throw new WTFException(e);
+                }
+
             }
         }.start();
 

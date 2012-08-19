@@ -25,13 +25,13 @@ public abstract class PlayToLocalBinary implements PlayToDevice {
     }
 
     @Override
-    public void play(final DownloadLink link, final String id) {
+    public void play(final DownloadLink link, final String id, final String subpath) {
 
         new Thread() {
             public void run() {
                 try {
 
-                    final String url = extension.createStreamUrl(id, getUniqueDeviceID());
+                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), subpath);
 
                     Executer exec = new Executer(getBinaryPath());
                     exec.setLogger(LogController.CL());

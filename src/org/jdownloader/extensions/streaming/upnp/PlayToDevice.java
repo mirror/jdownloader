@@ -8,6 +8,6 @@ public interface PlayToDevice {
 
     String getUniqueDeviceID();
 
-    void play(DownloadLink link, String id);
+    void play(DownloadLink link, String id, String subpath);
 
 }

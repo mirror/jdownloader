@@ -46,14 +46,7 @@ public class RarPlayToAction extends AppAction {
         DownloadLink link = ((DownloadLinkArchiveFactory) archive.getFactory()).getDownloadLinks().get(0);
         String id;
 
-        if (item != null) {
-            id = IDFactory.create(link, item.getPath());
-        } else {
-            id = IDFactory.create(link, null);
-
-        }
-
-        device.play(link, id);
+        device.play(link, link.getUniqueID().toString(), item == null ? null : item.getPath());
 
     }
 }

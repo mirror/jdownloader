@@ -14,25 +14,25 @@ import jd.plugins.download.DownloadInterfaceFactory;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.remoteapi.RemoteAPIRequest;
-import org.appwork.remoteapi.RemoteAPIResponse;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
 import org.appwork.utils.net.Input2OutputStreamForwarder;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpserver.requests.GetRequest;
+import org.appwork.utils.net.httpserver.responses.HttpResponse;
 import org.jdownloader.logging.LogController;
 
 public class StreamingThread extends Thread implements BrowserSettings, DownloadInterfaceFactory {
 
-    private RemoteAPIResponse response;
-    private RemoteAPIRequest  request;
-    private InputStream       sis = null;
+    private HttpResponse response;
+    private GetRequest   request;
+    private InputStream  sis = null;
 
-    public RemoteAPIResponse getResponse() {
+    public HttpResponse getResponse() {
         return response;
     }
 
-    public RemoteAPIRequest getRequest() {
+    public GetRequest getRequest() {
         return request;
     }
 
@@ -40,7 +40,7 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
     private LogSource          logger;
     private StreamingInterface streamingInterface;
 
-    public StreamingThread(RemoteAPIResponse response, RemoteAPIRequest request, StreamingInterface streamingInterface) {
+    public StreamingThread(HttpResponse response, GetRequest request, StreamingInterface streamingInterface) {
         this.response = response;
         this.request = request;
         this.streamingInterface = streamingInterface;

@@ -40,7 +40,7 @@ public class DirectPlayToAction extends AppAction {
 
     public void actionPerformed(ActionEvent e) {
 
-        device.play(link, link.getUniqueID().toString());
+        device.play(link, link.getUniqueID().toString(), null);
 
     }
 

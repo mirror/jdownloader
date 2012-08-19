@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.streaming;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -24,15 +25,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.actions.AppAction;
-import org.jdownloader.api.RemoteAPIController;
+import org.jdownloader.api.HttpServer;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.ExtensionController;
@@ -77,6 +78,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
     private String                 wmpBinary;
     private String                 vlcBinary;
     private MediaArchiveController mediaArchive;
+    private HttpHandlerInfo        streamServerHandler;
 
     @Override
     protected void stop() throws StopException {
@@ -85,8 +87,9 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
             if (mediaServer != null) mediaServer.shutdown();
             MenuFactoryEventSender.getInstance().removeListener(this);
-            if (vlcstreamingAPI != null) {
-                RemoteAPIController.getInstance().unregister(vlcstreamingAPI);
+            if (streamServerHandler != null) {
+
+                HttpServer.getInstance().unregisterRequestHandler(streamServerHandler);
             }
         } finally {
             vlcstreamingAPI = null;
@@ -109,8 +112,14 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         startMediaServer();
 
         vlcstreamingAPI = new HttpApiImpl(this, this.mediaServer);
-        RemoteAPIController.getInstance().register(vlcstreamingAPI);
+
         MenuFactoryEventSender.getInstance().addListener(this, true);
+        try {
+            streamServerHandler = HttpServer.getInstance().registerRequestHandler(getSettings().getStreamServerPort(), false, vlcstreamingAPI);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new StartException(e);
+        }
 
         // new EDTRunner() {
         //
@@ -416,11 +425,15 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         return new DownloadLinkProvider(this);
     }
 
-    public String createStreamUrl(String id, String deviceID) {
+    public String createStreamUrl(String id, String deviceID, String subpath) {
 
         try {
-            return "http://" + getHost() + ":3128/vlcstreaming/stream?" + URLEncoder.encode(JSonStorage.serializeToJson(id), "UTF-8") + "&" + URLEncoder.encode(JSonStorage.serializeToJson(deviceID), "UTF-8");
-
+            if (StringUtils.isEmpty(deviceID)) {
+                deviceID = "UnknownDevice";
+            }
+            String ret = "http://" + getHost() + ":" + getSettings().getStreamServerPort() + "/stream/" + URLEncoder.encode(deviceID, "UTF-8") + "/" + URLEncoder.encode(id, "UTF-8");
+            if (!StringUtils.isEmpty(subpath)) ret += "/" + subpath;
+            return ret;
         } catch (Throwable e) {
             throw new WTFException(e);
         }

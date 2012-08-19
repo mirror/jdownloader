@@ -51,7 +51,7 @@ public class FFMpegInfoReader {
     public void load(StreamingExtension extension) throws InterruptedException, IOException {
 
         String id = new UniqueAlltimeID().toString();
-        String streamurl = extension.createStreamUrl(id, "ffmpeg");
+        String streamurl = extension.createStreamUrl(id, "ffmpeg", null);
         try {
             extension.addDownloadLink(id, downloadLink);
             File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffprobe.exe");
