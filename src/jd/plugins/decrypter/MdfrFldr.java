@@ -143,8 +143,8 @@ public class MdfrFldr extends PluginForDecrypt {
             }
             return null;
         }
-        String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-        if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
+        String ID = new Regex(parameter, "\\.com/\\?([a-zA-Z0-9]+)").getMatch(0);
+        if (ID == null) ID = new Regex(parameter, "\\.com/.*?/([a-zA-Z0-9]*?)/").getMatch(0);
         if (ID == null) {
             ID = br.getRegex("var afI= '(.*?)'").getMatch(0);
         }
