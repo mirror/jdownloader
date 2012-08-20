@@ -4,6 +4,7 @@ JDUpdater_start_updater_update_title=Nova versió trobada!
 dialog_rly_cancel=Realment vols cancel·lar l'actualització?
 error_service_not_available_right_now=Servei no disponible. (Intenta-ho de nou en 60 seg.)
 exit=Tencar
+guiless_noupdates=Saltar actualitzacions. El paràmetre -noupdates esta activat
 install_updates_later=Pregunta'm més tard!
 install_updates_now=Instal·lar ara!
 literally_exit=Comprovació d'actualitzacions finalitzat - Sortir

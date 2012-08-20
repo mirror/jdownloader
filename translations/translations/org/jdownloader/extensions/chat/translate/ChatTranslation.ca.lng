@@ -4,6 +4,7 @@ jd_plugins_optional_jdchat_JDChatView_title=Xat de suport de JDownloader
 jd_plugins_optional_jdchat_JDChatView_tooltip=Xat de suport de JDownloader
 jd_plugins_optional_jdchat_JDChat_topic_default=Carregant missatge del dia
 jd_plugins_optional_jdchat_JDChat_topic_tooltip=Missatge del dia
+jd_plugins_optional_jdchat_closeTab=Tencar pestanya
 jd_plugins_optional_jdchat_jdchat=JDChat
 plugins_optional_jdchat_enternick=Nom d’usuari desitjat?
 settings_enabled_userlist_colors=Noms de diferents colors
