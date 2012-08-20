@@ -9,6 +9,7 @@ gui_config_jdshutdown_mode=Mode:
 gui_config_jdshutdown_shutdown=Apagat
 gui_config_jdshutdown_standby=Suspendre (No per tots els S.O)
 install_force=Instal·lar Força a apagar
+install_msg=Vols preparar el teu sistema per la característica de forçar l'apagat?
 install_title=Instal·lar Força a apagar
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">Es tancarà JDownloader!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">El sistema es posara en mode d'hivernació!</font></h2>
