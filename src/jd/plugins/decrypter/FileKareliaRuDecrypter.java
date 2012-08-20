@@ -48,6 +48,7 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
             final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
             dl.setFinalFileName(fid + ".zip");
             dl.setAvailable(false);
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         final String[][] fileInfo = br.getRegex("<a  href=\"http://[a-z0-9]+\\.file\\.karelia\\.ru/" + fid + "/[a-z0-9]+/[a-z0-9]+/([^<>\"/]*?)\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>").getMatches();

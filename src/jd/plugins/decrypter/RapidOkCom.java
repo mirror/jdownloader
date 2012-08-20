@@ -47,14 +47,18 @@ public class RapidOkCom extends PluginForDecrypt {
                 fpName = br.getRegex("<title>Download ([^<>\"\\']+) from .*?</title>").getMatch(0);
             }
         }
-        br.postPage(br.getURL(), "part=1&hash=" + new Regex(parameter, "rapidok\\.com/download/(.+)").getMatch(0));
-        String[] links = br.getRegex("links_array\\[\\d+\\] = \"([^<>\"\\']+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        br.setFollowRedirects(false);
+        int counter = 1;
+        String lastFinallink = null;
+        while (true) {
+            br.postPage(br.getURL(), "part=" + counter + "&hash=" + new Regex(parameter, "rapidok\\.com/download/(.+)").getMatch(0));
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) break;
+            if (finallink.equals(lastFinallink)) break;
+            decryptedLinks.add(createDownloadlink(finallink));
+            lastFinallink = finallink;
+            counter++;
         }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

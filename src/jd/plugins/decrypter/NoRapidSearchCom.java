@@ -50,12 +50,12 @@ public class NoRapidSearchCom extends PluginForDecrypt {
             return null;
         }
         br.postPage("http://www.norapidsearch.com/go/" + postID, "file_id=" + postID);
-        String finallink = br.getRedirectLocation();
+        final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        decryptedLinks.add(createDownloadlink(finallink));
+        if (!this.canHandle(finallink)) decryptedLinks.add(createDownloadlink(finallink));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "e-bol.net" }, urls = { "http://[\\w\\.]*?e-bol\\.net/.*/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "e-bol.net" }, urls = { "http://(www\\.)?e\\-bol\\.net/(?!wp\\-content).*/" }, flags = { 0 })
 public class EBlNt extends PluginForDecrypt {
 
     public EBlNt(PluginWrapper wrapper) {

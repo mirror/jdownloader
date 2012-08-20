@@ -49,6 +49,10 @@ public class EmbedUploadCom extends PluginForDecrypt {
             String[] redirectLinks = br.getRegex("style=\"padding\\-left:43px;padding\\-right:20px;padding\\-bottom:20px;font-size:17px;font\\-style:italic\" >[\t\r\n ]+<a href=\"(http://.*?)\"").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("\"(http://(www\\.)?embedupload\\.com/\\?[A-Z0-9]{2}=[A-Z0-9]+)\"").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
+                if (br.containsHTML("You can download from these site : ")) {
+                    logger.info("Link might be offline: " + parameter);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }

@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ted.com" }, urls = { "http://(www\\.)?ted.com/talks/(lang/[a-zA-Z\\-]+/)?\\w+\\.html" }, flags = { 0 })
 public class TedCom extends PluginForDecrypt {
 
     public TedCom(PluginWrapper wrapper) {
@@ -24,17 +24,29 @@ public class TedCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = parameter.toString();
         br.getPage(url);
-        String[] info = br.getRegex("<meta property=\"og:video\" content=\"([^\"]+)/([^/\"\\-]+)(?:-320k)?\\.(\\w+)\"").getRow(0);
-        if (info == null || info.length == 0) return decryptedLinks;
-        System.out.println(info[0] + ", " + info[1] + "; " + info[2]);
+        String[] info = br.getRegex("flashvars\\&quot; value=\\&quot;vu=(http://video\\.ted\\.com/talk/stream/([^\"]*?)/[^\"]*?)/([^/\"\\-]*?)(?:\\-320k)?\\.(\\w+)\\&amp;").getRow(0);
+        if (info == null || info.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         // Videos
-        String baseUrl = info[0] + "/" + info[1];
+        final String plainfilename = info[2];
+        final String ext = info[3];
+        final String baseUrl = "http://download.ted.com/talks/" + plainfilename;
         FilePackage fp = FilePackage.getInstance();
         fp.setName(info[1] + " (video)");
-        decryptedLinks.add(createDownloadlink(baseUrl + "-light." + info[2]));
-        decryptedLinks.add(createDownloadlink(baseUrl + "." + info[2]));
-        decryptedLinks.add(createDownloadlink(baseUrl + "-480p." + info[2]));
+        // Standard
+        decryptedLinks.add(createDownloadlink(baseUrl + "." + ext));
+        // 480p
+        decryptedLinks.add(createDownloadlink(baseUrl + "-480p." + ext));
+        // the link which is used in the player
+        decryptedLinks.add(createDownloadlink(info[0] + "/" + plainfilename + "-320k." + ext));
+        // light version (2 different links leading to the exact same file)
+        decryptedLinks.add(createDownloadlink(baseUrl + "-light." + ext));
+        decryptedLinks.add(createDownloadlink("http://video.ted.com/talk/podcast/" + info[1] + "/None/" + plainfilename + "-light." + ext));
+        // mp3 file
+        decryptedLinks.add(createDownloadlink(baseUrl + ".mp3"));
         fp.addLinks(decryptedLinks);
 
         // Subtitles: gets talkId and JSON array of languages from HTML

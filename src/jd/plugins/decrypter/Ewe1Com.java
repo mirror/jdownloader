@@ -36,7 +36,7 @@ public class Ewe1Com extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(parameter);
         /* Error handling */
@@ -44,7 +44,7 @@ public class Ewe1Com extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        Form decryptform = br.getForm(0);
+        final Form decryptform = br.getForm(0);
         if (decryptform == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

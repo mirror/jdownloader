@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashmirrors.com" }, urls = { "http://(www\\.)?flashmirrors\\.com/files/[a-z0-9]+" }, flags = { 0 })
 public class FlashMirrorsCom extends PluginForDecrypt {
@@ -37,14 +35,17 @@ public class FlashMirrorsCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage("http://flashmirrors.com/table.php?file_uid=" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
+        final String parameter = param.toString();
+        br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
         if (!br.containsHTML("<img src=")) {
-            logger.info("The following link should be offline: " + parameter);
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
-        String[] links = br.getRegex("/download\\.php\\?url=(https?://.*?)[ \r\n\t]*?\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        final String[] links = br.getRegex("/download\\.php\\?url=(https?://.*?)[ \r\n\t]*?(\"|\\')").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

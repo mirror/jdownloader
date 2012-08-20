@@ -82,25 +82,7 @@ public class GlumboUploadsCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(BRBEFORE, "\\.attr\\(\\'value\\'\\, \\'(.*?)\\'\\)").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(BRBEFORE, "You have requested.*?http://(www\\.)?" + COOKIE_HOST.replace("http://", "") + "/[a-z0-9]{12}/(.*?)</font>").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (filename == null) {
-                    filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) {
-                                filename = new Regex(BRBEFORE, "\\.html_code\\'\\)\\.html\\(\\'<a href=\"http://glumbouploads\\.com/[a-z0-9]{12}\">([^<>\"/]+) \\- \\d+").getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        String filename = new Regex(BRBEFORE, "<Title>Download ([^<>\"]*?)</Title>").getMatch(0);
         String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
@@ -120,7 +102,7 @@ public class GlumboUploadsCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim().replace("\\", ""));
+        link.setName(filename.trim().replace("\\", ""));
         if (filesize != null && !filesize.equals("")) {
             logger.info("Filesize found, filesize = " + filesize);
             link.setDownloadSize(SizeFormatter.getSize(filesize));

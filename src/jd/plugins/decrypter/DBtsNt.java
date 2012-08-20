@@ -45,7 +45,7 @@ public class DBtsNt extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         decryptedLinks = new ArrayList<DownloadLink>();
-        // TODO: beim hinzuf�gen von Events oder Artisten etc. sollte der
+        // TODO: beim Hinzufügen von Events oder Artisten etc. sollte der
         // Linkgrabber gleiche links auch als gleiche Links erkennen
 
         Regex urlInfo = new Regex(parameter, "http://[\\w\\.]*?audiobeats\\.net/(liveset|link|event|artist)\\?id=(\\d+)");
@@ -56,7 +56,12 @@ public class DBtsNt extends PluginForDecrypt {
 
             progress.increase(1);
             String link = "/link?id=" + id;
-            if (!decryptSingleLink(parameter.toString(), progress, decryptedLinks, link)) return null;
+            try {
+                if (!decryptSingleLink(parameter.toString(), decryptedLinks, link)) return null;
+            } catch (Exception e) {
+                logger.info("Link seems to be offline: " + parameter);
+                return decryptedLinks;
+            }
         } else if (type.equals("liveset")) {
             br.getPage(parameter.toString());
             fpName = br.getRegex("rel=\"alternate\" type=\"application/rss\\+xml\" title=\"(.*?)\"").getMatch(0);
@@ -70,18 +75,19 @@ public class DBtsNt extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(scloudLink));
                 }
             }
-            if (!decryptLiveset(parameter.toString(), progress, decryptedLinks)) return null;
+            if (!decryptLiveset(parameter.toString(), decryptedLinks)) return null;
         } else if (type.equals("event") || type.equals("artist")) {
 
             br.getPage(parameter.toString());
-            String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)\"").getColumn(0);
+            String[] allLivesets = br.getRegex("\"(/liveset\\?id=\\d+)").getColumn(0);
 
             if (allLivesets == null || allLivesets.length == 0) return null;
-            if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net - (.*?)</title>").getMatch(0);
-
-            progress.setRange(allLivesets.length);
+            if (fpName == null) fpName = br.getRegex("<title>AudioBeats\\.net \\- (.*?)</title>").getMatch(0);
             for (String aLiveset : allLivesets) {
-                if (!decryptLiveset(aLiveset, progress, decryptedLinks)) return null;
+                if (!decryptLiveset(aLiveset, decryptedLinks)) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 Thread.sleep(1000);
             }
         }
@@ -89,7 +95,7 @@ public class DBtsNt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private boolean decryptLiveset(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks) throws IOException, DecrypterException {
+    private boolean decryptLiveset(String parameter, ArrayList<DownloadLink> decryptedLinks) throws IOException, DecrypterException {
         int i = 0;
         do {
             br.getPage(parameter);
@@ -108,9 +114,13 @@ public class DBtsNt extends PluginForDecrypt {
                         return false;
                     }
                 }
-                progress.setRange(progress.getMax() + allLinks.length);
                 for (String aLink : allLinks) {
-                    if (!decryptSingleLink(parameter, progress, decryptedLinks, aLink)) return false;
+                    try {
+                        if (!decryptSingleLink(parameter, decryptedLinks, aLink)) return false;
+                    } catch (final Exception e) {
+                        logger.info("Continuing: Link sems to be offline: " + aLink);
+                        continue;
+                    }
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -134,7 +144,7 @@ public class DBtsNt extends PluginForDecrypt {
         }
     }
 
-    private boolean decryptSingleLink(String parameter, ProgressController progress, ArrayList<DownloadLink> decryptedLinks, String aLink) throws IOException {
+    private boolean decryptSingleLink(String parameter, ArrayList<DownloadLink> decryptedLinks, String aLink) throws IOException {
         br.setFollowRedirects(false);
         aLink = "http://www.audiobeats.net" + aLink.replace("link?id", "link.php?id");
         br.getPage(aLink);
@@ -153,7 +163,11 @@ public class DBtsNt extends PluginForDecrypt {
         }
         if (finallink == null) {
             finallink = br.getRegex("noresize=\"noresize\">[\t\n\r ]+<frame src=\"((?!http://(www\\.)?audiobeats.net)http.*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                // For zippyshare links, maybe also for others
+                finallink = br.getRegex("class=\"load\" /> <a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) finallink = br.getRedirectLocation();
+            }
         }
         if (!br.containsHTML("3voor12\\.vpro\\.nl")) {
             if (finallink == null) {
@@ -162,7 +176,6 @@ public class DBtsNt extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         }
-        progress.increase(1);
         return true;
     }
 

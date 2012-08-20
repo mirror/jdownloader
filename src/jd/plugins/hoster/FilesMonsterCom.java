@@ -90,7 +90,7 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.setDownloadSize(downloadLink.getDownloadSize());
         } else {
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -99,7 +99,8 @@ public class FilesMonsterCom extends PluginForHost {
                 synchronized (LOCK) {
                     if (loaded == false) {
                         /*
-                         * we only have to load this once, to make sure its loaded
+                         * we only have to load this once, to make sure its
+                         * loaded
                          */
                         JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
                     }

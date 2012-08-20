@@ -54,7 +54,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         br.getPage(parameter);
         // Is the file offline ? If so, let's stop here and just add it to the
         // downloadlist so the user can see the status
-        if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<)")) {
+        if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
             decryptedLinks.add(finalOne);
