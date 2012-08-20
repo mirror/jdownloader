@@ -25,6 +25,7 @@ import org.appwork.utils.ReusableByteArrayOutputStreamPool.ReusableByteArrayOutp
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
+import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
@@ -88,6 +89,13 @@ public class RAFChunk extends Thread {
         this.plugin = link.getLivePlugin();
         this.logger = dl.getLogger();
         this.linkStatus = link.getLinkStatus();
+        if (CrossSystem.isWindows()) {
+            /* workaround for windows multimedia stuff. it reduces priority for non active(in background) stuff */
+            try {
+                this.setPriority(NORM_PRIORITY + 2);
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Deprecated

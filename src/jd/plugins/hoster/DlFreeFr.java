@@ -82,6 +82,10 @@ public class DlFreeFr extends PluginForHost {
         cType = cType.split("/")[0];
         String instructions = null, cCode = null;
 
+        if (ayl.getRegex("adyoulike\":\\{\"disabled\":(true)").matches()) {
+            br.submitForm(form);
+            return true;
+        }
         /* Only available in France */
         if ("notDetected".equals(cType) && c.containsKey("disabled") && "true".equals(c.get("disabled"))) throw new PluginException(LinkStatus.ERROR_FATAL, "Only available in France. Please use a french proxy!");
 
@@ -114,7 +118,7 @@ public class DlFreeFr extends PluginForHost {
             logger.warning("Unknown captcha typ: " + cType);
             return false;
         }
-        if (cCode == null) return false;
+        if (cCode == null) { return false; }
         form.put("_ayl_captcha_engine", "adyoulike");
         form.put("_ayl_response", cCode);
         form.put("_ayl_utf8_ie_fix", "%E2%98%83");

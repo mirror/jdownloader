@@ -63,6 +63,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                     // some links are not provided by redirect.
                     else if (br.getHttpConnection().getContentType().contains("html")) {
                         String link = br.getRegex("<b>[\r\n\t ]+(https?://[^\t ]+)").getMatch(0);
+                        if (link == null || link.length() == 0) link = br.getRegex("You should click on the download link.*?href='(https?://.*?)'").getMatch(0);
                         if (link != null && link.length() != 0) {
                             decryptedLinks.add(createDownloadlink(link));
                         }
