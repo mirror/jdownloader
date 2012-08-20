@@ -74,6 +74,7 @@ public class ShurLoadEs extends PluginForHost {
             for (DownloadLink dl : urls) {
                 URLConnectionAdapter con = null;
                 try {
+                    br.setFollowRedirects(true);
                     con = br.openGetConnection(dl.getDownloadURL());
                     if (!con.isContentDisposition()) {
                         br.followConnection();
