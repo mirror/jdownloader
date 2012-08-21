@@ -77,6 +77,7 @@ public class LuckyShareNet extends PluginForHost {
         requestFileInformation(downloadLink);
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
+        if (br.containsHTML("This file is Premium only. Only Premium Users can download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
         final String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
         if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]+)\"").getMatch(0);

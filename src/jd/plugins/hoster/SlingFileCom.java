@@ -152,6 +152,7 @@ public class SlingFileCom extends PluginForHost {
                 if (br.containsHTML("(api\\.recaptcha\\.net|g>Invalid captcha entered\\. Please try again\\.<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             dllink = br.getRegex("(http://sf[0-9\\-].*?.slingfile\\.com/gdl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)('|\")").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://sf\\d+\\-\\d+\\.slingfile\\.com/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/[^<>\"\\']+)\"").getMatch(0);
             if (dllink == null) dllink = br.getRegex("<td valign=\\'middle\\' align=\\'center\\' colspan=\\'2\\'>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

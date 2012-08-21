@@ -65,7 +65,7 @@ public class HowFileCom extends PluginForHost {
                 } catch (final Throwable e) {
                     if (e instanceof PluginException) throw (PluginException) e;
                 }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "X-Art members only!");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This is only for our premium member!");
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

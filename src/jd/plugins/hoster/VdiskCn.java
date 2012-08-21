@@ -20,9 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.http.Browser;
 import jd.http.RandomUserAgent;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -66,33 +64,42 @@ public class VdiskCn extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         String dllink = downloadLink.getStringProperty("freelink");
+        boolean startDL = false;
         if (dllink != null) {
             try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                br.setReadTimeout(3 * 60 * 1000);
+                br.setFollowRedirects(true);
+                br.setCookie("http://vdisk.cn/", "lang", "en");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
+                if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
                     downloadLink.setProperty("freelink", Property.NULL);
                     dllink = null;
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (final Throwable e) {
+                    }
+                } else {
+                    startDL = true;
                 }
-                con.disconnect();
             } catch (Exception e) {
+                startDL = false;
                 downloadLink.setProperty("freelink", Property.NULL);
                 dllink = null;
             }
         }
         if (dllink == null) {
+            requestFileInformation(downloadLink);
             dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
+        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
