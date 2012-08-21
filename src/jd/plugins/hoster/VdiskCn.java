@@ -71,7 +71,7 @@ public class VdiskCn extends PluginForHost {
                 br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
                 br.setCookie("http://vdisk.cn/", "lang", "en");
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 20);
                 if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
                     downloadLink.setProperty("freelink", Property.NULL);
                     dllink = null;
@@ -93,7 +93,7 @@ public class VdiskCn extends PluginForHost {
             dllink = br.getRegex("(http://[\\w\\.]+?vdisk\\.cn/[^/]+/[0-9A-Z]{2}/[A-Z0-9]{32}\\?key=[a-z0-9]{32}[^\"\\>]+)").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
+        if (startDL == false) dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 20);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
