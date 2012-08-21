@@ -36,15 +36,27 @@ public class VDiskCn extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> allPages = new ArrayList<String>();
         String parameter = param.toString();
         br.getPage(parameter);
-        final String[] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        final String[] pages = br.getRegex("<a href=\\'\\?tag=ALLFILES\\&p=(\\d+)\\'").getColumn(0);
+        if (pages == null || pages.length == 0)
+            allPages.add("1");
+        else {
+            for (final String currentPage : pages)
+                if (!allPages.contains(currentPage)) allPages.add(currentPage);
         }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink("http://vdisk.cn" + singleLink));
+        int lastPage = Integer.parseInt(allPages.get(allPages.size() - 1));
+        for (int i = 1; i <= lastPage; i++) {
+            if (i != 1) br.getPage(parameter + "?p=" + i);
+            final String[] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink("http://vdisk.cn" + singleLink));
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
         fp.addLinks(decryptedLinks);

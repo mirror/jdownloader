@@ -92,11 +92,10 @@ public class KndGrlsCom extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptGalleryLinks(Browser br) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String[] links = br.getRegex("/></a><br /><a href=\"(/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(/gal-\\d+/[a-z0-9]+_\\d+/.*?)\"").getColumn(0);
+        final String[] links = br.getRegex("\"http://gals\\.kindgirls\\.com/([^<>\"]*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
         for (String finallink : links) {
-            DownloadLink dlLink = createDownloadlink("directhttp://http://www.kindgirls.com" + finallink);
+            final DownloadLink dlLink = createDownloadlink("directhttp://http://gals.kindgirls.com/" + finallink.replace("thumbnails/tn", ""));
             // rename files if required. Fixes alpha numeric sorting issues
             Regex regex = new Regex(dlLink.getName(), "(.*_)(\\d\\.[a-zA-Z0-9]+)$");
             if (regex.matches()) {
@@ -104,7 +103,7 @@ public class KndGrlsCom extends PluginForDecrypt {
             }
             decryptedLinks.add(dlLink);
         }
-        String girlsname = br.getRegex("<h3>Photo.*<a href='/girls/[a-zA-Z0-9 _\\-/]+'>([a-zA-Z0-9 _\\-]+)</a>.*</h3>").getMatch(0);
+        final String girlsname = br.getRegex("<h3>Photo.*<a href=\\'/girls/[a-zA-Z0-9 _\\-/]+\\'>([a-zA-Z0-9 _\\-]+)</a>.*</h3>").getMatch(0);
         if (girlsname != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName("Kindgirls - " + girlsname.trim());

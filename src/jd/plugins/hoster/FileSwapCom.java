@@ -42,9 +42,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class FileSwapCom extends PluginForHost {
 
     // DEV NOTES
-    // non account: 20 * 20
+    // non account: 4 * 20
     // free account: same as above (not tested)
-    // premium account: 20 * 20
+    // premium account: 10 * 1
     // protocol: http + https
     // captchatype: null
     // other: no published info on expire time.
@@ -144,8 +144,8 @@ public class FileSwapCom extends PluginForHost {
             }
         } else {
             try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -225,7 +225,7 @@ public class FileSwapCom extends PluginForHost {
                 }
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

@@ -36,7 +36,12 @@ public class SdxCc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = cryptedLink.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().equals("http://www.sdx.cc/news.php")) {
+            logger.info("Link broken/offline: " + parameter);
+            return decryptedLinks;
+        }
         String pw = br.getRegex("<tr>[\t\n\r ]+<td align=\"center\" valign=\"top\" width=\"20%\">([^<>\"]*?)</td>").getMatch(0);
         pw = pw != null ? pw.trim() : "sdx.cc";
         String[] links = br.getRegex("\\'(http://(www\\.)?relink\\.us/(f/|view\\.php\\?id=)[a-z0-9]+)\\'").getColumn(0);

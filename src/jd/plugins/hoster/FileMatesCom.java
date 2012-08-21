@@ -65,7 +65,7 @@ public class FileMatesCom extends PluginForHost {
     // XfileSharingProBasic Version 2.5.2.4
     // mods: null
     // free: 5 dl tested, no resume, no chunking
-    // premium: 5 dl * 20 tested.
+    // premium: 1 * 20
     // protocol: has https cert, but not setup correctly
     // captchatype: null
 
@@ -529,7 +529,7 @@ public class FileMatesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

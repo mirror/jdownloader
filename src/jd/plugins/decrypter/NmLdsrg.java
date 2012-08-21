@@ -77,12 +77,14 @@ public class NmLdsrg extends PluginForDecrypt {
                     dllink = br.getRegex("txt.innerHTML = \\'<a href=\"(http[^\"]+)\" target=\"_top\">Skip this Ad</a>\\'").getMatch(0);
                     if (dllink == null) {
                         dllink = br.getRegex("(https?://(www\\.)?crypt\\-it\\.com/[^\"]+)").getMatch(0);
-                        if (dllink == null) {
-                            logger.warning("Decrypter broken for link: " + parameter);
-                            return null;
-                        }
                     }
                 }
+            }
+            // Links can fail for multiple reasons so let's skip them
+            if (dllink == null) {
+                logger.info("Found a dead link: " + link);
+                logger.info("Mainlink: " + parameter);
+                continue;
             }
             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
             dl.setSourcePluginPasswordList(passwords);

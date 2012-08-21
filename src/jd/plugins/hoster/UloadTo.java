@@ -69,7 +69,7 @@ public class UloadTo extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.9-raz
     // mods: getdllink, account expire refs
-    // non account: 2 * 1
+    // non account: 1 * 1
     // free account: same above
     // premium account: 10 * 1
     // protocol: http only, has https though not setup correctly
@@ -141,13 +141,7 @@ public class UloadTo extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-            }
-        }
+        String filesize = new Regex(correctedBR, "<div id=\"upload_div\">[\t\n\r ]+<h2>[^<>\"/]*? \\- (\\d+(\\.\\d+)? [A-Za-z]+)</h2>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -603,7 +597,7 @@ public class UloadTo extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -2, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

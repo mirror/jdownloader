@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -57,10 +58,17 @@ public class SndLoadCom extends PluginForDecrypt {
         if (streamIDs != null && streamIDs.length != 0) {
             for (String streamID[] : streamIDs) {
                 decryptBR.getPage("http://www.sound-load.com/api/player/" + streamID[0]);
-                decryptBR.getPage("http://" + streamID[0] + ".track.sndapi.com");
-                final String finallink = decryptBR.getRedirectLocation();
+                final String templink = "http://" + streamID[0] + ".track.sndapi.com";
+                String finallink = null;
+                final URLConnectionAdapter con = decryptBR.openGetConnection(templink);
+                if (con.getContentType().contains("html")) {
+                    decryptBR.followConnection();
+                    finallink = decryptBR.getRedirectLocation();
+                } else
+                    finallink = templink;
+                con.disconnect();
                 if (finallink == null) continue;
-                DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                 // Set final name here or we have no name
                 dl.setFinalFileName(Encoding.htmlDecode(streamID[1]));
                 decryptedLinks.add(dl);

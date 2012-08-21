@@ -45,29 +45,43 @@ public class PanBaiduCom extends PluginForHost {
         return "http://pan.baidu.com/";
     }
 
-    private String DLLINK = null;
+    private String              DLLINK    = null;
+    private static final String OTHERTYPE = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         final String dirName = link.getStringProperty("dirname");
-        br.getPage(link.getStringProperty("mainlink"));
-        final DecimalFormat df = new DecimalFormat("0000");
-        if (dirName != null) {
-            final String uk = br.getRegex("type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
-            if (uk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=" + dirName + "&t=0." + df.format(new Random().nextInt(100000)) + "&type=1&uk=" + uk);
+        final String mainlink = link.getStringProperty("mainlink");
+        final String plainfilename = link.getStringProperty("plainfilename");
+        br.getPage(mainlink);
+        if (mainlink.matches(OTHERTYPE)) {
+            if (br.containsHTML(">很抱歉，您要访问的页面不存在。<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String correctedBR = br.toString().replace("\\", "");
+            final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"(" + plainfilename + ")\",\"size\":\"(\\d+)\"");
+            if (fileInfo.getMatches().length < 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String filesize = fileInfo.getMatch(1) + "b";
+            link.setFinalFileName(Encoding.htmlDecode(plainfilename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            DLLINK = new Regex(correctedBR, "filename=" + plainfilename + "\",\"dlink\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        } else {
+            final DecimalFormat df = new DecimalFormat("0000");
+            if (dirName != null) {
+                final String uk = br.getRegex("type=\"text/javascript\">FileUtils\\.sysUK=\"(\\d+)\";</script>").getMatch(0);
+                if (uk == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getPage("http://pan.baidu.com/netdisk/weblist?channel=chunlei&clienttype=0&dir=" + dirName + "&t=0." + df.format(new Random().nextInt(100000)) + "&type=1&uk=" + uk);
+            }
+            if (br.containsHTML("<title>[\t\n\r ]+的完全公开目录_百度网盘")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String correctedBR = br.toString().replace("\\", "");
+            final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"" + plainfilename + "\",\"s3_handle\":\"(http://[^<>\"]*?)\",\"size\":(\\d+)");
+            if (fileInfo.getMatches().length < 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String filesize = fileInfo.getMatch(1) + "b";
+            link.setFinalFileName(Encoding.htmlDecode(plainfilename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            DLLINK = fileInfo.getMatch(0);
         }
-        if (br.containsHTML("<title>[\t\n\r ]+的完全公开目录_百度网盘")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String correctedBR = br.toString().replace("\\", "");
-        final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"" + link.getStringProperty("plainfilename") + "\",\"s3_handle\":\"(http://[^<>\"]*?)\",\"size\":(\\d+)");
-        if (fileInfo.getMatches().length < 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String filesize = fileInfo.getMatch(1) + "b";
-        link.setFinalFileName(Encoding.htmlDecode(link.getStringProperty("plainfilename").trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        DLLINK = fileInfo.getMatch(0);
         return AvailableStatus.TRUE;
     }
 

@@ -69,7 +69,7 @@ public class RyuShareCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.0-raz
     // mods: premium traffic available
-    // non account: up to 4 chunks * 1 max dl
+    // non account: 1 * 1
     // free account: same as above
     // premium: unlimited
     // protocol: no https
@@ -498,8 +498,8 @@ public class RyuShareCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
+                maxPrem.set(2);
+                account.setMaxSimultanDownloads(2);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -584,7 +584,7 @@ public class RyuShareCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -4, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

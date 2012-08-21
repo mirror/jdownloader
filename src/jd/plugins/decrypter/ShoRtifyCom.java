@@ -60,11 +60,17 @@ public class ShoRtifyCom extends PluginForDecrypt {
             plaintxt = br.getRegex("<textarea.*?>(.*?)</textarea>").getMatch(0);
         }
 
-        if (plaintxt == null) return decryptedLinks;
+        if (plaintxt == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         // Find all those links
-        String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links == null || links.length == 0) return null;
+        final String[] links = HTMLParser.getHttpLinks(plaintxt, "");
+        if (links == null || links.length == 0) {
+            logger.info("Quitting, no links found for link: " + parameter);
+            return decryptedLinks;
+        }
         ArrayList<String> pws = HTMLParser.findPasswords(plaintxt);
         logger.info("Found " + links.length + " links in total.");
 
