@@ -1,0 +1,21 @@
+package org.jdownloader.extensions.streaming.dlna;
+
+public enum DLNAProfile {
+    /* Image Class */
+    DLNA_PROFILE_IMAGE_JPEG,
+    DLNA_PROFILE_IMAGE_PNG,
+    /* Audio Class */
+    DLNA_PROFILE_AUDIO_AC3,
+    DLNA_PROFILE_AUDIO_AMR,
+    DLNA_PROFILE_AUDIO_ATRAC3,
+    DLNA_PROFILE_AUDIO_LPCM,
+    DLNA_PROFILE_AUDIO_MP3,
+    DLNA_PROFILE_AUDIO_MPEG4,
+    DLNA_PROFILE_AUDIO_WMA,
+    /* AV Class */
+    DLNA_PROFILE_AV_MPEG1,
+    DLNA_PROFILE_AV_MPEG2,
+    DLNA_PROFILE_AV_MPEG4_PART2,
+    DLNA_PROFILE_AV_MPEG4_PART10, /* a.k.a. MPEG-4 AVC */
+    DLNA_PROFILE_AV_WMV9
+}
