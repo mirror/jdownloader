@@ -101,7 +101,7 @@ gui_settings_downloadcontroll_title=Administració de descàrrega
 gui_settings_downloadpath_description=Estableix la ruta de descàrregua aquí. Canviar la ruta par defecte aquí només afectarà a descárregues noves.
 gui_settings_extensions_description=Mòduls d'extensió
 gui_settings_extensions_show_now=Mostrar %s1 ara?
-gui_settings_filewriting_description=Utilitzant la opció de comprovació de hash, JDownloader comprovarà la integritat de les descàrregues al finalitzar-les
+gui_settings_filewriting_description=Utilitzant l'opció de comprovació de hash, JDownloader comprovarà la integritat de les descàrregues al finalitzar-les.
 gui_settings_general_title=General
 gui_settings_linkgrabber_filter_description=El filtre d'enllaços s'utilitza per finltar enllaços. Per ignorar enllaços, adreces, URLs o arxius basant-se en les seves propietats. Afegiu excepcions per acceptar enllaços en particular. Les excepcións es veuran a la vista Personalitzada a la barra lateral del Capturador d'enllaços.
 gui_settings_linkgrabber_packagizer_description=L'empaquetador li permet autoasignar opcions de descàrrega als arxius segons les seves propietats.
@@ -122,7 +122,7 @@ jd_controlling_SingleDownloadController_askexists=L'arxiu '%s1' en el paquet %s2
 jd_controlling_SingleDownloadController_askexists_title=L'arxiu existeix
 jd_controlling_reconnect_Reconnector_progress_failed2=La reconnexió ha fallat molts cops i ha estat desactivada. Si us plau, revisa la teva configuració!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>S'ha triat no reconnectar</u></b><br/><p>La Reconnexió és un mètode per evitar els temps d'espera que imposen alguns servidors als seus serveis gratuïts. No serveix de res en comptes Premium.</p><p>Més informació sobre la reconnexió <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>aquí</a>.</p>
-jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconnectat
+jd_controlling_reconnect_plugins_DummyRouterPlugin_getName=No reconnectar
 jd_plugins_PluginUtils_askPassword=Si us plau entra la contrasenya per %s1
 literally_offline=En línia
 literally_yes=Si

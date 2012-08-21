@@ -20,6 +20,6 @@ interaction_shutdown_dialog_title_hibernate=Hibernar?
 interaction_shutdown_dialog_title_shutdown=Apagar?
 interaction_shutdown_dialog_title_standby=Espera?
 jd_plugins_optional_jdshutdown=JDShutdown
-jd_plugins_optional_jdshutdown_description=Tancar, suspendre, hivernar el teu PC o tencar JDownloader automàticament cunat finalitzin les descàrregues.
+jd_plugins_optional_jdshutdown_description=Tancar, suspendre, hivernar el teu PC o tencar JDownloader automàticament quan finalitzin les descàrregues.
 lit_shutdownn=Desconnectar
 show_admin=Es necesiten permisos d'administrador per configurar JDownloader per ibernar o suspendre

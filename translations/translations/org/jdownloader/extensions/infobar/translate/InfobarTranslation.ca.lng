@@ -1,8 +1,8 @@
 jd_plugins_optional_infobar_InfoDialog_help=Zona "Arrossegar i dexar"
 jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Deixa URLs, Enllaços o arxius DLC aquí!
 jd_plugins_optional_infobar_InfoDialog_hideWindow=Ocultar la Barra d'informació
-jd_plugins_optional_infobar_docking=Habilitar Adherir a les cantonades
+jd_plugins_optional_infobar_docking=Habilitar adherir a les cantonades
 jd_plugins_optional_infobar_dropLocation2=Habilitar zona d'arrosegar i deixar
 jd_plugins_optional_infobar_jdinfobar=Barra d'informació
-jd_plugins_optional_infobar_jdinfobar_description=Petit panell flotant amb informació sobre les descàrregues en temps real, i la Zona d'arrossegar i deixar en la qual es poden afegir enllaços, URLs o arxius DLC.
-jd_plugins_optional_infobar_opacity=Opcaciotat de la finerta emergent [en %]
+jd_plugins_optional_infobar_jdinfobar_description=Petit panell flotant amb informació sobre les descàrregues a temps real i la zona d'arrossegar i deixar en la qual es poden afegir enllaços, URLs o arxius DLC.
+jd_plugins_optional_infobar_opacity=Opacitat de la finerta emergent [en %]
