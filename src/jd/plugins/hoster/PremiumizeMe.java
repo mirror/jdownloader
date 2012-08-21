@@ -89,7 +89,7 @@ public class PremiumizeMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (account != null && "uploaded.to".equalsIgnoreCase(link.getHost())) return -1;
+        if (account != null && "uploaded.to".equalsIgnoreCase(link.getHost())) return 1;
         return super.getMaxSimultanDownload(link, account);
     }
 
