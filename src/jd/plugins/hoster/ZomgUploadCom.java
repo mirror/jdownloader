@@ -42,7 +42,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zomgupload.com" }, urls = { "http://(www\\.)?zomgupload\\.com/[a-z0-9]{12}(\\.html)?" }, flags = { 2 })
 public class ZomgUploadCom extends PluginForHost {
 
     private String              BRBEFORE      = "";
