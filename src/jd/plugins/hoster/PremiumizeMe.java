@@ -88,6 +88,12 @@ public class PremiumizeMe extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanDownload(DownloadLink link, Account account) {
+        if (account != null && "uploaded.to".equalsIgnoreCase(link.getHost())) return -1;
+        return super.getMaxSimultanDownload(link, account);
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
@@ -106,7 +112,9 @@ public class PremiumizeMe extends PluginForHost {
     private void handleDL(Account account, DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        int maxConnections = 0;
+        if ("uploaded.to".equalsIgnoreCase(link.getHost())) maxConnections = 1;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxConnections);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
