@@ -188,7 +188,8 @@ public class FileVelocityCom extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                // for free download - correct final link is availablem after submitting form with <input type="hidden" name="method_free" value="Free Download">
+                // for free download - correct final link is availablem after submitting form with <input type="hidden" name="method_free"
+                // value="Free Download">
                 if (new Regex(correctedBR, "<form action=\"(.*?)\" method=\"post\" target=\"freedl_frame\">").getMatch(0) == null) {
                     br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
                     doSomething();
@@ -559,7 +560,7 @@ public class FileVelocityCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -20);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
