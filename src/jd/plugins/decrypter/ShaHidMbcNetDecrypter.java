@@ -46,11 +46,11 @@ import jd.utils.JDHexUtils;
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     public static enum Quality {
-        ALLOW_HD("3f3f", "HD"),
-        ALLOW_HIGH("3f20", "HIGH"),
-        ALLOW_MEDIUM("7d3f", "MEDIUM"),
-        ALLOW_LOW("7420", "LOW"),
-        ALLOW_LOWEST("6000", "LOWEST");
+        ALLOW_HD("3f3f", "720p HD"),
+        ALLOW_HIGH("3f20", "520p HIGH"),
+        ALLOW_MEDIUM("7d3f", "480p MEDIUM"),
+        ALLOW_LOW("7420", "360p LOW"),
+        ALLOW_LOWEST("6000", "240p LOWEST");
 
         private String hex;
         private String name;
@@ -199,18 +199,25 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
                 // Parsing -> video urls
                 String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
-                String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\n]+)").getColumn(0);
+                String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\r\n]+)").getColumn(0);
                 if (finalContent == null || finalContent.length == 0) { return null; }
-
+                boolean completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
                 for (String fC : finalContent) {
                     if (fC.length() < 40) {
                         continue;
                     }
                     // Einzellink oder Alles
                     if (fC.contains("rtmp")) {
-                        if (fC.contains(mediaId + "-") || (Boolean) shProperties.get("COMPLETE_SEASON")) {
-                            quality = JDHexUtils.getHexString(fC.substring(0, 2));
+
+                        if (fC.contains(mediaId + "-") || completeSeason) {
+                            quality = fixedHexValue(JDHexUtils.getHexString(fC.substring(0, 2)));
                             if (quality != null && qStr.containsKey(quality)) {
+                                /*
+                                 * Auf Anbieterseite wurden teilweise falsche Qualitätswerte eingepflegt. Funktioniert schon bei
+                                 * Einzellinks. Bei kompletten Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben.
+                                 * Scheint ein Tippfehler zu sein ;-). Wird demnächst fixed
+                                 */
+                                if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && "3f3f".equals(quality)) quality = "7d3f";
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());
                             }
                         }
@@ -269,6 +276,13 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
     private String safeUrl(String s) {
         if (s == null) return null;
         return s.replace("=", "").replace("+", "-").replace("/", "_");
+    }
+
+    private String fixedHexValue(String s) {
+        s = s.replace("3f00", "3f20");
+        s = s.replace("7900", "7420");
+        s = s.replace("6900", "6000");
+        return s;
     }
 
 }
