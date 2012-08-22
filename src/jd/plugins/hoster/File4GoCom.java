@@ -25,7 +25,6 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -71,19 +70,22 @@ public class File4GoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String dllUrl = br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
-        if (dllUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // String dllUrl = br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
+        // if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String dllink = br.getRegex("'(http://[a-z0-9]*\\.file4go.com/dll\\.php\\?id=.*?)'").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped
         // int wait = 60;
         // final String waittime =
         // br.getRegex(">contador\\((\\d+)\\);").getMatch(0);
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.file4go.com/recebe_id.php", "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        String dllink = br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllUrl + dllink;
+        /*
+         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
+         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
+         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
+         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
+         */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
