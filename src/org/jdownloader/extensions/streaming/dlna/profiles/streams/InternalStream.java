@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams;
 
+
 public class InternalStream {
     protected String  contentType;
     protected boolean systemStream;
@@ -12,10 +13,15 @@ public class InternalStream {
         this.contentType = contentType2;
     }
 
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
+    }
+
     protected String[] profileTags;
 
     public InternalStream setProfileTags(String[] profileTags) {
         this.profileTags = profileTags;
+
         return this;
     }
 

@@ -20,6 +20,11 @@ public class InternalAudioStream extends InternalStream {
         channels = new ArrayList<IntRange>();
     }
 
+    public InternalAudioStream setProfileTags(String[] profileTags) {
+        super.setProfileTags(profileTags);
+        return this;
+    }
+
     public InternalAudioStream addBitrateRange(int min, int max) {
         bitrates.add(new IntRange(min, max));
         return this;

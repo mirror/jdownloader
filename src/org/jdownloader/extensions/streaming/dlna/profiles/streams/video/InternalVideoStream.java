@@ -22,6 +22,38 @@ public class InternalVideoStream extends InternalStream {
         pixelAspectRatios = new ArrayList<Break>();
     }
 
+    public List<IntRange> getBitrates() {
+        return bitrates;
+    }
+
+    public void setBitrates(List<IntRange> bitrates) {
+        this.bitrates = bitrates;
+    }
+
+    public List<Resolution> getResolutions() {
+        return resolutions;
+    }
+
+    public void setResolutions(List<Resolution> resolutions) {
+        this.resolutions = resolutions;
+    }
+
+    public List<FrameRate> getFrameRates() {
+        return frameRates;
+    }
+
+    public void setFrameRates(List<FrameRate> frameRates) {
+        this.frameRates = frameRates;
+    }
+
+    public List<Break> getPixelAspectRatios() {
+        return pixelAspectRatios;
+    }
+
+    public void setPixelAspectRatios(List<Break> pixelAspectRatios) {
+        this.pixelAspectRatios = pixelAspectRatios;
+    }
+
     public InternalVideoStream setProfileTags(String[] profileTags) {
         this.profileTags = profileTags;
         return this;
@@ -47,12 +79,14 @@ public class InternalVideoStream extends InternalStream {
         return this;
     }
 
-    public void addResolution(int width, int height) {
+    public InternalVideoStream addResolution(int width, int height) {
         resolutions.add(Resolution.get(width, height));
+        return this;
     }
 
-    public void addPixelAspectRatio(int counter, int denominator) {
+    public InternalVideoStream addPixelAspectRatio(int counter, int denominator) {
         pixelAspectRatios.add(new Break(counter, denominator));
+        return this;
     }
 
 }

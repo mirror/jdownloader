@@ -1,16 +1,16 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.video;
 
-public class Mpeg2VideoStream extends MpegVideoStream {
+public class Mpeg4VideoStream extends MpegVideoStream {
 
-    public Mpeg2VideoStream() {
+    public Mpeg4VideoStream() {
 
         mpegVersions = new int[] { 4 };
-
+        systemStream = false;
     }
 
     private String[] level;
 
-    public Mpeg2VideoStream setLevel(String[] strings) {
+    public Mpeg4VideoStream setLevel(String[] strings) {
         this.level = strings;
         return this;
     }

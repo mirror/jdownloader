@@ -12,6 +12,11 @@ public class MpegAudioStream extends InternalAudioStream {
         return mpegVersions;
     }
 
+    public void setLayers(int[] layers) {
+        this.layers = layers;
+
+    }
+
     public int[] getMpegAudioVersions() {
         return mpegAudioVersions;
     }

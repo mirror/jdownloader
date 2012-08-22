@@ -34,7 +34,9 @@ public enum Extensions {
     AUDIO_VIDEO_PS("ps"),
     AUDIO_VIDEO_PES("pes"),
     AUDIO_VIDEO_ASF("asf"),
-    AUDIO_VIDEO_WMV("wmv");
+    AUDIO_VIDEO_WMV("wmv"),
+    AUDIO_VIDEO_MKV("mkv");
+
     private final String extension;
 
     public String getExtension() {
