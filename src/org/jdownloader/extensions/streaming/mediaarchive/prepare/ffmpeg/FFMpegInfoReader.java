@@ -57,11 +57,10 @@ public class FFMpegInfoReader {
         String streamurl = extension.createStreamUrl(id, "ffmpeg", null);
         try {
             extension.addDownloadLink(id, downloadLink);
-            File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffprobe.exe");
-
-            if (ffprobe.exists()) {
+            String path = getFFProbePath();
+            if (path != null) {
                 for (int myTry = 0; myTry < 3; myTry++) {
-                    String[] results = execute(ffprobe.getAbsolutePath(), "-show_format", "-show_streams", "-of", "json", "-i", streamurl);
+                    String[] results = execute(path, "-show_format", "-show_streams", "-of", "json", "-i", streamurl);
                     logger.info("Get STream Info: " + downloadLink.getDownloadURL());
 
                     String result = results[0];
@@ -85,7 +84,7 @@ public class FFMpegInfoReader {
                 }
 
             } else {
-                logger.info("ffprobe not found at " + ffprobe);
+                logger.info("ffprobe not found at " + path);
             }
 
             ArrayList<Stream> streams = getStreams();
@@ -94,21 +93,21 @@ public class FFMpegInfoReader {
 
                     if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
 
-                        File ffmpeg = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffmpeg.exe");
-                        if (ffmpeg.exists()) {
+                        String ffmpeg = getFFMpegPath();
+                        if (ffmpeg != null) {
                             thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
                             thumb.getParentFile().mkdirs();
                             thumb.delete();
                             int duration = getFormat().parseDuration();
                             int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
                             if (offsetInSeconds < 0) offsetInSeconds = 10;
-                            String[] ret = execute(ffmpeg.getAbsolutePath(), "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
+                            String[] ret = execute(ffmpeg, "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
                             logger.info(ret[1]);
                             System.out.println(2);
                             if (thumb.length() == 0) thumb = null;
                             break;
                         } else {
-                            logger.info("FFMPeg not found at " + ffprobe);
+                            logger.info("FFMpeg not found at " + ffmpeg);
 
                         }
                     }
@@ -122,6 +121,27 @@ public class FFMpegInfoReader {
         } finally {
             extension.removeDownloadLink(id);
         }
+    }
+
+    private String getFFMpegPath() {
+        if (CrossSystem.isWindows()) {
+            File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffmpeg.exe");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+        } else {
+            return "ffmpeg";
+        }
+        return null;
+    }
+
+    private String getFFProbePath() {
+        if (CrossSystem.isWindows()) {
+            File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffprobe.exe");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+        } else {
+            return "ffprobe";
+        }
+
+        return null;
     }
 
     public String getMajorBrand() {
