@@ -45,6 +45,7 @@ import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
 import org.jdownloader.extensions.streaming.dataprovider.DownloadLinkProvider;
+import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.gui.actions.AddToLibraryAction;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
@@ -63,6 +64,10 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     private LogSource           logger;
     protected StreamingProvider streamProvider = null;
+    static {
+        // we need to load the profiles
+        Profile.init();
+    }
 
     public StreamingExtension() {
 

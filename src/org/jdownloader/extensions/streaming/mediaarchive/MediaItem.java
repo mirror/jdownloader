@@ -23,8 +23,26 @@ public abstract class MediaItem implements MediaNode {
         return NewTheme.I().getIcon("video", 20);
     }
 
-    @Override
-    public long getFilesize() {
-        return downloadLink.getDownloadSize();
+    private String containerFormat;
+    private long   size = -1;
+
+    // video container type
+    public void setContainerFormat(String majorBrand) {
+        this.containerFormat = majorBrand;
+
     }
+
+    public String getContainerFormat() {
+        return containerFormat;
+    }
+
+    public void setSize(long l) {
+        this.size = l;
+    }
+
+    public long getSize() {
+
+        return size <= 0 ? downloadLink.getDownloadSize() : size;
+    }
+
 }

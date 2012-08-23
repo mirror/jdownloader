@@ -30,8 +30,7 @@ public class VideoMediaItem extends MediaItem {
     private long                   duration;
     private long                   bitrate;
     private ArrayList<VideoStream> videoStreams;
-    private String                 containerFormat;
-    private long                   size;
+    private String                 thumbnailPath;
 
     public VideoMediaItem(DownloadLink dl) {
         super(dl);
@@ -55,25 +54,16 @@ public class VideoMediaItem extends MediaItem {
         audioStreams.add(as);
     }
 
-    // video container type
-    public void setContainerFormat(String majorBrand) {
-        this.containerFormat = majorBrand;
-
-    }
-
     public ArrayList<VideoStream> getVideoStreams() {
         return videoStreams;
     }
 
-    public String getContainerFormat() {
-        return containerFormat;
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
     }
 
-    public void setSize(long l) {
-        this.size = l;
+    public String getThumbnailPath() {
+        return thumbnailPath;
     }
 
-    public long getSize() {
-        return size;
-    }
 }

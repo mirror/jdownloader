@@ -8,4 +8,32 @@ public class ImageMediaItem extends MediaItem {
         super(dl);
     }
 
+    private int width;
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    private int    height;
+    private String type;
+
+    public void setType(String string) {
+        this.type = string;
+    }
+
+    public String getType() {
+        return type;
+    }
 }

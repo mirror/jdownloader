@@ -23,12 +23,13 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
 
                 ffmpeg.load(extension);
 
+                boolean hasVideoStream = false;
                 ArrayList<Stream> streams = ffmpeg.getStreams();
                 if (streams != null) {
                     for (Stream info : streams) {
 
-                        if ("video".equals(info.getCodec_type())) {
-
+                        if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
+                            hasVideoStream = true;
                             VideoStream as = new VideoStream();
                             as.setCodec(info.getCodec_type());
                             as.setBitrate(info.parseBitrate());
@@ -49,8 +50,14 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                             as.setIndex(info.getIndex());
                             ret.addAudioStream(as);
                         }
+
+                    }
+                    if (!hasVideoStream) {
+                        // not a video
+                        return null;
                     }
 
+                    ret.setThumbnailPath(ffmpeg.getThumbnailPath());
                     ret.setBitrate(ffmpeg.getFormat().parseBitrate());
                     ret.setDuration(ffmpeg.getFormat().parseDuration());
                     ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());

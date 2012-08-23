@@ -11,4 +11,7 @@ public class MediaArchivePrepareTable extends BasicJDTable<PrepareJob> {
 
     }
 
+    public void stop() {
+    }
+
 }

@@ -7,6 +7,16 @@ public class Format implements Storable {
 
     }
 
+    private Tags tags;
+
+    public Tags getTags() {
+        return tags;
+    }
+
+    public void setTags(Tags tags) {
+        this.tags = tags;
+    }
+
     private int nb_streams;
 
     public int getNb_streams() {

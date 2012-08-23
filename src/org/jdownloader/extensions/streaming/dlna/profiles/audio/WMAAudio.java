@@ -45,4 +45,7 @@ public class WMAAudio extends AbstractAudioProfile {
 
     }
 
+    public static void init() {
+    }
+
 }

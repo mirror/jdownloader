@@ -84,6 +84,7 @@ public class JamendoCom extends PluginForHost {
     }
 
     private String prepareDownload(String typ, String ID, DownloadLink link) throws IOException, PluginException {
+
         String dlurl = null;
         String dlPage = "http://www.jamendo.com/en/download/" + typ + "/" + ID + "/do?output=contentonly";
         br.getPage(dlPage);
@@ -130,6 +131,8 @@ public class JamendoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+        // For streaming extension to tell her that these links can be streamed without account
+        parameter.setProperty("STREAMING", true);
         this.setBrowserExclusive();
         String TrackDownloadID = new Regex(parameter.getDownloadURL(), "/download/track/(\\d+)").getMatch(0);
         if (TrackDownloadID != null) {

@@ -113,6 +113,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
         layoutPanel();
         prepareTableScollPane.setVisible(false);
+
         plg.getMediaArchiveController().getEventSender().addListener(this, true);
 
     }
@@ -158,9 +159,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     }
 
     /**
-     * Is called if gui is visible now, and has not been visible before. For
-     * example, user starte the extension, opened the view, or switched form a
-     * different tab to this one
+     * Is called if gui is visible now, and has not been visible before. For example, user starte the extension, opened the view, or
+     * switched form a different tab to this one
      */
     @Override
     protected void onShow() {
@@ -168,8 +168,8 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
     }
 
     /**
-     * gets called of the extensiongui is not visible any more. for example
-     * because it has been closed or user switched to a different tab/view
+     * gets called of the extensiongui is not visible any more. for example because it has been closed or user switched to a different
+     * tab/view
      */
     @Override
     protected void onHide() {
@@ -207,6 +207,7 @@ public class VLCGui extends AddonPanel<StreamingExtension> implements MouseListe
 
                 } else {
                     prepareTableScollPane.setVisible(true);
+
                 }
             }
         };

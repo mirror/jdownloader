@@ -7,7 +7,7 @@ public class VideoTable extends MediaTable<VideoMediaItem> {
 
     public VideoTable(VideoTableModel model) {
         super(model);
-
+        this.setRowHeight(32);
     }
 
 }

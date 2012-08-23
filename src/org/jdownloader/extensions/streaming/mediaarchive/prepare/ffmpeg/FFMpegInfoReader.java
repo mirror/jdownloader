@@ -22,9 +22,11 @@ import org.jdownloader.logging.LogController;
 
 public class FFMpegInfoReader {
 
-    private DownloadLink      downloadLink;
-    private ArrayList<Stream> streams;
-    private String            majorBrand;
+    // if the call takes longer than 10 minutes. interrupt it
+    protected static final long FFMPEG_EXECUTE_TIMEOUT = 10 * 60 * 1000l;
+    private DownloadLink        downloadLink;
+    private ArrayList<Stream>   streams;
+    private String              majorBrand;
 
     public DownloadLink getDownloadLink() {
         return downloadLink;
@@ -34,6 +36,7 @@ public class FFMpegInfoReader {
 
     private FFProbe   probeResult;
     private Format    format;
+    private File      thumb;
 
     public Format getFormat() {
         return format;
@@ -55,9 +58,10 @@ public class FFMpegInfoReader {
         try {
             extension.addDownloadLink(id, downloadLink);
             File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffprobe.exe");
+
             if (ffprobe.exists()) {
                 for (int myTry = 0; myTry < 3; myTry++) {
-                    String[] results = execute(ffprobe.getAbsolutePath(), "-pretty", "-show_format", "-show_streams", "-of", "json", "-i", streamurl);
+                    String[] results = execute(ffprobe.getAbsolutePath(), "-show_format", "-show_streams", "-of", "json", "-i", streamurl);
                     logger.info("Get STream Info: " + downloadLink.getDownloadURL());
 
                     String result = results[0];
@@ -81,49 +85,42 @@ public class FFMpegInfoReader {
                 }
 
             } else {
-                logger.info("FFMPeg not found at " + ffprobe);
+                logger.info("ffprobe not found at " + ffprobe);
             }
+
+            ArrayList<Stream> streams = getStreams();
+            if (streams != null) {
+                for (Stream info : streams) {
+
+                    if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
+
+                        File ffmpeg = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffmpeg.exe");
+                        if (ffmpeg.exists()) {
+                            thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
+                            thumb.getParentFile().mkdirs();
+                            thumb.delete();
+                            int duration = getFormat().parseDuration();
+                            int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
+                            if (offsetInSeconds < 0) offsetInSeconds = 10;
+                            String[] ret = execute(ffmpeg.getAbsolutePath(), "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
+                            logger.info(ret[1]);
+                            System.out.println(2);
+                            if (thumb.length() == 0) thumb = null;
+                            break;
+                        } else {
+                            logger.info("FFMPeg not found at " + ffprobe);
+
+                        }
+                    }
+                }
+            }
+
+            // ffmpeg -itsoffset -4 -i test.avi -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 test.jpg
+
         } catch (Throwable e) {
             e.printStackTrace();
         } finally {
             extension.removeDownloadLink(id);
-        }
-    }
-
-    private long parseBitrate(String[] row) {
-        try {
-            // not sure if 1024 or 1000 faktor
-            if (row[1].contains("mb")) {
-                return Long.parseLong(row[0]) * 1000 * 1000;
-            } else if (row[1].contains("kb")) {
-                //
-                return Long.parseLong(row[0]) * 1000;
-            }
-            return Long.parseLong(row[0]);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return -1;
-        }
-    }
-
-    private long parseDuration(String match) {
-        try {
-
-            String[] split = match.split("[\\:\\.]");
-            int ret = 0;
-            // hours
-            ret += Integer.parseInt(split[0]) * 60 * 60;
-            // minutes
-            ret += Integer.parseInt(split[1]) * 60;
-            // seconds
-            ret += Integer.parseInt(split[2]);
-
-            // ignore ms
-
-            return ret;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            return -1;
         }
     }
 
@@ -138,7 +135,8 @@ public class FFMpegInfoReader {
         final StringBuilder sb = new StringBuilder();
         final StringBuilder sb2 = new StringBuilder();
         final Process process = pb.start();
-        new Thread("ffmpegReader") {
+
+        final Thread reader1 = new Thread("ffmpegReader") {
             public void run() {
                 try {
                     sb.append(readInputStreamToString(process.getInputStream()));
@@ -148,9 +146,9 @@ public class FFMpegInfoReader {
                     e.printStackTrace();
                 }
             }
-        }.start();
+        };
 
-        new Thread("ffmpegReader") {
+        final Thread reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
                     sb2.append(readInputStreamToString(process.getErrorStream()));
@@ -161,9 +159,29 @@ public class FFMpegInfoReader {
                     e.printStackTrace();
                 }
             }
-        }.start();
-        System.out.println(process.waitFor());
+        };
+        reader1.start();
+        reader2.start();
+        final boolean[] interrupted = new boolean[] { false };
+        Thread timouter = new Thread("ffmpegReaderTimeout") {
+            public void run() {
 
+                try {
+                    Thread.sleep(FFMPEG_EXECUTE_TIMEOUT);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                interrupted[0] = true;
+                reader1.interrupt();
+                reader2.interrupt();
+
+                process.destroy();
+            }
+        };
+        timouter.start();
+        System.out.println(process.waitFor());
+        timouter.interrupt();
+        if (interrupted[0]) { throw new InterruptedException("Timeout!"); }
         return new String[] { sb.toString(), sb2.toString() };
 
     }
@@ -180,8 +198,7 @@ public class FFMpegInfoReader {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
                     /*
-                     * Workaround for this bug:
-                     * http://bugs.sun.com/view_bug.do?bug_id=4508058
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
                      * http://bugs.sun.com/view_bug.do?bug_id=6378911
                      */
 
@@ -202,4 +219,9 @@ public class FFMpegInfoReader {
             // don't close streams this might ill the process
         }
     }
+
+    public String getThumbnailPath() {
+        return thumb == null ? null : thumb.getAbsolutePath();
+    }
+
 }

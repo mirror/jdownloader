@@ -17,4 +17,8 @@ public class PrepareEntry {
         return filePackage.getChildren();
     }
 
+    public String getName() {
+        return filePackage.getName();
+    }
+
 }

@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming.dlna.profiles.image;
 import org.jdownloader.extensions.streaming.dlna.profiles.IntRange;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 
-
 public abstract class AbstractImageProfile extends Profile {
     private final IntRange width;
 
@@ -23,6 +22,7 @@ public abstract class AbstractImageProfile extends Profile {
 
     public AbstractImageProfile(String id, IntRange width, IntRange height) {
         super(id);
+
         this.width = width;
         this.height = height;
 

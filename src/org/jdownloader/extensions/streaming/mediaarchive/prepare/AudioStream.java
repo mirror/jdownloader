@@ -39,5 +39,14 @@ public class AudioStream {
     private String codec;
     private int    duration;
     private int    index;
+    private int    samplingRate;
+
+    public int getSamplingRate() {
+        return samplingRate;
+    }
+
+    public void setSamplingRate(int samplingRate) {
+        this.samplingRate = samplingRate;
+    }
 
 }

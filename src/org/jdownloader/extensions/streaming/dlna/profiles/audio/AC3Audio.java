@@ -39,4 +39,7 @@ public class AC3Audio extends AbstractAudioProfile {
 
     }
 
+    public static void init() {
+    }
+
 }

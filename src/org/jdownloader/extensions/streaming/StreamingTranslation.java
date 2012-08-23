@@ -61,4 +61,19 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Add to Media Library" })
     String AddToLibraryAction();
+
+    @Default(lngs = { "en" }, values = { "Title" })
+    String gui_video_name();
+
+    @Default(lngs = { "en" }, values = { "Format" })
+    String gui_video_format();
+
+    @Default(lngs = { "en" }, values = { "Status" })
+    String gui_video_status();
+
+    @Default(lngs = { "en" }, values = { "Open Rar Archive: %s1" })
+    String open_rar(String name);
+
+    @Default(lngs = { "en" }, values = { "Scan Information: %s1" })
+    String prepare(String name);
 }

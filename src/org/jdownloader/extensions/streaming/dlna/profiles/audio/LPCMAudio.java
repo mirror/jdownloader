@@ -55,4 +55,7 @@ public class LPCMAudio extends AbstractAudioProfile {
 
     }
 
+    public static void init() {
+    }
+
 }

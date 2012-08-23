@@ -47,6 +47,9 @@ public class WMVVideo extends AbstractMpegProfile {
 
                                               };
 
+    public static void init() {
+    }
+
     public static final WMVVideo WMVHIGH_PRO  = new WMVVideo("WMVHIGH_PRO") {
                                                   {
                                                       getVideoStreams().addAll(createBaseStreams(Profile.MAIN, Level.HIGH));
@@ -110,16 +113,16 @@ public class WMVVideo extends AbstractMpegProfile {
 
             case L2:
                 ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 20000000).addResolution(Resolution._525_D1_720x480).addFrameRate(FrameRate.FPS_60));
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 20000000).addResolution(Resolution._1280x720_1280x720).addFrameRate(FrameRate.FPS_30));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 20000000).addResolution(Resolution._1280x720).addFrameRate(FrameRate.FPS_30));
 
                 break;
             case L3:
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1920x1080_1920x1080).addFrameRate(FrameRate.FPS_24));
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1920x1080_1920x1080).addFrameRate(FrameRate.FPS_30));
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1280x720_1280x720).addFrameRate(FrameRate.FPS_60));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1920x1080).addFrameRate(FrameRate.FPS_24));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1920x1080).addFrameRate(FrameRate.FPS_30));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 45000000).addResolution(Resolution._1280x720).addFrameRate(FrameRate.FPS_60));
                 break;
             case L4:
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 135000000).addResolution(Resolution._1920x1080_1920x1080).addFrameRate(FrameRate.FPS_60));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 135000000).addResolution(Resolution._1920x1080).addFrameRate(FrameRate.FPS_60));
                 ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 135000000).addResolution(Resolution._2048x1536).addFrameRate(FrameRate.FPS_24));
 
                 break;
@@ -128,7 +131,7 @@ public class WMVVideo extends AbstractMpegProfile {
         case MAIN:
             switch (l) {
             case HIGH:
-                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 20000000).addResolution(Resolution._1920x1080_1920x1080).addFrameRate(FrameRate.FPS_30));
+                ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 20000000).addResolution(Resolution._1920x1080).addFrameRate(FrameRate.FPS_30));
                 break;
             case MEDIUM:
                 ret.add(new WindowsMediaVideoStream(p, l).addBitrateRange(1, 10000000).addResolution(Resolution._525_D1_720x480).addFrameRate(FrameRate.FPS_30));

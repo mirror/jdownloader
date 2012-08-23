@@ -62,15 +62,6 @@ public class AACAudio extends AbstractAudioProfile {
 
                                                      }
                                                  };
-    // according to gupnp this profile may contain mime="audio/3gpp" and name=application/x-3gp as well
-    public static final AACAudio AAC_ISO_320_2   = new AAC_ISOAudio("AAC_ISO_320") {
-                                                     {
-                                                         mimeType = MimeType.AUDIO_3GP;
-                                                         containers = new AbstractMediaContainer[] { AudioGp3Container.INSTANCE };
-                                                         stream = new AACAudioStream().addBitrateRange(0, 320000).addChannelRange(1, 2).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
-
-                                                     }
-                                                 };
 
     public static final AACAudio AAC_MULT5_ADTS  = new AAC_ADTSAudio("AAC_MULT5_ADTS") {
                                                      {
@@ -125,6 +116,9 @@ public class AACAudio extends AbstractAudioProfile {
 
     public boolean isRaw() {
         return raw;
+    }
+
+    public static void init() {
     }
 
 }

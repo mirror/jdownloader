@@ -25,6 +25,7 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
 import org.jdownloader.extensions.streaming.dataprovider.rar.PartFileDataProvider;
 import org.jdownloader.extensions.streaming.dataprovider.rar.RarArchiveDataProvider;
+import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
@@ -121,6 +122,10 @@ public class HttpApiImpl implements HttpRequestHandler {
             String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
 
             String ct = "video/" + format;
+            if (format.equals("jpg")) {
+                ct = JPEGImage.JPEG_LRG.getMimeType().getLabel();
+                dlnaFeatures = "DLNA.ORG_PN=" + JPEGImage.JPEG_LRG.getProfileID();
+            }
             if (format.equals("mp3")) {
                 ct = "audio/mpeg";
                 dlnaFeatures = "DLNA.ORG_PN=MP3";

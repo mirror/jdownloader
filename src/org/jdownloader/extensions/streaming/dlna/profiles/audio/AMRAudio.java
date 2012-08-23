@@ -42,4 +42,7 @@ public class AMRAudio extends AbstractAudioProfile {
 
     }
 
+    public static void init() {
+    }
+
 }

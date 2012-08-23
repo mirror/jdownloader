@@ -16,6 +16,7 @@ public abstract class AbstractAudioVideoProfile extends Profile {
         audioStreams = new ArrayList<InternalAudioStream>();
         videoStreams = new ArrayList<InternalVideoStream>();
         systemBitrates = new ArrayList<IntRange>();
+
     }
 
     protected void addVideoStream(InternalVideoStream stream) {

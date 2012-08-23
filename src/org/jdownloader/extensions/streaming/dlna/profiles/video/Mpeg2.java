@@ -14,32 +14,38 @@ import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.Mpeg2Vid
 
 public class Mpeg2 extends AbstractMpegProfile {
 
-    private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS = new VideoTransportStreamContainer(TimeStamp.VALID, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
+    private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS   = new VideoTransportStreamContainer(TimeStamp.VALID, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS = new VideoTransportStreamContainer(TimeStamp.WITHOUT, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
-    private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
-    public static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_PS, Extensions.AUDIO_VIDEO_MP2P, Extensions.AUDIO_VIDEO_MP2P);
-    public static final Mpeg2 MPEG_PS_NTSC           = new Mpeg2("MPEG_PS_NTSC") {
+    private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS    = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
+    public static final VideoTransportStreamContainer  VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS    = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_PS, Extensions.AUDIO_VIDEO_MP2P, Extensions.AUDIO_VIDEO_MP2P);
+    public static final Mpeg2                          MPEG_PS_NTSC                                  = new Mpeg2("MPEG_PS_NTSC") {
 
-                                                         {
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
+                                                                                                         {
+                                                                                                             mimeType = MimeType.VIDEO_MPEG;
+                                                                                                             setupAudioPrivateAc3(this);
+                                                                                                             setupAudioAc3(this);
+                                                                                                             setupAudioMp2(this);
+                                                                                                             setupAudioLpcm(this);
+                                                                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
 
-                                                             addVideoStream(setup720x480(createMpegTsVideo()));
-                                                             addVideoStream(setup704x480(createMpegTsVideo()));
-                                                             addVideoStream(setup640x480(createMpegTsVideo()));
-                                                             addVideoStream(setup480x480(createMpegTsVideo()));
-                                                             addVideoStream(setup544x480(createMpegTsVideo()));
-                                                             addVideoStream(setup352x480(createMpegTsVideo()));
-                                                             addVideoStream(setup352x240(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup720x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup704x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup640x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup480x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup544x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup352x480(createMpegTsVideo()));
+                                                                                                             addVideoStream(setup352x240(createMpegTsVideo()));
 
-                                                         }
-                                                     };
+                                                                                                         }
+                                                                                                     };
+
+    public static void init() {
+    }
+
     public static final Mpeg2 MPEG_PS_NTSC_XAC3      = new Mpeg2("MPEG_PS_NTSC_XAC3") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG;
                                                              setupXAc3(this);
 
                                                              addVideoStream(setup720x480(createMpegTsVideo()));
@@ -58,7 +64,7 @@ public class Mpeg2 extends AbstractMpegProfile {
 
                                                          {
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
-
+                                                             mimeType = MimeType.VIDEO_MPEG;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -79,6 +85,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_PS_PAL_XAC3       = new Mpeg2("MPEG_PS_PAL_XAC3") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG;
                                                              setupXAc3(this);
                                                              // Video Streams
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
@@ -98,6 +105,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA          = new Mpeg2("MPEG_TS_HD_NA") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
 
                                                              setupAudioPrivateAc3(this);
@@ -116,6 +124,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA_ISO      = new Mpeg2("MPEG_TS_HD_NA_ISO") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              mimeType = MimeType.VIDEO_MPEG;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
@@ -133,6 +142,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA_T        = new Mpeg2("MPEG_TS_HD_NA_T") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -147,6 +157,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA_XAC3     = new Mpeg2("MPEG_TS_HD_NA_XAC3") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              // setupAc3(this);
                                                              // setupPrivateAc3(this);
                                                              setupXAc3(this);
@@ -163,6 +174,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA_XAC3_ISO = new Mpeg2("MPEG_TS_HD_NA_XAC3_ISO") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              // setupAc3(this);
                                                              // setupPrivateAc3(this);
                                                              setupXAc3(this);
@@ -179,6 +191,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_HD_NA_XAC3_T   = new Mpeg2("MPEG_TS_HD_NA_XAC3_T") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              // setupAc3(this);
                                                              // setupPrivateAc3(this);
                                                              setupXAc3(this);
@@ -195,7 +208,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_MP_LL_AAC      = new Mpeg2("MPEG_TS_MP_LL_AAC") {
 
                                                          {
-
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
 
@@ -214,6 +227,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_MP_LL_AAC_ISO  = new Mpeg2("MPEG_TS_MP_LL_AAC_ISO") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              // setupAc3(this);
                                                              // setupPrivateAc3(this);
 
@@ -235,7 +249,7 @@ public class Mpeg2 extends AbstractMpegProfile {
                                                          {
                                                              // setupAc3(this);
                                                              // setupPrivateAc3(this);
-
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
                                                              InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { "low" });
                                                              stream.addBitrateRange(1, 4000000);
@@ -253,6 +267,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_EU          = new Mpeg2("MPEG_TS_SD_EU") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -272,6 +287,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_EU_ISO      = new Mpeg2("MPEG_TS_SD_EU_ISO") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -291,6 +307,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_EU_T        = new Mpeg2("MPEG_TS_SD_EU_T") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -309,6 +326,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_NA          = new Mpeg2("MPEG_TS_SD_NA") {
 
                                                          {
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -335,7 +353,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_NA_T        = new Mpeg2("MPEG_TS_SD_NA_T") {
 
                                                          {
-
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupAudioPrivateAc3(this);
                                                              setupAudioAc3(this);
                                                              setupAudioMp2(this);
@@ -352,7 +370,7 @@ public class Mpeg2 extends AbstractMpegProfile {
 
                                                              setupXAc3(this);
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupTransportStreamsSdNa();
 
                                                          }
@@ -372,7 +390,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static final Mpeg2 MPEG_TS_SD_NA_XAC3_T   = new Mpeg2("MPEG_TS_SD_NA_XAC3_T") {
 
                                                          {
-
+                                                             mimeType = MimeType.VIDEO_MPEG_TS;
                                                              setupXAc3(this);
                                                              this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
                                                              setupTransportStreamsSdNa();
@@ -439,7 +457,7 @@ public class Mpeg2 extends AbstractMpegProfile {
      * @return
      */
     protected static InternalVideoStream setup1280x720(InternalVideoStream stream) {
-        stream.addResolution(Resolution._1280x720_1280x720);
+        stream.addResolution(Resolution._1280x720);
         stream.addFrameRate(FrameRate.FPS_29_97_30000_1001);
         stream.addFrameRate(FrameRate.FPS_30);
         stream.addFrameRate(FrameRate.FPS_23_97_24000_1001);
@@ -473,7 +491,7 @@ public class Mpeg2 extends AbstractMpegProfile {
      * @return
      */
     protected static InternalVideoStream setup1920x1080(InternalVideoStream stream) {
-        stream.addResolution(Resolution._1920x1080_1920x1080);
+        stream.addResolution(Resolution._1920x1080);
         stream.addFrameRate(FrameRate.FPS_29_97_30000_1001);
         stream.addFrameRate(FrameRate.FPS_30);
         stream.addFrameRate(FrameRate.FPS_23_97_24000_1001);
