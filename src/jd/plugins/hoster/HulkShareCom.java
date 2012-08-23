@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/(dl/)?[a-z0-9]{12}" }, flags = { 2 })
 public class HulkShareCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
@@ -76,6 +76,7 @@ public class HulkShareCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("hu.lk/", "hulkshare.com/"));
         /* www is needed now! */
         link.setUrlDownload(link.getDownloadURL().replaceFirst("http://hulkshare.com/", "http://www.hulkshare.com/"));
+        link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override
@@ -130,6 +131,25 @@ public class HulkShareCom extends PluginForHost {
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
+    }
+
+    private String checkDLLink(DownloadLink downloadLink) {
+        URLConnectionAdapter con = null;
+        try {
+            Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
+            String url = "http://hulkshare.com/dl/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
+            con = br2.openGetConnection(url);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) { return null; }
+            return url;
+        } catch (Exception e) {
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
+        return null;
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
@@ -241,8 +261,10 @@ public class HulkShareCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) dllink = checkDLLink(downloadLink);
         // Videolinks can already be found here, if a link is found here we can
         // skip waittimes and captchas
+
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
@@ -339,12 +361,14 @@ public class HulkShareCom extends PluginForHost {
         // Workaround for missing extensions for audio files
         if (dl.getConnection().getContentType().equals("audio/mpeg") && !downloadLink.getFinalFileName().endsWith(".mp3")) downloadLink.setFinalFileName(downloadLink.getFinalFileName() + ".mp3");
         if (dl.getConnection().getContentType().contains("html")) {
+            downloadLink.setProperty("freelink", null);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             doSomething();
             checkServerErrors();
             /** Downloadlink just redirects into nowhere */
             if (br.getURL().contains("hulkshare.com/dl/") || br.containsHTML("(Uploaded Now|<b>Size:</b> 0 b<br)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: bad downloadlink!", 30 * 60 * 1000l);
+            if (br.containsHTML("<h2>This is a private file.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) downloadLink.setProperty("pass", passCode);

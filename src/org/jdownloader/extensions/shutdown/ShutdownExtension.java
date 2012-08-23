@@ -343,14 +343,15 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 e1.printStackTrace();
             }
             ExtractionExtension extractor = (ExtractionExtension) ExtensionController.getInstance().getExtension(ExtractionExtension.class)._getExtension();
-            while (!extractor.getJobQueue().isEmpty()) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            if (extractor != null) {
+                while (!extractor.getJobQueue().isEmpty()) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
-
             String message;
             int ret2;
             switch (getSettings().getShutdownMode()) {
