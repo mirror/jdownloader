@@ -11,9 +11,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
 
-import com.sun.image.codec.jpeg.ImageFormatException;
-import com.sun.image.codec.jpeg.JPEGCodec;
-
 public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
 
     @Override
@@ -24,21 +21,12 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
         String streamurl = extension.createStreamUrl(id, "imagereader", null);
         try {
             extension.addDownloadLink(id, dl);
-            try {
-                BufferedImage image = JPEGCodec.createJPEGDecoder(new URL(streamurl).openStream()).decodeAsBufferedImage();
-                System.out.println(image.getWidth() + " - " + image.getHeight());
 
-                ret.setWidth(image.getWidth());
-                ret.setHeight(image.getHeight());
-                ret.setType("jpg");
-            } catch (ImageFormatException e) {
-                BufferedImage image = ImageIO.read(new URL(streamurl).openStream());
-                System.out.println(image.getWidth() + " - " + image.getHeight());
-                ret.setWidth(image.getWidth());
-                ret.setHeight(image.getHeight());
-                ret.setType("png");
+            BufferedImage image = ImageIO.read(new URL(streamurl).openStream());
+            System.out.println(image.getWidth() + " - " + image.getHeight());
+            ret.setWidth(image.getWidth());
+            ret.setHeight(image.getHeight());
 
-            }
             return ret;
         } catch (Throwable e) {
             e.printStackTrace();
