@@ -75,7 +75,8 @@ public class DeredactieBe extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                DLLINK = getMediaUrl("rtmpServer") + "@" + getMediaUrl("rtmpPath");
+                DLLINK = getMediaUrl("rtmpServer");
+                DLLINK = DLLINK != null && getMediaUrl("rtmpPath") != null ? DLLINK + "@" + getMediaUrl("rtmpPath") : null;
                 if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
