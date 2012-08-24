@@ -20,13 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shorttext.com" }, urls = { "http://[\\w\\.]*?shorttext\\.com/[a-z0-9]+" }, flags = { 0 })
 public class ShortTextCom extends PluginForDecrypt {
@@ -41,13 +41,37 @@ public class ShortTextCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML("the page has expired or no such shortText information available"))
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (br.containsHTML("the page has expired or no such shortText information available")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">This page is locked by the creator")) {
+            logger.info("Link is password protected...");
+            for (int i = 0; i <= 3; i++) {
+                final Form pwForm = br.getFormbyProperty("id", "ui");
+                if (pwForm == null) {
+                    logger.info("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                String passCode = getUserInput("Enter password for: " + parameter, param);
+                pwForm.put("txtKey", passCode);
+                br.submitForm(pwForm);
+                if (br.containsHTML(">This page is locked by the creator")) continue;
+                break;
+            }
+            if (br.containsHTML(">This page is locked by the creator")) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
         String plaintxt = br.getRegex("<span id=\"lblEdit\"></span>(.*?)<span id=\"lblCount\"><br><br>").getMatch(0);
         if (plaintxt == null) plaintxt = br.getRegex("<DIV align=\"justify\">(.*?)</DIV>").getMatch(0);
-        if (plaintxt == null) return null;
+        if (plaintxt == null) {
+            logger.info("Decrypter broken for link: " + parameter);
+            return null;
+        }
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
-        if (links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (links == null || links.length == 0) {
+            logger.info("No links found for link: " + parameter);
+            return decryptedLinks;
+        }
         for (String dl : links) {
             if (!dl.contains("shorttext.com") && !dl.contains("tweetmeme.com") || !dl.contains("sharethis.com")) {
                 decryptedLinks.add(createDownloadlink(dl));

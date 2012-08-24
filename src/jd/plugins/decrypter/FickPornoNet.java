@@ -90,8 +90,8 @@ public class FickPornoNet extends PluginForDecrypt {
             logger.info("This link is probably broken: " + parameter);
             return decryptedLinks;
         }
-        logger.warning("fickporno decrypter broken for link: " + parameter);
-        return null;
+        logger.warning("Decrypter broken or link offline: " + parameter);
+        return decryptedLinks;
     }
 
 }

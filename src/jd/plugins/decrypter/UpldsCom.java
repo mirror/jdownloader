@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uplds.com" }, urls = { "http://(www\\.)?uplds\\.com/\\d{6}" }, flags = { 0 })
 public class UpldsCom extends PluginForDecrypt {
 
     public UpldsCom(PluginWrapper wrapper) {
@@ -37,14 +38,21 @@ public class UpldsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(parameter);
         if (br.containsHTML("Link Not Found")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or page no longer exists."));
-        String[] links = br.getRegex("form action=\"(.*?)\" method=\"post\"").getColumn(0);
-        if ((links == null || links.length == 0)) return null;
-        if (links != null && links.length != 0) {
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
+        final Form decryptform = br.getFormbyProperty("name", "F1");
+        if (decryptform == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
+        br.submitForm(decryptform);
+        final String finallink = br.getRegex("style=\"background:#f9f9f9;border:1px dotted #bbb;padding:7px;\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        decryptedLinks.add(createDownloadlink(finallink));
         return decryptedLinks;
     }
 }

@@ -37,7 +37,7 @@ public class DivxMotionCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String externID = br.getRegex("nowvideo\\.eu/embed\\.php\\?v=([a-z0-9]+)").getMatch(0);
+        String externID = br.getRegex("nowvideo\\.(eu|co)/embed\\.php\\?v=([a-z0-9]+)").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.nowvideo.eu/video/" + externID));
             return decryptedLinks;

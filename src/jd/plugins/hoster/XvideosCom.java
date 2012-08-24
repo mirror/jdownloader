@@ -97,7 +97,7 @@ public class XvideosCom extends PluginForHost {
             br.getPage(parameter.getDownloadURL());
         }
         if (br.containsHTML("(This video has been deleted|Page not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div id=\"main\">[\t\n\r ]+<h2>([^<>\"]*?)<span class=").getMatch(0);
+        String filename = br.getRegex("<h2>([^<>\"]*?)<span class").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- XVIDEOS\\.COM</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim() + ".flv";

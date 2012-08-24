@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/[^<>\"/]*?\\-watch\\-[^<>\"/]*?\\.html" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {
@@ -37,7 +37,7 @@ public class Mv2kTo extends PluginForDecrypt {
     }
 
     /**
-     * Description of the regexes array: 1= nowvideo.eu,streamcloud.com
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com
      * 2=flashx.tv,veervid.com,ginbig
      * .com,vidbux.com,xvidstage.com,xvidstream.net
      * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos

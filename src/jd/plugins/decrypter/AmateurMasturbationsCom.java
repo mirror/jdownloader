@@ -38,14 +38,14 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
-        String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
+        String externID = br.getRedirectLocation();
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        tempID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink(tempID));
+        externID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         String filename = br.getRegex("\" rel=\"bookmark\">(.*?)</a></h2>").getMatch(0);
@@ -58,46 +58,51 @@ public class AmateurMasturbationsCom extends PluginForDecrypt {
             return null;
         }
         filename = filename.trim();
-        tempID = br.getRegex("<p><a  href=\"(http://pictures\\.share\\-image\\.com/flv/.*?)\"").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("\"(http://pictures\\.share\\-image\\.com/flv/video/.*?)\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("<p><a  href=\"(http://pictures\\.share\\-image\\.com/flv/.*?)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("\"(http://pictures\\.share\\-image\\.com/flv/video/.*?)\"").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        tempID = br.getRegex("embed\\.niceratios\\.com/ndgfs/images/.*?file=(http://embed\\.niceratios\\.com/.*?)\\&").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("embed\\.niceratios\\.com/ndgfs/images/.*?file=(http://embed\\.niceratios\\.com/.*?)\\&").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        tempID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.slutload.com/watch/" + tempID + "/" + Integer.toString(new Random().nextInt(1000000)) + ".html");
+        externID = br.getRegex("emb\\.slutload\\.com/([A-Za-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.slutload.com/watch/" + externID + "/" + Integer.toString(new Random().nextInt(1000000)) + ".html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("amateurmasturbations\\.com/player/pikoplayer\\.php\\?video=(http://[^<>\"\\']+)\"").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+        externID = br.getRegex("amateurmasturbations\\.com/player/pikoplayer\\.php\\?video=(http://[^<>\"\\']+)\"").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("directhttp://" + externID);
             decryptedLinks.add(dl);
             dl.setFinalFileName(filename + ".flv");
             return decryptedLinks;
         }
-        tempID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + tempID + "/x.html");
+        externID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + externID + "/x.html");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
-        if (tempID != null) {
-            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + tempID + "/" + System.currentTimeMillis() + ".html"));
+        externID = br.getRegex("xhamster\\.com/xembed\\.php\\?video=(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://xhamster.com/movies/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        if (tempID == null) {
+        externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
+            return decryptedLinks;
+        }
+        if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

@@ -59,35 +59,11 @@ public class NovaUpMovcom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("video")) {
-            // handling für "nicht"-video Links
-            if (br.containsHTML(TEMPORARYUNAVAILABLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 30 * 60 * 1000l); }
-            br.setFollowRedirects(false);
-            final String infolink = link.getDownloadURL();
-            br.getPage(infolink);
-            DLLINK = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
-            if (DLLINK == null) {
-                DLLINK = br.getRegex("\"(http://e\\d+\\.novaup\\.com/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
-            }
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (!DLLINK.contains("http://")) {
-                DLLINK = "http://novaup.com" + DLLINK;
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("This file no longer exists on our servers")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("This file no longer exists on our servers") || br.getURL().contains("novamov.com/index.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
             final String fileId = br.getRegex("flashvars\\.file=\"(.*?)\"").getMatch(0);
@@ -129,6 +105,31 @@ public class NovaUpMovcom extends PluginForHost {
         }
 
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        if (!link.getDownloadURL().contains("video")) {
+            // handling für "nicht"-video Links
+            if (br.containsHTML(TEMPORARYUNAVAILABLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 30 * 60 * 1000l); }
+            br.setFollowRedirects(false);
+            final String infolink = link.getDownloadURL();
+            br.getPage(infolink);
+            DLLINK = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
+            if (DLLINK == null) {
+                DLLINK = br.getRegex("\"(http://e\\d+\\.novaup\\.com/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
+            }
+            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (!DLLINK.contains("http://")) {
+                DLLINK = "http://novaup.com" + DLLINK;
+            }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

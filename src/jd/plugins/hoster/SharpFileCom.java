@@ -50,14 +50,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/[a-z0-9]{6,12}" }, flags = { 2 })
 public class SharpFileCom extends PluginForHost {
 
-    private String               correctedBR         = "";
-    private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://sharpfile.com";
-    private static final String  MAINTENANCE         = ">This server is in maintenance mode";
-    private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object  LOCK                = new Object();
-    private static AtomicInteger maxPrem             = new AtomicInteger(1);
+    private String               correctedBR          = "";
+    private static final String  PASSWORDTEXT         = "<br><b>Passwor(d|t):</b> <input";
+    private static final String  COOKIE_HOST          = "http://sharpfile.com";
+    private static final String  MAINTENANCE          = ">This server is in maintenance mode";
+    private static final String  TEMPORARYUNAVAILABLE = ">The file you requested is temporarily unavailable";
+    private static final String  MAINTENANCEUSERTEXT  = "This server is under Maintenance";
+    private static final String  ALLWAIT_SHORT        = "Waiting till new downloads can be started";
+    private static final Object  LOCK                 = new Object();
+    private static AtomicInteger maxPrem              = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
@@ -105,6 +106,11 @@ public class SharpFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
+        if (correctedBR.contains(TEMPORARYUNAVAILABLE)) {
+            String filename = new Regex(correctedBR, "<title>Download ([^<>\"]*?)</title>").getMatch(0);
+            if (filename != null) link.setName(Encoding.htmlDecode(filename.trim()));
+            return AvailableStatus.TRUE;
+        }
         String filename = new Regex(correctedBR, "<b>File Name: </b>([^<>\"]*?)<br").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
@@ -145,7 +151,8 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -322,6 +329,7 @@ public class SharpFileCom extends PluginForHost {
             }
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.sharpfilecom.tempunavailable", "This file is temporarily unavailable"), 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {

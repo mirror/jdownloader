@@ -118,6 +118,12 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
+        if (tempID != null) {
+            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + tempID + "/x.html");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

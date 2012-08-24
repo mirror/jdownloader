@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -37,6 +38,7 @@ public class EroxiaCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        String filename = br.getRegex("<title>Sex Video \\- ([^<>\"]*?) \\- Amateur Homemade Porn Eroxia</title>").getMatch(0);
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
@@ -45,8 +47,36 @@ public class EroxiaCom extends PluginForDecrypt {
         }
         tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
         if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
+            final DownloadLink dl = createDownloadlink(tempID);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        tempID = br.getRegex("config=(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
+        if (tempID != null) {
+            br.getPage(tempID);
+            if (br.containsHTML("is marked as crashed and should be repaired")) {
+                logger.info("Link broken/offline: " + parameter);
+                return decryptedLinks;
+            }
+            // Handling not done yet, had no working links
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        // filename is needed for all stuff below
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        filename = Encoding.htmlDecode(filename.trim());
+        tempID = br.getRegex("\\'flashvars\\',\\'\\&file=(http://[^<>\"]*?)\\&").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
+            dl.setFinalFileName(filename + ".flv");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("\"http://video\\.megarotic\\.com/")) {
+            logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (tempID == null) {

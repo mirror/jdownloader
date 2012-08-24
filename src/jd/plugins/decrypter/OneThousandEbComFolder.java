@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,12 +42,20 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
         String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<meta name=\"keywords\" content=\"([^,\"]+)").getMatch(0);
         final String[] links = br.getRegex("class=\"li\\-name\"><a title=\"[^<>\"\\']+\" href=\\'(http://1000eb\\.com/[a-z0-9]+)\\'").getColumn(0);
-        if (links == null || links.length == 0) {
+        final String[] folderLinks = br.getRegex("\"(/mydirectory[^<>\"]*?)\"").getColumn(0);
+        if ((links == null || links.length == 0) || (folderLinks == null || folderLinks.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (final String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
+        if (links != null && links.length > 0) {
+            for (final String singleLink : links)
+                decryptedLinks.add(createDownloadlink(singleLink));
+        }
+        if (folderLinks != null && folderLinks.length > 0) {
+            final String mainlink = new Regex(parameter, "(http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com)").getMatch(0);
+            for (final String folderLink : folderLinks)
+                decryptedLinks.add(createDownloadlink(mainlink + folderLink));
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

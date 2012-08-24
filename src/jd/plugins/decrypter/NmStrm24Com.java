@@ -94,8 +94,8 @@ public class NmStrm24Com extends PluginForDecrypt {
         if (externID != null) { return createDownloadlink("http://www.modovideo.com/video?v=" + externID); }
         externID = new Regex(fragment, "/pl/y\\.php\\?id=([a-z0-9]+)\"").getMatch(0);
         if (externID != null) { return createDownloadlink("http://yourupload.com/file/" + externID); }
-        externID = new Regex(fragment, "nowvideo\\.eu/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)\\'").getMatch(0);
-        if (externID != null) { return createDownloadlink("http://www.nowvideo.eu/video/" + externID); }
+        externID = new Regex(fragment, "nowvideo\\.(eu|co)/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)\\'").getMatch(1);
+        if (externID != null) { return createDownloadlink("http://www.nowvideo.co/video/" + externID); }
         externID = br.getRegex("dwn\\.so/player/embed\\.php\\?v=([A-Z0-9]+)\\&width=\\d+.*?").getMatch(0);
         if (externID != null) {
             br.getPage("http://dwn.so/player/embed.php?v=" + externID);
