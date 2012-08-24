@@ -699,7 +699,21 @@ public class MediafireCom extends PluginForHost {
                 if (url == null) {
                     Browser brc = br.cloneBrowser();
                     this.fileID = getID(downloadLink);
-                    brc.getPage("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = brc.openGetConnection("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
+                        if (con.getResponseCode() != 404) {
+                            brc.followConnection();
+                        } else {
+                            logger.info("Dynamic is 404");
+                            continue;
+                        }
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
                     url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
                     if (url != null) {
                         url = url.replaceAll("\\\\", "");

@@ -74,11 +74,11 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
                                                                                  }
                                                                              };
 
-    private java.util.List<CrawledLink>                         children;
+    private java.util.List<CrawledLink>                    children;
     private String                                         comment           = null;
     private PackageController<CrawledPackage, CrawledLink> controller        = null;
 
-    private long                                           created           = -1;
+    private long                                           created           = System.currentTimeMillis();
 
     private String                                         name              = null;
 
@@ -163,8 +163,8 @@ public class CrawledPackage implements AbstractPackageNode<CrawledLink, CrawledP
     }
 
     /**
-     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to
-     * return the actuall downloadloadfolder
+     * Returns the raw Downloadfolder String. This link may contain wildcards like <jd:packagename>. Use {@link #getDownloadFolder()} to return the actuall
+     * downloadloadfolder
      * 
      * @return
      */

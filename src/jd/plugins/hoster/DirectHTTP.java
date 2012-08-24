@@ -660,7 +660,7 @@ public class DirectHTTP extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) {
+    private void setCustomHeaders(final Browser br, final DownloadLink downloadLink) throws IOException {
         /* allow customized headers, eg useragent */
         final Object customRet = downloadLink.getProperty("customHeader");
         List<String[]> custom = null;
@@ -695,6 +695,15 @@ public class DirectHTTP extends PluginForHost {
         }
         if (downloadLink.getStringProperty("cookies", null) != null) {
             br.getCookies(downloadLink.getDownloadURL()).add(Cookies.parseCookies(downloadLink.getStringProperty("cookies", null), Browser.getHost(downloadLink.getDownloadURL()), null));
+        }
+        downloadWorkaround(br, downloadLink);
+    }
+
+    private void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
+        if (downloadLink.getDownloadURL().contains("fileplanet.com")) {
+            /* it seems fileplanet firewall checks referer and ip must have called the page lately */
+            // br.getPage("http://www.fileplanet.com/");
+            br.getHeaders().put("Referer", "http://fileplanet.com/");
         }
     }
 

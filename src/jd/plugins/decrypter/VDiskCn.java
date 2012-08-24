@@ -27,6 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/)[a-z0-9]+" }, flags = { 0 })
 public class VDiskCn extends PluginForDecrypt {
 
@@ -49,18 +51,23 @@ public class VDiskCn extends PluginForDecrypt {
         int lastPage = Integer.parseInt(allPages.get(allPages.size() - 1));
         for (int i = 1; i <= lastPage; i++) {
             if (i != 1) br.getPage(parameter + "?p=" + i);
-            final String[] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'").getColumn(0);
+            final String[][] links = br.getRegex("\\'(/down/index/[A-Z0-9]+)\\'.*?blank'>(.*?)</a.*?sizeinfo'>(.*?)\\&").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink("http://vdisk.cn" + singleLink));
+            DownloadLink link;
+            for (String singleLink[] : links) {
+                link = createDownloadlink("http://vdisk.cn" + singleLink[0]);
+                link.setName(singleLink[1]);
+                link.setDownloadSize(SizeFormatter.getSize(singleLink[2].trim()));
+                link.setAvailable(true);
+                decryptedLinks.add(link);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }
