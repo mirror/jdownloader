@@ -6,7 +6,6 @@ import java.util.HashSet;
 import jd.controlling.AccountController;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.hoster.DirectHTTP;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.event.queue.QueueAction;
@@ -105,7 +104,7 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
             Boolean streamingWithoutAccount = (Boolean) dl.getBooleanProperty("STREAMING", false);
             Plugin plg = dl.getDefaultPlugin();
             // instanceof may fail due to dynamic plugin loader
-            boolean isDirect = plg.getClass().getName().equals(DirectHTTP.class.getName());
+            boolean isDirect = "DirectHTTP".equals(plg.getHost()) || "http links".equals(plg.getHost());
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
                 String url = dl.getDownloadURL();
                 String name = dl.getName();
