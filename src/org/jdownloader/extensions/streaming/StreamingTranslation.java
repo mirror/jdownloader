@@ -82,4 +82,16 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Remove %s1 items from the library now?" })
     String mediatable_rly_remove_msg(int size);
+
+    @Default(lngs = { "en" }, values = { "Artist" })
+    String gui_video_artist();
+
+    @Default(lngs = { "en" }, values = { "Duration" })
+    String gui_video_duration();
+
+    @Default(lngs = { "en" }, values = { "Album" })
+    String gui_video_album();
+
+    @Default(lngs = { "en" }, values = { "Size" })
+    String gui_video_size();
 }

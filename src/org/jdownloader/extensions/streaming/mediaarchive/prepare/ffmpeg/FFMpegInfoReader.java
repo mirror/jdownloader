@@ -91,34 +91,48 @@ public class FFMpegInfoReader {
                 logger.info("ffprobe not found at " + path);
             }
 
-            ArrayList<Stream> streams = getStreams();
-            if (streams != null) {
-                for (Stream info : streams) {
+            if ("mp3".equals(getFormat().getFormat_name())) {
+                String ffmpeg = getFFMpegPath();
+                if (ffmpeg != null) {
+                    thumb = Application.getResource("tmp/streaming/cover/" + downloadLink.getUniqueID().toString() + ".jpg");
+                    thumb.getParentFile().mkdirs();
+                    thumb.delete();
+                    String[] ret = execute(ffmpeg, "-i", streamurl, "-c", "copy", thumb.getAbsolutePath());
+                    logger.info(ret[1]);
+                    System.out.println(2);
+                    if (thumb.length() == 0) thumb = null;
 
-                    if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
+                }
+            } else {
+                ArrayList<Stream> streams = getStreams();
+                if (streams != null) {
 
-                        String ffmpeg = getFFMpegPath();
-                        if (ffmpeg != null) {
-                            thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
-                            thumb.getParentFile().mkdirs();
-                            thumb.delete();
-                            int duration = getFormat().parseDuration();
-                            int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
-                            if (offsetInSeconds < 0) offsetInSeconds = 10;
-                            String[] ret = execute(ffmpeg, "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
-                            logger.info(ret[1]);
-                            System.out.println(2);
-                            if (thumb.length() == 0) thumb = null;
-                            break;
-                        } else {
-                            logger.info("FFMpeg not found at " + ffmpeg);
+                    for (Stream info : streams) {
 
+                        if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
+
+                            String ffmpeg = getFFMpegPath();
+                            if (ffmpeg != null) {
+                                thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
+                                thumb.getParentFile().mkdirs();
+                                thumb.delete();
+                                int duration = getFormat().parseDuration();
+                                int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
+                                if (offsetInSeconds < 0) offsetInSeconds = 10;
+                                String[] ret = execute(ffmpeg, "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
+                                logger.info(ret[1]);
+                                System.out.println(2);
+                                if (thumb.length() == 0) thumb = null;
+                                break;
+                            } else {
+                                logger.info("FFMpeg not found at " + ffmpeg);
+
+                            }
                         }
+
                     }
                 }
             }
-
-            // ffmpeg -itsoffset -4 -i test.avi -vcodec mjpeg -vframes 1 -an -f rawvideo -s 320x240 test.jpg
 
         } catch (Throwable e) {
             e.printStackTrace();

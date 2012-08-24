@@ -30,7 +30,6 @@ public class VideoMediaItem extends MediaItem {
     private long                   duration;
     private long                   bitrate;
     private ArrayList<VideoStream> videoStreams;
-    private String                 thumbnailPath;
 
     public VideoMediaItem(DownloadLink dl) {
         super(dl);
@@ -60,14 +59,6 @@ public class VideoMediaItem extends MediaItem {
 
     public ArrayList<VideoStream> getVideoStreams() {
         return videoStreams;
-    }
-
-    public void setThumbnailPath(String thumbnailPath) {
-        this.thumbnailPath = thumbnailPath;
-    }
-
-    public String getThumbnailPath() {
-        return thumbnailPath;
     }
 
 }

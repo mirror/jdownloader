@@ -12,6 +12,8 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.gui.MediaTableModel;
@@ -62,7 +64,21 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
                 return value.getName();
             }
         });
+        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_duration()) {
 
+            @Override
+            public String getStringValue(VideoMediaItem value) {
+                return TimeFormatter.formatSeconds(value.getDuration(), 0);
+            }
+        });
+
+        addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_size()) {
+
+            @Override
+            public String getStringValue(VideoMediaItem value) {
+                return SizeFormatter.formatBytes(value.getSize());
+            }
+        });
         addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_format()) {
 
             @Override

@@ -17,6 +17,7 @@ public class ImageItemStorable extends MediaItemStorable implements Storable {
         ret.setWidth(mi.getWidth());
         ret.setHeight(mi.getHeight());
         ret.setSize(mi.getSize());
+        ret.setThumbnailPath(mi.getThumbnailPath());
         ret.setContainerFormat(mi.getContainerFormat());
         return ret;
     }
@@ -46,6 +47,7 @@ public class ImageItemStorable extends MediaItemStorable implements Storable {
         ret.setWidth(getWidth());
         ret.setHeight(getHeight());
         ret.setSize(getSize());
+        ret.setThumbnailPath(getThumbnailPath());
         ret.setContainerFormat(getContainerFormat());
         return ret;
     }

@@ -73,7 +73,7 @@ public class VideoItemStorable extends MediaItemStorable implements Storable {
         ret.setBitrate(getBitrate());
         ret.setDuration(getDuration());
         ret.setThumbnailPath(getThumbnailPath());
-
+        ret.setContainerFormat(getContainerFormat());
         return ret;
     }
 

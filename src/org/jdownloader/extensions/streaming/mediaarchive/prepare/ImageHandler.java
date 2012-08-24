@@ -1,12 +1,16 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
+import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
@@ -27,6 +31,12 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
             ret.setWidth(image.getWidth());
             ret.setHeight(image.getHeight());
 
+            File thumb = Application.getResource("tmp/streaming/thumbs/" + dl.getUniqueID().toString() + ".png");
+            thumb.getParentFile().mkdirs();
+            thumb.delete();
+
+            ImageIO.write(IconIO.getScaledInstance(image, 300, 300), "png", thumb);
+            ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), thumb));
             return ret;
         } catch (Throwable e) {
             e.printStackTrace();

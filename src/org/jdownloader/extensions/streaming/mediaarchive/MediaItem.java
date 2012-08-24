@@ -17,6 +17,16 @@ public abstract class MediaItem implements MediaNode {
         return downloadLink;
     }
 
+    private String thumbnailPath;
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
+    }
+
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
     public void setDownloadLink(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
     }

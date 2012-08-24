@@ -48,4 +48,5 @@ public class AudioMediaItem extends MediaItem {
 
     private String album;
     private String title;
+
 }

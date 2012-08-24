@@ -56,6 +56,7 @@ public class AudioItemStorable extends MediaItemStorable implements Storable {
         ret.setStream(mi.getStream());
         ret.setAlbum(mi.getAlbum());
         ret.setArtist(mi.getArtist());
+        ret.setThumbnailPath(mi.getThumbnailPath());
         ret.setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
         ret.setTitle(mi.getTitle());
         ret.setSize(mi.getSize());
@@ -66,7 +67,7 @@ public class AudioItemStorable extends MediaItemStorable implements Storable {
     public AudioMediaItem toAudioMediaItem() {
 
         AudioMediaItem ret = new AudioMediaItem(getDownloadLink()._getDownloadLink());
-
+        ret.setThumbnailPath(getThumbnailPath());
         ret.setAlbum(getAlbum());
         ret.setArtist(getArtist());
         ret.setSize(getSize());

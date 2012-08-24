@@ -1,10 +1,13 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.Application;
+import org.appwork.utils.Files;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.AudioMediaItem;
@@ -41,7 +44,7 @@ public class AudioHandler extends ExtensionHandler<AudioMediaItem> {
                         }
 
                     }
-
+                    ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
                     ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
                     ret.setSize(ffmpeg.getFormat().parseSize());
                     if (ffmpeg.getFormat().getTags() != null) {
