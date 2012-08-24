@@ -142,24 +142,33 @@ public class FFMpegInfoReader {
     }
 
     private String getFFMpegPath() {
+
         if (CrossSystem.isWindows()) {
             File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffmpeg.exe");
             if (ffprobe.exists()) return ffprobe.getAbsolutePath();
-        } else {
-            return "ffmpeg";
+        } else if (CrossSystem.isLinux()) {
+            File ffprobe = Application.getResource("tools\\linux\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffmpeg");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+        } else if (CrossSystem.isMac()) {
+            File ffprobe = Application.getResource("tools\\mac\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffmpeg");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
         }
-        return null;
+        return "ffmpeg";
     }
 
     private String getFFProbePath() {
         if (CrossSystem.isWindows()) {
             File ffprobe = Application.getResource("tools\\Windows\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\bin\\ffprobe.exe");
             if (ffprobe.exists()) return ffprobe.getAbsolutePath();
-        } else {
-            return "ffprobe";
+        } else if (CrossSystem.isLinux()) {
+            File ffprobe = Application.getResource("tools\\linux\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffprobe");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
+        } else if (CrossSystem.isMac()) {
+            File ffprobe = Application.getResource("tools\\mac\\ffmpeg\\" + (CrossSystem.is64BitOperatingSystem() ? "x64" : "i386") + "\\ffprobe");
+            if (ffprobe.exists()) return ffprobe.getAbsolutePath();
         }
+        return "ffprobe";
 
-        return null;
     }
 
     public String getMajorBrand() {
