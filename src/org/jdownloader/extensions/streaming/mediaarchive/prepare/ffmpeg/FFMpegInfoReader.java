@@ -21,7 +21,11 @@ import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.logging.LogController;
 
 public class FFMpegInfoReader {
-
+    /*
+     * Have a static image displayed while a song plays.
+     * 
+     * $ ffmpeg -i audio.mp3 -loop_input -i albumcover.jpg -vcodec libx264 -preset slow -crf 20 -threads 0 -acodec copy -shortest output.mkv
+     */
     // if the call takes longer than 10 minutes. interrupt it
     protected static final long FFMPEG_EXECUTE_TIMEOUT = 10 * 60 * 1000l;
     private DownloadLink        downloadLink;

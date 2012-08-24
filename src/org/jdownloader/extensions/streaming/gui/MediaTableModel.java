@@ -26,6 +26,11 @@ public abstract class MediaTableModel<T extends MediaItem, E extends MediaListCo
         super(id);
         this.listController = listController;
         listController.getEventSender().addListener(this, true);
+        onContentChanged(listController);
+    }
+
+    public E getListController() {
+        return listController;
     }
 
 }

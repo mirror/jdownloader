@@ -38,6 +38,10 @@ public class VideoMediaItem extends MediaItem {
         videoStreams = new ArrayList<VideoStream>();
     }
 
+    public void setVideoStreams(ArrayList<VideoStream> videoStreams) {
+        this.videoStreams = videoStreams;
+    }
+
     public void setBitrate(long parseInt) {
         this.bitrate = parseInt;
     }

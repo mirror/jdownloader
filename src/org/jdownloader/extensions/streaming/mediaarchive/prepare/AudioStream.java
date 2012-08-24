@@ -1,6 +1,12 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
-public class AudioStream {
+import org.appwork.storage.Storable;
+
+public class AudioStream implements Storable {
+
+    public AudioStream(/* Storable */) {
+
+    }
 
     private int bitrate;
 

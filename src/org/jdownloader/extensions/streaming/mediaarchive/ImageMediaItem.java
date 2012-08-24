@@ -26,14 +26,6 @@ public class ImageMediaItem extends MediaItem {
         this.height = height;
     }
 
-    private int    height;
-    private String type;
+    private int height;
 
-    public void setType(String string) {
-        this.type = string;
-    }
-
-    public String getType() {
-        return type;
-    }
 }

@@ -76,4 +76,10 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Scan Information: %s1" })
     String prepare(String name);
+
+    @Default(lngs = { "en" }, values = { "Are your sure?" })
+    String mediatable_rly_remove_title();
+
+    @Default(lngs = { "en" }, values = { "Remove %s1 items from the library now?" })
+    String mediatable_rly_remove_msg(int size);
 }

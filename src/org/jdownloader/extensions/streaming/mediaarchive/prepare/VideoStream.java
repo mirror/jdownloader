@@ -1,6 +1,11 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
-public class VideoStream {
+import org.appwork.storage.Storable;
+
+public class VideoStream implements Storable {
+    public VideoStream(/* Storable */) {
+
+    }
 
     private int bitrate;
 

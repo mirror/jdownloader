@@ -6,8 +6,6 @@ import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
 
 public class AudioMediaItem extends MediaItem {
 
-    private AudioStream stream;
-
     public AudioMediaItem(DownloadLink dl) {
         super(dl);
     }
@@ -16,7 +14,9 @@ public class AudioMediaItem extends MediaItem {
         this.stream = as;
     }
 
-    private String artist;
+    private AudioStream stream;
+
+    private String      artist;
 
     public String getArtist() {
         return artist;

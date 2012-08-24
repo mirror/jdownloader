@@ -13,6 +13,14 @@ public abstract class MediaItem implements MediaNode {
         this.downloadLink = dl;
     }
 
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
+    }
+
+    public void setDownloadLink(DownloadLink downloadLink) {
+        this.downloadLink = downloadLink;
+    }
+
     @Override
     public String getName() {
         return downloadLink.getName();
