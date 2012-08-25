@@ -29,8 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|videos)/\\w+/[\\w\\-]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|videos|reviews)/\\w+/[\\w\\-]+)" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
+
     private static final String ua = RandomUserAgent.generate();
 
     public GameTrailersCom(final PluginWrapper wrapper) {
@@ -65,8 +66,10 @@ public class GameTrailersCom extends PluginForDecrypt {
                 br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(cId) + "&forceProgressive=true");
                 String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
                 if (link == null) continue;
-                DownloadLink dl = createDownloadlink("directhttp://" + link);
-                dl.setFinalFileName(getVideoTitle(episodesTitle + "_Part" + i++));
+                DownloadLink dl = createDownloadlink(link);
+                dl.setFinalFileName(getVideoTitle(episodesTitle + (contentIds.length > 1 ? "_Part" + i++ : "")));
+                dl.setProperty("CONTENTID", cId);
+                dl.setProperty("GRABBEDTIME", System.currentTimeMillis());
                 decryptedLinks.add(dl);
             }
             if (videoTitle.startsWith(" |")) {
@@ -79,8 +82,10 @@ public class GameTrailersCom extends PluginForDecrypt {
             String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
             if (link == null) return decryptedLinks;
 
-            DownloadLink dl = createDownloadlink("directhttp://" + link);
+            DownloadLink dl = createDownloadlink(link);
             dl.setFinalFileName(getVideoTitle(videoTitle));
+            dl.setProperty("CONTENTID", contentId);
+            dl.setProperty("GRABBEDTIME", System.currentTimeMillis());
             decryptedLinks.add(dl);
         }
         if (videoTitle != null) {
@@ -96,7 +101,7 @@ public class GameTrailersCom extends PluginForDecrypt {
         s = s.replace("._Part", "_Part");
         String ext = br.getRegex("type=\"video/([0-9a-zA-Z]{3,5})\"").getMatch(0);
         ext = ext != null ? ext : "mp4";
-        return s.trim() + "." + ext;
+        return Encoding.htmlDecode(s.trim() + "." + ext);
     }
 
 }
