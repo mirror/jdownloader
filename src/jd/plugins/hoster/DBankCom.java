@@ -37,7 +37,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbank.com" }, urls = { "http://(www\\.)?dbankdecrypted\\.com/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com", "dbank.com" }, urls = { "http://(www\\.)?vmalldecrypted\\.com/\\d+", "vgt5ui6trbevf6ijmnbdli94DELETEME" }, flags = { 2, 0 })
 public class DBankCom extends PluginForHost {
 
     public DBankCom(PluginWrapper wrapper) {
@@ -51,7 +51,7 @@ public class DBankCom extends PluginForHost {
     }
 
     private static final Object LOCK     = new Object();
-    private static final String MAINPAGE = "http://dbank.com/";
+    private static final String MAINPAGE = "http://vmall.com/";
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -90,7 +90,7 @@ public class DBankCom extends PluginForHost {
                     passCode = downloadLink.getStringProperty("password");
                 }
 
-                br.postPage("http://dl.dbank.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
+                br.postPage("http://dl.vmall.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
                 if (br.getRegex("\"retcode\":\"0000\"").matches()) {
                     break;
                 }
@@ -169,7 +169,7 @@ public class DBankCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://login.dbank.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.dbank.com%2FServiceLogin.action&forward=&relog=&client=&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://login.vmall.com/accounts/loginAuth", "userDomain.rememberme=true&ru=http%3A%2F%2Fwww.vmall.com%2FServiceLogin.action&forward=&relog=&client=&userDomain.user.email=" + Encoding.urlEncode(account.getUser()) + "&userDomain.user.password=" + Encoding.urlEncode(account.getPass()));
                 if (!"normal".equals(br.getCookie(MAINPAGE, "login_type"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

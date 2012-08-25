@@ -43,52 +43,61 @@ public class UnixMangaCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> tempList = new ArrayList<String>();
         br.setFollowRedirects(true);
         String url = parameter.toString();
         br.getPage(url);
 
         // We get the title
-        String title = br.getRegex(".*?/(.+?)/.*?").getMatch(0);
+        String title = br.getRegex("<TITLE>READ\\-\\->\\.\\.([^<>\"]*?)\\.\\.<\\-\\-ONLINE ACCESS</TITLE>").getMatch(0);
         if (title == null) {
             logger.warning("Title not found! : " + parameter);
             return null;
         }
-        // grab first page within the viewer
-        br.getPage(br.getRegex("(?i)<A class=\"td2\" rel=\"nofollow\" HREF=\"(http[^\"]+)").getMatch(0));
         // set sub + domain used, used later in page views
         String Url = new Regex(br.getURL(), "(?i)(https?://[^/]+)").getMatch(0);
-        // grab the total pages within viewer
-        String TotalPages = br.getRegex("(?i)<a href=\".+\\?image=.+\\.html\">(\\d+)</a>[\r\n]+</center></div>").getMatch(0);
-        if (TotalPages == null) {
-            logger.warning("Intial page not found! : " + parameter);
+        // We load each page and retrieve the URL of the picture
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+
+        // Grab all available images
+        final String[] allImages = br.getRegex("<A class=\"td2\" rel=\"nofollow\" HREF=\"(http://[^<>\"]*?)\\&server=").getColumn(0);
+        if (allImages == null || allImages.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        } else {
-
-            int numberOfPages = Integer.parseInt(TotalPages);
-            String format = "%02d";
-            if (numberOfPages > 0) {
-                format = String.format("%%0%dd", (int) Math.log10(numberOfPages) + 1);
-            }
-
-            progress.setRange(numberOfPages);
-
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            // We load each page and retrieve the URL of the picture
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            for (int i = 0; i < numberOfPages; i++) {
-                String pageNumber = String.format(format, (i + 1));
-                // grab the image source
-                String Img = br.getRegex("(?i)<IMG ALT=\" \" STYLE=\"border: solid 1px #\\d+\" SRC=\"(http[^\"]+)").getMatch(0);
-                if (Img == null) {
-                    logger.warning("No images found for page : " + pageNumber + " : " + parameter);
-                    logger.warning("Continuing...");
+        }
+        for (final String img : allImages) {
+            tempList.add(img);
+        }
+        int counter = 1;
+        for (final String img : tempList) {
+            // remove unnecessary images from saving
+            if (!img.contains("xxxhomeunixxxx.png")) {
+                String extension = img.substring(img.lastIndexOf("."));
+                final DownloadLink link = createDownloadlink("directhttp://" + img.replace("?image=", ""));
+                link.setFinalFileName(title + "–page_" + counter + extension);
+                fp.add(link);
+                try {
+                    distribute(link);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
                 }
-                // remove unnecessary images from saving
-                if (!Img.contains("xxxhomeunixxxx.png")) {
-                    String extension = Img.substring(Img.lastIndexOf("."));
-                    DownloadLink link = createDownloadlink("directhttp://" + Img);
-                    link.setFinalFileName(title + "–page_" + pageNumber + extension);
+                decryptedLinks.add(link);
+            }
+            counter++;
+        }
+        br.getPage(tempList.get(counter - 2));
+        while (true) {
+            // We look for next page and load it ready for the 'for' loop.
+            String nextPage = br.getRegex("document\\.write\\(\\'<a href =\"(\\?image=[^<>\"]*?)\"><b>\\[NEXT PAGE\\]<").getMatch(0);
+            if (nextPage != null) {
+                nextPage = "http://nas.homeunix.com/onlinereading/" + nextPage;
+                br.getPage(nextPage);
+                if (!nextPage.contains("xxxhomeunixxxx.png")) {
+                    String extension = nextPage.substring(nextPage.lastIndexOf("."));
+                    final DownloadLink link = createDownloadlink("directhttp://" + nextPage.replace("?image=", ""));
+                    link.setFinalFileName(title + "–page_" + counter + extension);
                     fp.add(link);
                     try {
                         distribute(link);
@@ -97,27 +106,12 @@ public class UnixMangaCom extends PluginForDecrypt {
                     }
                     decryptedLinks.add(link);
                 }
-                progress.increase(1);
-                // We look for next page and load it ready for the 'for' loop.
-                String NextPage = br.getRegex("(?i)<a class=\"ne\" href =\"(http[^\"]+)").getMatch(0);
-                if (NextPage != null) {
-                    br.getPage(NextPage);
-                    continue;
-                }
-                if (NextPage == null) {
-                    NextPage = br.getRegex("(?i)<a class=\"ne\" href =\"(\\?image=[^\"]+)").getMatch(0);
-                    if (NextPage != null) {
-                        br.getPage(Url + "/onlinereading/" + NextPage);
-                        continue;
-                    } else if ((NextPage == null) && (!pageNumber.equals(TotalPages))) {
-                        logger.warning("Plugin broken : " + parameter);
-                        return null;
-                    } else {
-                        logger.warning("Task Complete! : " + parameter);
-                    }
-                }
+                continue;
+            } else {
+                break;
             }
-            return decryptedLinks;
+
         }
+        return decryptedLinks;
     }
 }

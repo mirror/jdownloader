@@ -49,7 +49,7 @@ public class RLCsh extends PluginForDecrypt {
         String[] ret = new String[names.length];
 
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=).+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|reset_password|register_new|index\\.php).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
 
         }
         return ret;
@@ -80,11 +80,14 @@ public class RLCsh extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
-        if (link == null) link = br.getRegex("onClick=\"top\\.location='(.*?)'\">").getMatch(0);
-        if (link == null) link = br.getRegex("<iframe name='redirectframe' id='redirectframe'.*?src='(.*?)'.*?></iframe>").getMatch(0);
+        String link = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" .*? URL=(.*?)\">").getMatch(0);
+        if (link == null) link = br.getRegex("onClick=\"top\\.location=\\'(.*?)\\'\">").getMatch(0);
+        if (link == null) link = br.getRegex("<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
         if (link == null) link = br.getRedirectLocation();
-        if (link == null) return null;
+        if (link == null) {
+            logger.warning("Decrypter broken for link:" + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         return decryptedLinks;
     }

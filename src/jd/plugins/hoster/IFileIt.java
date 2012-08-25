@@ -48,7 +48,7 @@ public class IFileIt extends PluginForHost {
     private boolean             showDialog              = false;
     private int                 MAXFREECHUNKS           = 1;
     private static final String ONLY4REGISTERED         = "\"message\":\"signup\"";
-    private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Only downloadable for registered users");
+    private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
     private static final String NOCHUNKS                = "NOCHUNKS";
     private static final String NORESUME                = "NORESUME";
     private static final String MAINPAGE                = "http://filecloud.io/";
@@ -84,7 +84,7 @@ public class IFileIt extends PluginForHost {
         br2.setReadTimeout(40 * 1000);
         final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
         xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1);
-        if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_FATAL, ONLY4REGISTEREDUSERTEXT); }
+        if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
         if (br2.containsHTML("\"captcha\":1")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);

@@ -74,6 +74,7 @@ public class OneFichierCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
+        if (br.containsHTML(">The requested file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("password")) {
             pwProtected = true;

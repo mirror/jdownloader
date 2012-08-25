@@ -21,13 +21,14 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thekollection.com" }, urls = { "http://((www|dubstep|electro|indie)\\.)?thekollection\\.com/[\\w\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "thekollection.com" }, urls = { "http://(www\\.)?((dubstep|electro|indie)\\.)?thekollection\\.com/(?!wp\\-includes|wp\\-content|category|about|contact|playlists|submit)[\\w\\-]+/" }, flags = { 0 })
 public class TKlnCm extends PluginForDecrypt {
 
     // https not currently available
@@ -39,7 +40,10 @@ public class TKlnCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("http://www.", "http://");
-        if (parameter.contains(".com/artist") || parameter.contains(".com/category")) return null;
+        if (parameter.contains(".com/artist") || parameter.contains(".com/category")) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         br.setCookie("http://thekollection.com", "lang", "en");
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
@@ -50,11 +54,14 @@ public class TKlnCm extends PluginForDecrypt {
         }
         String fpName = br.getRegex("h1 id=\"post\\-\\d+\" class=\"entry\\-title\">(.*?)</h1>").getMatch(0);
         if (fpName == null) br.getRegex("<title>The Kollection  \\&raquo\\; (.*?)</title>").getMatch(0);
-        String[] links = br.getRegex("<div class=\"so\\-player\">[\r\n\t]+<a href=\"(.*?)\" class=\"wpaudio\">").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         if (links != null && links.length != 0) {
-            for (String dl : links)
-                decryptedLinks.add(createDownloadlink(dl));
+            for (final String dl : links)
+                if (!this.canHandle(dl)) decryptedLinks.add(createDownloadlink(dl));
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

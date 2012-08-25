@@ -537,6 +537,7 @@ public class BzLinkUs extends PluginForHost {
             }
             if (passCode != null) link.setProperty("pass", passCode);
             link.setProperty("premlink", dllink);
+            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
             dl.startDownload();
         }
     }

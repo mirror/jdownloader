@@ -37,7 +37,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dbank.com" }, urls = { "http://(www\\.)?dl\\.dbank\\.com/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vmall.com" }, urls = { "http://(www\\.)?dl\\.(dbank|vmall)\\.com/[a-z0-9]+" }, flags = { 0 })
 public class DBankComFolder extends PluginForDecrypt {
 
     public DBankComFolder(PluginWrapper wrapper) {
@@ -48,9 +48,9 @@ public class DBankComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        String parameter = param.toString();
+        String parameter = param.toString().replace("dbank.com/", "vmall.com/");
         br.getPage(parameter);
-        if (br.getURL().contains("dbank.com/linknotexist.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
+        if (br.getURL().contains("vmall.com/linknotexist.html") || br.containsHTML("(>抱歉，此外链不存在。|1、你输入的地址错误；<br/>|2、外链中含非法内容；<br />|3、创建外链的文件还没有上传到服务器，请稍后再试。<br /><br />)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -62,7 +62,7 @@ public class DBankComFolder extends PluginForDecrypt {
 
             for (int i = 0; i < 3; i++) {
                 passCode = Plugin.getUserInput(null, param);
-                br.postPage("http://dl.dbank.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
+                br.postPage("http://dl.vmall.com/app/encry_resource.php", "id=" + id + "&context=%7B%22pwd%22%3A%22" + passCode + "%22%7D&action=verify");
                 if (br.getRegex("\"retcode\":\"0000\"").matches()) {
                     break;
                 }
@@ -88,7 +88,7 @@ public class DBankComFolder extends PluginForDecrypt {
             for (String[] single : new Regex(all[0].replaceAll("\\\\/", "/"), "\"([^\",]+)\":\"?([^\"?,]+)").getMatches()) {
                 linkParameter.put(single[0], single[1]);
             }
-            DownloadLink dl = createDownloadlink("http://dbankdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
+            DownloadLink dl = createDownloadlink("http://vmalldecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(10000));
             for (final Entry<String, String> next : linkParameter.entrySet()) {
                 dl.setProperty(next.getKey(), next.getValue());
             }

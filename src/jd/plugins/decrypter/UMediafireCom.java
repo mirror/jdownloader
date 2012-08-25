@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "umediafire.com" }, urls = { "http://(www\\.)?umediafire\\.com/\\?d=[A-Za-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "linkhalt.com" }, urls = { "http://(www\\.)?(umediafire|linkhalt)\\.com/\\?d=[A-Za-z0-9]+" }, flags = { 0 })
 public class UMediafireCom extends PluginForDecrypt {
 
     public UMediafireCom(PluginWrapper wrapper) {
@@ -36,8 +36,12 @@ public class UMediafireCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("umediafire.com/", "linkhalt.com/");
         br.getPage(parameter);
+        if (br.containsHTML(">Sorry, file is not exist or has been deleted")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String iFrame = br.getRegex("\"(index\\.php\\?get=\\d+)\"").getMatch(0);
         if (iFrame == null) {
             if (br.getRedirectLocation() != null) {
@@ -49,7 +53,7 @@ public class UMediafireCom extends PluginForDecrypt {
             logger.info("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("http://umediafire.com/" + iFrame);
+        br.getPage("http://linkhalt.com/" + iFrame);
         if (br.containsHTML("google\\.com/recaptcha")) {
             if (br.containsHTML("google\\.com/recaptcha")) {
                 for (int i = 0; i <= 5; i++) {

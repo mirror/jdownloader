@@ -122,8 +122,8 @@ public class ChoMikujPl extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String savePost = postdata;
         String saveLink = null;
-        final PluginForHost lol = JDUtilities.getPluginForHost("chomikuj.pl");
-        final boolean decryptFolders = lol.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS);
+        final PluginForHost chomikujpl = JDUtilities.getPluginForHost("chomikuj.pl");
+        final boolean decryptFolders = chomikujpl.getPluginConfig().getBooleanProperty(jd.plugins.hoster.ChoMikujPl.DECRYPTFOLDERS, false);
         // Password handling
         if (br.containsHTML(PASSWORDTEXT)) {
             prepareBrowser(parameter, br);
@@ -196,8 +196,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
                 /** Specified for videos */
-                fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']+)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
-                addRegexInt(2, 3, 0, 1, 0);
+                fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
+                addRegexInt(2, 4, 0, 1, 0);
                 /**
                  * Last attempt, only get IDs (no pre-available-check possible)
                  */
@@ -223,10 +223,10 @@ public class ChoMikujPl extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
                     dl.setProperty("fileid", id[REGEXSORT.get(3)]);
                     if (id.length > 1) {
-                        if (id.length == 5) {
-                            dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim()));
+                        if (id.length == 6) {
+                            dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(4)].trim())));
                         } else {
-                            dl.setName(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim());
+                            dl.setName(correctFilename(Encoding.htmlDecode(id[REGEXSORT.get(0)].trim()) + id[REGEXSORT.get(1)].trim()));
 
                         }
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
@@ -315,5 +315,9 @@ public class ChoMikujPl extends PluginForDecrypt {
         bro.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
         bro.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         bro.getHeaders().put("Pragma", "no-cache");
+    }
+
+    private String correctFilename(final String filename) {
+        return filename.replace("<span class=\"e\"> </span>", "");
     }
 }

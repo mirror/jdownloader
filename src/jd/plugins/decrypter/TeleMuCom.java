@@ -22,14 +22,12 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://[\\w\\.]*telechargementmu\\.com/.*\\.html.*|http://feedproxy.google.com/~r/telechargementmu/.*\\.html.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "telechargementmu.com" }, urls = { "http://(www\\.)?telechargementmu\\.com/.*\\.html.*|http://feedproxy\\.google\\.com/~r/telechargementmu/.*\\.html.*" }, flags = { 0 })
 public class TeleMuCom extends PluginForDecrypt {
 
     public TeleMuCom(PluginWrapper wrapper) {
@@ -49,7 +47,6 @@ public class TeleMuCom extends PluginForDecrypt {
         br.setCookie(parameter, "dle_user_id", "9756");
         br.setCookie(parameter, "dle_password", "23d45b337ff85d0a326a79082f7c6f50");
         br.getPage(parameter);
-        if (br.containsHTML("(You must  register before you can view this text.)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "You may be logon on the web site to available links."));
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<h3>(.*?)</h3>").getMatch(0);
@@ -61,7 +58,7 @@ public class TeleMuCom extends PluginForDecrypt {
         fpName = RemoveCharacter(fpName);
 
         int iLinkImage = 0;
-        String[] TabImage = br.getRegex("<img[^>]+src\\s*=\\s*['\"](http://[^'\"]+)\\.jpg['\"][^>]*>").getColumn(0);
+        String[] TabImage = br.getRegex("<img[^>]+src\\s*=\\s*[\\'\"](http://[^\\'\"]+)\\.jpg[\\'\"][^>]*>").getColumn(0);
 
         if (TabImage != null) {
             for (String strImageLink : TabImage) {
@@ -83,12 +80,9 @@ public class TeleMuCom extends PluginForDecrypt {
         // Number of picture
         int iImage = TabImage == null ? 0 : TabImage.length;
 
-        progress.setRange(links.length + iImage + linksCrypted.length);
-
         // Added links
         for (String redirectlink : links) {
             decryptedLinks.add(createDownloadlink(redirectlink));
-            progress.increase(1);
         }
 
         // Added crypted links
@@ -97,14 +91,12 @@ public class TeleMuCom extends PluginForDecrypt {
             String finallink = br.getRedirectLocation();
             if (finallink != null) {
                 decryptedLinks.add(createDownloadlink(finallink));
-                progress.increase(1);
             }
         }
 
         if (TabImage != null) {
             for (String strImageLink : TabImage) {
                 decryptedLinks.add(createDownloadlink(strImageLink));
-                progress.increase(1);
             }
         }
 

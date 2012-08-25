@@ -24,6 +24,8 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +40,8 @@ public class LiveFileOrg extends PluginForHost {
 
     public LiveFileOrg(PluginWrapper wrapper) {
         super(wrapper);
+        this.setAccountwithoutUsername(true);
+        this.enablePremium();
     }
 
     @Override
@@ -116,6 +120,30 @@ public class LiveFileOrg extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    @Override
+    public void handlePremium(DownloadLink link, Account account) throws Exception {
+        requestFileInformation(link);
+        final String postdata = "file=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "&keycode=" + account.getPass();
+        // Chunkload = Temporary account block -> Bad idea ;)
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://livefile.org/valid.php", postdata, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many connections!", 10 * 60 * 1000l);
+            br.followConnection();
+            if (br.containsHTML("Key code not found\\!")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            logger.warning("The final dllink seems not to be a file...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        account.setValid(true);
+        ai.setStatus("Status can only be checked while downloading!");
+        return ai;
     }
 
     @Override
