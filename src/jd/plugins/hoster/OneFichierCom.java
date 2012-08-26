@@ -159,7 +159,7 @@ public class OneFichierCom extends PluginForHost {
                 // Regex(downloadLink.getDownloadURL(),
                 // "https?://([^\\.]+)").getMatch(0) +
                 // "[^;]+)").getMatch(0);
-                br.postPage(downloadLink.getDownloadURL() + "en/", "submit=Download+the+file");
+                br.postPage(downloadLink.getDownloadURL() + "en/", "a=1&submit=Download+the+file");
             }
             if (dllink == null) dllink = br.getRedirectLocation();
             if (dllink == null) {
