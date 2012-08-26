@@ -41,6 +41,10 @@ public class ImagesHackUs extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.getURL().equals("http://imageshack.us/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.matches(".*?imageshack\\.us/photo/[^<>\"\\'/]+/\\d+/[^<>\"\\'/]+")) {
             String finallink = br.getRegex("<meta property=\"og:image\" content=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);

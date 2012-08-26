@@ -44,7 +44,8 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://[\\w\\.]*?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+//Similar to SafeUrlMe (safeurl.me)
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
 
     private enum CaptchaTyp {

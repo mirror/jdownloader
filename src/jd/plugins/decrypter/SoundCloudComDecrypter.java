@@ -54,6 +54,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         if (decryptList) {
             br.getPage(parameter);
+            int lastPage = 1;
+            // only decrypt multiple pages if the user didn't specify and page
+            // higher than 1
+            if (parameter.endsWith("page=1") || !parameter.contains("page=")) {
+                final String maxpage = br.getRegex("class=\"gap\">\\&hellip;</span> <a href=\"[^<>\"]*?page=(\\d+)\"").getMatch(0);
+                if (maxpage != null) lastPage = Integer.parseInt(maxpage);
+            }
+            parameter = parameter.replaceAll("(\\?format=html\\&page=\\d+|\\?page=\\d+)", "");
             if (br.containsHTML(">Oops, looks like we can\\'t find that page")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
@@ -63,28 +71,32 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String fpName = br.getRegex("<title>(.*?) on SoundCloud \\- Create, record and share your sounds for free</title>").getMatch(0);
-            String[] links = br.getRegex("\"(http://soundcloud\\.com/[^\"\\'<>]+)\" property=\"og:song\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                links = br.getRegex("class=\"info\"><span>\\d+\\.</span>[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
+            for (int i = 1; i <= lastPage; i++) {
+                logger.info("Decrypting page " + i + " of " + lastPage);
+                if (i > 1) br.getPage(parameter + "?page=" + i);
+                String[] links = br.getRegex("\"(http://soundcloud\\.com/[^\"\\'<>]+)\" property=\"og:song\"").getColumn(0);
                 if (links == null || links.length == 0) {
-                    links = br.getRegex("class=\"action\\-overlay\\-inner\"><a href=\"(/.*?)\"").getColumn(0);
+                    links = br.getRegex("class=\"info\"><span>\\d+\\.</span>[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
                     if (links == null || links.length == 0) {
-                        links = br.getRegex("<h3><a href=\"(/.*?)\"").getColumn(0);
+                        links = br.getRegex("class=\"action\\-overlay\\-inner\"><a href=\"(/.*?)\"").getColumn(0);
+                        if (links == null || links.length == 0) {
+                            links = br.getRegex("<h3><a href=\"(/.*?)\"").getColumn(0);
+                        }
                     }
                 }
-            }
-            String[] playListLinks = br.getRegex("<li class=\"playlist\\-player \"><a href=\"(/[^\"\\'<>]+)(\\?size=large)?\"").getColumn(0);
-            if ((links == null || links.length == 0) && (playListLinks == null || playListLinks.length == 0)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            if (links != null && links.length != 0) {
-                for (String sclink : links)
-                    decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
-            }
-            if (playListLinks != null && playListLinks.length != 0) {
-                for (String sclink : playListLinks)
-                    decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+                String[] playListLinks = br.getRegex("<li class=\"playlist\\-player \"><a href=\"(/[^\"\\'<>]+)(\\?size=large)?\"").getColumn(0);
+                if ((links == null || links.length == 0) && (playListLinks == null || playListLinks.length == 0)) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                if (links != null && links.length != 0) {
+                    for (String sclink : links)
+                        decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+                }
+                if (playListLinks != null && playListLinks.length != 0) {
+                    for (String sclink : playListLinks)
+                        decryptedLinks.add(createDownloadlink("http://soundclouddecrypted.com" + sclink));
+                }
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,28 +39,23 @@ public class IFileItFldr extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("ifile.it/", "filecloud.io/");
         br.getPage(parameter);
-        String fpName = br.getRegex("<title>(.*?)\\| filecloud\\.io</title>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<legend>(.*?)</legend>").getMatch(0);
-        String[] linkinformation = br.getRegex("<tr class=\"context_row\" id=\"row.*?\">(.*?)</tr>").getColumn(0);
+        String fpName = br.getRegex("<title>([^<>\"]*?) \\- filecloud\\.io</title>").getMatch(0);
+        String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
         boolean fail = false;
         if (linkinformation == null || linkinformation.length == 0) {
             fail = true;
-            linkinformation = br.getRegex("class=\"file_link\" href=\"(http.*?)\"").getColumn(0);
+            linkinformation = br.getRegex("ukey\":\"([^<>\"]*?)\"").getMatches();
         }
         if (linkinformation == null || linkinformation.length == 0) return null;
-        for (String info : linkinformation) {
-            String filename = new Regex(info, "class=\"file_name\" id=\".*?\">(.*?)</span>").getMatch(0);
-            String filesize = new Regex(info, "<td align=\"center\" valign=\"middle\"  class=\"(even|odd)\">(.*?)</td>").getMatch(1);
-            String filelink = new Regex(info, "class=\"file_link\" href=\"(http.*?)\"").getMatch(0);
-            if (fail) filelink = info;
-            DownloadLink dl = createDownloadlink(filelink);
-            if (filename != null && filesize != null) dl.setAvailable(true);
-            if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-            if (filename != null) dl.setName(filename.trim());
-            if (filelink != null) {
-                decryptedLinks.add(dl);
+        for (final String[] info : linkinformation) {
+            if (fail) {
+                decryptedLinks.add(createDownloadlink("http://filecloud.io/" + info[0]));
             } else {
-                logger.warning("filelink for \"" + info + "\" could not be found!");
+                final DownloadLink dl = createDownloadlink("http://filecloud.io/" + info[2]);
+                dl.setAvailable(true);
+                dl.setDownloadSize(SizeFormatter.getSize(info[0].trim()));
+                dl.setName(info[1].trim());
+                decryptedLinks.add(dl);
             }
         }
         if (fpName != null) {

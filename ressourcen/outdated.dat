@@ -885,3 +885,5 @@ jd/plugins/decrypter/FlashbookSchroedelDe.class
 jd/captcha/methods/cnt
 jd/plugins/decrypter/CnT.class
 jd/plugins/decrypter/LlStrmnf.class
+jd/captcha/methods/scmn
+jd/plugins/decrypter/Scmn.class

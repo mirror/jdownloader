@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "osu.yas-online.net" }, urls = { "http://(www\\.)?(osu\\.yas\\-online\\.net|osupacks\\.ppy\\.sh)/((p|m)#\\d+|t#[^\"\\'<>]+\\-\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "osu.yas-online.net" }, urls = { "https?://(www\\.)?(osu\\.yas\\-online\\.net|osupacks\\.ppy\\.sh)/((p|m)#\\d+|t#[^\"\\'<>]+\\-\\d+)" }, flags = { 0 })
 public class OsuYasOnlineNet extends PluginForHost {
 
     private static final String OFFLINE = "\"Theme or pack does not exist";
@@ -40,7 +40,7 @@ public class OsuYasOnlineNet extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("osu.yas-online.net/", "osupacks.ppy.sh/"));
+        link.setUrlDownload(link.getDownloadURL().replace("osu.yas-online.net/", "osupacks.ppy.sh/").replace("https://", "http://"));
     }
 
     @Override
@@ -74,6 +74,7 @@ public class OsuYasOnlineNet extends PluginForHost {
         br.setFollowRedirects(false);
         String size = null;
         String filename = null;
+        br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (link.getDownloadURL().contains("osupacks.ppy.sh/p#")) {
             final String id = new Regex(link.getDownloadURL(), "osupacks\\.ppy\\.sh/p#(\\d+)").getMatch(0);

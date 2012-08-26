@@ -133,17 +133,15 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            System.out.println(br.toString() + "n");
-            final String postData = "cacheBuster=" + System.currentTimeMillis() + "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22%22%2C%22htmlHostDomain%22%3Anull%2C%22request%22%3A%22getAllData%22%2C%22playerOnly%22%3A%22true%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22appdataurl%22%3A%22" + Encoding.urlEncode(externID) + "%22%2C%22path%22%3A%22%22%2C%22cb%22%3A%22" + cb + "%22%7D&cacheBuster=" + System.currentTimeMillis();
+            final String postData = "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22%22%2C%22htmlHostDomain%22%3Anull%2C%22request%22%3A%22getAllData%22%2C%22playerOnly%22%3A%22true%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22appdataurl%22%3A%22" + Encoding.urlEncode(externID) + "%22%2C%22path%22%3A%22%22%2C%22cb%22%3A%22" + cb + "%22%7D&cacheBuster=" + System.currentTimeMillis();
             br.postPage(externID, postData);
-            System.out.println(br.toString() + "n");
             externID = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
-            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
             decryptedLinks.add(dl);
             return decryptedLinks;
         }

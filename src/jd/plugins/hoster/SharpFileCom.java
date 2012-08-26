@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -515,11 +516,15 @@ public class SharpFileCom extends PluginForHost {
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("username", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
+                loginform.put("vb_login_md5password", JDHash.getMD5(account.getPass()));
+                loginform.put("vb_login_md5password_utf", JDHash.getMD5(account.getPass()));
+                JDHash.getMD5(account.getPass());
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "sf_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/account.php");
-                if (!new Regex(correctedBR, "(>Buy Premium</a>|>Extend Premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, ">Extend Premium<").matches()) {
+                System.out.println(br.toString() + "n");
+                if (!new Regex(correctedBR, "(>Buy Premium</a>|\"Extend Premium Account\")").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (!new Regex(correctedBR, "\"Extend Premium Account\"").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

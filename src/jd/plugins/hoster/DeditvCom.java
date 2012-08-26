@@ -26,7 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deditv.com" }, urls = { "http://(www\\.)?deditv\\.com/play\\.php\\?v=[0-9a-f]+" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deditv.com" }, urls = { "http://(www\\.)?deditv\\.com/(play|gate\\-way)\\.php\\?v=[0-9a-f]+" }, flags = { 32 })
 public class DeditvCom extends PluginForHost {
 
     private String DLLINK;
@@ -43,6 +43,34 @@ public class DeditvCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("gate-way.php", "play.php"));
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        String dllink = downloadLink.getDownloadURL();
+        br.getPage(dllink);
+        if (br.containsHTML(">404 error , this file do not exist any more") || br.getURL().endsWith("removed.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(dllink);
+
+        String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\d+\\.swf)\',").getMatch(1);
+        String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
+        if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        flashUrl = "http://" + br.getHost() + "/" + flashUrl;
+        try {
+            DLLINK = getRtmpUrl(flashUrl);
+        } catch (Throwable e) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD or JD2Beta needed!");
+        }
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
+        downloadLink.setName(fileName);
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -71,30 +99,6 @@ public class DeditvCom extends PluginForHost {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
-        if (br.containsHTML(">404 error , this file do not exist any more") || br.getURL().endsWith("removed.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage(dllink);
-
-        String flashUrl = br.getRegex("new SWFObject\\(\'([\\./]+)?(\\d+\\.swf)\',").getMatch(1);
-        String fileName = br.getRegex("addVariable\\(\'file\',\'(.*?)\'\\)").getMatch(0);
-        if (flashUrl == null || fileName == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        flashUrl = "http://" + br.getHost() + "/" + flashUrl;
-        try {
-            DLLINK = getRtmpUrl(flashUrl);
-        } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD or JD2Beta needed!");
-        }
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;
-        downloadLink.setName(fileName);
-        return AvailableStatus.TRUE;
     }
 
     @Override

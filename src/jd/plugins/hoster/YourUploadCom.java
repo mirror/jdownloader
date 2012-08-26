@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://(www\\.)?yourupload\\.com/file/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourupload.com" }, urls = { "http://(www\\.)?yourupload\\.com/(file|embed)/[a-z0-9]+" }, flags = { 0 })
 public class YourUploadCom extends PluginForHost {
 
     public YourUploadCom(PluginWrapper wrapper) {
@@ -39,6 +39,10 @@ public class YourUploadCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://yourupload.com/index.php?act=pages&page=terms-of-service";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("yourupload.com/embed", "yourupload.com/file"));
     }
 
     @Override

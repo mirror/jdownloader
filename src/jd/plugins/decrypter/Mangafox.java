@@ -41,6 +41,7 @@ public class Mangafox extends PluginForDecrypt {
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
+        url = url.replaceAll("(c00\\d+)$", "c001");
         br.getPage(url + "/1.html");
         if (br.containsHTML("cannot be found|not available yet")) {
             logger.warning("Invalid link or release not yet available, check in your browser: " + parameter);

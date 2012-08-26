@@ -33,6 +33,10 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Page not found \\(404\\)<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
         if (contentReleaseName == null) return null;

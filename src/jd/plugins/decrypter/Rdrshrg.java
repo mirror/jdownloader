@@ -29,14 +29,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "raidrush.org" }, urls = { "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[\\w]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "raidrush.org" }, urls = { "http://(www\\.)?raidrush\\.org/ext/\\?fid\\=[\\w]+" }, flags = { 0 })
 public class Rdrshrg extends PluginForDecrypt {
 
     public Rdrshrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -66,7 +65,5 @@ public class Rdrshrg extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }
