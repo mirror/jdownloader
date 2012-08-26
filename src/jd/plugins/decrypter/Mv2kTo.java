@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/[^<>\"/]*?\\-watch\\-[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movie2k.to" }, urls = { "http://(www\\.)?movie2k\\.to/[^<>\"/]*?\\-\\d+\\.html" }, flags = { 0 })
 public class Mv2kTo extends PluginForDecrypt {
 
     public Mv2kTo(PluginWrapper wrapper) {
@@ -50,9 +50,6 @@ public class Mv2kTo extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         final String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);
-        // Not sure what that is, maybe mirrors (on the same hoster)
-        // String[] parts =
-        // br.getRegex("<OPTION value=\"([^<>\"]*?\\-\\d+\\.html)\"").getColumn(0);
         Browser br2 = br.cloneBrowser();
         final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" } };
         for (String[] regex : regexes) {
