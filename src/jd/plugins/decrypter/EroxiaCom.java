@@ -37,43 +37,41 @@ public class EroxiaCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         String parameter = param.toString();
+        boolean dh = false;
         br.getPage(parameter);
         String filename = br.getRegex("<title>Sex Video \\- ([^<>\"]*?) \\- Amateur Homemade Porn Eroxia</title>").getMatch(0);
         String tempID = br.getRedirectLocation();
-        if (tempID != null) {
-            DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink(tempID);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        tempID = br.getRegex("config=(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
-        if (tempID != null) {
-            br.getPage(tempID);
-            if (br.containsHTML("is marked as crashed and should be repaired")) {
-                logger.info("Link broken/offline: " + parameter);
-                return decryptedLinks;
+
+        /* homesexdaily */
+        if (tempID == null) {
+            tempID = br.getRegex("(http://(www\\.)?homesexdaily\\.com/video/[^<>\"/]*?\\.html)").getMatch(0);
+            if (tempID == null) {
+                if (tempID == null) tempID = br.getRegex("config=(http://(www\\.)?homesexdaily\\.com/flv_player/data/playerConfigEmbed/\\d+\\.xml)\\'").getMatch(0);
+                if (tempID == null) tempID = br.getRegex("src=\"(http://www.homesexdaily.com/stp/embed\\.php\\?video=[^\"]+)").getMatch(0);
+                if (tempID != null) {
+                    br.getPage(tempID);
+                    if (br.containsHTML("is marked as crashed and should be repaired")) {
+                        logger.info("Link broken/offline: " + parameter);
+                        return decryptedLinks;
+                    }
+                }
+                tempID = br.getRegex("\\'flashvars\\',\\'\\&file=(http://[^<>\"]*?)\\&").getMatch(0);
+                if (tempID == null) tempID = br.getRegex(" escape\\(\'(http://[^\'\\)]+)").getMatch(0);
+                if (tempID != null) {
+                    dh = true;
+                    filename = tempID.endsWith(".mp4") ? filename + ".mp4" : filename + ".flv";
+                }
             }
-            // Handling not done yet, had no working links
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         }
-        // filename is needed for all stuff below
-        if (filename == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        tempID = br.getRegex("\\'flashvars\\',\\'\\&file=(http://[^<>\"]*?)\\&").getMatch(0);
-        if (tempID != null) {
-            final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-            dl.setFinalFileName(filename + ".flv");
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+        /* freeadultmedia */
+        if (br.containsHTML("<param name=\"movie\" value=\"http://www\\.freeadultmedia\\.com/hosted/famplayer\\.swf\"")) {
+            String file = br.getRegex("<param name=\"FlashVars\" value=\"file=(.*?)\\&").getMatch(0);
+            br.getPage("http://www.freeadultmedia.com/famconfig.xml");
+            String server = br.getRegex("<server>(.*?)</server>").getMatch(0);
+            if (server == null || file == null) return null;
+            tempID = server + file;
+            filename = filename + ".flv";
+
         }
         if (br.containsHTML("\"http://video\\.megarotic\\.com/")) {
             logger.info("Link offline: " + parameter);
@@ -83,6 +81,10 @@ public class EroxiaCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        if (dh) tempID = "directhttp://" + tempID;
+        DownloadLink dl = createDownloadlink(tempID);
+        if (filename != null) dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        decryptedLinks.add(dl);
         return decryptedLinks;
     }
 
