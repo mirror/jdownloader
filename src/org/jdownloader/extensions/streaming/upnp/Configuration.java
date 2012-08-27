@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.streaming.upnp;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executor;
@@ -41,6 +42,7 @@ import org.fourthline.cling.transport.spi.NetworkAddressFactory;
 import org.fourthline.cling.transport.spi.SOAPActionProcessor;
 import org.fourthline.cling.transport.spi.StreamClient;
 import org.fourthline.cling.transport.spi.StreamServer;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.logging.LogController;
 import org.seamless.util.Exceptions;
 
@@ -49,8 +51,6 @@ import com.sun.net.httpserver.HttpServer;
 public class Configuration implements UpnpServiceConfiguration {
 
     private static Logger                 log    = Logger.getLogger(DefaultUpnpServiceConfiguration.class.getName());
-
-    final private int                     streamListenPort;
 
     final private Executor                defaultExecutor;
 
@@ -63,6 +63,8 @@ public class Configuration implements UpnpServiceConfiguration {
 
     final private Namespace               namespace;
 
+    private StreamingExtension            extension;
+
     private static LogSource              LOGGER = LogController.getInstance().getLogger(Configuration.class.getName());
 
     @Override
@@ -71,12 +73,14 @@ public class Configuration implements UpnpServiceConfiguration {
             synchronized public void init(InetAddress bindAddress, Router router) throws InitializationException {
                 try {
                     InetSocketAddress socketAddress = new InetSocketAddress(bindAddress, configuration.getListenPort());
+                    // configuration.
                     LOGGER.info("HTTPServer: " + bindAddress + ":" + configuration.getListenPort());
                     server = HttpServer.create(socketAddress, configuration.getTcpConnectionBacklog());
                     server.createContext("/", new ServerRequestHttpHandler(router, LOGGER));
 
                     LOGGER.info("Created server (for receiving TCP streams) on: " + server.getAddress());
-
+                } catch (BindException ex) {
+                    LOGGER.log(ex);
                 } catch (Exception ex) {
                     throw new InitializationException("Could not initialize " + getClass().getSimpleName() + ": " + ex.toString(), ex);
                 }
@@ -88,9 +92,8 @@ public class Configuration implements UpnpServiceConfiguration {
         return new FixedNetworkAddressFactoryImpl(streamListenPort);
     }
 
-    public Configuration() {
-
-        this.streamListenPort = 0;
+    public Configuration(StreamingExtension extension) {
+        this.extension = extension;
 
         defaultExecutor = createDefaultExecutor();
 
@@ -181,7 +184,7 @@ public class Configuration implements UpnpServiceConfiguration {
     }
 
     public NetworkAddressFactory createNetworkAddressFactory() {
-        return createNetworkAddressFactory(streamListenPort);
+        return createNetworkAddressFactory(extension.getSettings().getUpnpHttpServerPort());
     }
 
     public void shutdown() {

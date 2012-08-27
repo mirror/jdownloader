@@ -26,6 +26,11 @@ public class ImageMediaItem extends MediaItem {
         this.height = height;
     }
 
+    @Override
+    public String getMimeTypeString() {
+        return "image/" + getContainerFormat();
+    }
+
     private int height;
 
 }

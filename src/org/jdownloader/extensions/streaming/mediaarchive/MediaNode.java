@@ -8,4 +8,6 @@ public interface MediaNode {
     public long getSize();
 
     public ImageIcon getIcon();
+
+    public String getUniqueID();
 }

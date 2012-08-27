@@ -157,6 +157,7 @@ public class ContentDirectory extends AbstractContentDirectoryService {
     @Override
     public BrowseResult search(String containerId, String searchCriteriaString, String filterString, long firstResult, long maxResults, SortCriterion[] orderBy) throws ContentDirectoryException {
         try {
+            System.out.println("SEARCH");
             logger.info(String.format("ContentDirectory receive search request with ContainerID:%s, SearchCriteria:%s, Filter:%s, FirstResult:%s, MaxResults:%s, SortCriterion:%s.", containerId, searchCriteriaString, filterString, firstResult, maxResults, orderBy));
             UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
             String useragent = headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null;

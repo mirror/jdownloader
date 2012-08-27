@@ -1,7 +1,10 @@
 package org.jdownloader.extensions.streaming.upnp;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,6 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
+import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.JSonStorage;
@@ -19,10 +25,13 @@ import org.fourthline.cling.binding.annotations.AnnotationLocalServiceBinder;
 import org.fourthline.cling.controlpoint.ControlPoint;
 import org.fourthline.cling.model.Command;
 import org.fourthline.cling.model.DefaultServiceManager;
+import org.fourthline.cling.model.NetworkAddress;
+import org.fourthline.cling.model.ValidationError;
 import org.fourthline.cling.model.ValidationException;
 import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.UpnpRequest;
 import org.fourthline.cling.model.message.UpnpResponse;
+import org.fourthline.cling.model.message.discovery.OutgoingSearchResponseRootDevice;
 import org.fourthline.cling.model.message.header.UDAServiceTypeHeader;
 import org.fourthline.cling.model.meta.Action;
 import org.fourthline.cling.model.meta.Device;
@@ -60,7 +69,7 @@ import org.fourthline.cling.transport.Router;
 import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.upnp.content.ContentDirectory;
+import org.jdownloader.extensions.streaming.mediaarchive.UpnpContentDirectory;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -97,9 +106,10 @@ public class MediaServer implements Runnable {
             }
 
             logger.info("Wait for extraction Module: Done");
-            upnpService = new UpnpServiceImpl(new Configuration(), new RegistryListener[0]) {
+            upnpService = new UpnpServiceImpl(new Configuration(extension), new RegistryListener[0]) {
 
                 protected ProtocolFactory createProtocolFactory() {
+                    // return super.createProtocolFactory();
                     return new ProtocolFactoryImpl(this) {
                         public ReceivingAsync createReceivingAsync(IncomingDatagramMessage message) throws ProtocolCreationException {
 
@@ -110,14 +120,21 @@ public class MediaServer implements Runnable {
                                 case NOTIFY:
                                     return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ReceivingNotification(getUpnpService(), incomingRequest) : null;
                                 case MSEARCH:
+                                    /**
+                                     * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice -
+                                     * USNRootDeviceHeader header. . xbmc for example has discovery problems if jd has a bad formated answer
+                                     */
                                     return new ReceivingSearch(getUpnpService(), incomingRequest) {
                                         @Override
-                                        protected boolean waitBeforeExecution() throws InterruptedException {
-                                            // this may help to find the server
-                                            // faster
-                                            return true;
+                                        protected void sendSearchResponseRootDevices(NetworkAddress activeStreamServer) {
+                                            logger.fine("Responding to root device search with advertisement messages for all local root devices");
+                                            for (LocalDevice device : getUpnpService().getRegistry().getLocalDevices()) {
+
+                                                getUpnpService().getRouter().send(new OutgoingSearchResponseRootDevice(getInputMessage(), getDescriptorLocation(activeStreamServer, device), device));
+                                            }
                                         }
                                     };
+
                                 }
 
                             } else if (message.getOperation() instanceof UpnpResponse) {
@@ -139,7 +156,12 @@ public class MediaServer implements Runnable {
             //
             // // Broadcast a search message for all devices
             upnpService.getControlPoint().search(new UDAServiceTypeHeader(new UDAServiceType("AVTransport", 1)));
+
         } catch (Throwable ex) {
+            if (ex instanceof ValidationException) {
+                List<ValidationError> errors = ((ValidationException) ex).getErrors();
+                System.out.println(errors);
+            }
             try {
                 upnpService.shutdown();
             } catch (Throwable e) {
@@ -151,6 +173,8 @@ public class MediaServer implements Runnable {
     }
 
     private HashMap<String, MediaRenderer> renderer = new HashMap<String, MediaRenderer>();
+
+    private LocalDevice                    device;
 
     protected void removeRenderer(MediaRenderer mediaRenderer) {
         renderer.remove(mediaRenderer.getUniqueId());
@@ -164,9 +188,10 @@ public class MediaServer implements Runnable {
 
         String host = getHostName();
 
-        DeviceIdentity identity = new DeviceIdentity(UDN.uniqueSystemIdentifier("org.jdownloader.extensions.vlcstreaming.upnp.MediaServer.new"));
-        DeviceType type = new UDADeviceType("MediaServer", SERVER_VERSION);
+        DeviceIdentity identity = new DeviceIdentity(UDN.uniqueSystemIdentifier("org.jdownloader.extensions.vlcstreaming.upnp.MediaServer.new"), 180);
 
+        DeviceType type = new UDADeviceType("MediaServer", SERVER_VERSION);
+        // OutgoingSearchResponseRootDeviceUDN
         ManufacturerDetails manufacturer = new ManufacturerDetails("AppWork GmbH", "http://appwork.org");
         // Windows Media Player Device Details
         // seem like windows mediaplayer needs a special device description
@@ -193,12 +218,81 @@ public class MediaServer implements Runnable {
                 return ret;
             }
         };
+        final ArrayList<Icon> lst = new ArrayList<Icon>();
+        try {
+            lst.add(new Icon("image/png", 48, 48, 24, new URI("icon/48.png"), createIcon("png", 48)) {
 
-        Icon icon = new Icon("image/png", 64, 64, 32, NewTheme.I().getImageUrl("logo/jd_logo_64_64"));
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
 
-        LocalDevice device = new LocalDevice(identity, type, provider, icon, new LocalService[] { createContentDirectory(), createConnectionManager(), createMediaReceiverRegistrar() });
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/png", 120, 120, 24, new URI("icon/120.png"), createIcon("png", 120)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/jpeg", 48, 48, 24, new URI("icon/48.jpg"), createIcon("jpeg", 48)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/jpeg", 120, 120, 24, new URI("icon/120.jpg"), createIcon("jpeg", 120)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        final Icon[] icons = lst.toArray(new Icon[] {});
+        device = new LocalDevice(identity, type, provider, null, new LocalService[] { createContentDirectory(), createConnectionManager(), createMediaReceiverRegistrar() }) {
+            public Icon[] getIcons() {
+
+                return icons;
+            }
+
+            public boolean hasIcons() {
+                return true;
+            }
+        };
 
         return device;
+    }
+
+    private byte[] createIcon(String format, int size) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            BufferedImage image = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size, false);
+            ImageIO.write(image, format, baos);
+            if (baos.size() == 0) throw new WTFException("Image Not found");
+            return baos.toByteArray();
+        } finally {
+            baos.close();
+        }
+
     }
 
     private LocalService<MediaReceiverRegistrar> createMediaReceiverRegistrar() {
@@ -237,16 +331,17 @@ public class MediaServer implements Runnable {
         return service;
     }
 
-    private LocalService<ContentDirectory> createContentDirectory() {
+    private LocalService<UpnpContentDirectory> createContentDirectory() {
         @SuppressWarnings("unchecked")
-        LocalService<ContentDirectory> mp3ContentService = new AnnotationLocalServiceBinder().read(ContentDirectory.class);
+        LocalService<UpnpContentDirectory> mp3ContentService = new AnnotationLocalServiceBinder().read(UpnpContentDirectory.class);
 
         // init here to bypass the lazy init.
-        final ContentDirectory library = new ContentDirectory(this);
-        mp3ContentService.setManager(new DefaultServiceManager<ContentDirectory>(mp3ContentService, ContentDirectory.class) {
+        // final ContentDirectory library = new ContentDirectory(this);
+        final UpnpContentDirectory library = new UpnpContentDirectory(extension);
+        mp3ContentService.setManager(new DefaultServiceManager<UpnpContentDirectory>(mp3ContentService, UpnpContentDirectory.class) {
 
             @Override
-            protected ContentDirectory createServiceInstance() throws Exception {
+            protected UpnpContentDirectory createServiceInstance() throws Exception {
                 return library;
             }
 

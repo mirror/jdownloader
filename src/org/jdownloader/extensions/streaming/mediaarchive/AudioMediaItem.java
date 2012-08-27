@@ -49,4 +49,9 @@ public class AudioMediaItem extends MediaItem {
     private String album;
     private String title;
 
+    @Override
+    public String getMimeTypeString() {
+        return "audio/" + getContainerFormat();
+    }
+
 }

@@ -49,6 +49,7 @@ import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.gui.actions.AddToLibraryAction;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
 import org.jdownloader.extensions.streaming.upnp.PlayToDevice;
 import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
@@ -468,12 +469,20 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
         DownloadLink dlink = linkIdMap.get(id);
         if (dlink != null) return dlink;
+        try {
+            dlink = ((MediaItem) mediaArchive.getItemById(id)).getDownloadLink();
+            if (dlink != null) return dlink;
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
             if (dl.getUniqueID().toString().equals(id)) {
                 dlink = dl;
                 break;
             }
         }
+
         return dlink;
     }
+
 }

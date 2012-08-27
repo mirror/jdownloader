@@ -29,4 +29,9 @@ public interface StreamingConfig extends ExtensionConfigInterface {
 
     int getStreamServerPort();
 
+    @DefaultIntValue(8896)
+    int getUpnpHttpServerPort();
+
+    void setUpnpHttpServerPort(int value);
+
 }

@@ -42,8 +42,14 @@ public class HrnxCm extends PluginForDecrypt {
         br.getPage(parameter);
         String[] urls = br.getRegex("ngg\\-gallery\\-thumbnail\"\\s*>.*?<a href\\=\"(http.*?\\.jpg)\"").getColumn(0);
         String title = br.getRegex("<meta property=\"og\\:title\" content=\"(.*?)\" \\/>").getMatch(0);
+        FilePackage fp = null;
+        if (title != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(title.trim()));
+            fp.addLinks(decryptedLinks);
+        }
 
-        add(decryptedLinks, urls);
+        add(decryptedLinks, urls, fp);
         String[] pageqs = br.getRegex("\"page-numbers\" href=\"(.*?nggpage\\=\\d+)").getColumn(0);
 
         for (String page : pageqs) {
@@ -51,22 +57,23 @@ public class HrnxCm extends PluginForDecrypt {
             pageBrowser.getPage(page);
 
             urls = pageBrowser.getRegex("ngg\\-gallery\\-thumbnail\"\\s*>.*?<a href\\=\"(http.*?\\.jpg)\"").getColumn(0);
-            add(decryptedLinks, urls);
-        }
-
-        if (title != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title.trim()));
-            fp.addLinks(decryptedLinks);
+            add(decryptedLinks, urls, fp);
         }
 
         return decryptedLinks;
     }
 
-    private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls) {
+    private void add(ArrayList<DownloadLink> decryptedLinks, String[] urls, FilePackage fp) {
 
         for (String url : urls) {
-            decryptedLinks.add(createDownloadlink("directhttp://" + url));
+            DownloadLink link = createDownloadlink("directhttp://" + url);
+            fp.add(link);
+            decryptedLinks.add(link);
+            try {
+                distribute(link);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -11,6 +11,11 @@ public class VideoMediaItem extends MediaItem {
 
     private ArrayList<AudioStream> audioStreams;
 
+    @Override
+    public String getMimeTypeString() {
+        return "video/" + getContainerFormat();
+    }
+
     public ArrayList<AudioStream> getAudioStreams() {
         return audioStreams;
     }

@@ -37,6 +37,8 @@ public class SearchCriteria {
                             searchCriterion.setSearchType(SearchCriteria.SearchType.SEARCH_VIDEO);
                         } else if ("\"object.container.playlistContainer\"".equalsIgnoreCase(subFactors[2])) {
                             searchCriterion.setSearchType(SearchCriteria.SearchType.SEARCH_PLAYLIST);
+                        } else if ("\"object.item.audioItem\"".equalsIgnoreCase(subFactors[2])) {
+                            searchCriterion.setSearchType(SearchCriteria.SearchType.SEARCH_AUDIO);
                         } else {
                             searchCriterion.setSearchType(SearchCriteria.SearchType.SEARCH_UNKNOWN);
                         }
@@ -54,6 +56,7 @@ public class SearchCriteria {
         SEARCH_IMAGE,
         SEARCH_VIDEO,
         SEARCH_PLAYLIST,
-        SEARCH_UNKNOWN
+        SEARCH_UNKNOWN,
+        SEARCH_AUDIO
     }
 }

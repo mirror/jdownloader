@@ -13,6 +13,8 @@ public abstract class MediaItem implements MediaNode {
         this.downloadLink = dl;
     }
 
+    public abstract String getMimeTypeString();
+
     public DownloadLink getDownloadLink() {
         return downloadLink;
     }
@@ -56,6 +58,11 @@ public abstract class MediaItem implements MediaNode {
 
     public void setSize(long l) {
         this.size = l;
+    }
+
+    @Override
+    public String getUniqueID() {
+        return downloadLink.getUniqueID().toString();
     }
 
     public long getSize() {
