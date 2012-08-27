@@ -125,14 +125,15 @@ public class FileColumn extends ExtTextColumn<AbstractNode> {
     }
 
     protected boolean isEditable(final AbstractNode obj, final boolean enabled) {
-
         return isEditable(obj);
     }
 
     @Override
     protected void setStringValue(final String value, final AbstractNode object) {
         if (StringUtils.isEmpty(value)) return;
-        if (object instanceof CrawledPackage) {
+        if (object instanceof FilePackage) {
+            ((FilePackage) object).setName(value);
+        } else if (object instanceof CrawledPackage) {
             ((CrawledPackage) object).setName(value);
         } else if (object instanceof CrawledLink) {
             boolean isMultiArchive = false;

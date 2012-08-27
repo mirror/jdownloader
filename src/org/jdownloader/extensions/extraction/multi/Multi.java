@@ -135,7 +135,7 @@ public class Multi extends IExtraction {
     private static final String      REGEX_ZIP$                                                  = "(?i).*\\.zip$";
     private static final String      ZIP$                                                        = "\\.zip$";
     private int                      crack;
-    private java.util.List<String>        filter                                                      = new ArrayList<String>();
+    private java.util.List<String>   filter                                                      = new ArrayList<String>();
 
     private ArchiveFormat            format;
 
@@ -696,6 +696,11 @@ public class Multi extends IExtraction {
                     return;
                 }
             }
+        } catch (MultiSevenZipException e) {
+            setException(e);
+            logger.log(e);
+            archive.setExitCode(e.getExitCode());
+            return;
         } catch (SevenZipException e) {
             setException(e);
             logger.log(e);

@@ -37,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -304,6 +305,7 @@ public class OneFichierCom extends PluginForHost {
         String passCode = null;
         String dllink = link.getStringProperty(PREMLINK, null);
         boolean useSSL = getPluginConfig().getBooleanProperty(SSL_CONNECTION, true);
+        if (oldStyle() == true) useSSL = false;
         if (dllink != null) {
             /* try to resume existing file */
             if (useSSL) dllink = dllink.replaceFirst("http://", "https://");
@@ -357,6 +359,20 @@ public class OneFichierCom extends PluginForHost {
             link.setProperty(PREMLINK, dllink);
             dl.startDownload();
         }
+    }
+
+    private boolean oldStyle() {
+        String style = System.getProperty("ftpStyle", null);
+        if ("new".equalsIgnoreCase(style)) return false;
+        String prev = JDUtilities.getRevision();
+        if (prev == null || prev.length() < 3) {
+            prev = "0";
+        } else {
+            prev = prev.replaceAll(",|\\.", "");
+        }
+        int rev = Integer.parseInt(prev);
+        if (rev < 10000) return true;
+        return false;
     }
 
     private void setConfigElements() {

@@ -68,21 +68,12 @@ class MultiCallback implements ISequentialOutStream {
                 try {
                     Thread.sleep(priority.getTime());
                 } catch (InterruptedException e) {
-                    con.getLogger().log(e);
-                    con.setExeption(e);
-                    con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
+                    throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_FATAL_ERROR);
                 }
             }
-        } catch (FileNotFoundException e) {
-            con.getLogger().log(e);
-            con.setExeption(e);
-            con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         } catch (IOException e) {
-            con.getLogger().log(e);
-            con.setExeption(e);
-            con.getArchiv().setExitCode(ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
+            throw new MultiSevenZipException(e, ExtractionControllerConstants.EXIT_CODE_WRITE_ERROR);
         }
-
         return data.length;
     }
 
