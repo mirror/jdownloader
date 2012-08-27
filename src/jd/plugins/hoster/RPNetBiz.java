@@ -38,6 +38,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.storage.simplejson.JSonArray;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonNode;
+import org.appwork.storage.simplejson.JSonObject;
 import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rpnet.biz" }, urls = { "http://(www\\.)?dl[^\\.]*.rpnet\\.biz/download/.*/([^/\\s]+)?" }, flags = { 0 })
@@ -76,6 +80,11 @@ public class RPNetBiz extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         // tested with 20 seems fine.
         return -1;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception, PluginException {
+        handleDL(link, link.getDownloadURL());
     }
 
     @Override
@@ -158,17 +167,60 @@ public class RPNetBiz extends PluginForHost {
 
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        showMessage(link, "Task 1: Generating Link");
+        showMessage(link, "Generating Link");
         /* request Download */
-        br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(link.getDownloadURL()));
-        String generatedLink = br.getRegex("\"generated\":\"([^\"]*?)\"").getMatch(0);
-        if (generatedLink == null || generatedLink.isEmpty()) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        showMessage(link, "Task 2: Download begins!");
-        generatedLink = generatedLink.replaceAll("\\\\/", "/");
-        try {
-            handleDL(link, generatedLink);
-            return;
-        } catch (PluginException e1) {
+        String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(link.getDownloadURL());
+        br.getPage(apiDownloadLink);
+        JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+        JSonArray links = (JSonArray) node.get("links");
+
+        // for now there is only one generated link per api call, could be
+        // changed in the future, therefore iterate anyway
+        for (JSonNode linkNode : links) {
+            JSonObject linkObj = (JSonObject) linkNode;
+            if (linkObj.get("error") != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+
+            // Only ID given? => request the download from rpnet hdd
+            JSonNode idNode = linkObj.get("id");
+            String generatedLink = null;
+            if (idNode != null) {
+                String id = idNode.toString();
+
+                int progress = 0;
+                int tryNumber = 0;
+
+                while (tryNumber <= 30) {
+                    br.getPage(mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=downloadInformation&id=" + Encoding.urlEncode(id));
+                    JSonObject node2 = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
+                    JSonObject downloadNode = (JSonObject) node2.get("download");
+                    String tmp = downloadNode.get("status").toString();
+                    progress = Integer.parseInt(tmp.substring(1, tmp.length() - 1));
+
+                    showMessage(link, "Waiting for upload to rpnet HDD - " + progress + "%");
+
+                    // download complete?
+                    if (progress == 100) {
+                        String tmp2 = downloadNode.get("rpnet_link").toString();
+                        generatedLink = tmp2.substring(1, tmp2.length() - 1);
+                        break;
+                    }
+
+                    Thread.sleep(10000);
+                    tryNumber++;
+                }
+            } else {
+                String tmp = ((JSonObject) linkNode).get("generated").toString();
+                generatedLink = tmp.substring(1, tmp.length() - 1);
+            }
+            // download the file
+            if (generatedLink == null || generatedLink.isEmpty()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            showMessage(link, "Download begins!");
+
+            try {
+                handleDL(link, generatedLink);
+                return;
+            } catch (PluginException e1) {
+            }
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
