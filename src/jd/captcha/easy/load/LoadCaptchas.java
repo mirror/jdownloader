@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -52,29 +51,30 @@ import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 
 public class LoadCaptchas {
-    private static final long    serialVersionUID = 1L;
-    public String                host;
-    public boolean               opendir          = false;
-    private LoadInfo             loadinfo;
-    private Browser              br               = new Browser();
+    private static final long         serialVersionUID = 1L;
+    public String                     host;
+    public boolean                    opendir          = false;
+    private LoadInfo                  loadinfo;
+    private Browser                   br               = new Browser();
     {
         br.setFollowRedirects(true);
     }
     private java.util.List<LoadImage> images;
-    private LoadImage            selectedImage;
-    private JFrame               owner;
-    public int                   maxHeight        = 500;
-    public boolean               threaded         = false;
-    public int                   maxWeight        = 600;
+    private LoadImage                 selectedImage;
+    private JFrame                    owner;
+    public int                        maxHeight        = 500;
+    public boolean                    threaded         = false;
+    public int                        maxWeight        = 600;
     /**
      * Ordner in den die Bilder geladen werden (default: jdCaptchaFolder/host)
      * 
      */
-    private String               dir              = null;
+    private String                    dir              = null;
 
     /**
      * start aufrufen um den ladeprozess zu initialisieren
@@ -175,7 +175,7 @@ public class LoadCaptchas {
                 for (int j = 0; j < images.size(); j++) {
                     final LoadImage f = images.get(j);
                     if (f == null || f.file == null || !f.file.exists() || f.file.length() < 100) continue;
-                    final BufferedImage captchaImage = ImageIO.read(f.file);
+                    final BufferedImage captchaImage = ImageProvider.read(f.file);
                     if (captchaImage == null) {
                         f.file.delete();
                         continue;

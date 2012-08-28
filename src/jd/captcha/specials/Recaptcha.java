@@ -18,6 +18,7 @@ package jd.captcha.specials;
 
 import java.awt.Image;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 
@@ -135,6 +136,7 @@ public class Recaptcha {
     }
 
     public static void prepareCaptcha(final File file) {
+        FileOutputStream fos = null;
         try {
             final JAntiCaptcha jac = new JAntiCaptcha("recaptcha");
             jac.getJas().setColorType("RGB");
@@ -171,9 +173,15 @@ public class Recaptcha {
             captcha.toBlackAndWhite(0.6);
             captcha.clean();
             BasicWindow.showImage(captcha.getImage());
-            ImageIO.write(captcha.getImage(), "jpg", file);
+            fos = new FileOutputStream(file);
+            ImageIO.write(captcha.getImage(), "jpg", fos);
         } catch (final Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
 
     }

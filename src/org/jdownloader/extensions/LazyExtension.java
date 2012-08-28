@@ -1,6 +1,7 @@
 package org.jdownloader.extensions;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.MalformedURLException;
@@ -44,7 +45,16 @@ public class LazyExtension implements Storable, CheckBoxedEntry {
         iconCache.getParentFile().mkdirs();
         iconCache.delete();
         ret.description = plg.getDescription();
-        ImageIO.write(IconIO.toBufferedImage(plg.getIcon(32).getImage()), "png", iconCache);
+        FileOutputStream fos = null;
+        try {
+            fos = new FileOutputStream(iconCache);
+            ImageIO.write(IconIO.toBufferedImage(plg.getIcon(32).getImage()), "png", fos);
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
+        }
         ret.iconPath = path;
         ret.linuxRunnable = plg.isLinuxRunnable();
         ret.macRunnable = plg.isMacRunnable();

@@ -26,7 +26,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 
 import jd.Launcher;
@@ -35,6 +34,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -55,7 +55,7 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
             Launcher.statics();
             // getGifImages(new
             // File("C:/Users/Thomas/.BuildServ/applications/beta/sources/JDownloader/src/org/jdownloader/extensions/webinterface/webinterface/themes/main/images/core/load.gif").toURI().toURL())
-            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageIO.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), null, "Enter both words...");
+            cp = new CaptchaDialog(Dialog.LOGIC_COUNTDOWN, DialogType.HOSTER, DomainInfo.getInstance("wupload.com"), ImageProvider.read(new File("C:\\Users\\Thomas\\.jd_home\\captchas\\rusfolder.ru_10.07.2012_11.36.41.860.png")), null, "Enter both words...");
 
             LookAndFeelController.getInstance().setUIManager();
 

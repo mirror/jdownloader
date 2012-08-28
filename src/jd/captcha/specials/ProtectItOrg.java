@@ -22,8 +22,6 @@ import java.util.Collections;
 import java.util.ListIterator;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.ColorLetterComperator;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
@@ -32,6 +30,8 @@ import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
+
+import org.appwork.utils.ImageProvider.ImageProvider;
 
 public class ProtectItOrg {
     static java.util.List<PixelObject> getObjects(PixelGrid grid, int neighbourradius) {
@@ -93,7 +93,7 @@ public class ProtectItOrg {
         if (imageFile.exists()) {
             captcha.reset();
 
-            Captcha pixToFind = captcha.owner.createCaptcha(ImageIO.read(imageFile));
+            Captcha pixToFind = captcha.owner.createCaptcha(ImageProvider.read(imageFile));
             Letter l = captcha.createLetter();
             l.setGrid(pixToFind.grid);
 

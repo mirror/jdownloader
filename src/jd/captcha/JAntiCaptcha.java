@@ -26,6 +26,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
@@ -219,7 +221,7 @@ public class JAntiCaptcha {
     /**
      * Vector mit den Buchstaben aus der MTHO File
      */
-    public java.util.List<Letter>         letterDB;
+    public java.util.List<Letter>    letterDB;
 
     private int[][]                  letterMap    = null;
 
@@ -421,12 +423,18 @@ public class JAntiCaptcha {
             img = letter.getFullImage();
             file = new File(path + "/letterDB/" + i++ + "_" + letter.getDecodedValue() + ".png");
             file.mkdirs();
-
+            FileOutputStream fos = null;
             try {
                 logger.info("Write Db: " + file);
-                ImageIO.write(img, "png", file);
+                fos = new FileOutputStream(file);
+                ImageIO.write(img, "png", fos);
             } catch (IOException e) {
                 logger.log(e);
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
             }
         }
     }
@@ -445,14 +453,21 @@ public class JAntiCaptcha {
 
     private String callExtern() {
         synchronized (method) {
+            FileOutputStream fos = null;
             try {
                 File file = JDUtilities.getResourceFile(this.srcFile);
                 file.getParentFile().mkdirs();
                 String ext = CrossSystem.getFileExtension(file.getName());
-                ImageIO.write(toBufferedImage(this.sourceImage), ext, file);
+                fos = new FileOutputStream(file);
+                ImageIO.write(toBufferedImage(this.sourceImage), ext, fos);
             } catch (Exception e) {
                 logger.log(e);
                 return null;
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
             }
             Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
             exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
@@ -1271,7 +1286,7 @@ public class JAntiCaptcha {
         for (File element : images) {
             image = Utilities.loadImage(element);
             try {
-                image = ImageIO.read(element);
+                image = ImageProvider.read(element);
             } catch (IOException e) {
                 logger.log(e);
             }
@@ -1960,7 +1975,7 @@ public class JAntiCaptcha {
             }
 
             try {
-                Image captchaImage = ImageIO.read(file);
+                Image captchaImage = ImageProvider.read(file);
                 JAntiCaptcha jac = new JAntiCaptcha(host);
                 Captcha captcha = jac.createCaptcha(captchaImage);
                 return jac.checkCaptcha(file, captcha);

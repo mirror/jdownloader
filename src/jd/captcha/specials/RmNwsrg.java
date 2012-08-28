@@ -21,7 +21,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
+import org.appwork.utils.ImageProvider.ImageProvider;
 
 /**
  * Captcha Recognition for Smiley-Captcha
@@ -31,19 +31,19 @@ import javax.imageio.ImageIO;
 public class RmNwsrg {
 
     private BufferedImage pic;
-    private int[][] selected = new int[20001][2];
-    private boolean smiley = false;
-    private Color color;
-    private final Color colorsmiley = new Color(50, 50, 50);
-    private int max_x = 0;
-    private int max_y = 0;
-    private int min_x = 300;
-    private int min_y = 100;
-    private int[] result;
+    private int[][]       selected    = new int[20001][2];
+    private boolean       smiley      = false;
+    private Color         color;
+    private final Color   colorsmiley = new Color(50, 50, 50);
+    private int           max_x       = 0;
+    private int           max_y       = 0;
+    private int           min_x       = 300;
+    private int           min_y       = 100;
+    private int[]         result;
 
     public RmNwsrg(File file, Color color) {
         try {
-            this.pic = ImageIO.read(file);
+            this.pic = ImageProvider.read(file);
         } catch (IOException e) {
             e.printStackTrace();
         }

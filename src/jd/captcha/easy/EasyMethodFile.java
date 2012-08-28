@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import jd.captcha.JAntiCaptcha;
@@ -38,6 +37,7 @@ import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -96,8 +96,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
     }
 
     /**
-     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog
-     * true ist
+     * Ermittelt den Dateityp der Captchas im Captchaordner ist der Ordner leer wird jpg ausgegeben bzw Bilder geladen wenn showLoadDialog true ist
      * 
      * @param showLoadDialog
      * @return captchatyp jpg | png | gif
@@ -173,7 +172,7 @@ public class EasyMethodFile implements JDLabelContainer, Serializable {
             final File image = this.getExampleImage();
             if (image != null) {
 
-                final ImageIcon img = new ImageIcon(IconIO.getScaledInstance(ImageIO.read(image), 44, 24));
+                final ImageIcon img = new ImageIcon(IconIO.getScaledInstance(ImageProvider.read(image), 44, 24));
                 return img;
 
             }

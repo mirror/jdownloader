@@ -2,7 +2,7 @@ package jd.plugins.hoster;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -71,11 +71,19 @@ public class Mangastream extends PluginForHost {
                     }
                 }
             }
-
-            boolean success = ImageIO.write(buffer, "PNG", new File(downloadLink.getFileOutput()));
-            downloadLink.getLinkStatus().setStatusText(success ? "Finished" : "Error saving the file");
-            downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
-            return;
+            FileOutputStream fos = null;
+            try {
+                fos = new FileOutputStream(downloadLink.getFileOutput());
+                boolean success = ImageIO.write(buffer, "PNG", fos);
+                downloadLink.getLinkStatus().setStatusText(success ? "Finished" : "Error saving the file");
+                downloadLink.getLinkStatus().setStatus(success ? LinkStatus.FINISHED : LinkStatus.ERROR_LOCAL_IO);
+                return;
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
+            }
         } else {
             /* old method - or most recent one! (present in Naturo chap. 547) */
             String picUrl = br.getRegex("<img.*?src=\"(http://.*?mangastream.com/m(?:anga)?/\\d+/\\d+/.*?\\.(jpg|png))\"").getMatch(0);

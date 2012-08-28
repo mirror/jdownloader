@@ -16,6 +16,7 @@ import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.HTTPHeader;
@@ -97,7 +98,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
                 response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(IconIO.getScaledInstance(ImageIO.read(path), 160, 160), "jpeg", baos);
+                ImageIO.write(IconIO.getScaledInstance(ImageProvider.read(path), 160, 160), "jpeg", baos);
                 baos.close();
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, baos.size() + ""));
                 response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, ct));

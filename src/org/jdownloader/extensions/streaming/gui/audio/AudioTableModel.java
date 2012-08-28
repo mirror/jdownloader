@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming.gui.audio;
 import java.awt.Point;
 import java.io.IOException;
 
-import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.SwingConstants;
@@ -12,6 +11,7 @@ import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.IconLabelToolTip;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
@@ -35,7 +35,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
             public ExtTooltip createToolTip(final Point position, final AudioMediaItem obj) {
 
                 try {
-                    return new IconLabelToolTip(obj.getName(), new ImageIcon(IconIO.getScaledInstance(ImageIO.read(Application.getResource(obj.getThumbnailPath())), 320, 240))) {
+                    return new IconLabelToolTip(obj.getName(), new ImageIcon(IconIO.getScaledInstance(ImageProvider.read(Application.getResource(obj.getThumbnailPath())), 320, 240))) {
                         {
                             label.setHorizontalTextPosition(SwingConstants.CENTER);
                             label.setVerticalTextPosition(SwingConstants.BOTTOM);
@@ -51,7 +51,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
                 try {
 
                     // of course this is a performance desaster!
-                    return new ImageIcon(IconIO.getScaledInstance(ImageIO.read(Application.getResource(value.getThumbnailPath())), 32, 32));
+                    return new ImageIcon(IconIO.getScaledInstance(ImageProvider.read(Application.getResource(value.getThumbnailPath())), 32, 32));
                 } catch (Throwable e) {
 
                 }

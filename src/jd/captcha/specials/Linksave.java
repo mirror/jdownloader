@@ -18,6 +18,7 @@ package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -59,6 +60,7 @@ public class Linksave {
     }
 
     public static void prepareCaptcha(File file) {
+        FileOutputStream fos = null;
         try {
             JAntiCaptcha jac = new JAntiCaptcha("linksave.in");
             jac.getJas().setColorType("RGB");
@@ -136,9 +138,15 @@ public class Linksave {
             frames[0].setGrid(grid);
 
             // BasicWindow.showImage(frames[0].getImage(1));
-            ImageIO.write(frames[0].getImage(1), "png", file);
+            fos = new FileOutputStream(file);
+            ImageIO.write(frames[0].getImage(1), "png", fos);
         } catch (Exception e) {
 
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
 
     }

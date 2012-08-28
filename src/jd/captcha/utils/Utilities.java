@@ -19,15 +19,14 @@ package jd.captcha.utils;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.MediaTracker;
 import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.swing.EDTHelper;
+import org.appwork.utils.ImageProvider.ImageProvider;
 
 /**
  * Diese Klasse beinhaltet mehrere Hilfsfunktionen
@@ -104,23 +103,12 @@ public final class Utilities {
      * @return Neues Bild
      */
     public static Image loadImage(final File file) {
-        final EDTHelper<Image> run = new EDTHelper<Image>() {
-            @Override
-            public Image edtRun() {
-                final JFrame jf = new JFrame();
-                final Image img = jf.getToolkit().getImage(file.getAbsolutePath());
-                final MediaTracker mediaTracker = new MediaTracker(jf);
-                mediaTracker.addImage(img, 0);
-                try {
-                    mediaTracker.waitForID(0);
-                } catch (InterruptedException e) {
-                    return null;
-                }
-                mediaTracker.removeImage(img);
-                return img;
-            }
-        };
-        return run.getReturnValue();
+        try {
+            return ImageProvider.read(file);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public static int nextJump(final int x, final int from, final int to, final int step) {

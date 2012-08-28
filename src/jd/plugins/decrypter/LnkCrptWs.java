@@ -596,6 +596,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
+                    /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
                     // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
                     // URL(imgUrl));
@@ -898,6 +899,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                     fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
+                    /* TODO: replace with ImageProvider.read in future */
                     IMAGE[i] = ImageIO.read(fragmentedPic);
                     // IMAGE[i] = Toolkit.getDefaultToolkit().getImage(new
                     // URL(imgUrl));

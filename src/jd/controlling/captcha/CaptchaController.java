@@ -21,8 +21,6 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.JACMethod;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.LetterComperator;
@@ -35,6 +33,7 @@ import jd.gui.swing.dialog.CaptchaDialogInterface;
 import jd.plugins.Plugin;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.jdownloader.DomainInfo;
 
 public class CaptchaController {
@@ -118,7 +117,7 @@ public class CaptchaController {
         final JAntiCaptcha jac = new JAntiCaptcha(methodname);
         CaptchaResult captchaResult = new CaptchaResult();
         try {
-            final Image captchaImage = ImageIO.read(getPreparedCaptchaFile());
+            final Image captchaImage = ImageProvider.read(getPreparedCaptchaFile());
             final Captcha captcha = jac.createCaptcha(captchaImage);
             String captchaCode = jac.checkCaptcha(getPreparedCaptchaFile(), captcha);
             captchaResult.setCaptchaText(captchaCode);

@@ -2,6 +2,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -503,15 +504,23 @@ public class LiveHeaderDetectionWizard {
             this.sslPTagsCount = sslResponse.split("<p>").length;
             this.sslFrameTagCount = sslResponse.split("<frame").length;
             // get favicon and build hash
+            FileOutputStream fos = null;
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
                 imageFile.delete();
                 imageFile.deleteOnExit();
-                ImageIO.write(image, "png", imageFile);
+                fos = new FileOutputStream(imageFile);
+                ImageIO.write(image, "png", fos);
+                fos.flush();
                 this.sslFavIconHash = Hash.getMD5(imageFile);
             } catch (final Exception e) {
 
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
             }
 
         } catch (final Throwable e) {

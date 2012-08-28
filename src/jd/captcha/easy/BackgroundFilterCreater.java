@@ -19,6 +19,7 @@ package jd.captcha.easy;
 import java.awt.Image;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -118,10 +119,17 @@ public class BackgroundFilterCreater {
             }
         }
         File ret = new File(methode.file, "mask_" + System.currentTimeMillis() + ".png");
+        FileOutputStream fos = null;
         try {
-            ImageIO.write(firstCaptcha.getImage(), "png", ret);
+            fos = new FileOutputStream(ret);
+            ImageIO.write(firstCaptcha.getImage(), "png", fos);
         } catch (IOException e) {
             LogController.CL().log(e);
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
         return ret;
     }

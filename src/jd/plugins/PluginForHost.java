@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
@@ -44,6 +43,7 @@ import jd.plugins.download.DownloadInterfaceFactory;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
@@ -148,7 +148,7 @@ public abstract class PluginForHost extends Plugin {
             linkStatus.addStatus(LinkStatus.WAITING_USERIO);
             linkStatus.setStatusText(_JDT._.gui_downloadview_statustext_jac());
             try {
-                final BufferedImage img = ImageIO.read(file);
+                final BufferedImage img = ImageProvider.read(file);
                 linkStatus.setStatusIcon(new ImageIcon(IconIO.getScaledInstance(img, 16, 16)));
             } catch (Throwable e) {
                 e.printStackTrace();

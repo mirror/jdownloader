@@ -18,6 +18,7 @@ package jd.captcha.specials;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -46,6 +47,7 @@ public class Ncrypt {
     }
 
     public static void prepareCaptcha(final File file) {
+        FileOutputStream fos = null;
         try {
             final JAntiCaptcha jac = new JAntiCaptcha("ncrypt.in");
             jac.getJas().setColorType("RGB");
@@ -59,8 +61,14 @@ public class Ncrypt {
             }
 
             // BasicWindow.showImage(frames[0].getImage(1));
-            ImageIO.write(frames[0].getImage(1), "png", file);
+            fos = new FileOutputStream(file);
+            ImageIO.write(frames[0].getImage(1), "png", fos);
         } catch (final Throwable e) {
+        } finally {
+            try {
+                fos.close();
+            } catch (final Throwable e) {
+            }
         }
     }
 

@@ -13,6 +13,7 @@ import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -51,7 +52,7 @@ public class FavIcons {
     private static final AtomicInteger                                           THREADCOUNTER = new AtomicInteger(0);
     private static final Object                                                  LOCK          = new Object();
     private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE         = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
-    private static ArrayList<String>                                             FAILED_LIST        = null;
+    private static ArrayList<String>                                             FAILED_LIST   = null;
     private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
     static {
         int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
@@ -159,11 +160,13 @@ public class FavIcons {
                                 /* favicon loader failed, add to failed list */
                                 if (!FAILED_LIST.contains(host)) FAILED_LIST.add(host);
                             } else {
+                                FileOutputStream fos = null;
                                 try {
                                     /* buffer favicon to disk */
                                     File imageFile = Application.getResource(NewTheme.I().getPath() + "/images/fav/" + host + ".png");
                                     imageFile.getParentFile().mkdirs();
-                                    ImageIO.write(favicon, "png", imageFile);
+                                    fos = new FileOutputStream(imageFile);
+                                    ImageIO.write(favicon, "png", fos);
                                     /* load and scale it again */
                                     ImageIcon image = NewTheme.I().getIcon("fav/" + host, -1);
                                     if (image != null && requestors != null) {
@@ -174,6 +177,11 @@ public class FavIcons {
                                     }
                                 } catch (Throwable e) {
                                     LogController.getInstance().getLogger("FavIcons").log(e);
+                                } finally {
+                                    try {
+                                        fos.close();
+                                    } catch (final Throwable e) {
+                                    }
                                 }
                             }
                         }

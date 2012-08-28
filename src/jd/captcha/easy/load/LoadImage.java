@@ -20,8 +20,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URI;
 
-import javax.imageio.ImageIO;
-
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.http.Browser;
@@ -31,9 +29,10 @@ import jd.nutils.io.JDIO;
 import jd.parser.html.HTMLParser;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.ImageProvider.ImageProvider;
+
 /**
- * Diese klasse speichert Bildinformationen wie die Form die verwendet wurde und
- * die Bildposition
+ * Diese klasse speichert Bildinformationen wie die Form die verwendet wurde und die Bildposition
  * 
  * @author dwd
  * 
@@ -146,7 +145,7 @@ public class LoadImage {
         long b = 0;
 
         try {
-            BufferedImage ret = ImageIO.read(file);
+            BufferedImage ret = ImageProvider.read(file);
             Captcha captcha = new JAntiCaptcha("easycaptcha").createCaptcha(ret);
             for (int x = 0; x < captcha.getWidth(); x++) {
                 for (int y = 0; y < captcha.getHeight(); y++) {
@@ -185,8 +184,7 @@ public class LoadImage {
     }
 
     /**
-     * ruft die Seite erneut auf und folgt den Forms um dann am ende das Bild zu
-     * laden
+     * ruft die Seite erneut auf und folgt den Forms um dann am ende das Bild zu laden
      * 
      * @param host
      * @param loadInfo
