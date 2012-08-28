@@ -252,7 +252,7 @@ public class HttpApiImpl implements HttpRequestHandler {
     private Profile findProfile(MediaItem mediaItem) {
         ArrayList<Profile> ret = new ArrayList<Profile>();
         for (Profile p : Profile.ALL_PROFILES) {
-
+            System.out.println(p);
         }
         return null;
     }
