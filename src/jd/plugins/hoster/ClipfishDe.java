@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -25,6 +26,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.TbCm;
 import jd.plugins.decrypter.TbCm.DestinationFormat;
+import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "clipfish.de" }, urls = { "clipfish://.+" }, flags = { 0 })
 public class ClipfishDe extends PluginForHost {
@@ -51,8 +53,9 @@ public class ClipfishDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final LinkStatus linkStatus = downloadLink.getLinkStatus();
+        final String dllink = downloadLink.getDownloadURL();
 
-        if (downloadLink.getDownloadURL().startsWith("http")) {
+        if (dllink.startsWith("http")) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
             if (dl.getConnection().getLongContentLength() == 0) {
                 br.followConnection();
@@ -71,8 +74,11 @@ public class ClipfishDe extends PluginForHost {
                     }
                 }
             }
-        } else if (downloadLink.getDownloadURL().startsWith("rtmp")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "\"rtmp://\" is currently not supported!");
+        } else if (dllink.startsWith("rtmp")) {
+            if (downloadLink.getStringProperty("FLASHPLAYER", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            setupRTMPConnection(dllink, dl, downloadLink.getStringProperty("FLASHPLAYER"));
+            ((RTMPDownload) dl).startDownload();
         } else {
             logger.severe("Plugin out of date for link: " + downloadLink.getDownloadURL());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -95,6 +101,18 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+    }
+
+    private void setupRTMPConnection(String stream, DownloadInterface dl, String fp) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+        if (stream.contains("mp4:") && stream.contains("auth=")) {
+            String pp = "mp4:" + stream.split("mp4:")[1];
+            rtmp.setPlayPath(pp);
+            rtmp.setUrl(stream.split("mp4:")[0]);
+            rtmp.setApp("ondemand?ovpfv=2.0&" + new Regex(pp, "(auth=.*?)$").getMatch(0));
+            rtmp.setSwfUrl(fp);
+            rtmp.setResume(true);
+        }
     }
 
 }

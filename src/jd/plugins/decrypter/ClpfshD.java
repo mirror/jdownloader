@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -63,7 +64,7 @@ public class ClpfshD extends PluginForDecrypt {
         final Regex regexInfo = new Regex(br.getPage(parameter), PATTERN_TITEL);
         final String tmpStr = regexInfo.getMatch(0);
         if (tmpStr == null) { return null; }
-        final String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
+        String name = tmpStr.substring(0, tmpStr.lastIndexOf("-"));
         final String cType = tmpStr.substring(tmpStr.lastIndexOf("-") + 1, tmpStr.length()).toLowerCase();
         if (name == null || cType == null) { return null; }
 
@@ -81,6 +82,7 @@ public class ClpfshD extends PluginForDecrypt {
             return decryptedLinks;
         }
 
+        String flashplayer = br.getRegex("(http://(www\\.)?clipfish\\.de/cfng/flash/clipfish_player_\\d+\\.swf)").getMatch(0);
         String page = br.getPage(NEW_XMP_PATH + vidId + "?ts=" + System.currentTimeMillis());
         String pathToflv = getDllink(page);
         if (pathToflv == null) {
@@ -89,6 +91,7 @@ public class ClpfshD extends PluginForDecrypt {
             if (pathToflv == null) { return null; }
         }
         final DownloadLink downloadLink = createDownloadlink("clipfish://" + pathToflv);
+        name = Encoding.htmlDecode(name.trim());
         /*
          * scheinbar gibt es auf clipfish keine flv Audiodateien mehr.
          */
@@ -100,6 +103,7 @@ public class ClpfshD extends PluginForDecrypt {
             if (pathToflv.startsWith("rtmp")) {
                 ext = new Regex(pathToflv, "(\\w+):media/").getMatch(0);
                 ext = ext.length() > 3 ? null : ext;
+                if (flashplayer != null) downloadLink.setProperty("FLASHPLAYER", flashplayer);
             }
 
             ext = ext == null || ext.equals("f4v") || ext.equals("") ? "mp4" : ext;
