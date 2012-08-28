@@ -8,6 +8,7 @@ guiless_create_package=Počkejte prosím... připravování aktualizačního bal
 guiless_download_data=Stahuji aktualizační balíček...
 guiless_downloadfinished=Stahování dokončeno.
 guiless_files_ready_for_install=%s1 soubor(ů) čeká na instalaci!
+guiless_files_wait_for_removal=%s1 souborů je zastaralých a budou odebrány.
 guiless_progress1=...postup: %s1%
 guiless_selfupdate=Aktualizátor se teď sám aktualizuje...
 guiless_started_download=Spustit stahování: %s1
