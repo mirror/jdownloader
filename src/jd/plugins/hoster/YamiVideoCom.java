@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-//Same code as RocketFilesNet and FlashVidsOrg
+//Same code as RocketFilesNet, FlashVidsOrg, DivxHostedCom
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yamivideo.com" }, urls = { "http://(www\\.)?yamivideo\\.com/video/[a-z0-9]+" }, flags = { 0 })
 public class YamiVideoCom extends PluginForHost {
 

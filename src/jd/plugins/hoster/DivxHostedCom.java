@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,46 +28,43 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecondo.com" }, urls = { "http://(\\w+\\.)?filecondodecrypted\\.com/download_regular_active\\.php\\?file=[A-Za-z0-9]+\\&part=\\d+" }, flags = { 0 })
-public class FileCondoCom extends PluginForHost {
+//Same code as RocketFilesNet and YamiVideoCom, FlashVidsOrg
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divxhosted.com" }, urls = { "http://(www\\.)?divxhosted\\.com/video/[a-z0-9]+" }, flags = { 0 })
+public class DivxHostedCom extends PluginForHost {
 
-    public FileCondoCom(PluginWrapper wrapper) {
+    public DivxHostedCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filecondo.com/term.php";
-    }
-
-    /** Links come from a decrypter */
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("filecondodecrypted.com/", "filecondo.com/"));
+        return "http://divxhosted.com/contact";
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
-        final String mainLink = link.getStringProperty("mainlink");
-        if (mainLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(mainLink);
-        if (br.containsHTML("à¹„à¸¡à¹ˆà¸žà¸šà¹„à¸Ÿà¸¥à¹Œ / Link à¸œà¸´à¸”") || br.toString().length() < 200) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">404 Page not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h2 style=\"font\\-size:20px\">([^<>\"]*?)</h2>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) video</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), false, 1);
+        if (br.containsHTML("I AM HUMAN")) br.postPage(downloadLink.getDownloadURL(), "submit_human=I+AM+HUMAN");
+        br.postPage("http://" + this.getHost() + "/Xajax/saveaction/", "xjxfun=load_player_eng&xjxr=" + System.currentTimeMillis() + "&xjxargs[]=S" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&xjxargs%5B%5D=N2");
+        final String dllink = br.getRegex("\\&file=(http://[a-z0-9]+\\." + this.getHost() + "/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            final Regex waittime = br.getRegex("ฟล์เท่านั้น<br/>กรุณาลองใหม่อีกครั้งในเวลา (\\d+):(\\d+):(\\d+) <br/>");
-            final String hours = waittime.getMatch(0);
-            final String minutes = waittime.getMatch(1);
-            final String seconds = waittime.getMatch(2);
-            if (hours != null && minutes != null && seconds != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(hours) * 60 * 60) + Integer.parseInt(minutes) * 60) * 1001l);
+            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -78,7 +76,7 @@ public class FileCondoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

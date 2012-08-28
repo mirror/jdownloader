@@ -59,7 +59,12 @@ public class PanBaiduCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.getURL().contains("pan.baidu.com/share/error?")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String correctedBR = br.toString().replace("\\", "");
         decryptData(decryptedLinks, correctedBR, parameter, null);
         final DecimalFormat df = new DecimalFormat("0000");

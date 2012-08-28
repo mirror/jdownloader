@@ -20,54 +20,47 @@ import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://[\\w\\.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)zophar\\.net/download_file/[0-9]{1,}" }, flags = { 0 })
 public class RomsZopharNet extends PluginForHost {
 
     public RomsZopharNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public String getAGBLink() {
         return "http://roms.zophar.net/legal.html";
     }
 
-    // @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
         return 1;
     }
 
-    // @Override
-    /*
-     * public String getVersion() {
-     * 
-     * return getVersion("$Revision$"); }
-     */
-
-    // @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation()).startDownload();
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL());
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        dl.startDownload();
     }
 
-    // @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) {
         return AvailableStatus.TRUE;
     }
 
-    // @Override
     public void reset() {
     }
 
-    // @Override
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    // @Override
     public void resetPluginGlobals() {
     }
 }

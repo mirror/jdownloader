@@ -112,7 +112,10 @@ public class SflnkgNt extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", AGENT);
         br.setFollowRedirects(false);
         get(parameter);
-        if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist)")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+        if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|>404 Page/File not found<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(">Not yet checked</span>")) { throw new DecrypterException("Not yet checked"); }
         if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the safelinking.net support!"); }
         if (parameter.matches("https?://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {

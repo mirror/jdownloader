@@ -38,26 +38,37 @@ public class UrlGuardOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
-        final String allLinks = br.getRegex("var options = eval\\((.*?)</script>").getMatch(0);
-        if (allLinks == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        String[] links = new Regex(allLinks, "\"([^<>\"]*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(singleLink)));
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        final String singleLinkframe = br.getRegex("\"(/frame\\.php\\?\\d+)\"").getMatch(0);
+        if (singleLinkframe != null) {
+            br.getPage("http://urlguard.org" + singleLinkframe);
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+        } else {
+            final String allLinks = br.getRegex("var options = eval\\((.*?)</script>").getMatch(0);
+            if (allLinks == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+            String[] links = new Regex(allLinks, "\"([^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(singleLink)));
+            if (fpName != null) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
         }
         return decryptedLinks;
     }
-
 }

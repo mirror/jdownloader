@@ -31,22 +31,31 @@ import jd.plugins.PluginForDecrypt;
 public class MirStkCm extends PluginForDecrypt {
 
     /*
-     * TODO many sites are using this type of script. Rename this plugin into general/template type plugin naming scheme (find the name of the script and
-     * rename). Do this after next major update, when we can delete plugins again.
+     * TODO many sites are using this type of script. Rename this plugin into
+     * general/template type plugin naming scheme (find the name of the script
+     * and rename). Do this after next major update, when we can delete plugins
+     * again.
      */
 
     /*
-     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't unhash stored data values before exporting them into redirects. I've noticed this
-     * with mediafire links for example http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return http://www.mediafire.com/?HASH(0x15053b48), you can then
-     * reload a couple times and it will work in jd.. provider problem not plugin. Other example links I've used seem to work fine. - Please keep code generic
-     * as possible.
+     * DEV NOTES: (mirrorshack) - provider has issues at times, and doesn't
+     * unhash stored data values before exporting them into redirects. I've
+     * noticed this with mediafire links for example
+     * http://mirrorstack.com/mf_dbfzhyf2hnxm will at times return
+     * http://www.mediafire.com/?HASH(0x15053b48), you can then reload a couple
+     * times and it will work in jd.. provider problem not plugin. Other example
+     * links I've used seem to work fine. - Please keep code generic as
+     * possible.
      * 
-     * Don't use package name as these type of link protection services export a list of hoster urls of a single file. When one imports many links (parts), JD
-     * loads many instances of the decrypter and each url/parameter/instance gets a separate packagename and that sucks. It's best to use linkgrabbers default
-     * auto packagename sorting.
+     * Don't use package name as these type of link protection services export a
+     * list of hoster urls of a single file. When one imports many links
+     * (parts), JD loads many instances of the decrypter and each
+     * url/parameter/instance gets a separate packagename and that sucks. It's
+     * best to use linkgrabbers default auto packagename sorting.
      */
 
     // version 0.5
+    private static final String MULTISHARED = "http://(www\\.)?multishared\\.com/[a-z0-9]+";
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,6 +78,8 @@ public class MirStkCm extends PluginForDecrypt {
         // Add a single link parameter to String[]
         if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12}")) {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
+        } else if (parameter.matches(MULTISHARED)) {
+            singleLinks = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http[^<>\"\\']*?)\\'").getColumn(0);
         }
         // Standard parameter, find all singleLinks
         else if (parameter.matches("http://[^/<>\"\\' ]+/([a-z]_)?[a-z0-9]{12}")) {
@@ -80,9 +91,10 @@ public class MirStkCm extends PluginForDecrypt {
         }
         // Process links found. Each provider has a slightly different
         // requirement and outcome
-        progress.setRange(singleLinks.length);
         for (String singleLink : singleLinks) {
-            if (parameter.contains("uploading.to/") || parameter.contains("multishared.com/")) {
+            if (parameter.matches(MULTISHARED)) {
+                finallink = singleLink;
+            } else if (parameter.contains("uploading.to/")) {
                 br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                 br.getPage(singleLink);
                 finallink = br.getRegex("frame src=\"([^\"\\' <>]*?)\"").getMatch(0);
@@ -112,7 +124,6 @@ public class MirStkCm extends PluginForDecrypt {
                 distribute(link);
             } catch (final Throwable e) {
             }
-            progress.increase(1);
         }
         return decryptedLinks;
     }

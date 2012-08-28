@@ -25,25 +25,29 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?up\\.4share\\.vn/(d|dlist)/[a-z0-9]+" }, flags = { 0 })
-public class Up4ShareVnFolderdecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?upsto\\.re/d/[A-Za-z0-9]+" }, flags = { 0 })
+public class UpstoReFolder extends PluginForDecrypt {
 
-    public Up4ShareVnFolderdecrypter(PluginWrapper wrapper) {
+    public UpstoReFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">Error: Not valid ID")) {
+        if (br.getURL().equals("http://upsto.re/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String[] links = br.getRegex("(http://up\\.4share\\.vn/(d/[a-z0-9]{1,}|f/[a-z0-9]+/[^<>\"]{1,}))").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        final String[] links = br.getRegex("<td class=\"left\"><a href=\"(/[A-Za-z0-9]+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (String singleLink : links)
+            decryptedLinks.add(createDownloadlink("http://upsto.re" + singleLink));
 
         return decryptedLinks;
     }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -27,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/[a-z0-9_\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxxbunker.com" }, urls = { "http://(www\\.)?xxxbunker\\.com/(?!search|javascript|tos|flash|footer|display|videoList|embedcode_|)[a-z0-9_\\-]+" }, flags = { 0 })
 public class XxxBunkerCom extends PluginForDecrypt {
 
     public XxxBunkerCom(PluginWrapper wrapper) {
@@ -52,11 +53,19 @@ public class XxxBunkerCom extends PluginForDecrypt {
         }
         externID = br.getRegex("postbackurl=([^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            br.getPage(Encoding.Base64Decode(externID));
-            externID = br.getRedirectLocation();
-            if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            externID = Encoding.Base64Decode(Encoding.htmlDecode(externID));
+            final URLConnectionAdapter con = br.openGetConnection(externID);
+            if (!con.getContentType().contains("html")) {
+                con.disconnect();
+            } else {
+                br.followConnection();
+                con.disconnect();
+                br.getPage(Encoding.Base64Decode(externID));
+                externID = br.getRedirectLocation();
+                if (externID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(externID));
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");

@@ -33,7 +33,7 @@ import jd.utils.JDHexUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://[\\w\\.]*?filestore\\.to/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestore.to" }, urls = { "http://(www\\.)?filestore\\.to/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class FilestoreTo extends PluginForHost {
 
     private String aBrowser = "";
@@ -57,6 +57,35 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public int getTimegapBetweenConnections() {
         return 2000;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        setBrowserExclusive();
+        // Many other browsers seem to be blocked
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");
+        br.setCustomCharset("utf-8");
+        final String url = downloadLink.getDownloadURL();
+        String downloadName = null;
+        String downloadSize = null;
+        for (int i = 1; i < 3; i++) {
+            try {
+                br.getPage(url);
+            } catch (final Exception e) {
+                continue;
+            }
+            if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML(">Download\\-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            haveFun();
+            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename):? (.*?)(Größe|Dateigröße|Filesize)").getMatch(1);
+            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize|Größe):? (\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
+            if (downloadName != null) downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
+            if (downloadSize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
+            return AvailableStatus.TRUE;
+
+        }
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override
@@ -120,39 +149,6 @@ public class FilestoreTo extends PluginForHost {
     @Override
     public void init() {
         Browser.setRequestIntervalLimitGlobal(getHost(), 500);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
-        // Many other browsers seem to be blocked
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");
-        br.setCustomCharset("utf-8");
-        final String url = downloadLink.getDownloadURL();
-        String downloadName = null;
-        String downloadSize = null;
-        for (int i = 1; i < 5; i++) {
-            try {
-                br.getPage(url);
-            } catch (final Exception e) {
-                continue;
-            }
-            if (br.containsHTML(">Download\\-Datei wurde nicht gefunden<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML(">Download\\-Datei wurde gesperrt<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            if (br.containsHTML("Entweder wurde die Datei von unseren Servern entfernt oder der Download-Link war")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-            haveFun();
-            downloadName = new Regex(aBrowser, "(Datei|Dateiname|FileName|Filename): (.*?)(Größe|Dateigröße|Filesize):").getMatch(1);
-            downloadSize = new Regex(aBrowser, "(Dateigröße|Filesize|Größe): (.*?)(Uploaded: |Datum: )").getMatch(1);
-            if (downloadName != null) {
-                downloadLink.setName(Encoding.htmlDecode(downloadName.trim()));
-                if (downloadSize != null) {
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(downloadSize.replaceAll(",", "\\.").trim()));
-                }
-                return AvailableStatus.TRUE;
-            }
-
-        }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     @Override

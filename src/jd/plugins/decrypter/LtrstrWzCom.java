@@ -22,12 +22,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrastar-base.com" }, urls = { "http://(www\\.)?ultrastar-(warez|base)\\.com/index\\.php\\?section=download\\&cat=\\d+\\&id=\\d+" }, flags = { 0 })
 public class LtrstrWzCom extends PluginForDecrypt {
@@ -40,9 +38,12 @@ public class LtrstrWzCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("ultrastar-warez.com", "ultrastar-base.com");
         br.getPage(parameter);
-        if (br.containsHTML("(>Uploaded: 31\\.12\\.69 \\(23:00\\)<|class=\"title\"> - </span></td>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(>Uploaded: 31\\.12\\.69 \\(23:00\\)<|class=\"title\"> \\- </span></td>)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<span class=\"title\">(.*?)</span>").getMatch(0);
-        String mirrors[] = br.getRegex("<b>Download (\\d+)?:</b></td>[\t\r\n ]+<td colspan=\"4\" align=\"left\">(.*?)</td>").getColumn(1);
+        final String mirrors[] = br.getRegex("<b>Download (\\d+)?:</b></td>[\t\r\n ]+<td colspan=\"4\" align=\"left\">(.*?)</td>").getColumn(1);
         if (mirrors == null || mirrors.length == 0) return null;
         for (String mirror : mirrors) {
             String[] links = HTMLParser.getHttpLinks(mirror, "");

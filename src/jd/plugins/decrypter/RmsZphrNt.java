@@ -29,35 +29,33 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://[\\w\\.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)?zophar\\.net/(?!download_file)[^<>\"]*?\\.html" }, flags = { 0 })
 public class RmsZphrNt extends PluginForDecrypt {
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternDownload = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/([0-9]{1,})", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternFilesize = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))\\)</p>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternDownload = Pattern.compile("\"(http://(www\\.)?zophar\\.net/download_file/\\d+)\"", Pattern.CASE_INSENSITIVE);
 
     public RmsZphrNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(param.toString());
 
-        String filename = new Regex(parameter, patternSupported).getMatch(1);
-        String file = br.getRegex(patternDownload).getMatch(0);
-        long filesize = SizeFormatter.getSize(br.getRegex(patternFilesize).getMatch(0));
-        DownloadLink dlLink = createDownloadlink("http://roms.zophar.net/download-file/" + file);
-        dlLink.setDownloadSize(filesize);
-        dlLink.setName(filename);
+        final String file = br.getRegex(patternDownload).getMatch(0);
+        if (file == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String size = br.getRegex("<b>Filesize</b></td>.*?<td align=\"right\">(\\d+(\\.\\d+)? (KB|MB|B))</td>").getMatch(0);
+        final DownloadLink dlLink = createDownloadlink(file);
+        if (size != null) dlLink.setDownloadSize(SizeFormatter.getSize(size));
+        dlLink.setName(new Regex(parameter, "/([^<>\"/]*?)\\.html").getMatch(0));
 
         decryptedLinks.add(dlLink);
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

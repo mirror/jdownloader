@@ -31,7 +31,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net" }, urls = { "http://(www\\.)?odimusic\\.net/download/(music/.*?\\.html|engine/go\\.php\\?url=[a-zA-Z0-9% ]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odimusic.net" }, urls = { "http://(www\\.)?odimusic\\.net/download/((music/|\\d+\\-).*?\\.html|engine/go\\.php\\?url=[a-zA-Z0-9% ]+)" }, flags = { 0 })
 public class OdMscNt extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -53,7 +53,7 @@ public class OdMscNt extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+            final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
             if (links == null || links.length == 0) return null;
             for (String link : links) {
                 // Handling for redirect-links
@@ -65,6 +65,13 @@ public class OdMscNt extends PluginForDecrypt {
                 } else {
                     // Handling for normal links (plainlinks)
                     if (!link.contains("odimusic.net") && !link.contains("imageshack.us")) decryptedLinks.add(createDownloadlink(link));
+                }
+            }
+            final String[] otherLinks = br.getRegex("<\\!\\-\\-ecode1\\-\\-><br />(http[^<>\"]*?)<br").getColumn(0);
+            if (otherLinks != null && otherLinks.length != 0) {
+                for (final String link : otherLinks) {
+                    // Handling for normal links (plainlinks)
+                    if (!link.contains("odimusic.net") && !link.contains("imageshack.us")) decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
                 }
             }
         } else {

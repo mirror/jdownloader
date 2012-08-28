@@ -54,15 +54,19 @@ public class RpprsIn extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         } else {
-            String onlyDifference = "main";
-            if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
-            br.getPage(parameter);
-            final String artistID = br.getRegex("makeRIP\\(\"artistplaylist_" + onlyDifference + "\\-(\\d+)\"\\)").getMatch(0);
-            if (artistID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            if (parameter.matches("http://(www\\.)?rappers\\.in/track\\-\\d+")) {
+                br.getPage("http://www.rappers.in/playtrack-" + new Regex(parameter, "(\\d+)$").getMatch(0) + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
+            } else {
+                String onlyDifference = "main";
+                if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
+                br.getPage(parameter);
+                final String artistID = br.getRegex("makeRIP\\(\"artistplaylist_" + onlyDifference + "\\-(\\d+)\"\\)").getMatch(0);
+                if (artistID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                br.getPage("http://www.rappers.in/artistplaylist_" + onlyDifference + "-" + artistID + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
             }
-            br.getPage("http://www.rappers.in/artistplaylist_" + onlyDifference + "-" + artistID + "-1808.xml?" + new Random().nextInt(100) + "&s=undefined");
             final String[][] allSongs = br.getRegex("<filename>(http://[^<>\"]*?)</filename>[\t\n\r ]+<title>([^<>\"]*?)</title>").getMatches();
             if (allSongs == null || allSongs.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);

@@ -103,7 +103,7 @@ public class OdiMusicNet extends PluginForHost {
         } else {
             ajaxBR.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1");
         }
-        if (ajaxBR.containsHTML("This file is available Only with a premium account ")) {
+        if (ajaxBR.containsHTML("This file is available Only with a premium account")) {
             try {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
             } catch (final Throwable e) {

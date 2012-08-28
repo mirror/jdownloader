@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
  * @author butkovip
  * 
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://[\\w\\.]*?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, flags = { 0 }, names = { "topky.sk" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, urls = { "http://(www\\.)?topky\\.sk/cl/[0-9]+/[0-9]+/(VIDEO\\-[-a-zA-Z0-9]+)?" }, flags = { 0 }, names = { "topky.sk" })
 public class TopkySk extends PluginForDecrypt {
 
     public TopkySk(PluginWrapper wrapper) {
@@ -71,7 +71,7 @@ public class TopkySk extends PluginForDecrypt {
         final String finallink = br.getRegex("name=\"FlashVars\" value=\"file=(http://[^<>\"]*?)\\&").getMatch(0);
         if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
+            logger.warning("Decrypter broken or invalid link: " + parameter);
             return null;
         }
         return decryptedLinks;

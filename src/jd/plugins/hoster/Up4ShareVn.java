@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://[\\w\\.]*?up\\.4share\\.vn/f/[a-z0-9]+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "up.4share.vn" }, urls = { "http://(www\\.)?up\\.4share\\.vn/f/[a-z0-9]+/.+" }, flags = { 2 })
 public class Up4ShareVn extends PluginForHost {
 
     private static final String MAINPAGE = "http://up.4share.vn/";
@@ -42,6 +42,30 @@ public class Up4ShareVn extends PluginForHost {
     public Up4ShareVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://up.4share.vn/?act=gold");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.containsHTML(">FID Không hợp lệ\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex fileInfo = br.getRegex(">Tập tin: <b> ([^<>\"]*?)</b> <br /> Kích thước: <strong>([^<>\"]*?)</strong>");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -87,24 +111,23 @@ public class Up4ShareVn extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (!br.containsHTML("/code.html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (!br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
-        String captchaurl = "http://up.4share.vn/code.html?width=40&height=28&characters=2";
+        String captchaurl = "http://up.4share.vn/library/captcha1.html";
         String dllink = null;
         // Can be skipped
-        // int wait = 60;
-        // final String waittime =
-        // br.getRegex("var counter=(\\d+);").getMatch(0);
-        // if (waittime != null) wait = Integer.parseInt(waittime);
-        // sleep(wait * 1001l, downloadLink);
+        int wait = 60;
+        final String waittime = br.getRegex("var counter=(\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, downloadLink);
         for (int i = 0; i <= 3; i++) {
             String code = getCaptchaCode(captchaurl, downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "&submit=DOWNLOAD&s=&security_code=" + code);
             dllink = br.getRedirectLocation();
-            if (dllink == null && br.containsHTML("/code.html")) continue;
+            if (dllink == null && br.containsHTML("captcha1\\.html")) continue;
             break;
         }
-        if (dllink == null && br.containsHTML("/code.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (dllink == null && br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -144,30 +167,6 @@ public class Up4ShareVn extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage(MAINPAGE, "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
         if (br.getCookie(MAINPAGE, "userid") == null || br.getCookie(MAINPAGE, "passwd") == null || !br.containsHTML("<td> <b>VIP</b>")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(link.getDownloadURL());
-            if (con.getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            br.followConnection();
-        } finally {
-            try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-        if (br.containsHTML(">FID Không hợp lệ\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex(">Tập tin: <b> ([^<>\"]*?)</b> <br /> Kích thước: <strong>([^<>\"]*?)</strong>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

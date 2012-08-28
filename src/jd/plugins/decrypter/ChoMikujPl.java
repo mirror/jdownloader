@@ -55,12 +55,33 @@ public class ChoMikujPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("chomikujpagedecrypt.pl/", "chomikuj.pl/");
-        String problem = null;
+        String linkending = null;
         try {
-            problem = parameter.substring(parameter.lastIndexOf(","));
+            linkending = parameter.substring(parameter.lastIndexOf(","));
         } catch (Exception e) {
         }
-        if (problem != null) parameter = parameter.replace(problem, "");
+        // Check if link refers to a single file and get it
+        if (linkending != null) {
+            // It's a file: Get all important information out of the url and
+            // hand it over to the hosterplugin
+            if (linkending.matches(",\\d+\\.[a-z0-9]{1,5}")) {
+                final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+                final Regex info = new Regex(parameter, "/([^<>\"/]*?),(\\d+)(\\..+)$");
+                dl.setProperty("fileid", info.getMatch(1));
+                dl.setName(Encoding.htmlDecode(info.getMatch(0)) + info.getMatch(2));
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            } else {
+                // Or it's just a specified page of a folder, we remove that to
+                // prevent problems!
+                parameter = parameter.replace(linkending, "");
+            }
+        }
         parameter = parameter.replace("www.", "");
         // The message used on errors in this plugin
         ERROR = "Error while decrypting link: " + parameter;

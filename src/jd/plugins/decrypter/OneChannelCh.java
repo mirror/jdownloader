@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?1channel\\.(ch|li)/watch\\-\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1channel.ch" }, urls = { "http://(www\\.)?1channel\\.(ch|li)/(watch\\-\\d+|tv\\-\\d+[A-Za-z0-9\\-_]+/season\\-\\d+\\-episode\\-\\d+)" }, flags = { 0 })
 public class OneChannelCh extends PluginForDecrypt {
 
     public OneChannelCh(PluginWrapper wrapper) {
@@ -42,6 +42,10 @@ public class OneChannelCh extends PluginForDecrypt {
         if (fpName == null) fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
         String[] links = br.getRegex("\\&url=([^<>\"]*?)\\&domain=").getColumn(0);
         if (links == null || links.length == 0) {
+            if (br.containsHTML("\\'HD Sponsor\\'")) {
+                logger.info("Found no downloadlink in link: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

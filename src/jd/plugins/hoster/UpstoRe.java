@@ -43,7 +43,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?upsto\\.re/(?!faq|privacy|terms)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upsto.re" }, urls = { "http://(www\\.)?upsto\\.re/(?!faq|privacy|terms|d/)[A-Za-z0-9]+" }, flags = { 2 })
 public class UpstoRe extends PluginForHost {
 
     public UpstoRe(PluginWrapper wrapper) {
