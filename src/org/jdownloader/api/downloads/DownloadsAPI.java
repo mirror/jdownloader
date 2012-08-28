@@ -8,10 +8,16 @@ import org.appwork.remoteapi.RemoteAPIInterface;
 @ApiNamespace("downloads")
 public interface DownloadsAPI extends RemoteAPIInterface {
 
-    public List<FilePackageAPIStorable> list();
+	public List<FilePackageAPIStorable> list();
 
-    public boolean stop();
+	public boolean stop();
 
-    public boolean start();
+	public boolean start();
+
+	public int speed();
+
+	public int limit();
+
+	public long traffic();
 
 }
