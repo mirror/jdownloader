@@ -4,7 +4,7 @@ gui_config_jdshutdown_close=Zavřít JDownloader
 gui_config_jdshutdown_forceshutdown=Vynutit vypnutí (ne ve všech OS)
 gui_config_jdshutdown_hibernate=Hibernovat (ne na všech OS)
 gui_config_jdshutdown_mode=Režim:
-gui_config_jdshutdown_shutdown=Vypnout
+gui_config_jdshutdown_shutdown=Vypnutí
 gui_config_jdshutdown_standby=Spánek (ne ve všech OS)
 interaction_shutdown_dialog_msg_closejd=<h2><font color="red">JDownloader se zavře!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Systém se přepne do Režimu spánku!</font></h2>
@@ -16,3 +16,4 @@ interaction_shutdown_dialog_title_shutdown=Vypnout?
 interaction_shutdown_dialog_title_standby=Úsporný režim?
 jd_plugins_optional_jdshutdown=JD Shutdown
 jd_plugins_optional_jdshutdown_description=Automaticky vypne nebo uspí Váš počítač nebo zavře JD, když jsou všechna stahování dokončena.
+lit_shutdownn=Vypnutí

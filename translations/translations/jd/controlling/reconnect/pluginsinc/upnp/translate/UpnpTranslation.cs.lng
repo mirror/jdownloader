@@ -1,5 +1,9 @@
 auto=UPNP automatické nastavení
 controlURLTxt_help=Vložit kontrolní URL
+interaction_UpnpReconnect_wanservice_ip=Internetový protokol
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point protokol
+literally_choose_router=Vybrat zařízení
+literally_control_url=Kontrolní URL
 literally_router=UPNP Router
 literally_service_type=Typ služby
+malformedurl=Kontrolní URL je neplatná. Zkuste UPnP autonastavení.
