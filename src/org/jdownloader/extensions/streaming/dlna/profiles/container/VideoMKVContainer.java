@@ -2,7 +2,7 @@ package org.jdownloader.extensions.streaming.dlna.profiles.container;
 
 import org.jdownloader.extensions.streaming.dlna.Extensions;
 
-public class VideoMKVContainer extends AbstractAudioContainer {
+public class VideoMKVContainer extends AbstractAudioVideoContainer {
     public static final VideoMKVContainer INSTANCE = new VideoMKVContainer();
 
     protected VideoMKVContainer() {

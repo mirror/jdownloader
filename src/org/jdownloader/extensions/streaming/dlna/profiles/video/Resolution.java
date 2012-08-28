@@ -92,4 +92,8 @@ public enum Resolution {
     public IntRange getWidth() {
         return width;
     }
+
+    public boolean matches(int width, int height) {
+        return this.width.contains(width) && this.height.contains(height);
+    }
 }

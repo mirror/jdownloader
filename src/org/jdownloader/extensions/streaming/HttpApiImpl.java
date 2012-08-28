@@ -9,6 +9,7 @@ import javax.imageio.ImageIO;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.remoteapi.RemoteAPIException;
@@ -33,10 +34,14 @@ import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkA
 import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
 import org.jdownloader.extensions.streaming.dataprovider.rar.PartFileDataProvider;
 import org.jdownloader.extensions.streaming.dataprovider.rar.RarArchiveDataProvider;
+import org.jdownloader.extensions.streaming.dlna.DLNATransferMode;
+import org.jdownloader.extensions.streaming.dlna.DLNATransportConstants;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
+import org.jdownloader.extensions.streaming.dlna.profiles.video.AbstractAudioVideoProfile;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaNode;
+import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
@@ -96,7 +101,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 String ct = JPEGImage.JPEG_LRG.getMimeType().getLabel();
                 String dlnaFeatures = "DLNA.ORG_PN=" + JPEGImage.JPEG_TN.getProfileID();
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-                response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
+                response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.INTERACTIVE)));
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ImageIO.write(IconIO.getScaledInstance(ImageProvider.read(path), 160, 160), "jpeg", baos);
                 baos.close();
@@ -115,7 +120,7 @@ public class HttpApiImpl implements HttpRequestHandler {
             // can be null if this has been a playto from downloadlist or linkgrabber
             MediaNode mediaItem = extension.getMediaArchiveController().getItemById(id);
             DownloadLink dlink = extension.getLinkById(id);
-
+            if (dlink == null) { throw new WTFException("Link null"); }
             PlayToUpnpRendererDevice callingDevice = null;
             for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
                 if (request.getRemoteAddress().contains(dev.getAddress())) {
@@ -199,7 +204,7 @@ public class HttpApiImpl implements HttpRequestHandler {
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
 
             if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-            response.getResponseHeaders().add(new HTTPHeader("TransferMode.DLNA.ORG", "Streaming"));
+            response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.STREAMING)));
             response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
             if (streamingInterface instanceof RarStreamer) {
                 while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
@@ -249,10 +254,31 @@ public class HttpApiImpl implements HttpRequestHandler {
         return false;
     }
 
+    private String getTransferMode(GetRequest request, String def) {
+        HTTPHeader head = request.getRequestHeaders().get(DLNATransportConstants.HEADER_TRANSFERMODE);
+        String ret = null;
+        if (head != null && StringUtils.isNotEmpty(head.getValue())) {
+            ret = DLNATransferMode.valueOf(head.getValue());
+        }
+        return ret != null ? ret : def;
+    }
+
     private Profile findProfile(MediaItem mediaItem) {
+        if (mediaItem == null) return null;
         ArrayList<Profile> ret = new ArrayList<Profile>();
+        logger.info("find DLNA Profile: " + mediaItem.getDownloadLink());
         for (Profile p : Profile.ALL_PROFILES) {
-            System.out.println(p);
+            if (mediaItem instanceof VideoMediaItem) {
+                VideoMediaItem video = (VideoMediaItem) mediaItem;
+                if (p instanceof AbstractAudioVideoProfile) {
+                    boolean check = video.matches((AbstractAudioVideoProfile) p);
+                    if (check) {
+                        logger.info("DLNA Profile: " + p);
+
+                    }
+                }
+            }
+
         }
         return null;
     }

@@ -2,7 +2,7 @@ package org.jdownloader.extensions.streaming.dlna.profiles.container;
 
 import org.jdownloader.extensions.streaming.dlna.Extensions;
 
-public class VideoTransportStreamContainer extends AbstractAudioContainer {
+public class VideoTransportStreamContainer extends AbstractAudioVideoContainer {
 
     protected boolean systemStream;
     protected int     packetsize;

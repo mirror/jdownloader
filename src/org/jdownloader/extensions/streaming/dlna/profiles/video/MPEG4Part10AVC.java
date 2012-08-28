@@ -96,7 +96,6 @@ public class MPEG4Part10AVC extends AbstractMpegProfile {
         stream.addPixelAspectRatio(20, 11);
         stream.addPixelAspectRatio(32, 11);
         stream.addPixelAspectRatio(80, 33);
-        stream.setProfileTags(new String[] { "constrained-baseline" });
 
         return stream;
     }
@@ -104,10 +103,10 @@ public class MPEG4Part10AVC extends AbstractMpegProfile {
     /*
      * Setup Audio Profiles
      */
-    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_MULTI5 = new AACAudioStream().setProfileTags(new String[] { "lc", "ltp" }).addChannelRange(1, 6);
-    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_MULTI7 = new AACAudioStream().setProfileTags(new String[] { "lc", "ltp" }).addChannelRange(1, 8);
-    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_STEREO = new AACAudioStream().setProfileTags(new String[] { "lc", "ltp" }).addChannelRange(1, 2);
-    public static final InternalAudioStream    AUDIO_PROFILE_AAC_MULTI5     = new AACAudioStream().addChannelRange(1, 6);
+    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_MULTI5 = new AACAudioStream().addProfileTags("ltp").addChannelRange(3, 6);
+    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_MULTI7 = new AACAudioStream().addProfileTags("ltp").addChannelRange(7, 8);
+    private static final InternalAudioStream   AUDIO_PROFILE_AAC_LTP_STEREO = new AACAudioStream().addProfileTags("ltp").addChannelRange(1, 2);
+    public static final InternalAudioStream    AUDIO_PROFILE_AAC_MULTI5     = new AACAudioStream().addChannelRange(3, 6);
 
     private static final InternalAudioStream   AUDIO_PROFILE_AAC_STEREO     = new AACAudioStream().addChannelRange(1, 2);
 
@@ -412,11 +411,19 @@ public class MPEG4Part10AVC extends AbstractMpegProfile {
     }
 
     private static InternalVideoStream createMpL3SdBase() {
-        return createBaselineConstraint().setLevel(new String[] { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3" }).setProfileTags(new String[] { "constrained-baseline", "main", "baseline" });
+        return createBaselineConstraint().setLevel(new String[] { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3" }).setProfileTags(AVCStream.BASELINE_CONSTRAINED/*
+                                                                                                                                                                          * ,
+                                                                                                                                                                          * "main"
+                                                                                                                                                                          * ,
+                                                                                                                                                                          * "baseline"
+                                                                                                                                                                          */);
     }
 
     private static InternalVideoStream createMpSdBase() {
-        return createBaselineConstraint().setLevel(new String[] { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3" }).setProfileTags(new String[] { "constrained-baseline", "main" });
+        return createBaselineConstraint().setLevel(new String[] { "1", "1b", "1.1", "1.2", "1.3", "2", "2.1", "2.2", "3" }).setProfileTags(AVCStream.BASELINE_CONSTRAINED/*
+                                                                                                                                                                          * ,
+                                                                                                                                                                          * "main"
+                                                                                                                                                                          */);
     }
 
     // TS

@@ -57,7 +57,7 @@ public class VideoItemStorable extends MediaItemStorable implements Storable {
         VideoItemStorable ret = new VideoItemStorable();
         ret.setAudioStreams(mi.getAudioStreams());
         ret.setVideoStreams(mi.getVideoStreams());
-        ret.setBitrate(mi.getBitrate());
+        ret.setBitrate(mi.getSystemBitrate());
         ret.setDuration(mi.getDuration());
         ret.setThumbnailPath(mi.getThumbnailPath());
         ret.setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
@@ -70,7 +70,7 @@ public class VideoItemStorable extends MediaItemStorable implements Storable {
         VideoMediaItem ret = new VideoMediaItem(getDownloadLink()._getDownloadLink());
         ret.setAudioStreams(getAudioStreams());
         ret.setVideoStreams(getVideoStreams());
-        ret.setBitrate(getBitrate());
+        ret.setSystemBitrate(getBitrate());
         ret.setDuration(getDuration());
         ret.setThumbnailPath(getThumbnailPath());
         ret.setContainerFormat(getContainerFormat());

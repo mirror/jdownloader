@@ -14,6 +14,11 @@ import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.Mpeg2Vid
 
 public class Mpeg2 extends AbstractMpegProfile {
 
+    public static final String                         LEVEL_HIGH                                    = "high";
+    public static final String                         LEVEL_HIGH_1440                               = "high-1440";
+    public static final String                         LEVEL_LOW                                     = "low";
+    public static final String                         PROFILE_SIMPLE                                = "simple";
+    public static final String                         LEVEL_MAIN                                    = "main";
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS   = new VideoTransportStreamContainer(TimeStamp.VALID, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS = new VideoTransportStreamContainer(TimeStamp.WITHOUT, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS    = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
@@ -42,394 +47,395 @@ public class Mpeg2 extends AbstractMpegProfile {
     public static void init() {
     }
 
-    public static final Mpeg2 MPEG_PS_NTSC_XAC3      = new Mpeg2("MPEG_PS_NTSC_XAC3") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupXAc3(this);
-
-                                                             addVideoStream(setup720x480(createMpegTsVideo()));
-                                                             addVideoStream(setup704x480(createMpegTsVideo()));
-                                                             addVideoStream(setup640x480(createMpegTsVideo()));
-                                                             addVideoStream(setup480x480(createMpegTsVideo()));
-                                                             addVideoStream(setup544x480(createMpegTsVideo()));
-                                                             addVideoStream(setup352x480(createMpegTsVideo()));
-                                                             addVideoStream(setup352x240(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_PS_PAL            = new Mpeg2("MPEG_PS_PAL") {
-
-                                                         {
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-
-                                                             addVideoStream(setupEU720x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU704x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU544x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU480x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU352x576(createMpegTsVideo()));
-                                                             // libdlna claims that the last one is 252x288. 352 seems more
-                                                             // likly
-                                                             addVideoStream(setupEU352x288(createMpegTsVideo()));
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_PS_PAL_XAC3       = new Mpeg2("MPEG_PS_PAL_XAC3") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupXAc3(this);
-                                                             // Video Streams
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
-
-                                                             addVideoStream(setupEU720x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU704x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU544x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU480x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU352x576(createMpegTsVideo()));
-                                                             // libdlna claims that the last one is 252x288. 352 seems more
-                                                             // likly
-                                                             addVideoStream(setupEU352x288(createMpegTsVideo()));
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_HD_NA          = new Mpeg2("MPEG_TS_HD_NA") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_HD_NA_ISO      = new Mpeg2("MPEG_TS_HD_NA_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_HD_NA_T        = new Mpeg2("MPEG_TS_HD_NA_T") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_HD_NA_XAC3     = new Mpeg2("MPEG_TS_HD_NA_XAC3") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             // setupAc3(this);
-                                                             // setupPrivateAc3(this);
-                                                             setupXAc3(this);
-                                                             // Video Streams
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_HD_NA_XAC3_ISO = new Mpeg2("MPEG_TS_HD_NA_XAC3_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             // setupAc3(this);
-                                                             // setupPrivateAc3(this);
-                                                             setupXAc3(this);
-                                                             // Video Streams
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_HD_NA_XAC3_T   = new Mpeg2("MPEG_TS_HD_NA_XAC3_T") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             // setupAc3(this);
-                                                             // setupPrivateAc3(this);
-                                                             setupXAc3(this);
-                                                             // Video Streams
-
-                                                             addVideoStream(setup1920x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x720(createMpegTsVideo()));
-                                                             addVideoStream(setup1440x1080(createMpegTsVideo()));
-                                                             addVideoStream(setup1280x1080(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_MP_LL_AAC      = new Mpeg2("MPEG_TS_MP_LL_AAC") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
-                                                             InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { "low" });
-                                                             stream.addBitrateRange(1, 4000000);
-                                                             stream.setSystemStream(false);
-                                                             stream.setProfileTags(new String[] { "main" });
-                                                             stream.addResolution(Resolution._CIF_352x288);
-                                                             stream.addFrameRate(FrameRate.FPS_30);
-
-                                                             // Video Streams
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_MP_LL_AAC_ISO  = new Mpeg2("MPEG_TS_MP_LL_AAC_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             // setupAc3(this);
-                                                             // setupPrivateAc3(this);
-
-                                                             addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
-                                                             InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { "low" });
-                                                             stream.addBitrateRange(1, 4000000);
-                                                             stream.setSystemStream(false);
-                                                             stream.setProfileTags(new String[] { "main" });
-                                                             stream.addResolution(Resolution._CIF_352x288);
-                                                             stream.addFrameRate(FrameRate.FPS_30);
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                             // Video Streams
-
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_MP_LL_AAC_T    = new Mpeg2("MPEG_TS_MP_LL_AAC_T") {
-
-                                                         {
-                                                             // setupAc3(this);
-                                                             // setupPrivateAc3(this);
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
-                                                             InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { "low" });
-                                                             stream.addBitrateRange(1, 4000000);
-                                                             stream.setSystemStream(false);
-                                                             stream.setProfileTags(new String[] { "main" });
-                                                             stream.addResolution(Resolution._CIF_352x288);
-                                                             stream.addFrameRate(FrameRate.FPS_30);
-
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                             // Video Streams
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_EU          = new Mpeg2("MPEG_TS_SD_EU") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
-                                                             addVideoStream(setupEU720x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU544x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU480x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU352x576(createMpegTsVideo()));
-                                                             // libdlna claims that the last one is 252x288. 352 seems more
-                                                             // likly
-                                                             addVideoStream(setupEU352x288(createMpegTsVideo()));
-
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_SD_EU_ISO      = new Mpeg2("MPEG_TS_SD_EU_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             addVideoStream(setupEU720x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU544x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU480x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU352x576(createMpegTsVideo()));
-                                                             // libdlna claims that the last one is 252x288. 352 seems more
-                                                             // likly
-                                                             addVideoStream(setupEU352x288(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_EU_T        = new Mpeg2("MPEG_TS_SD_EU_T") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-
-                                                             addVideoStream(setupEU720x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU544x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU480x576(createMpegTsVideo()));
-                                                             addVideoStream(setupEU352x576(createMpegTsVideo()));
-                                                             // libdlna claims that the last one is 252x288. 352 seems more
-                                                             // likly
-                                                             addVideoStream(setupEU352x288(createMpegTsVideo()));
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_SD_NA          = new Mpeg2("MPEG_TS_SD_NA") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-
-                                                             setupTransportStreamsSdNa();
-
-                                                         }
-                                                     };
-    public static final Mpeg2 MPEG_TS_SD_NA_ISO      = new Mpeg2("MPEG_TS_SD_NA_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             setupTransportStreamsSdNa();
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_NA_T        = new Mpeg2("MPEG_TS_SD_NA_T") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupAudioPrivateAc3(this);
-                                                             setupAudioAc3(this);
-                                                             setupAudioMp2(this);
-                                                             setupAudioLpcm(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                             setupTransportStreamsSdNa();
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_NA_XAC3     = new Mpeg2("MPEG_TS_SD_NA_XAC3") {
-
-                                                         {
-
-                                                             setupXAc3(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupTransportStreamsSdNa();
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_NA_XAC3_ISO = new Mpeg2("MPEG_TS_SD_NA_XAC3_ISO") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG;
-                                                             setupXAc3(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
-                                                             setupTransportStreamsSdNa();
-
-                                                         }
-                                                     };
-
-    public static final Mpeg2 MPEG_TS_SD_NA_XAC3_T   = new Mpeg2("MPEG_TS_SD_NA_XAC3_T") {
-
-                                                         {
-                                                             mimeType = MimeType.VIDEO_MPEG_TS;
-                                                             setupXAc3(this);
-                                                             this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
-                                                             setupTransportStreamsSdNa();
-
-                                                         }
-                                                     };
+    public static final Mpeg2   MPEG_PS_NTSC_XAC3      = new Mpeg2("MPEG_PS_NTSC_XAC3") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupXAc3(this);
+
+                                                               addVideoStream(setup720x480(createMpegTsVideo()));
+                                                               addVideoStream(setup704x480(createMpegTsVideo()));
+                                                               addVideoStream(setup640x480(createMpegTsVideo()));
+                                                               addVideoStream(setup480x480(createMpegTsVideo()));
+                                                               addVideoStream(setup544x480(createMpegTsVideo()));
+                                                               addVideoStream(setup352x480(createMpegTsVideo()));
+                                                               addVideoStream(setup352x240(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_PS_PAL            = new Mpeg2("MPEG_PS_PAL") {
+
+                                                           {
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+
+                                                               addVideoStream(setupEU720x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU704x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU544x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU480x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU352x576(createMpegTsVideo()));
+                                                               // libdlna claims that the last one is 252x288. 352 seems more
+                                                               // likly
+                                                               addVideoStream(setupEU352x288(createMpegTsVideo()));
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_PS_PAL_XAC3       = new Mpeg2("MPEG_PS_PAL_XAC3") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupXAc3(this);
+                                                               // Video Streams
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS };
+
+                                                               addVideoStream(setupEU720x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU704x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU544x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU480x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU352x576(createMpegTsVideo()));
+                                                               // libdlna claims that the last one is 252x288. 352 seems more
+                                                               // likly
+                                                               addVideoStream(setupEU352x288(createMpegTsVideo()));
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_HD_NA          = new Mpeg2("MPEG_TS_HD_NA") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_HD_NA_ISO      = new Mpeg2("MPEG_TS_HD_NA_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_HD_NA_T        = new Mpeg2("MPEG_TS_HD_NA_T") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_HD_NA_XAC3     = new Mpeg2("MPEG_TS_HD_NA_XAC3") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               // setupAc3(this);
+                                                               // setupPrivateAc3(this);
+                                                               setupXAc3(this);
+                                                               // Video Streams
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_HD_NA_XAC3_ISO = new Mpeg2("MPEG_TS_HD_NA_XAC3_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               // setupAc3(this);
+                                                               // setupPrivateAc3(this);
+                                                               setupXAc3(this);
+                                                               // Video Streams
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_HD_NA_XAC3_T   = new Mpeg2("MPEG_TS_HD_NA_XAC3_T") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               // setupAc3(this);
+                                                               // setupPrivateAc3(this);
+                                                               setupXAc3(this);
+                                                               // Video Streams
+
+                                                               addVideoStream(setup1920x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x720(createMpegTsVideo()));
+                                                               addVideoStream(setup1440x1080(createMpegTsVideo()));
+                                                               addVideoStream(setup1280x1080(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_MP_LL_AAC      = new Mpeg2("MPEG_TS_MP_LL_AAC") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+
+                                                               InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { LEVEL_LOW });
+                                                               stream.addBitrateRange(1, 4000000);
+                                                               stream.setSystemStream(false);
+                                                               stream.addProfileTags(PROFILE_MAIN);
+                                                               stream.addResolution(Resolution._CIF_352x288);
+                                                               stream.addFrameRate(FrameRate.FPS_30);
+
+                                                               // Video Streams
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_MP_LL_AAC_ISO  = new Mpeg2("MPEG_TS_MP_LL_AAC_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               // setupAc3(this);
+                                                               // setupPrivateAc3(this);
+
+                                                               addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
+                                                               InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { LEVEL_LOW });
+                                                               stream.addBitrateRange(1, 4000000);
+                                                               stream.setSystemStream(false);
+                                                               stream.addProfileTags(PROFILE_MAIN);
+                                                               stream.addResolution(Resolution._CIF_352x288);
+                                                               stream.addFrameRate(FrameRate.FPS_30);
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                               // Video Streams
+
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_MP_LL_AAC_T    = new Mpeg2("MPEG_TS_MP_LL_AAC_T") {
+
+                                                           {
+                                                               // setupAc3(this);
+                                                               // setupPrivateAc3(this);
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               addAudioStream(new AACAudioStream().addBitrateRange(1, 256000));
+                                                               InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { LEVEL_LOW });
+                                                               stream.addBitrateRange(1, 4000000);
+                                                               stream.setSystemStream(false);
+                                                               stream.addProfileTags(PROFILE_MAIN);
+                                                               stream.addResolution(Resolution._CIF_352x288);
+                                                               stream.addFrameRate(FrameRate.FPS_30);
+
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                               // Video Streams
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_EU          = new Mpeg2("MPEG_TS_SD_EU") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+
+                                                               addVideoStream(setupEU720x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU544x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU480x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU352x576(createMpegTsVideo()));
+                                                               // libdlna claims that the last one is 252x288. 352 seems more
+                                                               // likly
+                                                               addVideoStream(setupEU352x288(createMpegTsVideo()));
+
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_SD_EU_ISO      = new Mpeg2("MPEG_TS_SD_EU_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               addVideoStream(setupEU720x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU544x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU480x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU352x576(createMpegTsVideo()));
+                                                               // libdlna claims that the last one is 252x288. 352 seems more
+                                                               // likly
+                                                               addVideoStream(setupEU352x288(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_EU_T        = new Mpeg2("MPEG_TS_SD_EU_T") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+
+                                                               addVideoStream(setupEU720x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU544x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU480x576(createMpegTsVideo()));
+                                                               addVideoStream(setupEU352x576(createMpegTsVideo()));
+                                                               // libdlna claims that the last one is 252x288. 352 seems more
+                                                               // likly
+                                                               addVideoStream(setupEU352x288(createMpegTsVideo()));
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_SD_NA          = new Mpeg2("MPEG_TS_SD_NA") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+
+                                                               setupTransportStreamsSdNa();
+
+                                                           }
+                                                       };
+    public static final Mpeg2   MPEG_TS_SD_NA_ISO      = new Mpeg2("MPEG_TS_SD_NA_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               setupTransportStreamsSdNa();
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_NA_T        = new Mpeg2("MPEG_TS_SD_NA_T") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupAudioPrivateAc3(this);
+                                                               setupAudioAc3(this);
+                                                               setupAudioMp2(this);
+                                                               setupAudioLpcm(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                               setupTransportStreamsSdNa();
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_NA_XAC3     = new Mpeg2("MPEG_TS_SD_NA_XAC3") {
+
+                                                           {
+
+                                                               setupXAc3(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS };
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupTransportStreamsSdNa();
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_NA_XAC3_ISO = new Mpeg2("MPEG_TS_SD_NA_XAC3_ISO") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG;
+                                                               setupXAc3(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS };
+                                                               setupTransportStreamsSdNa();
+
+                                                           }
+                                                       };
+
+    public static final Mpeg2   MPEG_TS_SD_NA_XAC3_T   = new Mpeg2("MPEG_TS_SD_NA_XAC3_T") {
+
+                                                           {
+                                                               mimeType = MimeType.VIDEO_MPEG_TS;
+                                                               setupXAc3(this);
+                                                               this.containers = new AbstractMediaContainer[] { VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS };
+                                                               setupTransportStreamsSdNa();
+
+                                                           }
+                                                       };
 
     // ES Encapsulation over rtp
-    public static final Mpeg2 MPEG_ES_NTSC           = MPEG_PS_NTSC.clone("MPEG_ES_NTSC");                    // ES
+    public static final Mpeg2   MPEG_ES_NTSC           = MPEG_PS_NTSC.clone("MPEG_ES_NTSC");                    // ES
     // Encapsulation
     // over
     // rtp
-    public static final Mpeg2 MPEG_ES_NTSC_XAC3      = MPEG_PS_NTSC_XAC3.clone("MPEG_ES_NTSC_XAC3");
+    public static final Mpeg2   MPEG_ES_NTSC_XAC3      = MPEG_PS_NTSC_XAC3.clone("MPEG_ES_NTSC_XAC3");
 
-    public static final Mpeg2 MPEG_ES_PAL            = MPEG_PS_PAL.clone("MPEG_ES_PAL");                      // es
+    public static final Mpeg2   MPEG_ES_PAL            = MPEG_PS_PAL.clone("MPEG_ES_PAL");                      // es
     // encapsulation
     // via
     // RTP
-    public static final Mpeg2 MPEG_ES_PAL_XAC3       = MPEG_PS_PAL_XAC3.clone("MPEG_ES_PAL_XAC3");
+    public static final Mpeg2   MPEG_ES_PAL_XAC3       = MPEG_PS_PAL_XAC3.clone("MPEG_ES_PAL_XAC3");
 
-    public static final Mpeg2 MPEG_TS_HD_KO          = MPEG_TS_HD_NA.clone("MPEG_TS_HD_KO");
-    public static final Mpeg2 MPEG_TS_HD_KO_ISO      = MPEG_TS_HD_NA_ISO.clone("MPEG_TS_HD_KO_ISO");
-    public static final Mpeg2 MPEG_TS_HD_KO_T        = MPEG_TS_HD_NA_T.clone("MPEG_TS_HD_KO_T");
-    public static final Mpeg2 MPEG_TS_HD_KO_XAC3     = MPEG_TS_HD_NA_XAC3.clone("MPEG_TS_HD_KO_XAC3");
-    public static final Mpeg2 MPEG_TS_HD_KO_XAC3_ISO = MPEG_TS_HD_NA_XAC3_ISO.clone("MPEG_TS_HD_KO_XAC3_ISO");
-    public static final Mpeg2 MPEG_TS_HD_KO_XAC3_T   = MPEG_TS_HD_NA_XAC3_T.clone("MPEG_TS_HD_KO_XAC3_T");
+    public static final Mpeg2   MPEG_TS_HD_KO          = MPEG_TS_HD_NA.clone("MPEG_TS_HD_KO");
+    public static final Mpeg2   MPEG_TS_HD_KO_ISO      = MPEG_TS_HD_NA_ISO.clone("MPEG_TS_HD_KO_ISO");
+    public static final Mpeg2   MPEG_TS_HD_KO_T        = MPEG_TS_HD_NA_T.clone("MPEG_TS_HD_KO_T");
+    public static final Mpeg2   MPEG_TS_HD_KO_XAC3     = MPEG_TS_HD_NA_XAC3.clone("MPEG_TS_HD_KO_XAC3");
+    public static final Mpeg2   MPEG_TS_HD_KO_XAC3_ISO = MPEG_TS_HD_NA_XAC3_ISO.clone("MPEG_TS_HD_KO_XAC3_ISO");
+    public static final Mpeg2   MPEG_TS_HD_KO_XAC3_T   = MPEG_TS_HD_NA_XAC3_T.clone("MPEG_TS_HD_KO_XAC3_T");
 
-    public static final Mpeg2 MPEG_TS_SD_KO          = MPEG_TS_SD_NA.clone("MPEG_TS_SD_KO");
-    public static final Mpeg2 MPEG_TS_SD_KO_ISO      = MPEG_TS_SD_NA_ISO.clone("MPEG_TS_SD_KO_ISO");
-    public static final Mpeg2 MPEG_TS_SD_KO_T        = MPEG_TS_SD_NA_T.clone("MPEG_TS_SD_KO_T");
-    public static final Mpeg2 MPEG_TS_SD_KO_XAC3     = MPEG_TS_SD_NA_XAC3.clone("MPEG_TS_SD_KO_XAC3");
-    public static final Mpeg2 MPEG_TS_SD_KO_XAC3_ISO = MPEG_TS_SD_NA_XAC3_ISO.clone("MPEG_TS_SD_KO_XAC3_ISO");
-    public static final Mpeg2 MPEG_TS_SD_KO_XAC3_T   = MPEG_TS_SD_NA_XAC3_T.clone("MPEG_TS_SD_KO_XAC3_T");
+    public static final Mpeg2   MPEG_TS_SD_KO          = MPEG_TS_SD_NA.clone("MPEG_TS_SD_KO");
+    public static final Mpeg2   MPEG_TS_SD_KO_ISO      = MPEG_TS_SD_NA_ISO.clone("MPEG_TS_SD_KO_ISO");
+    public static final Mpeg2   MPEG_TS_SD_KO_T        = MPEG_TS_SD_NA_T.clone("MPEG_TS_SD_KO_T");
+    public static final Mpeg2   MPEG_TS_SD_KO_XAC3     = MPEG_TS_SD_NA_XAC3.clone("MPEG_TS_SD_KO_XAC3");
+    public static final Mpeg2   MPEG_TS_SD_KO_XAC3_ISO = MPEG_TS_SD_NA_XAC3_ISO.clone("MPEG_TS_SD_KO_XAC3_ISO");
+    public static final Mpeg2   MPEG_TS_SD_KO_XAC3_T   = MPEG_TS_SD_NA_XAC3_T.clone("MPEG_TS_SD_KO_XAC3_T");
+    private static final String PROFILE_MAIN           = "main";
 
     protected static InternalVideoStream createMpegTsVideo() {
-        InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { "low", "main", "high-1440", "high" });
+        InternalVideoStream stream = new Mpeg2VideoStream().setLevel(new String[] { LEVEL_LOW, LEVEL_MAIN, LEVEL_HIGH_1440, LEVEL_HIGH });
         stream.addBitrateRange(1, 18881700);
         stream.setSystemStream(false);
-        stream.setProfileTags(new String[] { "simple", "main" });
+        stream.addProfileTags(PROFILE_MAIN, PROFILE_SIMPLE);
         return stream;
     }
 
@@ -603,7 +609,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     }
 
     private static void setupAudioAc3(Mpeg2 mpegtsVideo) {
-        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/ac3").addChannelRange(1, 6).addBitrateRange(0, 448000).addSamplingRateRange(48000, 48000));
+        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/ac3").addChannelRange(3, 6).addBitrateRange(0, 448000).addSamplingRateRange(48000, 48000));
 
     }
 
@@ -619,7 +625,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     }
 
     private static void setupAudioPrivateAc3(Mpeg2 mpegtsVideo) {
-        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/x-private1-ac3").addChannelRange(1, 6).addBitrateRange(0, 448000).addSamplingRateRange(48000, 48000));
+        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/x-private1-ac3").addChannelRange(3, 6).addBitrateRange(0, 448000).addSamplingRateRange(48000, 48000));
     }
 
     /**
@@ -700,7 +706,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     }
 
     private static void setupXAc3(Mpeg2 mpegtsVideo) {
-        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/x-ac3").addChannelRange(1, 6).addBitrateRange(0, 640000).addSamplingRateRange(48000, 48000));
+        mpegtsVideo.addAudioStream(new InternalAudioStream("audio/x-ac3").addChannelRange(3, 6).addBitrateRange(0, 640000).addSamplingRateRange(48000, 48000));
     }
 
     public Mpeg2(String id) {

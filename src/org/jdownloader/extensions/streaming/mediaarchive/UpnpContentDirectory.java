@@ -123,7 +123,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
     }
 
     private Item createVideoItem(VideoMediaItem c, String userAgent) {
-        Res res = new Res(MimeType.valueOf(c.getMimeTypeString()), c.getSize(), formatDuration(c.getDuration()), (long) c.getBitrate(), extension.createStreamUrl(c.getUniqueID(), userAgent, null));
+        Res res = new Res(MimeType.valueOf(c.getMimeTypeString()), c.getSize(), formatDuration(c.getDuration()), (long) c.getSystemBitrate(), extension.createStreamUrl(c.getUniqueID(), userAgent, null));
         //
         VideoItem ret = (new VideoItem(c.getUniqueID(), "ROOT", c.getName(), null, res));
 

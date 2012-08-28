@@ -1,5 +1,6 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams;
 
+import java.util.HashSet;
 
 public class InternalStream {
     protected String  contentType;
@@ -17,16 +18,24 @@ public class InternalStream {
         this.contentType = contentType;
     }
 
-    protected String[] profileTags;
+    protected HashSet<String> profileTags = new HashSet<String>();
 
-    public InternalStream setProfileTags(String[] profileTags) {
-        this.profileTags = profileTags;
+    public HashSet<String> getProfileTags() {
+        return profileTags;
 
+    }
+
+    public InternalStream setProfileTags(String... tags) {
+        getProfileTags().clear();
+        addProfileTags(tags);
         return this;
     }
 
-    public String[] getProfileTags() {
-        return profileTags;
+    public InternalStream addProfileTags(String... tags) {
+        for (String t : tags) {
+            profileTags.add(t);
+        }
+        return this;
     }
 
     public String getContentType() {

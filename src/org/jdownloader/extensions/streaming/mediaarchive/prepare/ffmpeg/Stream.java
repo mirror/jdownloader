@@ -30,6 +30,35 @@ public class Stream implements Storable {
         this.codec_name = codec_name;
     }
 
+    private String sample_aspect_ratio;
+
+    public String getSample_aspect_ratio() {
+        return sample_aspect_ratio;
+    }
+
+    public void setSample_aspect_ratio(String sample_aspect_ratio) {
+        this.sample_aspect_ratio = sample_aspect_ratio;
+    }
+
+    public String getCodec_time_base() {
+        return codec_time_base;
+    }
+
+    public void setCodec_time_base(String codec_time_base) {
+        this.codec_time_base = codec_time_base;
+    }
+
+    public String getIs_avc() {
+        return is_avc;
+    }
+
+    public void setIs_avc(String is_avc) {
+        this.is_avc = is_avc;
+    }
+
+    private String codec_time_base;
+    private String is_avc;
+
     public int getIndex() {
         return index;
     }
@@ -175,6 +204,40 @@ public class Stream implements Storable {
             return -1;
         }
 
+    }
+
+    public int[] parseFrameRate() {
+
+        try {
+            if (avg_frame_rate == null) return null;
+            String[] sp = avg_frame_rate.split("/");
+            if (sp.length == 2) {
+                return new int[] { Integer.parseInt(sp[0]), Integer.parseInt(sp[1]) };
+            } else {
+                return new int[] { Integer.parseInt(sp[0]), 1 };
+            }
+        } catch (Throwable e) {
+            LOGGER.info(avg_frame_rate);
+            LOGGER.log(e);
+            return null;
+        }
+    }
+
+    public int[] parsePixelAspectRatio() {
+
+        try {
+            if (sample_aspect_ratio == null) return null;
+            String[] sp = sample_aspect_ratio.split(":");
+            if (sp.length == 2) {
+                return new int[] { Integer.parseInt(sp[0]), Integer.parseInt(sp[1]) };
+            } else {
+                return new int[] { Integer.parseInt(sp[0]), 1 };
+            }
+        } catch (Throwable e) {
+            LOGGER.info(sample_aspect_ratio);
+            LOGGER.log(e);
+            return null;
+        }
     }
 
 }

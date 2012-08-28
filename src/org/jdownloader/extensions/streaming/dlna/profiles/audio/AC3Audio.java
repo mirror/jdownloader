@@ -20,7 +20,7 @@ public class AC3Audio extends AbstractAudioProfile {
                                               containers = new AbstractMediaContainer[] { RawAudioAc3Stream.INSTANCE };
 
                                               // according to libdlna bitrates from 32000 to 640000 are supported. gupnp: 64000+
-                                              stream = new AC3AudioStream("audio/x-ac3").addBitrateRange(64000, 640000).addChannelRange(1, 6).addSamplingRates(32000, 44100, 48000);
+                                              stream = new AC3AudioStream("audio/x-ac3").addBitrateRange(64000, 640000).addChannelRange(3, 6).addSamplingRates(32000, 44100, 48000);
 
                                           }
                                       };
@@ -28,7 +28,7 @@ public class AC3Audio extends AbstractAudioProfile {
     public static final AC3Audio EAC3 = new AC3Audio("EAC3") {
                                           {
                                               containers = new AbstractMediaContainer[] { RawAudioEac3Stream.INSTANCE };
-                                              stream = new AC3AudioStream("audio/x-ac3").addBitrateRange(0, 3024000).addChannelRange(1, 6).addSamplingRates(32000, 44100, 48000);
+                                              stream = new AC3AudioStream("audio/x-ac3").addBitrateRange(0, 3024000).addChannelRange(3, 6).addSamplingRates(32000, 44100, 48000);
 
                                           }
                                       };

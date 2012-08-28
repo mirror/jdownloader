@@ -65,14 +65,14 @@ public class AACAudio extends AbstractAudioProfile {
 
     public static final AACAudio AAC_MULT5_ADTS  = new AAC_ADTSAudio("AAC_MULT5_ADTS") {
                                                      {
-                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(1, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
+                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(3, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
 
                                                      }
                                                  };
 
     public static final AACAudio AAC_MULT5_ISO   = new AAC_ISOAudio("AAC_MULT5_ISO") {
                                                      {
-                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(1, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
+                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(3, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
 
                                                      }
                                                  };
@@ -80,7 +80,7 @@ public class AACAudio extends AbstractAudioProfile {
     public static final AACAudio AAC_MULT5_ISO_2 = new AAC_ISOAudio("AAC_MULT5_ISO") {
                                                      {
 
-                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(1, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
+                                                         stream = new AACAudioStream().addBitrateRange(0, 1440000).addChannelRange(3, 6).addSamplingRates(8000, 11025, 12000, 16000, 22050, 24000, 32000, 44100, 48000);
 
                                                          mimeType = MimeType.AUDIO_3GP;
                                                          containers = new AbstractMediaContainer[] { AudioGp3Container.INSTANCE };

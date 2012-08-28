@@ -36,7 +36,9 @@ public enum Extensions {
     AUDIO_VIDEO_ASF("asf"),
     AUDIO_VIDEO_WMV("wmv"),
     AUDIO_VIDEO_MKV("mkv"),
-    AUDIO_VIDEO_FLV("flv");
+    AUDIO_VIDEO_FLV("flv"),
+    AUDIO_VIDEO_AVI("avi"),
+    AUDIO_VIDEO_WEBM("webm");
 
     private final String extension;
 

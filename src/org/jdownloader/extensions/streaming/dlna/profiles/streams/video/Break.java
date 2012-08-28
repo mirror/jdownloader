@@ -14,4 +14,12 @@ public class Break {
         return counter + "/" + denominator;
     }
 
+    public double getDouble() {
+        return counter / (double) denominator;
+    }
+
+    public boolean equals(int c, int d) {
+        return c == counter && d == denominator;
+    }
+
 }

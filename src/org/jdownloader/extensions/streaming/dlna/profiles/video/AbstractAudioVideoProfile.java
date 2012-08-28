@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.jdownloader.extensions.streaming.dlna.profiles.IntRange;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
+import org.jdownloader.extensions.streaming.dlna.profiles.container.AbstractMediaContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.audio.InternalAudioStream;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.InternalVideoStream;
 
@@ -41,6 +42,21 @@ public abstract class AbstractAudioVideoProfile extends Profile {
 
     public List<InternalVideoStream> getVideoStreams() {
         return videoStreams;
+    }
+
+    public boolean checkSystemBitrate(long systemBitrate) {
+        if (systemBitrates.size() == 0) return true;
+        for (IntRange ir : systemBitrates) {
+            if (systemBitrate >= ir.getMin() && systemBitrate <= ir.getMax()) return true;
+        }
+        return false;
+    }
+
+    public boolean checkContainer(Class<? extends AbstractMediaContainer> containerType) {
+        for (AbstractMediaContainer c : getContainer()) {
+            if (c.getClass() == containerType) return true;
+        }
+        return false;
     }
 
 }

@@ -20,13 +20,18 @@ public class InternalAudioStream extends InternalStream {
         channels = new ArrayList<IntRange>();
     }
 
-    public InternalAudioStream setProfileTags(String[] profileTags) {
-        super.setProfileTags(profileTags);
+    public InternalAudioStream addBitrateRange(int min, int max) {
+        bitrates.add(new IntRange(min, max));
         return this;
     }
 
-    public InternalAudioStream addBitrateRange(int min, int max) {
-        bitrates.add(new IntRange(min, max));
+    public InternalAudioStream setProfileTags(String... tags) {
+        super.setProfileTags(tags);
+        return this;
+    }
+
+    public InternalAudioStream addProfileTags(String... tags) {
+        super.addProfileTags(tags);
         return this;
     }
 
@@ -45,6 +50,30 @@ public class InternalAudioStream extends InternalStream {
             addSamplingRateRange(i, i);
         }
         return this;
+    }
+
+    public boolean checkSamplingRate(int samplingRate) {
+        if (samplingRates.size() == 0) return true;
+        for (IntRange i : samplingRates) {
+            if (i.contains(samplingRate)) return true;
+        }
+        return false;
+    }
+
+    public boolean checkChannels(int channelNum) {
+        if (channels.size() == 0) return true;
+        for (IntRange i : channels) {
+            if (i.contains(channelNum)) return true;
+        }
+        return false;
+    }
+
+    public boolean checkBitrate(int bitrate) {
+        if (bitrates.size() == 0) return true;
+        for (IntRange i : bitrates) {
+            if (i.contains(bitrate)) return true;
+        }
+        return false;
     }
 
 }

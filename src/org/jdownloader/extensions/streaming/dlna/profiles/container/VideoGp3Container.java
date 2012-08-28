@@ -2,7 +2,7 @@ package org.jdownloader.extensions.streaming.dlna.profiles.container;
 
 import org.jdownloader.extensions.streaming.dlna.Extensions;
 
-public class VideoGp3Container extends AbstractAudioContainer {
+public class VideoGp3Container extends AbstractAudioVideoContainer {
     public static final VideoGp3Container INSTANCE = new VideoGp3Container();
 
     protected VideoGp3Container() {

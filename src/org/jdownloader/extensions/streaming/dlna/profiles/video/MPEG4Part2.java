@@ -18,6 +18,7 @@ import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.Internal
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.Mpeg4VideoStream;
 
 public class MPEG4Part2 extends AbstractMpegProfile {
+    private static final String PROFILE_SIMPLE = "simple";
     private static final AbstractMediaContainer[] _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS   = new AbstractMediaContainer[] { new VideoTransportStreamContainer(TimeStamp.VALID, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T) };
     private static final AbstractMediaContainer[] _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS = new AbstractMediaContainer[] { new VideoTransportStreamContainer(TimeStamp.WITHOUT, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T) };
     private static final AbstractMediaContainer[] _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS    = new AbstractMediaContainer[] { new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T) };
@@ -133,7 +134,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
                                                                                * BItrate is calculated by gupnp as
                                                                                * systembitrate-,maxvideobitrate
                                                                                */
-                                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 86000).setProfileTags(new String[] { "lc", "ltp" }).addChannelRange(1, 2));
+                                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 86000).addProfileTags("ltp").addChannelRange(1, 2));
 
                                                                           }
                                                                       };
@@ -164,7 +165,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
     public static final MPEG4Part2 MPEG4_P2_MP4_ASP_HEAAC_MULT5       = new MPEG4Part2AdvancedSimpleProfileLevel5("MPEG4_P2_MP4_ASP_HEAAC_MULT5") {
 
                                                                           {
-                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(1, 6));
+                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -199,7 +200,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
                                                                                * BItrate is calculated by gupnp as
                                                                                * systembitrate-,maxvideobitrate
                                                                                */
-                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(1, 6));
+                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -221,7 +222,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
     public static final MPEG4Part2 MPEG4_P2_MP4_ASP_L5_SO_HEAAC_MULT5 = new MPEG4Part2AdvancedSimpleProfileLevel5("MPEG4_P2_MP4_ASP_L5_SO_HEAAC_MULT5") {
 
                                                                           {
-                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(1, 6));
+                                                                              addAudioStream(new HEAACAudioStream().addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -237,7 +238,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
 
-                                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 216000).setProfileTags(new String[] { "lc", "ltp" }).addChannelRange(1, 2));
+                                                                              addAudioStream(new AACAudioStream().addBitrateRange(1, 216000).addProfileTags("ltp").addChannelRange(1, 2));
 
                                                                           }
                                                                       };
@@ -339,7 +340,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -347,7 +348,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -356,7 +357,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -367,7 +368,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -426,7 +427,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -435,7 +436,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -445,7 +446,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -453,7 +454,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -462,7 +463,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -471,7 +472,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -480,7 +481,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS;
-                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(1, 6));
+                                                                              addAudioStream(new AC3AudioStream("audio/x-ac3").addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -516,7 +517,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
 
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -524,7 +525,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS;
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -533,7 +534,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS;
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -542,7 +543,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS;
 
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -550,7 +551,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS;
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -559,7 +560,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
                                                                           {
                                                                               this.containers = _VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS;
-                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(1, 6));
+                                                                              addAudioStream(new Mpeg2AudioStream(1, 1).addChannelRange(3, 6));
 
                                                                           }
                                                                       };
@@ -610,7 +611,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
     protected static InternalVideoStream createSimpleProfileLevel2() {
         Mpeg4VideoStream simpleProfile64k = new Mpeg4VideoStream();
-        simpleProfile64k.setProfileTags(new String[] { "simple" });
+        simpleProfile64k.setProfileTags(new String[] { PROFILE_SIMPLE });
 
         simpleProfile64k.setLevel(new String[] { "0", "0b", "1", "2", });
 
@@ -621,7 +622,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
     protected static InternalVideoStream createSimpleProfileLevel3VGA() {
         Mpeg4VideoStream simpleProfile64k = new Mpeg4VideoStream();
-        simpleProfile64k.setProfileTags(new String[] { "simple" });
+        simpleProfile64k.setProfileTags(new String[] { PROFILE_SIMPLE });
         simpleProfile64k.addFrameRate(FrameRate.FPS_30);
         simpleProfile64k.setLevel(new String[] { "0", "0b", "1", "2", "3" });
         simpleProfile64k.addBitrateRange(1, 3000000);
@@ -630,7 +631,7 @@ public class MPEG4Part2 extends AbstractMpegProfile {
 
     private static Mpeg4VideoStream createSimpleProfileStream() {
         Mpeg4VideoStream simpleProfile64k = new Mpeg4VideoStream();
-        simpleProfile64k.setProfileTags(new String[] { "simple" });
+        simpleProfile64k.setProfileTags(new String[] { PROFILE_SIMPLE });
         simpleProfile64k.addPixelAspectRatio(1, 1);
         simpleProfile64k.addPixelAspectRatio(12, 11);
         simpleProfile64k.addPixelAspectRatio(10, 11);

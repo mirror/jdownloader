@@ -26,6 +26,16 @@ public class InternalVideoStream extends InternalStream {
         return bitrates;
     }
 
+    public InternalVideoStream setProfileTags(String... tags) {
+        super.setProfileTags(tags);
+        return this;
+    }
+
+    public InternalStream addProfileTags(String... tags) {
+        super.addProfileTags(tags);
+        return this;
+    }
+
     public void setBitrates(List<IntRange> bitrates) {
         this.bitrates = bitrates;
     }
@@ -52,11 +62,6 @@ public class InternalVideoStream extends InternalStream {
 
     public void setPixelAspectRatios(List<Break> pixelAspectRatios) {
         this.pixelAspectRatios = pixelAspectRatios;
-    }
-
-    public InternalVideoStream setProfileTags(String[] profileTags) {
-        this.profileTags = profileTags;
-        return this;
     }
 
     public InternalVideoStream setSystemStream(boolean systemStream) {
@@ -87,6 +92,46 @@ public class InternalVideoStream extends InternalStream {
     public InternalVideoStream addPixelAspectRatio(int counter, int denominator) {
         pixelAspectRatios.add(new Break(counter, denominator));
         return this;
+    }
+
+    public boolean checkBitrate(int bitrate) {
+        if (bitrates.size() == 0) return true;
+        for (IntRange r : bitrates) {
+            if (r.contains(bitrate)) return true;
+        }
+        return false;
+    }
+
+    public boolean checkFrameRate(int[] frameRate) {
+        if (frameRates.size() == 0) return true;
+        if (frameRate == null) return false;
+        if (frameRate.length != 2) throw new IllegalArgumentException("Framerate must be int[2]");
+        for (FrameRate i : frameRates) {
+            if (i.matches(frameRate[0], frameRate[1])) return true;
+
+        }
+        return false;
+    }
+
+    public boolean checkResolution(int width, int height) {
+        if (resolutions.size() == 0) return true;
+        if (width <= 0 || height <= 0) return false;
+        for (Resolution i : resolutions) {
+            if (i.matches(width, height)) return true;
+
+        }
+        return false;
+    }
+
+    public boolean checkPixelAspectRatio(int[] pixelAspectRatio) {
+        if (pixelAspectRatios.size() == 0) return true;
+        if (pixelAspectRatio == null || pixelAspectRatio[0] == 0 || pixelAspectRatio[1] == 0) return false;
+        if (pixelAspectRatio.length != 2) throw new IllegalArgumentException("pixelAspectRatio must be int[2]");
+        for (Break i : pixelAspectRatios) {
+            if (i.equals(pixelAspectRatio[0], pixelAspectRatio[1])) return true;
+
+        }
+        return false;
     }
 
 }

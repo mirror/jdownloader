@@ -23,4 +23,8 @@ public class IntRange {
         this.max = max;
     }
 
+    public boolean contains(int bitrate) {
+        return bitrate >= min && bitrate <= max;
+    }
+
 }

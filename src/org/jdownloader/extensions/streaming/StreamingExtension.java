@@ -473,7 +473,7 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             dlink = ((MediaItem) mediaArchive.getItemById(id)).getDownloadLink();
             if (dlink != null) return dlink;
         } catch (Throwable e) {
-            e.printStackTrace();
+
         }
         for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
             if (dl.getUniqueID().toString().equals(id)) {

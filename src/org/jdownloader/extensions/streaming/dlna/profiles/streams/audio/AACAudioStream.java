@@ -6,7 +6,7 @@ public class AACAudioStream extends MpegAudioStream {
         super("audio/vnd.dlna.adts");
 
         mpegVersions = new int[] { 2, 4 };
-        profileTags = new String[] { "lc" };
+        getProfileTags().add("lc");
 
     }
 

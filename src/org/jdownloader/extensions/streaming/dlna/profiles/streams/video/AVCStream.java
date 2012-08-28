@@ -1,10 +1,12 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.video;
 
 public class AVCStream extends Mpeg4VideoStream {
+    public static final String BASELINE_CONSTRAINED = "Baseline Constrained";
 
     public AVCStream() {
         setContentType("video/x-h264");
-        profileTags = new String[] { "constrained-baseline" };
+
+        getProfileTags().add(BASELINE_CONSTRAINED);
         mpegVersions = new int[] { 4 };
         systemStream = false;
 

@@ -34,10 +34,11 @@ public class AudioHandler extends ExtensionHandler<AudioMediaItem> {
                             return null;
                         } else if ("audio".equals(info.getCodec_type())) {
                             AudioStream as = new AudioStream();
-                            as.setCodec(info.getCodec_type());
+                            as.setCodec(info.getCodec_name());
                             as.setBitrate(info.parseBitrate());
                             as.setSamplingRate(info.parseSamplingRate());
                             as.setDuration(info.parseDuration());
+                            as.setChannels(info.getChannels());
                             as.setIndex(info.getIndex());
                             ret.setStream(as);
                             break;

@@ -32,7 +32,7 @@ public class WMAAudio extends AbstractAudioProfile {
 
                                              {
 
-                                                 stream = new WmaAudioStream().setWmaVersions(3).addChannelRange(1, 8).addBitrateRange(1, 1500000).addSamplingRateRange(8, 96000);
+                                                 stream = new WmaAudioStream().setWmaVersions(3).addChannelRange(7, 8).addBitrateRange(1, 1500000).addSamplingRateRange(8, 96000);
 
                                                  containers = new AbstractMediaContainer[] { RawAudioWmaStream.INSTANCE, AudioWmaAsfContainer.INSTANCE };
 

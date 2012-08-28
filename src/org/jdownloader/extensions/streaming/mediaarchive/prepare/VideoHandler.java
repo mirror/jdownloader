@@ -34,11 +34,13 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                         if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
                             hasVideoStream = true;
                             VideoStream as = new VideoStream();
-                            as.setCodec(info.getCodec_type());
+                            as.setCodec(info.getCodec_name());
                             as.setBitrate(info.parseBitrate());
-
+                            as.setFrameRate(info.parseFrameRate());
+                            as.setProfileTags(info.getProfile());
+                            as.setPixelAspectRatio(info.parsePixelAspectRatio());
                             as.setDuration(info.parseDuration());
-
+                            System.out.println(1);
                             as.setIndex(info.getIndex());
                             as.setWidth(info.getWidth());
                             as.setIndex(info.getIndex());
@@ -46,9 +48,10 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                             ret.addVideoStream(as);
                         } else if ("audio".equals(info.getCodec_type())) {
                             AudioStream as = new AudioStream();
-                            as.setCodec(info.getCodec_type());
+                            as.setCodec(info.getCodec_name());
                             as.setBitrate(info.parseBitrate());
-
+                            as.setSamplingRate(info.parseSamplingRate());
+                            as.setChannels(info.getChannels());
                             as.setDuration(info.parseDuration());
                             as.setIndex(info.getIndex());
                             ret.addAudioStream(as);
@@ -61,7 +64,7 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                     }
 
                     ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
-                    ret.setBitrate(ffmpeg.getFormat().parseBitrate());
+                    ret.setSystemBitrate(ffmpeg.getFormat().parseBitrate());
                     ret.setDuration(ffmpeg.getFormat().parseDuration());
                     ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
                     ret.setSize(ffmpeg.getFormat().parseSize());
