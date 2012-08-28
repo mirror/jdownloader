@@ -1,5 +1,2 @@
-gui_config_antistandby_mode=Režim:
-gui_config_antistandby_whiledl=Zamezit spuštění režimu Standby během stahování
-jd_plugins_optional_antistandby_jdantistandby_description=Zabraňuje Vašemu počítači přechod do Úsporného režimu nebo Režimu spánku, aby bylo možné stahovat
-gui_config_antistandby_whilejd=Zamezit spuštění režimu Standby, pokud JD běží
 jd_plugins_optional_antistandby_jdantistandby=JD AntiStandby
+jd_plugins_optional_antistandby_jdantistandby_description=Zabraňuje Vašemu počítači přechod do Úsporného režimu nebo Režimu spánku, aby bylo možné stahovat

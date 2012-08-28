@@ -1,4 +1,5 @@
 auto=UPNP automatické nastavení
+controlURLTxt_help=Vložit kontrolní URL
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point protokol
 literally_router=UPNP Router
 literally_service_type=Typ služby
