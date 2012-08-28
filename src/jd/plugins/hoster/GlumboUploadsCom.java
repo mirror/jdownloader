@@ -229,6 +229,12 @@ public class GlumboUploadsCom extends PluginForHost {
         return finallink;
     }
 
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink, true, -2, true);
+    }
+
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -426,8 +432,7 @@ public class GlumboUploadsCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
@@ -583,12 +588,6 @@ public class GlumboUploadsCom extends PluginForHost {
         return 4;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -2, true);
-    }
-
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
@@ -629,7 +628,7 @@ public class GlumboUploadsCom extends PluginForHost {
         if (ttt == null) {
             ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
             if (ttt == null) {
-                ttt = new Regex(BRBEFORE, "<div class=\"countdownnum\"  id=\".*?\">(\\d+)</div>").getMatch(0);
+                ttt = new Regex(BRBEFORE, "<div class=\"countdownnum\" id=\".*?\">(\\d+)</div>").getMatch(0);
             }
         }
         if (ttt != null) tt = Integer.parseInt(ttt);
