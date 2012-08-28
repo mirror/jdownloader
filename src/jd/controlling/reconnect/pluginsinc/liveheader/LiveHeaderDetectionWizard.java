@@ -513,6 +513,7 @@ public class LiveHeaderDetectionWizard {
                 fos = new FileOutputStream(imageFile);
                 ImageIO.write(image, "png", fos);
                 fos.flush();
+                fos.close();
                 this.sslFavIconHash = Hash.getMD5(imageFile);
             } catch (final Exception e) {
 
@@ -548,15 +549,23 @@ public class LiveHeaderDetectionWizard {
             this.pTagsCount = response.split("<p>").length;
             this.frameTagCount = response.split("<frame").length;
             // get favicon and build hash
+            FileOutputStream fos = null;
             try {
                 final BufferedImage image = FavIcons.downloadFavIcon(this.gatewayAdressHost);
                 final File imageFile = JDUtilities.getResourceFile("tmp/routerfav.png", true);
                 imageFile.delete();
                 imageFile.deleteOnExit();
-                ImageIO.write(image, "png", imageFile);
+                fos = new FileOutputStream(imageFile);
+                ImageIO.write(image, "png", fos);
+                fos.flush();
+                fos.close();
                 this.favIconHash = Hash.getMD5(imageFile);
             } catch (final Exception e) {
-
+            } finally {
+                try {
+                    fos.close();
+                } catch (final Throwable e) {
+                }
             }
         } catch (final IOException e) {
             this.exception = e.getClass().getSimpleName() + ": " + e.getMessage();
