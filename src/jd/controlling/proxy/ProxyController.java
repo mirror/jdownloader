@@ -599,13 +599,7 @@ public class ProxyController {
                 /* active downloads must be less than allowed download */
                 int active = none.activeDownloadsbyHosts(host);
                 if (byPassMaxSimultanDownload || active < maxactive) {
-                    if (none.isHostAllowed(host)) {
-                        if (link.getChunksProgress().length != 0) {
-                            if (none.isResumeAllowed()) return none;
-                        } else {
-                            return none;
-                        }
-                    }
+                    if (none.isHostAllowed(host)) return none;
                 }
             }
         }
