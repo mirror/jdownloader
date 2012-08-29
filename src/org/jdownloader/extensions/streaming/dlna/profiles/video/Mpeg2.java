@@ -3,6 +3,7 @@ package org.jdownloader.extensions.streaming.dlna.profiles.video;
 import org.jdownloader.extensions.streaming.dlna.Extensions;
 import org.jdownloader.extensions.streaming.dlna.MimeType;
 import org.jdownloader.extensions.streaming.dlna.profiles.container.AbstractMediaContainer;
+import org.jdownloader.extensions.streaming.dlna.profiles.container.VideoProgramStreamContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.container.VideoTransportStreamContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.container.VideoTransportStreamContainer.TimeStamp;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.audio.AACAudioStream;
@@ -22,7 +23,7 @@ public class Mpeg2 extends AbstractMpegProfile {
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_VALIDTS_TS   = new VideoTransportStreamContainer(TimeStamp.VALID, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_WITHOUTTS_TS = new VideoTransportStreamContainer(TimeStamp.WITHOUT, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
     private static final VideoTransportStreamContainer VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_TS    = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_TS, Extensions.AUDIO_VIDEO_MPG, Extensions.AUDIO_VIDEO_MPEG, Extensions.AUDIO_VIDEO_MPE, Extensions.AUDIO_VIDEO_M2V, Extensions.AUDIO_VIDEO_MP2T);
-    public static final VideoTransportStreamContainer  VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS    = new VideoTransportStreamContainer(TimeStamp.ZERO, Extensions.AUDIO_VIDEO_PS, Extensions.AUDIO_VIDEO_MP2P, Extensions.AUDIO_VIDEO_MP2P);
+    public static final VideoProgramStreamContainer    VIDEO_TRANSPORT_STREAM_CONTAINER_ZEROTS_PS    = new VideoProgramStreamContainer(Extensions.AUDIO_VIDEO_PS, Extensions.AUDIO_VIDEO_MP2P, Extensions.AUDIO_VIDEO_MP2P);
     public static final Mpeg2                          MPEG_PS_NTSC                                  = new Mpeg2("MPEG_PS_NTSC") {
 
                                                                                                          {

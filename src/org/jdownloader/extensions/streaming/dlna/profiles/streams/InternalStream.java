@@ -6,6 +6,36 @@ public class InternalStream {
     protected String  contentType;
     protected boolean systemStream;
 
+    private String[]  codecTags;
+
+    /**
+     * Sets the possible codec ids for this streams. these ids have to be equal with the ffmpeg codec ids
+     * 
+     * @param ids
+     */
+    public void setCodecTags(String... ids) {
+        this.codecTags = ids;
+    }
+
+    public String[] getCodecTags() {
+        return codecTags;
+    }
+
+    private String[] codecNames;
+
+    /**
+     * Sets the possible codec ids for this streams. these ids have to be equal with the ffmpeg codec ids
+     * 
+     * @param ids
+     */
+    public void setCodecNames(String... ids) {
+        this.codecNames = ids;
+    }
+
+    public String[] getCodecNames() {
+        return codecNames;
+    }
+
     public boolean isSystemStream() {
         return systemStream;
     }

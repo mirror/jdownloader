@@ -7,6 +7,9 @@ public class RawAudioAMRStream extends RawStream {
 
     protected RawAudioAMRStream() {
         super(Extensions.AUDIO_AMR);
+
+        // 3GPP AMR
+        setFormatName("amr");
         setName("audio/AMR");
     }
 }

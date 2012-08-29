@@ -1,8 +1,8 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.video;
 
-
-public class Mpeg1VideoStream extends MpegVideoStream {
+public class Mpeg1VideoStream extends AbstractMpegVideoStream {
     public Mpeg1VideoStream() {
+        setCodecNames("mpeg1video");
 
         mpegVersions = new int[] { 1 };
         /**

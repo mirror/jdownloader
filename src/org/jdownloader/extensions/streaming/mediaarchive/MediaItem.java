@@ -20,6 +20,7 @@ public abstract class MediaItem implements MediaNode {
     }
 
     private String thumbnailPath;
+    private String infoString;
 
     public void setThumbnailPath(String thumbnailPath) {
         this.thumbnailPath = thumbnailPath;
@@ -41,6 +42,14 @@ public abstract class MediaItem implements MediaNode {
     @Override
     public ImageIcon getIcon() {
         return NewTheme.I().getIcon("video", 20);
+    }
+
+    public void setInfoString(String result) {
+        infoString = result;
+    }
+
+    public String getInfoString() {
+        return infoString;
     }
 
     private String containerFormat;

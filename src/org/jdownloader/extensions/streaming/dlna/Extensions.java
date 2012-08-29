@@ -7,7 +7,7 @@ public enum Extensions {
     IMAGE_PNG("png"),
     AUDIO_VIDEO_MP4("mp4"),
     AUDIO_M4A("m4a"),
-    AUDIO_VIDEO_GP3("gp3"),
+    AUDIO_VIDEO_GP3("3gp"),
     AUDIO_VIDEO_QT("qt"),
     AUDIO_VIDEO_MOV("mov"),
     AUDIO_ADTS("adts"),

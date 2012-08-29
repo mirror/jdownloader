@@ -7,6 +7,8 @@ public class VideoMKVContainer extends AbstractAudioVideoContainer {
 
     protected VideoMKVContainer() {
         super(Extensions.AUDIO_VIDEO_MKV);
+
+        setFormatName("matroska,webm");
         setName("video/x-matroska");
 
     }

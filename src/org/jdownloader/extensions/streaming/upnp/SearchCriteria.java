@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp.content;
+package org.jdownloader.extensions.streaming.upnp;
 
 /**
  * Search Criterion

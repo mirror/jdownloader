@@ -45,6 +45,7 @@ public class VideoMediaItem extends MediaItem {
     private long                   duration;
     private long                   systemBitrate;
     private ArrayList<VideoStream> videoStreams;
+    private String                 majorBrand;
 
     public VideoMediaItem(DownloadLink dl) {
         super(dl);
@@ -76,13 +77,17 @@ public class VideoMediaItem extends MediaItem {
         return videoStreams;
     }
 
-    public boolean matches(AbstractAudioVideoProfile p) {
+    public ProfileMatch matches(AbstractAudioVideoProfile p) {
+
         boolean sysBitrate = p.checkSystemBitrate(getSystemBitrate());
         boolean container = p.checkContainer(mapDlnaContainer());
-        boolean video = false;
-        boolean audio = false;
-
-        for (VideoStream vs : getVideoStreams()) {
+        if (!container) return null;
+        if (!sysBitrate) return null;
+        InternalVideoStream matchingProfileVs = null;
+        InternalAudioStream matchingProfileAs = null;
+        VideoStream matchingVs = null;
+        AudioStream matchingAs = null;
+        vs: for (VideoStream vs : getVideoStreams()) {
             Class<? extends InternalVideoStream> streamType = vs.mapDlnaStream();
             if (streamType == null) continue;
             for (InternalVideoStream ps : p.getVideoStreams()) {
@@ -92,13 +97,17 @@ public class VideoMediaItem extends MediaItem {
                 boolean vRes = ps.checkResolution(vs.getWidth(), vs.getHeight());
                 boolean vPAR = ps.checkPixelAspectRatio(vs.getPixelAspectRatio());
 
-                video = vBitrate && vFrameRate && vRes && vPAR && vCodec && vPAR;
-                if (video) break;
+                if (vBitrate && vFrameRate && vRes && vPAR && vCodec && vPAR) {
+                    matchingProfileVs = ps;
+                    matchingVs = vs;
+                    break vs;
+                }
+
             }
 
         }
 
-        for (AudioStream as : getAudioStreams()) {
+        as: for (AudioStream as : getAudioStreams()) {
             Class<? extends InternalAudioStream> streamType = as.mapDlnaStream();
             if (streamType == null) continue;
             for (InternalAudioStream ps : p.getAudioStreams()) {
@@ -106,13 +115,17 @@ public class VideoMediaItem extends MediaItem {
                 boolean aBitrate = ps.checkBitrate(as.getBitrate());
                 boolean aSamplingrate = ps.checkSamplingRate(as.getSamplingRate());
                 boolean aChannels = ps.checkChannels(as.getChannels());
-                audio = aBitrate && aCodec && aSamplingrate && aChannels;
-                if (audio) break;
+                if (aBitrate && aCodec && aSamplingrate && aChannels) {
+                    matchingProfileAs = ps;
+                    matchingAs = as;
+                    break as;
+                }
             }
 
         }
 
-        return sysBitrate && container && audio && video;
+        if (sysBitrate && container && matchingProfileAs != null && matchingProfileVs != null) { return new ProfileMatch(p, matchingProfileVs, matchingProfileAs, matchingVs, matchingAs); }
+        return null;
     }
 
     private static final LogSource LOGGER = LogController.getInstance().getLogger(AudioStream.class.getName());
@@ -124,6 +137,12 @@ public class VideoMediaItem extends MediaItem {
     private Class<? extends AbstractAudioVideoContainer> mapDlnaContainer() {
         if ("mov,mp4,m4a,3gp,3g2,mj2".equals(getContainerFormat())) {
             //
+            if ("isom".equalsIgnoreCase(getMajorBrand())) {
+                // Format : MPEG-4
+                // Format_Profile : Base Media
+                // CodecID : isom
+                return VideoMp4Container.class;
+            }
             return VideoMp4Container.class;
             //
         }
@@ -136,6 +155,14 @@ public class VideoMediaItem extends MediaItem {
         LOGGER.info("Unknown Container: " + getContainerFormat());
 
         return null;
+    }
+
+    public void setMajorBrand(String major_brand) {
+        this.majorBrand = major_brand;
+    }
+
+    public String getMajorBrand() {
+        return majorBrand;
     }
 
 }

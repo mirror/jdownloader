@@ -6,9 +6,18 @@ public abstract class AbstractMediaContainer {
 
     private final Extensions[] extensions;
     private String             name;
+    private String             formatName;
 
     public String getName() {
         return name;
+    }
+
+    public String getFormatName() {
+        return formatName;
+    }
+
+    public void setFormatName(String codecID) {
+        this.formatName = codecID;
     }
 
     protected boolean systemStream;

@@ -27,8 +27,8 @@ import org.fourthline.cling.support.model.item.Item;
 import org.fourthline.cling.support.model.item.MusicTrack;
 import org.fourthline.cling.support.model.item.VideoItem;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.upnp.content.Filter;
-import org.jdownloader.extensions.streaming.upnp.content.SearchCriteria;
+import org.jdownloader.extensions.streaming.upnp.Filter;
+import org.jdownloader.extensions.streaming.upnp.SearchCriteria;
 import org.jdownloader.logging.LogController;
 import org.seamless.util.MimeType;
 
@@ -142,7 +142,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
         minutes = ms / 60;
         seconds = ms - minutes * 60;
 
-        return hours + ":" + minutes + ":" + seconds;
+        return hours + ":" + minutes + ":" + seconds + ".000";
     }
 
     private Item createAudioItem(AudioMediaItem c, String userAgent) {
@@ -160,8 +160,11 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
         try {
             List<Property<DIDLAttribute>> attributes = new ArrayList<Property<DIDLAttribute>>();
             attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", "JPEG_TN")));
-            ret.addProperty(new UPNP.ALBUM_ART_URI(new URI(extension.createStreamUrl(c.getUniqueID(), userAgent, ".albumart")), attributes));
+            ret.addProperty(new UPNP.ALBUM_ART_URI(new URI(extension.createStreamUrl(c.getUniqueID(), userAgent, ".albumart.jpeg_tn")), attributes));
 
+            attributes = new ArrayList<Property<DIDLAttribute>>();
+            attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", "JPEG_SM")));
+            ret.addProperty(new UPNP.ALBUM_ART_URI(new URI(extension.createStreamUrl(c.getUniqueID(), userAgent, ".albumart.jpeg_sm")), attributes));
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

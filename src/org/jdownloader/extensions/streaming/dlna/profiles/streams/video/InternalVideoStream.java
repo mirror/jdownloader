@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.video;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jdownloader.extensions.streaming.dlna.profiles.IntRange;
@@ -24,6 +25,10 @@ public class InternalVideoStream extends InternalStream {
 
     public List<IntRange> getBitrates() {
         return bitrates;
+    }
+
+    public String toString() {
+        return this.getContentType() + "(" + Arrays.toString(this.getCodecNames()) + ") Bitrates:" + bitrates + " Resolutions:" + resolutions + " Framerates: " + frameRates + " PAR:" + pixelAspectRatios;
     }
 
     public InternalVideoStream setProfileTags(String... tags) {

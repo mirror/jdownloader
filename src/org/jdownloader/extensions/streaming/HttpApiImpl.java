@@ -2,8 +2,10 @@ package org.jdownloader.extensions.streaming;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -41,6 +43,7 @@ import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
 import org.jdownloader.extensions.streaming.dlna.profiles.video.AbstractAudioVideoProfile;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaNode;
+import org.jdownloader.extensions.streaming.mediaarchive.ProfileMatch;
 import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.DLNAOp;
@@ -94,26 +97,12 @@ public class HttpApiImpl implements HttpRequestHandler {
         String subpath = params[2];
 
         try {
-            if (".albumart".equals(subpath)) {
-                MediaItem item = (MediaItem) extension.getMediaArchiveController().getItemById(id);
-                File path = Application.getResource(item.getThumbnailPath());
+            if (".albumart.jpeg_tn".equals(subpath)) {
+                onAlbumArtRequest(request, response, id, JPEGImage.JPEG_TN);
+                return true;
 
-                String ct = JPEGImage.JPEG_LRG.getMimeType().getLabel();
-                String dlnaFeatures = "DLNA.ORG_PN=" + JPEGImage.JPEG_TN.getProfileID();
-                if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-                response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.INTERACTIVE)));
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(IconIO.getScaledInstance(ImageProvider.read(path), 160, 160), "jpeg", baos);
-                baos.close();
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, baos.size() + ""));
-                response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, ct));
-                response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
-                response.setResponseCode(ResponseCode.SUCCESS_OK);
-
-                // JPegImage.JPEG_TN
-                response.getOutputStream().write(baos.toByteArray());
-
-                response.closeConnection();
+            } else if (".albumart.jpeg_sm".equals(subpath)) {
+                onAlbumArtRequest(request, response, id, JPEGImage.JPEG_SM);
                 return true;
 
             }
@@ -160,7 +149,7 @@ public class HttpApiImpl implements HttpRequestHandler {
             }
             // seeking
 
-            Profile dlnaProfile = findProfile((MediaItem) mediaItem);
+            List<ProfileMatch> dlnaProfile = findProfile((MediaItem) mediaItem);
 
             String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
 
@@ -254,6 +243,28 @@ public class HttpApiImpl implements HttpRequestHandler {
         return false;
     }
 
+    public void onAlbumArtRequest(GetRequest request, HttpResponse response, String id, JPEGImage profile) throws IOException {
+        MediaItem item = (MediaItem) extension.getMediaArchiveController().getItemById(id);
+        File path = Application.getResource(item.getThumbnailPath());
+
+        String ct = profile.getMimeType().getLabel();
+        String dlnaFeatures = "DLNA.ORG_PN=" + profile.getProfileID();
+        if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
+        response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.INTERACTIVE)));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(IconIO.getScaledInstance(ImageProvider.read(path), profile.getWidth().getMax(), profile.getHeight().getMax()), "jpeg", baos);
+        baos.close();
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, baos.size() + ""));
+        response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, ct));
+        response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "none"));
+        response.setResponseCode(ResponseCode.SUCCESS_OK);
+
+        // JPegImage.JPEG_TN
+        response.getOutputStream().write(baos.toByteArray());
+
+        response.closeConnection();
+    }
+
     private String getTransferMode(GetRequest request, String def) {
         HTTPHeader head = request.getRequestHeaders().get(DLNATransportConstants.HEADER_TRANSFERMODE);
         String ret = null;
@@ -263,24 +274,26 @@ public class HttpApiImpl implements HttpRequestHandler {
         return ret != null ? ret : def;
     }
 
-    private Profile findProfile(MediaItem mediaItem) {
+    private List<ProfileMatch> findProfile(MediaItem mediaItem) {
         if (mediaItem == null) return null;
-        ArrayList<Profile> ret = new ArrayList<Profile>();
+        ArrayList<ProfileMatch> ret = new ArrayList<ProfileMatch>();
         logger.info("find DLNA Profile: " + mediaItem.getDownloadLink());
         for (Profile p : Profile.ALL_PROFILES) {
             if (mediaItem instanceof VideoMediaItem) {
                 VideoMediaItem video = (VideoMediaItem) mediaItem;
                 if (p instanceof AbstractAudioVideoProfile) {
-                    boolean check = video.matches((AbstractAudioVideoProfile) p);
-                    if (check) {
-                        logger.info("DLNA Profile: " + p);
+                    ProfileMatch match = video.matches((AbstractAudioVideoProfile) p);
 
+                    if (match != null) {
+                        logger.info(match.toString());
+                        ret.add(match);
                     }
+
                 }
             }
 
         }
-        return null;
+        return ret;
     }
 
     @Override

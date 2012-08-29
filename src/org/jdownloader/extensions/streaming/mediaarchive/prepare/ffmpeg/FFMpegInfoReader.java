@@ -30,7 +30,6 @@ public class FFMpegInfoReader {
     protected static final long FFMPEG_EXECUTE_TIMEOUT = 10 * 60 * 1000l;
     private DownloadLink        downloadLink;
     private ArrayList<Stream>   streams;
-    private String              majorBrand;
 
     public DownloadLink getDownloadLink() {
         return downloadLink;
@@ -41,6 +40,7 @@ public class FFMpegInfoReader {
     private FFProbe   probeResult;
     private Format    format;
     private File      thumb;
+    private String    result;
 
     public Format getFormat() {
         return format;
@@ -64,10 +64,10 @@ public class FFMpegInfoReader {
             String path = getFFProbePath();
             if (path != null) {
                 for (int myTry = 0; myTry < 3; myTry++) {
-                    String[] results = execute(path, "-show_format", "-show_streams", "-of", "json", "-i", streamurl);
+                    String[] results = execute(path, "-show_format", "-show_streams", "-probesize", "10000000", "-of", "json", "-i", streamurl);
                     logger.info("Get STream Info: " + downloadLink.getDownloadURL());
 
-                    String result = results[0];
+                    result = results[0];
                     String report = results[1];
                     logger.info(report);
                     logger.info(result);
@@ -141,6 +141,10 @@ public class FFMpegInfoReader {
         }
     }
 
+    public String getResult() {
+        return result;
+    }
+
     private String getFFMpegPath() {
 
         if (CrossSystem.isWindows()) {
@@ -169,10 +173,6 @@ public class FFMpegInfoReader {
         }
         return "ffprobe";
 
-    }
-
-    public String getMajorBrand() {
-        return majorBrand;
     }
 
     private String[] execute(String... cmds) throws InterruptedException, IOException {

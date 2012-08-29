@@ -8,7 +8,6 @@ import org.jdownloader.extensions.streaming.dlna.profiles.audio.MP3Audio;
 import org.jdownloader.extensions.streaming.dlna.profiles.audio.WMAAudio;
 import org.jdownloader.extensions.streaming.dlna.profiles.container.AbstractMediaContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.container.VideoASFContainer;
-import org.jdownloader.extensions.streaming.dlna.profiles.container.VideoWMVContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.InternalVideoStream;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.WindowsMediaVideoStream;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.WindowsMediaVideoStream.Level;
@@ -84,7 +83,7 @@ public class WMVVideo extends AbstractMpegProfile {
     public WMVVideo(String id) {
         super(id);
         mimeType = MimeType.VIDEO_WMV;
-        this.containers = new AbstractMediaContainer[] { new VideoWMVContainer(), new VideoASFContainer() };
+        this.containers = new AbstractMediaContainer[] { new VideoASFContainer() };
 
     }
 

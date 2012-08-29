@@ -2,6 +2,8 @@ package org.jdownloader.extensions.streaming.mediaarchive.prepare.ffmpeg;
 
 import org.appwork.storage.Storable;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
+import org.jdownloader.extensions.streaming.mediaarchive.prepare.VideoStream;
 import org.jdownloader.logging.LogController;
 
 public class Stream implements Storable {
@@ -11,6 +13,15 @@ public class Stream implements Storable {
 
     private static final LogSource LOGGER = LogController.getInstance().getLogger(Stream.class.getName());
     private int                    channels;
+    private StreamTags             tags;
+
+    public StreamTags getTags() {
+        return tags;
+    }
+
+    public void setTags(StreamTags tags) {
+        this.tags = tags;
+    }
 
     public int getChannels() {
         return channels;
@@ -21,6 +32,15 @@ public class Stream implements Storable {
     }
 
     private String codec_name;
+    private String codec_long_name;
+
+    public String getCodec_long_name() {
+        return codec_long_name;
+    }
+
+    public void setCodec_long_name(String codec_long_name) {
+        this.codec_long_name = codec_long_name;
+    }
 
     public String getCodec_name() {
         return codec_name;
@@ -57,6 +77,16 @@ public class Stream implements Storable {
     }
 
     private String codec_time_base;
+    private String codec_tag_string;
+
+    public String getCodec_tag_string() {
+        return codec_tag_string;
+    }
+
+    public void setCodec_tag_string(String codec_tag_string) {
+        this.codec_tag_string = codec_tag_string;
+    }
+
     private String is_avc;
 
     public int getIndex() {
@@ -238,6 +268,45 @@ public class Stream implements Storable {
             LOGGER.log(e);
             return null;
         }
+    }
+
+    public AudioStream toAudioStream() {
+        if ("audio".equalsIgnoreCase(getCodec_type())) {
+            AudioStream as = new AudioStream();
+            as.setCodec(getCodec_name());
+            as.setCodecDescription(getCodec_long_name());
+            as.setCodecTag(getCodec_tag_string());
+            as.setBitrate(parseBitrate());
+            as.setSamplingRate(parseSamplingRate());
+            as.setDuration(parseDuration());
+            as.setChannels(getChannels());
+            as.setIndex(getIndex());
+            return as;
+        } else {
+            return null;
+        }
+    }
+
+    public VideoStream toVideoStream() {
+        if ("video".equalsIgnoreCase(getCodec_type())) {
+            VideoStream as = new VideoStream();
+            as.setCodec(getCodec_name());
+            as.setBitrate(parseBitrate());
+            as.setCodecDescription(getCodec_long_name());
+            as.setCodecTag(getCodec_tag_string());
+            as.setFrameRate(parseFrameRate());
+            as.setProfileTags(getProfile());
+            as.setPixelAspectRatio(parsePixelAspectRatio());
+            as.setDuration(parseDuration());
+            as.setIndex(getIndex());
+            as.setWidth(getWidth());
+            as.setIndex(getIndex());
+            as.setHeight(getHeight());
+            return as;
+        } else {
+            return null;
+        }
+
     }
 
 }

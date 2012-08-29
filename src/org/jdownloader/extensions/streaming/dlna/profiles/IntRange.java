@@ -18,6 +18,10 @@ public class IntRange {
         this(value, value);
     }
 
+    public String toString() {
+        return min + "-" + max;
+    }
+
     public IntRange(int min, int max) {
         this.min = min;
         this.max = max;

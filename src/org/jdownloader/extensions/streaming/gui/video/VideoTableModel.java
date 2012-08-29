@@ -67,7 +67,14 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
         addColumn(new ExtTextColumn<VideoMediaItem>(T._.gui_video_duration()) {
 
             @Override
+            protected String getTooltipText(final VideoMediaItem obj) {
+                return obj.getInfoString();
+
+            }
+
+            @Override
             public String getStringValue(VideoMediaItem value) {
+
                 return TimeFormatter.formatSeconds(value.getDuration(), 0);
             }
         });

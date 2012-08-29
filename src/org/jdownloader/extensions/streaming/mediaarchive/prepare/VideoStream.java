@@ -29,6 +29,10 @@ public class VideoStream implements Storable {
         return codec;
     }
 
+    public String toString() {
+        return codec + "(" + codecTag + ") " + getWidth() + "x" + getHeight() + " " + (getPixelAspectRatio() == null ? "0:1" : (getPixelAspectRatio()[0] + ":" + getPixelAspectRatio()[1])) + getBitrate() + "bps " + "Hz " + getDuration() + "s";
+    }
+
     public void setCodec(String codec) {
         this.codec = codec;
     }
@@ -39,6 +43,25 @@ public class VideoStream implements Storable {
 
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    private String codecDescription;
+
+    public String getCodecTag() {
+        return codecTag;
+    }
+
+    public void setCodecTag(String codecTag) {
+        this.codecTag = codecTag;
+    }
+
+    public String getCodecDescription() {
+        return codecDescription;
+    }
+
+    private String codecTag;
+
+    public void setCodecDescription(String codec_long_name) {
     }
 
     public int getIndex() {

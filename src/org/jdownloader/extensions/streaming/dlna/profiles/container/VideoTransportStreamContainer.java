@@ -20,7 +20,7 @@ public class VideoTransportStreamContainer extends AbstractAudioVideoContainer {
 
     public VideoTransportStreamContainer(TimeStamp ts, Extensions... extensions) {
         super(extensions);
-
+        setFormatName("mpegts");
         setName("video/mpegts");
         this.systemStream = true;
         timestamp = ts;

@@ -1,6 +1,6 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.audio;
 
-public class HEAACAudioStream extends MpegAudioStream {
+public class HEAACAudioStream extends AbstractMpegAudioStream {
 
     public HEAACAudioStream() {
         super("audio/aacp");

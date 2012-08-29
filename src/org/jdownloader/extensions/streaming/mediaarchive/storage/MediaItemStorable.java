@@ -8,6 +8,7 @@ public class MediaItemStorable implements Storable {
 
     private String               thumbnailPath;
     private DownloadLinkStorable downloadLink;
+    private String               infoString;
 
     protected MediaItemStorable(/* Storable */) {
 
@@ -19,6 +20,14 @@ public class MediaItemStorable implements Storable {
 
     public void setDownloadLink(DownloadLinkStorable downloadLink) {
         this.downloadLink = downloadLink;
+    }
+
+    public void setInfoString(String result) {
+        infoString = result;
+    }
+
+    public String getInfoString() {
+        return infoString;
     }
 
     public void setThumbnailPath(String thumbnailPath) {

@@ -1,8 +1,8 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.audio;
 
-public class MpegAudioStream extends InternalAudioStream {
+public abstract class AbstractMpegAudioStream extends InternalAudioStream {
 
-    protected MpegAudioStream(String contentType) {
+    protected AbstractMpegAudioStream(String contentType) {
         super(contentType == null ? "audio/mpeg" : contentType);
     }
 
@@ -12,7 +12,7 @@ public class MpegAudioStream extends InternalAudioStream {
         return mpegVersions;
     }
 
-    public MpegAudioStream setLayers(int[] layers) {
+    public AbstractMpegAudioStream setLayers(int[] layers) {
         this.layers = layers;
         return this;
     }

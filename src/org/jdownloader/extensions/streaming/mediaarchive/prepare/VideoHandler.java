@@ -33,28 +33,11 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
 
                         if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
                             hasVideoStream = true;
-                            VideoStream as = new VideoStream();
-                            as.setCodec(info.getCodec_name());
-                            as.setBitrate(info.parseBitrate());
-                            as.setFrameRate(info.parseFrameRate());
-                            as.setProfileTags(info.getProfile());
-                            as.setPixelAspectRatio(info.parsePixelAspectRatio());
-                            as.setDuration(info.parseDuration());
-                            System.out.println(1);
-                            as.setIndex(info.getIndex());
-                            as.setWidth(info.getWidth());
-                            as.setIndex(info.getIndex());
-                            as.setHeight(info.getHeight());
-                            ret.addVideoStream(as);
+
+                            ret.addVideoStream(info.toVideoStream());
                         } else if ("audio".equals(info.getCodec_type())) {
-                            AudioStream as = new AudioStream();
-                            as.setCodec(info.getCodec_name());
-                            as.setBitrate(info.parseBitrate());
-                            as.setSamplingRate(info.parseSamplingRate());
-                            as.setChannels(info.getChannels());
-                            as.setDuration(info.parseDuration());
-                            as.setIndex(info.getIndex());
-                            ret.addAudioStream(as);
+
+                            ret.addAudioStream(info.toAudioStream());
                         }
 
                     }
@@ -62,11 +45,12 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                         // not a video
                         return null;
                     }
-
+                    ret.setInfoString(ffmpeg.getResult());
                     ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
                     ret.setSystemBitrate(ffmpeg.getFormat().parseBitrate());
                     ret.setDuration(ffmpeg.getFormat().parseDuration());
                     ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
+                    if (ffmpeg.getFormat().getTags() != null) ret.setMajorBrand(ffmpeg.getFormat().getTags().getMajor_brand());
                     ret.setSize(ffmpeg.getFormat().parseSize());
 
                 }

@@ -72,6 +72,10 @@ public class AudioStream implements Storable {
         this.samplingRate = samplingRate;
     }
 
+    public String toString() {
+        return codec + "(" + codecTag + ") " + getChannels() + " Channel(s) " + getBitrate() + "bps " + getSamplingRate() + "Hz " + getDuration() + "s";
+    }
+
     public Class<? extends InternalAudioStream> mapDlnaStream() {
         if ("aac".equals(codec)) {
             return AACAudioStream.class;
@@ -93,6 +97,25 @@ public class AudioStream implements Storable {
 
     public int getChannels() {
         return channels;
+    }
+
+    private String codecDescription;
+
+    public String getCodecTag() {
+        return codecTag;
+    }
+
+    public void setCodecTag(String codecTag) {
+        this.codecTag = codecTag;
+    }
+
+    public String getCodecDescription() {
+        return codecDescription;
+    }
+
+    private String codecTag;
+
+    public void setCodecDescription(String codec_long_name) {
     }
 
 }

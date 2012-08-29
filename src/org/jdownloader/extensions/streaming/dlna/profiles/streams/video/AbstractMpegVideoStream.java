@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.streaming.dlna.profiles.streams.video;
 
-public class MpegVideoStream extends InternalVideoStream {
-    public MpegVideoStream() {
+public abstract class AbstractMpegVideoStream extends InternalVideoStream {
+    public AbstractMpegVideoStream() {
         super("video/mpeg");
     }
 
@@ -11,7 +11,7 @@ public class MpegVideoStream extends InternalVideoStream {
         return mpegVersions;
     }
 
-    public MpegVideoStream setMpegVersions(int[] mpegVersions) {
+    public AbstractMpegVideoStream setMpegVersions(int[] mpegVersions) {
         this.mpegVersions = mpegVersions;
         return this;
     }
