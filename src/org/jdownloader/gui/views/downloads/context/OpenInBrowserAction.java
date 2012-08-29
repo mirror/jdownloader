@@ -26,8 +26,10 @@ public class OpenInBrowserAction extends AppAction {
     public boolean isEnabled() {
         if (links.size() > MAX_LINKS) return false;
         if (!CrossSystem.isOpenBrowserSupported()) return false;
-        for (DownloadLink link : links)
+        for (DownloadLink link : links) {
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) return true;
+            if (link.getLinkType() == DownloadLink.LINKTYPE_CONTAINER && link.gotBrowserUrl()) return true;
+        }
         return false;
     }
 
@@ -36,9 +38,7 @@ public class OpenInBrowserAction extends AppAction {
                                 // actionPerformed in the code although the
                                 // action should be disabled
             for (DownloadLink link : links) {
-                if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-                    CrossSystem.openURLOrShowMessage(link.getBrowserUrl());
-                }
+                CrossSystem.openURLOrShowMessage(link.getBrowserUrl());
             }
         }
     }

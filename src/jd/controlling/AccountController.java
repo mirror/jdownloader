@@ -483,7 +483,7 @@ public class AccountController implements AccountControllerListener {
                         /*
                          * synchronized on list because plugins can change the list in runtime
                          */
-                        if (supported instanceof ArrayList) {
+                        if (supported instanceof List) {
                             for (String sup : (java.util.List<String>) supported) {
                                 if (host.equalsIgnoreCase(sup)) { return true; }
                             }

@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|s\\d+\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
 
     private static boolean       debugSwitch                       = false;
@@ -72,7 +72,7 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         /* convert directdownload links to normal links */
-        link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", ""));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", "").replaceAll("http://s\\d+.", "http://"));
     }
 
     @Override
@@ -82,7 +82,9 @@ public class LetitBitNet extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.setCookie("http://letitbit.net/", "lang", "en");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         // /* set english language */
         // br.postPage(downloadLink.getDownloadURL(),
         // "en.x=10&en.y=8&vote_cr=en");

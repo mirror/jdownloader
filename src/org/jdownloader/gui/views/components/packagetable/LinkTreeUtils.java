@@ -166,6 +166,8 @@ public class LinkTreeUtils {
                     } else {
                         urls.add(link.getDownloadURL());
                     }
+                } else if (link.gotBrowserUrl()) {
+                    urls.add(link.getBrowserUrl());
                 }
             }
         }
@@ -175,5 +177,4 @@ public class LinkTreeUtils {
         }
         return urls;
     }
-
 }

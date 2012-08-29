@@ -104,10 +104,16 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
     }
 
     private boolean isOpenURLAllowed(AbstractNode value) {
+        DownloadLink dlLink = null;
         if (value instanceof CrawledLink) {
-            DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
-            return dlLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL;
-        } else if (value instanceof DownloadLink) { return ((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_NORMAL; }
+            dlLink = ((CrawledLink) value).getDownloadLink();
+        } else if (value instanceof DownloadLink) {
+            dlLink = (DownloadLink) value;
+        }
+        if (dlLink != null) {
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_NORMAL) return true;
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER && dlLink.gotBrowserUrl()) return true;
+        }
         return false;
     }
 
@@ -131,11 +137,17 @@ public class UrlColumn extends ExtTextColumn<AbstractNode> {
             return null;
         } else if (value instanceof CrawledLink) {
             DownloadLink dlLink = ((CrawledLink) value).getDownloadLink();
-            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) return null;
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
+                return null;
+            }
             return dlLink.getBrowserUrl();
         } else if (value instanceof DownloadLink) {
             DownloadLink dlLink = ((DownloadLink) value);
-            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) return null;
+            if (dlLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+                if (dlLink.gotBrowserUrl()) return dlLink.getBrowserUrl();
+                return null;
+            }
             return dlLink.getBrowserUrl();
         }
         return null;

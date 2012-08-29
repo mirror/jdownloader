@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -183,7 +184,19 @@ public class RealDebridCom extends PluginForHost {
         // handleErrors();
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String dlLinks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
-        if (dlLinks == null || dlLinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dlLinks == null || dlLinks.length == 0) {
+            if (br.containsHTML("error\":9")) {
+                logger.info("Host is currently not possible because no server is available!");
+                Object supportedHosts = acc.getAccountInfo().getProperty("multiHostSupport", null);
+                if (supportedHosts != null && supportedHosts instanceof List) {
+                    ArrayList<String> newList = new ArrayList<String>((List<String>) supportedHosts);
+                    newList.remove(link.getHost());
+                    acc.getAccountInfo().setProperty("multiHostSupport", newList);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         showMessage(link, "Task 2: Download begins!");
         for (String dllink : dlLinks) {
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) continue;

@@ -195,6 +195,7 @@ public class NCryptIn extends PluginForDecrypt {
                     }
                     if (containerLinks != null) {
                         for (final DownloadLink containerLink : containerLinks) {
+                            containerLink.setBrowserUrl(parameter);
                             decryptedLinks.add(containerLink);
                         }
                     }

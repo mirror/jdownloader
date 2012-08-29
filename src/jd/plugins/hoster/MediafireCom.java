@@ -694,13 +694,16 @@ public class MediafireCom extends PluginForHost {
                 logger.info("DirectDownload");
                 url = dlURL;
             } else {
+                logger.info("Handle possible PW");
                 this.handlePW(downloadLink);
                 url = br.getRegex("kNO = \"(http://.*?)\"").getMatch(0);
+                logger.info("Kno= " + url);
                 if (url == null) {
                     Browser brc = br.cloneBrowser();
                     this.fileID = getID(downloadLink);
                     URLConnectionAdapter con = null;
                     try {
+                        logger.info("try dlget");
                         con = brc.openGetConnection("http://www.mediafire.com/dynamic/dlget.php?qk=" + fileID);
                         if (con.getResponseCode() != 404) {
                             brc.followConnection();
@@ -716,8 +719,10 @@ public class MediafireCom extends PluginForHost {
                     }
                     url = brc.getRegex("dllink\":\"(http:.*?)\"").getMatch(0);
                     if (url != null) {
+                        logger.info("dllink= " + url);
                         url = url.replaceAll("\\\\", "");
                     } else {
+                        logger.info("dllink failed " + brc.toString());
                         logger.info("Try fallback:");
                         try {
                             logger.info(brc.toString());

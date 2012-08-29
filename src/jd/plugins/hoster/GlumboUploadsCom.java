@@ -78,10 +78,7 @@ public class GlumboUploadsCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (BRBEFORE.contains(MAINTENANCE)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
-            return AvailableStatus.TRUE;
-        }
+
         String filename = new Regex(BRBEFORE, "<Title>Download ([^<>\"]*?)</Title>").getMatch(0);
         String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
@@ -92,6 +89,14 @@ public class GlumboUploadsCom extends PluginForHost {
                     filesize = new Regex(BRBEFORE, "\"font\\-style:italic; color:#bbbbbb;\">http://glumbouploads\\.com/[a-z0-9]{12} <b>\\((.*?)\\)</b></font>").getMatch(0);
                 }
             }
+        }
+        if (BRBEFORE.contains(MAINTENANCE)) {
+            if (filename != null) {
+                filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+                link.setName(filename.trim().replace("\\", ""));
+            }
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+            return AvailableStatus.UNCHECKABLE;
         }
         if (filename == null || filename.equals("")) {
             if (BRBEFORE.contains("You have reached the download-limit")) {

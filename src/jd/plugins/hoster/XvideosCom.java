@@ -51,7 +51,7 @@ public class XvideosCom extends PluginForHost {
         if (dllink == null) dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
         dl.startDownload();
     }
 

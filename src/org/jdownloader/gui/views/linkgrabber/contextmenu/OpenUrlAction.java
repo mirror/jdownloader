@@ -31,7 +31,7 @@ public class OpenUrlAction extends AppAction {
 
     @Override
     public boolean isEnabled() {
-        return CrossSystem.isOpenBrowserSupported() && link != null && link.getDownloadLink() != null && link.getDownloadLink().getLinkType() == DownloadLink.LINKTYPE_NORMAL;
+        return CrossSystem.isOpenBrowserSupported() && link != null && link.getDownloadLink() != null && (link.getDownloadLink().getLinkType() == DownloadLink.LINKTYPE_NORMAL || link.getDownloadLink().gotBrowserUrl());
     }
 
 }
