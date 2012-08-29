@@ -42,18 +42,45 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class BuckShareCom extends PluginForHost {
 
     private String              BRBEFORE      = "";
-
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-
     private static final String COOKIE_HOST   = "http://buckshare.com";
-
     public boolean              NOPREMIUM     = false;
 
     public BuckShareCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        doSomething();
+        if ("http://buckshare.com/".equals(br.getRedirectLocation()) || BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<") || BRBEFORE.contains(">Oops...Not found, perhaps the search will help you")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        Regex theRegex = new Regex(BRBEFORE, "<h3><a href=\"[^<>\"/]*?\">([^<>\"]*?)</a> \\(([^<>\"]*?)\\) </h3>");
+        String filename = theRegex.getMatch(0);
+        String filesize = theRegex.getMatch(1);
+        if (filename == null || filename.equals("")) {
+            if (BRBEFORE.contains("You have reached the download-limit")) {
+                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) {
+            logger.info("Filesize found, filesize = " + filesize);
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
     public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode, boolean loggedIn) throws NumberFormatException, PluginException {
@@ -165,7 +192,7 @@ public class BuckShareCom extends PluginForHost {
         return finallink;
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean loggedIn) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, boolean loggedIn) throws Exception, PluginException {
         String dllink = null;
         String passCode = null;
         if (BRBEFORE.contains("\"download1\"")) {
@@ -182,6 +209,7 @@ public class BuckShareCom extends PluginForHost {
         br.setFollowRedirects(false);
         Form DLForm = br.getFormbyProperty("name", "F1");
         if (DLForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        DLForm.setAction(br.getURL());
         long timeBefore = System.currentTimeMillis();
         boolean password = false;
         boolean recaptcha = false;
@@ -231,21 +259,19 @@ public class BuckShareCom extends PluginForHost {
             DLForm.put("code", code);
             logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
         } else if (BRBEFORE.contains("api.recaptcha.net") || BRBEFORE.contains("google.com/recaptcha/api/")) {
-            // Some hosters also got commentfields with captchas, therefore is
-            // the !br.contains...check Exampleplugin:
-            // FileGigaCom
+            recaptcha = true;
             logger.info("Detected captcha method \"Re Captcha\" for this host");
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
+            rc.setForm(DLForm);
+            String id = new Regex(BRBEFORE, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            rc.setId(id);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            if (password) {
-                passCode = handlePassword(passCode, rc.getForm(), downloadLink);
-            }
-            recaptcha = true;
-            waitTime(timeBefore, downloadLink);
+            Form rcform = rc.getForm();
+            rcform.put("recaptcha_challenge_field", rc.getChallenge());
+            rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
             rc.setCode(c);
             logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
             dllink = br.getRedirectLocation();
@@ -314,15 +340,12 @@ public class BuckShareCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(BRBEFORE, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(BRBEFORE, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
+                dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                 if (dllink == null) {
-                    dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                        if (crypted != null) dllink = decodeDownloadLink(crypted);
-                    }
+                    String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
+                    if (crypted != null) dllink = decodeDownloadLink(crypted);
                 }
             }
         }
@@ -360,62 +383,6 @@ public class BuckShareCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        doSomething();
-        if ("http://buckshare.com/".equals(br.getRedirectLocation()) || BRBEFORE.contains("No such file") || BRBEFORE.contains("No such user exist") || BRBEFORE.contains("File not found") || BRBEFORE.contains(">File Not Found<") || BRBEFORE.contains(">Oops...Not found, perhaps the search will help you")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        Regex additionalRegex = new Regex(BRBEFORE, "<h3>(.*?)<span style=\"color:#A0A0A4;\">\\&nbsp;\\((.*?)\\)</span> </h3>");
-        String filename = new Regex(BRBEFORE, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(BRBEFORE, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(BRBEFORE, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(BRBEFORE, "Filename:</b></td><td[ ]{0,2}>(.*?)</td>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(BRBEFORE, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(BRBEFORE, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                            if (filename == null) {
-                                filename = additionalRegex.getMatch(0);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(BRBEFORE, "</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) filesize = additionalRegex.getMatch(1);
-            }
-        }
-        if (filename == null || filename.equals("")) {
-            if (BRBEFORE.contains("You have reached the download-limit")) {
-                logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-                return AvailableStatus.UNCHECKABLE;
-            }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setName(filename.trim());
-        if (filesize != null && !filesize.equals("")) {
-            logger.info("Filesize found, filesize = " + filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
