@@ -23,12 +23,10 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|theisozone)\\.com/downloads/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+/|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
 public class XboxSoZoneCom extends PluginForDecrypt {
@@ -42,7 +40,10 @@ public class XboxSoZoneCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(g> The page you requested could not be found\\. </strong>|It may have been moved or deleted\\. <br)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.getURL().contains("/errors/page-not-found/") || br.containsHTML(">The page you requested could not be found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("class=\"row_link\" >([^<>\"]*?)</a>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("<title>([^<>\"]*?) \\&bull; .*?</title>").getMatch(0);

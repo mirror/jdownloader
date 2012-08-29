@@ -42,8 +42,8 @@ public class NowAm extends PluginForDecrypt {
         if (finallink != null && !this.canHandle(finallink)) {
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
-        }
-        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+        } else if (finallink != null) br.getPage(finallink);
+        final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

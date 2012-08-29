@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirorii.com" }, urls = { "http://[\\w\\.]*?mirorii\\.com/fichier/\\d+/\\d+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirorii.com" }, urls = { "http://(www\\.)?mirorii\\.com/fichier/\\d+/\\d+/" }, flags = { 0 })
 public class MiroriiCom extends PluginForDecrypt {
 
     public MiroriiCom(PluginWrapper wrapper) {

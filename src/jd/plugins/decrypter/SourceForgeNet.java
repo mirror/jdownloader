@@ -53,8 +53,13 @@ public class SourceForgeNet extends PluginForDecrypt {
                 link = br.getRegex("Please use this([\n\t\r ]+)?<a href=\"(.*?)\"").getMatch(1);
                 if (link == null) link = br.getRegex("\"(http://downloads\\.sourceforge\\.net/project/.*?/extras/.*?/.*?use_mirror=.*?)\"").getMatch(0);
             } else {
-                String continuelink = br.getRegex("\"(/projects/" + new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0) + "/files/latest/download)\"").getMatch(0);
+                final String project = new Regex(parameter, "sourceforge\\.net/projects/(.*?)/").getMatch(0);
+                final String continuelink = br.getRegex("\"(/projects/" + project + "/files/latest/download[^<>\"/]*?)\"").getMatch(0);
                 if (continuelink == null) {
+                    if (br.getRegex("<section id=\"download_button\">[\t\n\r ]+<a href=\"(/p/" + project + "/code/)\"").getMatch(0) != null) {
+                        logger.info("Found no downloadable link for: " + parameter);
+                        return decryptedLinks;
+                    }
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }

@@ -42,23 +42,25 @@ public class DownloadPandaAppCom extends PluginForDecrypt {
         br.getPage(parameter);
         final String fpName = br.getRegex("<div class=\"title\">[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         String[] links = br.getRegex("\"(http://[^<>\"]*?)\" class=\"btn_netdisk\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+        if (links != null && links.length != 0) {
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink(singleLink));
         }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
         final String controller = br.getRegex("\\&controller=([^<>\"/]*?)\\&").getMatch(0);
         if (controller != null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://download.pandaapp.com/?app=soft&controller=" + controller + "&action=FastDownAjaxRedirect&f_id=" + new Regex(parameter, "id(\\d+)\\.html$").getMatch(0));
-            String finallink = br.getRegex("\"status\":1,\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            String finallink = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getMatch(0);
             if (finallink != null) {
                 finallink = Encoding.htmlDecode(finallink.trim().replace("\\", ""));
                 br.getPage(finallink);
                 finallink = br.getRedirectLocation();
                 if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             }
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

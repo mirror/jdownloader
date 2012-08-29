@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -125,9 +127,8 @@ public class SharpFileCom extends PluginForHost {
         link.setProperty("plainfilename", filename);
         link.setFinalFileName(filename.trim());
         if (link.getDownloadSize() <= 0) {
-            Browser brc = br.cloneBrowser();
-            brc.postPage(br.getURL(), "free=Free+Download&referer=");
-            String size = brc.getRegex("<b>Size:</b></td><td>.*?<small>.*?\\((\\d+) bytes").getMatch(0);
+            postPage(br.getURL(), "free=Free+Download&referer=");
+            String size = br.getRegex("<b>Size:</b></td><td>.*?<small>.*?\\((\\d+) bytes").getMatch(0);
             if (size != null) {
                 link.setDownloadSize(Long.parseLong(size));
             }
@@ -141,7 +142,7 @@ public class SharpFileCom extends PluginForHost {
         doFree(downloadLink, false, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -155,9 +156,11 @@ public class SharpFileCom extends PluginForHost {
          * Video links can already be found here, if a link is found here we can
          * skip wait times and captchas
          */
+        checkErrors(downloadLink, false, passCode);
         if (dllink == null) {
-            checkErrors(downloadLink, false, passCode);
-            postPage(br.getURL(), "free=Free+Download&referer=");
+            if (downloadLink.getDownloadSize() >= 0) {
+                postPage(br.getURL(), "free=Free+Download&referer=");
+            }
             dllink = getDllink();
         }
         if (dllink == null) {
@@ -182,6 +185,21 @@ public class SharpFileCom extends PluginForHost {
                     String code = getCaptchaCode("http://www.sharpfile.com/securimage/securimage_show.php", downloadLink);
                     dlForm.put("captcha_code", code);
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"securimage captcha\" in the form.");
+                } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+                    logger.info("Detected captcha method \"Re Captcha\" for this host");
+                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setForm(dlForm);
+                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    rc.setId(id);
+                    rc.load();
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
+                    /** wait time is often skippable for reCaptcha handling */
+                    skipWaittime = true;
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -190,13 +208,14 @@ public class SharpFileCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && br.containsHTML("/securimage/securimage_show\\.php")) {
+                if (dllink == null && (br.containsHTML("/securimage/securimage_show\\.php") || new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
                     continue;
-                } else if (dllink == null && !br.containsHTML("/securimage/securimage_show\\.php")) {
+                } else if (dllink == null && (!br.containsHTML("/securimage/securimage_show\\.php") && !new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else
+                } else {
                     break;
+                }
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
@@ -224,7 +243,6 @@ public class SharpFileCom extends PluginForHost {
         ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);

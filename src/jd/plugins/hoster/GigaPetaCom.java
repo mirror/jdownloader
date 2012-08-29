@@ -42,9 +42,26 @@ public class GigaPetaCom extends PluginForHost {
 
     public boolean     nopremium       = false;
 
+    // Gehört zu tenfiles.com/tenfiles.info
     public GigaPetaCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://gigapeta.com/premium/");
+    }
+
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://gigapeta.com", "lang", "us");
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("All threads for IP")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
+        if (br.containsHTML("<div id=\"page_error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
+        String fileName = infos.getMatch(0);
+        String fileSize = infos.getMatch(1);
+        if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(fileName.trim());
+        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
+
+        return AvailableStatus.TRUE;
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
@@ -153,22 +170,6 @@ public class GigaPetaCom extends PluginForHost {
         if (accType.equals("basic")) nopremium = true;
         if (br.getCookie("http://gigapeta.com/", "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (!nopremium) simultanpremium = -1;
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setCookie("http://gigapeta.com", "lang", "us");
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("All threads for IP")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.gigapeta.unavailable", "Your IP is already downloading a file"));
-        if (br.containsHTML("<div id=\"page_error\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex infos = br.getRegex(Pattern.compile("<img src=\".*\" alt=\"file\" />(.*?)</td>.*?</tr>.*?<tr>.*?<th>.*?</th>.*?<td>(.*?)</td>", Pattern.DOTALL));
-        String fileName = infos.getMatch(0);
-        String fileSize = infos.getMatch(1);
-        if (fileName == null || fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(fileName.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(fileSize.trim()));
-
-        return AvailableStatus.TRUE;
     }
 
     public void reset() {

@@ -36,6 +36,8 @@ public class FlashMirrorsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        // For slow servers
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage("http://flashmirrors.com/mirrors/" + new Regex(parameter, "flashmirrors\\.com/files/(.+)").getMatch(0));
         if (!br.containsHTML("<img src=")) {
             logger.info("Link offline: " + parameter);
