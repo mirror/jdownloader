@@ -1,5 +1,7 @@
 package jd.controlling.proxy;
 
+import java.util.List;
+
 import org.appwork.storage.Storable;
 import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
 
@@ -14,9 +16,15 @@ public class ProxyData implements Storable {
     private boolean           defaultProxy         = false;
     private HTTPProxyStorable proxy                = null;
     private String            ID                   = null;
+    private List<String>      permitDenyList       = null;
+    private boolean           resumeIsAllowed      = false;
 
     public String getID() {
         return ID;
+    }
+
+    public List<String> getPermitDenyList() {
+        return this.permitDenyList;
     }
 
     public void setID(String iD) {
@@ -54,11 +62,23 @@ public class ProxyData implements Storable {
         this.proxy = proxy;
     }
 
+    public void setPermitDenyList(final List<String> permitDenyList) {
+        this.permitDenyList = permitDenyList;
+    }
+
     /**
      * @return the proxy
      */
     public HTTPProxyStorable getProxy() {
         return proxy;
+    }
+
+    public void setResumeIsAllowed(boolean b) {
+        resumeIsAllowed = b;
+    }
+
+    public boolean isResumeAllowed() {
+        return resumeIsAllowed;
     }
 
 }

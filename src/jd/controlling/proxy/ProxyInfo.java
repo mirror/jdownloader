@@ -1,10 +1,14 @@
 package jd.controlling.proxy;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.plugins.DownloadLink;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPProxy;
 
 public class ProxyInfo extends HTTPProxy {
@@ -12,11 +16,16 @@ public class ProxyInfo extends HTTPProxy {
     final private static AtomicLong           IDs                  = new AtomicLong(0);
     private boolean                           proxyRotationEnabled = true;
     private String                            ID                   = null;
+    private HashSet<String>                   permitDenyList       = new HashSet<String>();
 
     private final HashMap<String, Integer>    activeHosts          = new HashMap<String, Integer>();
 
     private final HashMap<String, ProxyBlock> unavailBlocks        = new HashMap<String, ProxyBlock>();
     private final HashMap<String, ProxyBlock> ipBlocks             = new HashMap<String, ProxyBlock>();
+    /*
+     * by default a proxy supports resume
+     */
+    private boolean                           resumeIsAllowed      = true;
 
     /**
      * @return the enabled
@@ -38,6 +47,8 @@ public class ProxyInfo extends HTTPProxy {
         ret.setProxyRotationEnabled(this.isProxyRotationEnabled());
         ret.setProxy(HTTPProxy.getStorable(this));
         ret.setID(this.ID);
+        ret.setPermitDenyList(getPermitDenyList());
+        ret.setResumeIsAllowed(this.resumeIsAllowed);
         return ret;
     }
 
@@ -45,6 +56,9 @@ public class ProxyInfo extends HTTPProxy {
         this.cloneProxy(proxyTemplate);
         this.proxyRotationEnabled = proxyData.isProxyRotationEnabled();
         this.ID = proxyData.getID();
+        this.setPermitDenyList(proxyData.getPermitDenyList());
+        this.setConnectMethodPrefered(proxyData.getProxy().isConnectMethodPrefered());
+        this.setResumeAllowed(proxyData.isResumeAllowed());
         if (ID == null) {
             if (isNone()) {
                 this.ID = "NONE";
@@ -60,6 +74,13 @@ public class ProxyInfo extends HTTPProxy {
             this.ID = "NONE";
         } else {
             this.ID = proxy.getType().name() + IDs.incrementAndGet() + "_" + System.currentTimeMillis();
+        }
+        this.setPermitDenyList(null);
+    }
+
+    public List<String> getPermitDenyList() {
+        synchronized (permitDenyList) {
+            return new ArrayList<String>(this.permitDenyList);
         }
     }
 
@@ -114,6 +135,17 @@ public class ProxyInfo extends HTTPProxy {
                 return old;
             }
         }
+    }
+
+    public void setPermitDenyList(List<String> permitDenyList) {
+        HashSet<String> newList = new HashSet<String>();
+        if (permitDenyList == null || permitDenyList.size() == 0) {
+            /* by default every host is allowed */
+            newList.add("+*");
+        } else {
+            newList.addAll(permitDenyList);
+        }
+        this.permitDenyList = newList;
     }
 
     protected void removeHostIPBlockTimeout(final String host) {
@@ -172,4 +204,67 @@ public class ProxyInfo extends HTTPProxy {
         }
     }
 
+    public boolean isHostAllowed(String host) {
+        HashSet<String> lpermitDenyList = permitDenyList;
+        if (lpermitDenyList.contains("+*")) {
+            /* list contains allow all */
+            if (lpermitDenyList.contains("-" + host)) {
+                /* host is not allowed */
+                return false;
+            }
+            return true;
+        } else {
+            /* list does not allow all, so we have to check for host */
+            return lpermitDenyList.contains("+" + host);
+        }
+    }
+
+    public void setHostPermitDenyState(String host, boolean allowed) {
+        HashSet<String> newList = new HashSet<String>(permitDenyList);
+        if (host == null) {
+            /** host is null so we want to permit/deny everything */
+            if (allowed) {
+                /* we want to allow everything */
+                newList.remove("-*");
+                newList.add("+*");
+            } else {
+                /* we want to forbidd everything */
+                newList.remove("+*");
+                newList.add("-*");
+            }
+        } else {
+            /* we only want to permit/deny given host */
+            if (allowed) {
+                /* we want to allow host */
+                newList.remove("-" + host);
+                newList.add("+" + host);
+            } else {
+                /* we want to forbidd host */
+                newList.remove("+" + host);
+                newList.add("-" + host);
+            }
+        }
+        permitDenyList = newList;
+    }
+
+    public void removeHostFromPermitDenyList(String host) {
+        if (StringUtils.isEmpty(host)) {
+            // remove everything
+            setPermitDenyList(null);
+        } else {
+            HashSet<String> newList = new HashSet<String>(permitDenyList);
+            /* remove existing permit/deny rule for given host */
+            newList.remove("-" + host);
+            newList.remove("+" + host);
+            permitDenyList = newList;
+        }
+    }
+
+    public void setResumeAllowed(boolean b) {
+        resumeIsAllowed = b;
+    }
+
+    public boolean isResumeAllowed() {
+        return resumeIsAllowed;
+    }
 }

@@ -533,6 +533,7 @@ public class ProxyController {
             java.util.List<ProxyInfo> nproxies = new ArrayList<ProxyInfo>(proxies);
             changes = nproxies.size();
             main: for (HTTPProxy newP : proxy) {
+                if (newP == null) continue;
                 for (ProxyInfo info : nproxies) {
                     /* duplicate check */
                     if (info.sameProxy(newP)) continue main;
@@ -597,7 +598,15 @@ public class ProxyController {
             if (none.getHostBlockedTimeout(host) == null && none.getHostIPBlockTimeout(host) == null) {
                 /* active downloads must be less than allowed download */
                 int active = none.activeDownloadsbyHosts(host);
-                if (byPassMaxSimultanDownload || active < maxactive) return none;
+                if (byPassMaxSimultanDownload || active < maxactive) {
+                    if (none.isHostAllowed(host)) {
+                        if (link.getChunksProgress().length != 0) {
+                            if (none.isResumeAllowed()) return none;
+                        } else {
+                            return none;
+                        }
+                    }
+                }
             }
         }
         java.util.List<ProxyInfo> ldirects = directs;
@@ -607,7 +616,23 @@ public class ProxyController {
                 if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
-                    if (byPassMaxSimultanDownload || active < maxactive) return info;
+                    if (byPassMaxSimultanDownload || active < maxactive) {
+                        /* connection to hoster must be allowed */
+                        if (info.isHostAllowed(host)) {
+                            /* proxy must allow resume, if selected */
+                            if (link.getChunksProgress().length != 0) {
+                                if (info.isResumeAllowed()) {
+                                    return info;
+                                } else {
+                                    continue;
+                                }
+                            } else {
+                                return info;
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
                 }
             }
         }
@@ -618,7 +643,23 @@ public class ProxyController {
                 if (info.getHostBlockedTimeout(host) == null && info.getHostIPBlockTimeout(host) == null) {
                     /* active downloads must be less than allowed download */
                     int active = info.activeDownloadsbyHosts(host);
-                    if (byPassMaxSimultanDownload || active < maxactive) return info;
+                    if (byPassMaxSimultanDownload || active < maxactive) {
+                        /* connection to hoster must be allowed */
+                        if (info.isHostAllowed(host)) {
+                            /* proxy must allow resume, if selected */
+                            if (link.getChunksProgress().length != 0) {
+                                if (info.isResumeAllowed()) {
+                                    return info;
+                                } else {
+                                    continue;
+                                }
+                            } else {
+                                return info;
+                            }
+                        } else {
+                            continue;
+                        }
+                    }
                 }
             }
         }
