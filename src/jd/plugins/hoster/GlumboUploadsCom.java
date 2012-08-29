@@ -79,7 +79,8 @@ public class GlumboUploadsCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
-        String filename = new Regex(BRBEFORE, "<Title>Download ([^<>\"]*?)</Title>").getMatch(0);
+        String filename = new Regex(BRBEFORE, "\\$\\(\\'input\\[name=\"fname\"\\]\\'\\)\\.attr\\(\\'value\\', \\'([^<>\"]*?)\\'\\);").getMatch(0);
+        if (filename == null) filename = new Regex(BRBEFORE, "<Title>Download ([^<>\"]*?)</Title>").getMatch(0);
         String filesize = new Regex(BRBEFORE, "\\(([0-9]+ bytes)\\)").getMatch(0);
         if (filesize == null) {
             filesize = new Regex(BRBEFORE, "<small>\\((.*?)\\)</small>").getMatch(0);
@@ -437,7 +438,8 @@ public class GlumboUploadsCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just remove it
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
