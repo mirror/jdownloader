@@ -45,6 +45,11 @@ public class Main {
          * we have to make sure that this property gets set before any network stuff gets loaded!!
          */
         System.setProperty("java.net.preferIPv4Stack", "true");
+        try {
+            /* never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout */
+            java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
+        } catch (final Throwable e) {
+        }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
         try {

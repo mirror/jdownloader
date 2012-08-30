@@ -78,6 +78,22 @@ public class AsFileCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String dllink = downloadLink.getStringProperty("directFree", null);
+        if (dllink != null) {
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                /* direct link no longer valid */
+                br.followConnection();
+                dllink = null;
+            }
+            if (dllink != null) {
+                /* direct link still valid */
+                downloadLink.setProperty("direct", dllink);
+                dl.startDownload();
+                return;
+            }
+        }
         if (!br.containsHTML("/free\\-download/")) {
             if (br.containsHTML("This file is available only to premium users")) {
                 try {
@@ -102,14 +118,17 @@ public class AsFileCom extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
         final String correctedBR = br.toString().replace("\\", "");
-        String dllink = new Regex(correctedBR, "\"url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+        dllink = new Regex(correctedBR, "\"url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) dllink = new Regex(correctedBR, "\"(http://s\\d+\\.asfile\\.com/file/free/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        sleep(2000, downloadLink);
+        br.getHeaders().remove("X-Requested-With");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setProperty("directFree", dllink);
         dl.startDownload();
     }
 

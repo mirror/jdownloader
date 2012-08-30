@@ -37,11 +37,10 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
         /*
          * 
          * final String data = "<?xml version=\"1.0\"?>\n" +
-         * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-         * + " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final
-         * URL url = new URL(controlUrl); final URLConnection conn = url.openConnection(); conn.setDoOutput(true);
-         * conn.addRequestProperty("Content-Type", "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction", serviceType + "#" +
-         * command + "\"");
+         * "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
+         * " <s:Body>\n  <m:" + command + " xmlns:m=\"" + serviceType + "\"></m:" + command + ">\n </s:Body>\n</s:Envelope>"; try { final URL url = new
+         * URL(controlUrl); final URLConnection conn = url.openConnection(); conn.setDoOutput(true); conn.addRequestProperty("Content-Type",
+         * "text/xml; charset=\"utf-8\""); conn.addRequestProperty("SOAPAction", serviceType + "#" + command + "\"");
          */
         final URL url = new URL(controlUrl);
         HTTPConnection con = new HTTPConnectionImpl(url);
@@ -118,10 +117,11 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
             if (StringUtils.isEmpty(serviceType)) { throw new ReconnectException(T._.malformedservicetype()); }
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
             runCommand(serviceType, controlURL, "ForceTermination");
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            Thread.sleep(2000);
-            if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            runCommand(serviceType, controlURL, "RequestConnection");
+            try {
+                Thread.sleep(2000);
+            } finally {
+                runCommand(serviceType, controlURL, "RequestConnection");
+            }
         } catch (MalformedURLException e) {
             throw new ReconnectException(T._.malformedurl());
         } catch (InterruptedException e) {

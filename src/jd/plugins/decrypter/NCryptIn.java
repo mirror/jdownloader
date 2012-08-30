@@ -178,9 +178,9 @@ public class NCryptIn extends PluginForDecrypt {
                 }
             }
             String fpName = br.getRegex("<h1>(.*?)<img").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
-            }
+            if (fpName == null) fpName = br.getRegex("title>nCrypt\\.in - (.*?)</tit").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
+
             // Container handling
             final String[] containerIDs = br.getRegex("/container/(rsdf|dlc|ccf)/([a-z0-9]+)\\.").getColumn(1);
             if (containerIDs != null && containerIDs.length != 0) {
