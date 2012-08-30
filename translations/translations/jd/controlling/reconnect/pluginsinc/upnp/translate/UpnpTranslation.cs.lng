@@ -1,9 +1,10 @@
-auto=UPNP automatické nastavení
+UPNPRouterPlugin_run_mesg=Skenuji všechny síťové adaptéry
+auto=UPnP automatické nastavení
 controlURLTxt_help=Vložit kontrolní URL
 interaction_UpnpReconnect_wanservice_ip=Internetový protokol
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point protokol
 literally_choose_router=Vybrat zařízení
 literally_control_url=Kontrolní URL
-literally_router=UPNP Router
+literally_router=UPnP router
 literally_service_type=Typ služby
 malformedurl=Kontrolní URL je neplatná. Zkuste UPnP autonastavení.

@@ -1,4 +1,5 @@
 ValidateArchiveAction_ValidateArchiveAction=Zkontrolovat %s1
+ValidateArchiveAction_ValidateArchiveAction_multi=Zkontrolovat archivy
 ValidateArchiveAction_ValidateArchiveAction_object_=Zkontrolovat archiv(y)
 archivename=Název archivu
 cannot_extract_incopmplete=Nelze rozbalit %s1. Archiv je nekompletní!
@@ -70,4 +71,5 @@ settings_subpath_minnum2=... pouze pokud kořenová složka archivu obsahuje ví
 settings_subpath_no_folder2=... pouze pokud neexistují žádné podsložky
 settings_use_subpath=Vytvořit podsložku
 settings_various=Různé
+subfolder=Podsložka v cestě pro stažení
 tooltip_NameColumn=Jméno archivu

@@ -1,5 +1,6 @@
 addons_jdshutdown_statusmessage_disabled=Systém se NEVYPNE pomocí JD
 addons_jdshutdown_statusmessage_enabled=JD vypne systém po dokončení stahování
+config_toolbarbutton=Zobrazit tlačítko na Nástrojové liště
 gui_config_jdshutdown_close=Zavřít JDownloader
 gui_config_jdshutdown_forceshutdown=Vynutit vypnutí (ne ve všech OS)
 gui_config_jdshutdown_hibernate=Hibernovat (ne na všech OS)
@@ -17,3 +18,4 @@ interaction_shutdown_dialog_title_standby=Úsporný režim?
 jd_plugins_optional_jdshutdown=JD Shutdown
 jd_plugins_optional_jdshutdown_description=Automaticky vypne nebo uspí Váš počítač nebo zavře JD, když jsou všechna stahování dokončena.
 lit_shutdownn=Vypnutí
+show_admin=Pro nastavení Hibernace nebo Úsporného režimu jsou nutná Administrátorská oprávnění
