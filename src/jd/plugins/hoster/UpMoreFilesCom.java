@@ -45,12 +45,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "monsteruploads.eu" }, urls = { "https?://(www\\.)?monsteruploads\\.eu/[a-z0-9]{12}\\.html" }, flags = { 0 })
-public class MonsterUploadsEu extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upmorefiles.com" }, urls = { "https?://(www\\.)?upmorefiles\\.com/[a-z0-9]{12}" }, flags = { 0 })
+public class UpMoreFilesCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://monsteruploads.eu";
+    private final String         COOKIE_HOST                  = "http://upmorefiles.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -62,11 +62,16 @@ public class MonsterUploadsEu extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
+    /**
+     * Script notes: Streaming versions of this script sometimes redirect you to
+     * their directlinks when accessing this link + the link ID:
+     * http://somehoster.in/vidembed-
+     * */
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods: changed decodeDownloadLink
-    // non account: 1 * 1
-    // free account:
-    // premium account:
+    // mods: changed filename/size/dllink regexes
+    // non account: 8 * 1
+    // free account: chunk * maxdl
+    // premium account: chunk * maxdl
     // protocol: no https
     // captchatype: null
     // other: no redirects
@@ -81,7 +86,7 @@ public class MonsterUploadsEu extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public MonsterUploadsEu(PluginWrapper wrapper) {
+    public UpMoreFilesCom(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -142,38 +147,13 @@ public class MonsterUploadsEu extends PluginForHost {
     }
 
     private String[] scanInfo(String[] fileInfo) {
+        final Regex info = new Regex(correctedBR, "<td><b><td nowrap><center><B>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)</B>");
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // traits from download1 page below.
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                            // next two are details from sharing box
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                                if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            fileInfo[0] = info.getMatch(0);
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                }
-            }
+            fileInfo[1] = info.getMatch(1);
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
@@ -182,7 +162,7 @@ public class MonsterUploadsEu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -8, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -371,32 +351,9 @@ public class MonsterUploadsEu extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "method=\"LINK\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link
-                        // format.
-                        if (dllink == null) {
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.upmorefiles\\.com:\\d+/d/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
             }
         }
         return dllink;
@@ -404,11 +361,6 @@ public class MonsterUploadsEu extends PluginForHost {
 
     private void getPage(String page) throws Exception {
         br.getPage(page);
-        correctBR();
-    }
-
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
         correctBR();
     }
 
@@ -478,33 +430,6 @@ public class MonsterUploadsEu extends PluginForHost {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    private String decodeDownloadLink(String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-        }
-
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "playlist:\\[\\'(http://[^<>\"]*?)\\',\\]").getMatch(0);
-        }
-        return finallink;
     }
 
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {

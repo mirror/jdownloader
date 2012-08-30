@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien=.+|fichiers/download.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien={2,}|fichiers/download{2,})" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     public MultiupOrg(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class MultiupOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("The file does not exist any more\\.<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String quest = br.getRegex("name=\"data\\[Fichier\\]\\[indiceQuestion\\]\" value=\"(.*?)\"").getMatch(0);
         final Regex additionValues = br.getRegex("What is the result of (\\d+) \\+ (\\d+) :");
         final Regex multiplyValues = br.getRegex("What is the result of (\\d+) \\* (\\d+) : </th>");

@@ -39,7 +39,7 @@ public class Rpdshrknt extends PluginForDecrypt {
             parameter = "http://rapidshark.net/safe.php?id=" + parameter.substring(parameter.lastIndexOf("/") + 1);
         }
         br.getPage(parameter);
-        final String finallink = br.getRegex("src=\"(.*)\"></iframe>").getMatch(0);
+        final String finallink = br.getRegex("src=\"(http[^<>\"]*?)\"></iframe>").getMatch(0);
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

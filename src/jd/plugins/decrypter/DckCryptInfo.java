@@ -37,6 +37,13 @@ public class DckCryptInfo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.getURL().equals("http://duckcrypt.info/notfound.html")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(false);
         br.getPage(parameter.replace("/folder/", "/wait/"));
         String continueLink = br.getRegex("url: \"(http://.*?)\"").getMatch(0);
         if (continueLink == null) continueLink = br.getRegex("\"(http://duckcrypt\\.info/ajax/auth\\.php\\?hash=[a-z0-9]+)\"").getMatch(0);
@@ -51,7 +58,6 @@ public class DckCryptInfo extends PluginForDecrypt {
         String[] links = br.getRegex("<h2><a href=\"(http://.*?)\"").getColumn(0);
         if (links == null || links.length == 0) br.getRegex("\"(http://duckcrypt\\.info/link/[a-z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
         for (String singleLink : links) {
             br.getPage(singleLink);
             String finalLink = br.getRegex("name=\"redirect_iframe\" src=\"(.*?)\"").getMatch(0);
@@ -59,7 +65,6 @@ public class DckCryptInfo extends PluginForDecrypt {
             if (finalLink == null) return null;
             finalLink = Encoding.htmlDecode(finalLink);
             decryptedLinks.add(createDownloadlink(finalLink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

@@ -34,7 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.bz" }, urls = { "http://(www\\.)?drei\\.bz/(index\\.php)?(\\?id|\\?a=Download\\&dlid)=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drei.bz" }, urls = { "http://(www\\.)?(xxx\\.)?drei\\.bz/(index\\.php)?(\\?id|\\?a=Download\\&dlid)=\\d+" }, flags = { 0 })
 public class ThreeBz extends PluginForDecrypt {
 
     public ThreeBz(PluginWrapper wrapper) {
@@ -50,7 +50,7 @@ public class ThreeBz extends PluginForDecrypt {
         String secondLink = null;
         if (parameter.matches("http://(www\\.)?drei\\.bz/(index\\.php)?\\?a=Download&dlid=\\d+")) {
             secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "dlid=(\\d+)").getMatch(0);
-        } else if (parameter.matches("http://(www\\.)?drei\\.bz/(index\\.php)?\\?id=\\d+")) {
+        } else if (parameter.matches("http://(www\\.)?(xxx\\.)?drei\\.bz/(index\\.php)?\\?id=\\d+")) {
             secondLink = "http://drei.bz/?a=Download&dlid=" + new Regex(parameter, "drei\\.bz/\\?id=(\\d+)").getMatch(0);
         }
         if (secondLink == null) {
@@ -69,7 +69,7 @@ public class ThreeBz extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 File file = this.getLocalCaptchaFile();
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://drei.bz/captcha/imagecreate.php"));
-                Point p = UserIO.getInstance().requestClickPositionDialog(file, "relink.us", "Click on open Circle");
+                Point p = UserIO.getInstance().requestClickPositionDialog(file, "drei.bz", "Click on open Circle");
                 /* anticaptcha does not work good enough */
                 // int[] p = new jd.captcha.specials.GmdMscCm(file).getResult();
                 if (p == null) continue;

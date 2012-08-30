@@ -100,7 +100,7 @@ public class YkCm extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
 
-        final String videoId = br.getRegex("var videoId2= \'(.*?)\'").getMatch(0);
+        final String videoId = br.getRegex("var videoId2= \\'(.*?)\\'").getMatch(0);
         if (videoId == null) { return null; }
         // get Playlist
         final Date date = new Date();

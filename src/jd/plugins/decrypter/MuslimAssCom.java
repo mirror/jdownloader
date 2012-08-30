@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!category)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "muslimass.com" }, urls = { "http://(www\\.)?muslimass\\.com/(?!category|feed|wp\\-content|about)[a-z0-9\\-]+" }, flags = { 0 })
 public class MuslimAssCom extends PluginForDecrypt {
 
     public MuslimAssCom(PluginWrapper wrapper) {
@@ -60,6 +60,17 @@ public class MuslimAssCom extends PluginForDecrypt {
         if (externID != null) {
             String finallink = "http://www.xvideos.com/video" + externID + "/";
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?pornhost\\.com/\\d+/?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        // For hosterlinks like hotfile.com (tested)
+        externID = br.getRegex("<p style=\"text\\-align: left;\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         logger.warning("muslimass decrypter broken for link: " + parameter);

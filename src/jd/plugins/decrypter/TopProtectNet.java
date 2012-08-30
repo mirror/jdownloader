@@ -44,6 +44,10 @@ public class TopProtectNet extends PluginForDecrypt {
         final String fpName = br.getRegex("Titre:[\t\n\r ]+</td>[\t\n\r ]+<td style=\\'border:1px\\'>([^<>\"/]+)</td>").getMatch(0);
         String[] links = br.getRegex("target=_blank>(http://[^<>\"\\']+)").getColumn(0);
         if (links == null || links.length == 0) {
+            if (br.containsHTML("href= target=_blank></a><br></br><a")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

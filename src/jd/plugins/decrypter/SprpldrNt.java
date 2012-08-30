@@ -36,7 +36,7 @@ public class SprpldrNt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("File not found")) {
+        if (br.containsHTML("File not found|>Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

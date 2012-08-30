@@ -101,6 +101,10 @@ public class UploadStationCom extends PluginForHost {
                         logger.warning("Uploadstation availablecheck is broken!");
                         return false;
                     }
+                    if (checkbr.containsHTML("http://" + linkpart + "</td>[\t\n\r ]+<td>\\-\\-</td>")) {
+                        dl.setAvailable(false);
+                        continue;
+                    }
                     final String regexForThisLink = "(<td>http://(www\\.)" + linkpart + "([\r\n\t]+)?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>.*?</td>[\r\n\t ]+<td>(Available|Not available)(\\&nbsp;)?(<img|</td>))";
                     final String theData = checkbr.getRegex(regexForThisLink).getMatch(0);
                     if (theData == null) {

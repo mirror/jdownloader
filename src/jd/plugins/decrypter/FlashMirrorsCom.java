@@ -45,6 +45,10 @@ public class FlashMirrorsCom extends PluginForDecrypt {
         }
         final String[] links = br.getRegex("/download\\.php\\?url=(https?://.*?)[ \r\n\t]*?(\"|\\')").getColumn(0);
         if (links == null || links.length == 0) {
+            if (br.containsHTML("alt=\"Not Available\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
