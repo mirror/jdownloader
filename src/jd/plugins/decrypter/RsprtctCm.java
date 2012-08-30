@@ -36,6 +36,8 @@ public class RsprtctCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        if (!parameter.contains("www.")) parameter = parameter.replace("http://", "http://www.");
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.containsHTML("No htmlCode read")) {
             logger.info("Link offline: " + parameter);

@@ -107,7 +107,8 @@ public class LuckyShareNet extends PluginForHost {
             break;
         }
         if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        String dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']+)\"").getMatch(0);
+        if (ajax.containsHTML("Hash expired")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error");
+        String dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);

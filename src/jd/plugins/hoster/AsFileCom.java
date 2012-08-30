@@ -31,6 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -55,29 +56,36 @@ public class AsFileCom extends PluginForHost {
     private static final String MAINPAGE = "http://asfile.com";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("Download: <strong>([^<>\"\\']+)</strong><br/> \\(([^<>\"\\']+)\\)");
-        String filename = br.getRegex("<meta name=\"title\" content=\"Free download ([^<>\"\\']+)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
+        final Regex fileInfo = br.getRegex("Download: <strong>([^<>\"\\']+)</strong><br/> \\(([^<>\"\\']+)\\)");
+        String filename;
+        if (br.getURL().contains("/password/")) {
+            filename = br.getRegex("This file ([^<>\"]*?) is password protected.").getMatch(0);
+            link.getLinkStatus().setStatusText("This link is password protected!");
+        } else {
+            filename = br.getRegex("<meta name=\"title\" content=\"Free download ([^<>\"\\']+)\"").getMatch(0);
             if (filename == null) {
-                filename = fileInfo.getMatch(0);
+                filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
+                if (filename == null) {
+                    filename = fileInfo.getMatch(0);
+                }
             }
+            String filesize = fileInfo.getMatch(1);
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        String filesize = fileInfo.getMatch(1);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String passCode = null;
         String dllink = downloadLink.getStringProperty("directFree", null);
         if (dllink != null) {
             br.setFollowRedirects(true);
@@ -94,6 +102,14 @@ public class AsFileCom extends PluginForHost {
                 return;
             }
         }
+        // Password handling
+        if (br.getURL().contains("/password/")) {
+            passCode = downloadLink.getStringProperty("pass", null);
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            br.postPage(br.getURL(), "password=" + passCode);
+            if (br.getURL().contains("/password/")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+        }
+
         if (!br.containsHTML("/free\\-download/")) {
             if (br.containsHTML("This file is available only to premium users")) {
                 try {
@@ -126,9 +142,11 @@ public class AsFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("directFree", dllink);
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 
@@ -166,8 +184,12 @@ public class AsFileCom extends PluginForHost {
                 if (br.containsHTML(">Fail login<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.containsHTML("logout\">Logout ")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage("http://asfile.com/en/profile");
+                if (br.containsHTML("Your account is: FREE<br")) {
+                    logger.info("Free accounts are not supported!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (!br.containsHTML("<p>Your account:<strong> premium")) {
-                    logger.info("This is no premium account!");
+                    logger.info("This is an unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies

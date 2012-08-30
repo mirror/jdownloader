@@ -40,7 +40,7 @@ public class OsuYasOnlineNet extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("osu.yas-online.net/", "osupacks.ppy.sh/").replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("osupacks.ppy.sh/", "osu.yas-online.net/"));
     }
 
     @Override
@@ -59,7 +59,7 @@ public class OsuYasOnlineNet extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = new Regex(br.toString().replace("\\", ""), "\"downloadLink\":\"(/fetch/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = "http://osupacks.ppy.sh" + dllink;
+        dllink = "https://osu.yas-online.net" + dllink;
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -78,16 +78,16 @@ public class OsuYasOnlineNet extends PluginForHost {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (link.getDownloadURL().contains("osupacks.ppy.sh/p#")) {
             final String id = new Regex(link.getDownloadURL(), "osupacks\\.ppy\\.sh/p#(\\d+)").getMatch(0);
-            br.getPage("http://osupacks.ppy.sh/json.packdata.php?themeId=1&packNum=" + id);
+            br.getPage("https://osu.yas-online.net/json.packdata.php?themeId=1&packNum=" + id);
             if (br.containsHTML(OFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = "Beatmap Paket #" + id + ".rar";
         } else if (link.getDownloadURL().contains("osupacks.ppy.sh/m#")) {
-            br.getPage("http://osupacks.ppy.sh/json.mapdata.php?mapId=" + new Regex(link.getDownloadURL(), "osupacks\\.ppy\\.sh/m#(\\d+)").getMatch(0));
+            br.getPage("https://osu.yas-online.net/json.mapdata.php?mapId=" + new Regex(link.getDownloadURL(), "osupacks\\.ppy\\.sh/m#(\\d+)").getMatch(0));
             if (br.containsHTML("could not be found in the database")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("\"filename\":\"(.*?)\"").getMatch(0);
         } else {
             final Regex infoRegex = new Regex(link.getDownloadURL(), "osupacks\\.ppy\\.sh/t#(.*?)\\-(\\d+)");
-            br.getPage("http://osupacks.ppy.sh/json.packdata.php?themeId=" + infoRegex.getMatch(0) + "&packNum=" + infoRegex.getMatch(1));
+            br.getPage("https://osu.yas-online.net/json.packdata.php?themeId=" + infoRegex.getMatch(0) + "&packNum=" + infoRegex.getMatch(1));
             if (br.containsHTML(OFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = infoRegex.getMatch(0) + " #" + infoRegex.getMatch(1) + ".rar";
         }
