@@ -616,15 +616,7 @@ public class ProxyController {
                         /* connection to hoster must be allowed */
                         if (info.isHostAllowed(host)) {
                             /* proxy must allow resume, if selected */
-                            if (link.getChunksProgress().length != 0) {
-                                if (info.isResumeAllowed()) {
-                                    return info;
-                                } else {
-                                    continue;
-                                }
-                            } else {
-                                return info;
-                            }
+                            if (link.getChunksProgress() == null || info.isResumeAllowed()) return info;
                         } else {
                             continue;
                         }
@@ -643,15 +635,7 @@ public class ProxyController {
                         /* connection to hoster must be allowed */
                         if (info.isHostAllowed(host)) {
                             /* proxy must allow resume, if selected */
-                            if (link.getChunksProgress().length != 0) {
-                                if (info.isResumeAllowed()) {
-                                    return info;
-                                } else {
-                                    continue;
-                                }
-                            } else {
-                                return info;
-                            }
+                            if (link.getChunksProgress() == null || info.isResumeAllowed()) return info;
                         } else {
                             continue;
                         }

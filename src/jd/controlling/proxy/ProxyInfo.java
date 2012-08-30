@@ -265,6 +265,7 @@ public class ProxyInfo extends HTTPProxy {
     }
 
     public boolean isResumeAllowed() {
+        if (this.isLocal()) return true;
         return resumeIsAllowed;
     }
 }
