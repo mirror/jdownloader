@@ -1,5 +1,8 @@
 package org.jdownloader.extensions.streaming.upnp;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import org.appwork.storage.config.ConfigInterface;
 
 public interface RendererDeviceSettings extends ConfigInterface {
@@ -8,4 +11,7 @@ public interface RendererDeviceSettings extends ConfigInterface {
 
     String getProtocolInfos();
 
+    void setHeaders(HashMap<String, ArrayList<String>> headers);
+
+    HashMap<String, ArrayList<String>> getHeaders();
 }

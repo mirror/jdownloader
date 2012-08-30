@@ -28,4 +28,8 @@ public abstract class AbstractImageProfile extends Profile {
 
     }
 
+    public boolean checkResolution(int width, int height) {
+        return this.width.contains(width) && this.height.contains(height);
+    }
+
 }

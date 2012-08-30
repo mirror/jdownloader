@@ -3,22 +3,11 @@ package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 import java.util.List;
 
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 
-public class PrepareEntry {
+public interface PrepareEntry {
 
-    private FilePackage filePackage;
+    public List<DownloadLink> getLinks();
 
-    public PrepareEntry(FilePackage fp) {
-        filePackage = fp;
-    }
-
-    public List<DownloadLink> getLinks() {
-        return filePackage.getChildren();
-    }
-
-    public String getName() {
-        return filePackage.getName();
-    }
+    public String getName();
 
 }

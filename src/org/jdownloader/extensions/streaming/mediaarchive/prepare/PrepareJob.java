@@ -1,11 +1,12 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import jd.controlling.AccountController;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 
 import org.appwork.utils.Files;
 import org.appwork.utils.event.queue.QueueAction;
@@ -21,8 +22,12 @@ import org.jdownloader.extensions.streaming.dlna.profiles.audio.AbstractAudioPro
 import org.jdownloader.extensions.streaming.dlna.profiles.container.AbstractMediaContainer;
 import org.jdownloader.extensions.streaming.dlna.profiles.image.AbstractImageProfile;
 import org.jdownloader.extensions.streaming.dlna.profiles.video.AbstractAudioVideoProfile;
+import org.jdownloader.extensions.streaming.mediaarchive.AudioMediaItem;
+import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
+import org.jdownloader.extensions.streaming.mediaarchive.ProfileMatch;
+import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.logging.LogController;
 
 public class PrepareJob extends QueueAction<Void, RuntimeException> {
@@ -102,9 +107,9 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
 
         for (DownloadLink dl : jobEntry.getLinks()) {
             Boolean streamingWithoutAccount = (Boolean) dl.getBooleanProperty("STREAMING", false);
-            Plugin plg = dl.getDefaultPlugin();
+
             // instanceof may fail due to dynamic plugin loader
-            boolean isDirect = "DirectHTTP".equals(plg.getHost()) || "http links".equals(plg.getHost());
+            boolean isDirect = "DirectHTTP".equalsIgnoreCase(dl.getHost()) || "http links".equalsIgnoreCase(dl.getHost());
             if (streamingWithoutAccount || AccountController.getInstance().hasAccounts(dl.getHost()) || isDirect) {
                 String url = dl.getDownloadURL();
                 String name = dl.getName();
@@ -129,7 +134,17 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
                     for (ExtensionHandler handler : handlers) {
                         MediaItem node = handler.handle(extension, dl);
                         if (node != null) {
-                            controller.addMedia(node);
+
+                            List<ProfileMatch> profiles = findProfile(node);
+                            HashSet<String> profileNames = new HashSet<String>();
+
+                            for (ProfileMatch pm : profiles) {
+                                profileNames.add(pm.getProfile().getProfileID());
+                                node.setContainerFormat(pm.getProfile().getMimeType().getLabel());
+                            }
+                            node.setDlnaProfiles(profileNames.toArray(new String[] {}));
+                            onMedia(node);
+
                         }
                     }
                 }
@@ -137,6 +152,57 @@ public class PrepareJob extends QueueAction<Void, RuntimeException> {
         }
 
         return null;
+    }
+
+    protected void onMedia(MediaItem node) {
+        controller.addMedia(node);
+
+    }
+
+    private List<ProfileMatch> findProfile(MediaItem mediaItem) {
+        if (mediaItem == null) return null;
+        ArrayList<ProfileMatch> ret = new ArrayList<ProfileMatch>();
+        LOGGER.info("find DLNA Profile: " + mediaItem.getDownloadLink());
+        for (Profile p : Profile.ALL_PROFILES) {
+            if (mediaItem instanceof VideoMediaItem) {
+                VideoMediaItem video = (VideoMediaItem) mediaItem;
+                if (p instanceof AbstractAudioVideoProfile) {
+                    ProfileMatch match = video.matches((AbstractAudioVideoProfile) p);
+
+                    if (match != null) {
+                        LOGGER.info(match.toString());
+                        ret.add(match);
+                    }
+
+                }
+            } else if (mediaItem instanceof ImageMediaItem) {
+                ImageMediaItem item = (ImageMediaItem) mediaItem;
+                if (p instanceof AbstractImageProfile) {
+                    ProfileMatch match = item.matches((AbstractImageProfile) p);
+
+                    if (match != null) {
+                        LOGGER.info(match.toString());
+                        ret.add(match);
+                    }
+
+                }
+
+            } else if (mediaItem instanceof AudioMediaItem) {
+                AudioMediaItem item = (AudioMediaItem) mediaItem;
+                if (p instanceof AbstractAudioProfile) {
+                    ProfileMatch match = item.matches((AbstractAudioProfile) p);
+
+                    if (match != null) {
+                        LOGGER.info(match.toString());
+                        ret.add(match);
+                    }
+
+                }
+
+            }
+
+        }
+        return ret;
     }
 
     private void handleArchive(Archive archive) {

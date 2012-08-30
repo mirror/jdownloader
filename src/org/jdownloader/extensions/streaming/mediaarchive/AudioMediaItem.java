@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming.mediaarchive;
 
 import jd.plugins.DownloadLink;
 
+import org.jdownloader.extensions.streaming.dlna.profiles.audio.AbstractAudioProfile;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
 
 public class AudioMediaItem extends MediaItem {
@@ -16,42 +17,22 @@ public class AudioMediaItem extends MediaItem {
 
     private AudioStream stream;
 
-    private String      artist;
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
-    public String getAlbum() {
-        return album;
-    }
-
-    public void setAlbum(String album) {
-        this.album = album;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public AudioStream getStream() {
         return stream;
     }
-
-    private String album;
-    private String title;
 
     @Override
     public String getMimeTypeString() {
         return "audio/" + getContainerFormat();
     }
 
+    public void update(AudioMediaItem node) {
+        super.update(node);
+        this.stream = node.stream;
+
+    }
+
+    public ProfileMatch matches(AbstractAudioProfile p) {
+        return null;
+    }
 }

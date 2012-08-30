@@ -67,9 +67,9 @@ public class Format implements Storable {
         this.bit_rate = bit_rate;
     }
 
-    public int parseDuration() {
+    public long parseDuration() {
         try {
-            return (int) Double.parseDouble(getDuration());
+            return (long) (Double.parseDouble(getDuration()) * 1000);
         } catch (Throwable e) {
             return -1;
         }

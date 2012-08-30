@@ -14,7 +14,7 @@ public class ImagesRootCategory extends RootCategory {
 
     public ImagesRootCategory(StreamingExtension plg) {
         super(plg, T._.SettingsSidebarModel_images(), "image");
-        model = new ImageTableModel(plg.getMediaArchiveController());
+        model = new ImageTableModel(plg, plg.getMediaArchiveController());
         table = new ImageTable(model);
     }
 

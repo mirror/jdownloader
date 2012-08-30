@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming.gui.image;
 
 import java.awt.Point;
 import java.io.IOException;
+import java.util.Arrays;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -13,6 +14,7 @@ import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.gui.MediaTableModel;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageListController;
@@ -21,8 +23,8 @@ import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 
 public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListController> {
 
-    public ImageTableModel(MediaArchiveController mediaArchiveController) {
-        super("ImageTableModel", mediaArchiveController.getImageController());
+    public ImageTableModel(StreamingExtension plg, MediaArchiveController mediaArchiveController) {
+        super("ImageTableModel", plg, mediaArchiveController.getImageController());
 
     }
 
@@ -67,15 +69,15 @@ public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListCo
 
             @Override
             public String getStringValue(ImageMediaItem value) {
-                return value.getContainerFormat();
+                return (value.getContainerFormat() == null ? "Unknown" : value.getContainerFormat()) + " " + value.getWidth() + "x" + value.getHeight();
             }
         });
 
-        addColumn(new ExtTextColumn<ImageMediaItem>(T._.gui_video_status()) {
+        addColumn(new ExtTextColumn<ImageMediaItem>("DLNA Profiles") {
 
             @Override
             public String getStringValue(ImageMediaItem value) {
-                return "";
+                return Arrays.toString(value.getDlnaProfiles());
             }
         });
     }

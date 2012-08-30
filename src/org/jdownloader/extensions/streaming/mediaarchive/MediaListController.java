@@ -37,6 +37,10 @@ public abstract class MediaListController<T extends MediaItem> {
         save();
     }
 
+    public void onRefresh(T mi) {
+        fireContentChanged();
+    }
+
     protected MediaListController() {
         eventSender = new MediaListEventSender();
         logger = LogController.getInstance().getLogger(getClass().getName());

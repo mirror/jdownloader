@@ -45,7 +45,6 @@ public class VideoMediaItem extends MediaItem {
     private long                   duration;
     private long                   systemBitrate;
     private ArrayList<VideoStream> videoStreams;
-    private String                 majorBrand;
 
     public VideoMediaItem(DownloadLink dl) {
         super(dl);
@@ -157,12 +156,13 @@ public class VideoMediaItem extends MediaItem {
         return null;
     }
 
-    public void setMajorBrand(String major_brand) {
-        this.majorBrand = major_brand;
-    }
+    public void update(VideoMediaItem node) {
+        super.update(node);
+        this.audioStreams = node.audioStreams;
+        this.duration = node.duration;
+        this.videoStreams = node.videoStreams;
+        this.systemBitrate = node.systemBitrate;
 
-    public String getMajorBrand() {
-        return majorBrand;
     }
 
 }

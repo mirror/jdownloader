@@ -29,4 +29,9 @@ public class PlayToVLCDevice extends PlayToLocalBinary {
         return "vlc";
     }
 
+    @Override
+    public String getUserAgentPattern() {
+        return null;
+    }
+
 }

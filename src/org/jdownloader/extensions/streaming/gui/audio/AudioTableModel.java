@@ -15,6 +15,7 @@ import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.images.IconIO;
+import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.gui.MediaTableModel;
 import org.jdownloader.extensions.streaming.mediaarchive.AudioListController;
@@ -23,8 +24,8 @@ import org.jdownloader.extensions.streaming.mediaarchive.MediaArchiveController;
 
 public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListController> {
 
-    public AudioTableModel(MediaArchiveController mediaArchiveController) {
-        super("AudioTableModel", mediaArchiveController.getAudioController());
+    public AudioTableModel(StreamingExtension plg, MediaArchiveController mediaArchiveController) {
+        super("AudioTableModel", plg, mediaArchiveController.getAudioController());
 
     }
 
@@ -83,6 +84,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
 
             @Override
             public String getStringValue(AudioMediaItem value) {
+                if (value.getStream() == null) return null;
                 return TimeFormatter.formatSeconds(value.getStream().getDuration(), 0);
             }
         });

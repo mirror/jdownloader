@@ -14,7 +14,7 @@ public class VideoRootCategory extends RootCategory {
 
     public VideoRootCategory(StreamingExtension plg) {
         super(plg, T._.SettingsSidebarModel_video(), "video");
-        model = new VideoTableModel(plg.getMediaArchiveController());
+        model = new VideoTableModel(plg, plg.getMediaArchiveController());
         table = new VideoTable(model);
     }
 

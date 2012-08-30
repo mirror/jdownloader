@@ -116,7 +116,7 @@ public class FFMpegInfoReader {
                                 thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
                                 thumb.getParentFile().mkdirs();
                                 thumb.delete();
-                                int duration = getFormat().parseDuration();
+                                long duration = getFormat().parseDuration() / 1000;
                                 int offsetInSeconds = (int) (((duration * 0.6 * Math.random())) + duration * 0.2);
                                 if (offsetInSeconds < 0) offsetInSeconds = 10;
                                 String[] ret = execute(ffmpeg, "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());

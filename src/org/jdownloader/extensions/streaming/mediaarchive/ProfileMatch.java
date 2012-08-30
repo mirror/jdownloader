@@ -1,6 +1,7 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
+import org.jdownloader.extensions.streaming.dlna.profiles.image.AbstractImageProfile;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.audio.InternalAudioStream;
 import org.jdownloader.extensions.streaming.dlna.profiles.streams.video.InternalVideoStream;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
@@ -65,6 +66,10 @@ public class ProfileMatch {
         this.profileAudioStream = matchingProfileAs;
         this.sampleVideoStream = matchingVs;
         this.sampleAudioStream = matchingAs;
+    }
+
+    public ProfileMatch(AbstractImageProfile p) {
+        this(p, null, null, null, null);
     }
 
 }

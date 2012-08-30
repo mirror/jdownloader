@@ -94,4 +94,13 @@ public interface StreamingTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Size" })
     String gui_video_size();
+
+    @Default(lngs = { "en" }, values = { "Video" })
+    String nodename_video();
+
+    @Default(lngs = { "en" }, values = { "Audio" })
+    String nodename_audio();
+
+    @Default(lngs = { "en" }, values = { "Image" })
+    String nodename_image();
 }

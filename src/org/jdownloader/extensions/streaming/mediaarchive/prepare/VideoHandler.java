@@ -8,7 +8,6 @@ import jd.plugins.DownloadLink;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.Files;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.ffmpeg.FFMpegInfoReader;
@@ -19,49 +18,51 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
     @Override
     public VideoMediaItem handle(StreamingExtension extension, DownloadLink dl) {
         VideoMediaItem ret = new VideoMediaItem(dl);
-        if (CrossSystem.isWindows()) {
-            try {
 
-                FFMpegInfoReader ffmpeg = new FFMpegInfoReader(dl);
+        try {
 
-                ffmpeg.load(extension);
+            FFMpegInfoReader ffmpeg = new FFMpegInfoReader(dl);
 
-                boolean hasVideoStream = false;
-                ArrayList<Stream> streams = ffmpeg.getStreams();
-                if (streams != null) {
-                    for (Stream info : streams) {
+            ffmpeg.load(extension);
 
-                        if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
-                            hasVideoStream = true;
+            boolean hasVideoStream = false;
+            ArrayList<Stream> streams = ffmpeg.getStreams();
+            if (streams != null) {
+                for (Stream info : streams) {
 
-                            ret.addVideoStream(info.toVideoStream());
-                        } else if ("audio".equals(info.getCodec_type())) {
+                    if ("video".equals(info.getCodec_type()) && !"mjpeg".equalsIgnoreCase(info.getCodec_name())) {
+                        hasVideoStream = true;
 
-                            ret.addAudioStream(info.toAudioStream());
-                        }
+                        ret.addVideoStream(info.toVideoStream());
+                    } else if ("audio".equals(info.getCodec_type())) {
 
+                        ret.addAudioStream(info.toAudioStream());
                     }
-                    if (!hasVideoStream) {
-                        // not a video
-                        return null;
-                    }
-                    ret.setInfoString(ffmpeg.getResult());
-                    ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
-                    ret.setSystemBitrate(ffmpeg.getFormat().parseBitrate());
-                    ret.setDuration(ffmpeg.getFormat().parseDuration());
-                    ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
-                    if (ffmpeg.getFormat().getTags() != null) ret.setMajorBrand(ffmpeg.getFormat().getTags().getMajor_brand());
-                    ret.setSize(ffmpeg.getFormat().parseSize());
 
                 }
+                if (!hasVideoStream) {
+                    // not a video
+                    return null;
+                }
+                ret.setInfoString(ffmpeg.getResult());
+                if (ffmpeg.getThumbnailPath() != null) ret.setThumbnailPath(Files.getRelativePath(Application.getResource("tmp").getParentFile(), new File(ffmpeg.getThumbnailPath())));
+                ret.setSystemBitrate(ffmpeg.getFormat().parseBitrate());
+                ret.setDuration(ffmpeg.getFormat().parseDuration());
+                ret.setContainerFormat(ffmpeg.getFormat().getFormat_name());
+                if (ffmpeg.getFormat().getTags() != null) ret.setMajorBrand(ffmpeg.getFormat().getTags().getMajor_brand());
+                ret.setSize(ffmpeg.getFormat().parseSize());
 
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
+            } else {
+                // ffmpeg failed
+                return null;
             }
 
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
         return ret;
     }
 }

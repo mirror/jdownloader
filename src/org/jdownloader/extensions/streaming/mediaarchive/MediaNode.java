@@ -10,4 +10,8 @@ public interface MediaNode {
     public ImageIcon getIcon();
 
     public String getUniqueID();
+
+    public void setRoot(MediaRoot root);
+
+    public void setParent(MediaFolder mediaFolder);
 }

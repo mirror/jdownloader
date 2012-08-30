@@ -1,5 +1,13 @@
 package org.jdownloader.extensions.streaming.upnp;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.RenderingHints;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Float;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -57,9 +65,7 @@ import org.fourthline.cling.protocol.ProtocolCreationException;
 import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.protocol.ProtocolFactoryImpl;
 import org.fourthline.cling.protocol.ReceivingAsync;
-import org.fourthline.cling.protocol.async.ReceivingNotification;
 import org.fourthline.cling.protocol.async.ReceivingSearch;
-import org.fourthline.cling.protocol.async.ReceivingSearchResponse;
 import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
@@ -118,7 +124,7 @@ public class MediaServer implements Runnable {
 
                                 switch (incomingRequest.getOperation().getMethod()) {
                                 case NOTIFY:
-                                    return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ReceivingNotification(getUpnpService(), incomingRequest) : null;
+                                    return isByeBye(incomingRequest) || isSupportedServiceAdvertisement(incomingRequest) ? new ExtReceivingNotification(getUpnpService(), incomingRequest) : null;
                                 case MSEARCH:
                                     /**
                                      * IT seems like rpoot device searches must be answered by a OutgoingSearchResponseRootDevice -
@@ -140,7 +146,7 @@ public class MediaServer implements Runnable {
                             } else if (message.getOperation() instanceof UpnpResponse) {
                                 IncomingDatagramMessage<UpnpResponse> incomingResponse = message;
 
-                                return isSupportedServiceAdvertisement(incomingResponse) ? new ReceivingSearchResponse(getUpnpService(), incomingResponse) : null;
+                                return isSupportedServiceAdvertisement(incomingResponse) ? new ExtReceivingSearchResponse(getUpnpService(), incomingResponse) : null;
                             }
 
                             throw new ProtocolCreationException("Protocol for incoming datagram message not found: " + message);
@@ -285,8 +291,38 @@ public class MediaServer implements Runnable {
     private byte[] createIcon(String format, int size) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
-            BufferedImage image = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size, false);
-            ImageIO.write(image, format, baos);
+
+            if ("png".equals(format)) {
+                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size, false);
+                ImageIO.write(ret, format, baos);
+            } else {
+                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size - 4, false);
+                int w = size;
+                int h = size;
+
+                Color fg = Color.BLACK;
+                Color bg = Color.WHITE;
+
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                GraphicsDevice gd = ge.getDefaultScreenDevice();
+
+                GraphicsConfiguration gc = gd.getDefaultConfiguration();
+                final BufferedImage image = gc.createCompatibleImage(w, h);
+
+                // paint
+                Graphics2D g = image.createGraphics();
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Float roundedRectangle = new Rectangle2D.Float(0, 0, w - 1, h - 1);
+                g.setColor(bg);
+                g.fill(roundedRectangle);
+                g.setColor(bg.darker());
+                g.draw(roundedRectangle);
+
+                g.drawImage(ret, 2, 2, null);
+                g.dispose();
+                ImageIO.write(image, format, baos);
+            }
             if (baos.size() == 0) throw new WTFException("Image Not found");
             return baos.toByteArray();
         } finally {

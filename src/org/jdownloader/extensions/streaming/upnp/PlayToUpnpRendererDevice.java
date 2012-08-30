@@ -1,8 +1,11 @@
 package org.jdownloader.extensions.streaming.upnp;
 
+import java.util.ArrayList;
+
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
@@ -60,6 +63,9 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
 
         settings = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + rendererDevice.getIdentity().getUdn().toString().substring(5)), RendererDeviceSettings.class);
         address = ((RemoteDeviceIdentity) rendererDevice.getIdentity()).getDescriptorURL().getHost();
+        if (rendererDevice.getIdentity() instanceof ExtRemoteDeviceIdentity) {
+            settings.setHeaders(((ExtRemoteDeviceIdentity) rendererDevice.getIdentity()).getHeaders());
+        }
 
         if (!StringUtils.isEmpty(settings.getProtocolInfos())) {
             protocolInfos = new ProtocolInfos(settings.getProtocolInfos());
@@ -228,6 +234,18 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     @Override
     public String getUniqueDeviceID() {
         return this.rendererDevice.getIdentity().getUdn().toString();
+    }
+
+    @Override
+    public String getUserAgentPattern() {
+        return null;
+    }
+
+    public String getUserAgent() {
+        if (settings.getHeaders() == null) return null;
+        ArrayList<String> l = settings.getHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+        if (l != null && l.size() > 0) return l.get(0);
+        return null;
     }
 
 }

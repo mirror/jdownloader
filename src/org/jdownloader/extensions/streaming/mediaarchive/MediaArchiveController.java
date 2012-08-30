@@ -1,12 +1,13 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
+import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
 import org.jdownloader.extensions.streaming.StreamingExtension;
+import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.MediaPreparerQueue;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareEntry;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareJob;
@@ -19,16 +20,7 @@ public class MediaArchiveController implements MediaListListener {
     private VideoListController     videoController;
     private AudioListController     audioController;
     private ImageListController     imageController;
-    private List<VideoMediaItem>    videoList;
-    private List<AudioMediaItem>    audioList;
-    private List<ImageMediaItem>    imageList;
-    private List<MediaNode>         list;
-
-    public List<MediaNode> getList() {
-        return list;
-    }
-
-    private HashMap<String, MediaNode> map;
+    private MediaRoot               root;
 
     public MediaArchiveController(StreamingExtension streamingExtension) {
         extension = streamingExtension;
@@ -44,7 +36,7 @@ public class MediaArchiveController implements MediaListListener {
     }
 
     private void update() {
-        HashMap<String, MediaNode> map = new HashMap<String, MediaNode>();
+        MediaRoot root = new MediaRoot();
         // List<VideoMediaItem> videoList = videoController.getList();
         // Collections.sort(videoList, new Comparator<MediaItem>() {
         //
@@ -54,23 +46,18 @@ public class MediaArchiveController implements MediaListListener {
         // }
         // });
         List<MediaNode> list = new ArrayList<MediaNode>();
-        videoList = videoController.getList();
-        audioList = audioController.getList();
-        imageList = imageController.getList();
-        for (MediaNode mn : videoList) {
-            map.put(mn.getUniqueID(), mn);
-            list.add(mn);
-        }
-        for (MediaNode mn : audioList) {
-            map.put(mn.getUniqueID(), mn);
-            list.add(mn);
-        }
-        for (MediaNode mn : imageList) {
-            map.put(mn.getUniqueID(), mn);
-            list.add(mn);
-        }
-        this.list = list;
-        this.map = map;
+        // videoList = ;
+        // audioList = audioController.getList();
+        // imageList = imageController.getList();
+        put(root, new MediaFolder("video", T._.nodename_video()).addChildren(videoController.getList()));
+        put(root, new MediaFolder("audio", T._.nodename_audio()).addChildren(audioController.getList()));
+        put(root, new MediaFolder("image", T._.nodename_image()).addChildren(imageController.getList()));
+
+        this.root = root;
+    }
+
+    private void put(MediaFolder parent, MediaNode child) {
+        parent.addChild(child);
     }
 
     public VideoListController getVideoController() {
@@ -89,10 +76,34 @@ public class MediaArchiveController implements MediaListListener {
         return extension;
     }
 
-    public void mount(FilePackage fp) {
-        PrepareEntry pe = new PrepareEntry(fp);
-        preparerQueue.addAsynch(new PrepareJob(this, pe));
+    public void mount(final FilePackage fp) {
+
+        for (final DownloadLink dl : fp.getChildren()) {
+            final List<DownloadLink> ret = new ArrayList<DownloadLink>();
+            ret.add(dl);
+            PrepareEntry pe = new PrepareEntry() {
+
+                @Override
+                public List<DownloadLink> getLinks() {
+                    return ret;
+                }
+
+                @Override
+                public String getName() {
+                    return "(" + dl.getHost() + ") " + dl.getName();
+                }
+
+            };
+            preparerQueue.addAsynch(new PrepareJob(this, pe) {
+                protected void onMedia(MediaItem node) {
+                    super.onMedia(node);
+
+                }
+
+            });
+        }
         firePreparerQueueUpdate();
+
     }
 
     public void firePreparerQueueUpdate() {
@@ -122,13 +133,57 @@ public class MediaArchiveController implements MediaListListener {
         }
     }
 
-    public MediaNode getItemById(String objectID) {
-        return map.get(objectID);
-    }
-
     @Override
     public void onContentChanged(MediaListController<?> caller) {
         update();
+    }
+
+    public MediaFolder getDirectory(String objectID) {
+        MediaFolder ret = root.getFolder(objectID);
+        if (ret == null) return root;
+        return ret;
+    }
+
+    public MediaNode getItemById(String objectID) {
+        return root.get(objectID);
+    }
+
+    public void refreshMetadata(final MediaItem mi) {
+        final List<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.add(mi.getDownloadLink());
+        PrepareEntry pe = new PrepareEntry() {
+
+            @Override
+            public List<DownloadLink> getLinks() {
+
+                return ret;
+            }
+
+            @Override
+            public String getName() {
+                return mi.getName();
+            }
+
+        };
+        preparerQueue.addAsynch(new PrepareJob(this, pe) {
+            protected void onMedia(MediaItem node) {
+
+                if (node.getClass() != mi.getClass()) { return; }
+                mi.update(node);
+                if (node instanceof VideoMediaItem) {
+                    videoController.onRefresh((VideoMediaItem) mi);
+                } else if (node instanceof AudioMediaItem) {
+                    audioController.onRefresh((AudioMediaItem) mi);
+                } else if (node instanceof ImageMediaItem) {
+                    imageController.onRefresh((ImageMediaItem) mi);
+                }
+
+                firePreparerQueueUpdate();
+            }
+
+        });
+        firePreparerQueueUpdate();
+
     }
 
 }

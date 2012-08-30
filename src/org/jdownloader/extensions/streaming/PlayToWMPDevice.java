@@ -30,4 +30,9 @@ public class PlayToWMPDevice extends PlayToLocalBinary {
     public String getUniqueDeviceID() {
         return "wmp";
     }
+
+    @Override
+    public String getUserAgentPattern() {
+        return null;
+    }
 }
