@@ -1,3 +1,6 @@
 jd_plugins_optional_jdchat_closeTab=Fermer l'onglet
 jd_plugins_optional_jdchat_jdchat=JD Chat
 plugins_optional_jdchat_enternick=Votre pseudo souhaité ?
+settings_nick=Votre nom
+settings_userlist_position_left=Coté gauche
+settings_userlist_position_right=Coté droit
