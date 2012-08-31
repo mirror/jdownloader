@@ -438,8 +438,7 @@ public class GlumboUploadsCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
@@ -635,7 +634,7 @@ public class GlumboUploadsCom extends PluginForHost {
         if (ttt == null) {
             ttt = new Regex(BRBEFORE, "id=\"countdown_str\".*?<span id=\".*?\">.*?(\\d+).*?</span").getMatch(0);
             if (ttt == null) {
-                ttt = new Regex(BRBEFORE, "<div class=\"countdownnum\" id=\".*?\">(\\d+)</div>").getMatch(0);
+                ttt = new Regex(BRBEFORE, "<div class=\"countdownnum\"\\s+id=\".*?\">(\\d+)</div>").getMatch(0);
             }
         }
         if (ttt != null) tt = Integer.parseInt(ttt);
