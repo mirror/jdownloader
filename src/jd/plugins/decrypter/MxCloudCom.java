@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.InvalidKeyException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -143,36 +144,38 @@ public class MxCloudCom extends PluginForDecrypt {
         } catch (final Throwable e) {
         }
 
-        final String sets[] = new Regex(result, "\\[(.*?)\\]").getColumn(0);
-        if (sets == null || sets.length == 0) { return null; }
         URLConnectionAdapter con = null;
-        for (final String set : sets) {
-            final String[] links = new Regex(set, "\"(.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
+        final String[] links = new Regex(result, "\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) { return null; }
+        HashMap<String, Long> alreadyFound = new HashMap<String, Long>();
+        for (final String dl : links) {
+            if (!dl.endsWith(".mp3") && !dl.endsWith(".m4a")) {
                 continue;
             }
-            for (final String dl : links) {
-                if (!dl.endsWith("mp3")) {
-                    break;
+            final DownloadLink dlink = createDownloadlink("directhttp://" + dl);
+            dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
+            /* Nicht alle Links im Array sets[] sind verfügbar. */
+            try {
+                con = br.openGetConnection(dl);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    continue;
                 }
-                final DownloadLink dlink = createDownloadlink("directhttp://" + dl);
-                dlink.setFinalFileName(Encoding.htmlDecode(theName).trim() + new Regex(dl, "(\\..{3}$)").getMatch(0));
-                /* Nicht alle Links im Array sets[] sind verfügbar. */
-                try {
-                    con = br.openGetConnection(dl);
-                    if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                        continue;
-                    }
+                if (alreadyFound.get(dlink.getName()) != null && alreadyFound.get(dlink.getName()) == con.getLongContentLength()) {
+                    continue;
+                } else {
+                    alreadyFound.put(dlink.getName(), con.getLongContentLength());
+                    dlink.setAvailable(true);
+                    dlink.setDownloadSize(con.getLongContentLength());
                     decryptedLinks.add(dlink);
-                    break;
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
+
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(theName);
         fp.addLinks(decryptedLinks);

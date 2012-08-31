@@ -471,7 +471,7 @@ public class JAntiCaptcha {
             }
             Executer exec = new Executer(JDUtilities.getResourceFile(this.command).getAbsolutePath());
             exec.setRunin(JDUtilities.getResourceFile(this.command).getParent());
-            exec.setWaitTimeout(30);
+            exec.setWaitTimeout(150);
             exec.start();
             exec.waitTimeout();
             // String ret = exec.getOutputStream() + " \r\n " +
