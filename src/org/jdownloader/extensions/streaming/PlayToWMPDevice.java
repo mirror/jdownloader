@@ -31,8 +31,4 @@ public class PlayToWMPDevice extends PlayToLocalBinary {
         return "wmp";
     }
 
-    @Override
-    public String getUserAgentPattern() {
-        return null;
-    }
 }

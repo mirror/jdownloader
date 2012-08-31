@@ -76,6 +76,9 @@ import org.jdownloader.extensions.ExtensionController;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.UpnpContentDirectory;
+import org.jdownloader.extensions.streaming.upnp.clingext.Configuration;
+import org.jdownloader.extensions.streaming.upnp.clingext.ExtReceivingNotification;
+import org.jdownloader.extensions.streaming.upnp.clingext.ExtReceivingSearchResponse;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
@@ -87,6 +90,8 @@ public class MediaServer implements Runnable {
     private UpnpServiceImpl    upnpService;
 
     private StreamingExtension extension;
+
+    private DeviceManager      deviceManager;
 
     public StreamingExtension getExtension() {
         return extension;
@@ -161,6 +166,8 @@ public class MediaServer implements Runnable {
             // upnpService.getRegistry().addListener(listener);
             //
             // // Broadcast a search message for all devices
+            deviceManager = new DeviceManager(upnpService);
+            upnpService.getRegistry().addListener(deviceManager);
             upnpService.getControlPoint().search(new UDAServiceTypeHeader(new UDAServiceType("AVTransport", 1)));
 
         } catch (Throwable ex) {
@@ -176,6 +183,10 @@ public class MediaServer implements Runnable {
             logger.log(ex);
             Dialog.getInstance().showExceptionDialog("Exception", "Could not start upnp server", ex);
         }
+    }
+
+    public DeviceManager getDeviceManager() {
+        return deviceManager;
     }
 
     private HashMap<String, MediaRenderer> renderer = new HashMap<String, MediaRenderer>();

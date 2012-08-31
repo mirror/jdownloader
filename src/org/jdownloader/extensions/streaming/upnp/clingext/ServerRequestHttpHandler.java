@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp;
+package org.jdownloader.extensions.streaming.upnp.clingext;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -21,7 +21,7 @@ public class ServerRequestHttpHandler implements HttpHandler {
     }
 
     // This is executed in the request receiving thread!
-    public void handle(HttpExchange httpExchange) throws IOException {
+    public void handle(final HttpExchange httpExchange) throws IOException {
         // And we pass control to the service, which will (hopefully) start a new thread immediately so we can
         // continue the receiving thread ASAP
         logger.fine("Received HTTP exchange: " + httpExchange.getRequestMethod() + " " + httpExchange.getRequestURI());
@@ -31,5 +31,4 @@ public class ServerRequestHttpHandler implements HttpHandler {
         logger.fine(JSonStorage.toString(httpExchange.getResponseHeaders()));
 
     }
-
 }

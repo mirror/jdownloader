@@ -1,5 +1,7 @@
 package org.jdownloader.extensions.streaming.dlna;
 
+import java.util.Locale;
+
 public enum Extensions {
     IMAGE_JPG("jpg"),
     IMAGE_JPEG("jpeg"),
@@ -48,6 +50,17 @@ public enum Extensions {
 
     private Extensions(String extension) {
         this.extension = extension;
+    }
+
+    public static String getType(String ext) {
+        for (Extensions e : values()) {
+            if (e.getExtension().toLowerCase(Locale.ENGLISH).equalsIgnoreCase(ext)) {
+                if (e.name().startsWith("AUDIO_VIDEO_")) return "video";
+                if (e.name().startsWith("AUDIO_")) return "audio";
+                return "image";
+            }
+        }
+        return null;
     }
 
 }

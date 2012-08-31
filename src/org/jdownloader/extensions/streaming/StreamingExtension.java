@@ -76,11 +76,16 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     }
 
-    private HttpApiImpl            vlcstreamingAPI;
+    private HttpApiImpl          vlcstreamingAPI;
 
-    private StreamingConfigPanel   configPanel = null;
-    protected VLCGui               tab;
-    private MediaServer            mediaServer;
+    private StreamingConfigPanel configPanel = null;
+    protected VLCGui             tab;
+    private MediaServer          mediaServer;
+
+    public MediaServer getMediaServer() {
+        return mediaServer;
+    }
+
     private String                 wmpBinary;
     private String                 vlcBinary;
     private MediaArchiveController mediaArchive;

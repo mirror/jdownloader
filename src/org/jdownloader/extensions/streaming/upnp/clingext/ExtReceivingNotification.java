@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp;
+package org.jdownloader.extensions.streaming.upnp.clingext;
 
 import java.util.logging.Logger;
 
@@ -29,12 +29,12 @@ public class ExtReceivingNotification extends ReceivingNotification {
             return;
         }
 
-        RemoteDeviceIdentity rdIdentity = new ExtRemoteDeviceIdentity(getInputMessage());
+        RemoteDeviceIdentity rdIdentity = new RemoteDeviceIdentity(getInputMessage());
         logger.fine("Received device notification: " + rdIdentity);
 
         RemoteDevice rd;
         try {
-            rd = new RemoteDevice(rdIdentity);
+            rd = new ExtRemoteDevice(getInputMessage(), rdIdentity);
 
         } catch (ValidationException ex) {
             logger.warning("Validation errors of device during discovery: " + rdIdentity);

@@ -1,7 +1,7 @@
 package org.jdownloader.extensions.streaming.upnp;
 
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.appwork.storage.config.ConfigInterface;
 
@@ -11,7 +11,27 @@ public interface RendererDeviceSettings extends ConfigInterface {
 
     String getProtocolInfos();
 
-    void setHeaders(HashMap<String, ArrayList<String>> headers);
+    void setHeaders(HashMap<String, List<String>> headers);
 
-    HashMap<String, ArrayList<String>> getHeaders();
+    HashMap<String, List<String>> getHeaders();
+
+    void setDisplayString(String displayString);
+
+    String getDisplayString();
+
+    void setUDN(String UDN);
+
+    String getUDN();
+
+    void setDescriptorURL(String string);
+
+    String getDescriptorURL();
+
+    void setIconPath(String relativePath);
+
+    String getIconPath();
+
+    void setServerName(String list);
+
+    String getServerName();
 }

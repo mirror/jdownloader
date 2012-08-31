@@ -1,14 +1,8 @@
 package org.jdownloader.extensions.streaming.upnp;
 
-import java.util.ArrayList;
-
 import jd.plugins.DownloadLink;
 
 import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.fourthline.cling.controlpoint.ActionCallback;
@@ -20,8 +14,6 @@ import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.support.avtransport.callback.Play;
 import org.fourthline.cling.support.avtransport.callback.SetAVTransportURI;
 import org.fourthline.cling.support.avtransport.callback.Stop;
-import org.fourthline.cling.support.model.Protocol;
-import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.logging.LogController;
@@ -38,13 +30,12 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
         return avtransportService;
     }
 
-    private Service                avtransportService;
-    private MediaServer            mediaServer;
-    private LogSource              logger;
-    private RendererDeviceSettings settings;
-    private ProtocolInfos          protocolInfos;
-    private String                 address;
-    private StreamingExtension     extension;
+    private Service            avtransportService;
+    private MediaServer        mediaServer;
+    private LogSource          logger;
+
+    private StreamingExtension extension;
+    private DeviceCache        cache;
 
     public PlayToUpnpRendererDevice(MediaServer mediaServer, Device d, Service avtransport) {
         this.rendererDevice = d;
@@ -56,21 +47,11 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     }
 
     public String getAddress() {
-        return address;
+        return cache.getAddress();
     }
 
     protected void init() {
-
-        settings = JsonConfig.create(Application.getResource("tmp/streaming/devices/" + rendererDevice.getIdentity().getUdn().toString().substring(5)), RendererDeviceSettings.class);
-        address = ((RemoteDeviceIdentity) rendererDevice.getIdentity()).getDescriptorURL().getHost();
-        if (rendererDevice.getIdentity() instanceof ExtRemoteDeviceIdentity) {
-            settings.setHeaders(((ExtRemoteDeviceIdentity) rendererDevice.getIdentity()).getHeaders());
-        }
-
-        if (!StringUtils.isEmpty(settings.getProtocolInfos())) {
-            protocolInfos = new ProtocolInfos(settings.getProtocolInfos());
-            return;
-        }
+        cache = mediaServer.getDeviceManager().getDeviceCache(rendererDevice);
 
         // new Thread("ProtocolInfoLoader") {
         // public void run() {
@@ -135,24 +116,7 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     }
 
     public ProtocolInfos getProtocolInfos() {
-        return protocolInfos;
-    }
-
-    private void setProtocolInfos(ProtocolInfos sinkProtocolInfos) {
-        ProtocolInfos list = new ProtocolInfos();
-        for (ProtocolInfo pi : sinkProtocolInfos) {
-            if (pi.getProtocol() == Protocol.HTTP_GET) {
-                list.add(pi);
-            } else {
-                // do not use ProtocolInfo.toString() - it contains nullpointer
-                logger.warning("Unsupported Streamprotocol: " + getDisplayName() + " " + pi.getProtocol() + ":" + pi.getNetwork() + ":" + pi.getAdditionalInfo() + ":" + pi.getContentFormat());
-            }
-        }
-        protocolInfos = list;
-        logger.info("ProtocolInfos  for " + getDisplayName() + ": " + list);
-        if (list != null) {
-            settings.setProtocolInfos(list.toString());
-        }
+        return cache.getProtocolInfos();
     }
 
     public String getDisplayName() {
@@ -169,7 +133,7 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
     public void play(final DownloadLink link, final String id, final String subpath) {
         new Thread("PlayTpUpnpDevice") {
             public void run() {
-                logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + settings.getProtocolInfos());
+                logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + getProtocolInfos());
                 try {
 
                     final String url = extension.createStreamUrl(id, getUniqueDeviceID(), subpath);
@@ -236,16 +200,9 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
         return this.rendererDevice.getIdentity().getUdn().toString();
     }
 
-    @Override
-    public String getUserAgentPattern() {
-        return null;
-    }
-
     public String getUserAgent() {
-        if (settings.getHeaders() == null) return null;
-        ArrayList<String> l = settings.getHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
-        if (l != null && l.size() > 0) return l.get(0);
-        return null;
+        return cache.getUserAgent();
+
     }
 
 }

@@ -3,6 +3,8 @@ package org.jdownloader.extensions.streaming;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,11 +46,7 @@ import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.ProfileMatch;
 import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
-import org.jdownloader.extensions.streaming.renderer.VLCDevice;
-import org.jdownloader.extensions.streaming.upnp.DLNAOp;
-import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
-import org.jdownloader.extensions.streaming.upnp.PlayToUpnpRendererDevice;
 import org.jdownloader.extensions.streaming.upnp.RendererDevice;
 import org.jdownloader.logging.LogController;
 
@@ -58,15 +56,13 @@ public class HttpApiImpl implements HttpRequestHandler {
     private StreamingExtension                  extension;
     private LogSource                           logger;
     private MediaServer                         mediaServer;
-    private ArrayList<RendererDevice>           devices;
 
     public HttpApiImpl(StreamingExtension extension, MediaServer mediaServer) {
         this.extension = extension;
         this.mediaServer = mediaServer;
         logger = LogController.getInstance().getLogger(getClass().getName());
         Profile.init();
-        devices = new ArrayList<RendererDevice>();
-        devices.add(new VLCDevice());
+
     }
 
     public void addHandler(String name, StreamingInterface rarStreamer) {
@@ -95,7 +91,12 @@ public class HttpApiImpl implements HttpRequestHandler {
 
         String[] params = new Regex(request.getRequestedPath(), "^/stream/([^\\/]+)/([^\\/]+)/?(.*)$").getRow(0);
         if (params == null) return false;
-        String deviceid = params[0];
+        String deviceid = null;
+        try {
+            deviceid = URLDecoder.decode(params[0], "UTF-8");
+        } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
+        }
         String id = params[1];
         String subpath = params[2];
 
@@ -147,55 +148,29 @@ public class HttpApiImpl implements HttpRequestHandler {
             RendererDevice callingDevice = getCaller(deviceid, request);
 
             logger.info("Call from " + callingDevice);
-
+            String dlnaFeatures = null;
+            // we should redirect the contenttype from the plugins by default.
+            String ct = org.jdownloader.extensions.streaming.dlna.Extensions.getType(format) + "/" + format;
+            String acceptRanges = "bytes";
             if (mediaItem != null) {
-                String[] profiles = mediaItem.getDlnaProfiles();
+
+                boolean isTranscodeRequired = false;
+                Profile dlnaProfile = callingDevice.getBestProfile(mediaItem);
+                if (dlnaProfile == null) {
+                    isTranscodeRequired = true;
+                    dlnaProfile = callingDevice.getBestTranscodeProfile(mediaItem);
+                }
+                dlnaFeatures = "DLNA.ORG_PN=" + callingDevice.createDlnaOrgPN(dlnaProfile, mediaItem) + ";DLNA.ORG_OP=" + callingDevice.createDlnaOrgOP(dlnaProfile, mediaItem) + ";DLNA.ORG_FLAGS=" + callingDevice.createDlnaOrgFlags(dlnaProfile, mediaItem);
+                acceptRanges = callingDevice.createHeaderAcceptRanges(dlnaProfile, mediaItem);
+                ct = callingDevice.createContentType(dlnaProfile, mediaItem);
 
             }
-            String dlnaFeatures = "DLNA.ORG_PN=" + format + ";DLNA.ORG_OP=" + DLNAOp.create(DLNAOp.RANGE_SEEK_SUPPORTED) + ";DLNA.ORG_FLAGS=" + DLNAOrg.create(DLNAOrg.STREAMING_TRANSFER_MODE);
 
-            String ct = "video/" + format;
-            if (format.equals("jpg")) {
-                ct = JPEGImage.JPEG_LRG.getMimeType().getLabel();
-                dlnaFeatures = "DLNA.ORG_PN=" + JPEGImage.JPEG_LRG.getProfileID();
-            }
-            if (format.equals("mp3")) {
-                ct = "audio/mpeg";
-                dlnaFeatures = "DLNA.ORG_PN=MP3";
-            }
-            if (format.equals("flac")) {
-                ct = "audio/flac";
-                dlnaFeatures = null;
-            }
-            if (format.equals("flv")) {
-                ct = "video/x-flv";
-                // dlnaFeatures = null;
-
-            }
-            if (format.equals("mkv")) {
-                ct = "video/x-mkv";
-                // dlnaFeatures = null;
-
-            }
-            // if (callingDevice != null) {
-            // if (callingDevice.getProtocolInfos() != null) {
-            // for (ProtocolInfo pi : callingDevice.getProtocolInfos()) {
-            //
-            // if (pi.getContentFormatMimeType().getSubtype().contains(format)) {
-            //
-            // System.out.println(1);
-            // ct = pi.getContentFormat();
-            // dlnaFeatures = pi.getAdditionalInfo();
-            // break;
-            // }
-            // }
-            // }
-            // }
             response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
 
             if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
             response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.STREAMING)));
-            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
+            response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", acceptRanges));
             if (streamingInterface instanceof RarStreamer) {
                 while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
                     Thread.sleep(100);
@@ -245,28 +220,10 @@ public class HttpApiImpl implements HttpRequestHandler {
     }
 
     private RendererDevice getCaller(String deviceid, GetRequest request) {
-        HTTPHeader uah = request.getRequestHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
-        String userAgent = uah == null ? null : uah.getValue();
-        if (userAgent != null) {
-            for (RendererDevice d : devices) {
-                if (StringUtils.isEmpty(d.getUserAgentPattern())) continue;
-                if (userAgent.matches(d.getUserAgentPattern()) || deviceid.matches(d.getUserAgentPattern())) { return d; }
-            }
-        }
+
         // try to find user agent matches
-        for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
-            if (request.getRemoteAddress().contains(dev.getAddress())) {
-                if (dev.getUserAgent() != null && (dev.getUserAgent().equalsIgnoreCase(deviceid) || dev.getUserAgent().equalsIgnoreCase(userAgent))) { return dev; }
 
-            }
-        }
-        // try to find ip matches
-        for (PlayToUpnpRendererDevice dev : mediaServer.getPlayToRenderer()) {
-            if (request.getRemoteAddress().contains(dev.getAddress())) { return dev;
-
-            }
-        }
-        return null;
+        return mediaServer.getDeviceManager().findDevice(deviceid, request.getRemoteAddress().get(0), request.getRequestHeaders());
     }
 
     public void onAlbumArtRequest(GetRequest request, HttpResponse response, String id, JPEGImage profile) throws IOException {

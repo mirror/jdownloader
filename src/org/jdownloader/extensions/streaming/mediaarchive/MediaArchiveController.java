@@ -49,7 +49,10 @@ public class MediaArchiveController implements MediaListListener {
         // videoList = ;
         // audioList = audioController.getList();
         // imageList = imageController.getList();
-        put(root, new MediaFolder("video", T._.nodename_video()).addChildren(videoController.getList()));
+        put(root, new MediaFolder("video", T._.nodename_video()));
+        put(root.getFolder("video"), new MediaFolder("Archive", "Video Archive").addChildren(videoController.getList()));
+        put(root.getFolder("video"), new MediaFolder("DownloadList", "Download List"));
+        put(root.getFolder("video"), new MediaFolder("Linkgrabber", "Linkgrabber"));
         put(root, new MediaFolder("audio", T._.nodename_audio()).addChildren(audioController.getList()));
         put(root, new MediaFolder("image", T._.nodename_image()).addChildren(imageController.getList()));
 

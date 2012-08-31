@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp;
+package org.jdownloader.extensions.streaming.upnp.clingext;
 
 import java.util.logging.Logger;
 
@@ -33,7 +33,7 @@ public class ExtReceivingSearchResponse extends ReceivingSearchResponse {
             return;
         }
 
-        RemoteDeviceIdentity rdIdentity = new ExtRemoteDeviceIdentity(getInputMessage());
+        RemoteDeviceIdentity rdIdentity = new RemoteDeviceIdentity(getInputMessage());
         log.fine("Received device search response: " + rdIdentity);
 
         if (getUpnpService().getRegistry().update(rdIdentity)) {
@@ -43,7 +43,7 @@ public class ExtReceivingSearchResponse extends ReceivingSearchResponse {
 
         RemoteDevice rd;
         try {
-            rd = new RemoteDevice(rdIdentity);
+            rd = new ExtRemoteDevice(getInputMessage(), rdIdentity);
         } catch (ValidationException ex) {
             log.warning("Validation errors of device during discovery: " + rdIdentity);
             for (ValidationError validationError : ex.getErrors()) {

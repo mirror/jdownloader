@@ -2,7 +2,7 @@ package org.jdownloader.extensions.streaming.upnp;
 
 import jd.plugins.DownloadLink;
 
-public interface PlayToDevice extends RendererDevice {
+public interface PlayToDevice {
 
     String getDisplayName();
 

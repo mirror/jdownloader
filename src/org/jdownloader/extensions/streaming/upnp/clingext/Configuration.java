@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp;
+package org.jdownloader.extensions.streaming.upnp.clingext;
 
 import java.net.BindException;
 import java.net.InetAddress;

@@ -13,8 +13,6 @@ import org.fourthline.cling.binding.annotations.UpnpOutputArgument;
 import org.fourthline.cling.binding.annotations.UpnpStateVariable;
 import org.fourthline.cling.binding.annotations.UpnpStateVariables;
 import org.fourthline.cling.model.message.UpnpHeaders;
-import org.fourthline.cling.model.message.control.IncomingActionRequestMessage;
-import org.fourthline.cling.protocol.sync.ReceivingAction;
 import org.fourthline.cling.support.contentdirectory.AbstractContentDirectoryService;
 import org.fourthline.cling.support.contentdirectory.ContentDirectoryErrorCode;
 import org.fourthline.cling.support.contentdirectory.ContentDirectoryException;
@@ -44,6 +42,7 @@ import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
 import org.jdownloader.extensions.streaming.upnp.DLNAOrg;
 import org.jdownloader.extensions.streaming.upnp.Filter;
 import org.jdownloader.extensions.streaming.upnp.SearchCriteria;
+import org.jdownloader.extensions.streaming.upnp.deviceprofiles.AbstractDeviceProfile;
 import org.jdownloader.logging.LogController;
 import org.seamless.util.MimeType;
 
@@ -79,14 +78,15 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
     public BrowseResult browse(String objectID, BrowseFlag browseFlag, String filterString, long firstResult, long maxResults, SortCriterion[] orderby) throws ContentDirectoryException {
         try {
             UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
-            IncomingActionRequestMessage msg = ReceivingAction.getRequestMessage();
+
+            AbstractDeviceProfile profile = extension.getMediaServer().getDeviceManager().getProfileByUpnpHeaders(headers);
             if (browseFlag == BrowseFlag.METADATA) {
 
-                return browseMetaData(objectID, Filter.create(filterString), firstResult, maxResults, orderby, headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null);
+                return browseMetaData(objectID, Filter.create(filterString), firstResult, maxResults, orderby, headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null, profile);
 
             } else {
 
-                return browseContentDirectory(objectID, Filter.create(filterString), firstResult, maxResults, orderby, headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null);
+                return browseContentDirectory(objectID, Filter.create(filterString), firstResult, maxResults, orderby, headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null, profile);
 
             }
         } catch (Exception e) {
@@ -97,7 +97,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
 
     }
 
-    private BrowseResult browseContentDirectory(String objectID, Filter filter, long firstResult, long maxResults, SortCriterion[] orderby, String userAgent) throws Exception {
+    private BrowseResult browseContentDirectory(String objectID, Filter filter, long firstResult, long maxResults, SortCriterion[] orderby, String userAgent, AbstractDeviceProfile profile) throws Exception {
 
         List<MediaNode> children = archive.getDirectory(objectID).getChildren();
 
@@ -116,7 +116,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
         int count = 0;
         for (long i = firstResult; i < to; i++) {
             MediaNode c = children.get((int) i);
-            addMediaItemToDidl(userAgent, didl, c);
+            addMediaItemToDidl(profile == null ? userAgent : profile.getProfileID(), didl, c);
             count++;
 
         }
@@ -270,14 +270,14 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
 
     }
 
-    private BrowseResult browseMetaData(String objectID, Filter create, long firstResult, long maxResults, SortCriterion[] orderby, String userAgent) throws ContentDirectoryException {
+    private BrowseResult browseMetaData(String objectID, Filter create, long firstResult, long maxResults, SortCriterion[] orderby, String userAgent, AbstractDeviceProfile profile) throws ContentDirectoryException {
         // ps3 and xbmc browse metaData
         try {
             MediaNode item = archive.getItemById(objectID);
             if (item != null) {
                 DIDLContent didl = new DIDLContent();
 
-                addMediaItemToDidl(userAgent, didl, item);
+                addMediaItemToDidl(profile == null ? userAgent : profile.getProfileID(), didl, item);
                 String didlStrng;
 
                 didlStrng = new ExtDIDLParser().generate(didl);
@@ -299,6 +299,8 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
         try {
             logger.info(String.format("ContentDirectory receive search request with ContainerID:%s, SearchCriteria:%s, Filter:%s, FirstResult:%s, MaxResults:%s, SortCriterion:%s.", containerId, searchCriteriaString, filterString, firstResult, maxResults, orderBy));
             UpnpHeaders headers = org.fourthline.cling.protocol.sync.ReceivingAction.getRequestMessage().getHeaders();
+
+            AbstractDeviceProfile profile = extension.getMediaServer().getDeviceManager().getProfileByUpnpHeaders(headers);
             String userAgent = headers.get("User-agent") != null ? headers.get("User-agent").get(0) : null;
             SearchCriteria searchCriterion = SearchCriteria.create(searchCriteriaString);
 
@@ -324,7 +326,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
                 switch (searchCriterion.getSearchType()) {
                 case SEARCH_IMAGE:
                     if (c instanceof ImageMediaItem) {
-                        addMediaItemToDidl(userAgent, didl, c);
+                        addMediaItemToDidl(profile == null ? userAgent : profile.getProfileID(), didl, c);
                     }
                     break;
                 case SEARCH_PLAYLIST:

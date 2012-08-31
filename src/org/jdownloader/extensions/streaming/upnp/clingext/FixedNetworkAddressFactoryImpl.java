@@ -1,4 +1,4 @@
-package org.jdownloader.extensions.streaming.upnp;
+package org.jdownloader.extensions.streaming.upnp.clingext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
