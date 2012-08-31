@@ -143,7 +143,7 @@ public class ReconnectDialog extends AbstractDialog<Object> implements IPControl
                     logger.log(e);
                 } finally {
                     logger.close();
-                    dispose();
+
                 }
 
             }
