@@ -6,7 +6,6 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
@@ -38,6 +37,7 @@ import org.appwork.update.updateclient.translation.T;
 import org.appwork.utils.Application;
 import org.appwork.utils.Hash;
 import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.controlling.JDRestartController;
@@ -76,6 +76,7 @@ public class JDUpdater extends AppUpdater {
                 System.exit(1);
             }
         } catch (LastChanceException e) {
+            locLogger.log(e);
             Dialog.getInstance().showMessageDialog(_GUI._.JDUpdater_run_lasttryfailed_title_(), _GUI._.JDUpdater_run_lasttry_msg_());
         }
         super.run();
@@ -159,14 +160,16 @@ public class JDUpdater extends AppUpdater {
         return sb.toString();
     }
 
-    private boolean iconVisible;
+    private boolean   iconVisible;
+    private LogSource locLogger;
 
     /**
      * Create a new instance of JDUpdater. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private JDUpdater() {
         super();
-        setLogger(LogController.getInstance().getLogger("Updater"));
+        locLogger = LogController.getInstance().getLogger("Updater");
+        setLogger(logger);
         setRestartArgs(Launcher.PARAMETERS);
         setRestartAfterUpdaterUpdateAction(RestartViaUpdaterEvent.getInstance());
         icon = new UpdateProgress();
