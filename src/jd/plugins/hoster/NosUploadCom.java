@@ -47,7 +47,8 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class NosUploadCom extends PluginForHost {
 
     private String              correctedBR         = "";
-    private static final String PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
+    // private static final String PASSWORDTEXT = "<br><b>Passwor(d|t):</b> <input";
+    private static final String PASSWORDTEXT        = "<strong>Passwor(d|t):</strong> <input";
     private static final String COOKIE_HOST         = "http://nosupload.com";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
