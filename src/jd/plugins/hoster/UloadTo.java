@@ -413,6 +413,7 @@ public class UloadTo extends PluginForHost {
         }
         if (correctedBR.contains("There are no free slots available for free/registered users at the moment!")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No Free Slots available at the moment", 15 * 60 * 1000l);
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains("We are moving files to faster servers!")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "We are moving files to faster servers!", 1 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
