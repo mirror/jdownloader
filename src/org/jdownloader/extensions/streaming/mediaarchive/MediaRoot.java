@@ -7,7 +7,8 @@ public class MediaRoot extends MediaFolder {
     private HashMap<String, MediaNode> map;
 
     public MediaRoot() {
-        super("root");
+        // some renderers, like the ps3 want the root to have a 0 id
+        super("0");
         this.map = new HashMap<String, MediaNode>();
         setRoot(this);
     }

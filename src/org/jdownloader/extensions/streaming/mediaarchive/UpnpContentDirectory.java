@@ -143,7 +143,7 @@ public class UpnpContentDirectory extends AbstractContentDirectoryService implem
     private Container createFolder(MediaFolder c, String userAgent) {
 
         Container con = new Container();
-        con.setParentID(c.getParent().getUniqueID());
+        con.setParentID(c.getParent() == null ? "-1" : c.getParent().getUniqueID());
         con.setId(c.getUniqueID());
         con.setChildCount(c.getChildren().size());
         con.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
