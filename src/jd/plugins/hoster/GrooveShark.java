@@ -216,8 +216,8 @@ public class GrooveShark extends PluginForHost {
 
     private static String reqk(int i) {
         String[] s = new String[3];
-        s[0] = "ff8cf9faf900cfe71996b4cedc5046fb2b9c72bb0b5fdbce19195c68103a85d65d88ff6e8c5be634254654edea231d2fe725299ac69a6263";
-        s[1] = "fd8efaf1fa55cdb21997b695de5443fa2b9771e9085fd8cb19485b38163882d65d83f86f8c58e76a251a53eeeb761a72e0252c9cc4cd6634ad23d0e06f5a373e5af0cd2c5d2bf8cd24fb2bba576bcde641f98f8f6efc";
+        s[0] = "ff8cf9faf900cfe71996b4cedc5046fb2b9c72bb0b5fdbce19195c68103a85d65d88ff6e8c5be634224051bbeb271d2fe07f2ecbc1cd6565a873d3b56e0d333e5ff6c973";
+        s[1] = "ff81f9a6f907cfe31896b59fdd5041f82a9072e90b58dacb18195c39176985805d88f8328b5ae33b254154b5eb761925e5722c9bc4cc6634ac74d3e26c0d37395af2cc7f5c2a";
         s[2] = "fd8bfba0fa0acde31bc1b799dd5742fd289271b60958d8c71a4c5f6e103d82865d83ff69880de66e251a54be";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
