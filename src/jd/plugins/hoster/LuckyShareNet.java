@@ -44,6 +44,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckyshare.net" }, urls = { "http://(www\\.)?luckyshare\\.net/\\d+" }, flags = { 2 })
 public class LuckyShareNet extends PluginForHost {
 
+    private static String AGENT = null;
+
     public LuckyShareNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://luckyshare.net/premium");
@@ -74,41 +76,65 @@ public class LuckyShareNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (AGENT == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            AGENT = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            if (AGENT == null) AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0";
+        }
         requestFileInformation(downloadLink);
+        String dllink = downloadLink.getDownloadURL();
         final String filesizelimit = br.getRegex(">Files with filesize over ([^<>\"\\'/]+) are available only for Premium Users").getMatch(0);
         if (filesizelimit != null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free users can only download files up to " + filesizelimit);
         if (br.containsHTML("This file is Premium only. Only Premium Users can download this file")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium Users can download this file");
-        final String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
+        String reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
         if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
         final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]+)\"").getMatch(0);
         if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
         Browser ajax = br.cloneBrowser();
-        ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        ajax.getPage("http://luckyshare.net/download/request/type/time/file/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0));
-        final String hash = ajax.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
-        if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        /** Waittime can still be skipped */
-        int wait = 30;
-        final String waittime = ajax.getRegex("\"time\":(\\d+)").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        prepareHeader(ajax, dllink);
+        String hash = getHash(ajax, dllink);
+        sleep(getWaitTime(ajax) * 1001l, downloadLink);
+
         PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
+
         for (int i = 0; i <= 5; i++) {
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            ajax.getPage("http://luckyshare.net/download/verify/challenge/" + rc.getChallenge() + "/response/" + c + "/hash/" + hash);
-            if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) {
+            c = c != null && "".equals(c) ? c = null : c;
+
+            /* simple 'reload button' method */
+            while (c == null) {
+                rc.reload();
+                cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                c = getCaptchaCode(cf, downloadLink);
+                c = c != null && "".equals(c) ? c = null : c;
+            }
+
+            try {
+                ajax.getPage("http://luckyshare.net/download/verify/challenge/" + rc.getChallenge() + "/response/" + c.replaceAll("\\s", "%20") + "/hash/" + hash);
+            } catch (Throwable e) {
+                if (ajax.getHttpConnection().getResponseCode() == 500) continue;
+            }
+            if (ajax.containsHTML("<strong>Wait:</strong>")) {
+                reconnectWait = br.getRegex("id=\"waitingtime\">(\\d+)</span>").getMatch(0);
+                if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 1001l);
+            }
+            if (!ajax.getRegex("\"link\":\"http:[^<>\"\\']*?\"").matches()) {
+                hash = getHash(ajax, dllink);
+                sleep(getWaitTime(ajax) * 1001l, downloadLink);
                 rc.reload();
                 continue;
             }
             break;
         }
         if (ajax.containsHTML("(Verification failed|You can renew the verification image by clicking on a corresponding button near the validation input area)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        if (ajax.containsHTML("Hash expired")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error");
-        String dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']*?)\"").getMatch(0);
+        if (ajax.containsHTML("(Hash expired|Please supply a valid hash)")) throw new PluginException(LinkStatus.ERROR_FATAL, "Plugin outdated!");
+        dllink = ajax.getRegex("\"link\":\"(http:[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
@@ -117,6 +143,36 @@ public class LuckyShareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private int getWaitTime(Browser b) {
+        int wait = 30;
+        String waittime = b.getRegex("\"time\":(\\d+)").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        return wait;
+    }
+
+    private void prepareHeader(Browser b, String s) {
+        b.getHeaders().put("User-Agent", AGENT);
+        b.getHeaders().put("Accept-Language", "en-us");
+        b.getHeaders().put("Accept-Encoding", "deflate");
+        b.getHeaders().put("Accept-Charset", null);
+        b.getHeaders().put("Accept", "*/*");
+        b.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        b.getHeaders().put("Referer", s);
+        b.getHeaders().put("Pragma", null);
+        b.getHeaders().put("Cache-Control", null);
+    }
+
+    private String getHash(Browser b, String s) {
+        try {
+            b.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            b.getPage("http://luckyshare.net/download/request/type/time/file/" + new Regex(s, "(\\d+)$").getMatch(0));
+        } catch (Throwable e) {
+            return null;
+        }
+        prepareHeader(b, s);
+        return b.getRegex("\"hash\":\"([a-z0-9]+)\"").getMatch(0);
     }
 
     @SuppressWarnings("unchecked")
