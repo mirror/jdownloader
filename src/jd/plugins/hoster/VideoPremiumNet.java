@@ -335,11 +335,9 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     private void download(DownloadLink downloadLink, String dllink) throws Exception {
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            setupRTMPConnection(dllink, dl);
-            ((RTMPDownload) dl).startDownload();
-        }
+        dl = new RTMPDownload(this, downloadLink, dllink);
+        setupRTMPConnection(dllink, dl);
+        ((RTMPDownload) dl).startDownload();
     }
 
     @Override
