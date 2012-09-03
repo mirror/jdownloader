@@ -58,7 +58,7 @@ public class FFMpegInfoReader {
     public void load(StreamingExtension extension) throws InterruptedException, IOException {
 
         String id = new UniqueAlltimeID().toString();
-        String streamurl = extension.createStreamUrl(id, "ffmpeg", null);
+        String streamurl = extension.createStreamUrl(id, "ffmpeg", null, null);
         try {
             extension.addDownloadLink(id, downloadLink);
             String path = getFFProbePath();

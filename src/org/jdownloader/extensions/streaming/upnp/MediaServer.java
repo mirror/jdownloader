@@ -39,6 +39,7 @@ import org.fourthline.cling.model.ValidationException;
 import org.fourthline.cling.model.message.IncomingDatagramMessage;
 import org.fourthline.cling.model.message.UpnpRequest;
 import org.fourthline.cling.model.message.UpnpResponse;
+import org.fourthline.cling.model.message.control.IncomingActionRequestMessage;
 import org.fourthline.cling.model.message.discovery.OutgoingSearchResponseRootDevice;
 import org.fourthline.cling.model.message.header.UDAServiceTypeHeader;
 import org.fourthline.cling.model.meta.Action;
@@ -66,6 +67,7 @@ import org.fourthline.cling.protocol.ProtocolFactory;
 import org.fourthline.cling.protocol.ProtocolFactoryImpl;
 import org.fourthline.cling.protocol.ReceivingAsync;
 import org.fourthline.cling.protocol.async.ReceivingSearch;
+import org.fourthline.cling.protocol.sync.ReceivingAction;
 import org.fourthline.cling.registry.RegistryListener;
 import org.fourthline.cling.support.connectionmanager.ConnectionManagerService;
 import org.fourthline.cling.support.model.Protocol;
@@ -166,7 +168,7 @@ public class MediaServer implements Runnable {
             // upnpService.getRegistry().addListener(listener);
             //
             // // Broadcast a search message for all devices
-            deviceManager = new DeviceManager(upnpService);
+            deviceManager = new DeviceManager(extension, upnpService);
             upnpService.getRegistry().addListener(deviceManager);
             upnpService.getControlPoint().search(new UDAServiceTypeHeader(new UDAServiceType("AVTransport", 1)));
 
@@ -223,8 +225,7 @@ public class MediaServer implements Runnable {
         Map<HeaderDeviceDetailsProvider.Key, DeviceDetails> headerDetails = new HashMap<HeaderDeviceDetailsProvider.Key, DeviceDetails>();
         // WDTV?
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "FDSSDP"), wmpDetails);
-        // headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent",
-        // ".*Windows\\-Media\\-Player.*"), wmpDetails);
+        headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", ".*Windows\\-Media\\-Player.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("User-Agent", "Xbox.*"), wmpDetails);
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("X-AV-Client-Info", ".*PLAYSTATION 3.*"), ownDetails);
         HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails) {
@@ -237,7 +238,7 @@ public class MediaServer implements Runnable {
         };
         final ArrayList<Icon> lst = new ArrayList<Icon>();
         try {
-            lst.add(new Icon("image/png", 48, 48, 24, new URI("icon/48.png"), createIcon("png", 48)) {
+            lst.add(new Icon("image/png", 256, 256, 24, new URI("icon/256.png"), createIcon("png", 256)) {
 
                 @Override
                 public Device getDevice() {
@@ -248,20 +249,21 @@ public class MediaServer implements Runnable {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+        try {
+            lst.add(new Icon("image/jpeg", 256, 256, 24, new URI("icon/256.jpg"), createIcon("jpeg", 256)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         try {
             lst.add(new Icon("image/png", 120, 120, 24, new URI("icon/120.png"), createIcon("png", 120)) {
-
-                @Override
-                public Device getDevice() {
-                    return device;
-                }
-
-            });
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-        try {
-            lst.add(new Icon("image/jpeg", 48, 48, 24, new URI("icon/48.jpg"), createIcon("jpeg", 48)) {
 
                 @Override
                 public Device getDevice() {
@@ -284,10 +286,61 @@ public class MediaServer implements Runnable {
         } catch (Throwable e) {
             e.printStackTrace();
         }
+
+        try {
+            lst.add(new Icon("image/png", 48, 48, 24, new URI("icon/48.png"), createIcon("png", 48)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/jpeg", 48, 48, 24, new URI("icon/48.jpg"), createIcon("jpeg", 48)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
+        try {
+            lst.add(new Icon("image/png", 32, 32, 24, new URI("icon/32.png"), createIcon("png", 32)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        try {
+            lst.add(new Icon("image/jpeg", 32, 32, 24, new URI("icon/32.jpg"), createIcon("jpeg", 32)) {
+
+                @Override
+                public Device getDevice() {
+                    return device;
+                }
+
+            });
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+
         final Icon[] icons = lst.toArray(new Icon[] {});
         device = new LocalDevice(identity, type, provider, null, new LocalService[] { createContentDirectory(), createConnectionManager(), createMediaReceiverRegistrar() }) {
             public Icon[] getIcons() {
-
+                IncomingActionRequestMessage rm = ReceivingAction.getRequestMessage();
                 return icons;
             }
 
@@ -304,10 +357,10 @@ public class MediaServer implements Runnable {
         try {
 
             if ("png".equals(format)) {
-                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size, false);
+                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_256_256", size, false);
                 ImageIO.write(ret, format, baos);
             } else {
-                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_128_128", size - 4, false);
+                BufferedImage ret = (BufferedImage) NewTheme.I().getImage("logo/jd_logo_256_256", size - 4, false);
                 int w = size;
                 int h = size;
 

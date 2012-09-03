@@ -36,8 +36,10 @@ import org.fourthline.cling.support.connectionmanager.callback.GetProtocolInfo;
 import org.fourthline.cling.support.model.Protocol;
 import org.fourthline.cling.support.model.ProtocolInfo;
 import org.fourthline.cling.support.model.ProtocolInfos;
-import org.jdownloader.extensions.streaming.renderer.RendererDeviceImpl;
-import org.jdownloader.extensions.streaming.upnp.deviceprofiles.AbstractDeviceProfile;
+import org.jdownloader.extensions.streaming.StreamingExtension;
+import org.jdownloader.extensions.streaming.upnp.remotedevices.RendererInfo;
+import org.jdownloader.extensions.streaming.upnp.remotedevices.handlers.AbstractDeviceHandler;
+import org.jdownloader.extensions.streaming.upnp.remotedevices.handlers.GenericDeviceHandler;
 import org.jdownloader.logging.LogController;
 
 public class DeviceManager implements RegistryListener {
@@ -47,29 +49,36 @@ public class DeviceManager implements RegistryListener {
     private ControlPoint                     controlPoint;
     private LogSource                        logger;
     private Queue                            resourceLoader;
-    private ArrayList<AbstractDeviceProfile> deviceProfiles;
-    private RendererDevice                   defaultDevice;
+    private ArrayList<AbstractDeviceHandler> deviceProfiles;
+    private RendererInfo                     defaultDevice;
+    private StreamingExtension               extension;
 
-    public DeviceManager(UpnpServiceImpl upnpService) {
+    public DeviceManager(StreamingExtension extension, UpnpServiceImpl upnpService) {
         this.upnpService = upnpService;
         this.controlPoint = upnpService.getControlPoint();
         logger = LogController.getInstance().getLogger(DeviceManager.class.getName());
         resourceLoader = new Queue("DeviceManagerResourceLoader") {
         };
-        initProfiles();
 
-        defaultDevice = new DefaultRendererDevice();
+        this.extension = extension;
+        initProfiles();
+        GenericDeviceHandler generic = new GenericDeviceHandler();
+        generic.setExtension(extension);
+        defaultDevice = new RendererInfo(generic, null, null);
     }
 
     private void initProfiles() {
-        deviceProfiles = new ArrayList<AbstractDeviceProfile>();
+        deviceProfiles = new ArrayList<AbstractDeviceHandler>();
 
         try {
 
-            List<Class<? extends AbstractDeviceProfile>> classes = ReflectionUtils.getClassesInPackage(Thread.currentThread().getContextClassLoader(), AbstractDeviceProfile.class.getPackage().getName(), null, AbstractDeviceProfile.class);
-            for (Class<? extends AbstractDeviceProfile> cl : classes) {
+            List<Class<? extends AbstractDeviceHandler>> classes = ReflectionUtils.getClassesInPackage(Thread.currentThread().getContextClassLoader(), AbstractDeviceHandler.class.getPackage().getName(), null, AbstractDeviceHandler.class);
+            for (Class<? extends AbstractDeviceHandler> cl : classes) {
                 try {
-                    deviceProfiles.add(cl.newInstance());
+                    if (cl == GenericDeviceHandler.class) continue;
+                    AbstractDeviceHandler i = cl.newInstance();
+                    i.setExtension(extension);
+                    deviceProfiles.add(i);
                 } catch (Throwable e) {
                     logger.log(e);
                 }
@@ -144,68 +153,69 @@ public class DeviceManager implements RegistryListener {
             deviceCache.setDescriptorURL(device.getIdentity().getDescriptorURL() + "");
 
             connectionManager = device.findService(CONNECTIONMANAGER_ID);
+            if (connectionManager != null) {
+                controlPoint.execute(new GetProtocolInfo(connectionManager) {
 
-            controlPoint.execute(new GetProtocolInfo(connectionManager) {
+                    private IncomingActionResponseMessage response;
 
-                private IncomingActionResponseMessage response;
+                    @Override
+                    public void run() {
+                        Service service = actionInvocation.getAction().getService();
+                        if (service instanceof RemoteService) {
+                            if (getControlPoint() == null) { throw new IllegalStateException("Callback must be executed through ControlPoint"); }
 
-                @Override
-                public void run() {
-                    Service service = actionInvocation.getAction().getService();
-                    if (service instanceof RemoteService) {
-                        if (getControlPoint() == null) { throw new IllegalStateException("Callback must be executed through ControlPoint"); }
+                            RemoteService remoteService = (RemoteService) service;
 
-                        RemoteService remoteService = (RemoteService) service;
+                            // Figure out the remote URL where we'd like to send the action request to
+                            URL controLURL = remoteService.getDevice().normalizeURI(remoteService.getControlURI());
 
-                        // Figure out the remote URL where we'd like to send the action request to
-                        URL controLURL = remoteService.getDevice().normalizeURI(remoteService.getControlURI());
+                            // Do it
+                            SendingAction prot = getControlPoint().getProtocolFactory().createSendingAction(actionInvocation, controLURL);
+                            prot.run();
 
-                        // Do it
-                        SendingAction prot = getControlPoint().getProtocolFactory().createSendingAction(actionInvocation, controLURL);
-                        prot.run();
+                            response = prot.getOutputMessage();
+                            try {
+                                deviceCache.setServerName(response.getHeaders().get(HTTPConstants.HEADER_RESPONSE_SERVER).get(0));
+                            } catch (Exception e) {
 
-                        response = prot.getOutputMessage();
-                        try {
-                            deviceCache.setServerName(response.getHeaders().get(HTTPConstants.HEADER_RESPONSE_SERVER).get(0));
-                        } catch (Exception e) {
-
-                        }
-                        if (response == null) {
-                            failure(actionInvocation, null);
-                        } else if (response.getOperation().isFailed()) {
-                            failure(actionInvocation, response.getOperation());
-                        } else {
-                            success(actionInvocation);
-                        }
-                    }
-                }
-
-                @Override
-                public void received(ActionInvocation actionInvocation, ProtocolInfos sinkProtocolInfos, ProtocolInfos sourceProtocolInfos) {
-
-                    ProtocolInfos list = new ProtocolInfos();
-                    for (ProtocolInfo pi : sinkProtocolInfos) {
-                        if (pi.getProtocol() == Protocol.HTTP_GET) {
-                            list.add(pi);
-                        } else {
-                            // do not use ProtocolInfo.toString() - it contains nullpointer
-                            logger.warning("Unsupported Streamprotocol: " + device.getDisplayString() + " " + pi.getProtocol() + ":" + pi.getNetwork() + ":" + pi.getAdditionalInfo() + ":" + pi.getContentFormat());
+                            }
+                            if (response == null) {
+                                failure(actionInvocation, null);
+                            } else if (response.getOperation().isFailed()) {
+                                failure(actionInvocation, response.getOperation());
+                            } else {
+                                success(actionInvocation);
+                            }
                         }
                     }
 
-                    if (list != null) {
-                        deviceCache.setProtocolInfos(list.toString());
+                    @Override
+                    public void received(ActionInvocation actionInvocation, ProtocolInfos sinkProtocolInfos, ProtocolInfos sourceProtocolInfos) {
+
+                        ProtocolInfos list = new ProtocolInfos();
+                        for (ProtocolInfo pi : sinkProtocolInfos) {
+                            if (pi.getProtocol() == Protocol.HTTP_GET) {
+                                list.add(pi);
+                            } else {
+                                // do not use ProtocolInfo.toString() - it contains nullpointer
+                                logger.warning("Unsupported Streamprotocol: " + device.getDisplayString() + " " + pi.getProtocol() + ":" + pi.getNetwork() + ":" + pi.getAdditionalInfo() + ":" + pi.getContentFormat());
+                            }
+                        }
+
+                        if (list != null) {
+                            deviceCache.setProtocolInfos(list.toString());
+                        }
+                        logger.info("Received Supported Protocols: " + deviceCache);
+
                     }
-                    logger.info("Received Supported Protocols: " + deviceCache);
 
-                }
+                    @Override
+                    public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
+                        logger.info("Error Receiving Protocol " + defaultMsg + ": " + deviceCache);
+                    }
 
-                @Override
-                public void failure(ActionInvocation invocation, UpnpResponse operation, String defaultMsg) {
-                    logger.info("Error Receiving Protocol " + defaultMsg + ": " + deviceCache);
-                }
-
-            });
+                });
+            }
         }
     }
 
@@ -240,6 +250,24 @@ public class DeviceManager implements RegistryListener {
         return new DeviceCache(id, device, deviceCache);
     }
 
+    public RendererInfo findDeviceByUpnpHeaders(UpnpHeaders headers) {
+        // TODO: some cache to get faster access
+        for (AbstractDeviceHandler dp : deviceProfiles) {
+            List<String> ua = headers.get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
+            try {
+                if (dp.matchesUpnpUserAgent(ua.get(0))) {
+                    if (dp.matchesUpnpHeader(headers)) {//
+                        return new RendererInfo(dp, null, null);
+
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(e);
+            }
+        }
+        return defaultDevice;
+    }
+
     /**
      * Tries to find a matching device.
      * 
@@ -252,12 +280,12 @@ public class DeviceManager implements RegistryListener {
      * @param headerCollection
      * @return
      */
-    public RendererDevice findDevice(String deviceID, String address, HeaderCollection headerCollection) {
+    public RendererInfo findDevice(String deviceID, String address, HeaderCollection headerCollection) {
         logger.info("Try to find Device:");
         logger.info("UpnpUA: " + deviceID);
         logger.info("Address: " + address);
         logger.info("Header: " + headerCollection);
-        AbstractDeviceProfile profile = findProfile(deviceID, headerCollection);
+        AbstractDeviceHandler profile = findDeviceHandler(deviceID, headerCollection);
 
         // full match.
         if (profile != null) {
@@ -268,7 +296,7 @@ public class DeviceManager implements RegistryListener {
                     if (profile.matchesRemoteDevice(d, cache)) {
                         logger.info("Profile Match: " + profile + " " + d);
                         logger.info(cache + "");
-                        return new RendererDeviceImpl(profile, d, cache);
+                        return new RendererInfo(profile, d, cache);
 
                     }
                 } catch (Exception e) {
@@ -302,7 +330,7 @@ public class DeviceManager implements RegistryListener {
                 logger.info(cache + "");
                 try {
 
-                    return new RendererDeviceImpl(profile, matchesByIP.get(0), cache);
+                    return new RendererInfo(profile == null ? defaultDevice.getHandler() : profile, matchesByIP.get(0), cache);
 
                 } catch (Exception e) {
 
@@ -311,8 +339,8 @@ public class DeviceManager implements RegistryListener {
             }
         } else {
             // at least we have a profile.
-            logger.info("No Remote Device found, or several Remote Devices on " + address);
-            return new RendererDeviceImpl(profile, null, null);
+            logger.info("No Remote Device found, or several Remote Devices on " + address + " profile: " + profile);
+            return new RendererInfo(profile == null ? defaultDevice.getHandler() : profile, null, null);
 
         }
 
@@ -320,12 +348,12 @@ public class DeviceManager implements RegistryListener {
         return defaultDevice;
     }
 
-    private AbstractDeviceProfile findProfile(String deviceID, HeaderCollection headerCollection) {
-        for (AbstractDeviceProfile dp : deviceProfiles) {
+    private AbstractDeviceHandler findDeviceHandler(String deviceID, HeaderCollection headerCollection) {
+        for (AbstractDeviceHandler dp : deviceProfiles) {
             HTTPHeader ua = headerCollection.get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
             try {
-                if (dp.getProfileID().equals(deviceID)) return dp;
-                if (dp.matchesUpnpUserAgent(deviceID)) {
+
+                if (dp.matchesUpnpUserAgent(deviceID) || dp.getID().equals(deviceID)) {
                     if (dp.matchesStreamUserAgent(ua == null ? null : ua.getValue())) {
                         if (dp.matchesStreamHeader(headerCollection)) { return dp; }
                     }
@@ -337,18 +365,4 @@ public class DeviceManager implements RegistryListener {
         return null;
     }
 
-    public AbstractDeviceProfile getProfileByUpnpHeaders(UpnpHeaders headers) {
-        // TODO: some cache to get faster access
-        for (AbstractDeviceProfile dp : deviceProfiles) {
-            List<String> ua = headers.get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
-            try {
-                if (dp.matchesUpnpUserAgent(ua.get(0))) {
-                    if (dp.matchesUpnpHeader(headers)) { return dp; }
-                }
-            } catch (Exception e) {
-                logger.log(e);
-            }
-        }
-        return null;
-    }
 }

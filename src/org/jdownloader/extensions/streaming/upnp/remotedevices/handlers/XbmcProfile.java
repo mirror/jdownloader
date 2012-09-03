@@ -1,11 +1,13 @@
-package org.jdownloader.extensions.streaming.upnp.deviceprofiles;
+package org.jdownloader.extensions.streaming.upnp.remotedevices.handlers;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.fourthline.cling.model.message.UpnpHeaders;
 import org.fourthline.cling.model.meta.RemoteDevice;
+import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.DeviceCache;
 
-public class XbmcProfile extends AbstractDeviceProfile {
+public class XbmcProfile extends AbstractDeviceHandler {
     public XbmcProfile() {
 
     }
@@ -35,6 +37,16 @@ public class XbmcProfile extends AbstractDeviceProfile {
         if (!cache.getServerName().matches("UPnP/.*, DLNADOC/1\\.50\\, Platinum/.*")) return false;
         if (!"XBMC".equals(d.getDetails().getModelDetails().getModelName())) return false;
         return true;
+    }
+
+    @Override
+    public Profile getBestProfileForTranscoding(MediaItem mediaItem) {
+        return null;
+    }
+
+    @Override
+    public String getID() {
+        return "xbmc";
     }
 
 }

@@ -33,7 +33,8 @@ public class ImageMediaItem extends MediaItem {
 
     @Override
     public String getMimeTypeString() {
-        return "image/" + getContainerFormat();
+
+        return getContainerFormat();
     }
 
     private int height;

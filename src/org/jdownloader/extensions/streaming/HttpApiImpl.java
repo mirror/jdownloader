@@ -5,9 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -41,13 +39,11 @@ import org.jdownloader.extensions.streaming.dlna.DLNATransferMode;
 import org.jdownloader.extensions.streaming.dlna.DLNATransportConstants;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
-import org.jdownloader.extensions.streaming.dlna.profiles.video.AbstractAudioVideoProfile;
+import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
-import org.jdownloader.extensions.streaming.mediaarchive.ProfileMatch;
-import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.rarstream.RarStreamer;
 import org.jdownloader.extensions.streaming.upnp.MediaServer;
-import org.jdownloader.extensions.streaming.upnp.RendererDevice;
+import org.jdownloader.extensions.streaming.upnp.remotedevices.RendererInfo;
 import org.jdownloader.logging.LogController;
 
 public class HttpApiImpl implements HttpRequestHandler {
@@ -87,26 +83,35 @@ public class HttpApiImpl implements HttpRequestHandler {
     public static final int DLNA_ORG_FLAG_DLNA_V15                   = (1 << 20);
 
     @Override
-    public boolean onGetRequest(GetRequest request, HttpResponse response) {
+    public synchronized boolean onGetRequest(GetRequest request, HttpResponse response) {
 
-        String[] params = new Regex(request.getRequestedPath(), "^/stream/([^\\/]+)/([^\\/]+)/?(.*)$").getRow(0);
+        String[] params = new Regex(request.getRequestedPath(), "^/stream/([^\\/]+)/([^\\/]+)/([^\\/]+)/?(.*)$").getRow(0);
         if (params == null) return false;
         String deviceid = null;
+        String formatID = null;
         try {
             deviceid = URLDecoder.decode(params[0], "UTF-8");
         } catch (UnsupportedEncodingException e1) {
             e1.printStackTrace();
         }
-        String id = params[1];
-        String subpath = params[2];
 
+        String id = params[1];
         try {
-            if (".albumart.jpeg_tn".equals(subpath)) {
-                onAlbumArtRequest(request, response, id, JPEGImage.JPEG_TN);
+            formatID = URLDecoder.decode(params[2], "UTF-8");
+        } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
+        }
+        String subpath = params[3];
+        RendererInfo callingDevice = mediaServer.getDeviceManager().findDevice(deviceid, request.getRemoteAddress().get(0), request.getRequestHeaders());
+        logger.info("Stream:_ " + request);
+        try {
+
+            if ("JPEG_TN".equals(formatID)) {
+                onAlbumArtRequest(request, response, id, callingDevice, JPEGImage.JPEG_TN);
                 return true;
 
-            } else if (".albumart.jpeg_sm".equals(subpath)) {
-                onAlbumArtRequest(request, response, id, JPEGImage.JPEG_SM);
+            } else if ("JPEG_SM".equals(formatID)) {
+                onAlbumArtRequest(request, response, id, callingDevice, JPEGImage.JPEG_SM);
                 return true;
 
             }
@@ -145,31 +150,33 @@ public class HttpApiImpl implements HttpRequestHandler {
             }
             // seeking
 
-            RendererDevice callingDevice = getCaller(deviceid, request);
-
             logger.info("Call from " + callingDevice);
             String dlnaFeatures = null;
             // we should redirect the contenttype from the plugins by default.
             String ct = org.jdownloader.extensions.streaming.dlna.Extensions.getType(format) + "/" + format;
             String acceptRanges = "bytes";
+            String transferMode = null;
             if (mediaItem != null) {
 
                 boolean isTranscodeRequired = false;
-                Profile dlnaProfile = callingDevice.getBestProfile(mediaItem);
+                Profile dlnaProfile = callingDevice.getHandler().getBestProfileWithoutTranscoding(mediaItem);
+
                 if (dlnaProfile == null) {
                     isTranscodeRequired = true;
-                    dlnaProfile = callingDevice.getBestTranscodeProfile(mediaItem);
+                    dlnaProfile = callingDevice.getHandler().getBestProfileForTranscoding(mediaItem);
                 }
-                dlnaFeatures = "DLNA.ORG_PN=" + callingDevice.createDlnaOrgPN(dlnaProfile, mediaItem) + ";DLNA.ORG_OP=" + callingDevice.createDlnaOrgOP(dlnaProfile, mediaItem) + ";DLNA.ORG_FLAGS=" + callingDevice.createDlnaOrgFlags(dlnaProfile, mediaItem);
-                acceptRanges = callingDevice.createHeaderAcceptRanges(dlnaProfile, mediaItem);
-                ct = callingDevice.createContentType(dlnaProfile, mediaItem);
+                if (dlnaProfile != null) transferMode = callingDevice.getHandler().getTransferMode(request, mediaItem instanceof ImageMediaItem ? DLNATransferMode.INTERACTIVE : DLNATransferMode.STREAMING);
+                if (dlnaProfile != null) dlnaFeatures = callingDevice.getHandler().getDlnaFeaturesString(dlnaProfile, mediaItem, getHeader(request, DLNATransportConstants.HEADER_TRANSFERMODE), getHeader(request, DLNATransportConstants.HEADER_FEATURES));
+                acceptRanges = callingDevice.getHandler().createHeaderAcceptRanges(dlnaProfile, mediaItem, getHeader(request, DLNATransportConstants.HEADER_TRANSFERMODE), getHeader(request, DLNATransportConstants.HEADER_FEATURES));
+                ct = callingDevice.getHandler().createContentType(dlnaProfile, mediaItem);
 
             }
 
-            response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
+            // transferMode = null;
+            if (ct != null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
 
-            if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-            response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.STREAMING)));
+            if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
+            if (transferMode != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, transferMode));
             response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", acceptRanges));
             if (streamingInterface instanceof RarStreamer) {
                 while (((RarStreamer) streamingInterface).getExtractionThread() == null && ((RarStreamer) streamingInterface).getException() == null) {
@@ -219,64 +226,56 @@ public class HttpApiImpl implements HttpRequestHandler {
         return false;
     }
 
-    private RendererDevice getCaller(String deviceid, GetRequest request) {
-
-        // try to find user agent matches
-
-        return mediaServer.getDeviceManager().findDevice(deviceid, request.getRemoteAddress().get(0), request.getRequestHeaders());
+    private String getHeader(GetRequest request, String key) {
+        try {
+            return request.getRequestHeaders().get(key).getValue();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
-    public void onAlbumArtRequest(GetRequest request, HttpResponse response, String id, JPEGImage profile) throws IOException {
+    public void onAlbumArtRequest(GetRequest request, HttpResponse response, String id, RendererInfo callingDevice, JPEGImage profile) throws IOException {
         MediaItem item = (MediaItem) extension.getMediaArchiveController().getItemById(id);
         File path = Application.getResource(item.getThumbnailPath());
         String ct = profile.getMimeType().getLabel();
-        String dlnaFeatures = "DLNA.ORG_PN=" + profile.getProfileID();
-        if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader("ContentFeatures.DLNA.ORG", dlnaFeatures));
-        response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, getTransferMode(request, DLNATransferMode.INTERACTIVE)));
+        String dlnaFeatures = callingDevice.getHandler().getDlnaFeaturesString(profile, item, getHeader(request, DLNATransportConstants.HEADER_TRANSFERMODE), getHeader(request, DLNATransportConstants.HEADER_FEATURES));
+        if (!(request instanceof HeadRequest) && dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
+        response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, callingDevice.getHandler().getTransferMode(request, DLNATransferMode.INTERACTIVE)));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(IconIO.getScaledInstance(ImageProvider.read(path), profile.getWidth().getMax(), profile.getHeight().getMax()), "jpeg", baos);
         baos.close();
         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, baos.size() + ""));
         response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, ct));
-        response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "none"));
+        response.getResponseHeaders().add(new HTTPHeader("Accept-Ranges", "bytes"));
         response.setResponseCode(ResponseCode.SUCCESS_OK);
 
         // JPegImage.JPEG_TN
-        response.getOutputStream().write(baos.toByteArray());
+        if (!(request instanceof HeadRequest)) response.getOutputStream().write(baos.toByteArray());
 
         response.closeConnection();
     }
 
-    private String getTransferMode(GetRequest request, String def) {
-        HTTPHeader head = request.getRequestHeaders().get(DLNATransportConstants.HEADER_TRANSFERMODE);
-        String ret = null;
-        if (head != null && StringUtils.isNotEmpty(head.getValue())) {
-            ret = DLNATransferMode.valueOf(head.getValue());
-        }
-        return ret != null ? ret : def;
-    }
-
-    private List<ProfileMatch> findProfile(MediaItem mediaItem) {
-        if (mediaItem == null) return null;
-        ArrayList<ProfileMatch> ret = new ArrayList<ProfileMatch>();
-        logger.info("find DLNA Profile: " + mediaItem.getDownloadLink());
-        for (Profile p : Profile.ALL_PROFILES) {
-            if (mediaItem instanceof VideoMediaItem) {
-                VideoMediaItem video = (VideoMediaItem) mediaItem;
-                if (p instanceof AbstractAudioVideoProfile) {
-                    ProfileMatch match = video.matches((AbstractAudioVideoProfile) p);
-
-                    if (match != null) {
-                        logger.info(match.toString());
-                        ret.add(match);
-                    }
-
-                }
-            }
-
-        }
-        return ret;
-    }
+    // private List<ProfileMatch> findProfile(MediaItem mediaItem) {
+    // if (mediaItem == null) return null;
+    // ArrayList<ProfileMatch> ret = new ArrayList<ProfileMatch>();
+    // logger.info("find DLNA Profile: " + mediaItem.getDownloadLink());
+    // for (Profile p : Profile.ALL_PROFILES) {
+    // if (mediaItem instanceof VideoMediaItem) {
+    // VideoMediaItem video = (VideoMediaItem) mediaItem;
+    // if (p instanceof AbstractAudioVideoProfile) {
+    // ProfileMatch match = video.matches((AbstractAudioVideoProfile) p);
+    //
+    // if (match != null) {
+    // logger.info(match.toString());
+    // ret.add(match);
+    // }
+    //
+    // }
+    // }
+    //
+    // }
+    // return ret;
+    // }
 
     @Override
     public boolean onPostRequest(PostRequest request, HttpResponse response) {

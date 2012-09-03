@@ -1,13 +1,15 @@
-package org.jdownloader.extensions.streaming.upnp.deviceprofiles;
+package org.jdownloader.extensions.streaming.upnp.remotedevices.handlers;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.fourthline.cling.model.message.UpnpHeaders;
 import org.fourthline.cling.model.meta.RemoteDevice;
+import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.DeviceCache;
 import org.jdownloader.extensions.streaming.upnp.clingext.ExtRemoteDevice;
 
 //tested with wmp 12
-public class WindowsMediaPlayerProfile extends AbstractDeviceProfile {
+public class WindowsMediaPlayerProfile extends AbstractDeviceHandler {
     public WindowsMediaPlayerProfile() {
 
     }
@@ -50,6 +52,16 @@ public class WindowsMediaPlayerProfile extends AbstractDeviceProfile {
             }
         }
         return "Windows Media Player Sharing".equals(d.getDetails().getModelDetails().getModelName());
+    }
+
+    @Override
+    public Profile getBestProfileForTranscoding(MediaItem mediaItem) {
+        return null;
+    }
+
+    @Override
+    public String getID() {
+        return "wmp";
     }
 
 }

@@ -31,7 +31,7 @@ public abstract class PlayToLocalBinary implements PlayToDevice {
             public void run() {
                 try {
 
-                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), subpath);
+                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), null, subpath);
 
                     Executer exec = new Executer(getBinaryPath());
                     exec.setLogger(LogController.CL());

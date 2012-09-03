@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.streaming.mediaarchive.storage;
 
-import jd.controlling.downloadcontroller.DownloadLinkStorable;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
 
@@ -13,12 +11,10 @@ public class ImageItemStorable extends MediaItemStorable implements Storable {
 
     public static ImageItemStorable create(ImageMediaItem mi) {
         ImageItemStorable ret = new ImageItemStorable();
-        ret.setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
+        ret.init(mi);
         ret.setWidth(mi.getWidth());
         ret.setHeight(mi.getHeight());
-        ret.setSize(mi.getSize());
-        ret.setThumbnailPath(mi.getThumbnailPath());
-        ret.setContainerFormat(mi.getContainerFormat());
+
         return ret;
     }
 
@@ -44,11 +40,10 @@ public class ImageItemStorable extends MediaItemStorable implements Storable {
 
     public ImageMediaItem toImageMediaItem() {
         ImageMediaItem ret = new ImageMediaItem(getDownloadLink()._getDownloadLink());
+        fillMediaItem(ret);
         ret.setWidth(getWidth());
         ret.setHeight(getHeight());
-        ret.setSize(getSize());
-        ret.setThumbnailPath(getThumbnailPath());
-        ret.setContainerFormat(getContainerFormat());
+
         return ret;
     }
 

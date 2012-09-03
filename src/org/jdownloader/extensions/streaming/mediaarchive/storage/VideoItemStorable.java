@@ -2,8 +2,6 @@ package org.jdownloader.extensions.streaming.mediaarchive.storage;
 
 import java.util.ArrayList;
 
-import jd.controlling.downloadcontroller.DownloadLinkStorable;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.streaming.mediaarchive.VideoMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
@@ -55,25 +53,23 @@ public class VideoItemStorable extends MediaItemStorable implements Storable {
 
     public static MediaItemStorable create(VideoMediaItem mi) {
         VideoItemStorable ret = new VideoItemStorable();
+        ret.init(mi);
         ret.setAudioStreams(mi.getAudioStreams());
         ret.setVideoStreams(mi.getVideoStreams());
         ret.setBitrate(mi.getSystemBitrate());
         ret.setDuration(mi.getDuration());
-        ret.setThumbnailPath(mi.getThumbnailPath());
-        ret.setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
-        ret.setSize(mi.getSize());
-        ret.setContainerFormat(mi.getContainerFormat());
+
         return ret;
     }
 
     public VideoMediaItem toVideoMediaItem() {
         VideoMediaItem ret = new VideoMediaItem(getDownloadLink()._getDownloadLink());
+        fillMediaItem(ret);
         ret.setAudioStreams(getAudioStreams());
         ret.setVideoStreams(getVideoStreams());
         ret.setSystemBitrate(getBitrate());
         ret.setDuration(getDuration());
-        ret.setThumbnailPath(getThumbnailPath());
-        ret.setContainerFormat(getContainerFormat());
+
         return ret;
     }
 

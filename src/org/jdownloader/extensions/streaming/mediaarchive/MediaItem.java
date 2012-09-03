@@ -13,9 +13,36 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public abstract class MediaItem implements MediaNode {
-    private DownloadLink           downloadLink;
-    private MediaRoot              root;
     private static final LogSource LOGGER = LogController.getInstance().getLogger(PrepareJob.class.getName());
+    private String[] actors;
+    private String album;
+
+    private String artist;
+
+    private String containerFormat;
+
+    private String   creator;
+
+    private long     date = 0l;
+
+    private String[] dlnaProfiles;
+
+    private DownloadLink           downloadLink;
+
+    private String[] genres;
+
+    private String infoString;
+
+    private String   majorBrand;
+
+    private MediaFolder parent;
+    private MediaRoot              root;
+
+    private long   size = -1;
+
+    private String thumbnailPath;
+
+    private String   title;
 
     public MediaItem(DownloadLink dl) {
         this.downloadLink = dl;
@@ -24,6 +51,81 @@ public abstract class MediaItem implements MediaNode {
         }
 
         date = System.currentTimeMillis();
+    }
+
+    public String[] getActors() {
+        return actors;
+    }
+
+    public String getAlbum() {
+        return album;
+    }
+
+    public String getArtist() {
+        return artist;
+    }
+
+    public String getContainerFormat() {
+        return containerFormat;
+    }
+    public String getCreator() {
+        return creator == null ? ("(" + downloadLink.getHost() + ") " + downloadLink.getBrowserUrl()) : creator;
+    }
+    public long getDate() {
+        if (date <= 0) date = System.currentTimeMillis();
+        return date;
+    }
+    public String[] getDlnaProfiles() {
+        return dlnaProfiles;
+    }
+
+    public DownloadLink getDownloadLink() {
+        return downloadLink;
+    }
+
+    public String[] getGenres() {
+        return genres;
+    }
+
+    @Override
+    public ImageIcon getIcon() {
+        return NewTheme.I().getIcon("video", 20);
+    }
+    public String getInfoString() {
+        return infoString;
+    }
+    public String getMajorBrand() {
+        return majorBrand;
+    }
+    public abstract String getMimeTypeString();
+    @Override
+    public String getName() {
+        return downloadLink.getName();
+    }
+
+    public MediaFolder getParent() {
+        return parent;
+    }
+
+    public MediaRoot getRoot() {
+        return root;
+    }
+
+    public long getSize() {
+
+        return size <= 0 ? downloadLink.getDownloadSize() : size;
+    }
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    @Override
+    public String getUniqueID() {
+        return downloadLink.getUniqueID().toString();
     }
 
     private void restorePlugin() {
@@ -60,16 +162,50 @@ public abstract class MediaItem implements MediaNode {
 
     }
 
-    public abstract String getMimeTypeString();
-
-    public DownloadLink getDownloadLink() {
-        return downloadLink;
+    public void setActors(String[] actors) {
+        this.actors = actors;
     }
 
-    private MediaFolder parent;
+    public void setAlbum(String album) {
+        this.album = album;
+    }
 
-    public MediaFolder getParent() {
-        return parent;
+    public void setArtist(String artist) {
+        this.artist = artist;
+    }
+
+    // video container type
+    public void setContainerFormat(String majorBrand) {
+        this.containerFormat = majorBrand;
+
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public void setDate(long date) {
+        this.date = date;
+    }
+
+    public void setDlnaProfiles(String[] dlnaProfiles) {
+        this.dlnaProfiles = dlnaProfiles;
+    }
+
+    public void setDownloadLink(DownloadLink downloadLink) {
+        this.downloadLink = downloadLink;
+    }
+
+    public void setGenres(String[] genres) {
+        this.genres = genres;
+    }
+
+    public void setInfoString(String result) {
+        infoString = result;
+    }
+
+    public void setMajorBrand(String major_brand) {
+        this.majorBrand = major_brand;
     }
 
     @Override
@@ -82,152 +218,16 @@ public abstract class MediaItem implements MediaNode {
         this.root = root;
     }
 
-    public MediaRoot getRoot() {
-        return root;
+    public void setSize(long l) {
+        this.size = l;
     }
-
-    private String thumbnailPath;
-    private String infoString;
 
     public void setThumbnailPath(String thumbnailPath) {
         this.thumbnailPath = thumbnailPath;
     }
 
-    public String getThumbnailPath() {
-        return thumbnailPath;
-    }
-
-    public void setDownloadLink(DownloadLink downloadLink) {
-        this.downloadLink = downloadLink;
-    }
-
-    @Override
-    public String getName() {
-        return downloadLink.getName();
-    }
-
-    @Override
-    public ImageIcon getIcon() {
-        return NewTheme.I().getIcon("video", 20);
-    }
-
-    public void setInfoString(String result) {
-        infoString = result;
-    }
-
-    public String getInfoString() {
-        return infoString;
-    }
-
-    private String containerFormat;
-    private long   size = -1;
-    private String artist;
-    private String album;
-
-    public void setCreator(String creator) {
-        this.creator = creator;
-    }
-
-    public void setGenres(String[] genres) {
-        this.genres = genres;
-    }
-
-    private String   title;
-    private String   majorBrand;
-    private String   creator;
-    private String[] genres;
-    private long     date = 0l;
-
-    public void setDate(long date) {
-        this.date = date;
-    }
-
-    public void setActors(String[] actors) {
-        this.actors = actors;
-    }
-
-    private String[] actors;
-    private String[] dlnaProfiles;
-
-    // video container type
-    public void setContainerFormat(String majorBrand) {
-        this.containerFormat = majorBrand;
-
-    }
-
-    public String getContainerFormat() {
-        return containerFormat;
-    }
-
-    public void setSize(long l) {
-        this.size = l;
-    }
-
-    @Override
-    public String getUniqueID() {
-        return downloadLink.getUniqueID().toString();
-    }
-
-    public long getSize() {
-
-        return size <= 0 ? downloadLink.getDownloadSize() : size;
-    }
-
-    public void setMajorBrand(String major_brand) {
-        this.majorBrand = major_brand;
-    }
-
-    public String getMajorBrand() {
-        return majorBrand;
-    }
-
-    public String getCreator() {
-        return creator == null ? ("(" + downloadLink.getHost() + ") " + downloadLink.getBrowserUrl()) : creator;
-    }
-
-    public String[] getGenres() {
-        return genres;
-    }
-
-    public String getArtist() {
-        return artist;
-    }
-
-    public String getAlbum() {
-        return album;
-    }
-
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
-    public void setAlbum(String album) {
-        this.album = album;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public long getDate() {
-        if (date <= 0) date = System.currentTimeMillis();
-        return date;
-    }
-
-    public String[] getActors() {
-        return actors;
-    }
-
-    public String[] getDlnaProfiles() {
-        return dlnaProfiles;
-    }
-
-    public void setDlnaProfiles(String[] dlnaProfiles) {
-        this.dlnaProfiles = dlnaProfiles;
     }
 
     public void update(MediaItem node) {

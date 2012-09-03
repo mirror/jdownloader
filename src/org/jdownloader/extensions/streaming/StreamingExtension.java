@@ -2,6 +2,7 @@ package org.jdownloader.extensions.streaming;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -436,19 +437,30 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
         return new DownloadLinkProvider(this);
     }
 
-    public String createStreamUrl(String id, String deviceID, String subpath) {
+    public String createStreamUrl(String id, String deviceID, String format, String subpath) {
 
         try {
             if (StringUtils.isEmpty(deviceID)) {
                 deviceID = "UnknownDevice";
             }
-            String ret = "http://" + getHost() + ":" + getSettings().getStreamServerPort() + "/stream/" + URLEncoder.encode(deviceID, "UTF-8") + "/" + URLEncoder.encode(id, "UTF-8");
-            if (!StringUtils.isEmpty(subpath)) ret += "/" + subpath;
+            String ret = "http://" + getHost() + ":" + getSettings().getStreamServerPort() + "/stream/" + encode(deviceID) + "/" + encode(id) + "/" + encode(format);
+            if (!StringUtils.isEmpty(subpath)) ret += "/" + encode(subpath);
             return ret;
         } catch (Throwable e) {
+            logger.log(e);
             throw new WTFException(e);
         }
 
+    }
+
+    private String encode(String string) {
+        if (StringUtils.isEmpty(string)) return null;
+        try {
+            return URLEncoder.encode(string, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public MediaArchiveController getMediaArchiveController() {

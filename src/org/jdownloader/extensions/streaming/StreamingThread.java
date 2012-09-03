@@ -94,7 +94,7 @@ public class StreamingThread extends Thread implements BrowserSettings, Download
                 getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, "0"));
                 getResponse().getOutputStream();
             } else {
-                getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES, "ranges"));
+                if (getResponse().getResponseHeaders().get(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES) == null) getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_RANGES, "bytes"));
                 if (rangeRequest == null) {
                     getResponse().setResponseCode(ResponseCode.SUCCESS_OK);
                     if (completeSize != -1) getResponse().getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, completeSize + ""));

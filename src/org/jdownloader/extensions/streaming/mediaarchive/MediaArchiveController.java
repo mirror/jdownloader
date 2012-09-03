@@ -189,4 +189,15 @@ public class MediaArchiveController implements MediaListListener {
 
     }
 
+    public static List<MediaNode> getAllChildren(List<MediaNode> children) {
+        ArrayList<MediaNode> ret = new ArrayList<MediaNode>();
+        for (MediaNode mn : children) {
+            ret.add(mn);
+            if (mn instanceof MediaFolder) {
+                ret.addAll(getAllChildren(((MediaFolder) mn).getChildren()));
+            }
+        }
+        return ret;
+    }
+
 }

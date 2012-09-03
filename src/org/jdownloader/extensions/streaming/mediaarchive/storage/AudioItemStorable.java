@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.streaming.mediaarchive.storage;
 
-import jd.controlling.downloadcontroller.DownloadLinkStorable;
-
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.streaming.mediaarchive.AudioMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.AudioStream;
@@ -53,26 +51,16 @@ public class AudioItemStorable extends MediaItemStorable implements Storable {
 
     public static AudioItemStorable create(AudioMediaItem mi) {
         AudioItemStorable ret = new AudioItemStorable();
+        ret.init(mi);
         ret.setStream(mi.getStream());
-        ret.setAlbum(mi.getAlbum());
-        ret.setArtist(mi.getArtist());
-        ret.setThumbnailPath(mi.getThumbnailPath());
-        ret.setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
-        ret.setTitle(mi.getTitle());
-        ret.setSize(mi.getSize());
-        ret.setContainerFormat(mi.getContainerFormat());
+
         return ret;
     }
 
     public AudioMediaItem toAudioMediaItem() {
 
         AudioMediaItem ret = new AudioMediaItem(getDownloadLink()._getDownloadLink());
-        ret.setThumbnailPath(getThumbnailPath());
-        ret.setAlbum(getAlbum());
-        ret.setArtist(getArtist());
-        ret.setSize(getSize());
-        ret.setContainerFormat(getContainerFormat());
-        ret.setTitle(getTitle());
+        fillMediaItem(ret);
         ret.setStream(getStream());
 
         return ret;

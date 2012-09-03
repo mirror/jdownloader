@@ -136,7 +136,7 @@ public class PlayToUpnpRendererDevice implements PlayToDevice {
                 logger.info("Play " + link + " on " + getDisplayName() + " Supported formats: " + getProtocolInfos());
                 try {
 
-                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), subpath);
+                    final String url = extension.createStreamUrl(id, getUniqueDeviceID(), null, subpath);
 
                     // final String url =
                     // "http://192.168.2.102:3128/vlcstreaming/stream?%221344103042405%22&%226.1.7601+2%2FService+Pack+1%2C+UPnP%2F1.0%2C+Portable+SDK+for+UPnP+devices%2F1.6.16%22";

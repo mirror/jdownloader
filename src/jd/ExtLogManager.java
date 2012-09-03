@@ -7,7 +7,7 @@ import org.jdownloader.logging.LogController;
 
 public class ExtLogManager extends LogManager {
     private static String[] WHITELIST     = new String[] { "org.fourthline" };
-    private static String[] BLACKLIST     = new String[] { "org.fourthline.cling.registry.Registry", "org.fourthline.cling.model.message.header" };
+    private static String[] BLACKLIST     = new String[] { "org.fourthline", "org.fourthline.cling.registry.Registry", "org.fourthline.cling.model.message.header", "org.fourthline.cling.model.message.UpnpHeaders", "org.fourthline.cling.transport" };
 
     private LogController   logController = null;
 

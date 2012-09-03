@@ -23,7 +23,7 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
         ImageMediaItem ret = new ImageMediaItem(dl);
 
         String id = new UniqueAlltimeID().toString();
-        String streamurl = extension.createStreamUrl(id, "imagereader", null);
+        String streamurl = extension.createStreamUrl(id, "imagereader", null, null);
         FileOutputStream fos = null;
         try {
             extension.addDownloadLink(id, dl);
