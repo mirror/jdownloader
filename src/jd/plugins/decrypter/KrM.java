@@ -28,20 +28,23 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ikr.me" }, urls = { "http://[\\w\\.]*?ikr\\.me/[A-Za-z0-9]{2}-?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ikr.me" }, urls = { "http://(www\\.)?ikr\\.me/(?!sitemap|index)[A-Za-z0-9]{2}\\-?" }, flags = { 0 })
 public class KrM extends PluginForDecrypt {
 
     public KrM(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String linkurl = null;
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("404 Not Found")) {
+            logger.info("Link offline:" + parameter);
+            return decryptedLinks;
+        }
 
         if (!br.containsHTML("Kod.*?ne postoji u iOboru")) {
             Form form = br.getForm(0);
@@ -75,7 +78,5 @@ public class KrM extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

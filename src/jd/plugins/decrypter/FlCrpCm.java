@@ -29,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrop.com" }, urls = { "http://[\\w\\.]*?filecrop\\.com/\\d+/index\\.html" }, flags = { 0 })
 public class FlCrpCm extends PluginForDecrypt {
@@ -47,7 +46,10 @@ public class FlCrpCm extends PluginForDecrypt {
         // shouldn't do this step simultan
         synchronized (LOCK) {
             br.getPage(parameter);
-            if (br.containsHTML("<title>404 Not Found</title>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML("<title>404 Not Found</title>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String captchaurl = br.getRegex("\"(/captcha\\.php\\?id=[a-z0-9]+)\"").getMatch(0);
             if (captchaurl != null) {
                 for (int i = 0; i <= 3; i++) {

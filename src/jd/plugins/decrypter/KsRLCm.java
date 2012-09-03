@@ -29,19 +29,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kisaurl.com" }, urls = { "http://[\\w\\.]*?kisaurl\\.com/\\?\\d[A-Z]{2}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "kisaurl.com" }, urls = { "http://(www\\.)?kisaurl\\.com/\\?\\d+" }, flags = { 0 })
 public class KsRLCm extends PluginForDecrypt {
 
     public KsRLCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String linkurl = null;
         String parameter = param.toString();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(parameter);
 
         if (br.getHost().equals("kisaurl.com") && !br.containsHTML("sayfa sistemde bulunamad.")) {
@@ -63,7 +62,7 @@ public class KsRLCm extends PluginForDecrypt {
             }
         }
 
-        linkurl = br.getURL();
+        linkurl = br.getRedirectLocation();
 
         if (linkurl == null) return null;
 
@@ -71,7 +70,5 @@ public class KsRLCm extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

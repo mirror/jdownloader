@@ -77,8 +77,8 @@ public class SkGlbeRu extends PluginForDecrypt {
             }
         } else if (parameter.matches("http://(www\\.)?skyglobe\\.ru/soft/section/[^<>\"/]+/[^<>\"/]+/\\d+")) {
             br.getPage("http://skyglobe.ru/soft/download/" + new Regex(parameter, "(\\d+)$").getMatch(0));
-            String finallink = br.getRegex("<META http\\-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("If downloading not start after \\d+ seconds, press </FONT><A href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            String finallink = br.getRegex("<META http\\-equiv=\"refresh\" content=\"\\d+; url=((http|ftp)[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) finallink = br.getRegex("If downloading not start after \\d+ seconds, press </FONT><A href=\"((http|ftp)[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

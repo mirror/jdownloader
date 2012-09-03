@@ -42,7 +42,10 @@ public class UploadedToFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie("http://uploaded.net", "lang", "de");
         br.getPage(parameter);
-        if (br.containsHTML("(title=\"enthaltene Dateien\" style=\"cursor:help\">\\(0\\)</span>|<i>enthält keine Dateien</i>)")) return decryptedLinks;
+        if (br.containsHTML("(title=\"enthaltene Dateien\" style=\"cursor:help\">\\(0\\)</span>|<i>enthält keine Dateien</i>)")) {
+            logger.info("Folder empty: " + parameter);
+            return decryptedLinks;
+        }
         if (br.getURL().contains("uploaded.net/404") || br.containsHTML("(<h1>Seite nicht gefunden<br|>Error: 404<|<title>uploaded.*?\\- where your files have to be uploaded to</title>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h1><a href=\"folder/[a-z0-9]+\">(.*?)</a></h1>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);

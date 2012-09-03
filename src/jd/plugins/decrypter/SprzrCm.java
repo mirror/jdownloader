@@ -50,14 +50,14 @@ public class SprzrCm extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String link : links) {
+        for (final String link : links) {
             // Saves traffic and time
             br.getHeaders().put("Referer", "http://www.sprezer.com/r_counter");
             br.getPage(link);
             final String finallink = br.getRegex("\\'>[\t\n\r ]+<frame src=\"(http://[^<>\"\\']+)\"").getMatch(0);
             if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.warning("Link offline: " + link);
+                continue;
             }
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
             if (fpName != null) {

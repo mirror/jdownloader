@@ -27,27 +27,31 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectlinks.com" }, urls = { "http://[\\w\\.]*?protectlinks\\.com/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protectlinks.com" }, urls = { "http://(www\\.)?protectlinks\\.com/\\d+" }, flags = { 0 })
 public class PrtctLnksCm extends PluginForDecrypt {
 
     public PrtctLnksCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String redirectid = new Regex(parameter, ".*?protectlinks\\.com/([^/]*)").getMatch(0);
         br.setFollowRedirects(true);
         br.getPage("http://www.protectlinks.com/redirect.php?id=" + redirectid);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String link = br.getRegex("<iframe name=\"pagetext\"[^>]* src=\"\\s*(.*?)\"").getMatch(0);
-        if (link == null) return null;
+        if (link == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
     }
-
-    // @Override
 
 }

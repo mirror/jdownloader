@@ -56,6 +56,10 @@ public class CyberSansarCom extends PluginForDecrypt {
             final String model_name = fpName.getMatch(1);
             final String gallery_num = fpName.getMatch(0);
             final String[] thumbnails = br.getRegex("class=\"photolink\"><img src=\"(graphics/[^<>\"]*?\\.jpg)\"").getColumn(0);
+            if ((thumbnails == null || thumbnails.length == 0) && (model_name != null && gallery_num != null)) {
+                logger.info("Gallery is empty: " + parameter);
+                return decryptedLinks;
+            }
             if (thumbnails == null || thumbnails.length == 0 || model_name == null || gallery_num == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

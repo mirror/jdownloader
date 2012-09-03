@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/(?!blog|api)[a-z0-9]+/(?!feed)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/(?!blog|api|content|category|search|shows|login)[a-z0-9]+/(?!feed)[a-z0-9\\-]+" }, flags = { 0 })
 public class RevisionThreeCom extends PluginForDecrypt {
 
     public RevisionThreeCom(PluginWrapper wrapper) {
@@ -54,17 +54,24 @@ public class RevisionThreeCom extends PluginForDecrypt {
                 decryptedLinks.add(fina);
             }
         } else {
-            String[] allLinks = br.getRegex("\"(http://(www\\.)?podtrac\\.com/pts/redirect\\.[a-z0-9]+/videos\\.revision3\\.com/revision3/.*?)\"").getColumn(0);
+            final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
+            if (videoID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage("http://revision3.com/api/getPlaylist.json?api_key=ba9c741bce1b9d8e3defcc22193f3651b8867e62&codecs=h264,vp8,theora&video_id=" + videoID + "&jsonp=parseResponse&_=" + System.currentTimeMillis());
+            final String[] allLinks = br.getRegex("\"url\":\"(http:[^<>\"]*?)\"").getColumn(0);
             if (allLinks == null || allLinks.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (final String singleLink : allLinks) {
-                br.getPage(singleLink);
-                final String finallink = br.getRedirectLocation();
-                if (finallink == null) return null;
+            for (String finallink : allLinks) {
+                finallink = finallink.replace("\\", "");
                 final DownloadLink fina = createDownloadlink("directhttp://" + finallink);
-                if (fpName != null) fina.setFinalFileName(fpName + finallink.substring(finallink.length() - 4, finallink.length()));
+                if (fpName != null) {
+                    String ext = finallink.substring(finallink.lastIndexOf("."));
+                    if (ext != null && ext.length() < 5) fina.setFinalFileName(fpName + ext);
+                }
                 decryptedLinks.add(fina);
             }
         }

@@ -243,6 +243,7 @@ public class FourSharedCom extends PluginForHost {
         if (br.containsHTML("(Servers Upgrade|4shared servers are currently undergoing a short\\-time maintenance)")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l); }
         String ttt = br.getRegex(" var c = (\\d+);").getMatch(0);
         if (ttt != null) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l); }
+        if (br.containsHTML("Sorry, the file link that you requested is not valid")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered/premium users!");
     }
 
     private String handlePassword(DownloadLink link) throws Exception {

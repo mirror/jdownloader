@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tny.cz" }, urls = { "http://(www\\.)?(tinypaste\\.com|tny\\.cz)/([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tny.cz" }, urls = { "http://(www\\.)?(tinypaste\\.com|tny\\.cz)/(?!tools|terms|api|contact|login|register|press|index|getpaid|https|public)([0-9a-z]+|.*?id=[0-9a-z]+)" }, flags = { 0 })
 public class Tnypst extends PluginForDecrypt {
 
     private DownloadLink dl = null;

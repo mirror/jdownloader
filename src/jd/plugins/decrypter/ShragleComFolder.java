@@ -42,6 +42,10 @@ public class ShragleComFolder extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        if (br.containsHTML(">In the folder no files are present")) {
+            logger.info("Folder empty: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<h2 class=\"box\\-title bold\">([^<>\"]*?)<span style=").getMatch(0);
         final String[] links = br.getRegex("\"(http://(www\\.)?cloudnator\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) return null;

@@ -67,12 +67,19 @@ public class NCryptIn extends PluginForDecrypt {
         if (parameter.contains("ncrypt.in/link")) {
             final String finallink = decryptSingle(parameter);
             if (finallink == null) { return null; }
+            if (finallink.contains("error=crypted_id_invalid")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
         } else {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             haveFun();
-            if (br.getURL().contains("error=crypted_id_invalid")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+            if (br.getURL().contains("error=crypted_id_invalid")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             // Handle Captcha and/or password
             Form allForm = null;
             for (final Form tempForm : Form.getForms(aBrowser)) {

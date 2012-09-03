@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "game-freaks.net" }, urls = { "http://[\\w\\.]*?game-freaks\\.net/download/[A-Z_]+/.*?d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "game-freaks.net" }, urls = { "http://(www\\.)?game\\-freaks\\.net/(download/.*?\\d+\\.html|\\?id=\\d+)" }, flags = { 0 })
 public class GmFrksNt extends PluginForDecrypt {
 
     public GmFrksNt(PluginWrapper wrapper) {
@@ -44,31 +44,35 @@ public class GmFrksNt extends PluginForDecrypt {
         if (fpName == null) {
             fpName = br.getRegex("<H1><A HREF=\"/\\?id=\\d+\"><B>(.*?)</B></A></H1>").getMatch(0);
             if (fpName == null) {
-                fpName = br.getRegex("<title>GAME-FREAKs\\.NET - (.*?)</title>").getMatch(0);
+                fpName = br.getRegex("<title>GAME-FREAKs\\.NET \\- (.*?)</title>").getMatch(0);
             }
         }
         if (br.containsHTML(">Es existiert kein Eintrag mit der ID")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        boolean failed = true;
-        for (int i = 0; i <= 3; i++) {
-            Form ppost = br.getFormbyProperty("name", "download_form");
-            String captchaUrl = br.getRegex("\"(/gfx/secure/index\\.php\\?captcha=[a-z0-9]+)\"").getMatch(0);
-            if (ppost == null || captchaUrl == null) return null;
-            captchaUrl = "http://game-freaks.net" + captchaUrl;
-            String code = getCaptchaCode("ucms", captchaUrl, param);
-            ppost.put("code", code);
-            br.submitForm(ppost);
-            if (br.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
+        final String[] dlforms = { "download_form", "mirror1_form" };
+        for (final String dlformname : dlforms) {
+            boolean failed = true;
+            final Form ppost = br.getFormbyProperty("NAME", dlformname);
+            if (ppost != null) {
+                for (int i = 0; i <= 3; i++) {
+                    final String captchaUrl = "http://game-freaks.net/gfx/secure/index.php?captcha=" + ppost.getVarsMap().get("c");
+                    String code = getCaptchaCode("ucms", captchaUrl, param);
+                    ppost.put("code", code);
+                    br.submitForm(ppost);
+                    if (br.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
+                        br.getPage(parameter);
+                        continue;
+                    }
+                    failed = false;
+                    break;
+                }
+                if (failed) continue;
+                String[] links = br.getRegex("<FORM ACTION=\"(.*?)\"").getColumn(0);
+                if (links == null || links.length == 0) return null;
+                for (String dl : links)
+                    decryptedLinks.add(createDownloadlink(dl));
                 br.getPage(parameter);
-                continue;
             }
-            failed = false;
-            break;
         }
-        if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String[] links = br.getRegex("<FORM ACTION=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

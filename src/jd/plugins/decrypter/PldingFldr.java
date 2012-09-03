@@ -13,7 +13,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/linklists/\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://(www\\.)?uploading\\.com/linklists/\\w+" }, flags = { 0 })
 public class PldingFldr extends PluginForDecrypt {
 
     public PldingFldr(PluginWrapper wrapper) {

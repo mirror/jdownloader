@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink-it.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.relink\\-it\\.com" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink-it.com" }, urls = { "(http://www\\.[a-z0-9]{2,}\\.relink\\-it\\.com|http://(?!www\\.)[a-z0-9]{2,}\\.relink\\-it\\.com)" }, flags = { 0 })
 public class RlnktCm extends PluginForDecrypt {
 
     public RlnktCm(PluginWrapper wrapper) {

@@ -50,15 +50,10 @@ public class HdPrnBlgOg extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String contentReleaseName = br.getRegex("<h1 class=\"entry\\-title\">(.*?)</h1>").getMatch(0);
-        String contentReleaseLinks = br.getRegex("(/images/Download\\.png\".*images/HD720p\\.png\")").getMatch(0);
-        if (contentReleaseLinks == null) {
-            logger.warning("contentReleaeLinks == null");
-            return null;
-        }
-        String[] links = new Regex(contentReleaseLinks, "<a href=\"(http[^\"]+)", Pattern.CASE_INSENSITIVE).getColumn(0);
+        String[] links = new Regex(br.toString(), "<a href=\"(http[^\"]+)", Pattern.CASE_INSENSITIVE).getColumn(0);
         if (links == null || links.length == 0) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+        for (final String link : links) {
+            if (!this.canHandle(link)) decryptedLinks.add(createDownloadlink(link));
         }
         // assuming that this img hoster is used exclusively.
         String[] imgs = br.getRegex("(http://([\\w\\.]+)?fastpic\\.ru/thumb/[^\"]+)").getColumn(0);
