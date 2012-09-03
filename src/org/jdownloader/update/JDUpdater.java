@@ -85,11 +85,6 @@ public class JDUpdater extends AppUpdater {
     protected byte[] getLastChanceBytes() throws UnsupportedEncodingException, HTTPIOException, InterruptedException, ClientUpdateRequiredException, UpdateServerException, KeyChangeRequest {
         Parameters jar = null;
         Parameters jarHash = null;
-        try {
-            jar = new Parameters("jar", getJarName());
-        } catch (Throwable e) {
-            Log.exception(e);
-        }
 
         try {
             jarHash = new Parameters("jarhash", Hash.getMD5(Application.getResource(getJarName())));
@@ -97,9 +92,9 @@ public class JDUpdater extends AppUpdater {
 
         }
         if (Launcher.PARAMETERS.hasCommandSwitch("lasttry")) {
-            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jar, jarHash, new Parameters("test", "test"));
+            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jarHash);
         } else {
-            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jar, jarHash);
+            return get(Actions.LAST_CHANCE, Parameters.APP_ID, Parameters.BRANCH_ID, jarHash);
         }
 
     }
