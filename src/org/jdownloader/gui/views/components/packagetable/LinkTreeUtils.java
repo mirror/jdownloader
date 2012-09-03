@@ -171,7 +171,8 @@ public class LinkTreeUtils {
                 }
             }
         }
-        if (links.size() == 1 && rawURL != null) {
+        if (links.size() == 1 && rawURL != null && false) {
+            /* TODO: #5707 */
             urls.clear();
             urls.add(rawURL);
         }

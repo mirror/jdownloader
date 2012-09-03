@@ -41,17 +41,17 @@ import org.jdownloader.settings.advanced.AdvancedConfigManager;
 
 public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
-    public static final String            ID = "SIMPLEUPNP";
+    public static final String                 ID = "SIMPLEUPNP";
 
-    private ExtTextField                  serviceTypeTxt;
-    private ExtTextField                  controlURLTxt;
-    private JLabel                        wanType;
+    private ExtTextField                       serviceTypeTxt;
+    private ExtTextField                       controlURLTxt;
+    private JLabel                             wanType;
 
     protected java.util.List<UpnpRouterDevice> devices;
 
-    private ImageIcon                     icon;
+    private ImageIcon                          icon;
 
-    private UPUPReconnectSettings         settings;
+    private UPUPReconnectSettings              settings;
 
     public UPNPRouterPlugin() {
         super();
@@ -111,12 +111,16 @@ public class UPNPRouterPlugin extends RouterPlugin implements IPCheckProvider {
 
     public IP getExternalIP() throws IPCheckException {
         String ipxml;
+        LogSource logger = LogController.getInstance().getLogger("UPNPReconnect");
         try {
-            ipxml = UPNPReconnectInvoker.runCommand(settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
+            ipxml = UPNPReconnectInvoker.runCommand(logger, settings.getServiceType(), settings.getControlURL(), "GetExternalIPAddress");
+            logger.clear();
         } catch (final Exception e) {
             this.setCanCheckIP(false);
 
             throw new InvalidProviderException("UPNP Command Error");
+        } finally {
+            logger.close();
         }
         try {
             final Matcher ipm = Pattern.compile("<\\s*NewExternalIPAddress\\s*>\\s*(.*)\\s*<\\s*/\\s*NewExternalIPAddress\\s*>", Pattern.CASE_INSENSITIVE).matcher(ipxml);

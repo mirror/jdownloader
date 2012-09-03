@@ -217,9 +217,7 @@ public class RealDebridCom extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-
             ai.setProperty("multiHostSupport", Property.NULL);
-
             return ai;
         }
         account.setValid(true);

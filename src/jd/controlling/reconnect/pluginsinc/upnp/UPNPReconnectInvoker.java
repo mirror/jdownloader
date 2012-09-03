@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.logging.Logger;
 
 import jd.controlling.reconnect.ReconnectException;
 import jd.controlling.reconnect.ReconnectInvoker;
@@ -13,7 +14,7 @@ import jd.controlling.reconnect.ReconnectResult;
 import jd.controlling.reconnect.pluginsinc.upnp.translate.T;
 
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging.Log;
+import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.net.httpconnection.HTTPConnectionImpl;
@@ -29,7 +30,7 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
 
     }
 
-    public static String runCommand(final String serviceType, final String controlUrl, final String command) throws IOException {
+    public static String runCommand(final Logger logger, final String serviceType, final String controlUrl, final String command) throws IOException {
         final String data = "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:" + command + " xmlns:u='" + serviceType + "' /> </s:Body> </s:Envelope>";
         // this works for fritz box.
         // old code did NOT work:
@@ -44,6 +45,9 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
          */
         final URL url = new URL(controlUrl);
         HTTPConnection con = new HTTPConnectionImpl(url);
+        if ("GetExternalIPAddress".equalsIgnoreCase(command)) {
+            con.setReadTimeout(2000);
+        }
         con.setRequestMethod(RequestMethod.POST);
         con.setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"");
         con.setRequestProperty("SOAPAction", serviceType + "#" + command);
@@ -66,7 +70,8 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
                     }
                 }
             } catch (IOException e) {
-                Log.exception(e);
+                logger.info(con.toString());
+                LogSource.exception(logger, e);
                 if (!StringUtils.isEmpty(xmlstr)) {
                     return xmlstr;
 
@@ -116,11 +121,11 @@ public class UPNPReconnectInvoker extends ReconnectInvoker {
             logger.info("RUN");
             if (StringUtils.isEmpty(serviceType)) { throw new ReconnectException(T._.malformedservicetype()); }
             if (Thread.currentThread().isInterrupted()) throw new InterruptedException();
-            runCommand(serviceType, controlURL, "ForceTermination");
+            runCommand(getLogger(), serviceType, controlURL, "ForceTermination");
             try {
                 Thread.sleep(2000);
             } finally {
-                runCommand(serviceType, controlURL, "RequestConnection");
+                runCommand(getLogger(), serviceType, controlURL, "RequestConnection");
             }
         } catch (MalformedURLException e) {
             throw new ReconnectException(T._.malformedurl());

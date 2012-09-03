@@ -107,6 +107,7 @@ public class GlumboUploadsCom extends PluginForHost {
             logger.warning("The filename equals null, throwing \"plugin defect\" now...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        filename = filename.replaceAll("-GlumboUploads", "");
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim().replace("\\", ""));
         if (filesize != null && !filesize.equals("")) {

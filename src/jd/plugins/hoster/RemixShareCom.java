@@ -143,9 +143,12 @@ public class RemixShareCom extends PluginForHost {
             filesize = Encoding.htmlDecode(filesize);
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", ".")));
         }
-        String md5Hash = br.getRegex("/>MD5:(.*?)</span>").getMatch(0);
-        if (md5Hash != null) {
+        String md5Hash = br.getRegex("/>MD5:(.*?)<").getMatch(0);
+        if (md5Hash != null && md5Hash.trim().length() == 32) {
             downloadLink.setMD5Hash(md5Hash.trim());
+        } else {
+            /* fix broken md5 sums */
+            downloadLink.setMD5Hash(null);
         }
         return AvailableStatus.TRUE;
     }

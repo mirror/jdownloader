@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDog.DISKSPACECHECK;
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
@@ -762,14 +763,14 @@ public class OldRAFDownload extends DownloadInterface {
                     String hash = null;
                     String type = null;
                     Boolean success = null;
-                    if ((hash = downloadLink.getMD5Hash()) != null) {
+                    if ((hash = downloadLink.getMD5Hash()) != null && hash.length() == 32) {
                         /* MD5 Check */
                         type = "MD5";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
                         String hashFile = Hash.getMD5(part);
                         success = hash.equalsIgnoreCase(hashFile);
 
-                    } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash())) {
+                    } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.length() == 40) {
                         /* SHA1 Check */
                         type = "SHA1";
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("SHA1"));
@@ -1026,8 +1027,9 @@ public class OldRAFDownload extends DownloadInterface {
                 if (chunk.getID() >= 0) {
                     downloadLink.getChunksProgress()[chunk.getID()] = chunk.getCurrentBytesPosition() - 1;
                 }
-                return true;
             }
+            DownloadController.getInstance().requestSaving(true);
+            return true;
         } catch (Exception e) {
             LogSource.exception(logger, e);
             error(LinkStatus.ERROR_LOCAL_IO, Exceptions.getStackTrace(e));

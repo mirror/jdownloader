@@ -37,12 +37,11 @@ public class GlumboUploadsComFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        parameter = parameter.replace("glumbouploads.com/", "uploads.glumbo.com/");
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) return decryptedLinks;
-        String[] links = br.getRegex("<div class=\"link\"><a href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})\"").getColumn(0);
+        String[] links = br.getRegex("<div class=\"link\"><a href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12}.*?)\"").getColumn(0);
         if (links == null) return null;
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));

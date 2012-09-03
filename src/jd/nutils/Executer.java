@@ -101,17 +101,14 @@ public class Executer extends Thread implements Runnable {
         public void requestInterrupt() {
             try {
                 /*
-                 * if there is data available to read and we never read any data
-                 * from stream yet, let the streamobserver read it, because it
-                 * can be important data (eg. it breaks unrar pw finding for
-                 * fast computers if we dont do this)
+                 * if there is data available to read and we never read any data from stream yet, let the streamobserver read it, because it can be important
+                 * data (eg. it breaks unrar pw finding for fast computers if we dont do this)
                  */
                 /* must be synchronized */
                 synchronized (this.LOCK) {
                     /*
-                     * we never read any data but there is some available, so
-                     * abort interrupt this time(its the only possible time to
-                     * abort an interrupt request) and read it
+                     * we never read any data but there is some available, so abort interrupt this time(its the only possible time to abort an interrupt
+                     * request) and read it
                      */
                     if (!this.isClosed && this.idle == true && this.reader.available() > 0) { return; }
                 }
@@ -136,8 +133,7 @@ public class Executer extends Thread implements Runnable {
                     Thread.sleep(150);
                 }
                 /*
-                 * this must be synchronized for correct working
-                 * requestInterrupt()
+                 * this must be synchronized for correct working requestInterrupt()
                  */
                 synchronized (this.LOCK) {
                     this.idle = false;
@@ -182,8 +178,7 @@ public class Executer extends Thread implements Runnable {
     public static final String CODEPAGE = Executer.isWindows() ? "ISO-8859-1" : "UTF-8";
 
     /*
-     * We use our own method, to avoid usage of apwork utils. we need to keep
-     * restarter.jar free from wau
+     * We use our own method, to avoid usage of apwork utils. we need to keep restarter.jar free from wau
      */
     private static boolean isWindows() {
         final String os = System.getProperty("os.name").toLowerCase();
@@ -193,37 +188,37 @@ public class Executer extends Thread implements Runnable {
         return false;
     }
 
-    private boolean                          debug                = true;
-    private Logger                           logger;
+    private boolean                               debug                = true;
+    private Logger                                logger;
 
-    private String                           codepage             = Executer.CODEPAGE;
+    private String                                codepage             = Executer.CODEPAGE;
 
-    public static int                        LISTENER_ERRORSTREAM = 1;
+    public static int                             LISTENER_ERRORSTREAM = 1;
 
-    public static int                        LISTENER_STDSTREAM   = 1 << 1;
+    public static int                             LISTENER_STDSTREAM   = 1 << 1;
 
-    private String                           command;
+    private String                                command;
 
     private java.util.List<String>                parameter;
 
-    private String                           runIn;
+    private String                                runIn;
 
-    private final DynByteBuffer              inputStreamBuffer;
+    private final DynByteBuffer                   inputStreamBuffer;
 
-    private final DynByteBuffer              errorStreamBuffer;
+    private final DynByteBuffer                   errorStreamBuffer;
     private final java.util.List<ProcessListener> listener             = new ArrayList<ProcessListener>();
 
     private final java.util.List<ProcessListener> elistener            = new ArrayList<ProcessListener>();
 
-    private int                              waitTimeout          = 60;
-    private int                              exitValue            = -1;
-    private boolean                          gotInterrupted       = false;
-    private Process                          process;
-    private StreamObserver                   sbeObserver;
-    private StreamObserver                   sboObserver;
+    private int                                   waitTimeout          = 60;
+    private int                                   exitValue            = -1;
+    private boolean                               gotInterrupted       = false;
+    private Process                               process;
+    private StreamObserver                        sbeObserver;
+    private StreamObserver                        sboObserver;
 
-    private OutputStream                     outputStream         = null;
-    private Exception                        exception            = null;
+    private OutputStream                          outputStream         = null;
+    private Exception                             exception            = null;
 
     public Executer(final String command) {
         super("Executer: " + command);
@@ -341,15 +336,18 @@ public class Executer extends Thread implements Runnable {
 
     @Override
     public void interrupt() {
-        this.gotInterrupted = true;
-        super.interrupt();
-        if (this.sbeObserver != null) {
-            this.sbeObserver.requestInterrupt();
+        try {
+            this.gotInterrupted = true;
+            super.interrupt();
+            if (this.sbeObserver != null) {
+                this.sbeObserver.requestInterrupt();
+            }
+            if (this.sboObserver != null) {
+                this.sboObserver.requestInterrupt();
+            }
+        } finally {
+            this.process.destroy();
         }
-        if (this.sboObserver != null) {
-            this.sboObserver.requestInterrupt();
-        }
-        this.process.destroy();
     }
 
     public boolean isDebug() {

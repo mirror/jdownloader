@@ -73,6 +73,9 @@ public class LocalHostrCom extends PluginForHost {
         String dllink = br.getRegex("\"(/file/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = "http://localhostr.com" + dllink;
+        if (br.containsHTML("I know the risk")) {
+            dllink = dllink + "?agree=on";
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

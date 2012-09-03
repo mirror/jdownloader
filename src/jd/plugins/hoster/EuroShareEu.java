@@ -67,8 +67,7 @@ public class EuroShareEu extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -174,6 +173,7 @@ public class EuroShareEu extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Požadovaný súbor sa na serveri nenachádza alebo bol odstránený")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
         if (br.containsHTML("(>Všetky sloty pre Free užívateľov sú obsadené|Skúste prosím neskôr\\.<br)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.euroshareeu.nofreeslots", "No free slots available"), 5 * 60 * 1000l);
         // br.setFollowRedirects(false);
@@ -195,6 +195,7 @@ public class EuroShareEu extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML("Požadovaný súbor sa na serveri nenachádza alebo bol odstránený")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         login(account);
         if (account.getBooleanProperty("FREE")) {
             doFree(link);

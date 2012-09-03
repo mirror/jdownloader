@@ -132,6 +132,10 @@ public class RapidGatorNet extends PluginForHost {
         if (filename == null) filename = br.getRegex("<title>Download file ([^<>\"]+)</title>").getMatch(0);
         String filesize = br.getRegex("File size:[\t\n\r ]+<strong>([^<>\"]+)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename.startsWith(".")) {
+            /* Temp workaround for mac user */
+            filename = filename.substring(1);
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         br.setFollowRedirects(false);

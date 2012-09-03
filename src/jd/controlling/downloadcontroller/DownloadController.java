@@ -144,6 +144,14 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
 
     }
 
+    public void requestSaving(boolean async) {
+        if (async) {
+            asyncSaving.run();
+        } else {
+            saveDownloadLinks();
+        }
+    }
+
     @Override
     protected void _controllerPackageNodeAdded(FilePackage pkg, QueuePriority priority) {
         broadcaster.fireEvent(new DownloadControllerEvent(this, DownloadControllerEvent.TYPE.REFRESH_STRUCTURE));

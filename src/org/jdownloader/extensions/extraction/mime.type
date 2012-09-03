@@ -43,10 +43,10 @@ MP3:::fffb904.*:::Mp3 Audio:::.+\.mp3
 MP3:::fffba0040000.*:::Mp3 Audio:::.+\.mp3
 EXE:::4d5a[a-f0-9]{2}000[a-f0-9]{1}00.*:::Windows executable:::.+\.exe
 GIF:::474946383961.*:::Gif Image:::.+\.gif
-ISO:::[a-f0-9]{65538}4344303031.*:::ISO:::.+\.iso
-ISO:::[a-f0-9]{73730}4344303031.*:::ISO:::.+\.iso
-ISO:::[a-f0-9]{69634}4344303031.*:::ISO:::.+\.iso
-ISO:::[a-f0-9]{75266}4344303031.*:::ISO:::.+\.iso
+ISO:::[a-f0-9]{65538}4344303031.*:::ISO:::.+\.(iso|img)
+ISO:::[a-f0-9]{73730}4344303031.*:::ISO:::.+\.(iso|img)
+ISO:::[a-f0-9]{69634}4344303031.*:::ISO:::.+\.(iso|img)
+ISO:::[a-f0-9]{75266}4344303031.*:::ISO:::.+\.(iso|img)
 FLV:::464c56.*:::Flv Video:::.+\.flv
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso
 RMF:::2E524D46.*:::RealMediaFile:::.+\.rmvb
