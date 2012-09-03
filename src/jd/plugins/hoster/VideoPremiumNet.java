@@ -37,6 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -60,8 +61,7 @@ public class VideoPremiumNet extends PluginForHost {
 
     // DEV NOTES
     /**
-     * Script notes: Streaming versions of this script sometimes redirect you to
-     * their directlinks when accessing this link + the link ID:
+     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -295,25 +295,50 @@ public class VideoPremiumNet extends PluginForHost {
                     break;
             }
         }
-        logger.info("Final downloadlink = " + dllink + " starting the download...");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            correctBR();
-            checkServerErrors();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink.startsWith("rtmp")) {
+            download(downloadLink, dllink);
+        } else {
+            logger.info("Final downloadlink = " + dllink + " starting the download...");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                correctBR();
+                checkServerErrors();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadLink.setProperty(directlinkproperty, dllink);
+            if (passCode != null) downloadLink.setProperty("pass", passCode);
+            try {
+                // add a download slot
+                controlFree(+1);
+                // start the dl
+                dl.startDownload();
+            } finally {
+                // remove download slot
+                controlFree(-1);
+            }
         }
-        downloadLink.setProperty(directlinkproperty, dllink);
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
-        try {
-            // add a download slot
-            controlFree(+1);
-            // start the dl
-            dl.startDownload();
-        } finally {
-            // remove download slot
-            controlFree(-1);
+    }
+
+    private void setupRTMPConnection(String dllink, DownloadInterface dl) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+        /* videopremium.net uses redirections in streams. rtmpdump can't handle this. */
+        String url = dllink.split("@")[0].replaceAll("//[\\w\\.]+\\.videopremium.net/", "//x" + ((int) (11 * Math.random()) + 1) + ".videopremium.net/");
+
+        rtmp.setPlayPath(dllink.split("@")[1]);
+        rtmp.setUrl(url);
+        rtmp.setSwfVfy(dllink.split("@")[2]);
+        rtmp.setResume(true);
+        rtmp.setTimeOut(-10);
+    }
+
+    private void download(DownloadLink downloadLink, String dllink) throws Exception {
+        if (dllink.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, dllink);
+            setupRTMPConnection(dllink, dl);
+            ((RTMPDownload) dl).startDownload();
         }
     }
 
@@ -323,19 +348,14 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -486,6 +506,12 @@ public class VideoPremiumNet extends PluginForHost {
                 finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
                 if (finallink == null) {
                     finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                    if (finallink == null) {
+                        String[] rtmpStuff = new Regex(decoded, "flowplayer\\(\"vplayer\",\"(http://.*?)\",\\{key:\'[#\\$0-9-a-f]+\',clip:\\{url:\'(.*?)\',provider:\'rtmp\',.*?,netConnectionUrl:\'([^\']+)").getRow(0);
+                        if (rtmpStuff != null && rtmpStuff.length == 3) {
+                            finallink = rtmpStuff[2] + "@" + rtmpStuff[1] + "@" + rtmpStuff[0];
+                        }
+                    }
                 }
             }
         }
