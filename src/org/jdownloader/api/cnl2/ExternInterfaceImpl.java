@@ -299,70 +299,71 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
             String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
+            if (urls != null && urls.length > 0) {
+                final String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
+                final String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
+                final String cookies = HttpRequest.getParameterbyKey(request, "cookies");
+                final String post = HttpRequest.getParameterbyKey(request, "postData");
+                final String referer = HttpRequest.getParameterbyKey(request, "referer");
+                /*
+                 * create LinkCollectingJob to forward general Information like directory, autostart...
+                 */
+                LinkCollectingJob job = new LinkCollectingJob(null);
+                job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
+                String dir = HttpRequest.getParameterbyKey(request, "dir");
+                if (!StringUtils.isEmpty(dir)) {
+                    job.setOutputFolder(new File(dir));
+                }
+                job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
 
-            final String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
-            final String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
-            final String cookies = HttpRequest.getParameterbyKey(request, "cookies");
-            final String post = HttpRequest.getParameterbyKey(request, "postData");
-            final String referer = HttpRequest.getParameterbyKey(request, "referer");
-            /*
-             * create LinkCollectingJob to forward general Information like directory, autostart...
-             */
-            LinkCollectingJob job = new LinkCollectingJob(null);
-            job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
-            String dir = HttpRequest.getParameterbyKey(request, "dir");
-            if (!StringUtils.isEmpty(dir)) {
-                job.setOutputFolder(new File(dir));
-            }
-            job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
+                LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
+                final PluginForHost defaultplg = lazyp.getPrototype();
 
-            LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
-            final PluginForHost defaultplg = lazyp.getPrototype();
+                java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
+                for (int index = 0; index <= urls.length - 1; index++) {
+                    CrawledLink link = new CrawledLink(urls[index]);
+                    final int index2 = index;
+                    link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
 
-            java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
-            for (int index = 0; index <= urls.length - 1; index++) {
-                CrawledLink link = new CrawledLink(urls[index]);
-                final int index2 = index;
-                link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
-
-                    public void modifyCrawledLink(CrawledLink link) {
-                        DownloadLink dl = link.getDownloadLink();
-                        if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
-                        if (index2 < desc.length) dl.setComment(desc[index2]);
-                    }
-                });
-                link.setUnknownHandler(new UnknownCrawledLinkHandler() {
-
-                    /*
-                     * this handler transforms unknown links into directhttp links with all information given by flashgot
-                     */
-                    public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
-                        String url = link.getURL();
-                        String name = null;
-                        try {
-                            name = Plugin.extractFileNameFromURL(url);
-                        } catch (final Throwable e) {
-                            Log.exception(e);
+                        public void modifyCrawledLink(CrawledLink link) {
+                            DownloadLink dl = link.getDownloadLink();
+                            if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
+                            if (index2 < desc.length) dl.setComment(desc[index2]);
                         }
-                        DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
-                        if (index2 < desc.length) direct.setComment(desc[index2]);
-                        direct.setProperty("cookies", cookies);
-                        direct.setProperty("post", post);
-                        direct.setProperty("referer", referer);
-                        if (index2 < fnames.length) direct.setProperty("fixName", fnames[index2]);
-                        try {
-                            defaultplg.correctDownloadLink(direct);
-                        } catch (final Throwable e) {
-                            Log.exception(e);
+                    });
+                    link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+
+                        /*
+                         * this handler transforms unknown links into directhttp links with all information given by flashgot
+                         */
+                        public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                            String url = link.getURL();
+                            String name = null;
+                            try {
+                                name = Plugin.extractFileNameFromURL(url);
+                            } catch (final Throwable e) {
+                                Log.exception(e);
+                            }
+                            DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
+                            if (index2 < desc.length) direct.setComment(desc[index2]);
+                            direct.setProperty("cookies", cookies);
+                            direct.setProperty("post", post);
+                            direct.setProperty("referer", referer);
+                            if (index2 < fnames.length) direct.setProperty("fixName", fnames[index2]);
+                            try {
+                                defaultplg.correctDownloadLink(direct);
+                            } catch (final Throwable e) {
+                                Log.exception(e);
+                            }
+                            link.setDownloadLink(direct);
+                            link.sethPlugin(defaultplg);
                         }
-                        link.setDownloadLink(direct);
-                        link.sethPlugin(defaultplg);
-                    }
-                });
-                link.setSourceJob(job);
-                links.add(link);
+                    });
+                    link.setSourceJob(job);
+                    links.add(link);
+                }
+                LinkCollector.getInstance().addCrawlerJob(links);
             }
-            LinkCollector.getInstance().addCrawlerJob(links);
             writeString(response, request, sb.toString(), true);
         } catch (final Throwable e) {
             e.printStackTrace();
