@@ -330,7 +330,7 @@ public class VideoPremiumNet extends PluginForHost {
         rtmp.setPlayPath(dllink.split("@")[1]);
         rtmp.setUrl(url);
         rtmp.setSwfVfy(dllink.split("@")[2]);
-        rtmp.setResume(true);
+        rtmp.setResume(false);
         rtmp.setTimeOut(-10);
     }
 

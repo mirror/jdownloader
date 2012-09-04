@@ -289,8 +289,12 @@ public class HitFileNet extends PluginForHost {
 
         if (isUpdateNeeded || rtUpdate == null) {
             final Browser rt = new Browser();
-            rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
-            getPluginConfig().setProperty("rtupdate", rtUpdate);
+            try {
+                rtUpdate = rt.getPage("http://update0.jdownloader.org/pluginstuff/tbupdate.js");
+                rtUpdate = JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(rtUpdate.split("[\r\n]+")[1]));
+                getPluginConfig().setProperty("rtupdate", rtUpdate);
+            } catch (Throwable e) {
+            }
             getPluginConfig().setProperty("isUpdateNeeded", false);
             getPluginConfig().setProperty("attemps", attemps++);
             getPluginConfig().save();

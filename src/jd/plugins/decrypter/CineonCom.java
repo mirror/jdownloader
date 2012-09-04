@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -40,6 +41,7 @@ public class CineonCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String fpName = br.getRegex("title=\'([^\']+)").getMatch(0);
+        if (fpName != null) fpName = Encoding.htmlDecode(fpName);
         String allLinks = br.getRegex("var subcats = \\{([^;]+)").getMatch(0);
         if (allLinks != null) {
             allLinks = allLinks.replaceAll("\\\\|\"", "");
