@@ -63,8 +63,8 @@ public class OneThousandEbCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
-        final String js = br.getRegex(fortyTwo(tb(0))).getMatch(0);
-        final String dllink = requestDownloadLink(js);
+        // final String js = br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
+        final String dllink = requestDownloadLink("http://1000eb.com/base.js");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -98,6 +98,7 @@ public class OneThousandEbCom extends PluginForHost {
         // js Funktion vorbereiten. Leider recht statisch.
         final StringBuilder sb = new StringBuilder();
         sb.append(br.getRegex(fortyTwo(tb(3))).getMatch(0));
+        sb.append(br.getRegex("(fileInfoFileName.*?;)").getMatch(0));
         sb.append(br.getRegex(fortyTwo(tb(4))).getMatch(0));
         jsBr.getPage(js);
         String dlUrl = jsBr.getRegex(fortyTwo(tb(5))).getMatch(0);
