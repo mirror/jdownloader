@@ -632,8 +632,19 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
             final int port = getSettings().getIrcPort();
             final String pass = null;
             final String nick = this.getNickname();
-            final String user = "jdChatuser";
-            final String name = "jdChatuser";
+            String user = "jdchat1";
+            String name = "jdchat1";
+
+            String uid;
+            try {
+                uid = IO.readFileToString(Application.getResource("cfg/uid"));
+                if (!StringUtils.isEmpty(uid)) {
+                    user = uid.substring(uid.length() - 9);
+                    name = user;
+                }
+            } catch (Exception e2) {
+                e2.printStackTrace();
+            }
             this.addToText(null, ChatExtension.STYLE_SYSTEM_MESSAGE, "Connecting to JDChat...");
             this.conn = new IRCConnection(host, new int[] { port }, pass, nick, user, name);
             this.conn.setTimeout(1000 * 60 * 60);
