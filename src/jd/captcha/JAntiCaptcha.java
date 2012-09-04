@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.ListIterator;
 import java.util.Vector;
 
@@ -247,17 +248,19 @@ public class JAntiCaptcha {
         return extern;
     }
 
-    private String          command;
+    private String                         command;
 
-    private String          dstFile;
+    private String                         dstFile;
 
-    private String          srcFile;
+    private String                         srcFile;
 
-    private Image           sourceImage;
+    private Image                          sourceImage;
 
-    private final LogSource logger;
+    private final LogSource                logger;
 
-    private final JACMethod method;
+    private final JACMethod                method;
+
+    public static final HashSet<JACMethod> SYNCMAP = new HashSet<JACMethod>();
 
     public JAntiCaptcha(String methodName) {
         logger = LogController.CL();
@@ -452,7 +455,23 @@ public class JAntiCaptcha {
     }
 
     private String callExtern() {
-        synchronized (method) {
+        /* wait till locked */
+        logger.info("acquire lock: " + method.getServiceName());
+        while (true) {
+            synchronized (SYNCMAP) {
+                if (SYNCMAP.add(method) == true) {
+                    logger.info("locked: " + method.getServiceName());
+                    break;
+                }
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.log(e);
+                return null;
+            }
+        }
+        try {
             FileOutputStream fos = null;
             try {
                 File file = JDUtilities.getResourceFile(this.srcFile);
@@ -486,6 +505,12 @@ public class JAntiCaptcha {
             logger.info("returned with: " + res);
             if (res == null) return null;
             return res.trim();
+        } finally {
+            /* remove lock */
+            synchronized (SYNCMAP) {
+                logger.info("release lock: " + method.getServiceName());
+                SYNCMAP.remove(method);
+            }
         }
     }
 
