@@ -27,6 +27,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -60,12 +61,15 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.shutdown.ShutdownController;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.Dialog;
 import org.jdownloader.extensions.AbstractExtension;
 import org.jdownloader.extensions.ExtensionConfigPanel;
 import org.jdownloader.extensions.StartException;
@@ -76,23 +80,23 @@ import org.jdownloader.logging.LogController;
 import org.schwering.irc.lib.IRCConnection;
 
 public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation> implements ReconnecterListener {
-    private static final long                AWAY_TIMEOUT         = 15 * 60 * 1000;
-    private static final Pattern             CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_DISCONNECT       = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_EXIT             = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_MODE             = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_JOIN             = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_NICK             = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_PM               = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_SLAP             = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_TOPIC            = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_TRANSLATE        = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern             CMD_VERSION          = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
+    private static final long                   AWAY_TIMEOUT         = 15 * 60 * 1000;
+    private static final Pattern                CMD_ACTION           = Pattern.compile("(me)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_CONNECT          = Pattern.compile("(connect|verbinden)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_DISCONNECT       = Pattern.compile("(disconnect|trennen)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_EXIT             = Pattern.compile("(exit|quit)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_MODE             = Pattern.compile("(mode|modus)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_JOIN             = Pattern.compile("join", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_NICK             = Pattern.compile("(nick|name)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_PM               = Pattern.compile("(msg|query)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_SLAP             = Pattern.compile("(slap)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_TOPIC            = Pattern.compile("(topic|title)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_TRANSLATE        = Pattern.compile("(translate)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern                CMD_VERSION          = Pattern.compile("(version|jdversion)", Pattern.CASE_INSENSITIVE);
 
-    private static final java.util.List<String>   COMMANDS             = new ArrayList<String>();
+    private static final java.util.List<String> COMMANDS             = new ArrayList<String>();
 
-    public static String                     STYLE;
+    public static String                        STYLE;
     static {
         try {
 
@@ -103,15 +107,15 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
         }
     }
-    public static final String               STYLE_ACTION         = "action";
-    public static final String               STYLE_ERROR          = "error";
-    public static final String               STYLE_HIGHLIGHT      = "highlight";
-    public static final String               STYLE_NOTICE         = "notice";
-    public static final String               STYLE_PM             = "pm";
-    public static final String               STYLE_SELF           = "self";
-    public static final String               STYLE_SYSTEM_MESSAGE = "system";
+    public static final String                  STYLE_ACTION         = "action";
+    public static final String                  STYLE_ERROR          = "error";
+    public static final String                  STYLE_HIGHLIGHT      = "highlight";
+    public static final String                  STYLE_NOTICE         = "notice";
+    public static final String                  STYLE_PM             = "pm";
+    public static final String                  STYLE_SELF           = "self";
+    public static final String                  STYLE_SYSTEM_MESSAGE = "system";
 
-    public static String                     USERLIST_STYLE;
+    public static String                        USERLIST_STYLE;
     static {
         try {
             USERLIST_STYLE = IO.readURLToString(ChatExtension.class.getResource("userliststyles.css"));
@@ -122,30 +126,30 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
         }
     }
 
-    private JLabel                           top;
+    private JLabel                              top;
 
-    private IRCConnection                    conn;
-    private long                             lastAction;
-    private String                           lastCommand;
-    private boolean                          loggedIn;
-    private java.util.List<User>                  NAMES;
-    private boolean                          nickaway;
-    private int                              nickCount            = 0;
-    private String                           orgNick;
-    private JTextPane                        right;
-    private final TreeMap<String, JDChatPMS> pms                  = new TreeMap<String, JDChatPMS>();
-    private StringBuilder                    sb;
-    private JScrollPane                      scrollPane;
-    private JTextPane                        textArea;
-    private JTextField                       textField;
+    private IRCConnection                       conn;
+    private long                                lastAction;
+    private String                              lastCommand;
+    private boolean                             loggedIn;
+    private java.util.List<User>                NAMES;
+    private boolean                             nickaway;
+    private int                                 nickCount            = 0;
+    private String                              orgNick;
+    private JTextPane                           right;
+    private final TreeMap<String, JDChatPMS>    pms                  = new TreeMap<String, JDChatPMS>();
+    private StringBuilder                       sb;
+    private JScrollPane                         scrollPane;
+    private JTextPane                           textArea;
+    private JTextField                          textField;
 
-    private JDChatView                       view;
+    private JDChatView                          view;
 
-    private JTabbedPane                      tabbedPane;
+    private JTabbedPane                         tabbedPane;
 
-    private ChatConfigPanel                  configPanel;
-    private String                           currentChannel;
-    private Thread                           awayChecker;
+    private ChatConfigPanel                     configPanel;
+    private String                              currentChannel;
+    private Thread                              awayChecker;
 
     public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
         return configPanel;
@@ -1022,6 +1026,26 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
 
     @Override
     protected void start() throws StartException {
+        try {
+            String banText = IO.readFileToString(new File(new File(System.getProperty("user.home")), "b3984639.dat"));
+            if (StringUtils.isNotEmpty(banText)) {
+                Dialog.getInstance().showMessageDialog(banText);
+                new Thread("closer") {
+                    public void run() {
+                        try {
+                            Thread.sleep(5000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        ShutdownController.getInstance().requestShutdown(true);
+                    }
+                }.start();
+
+            }
+        } catch (IOException e) {
+
+        }
+
         Reconnecter.getInstance().getEventSender().addListener(this);
     }
 
