@@ -81,7 +81,8 @@ public class DeviantClipCom extends PluginForHost {
             dllink = br.getRegex("\"file\":\"(.*?)\"").getMatch(0);
             if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "\"(http://medias\\.deviantclip\\.com/media/[0-9]+/.*?\\.flv\\?.*?)\"").getMatch(0);
             if (filename == null || filename.matches("Free Porn Tube Videos, Extreme Hardcore Porn Galleries")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = filename.trim();
+            filename = Encoding.htmlDecode(filename.trim());
+            if (filename.contains("\\x")) filename = Encoding.urlDecode(filename.replaceAll("\\\\x", "%"), false);
             downloadLink.setFinalFileName(filename + ".flv");
         }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

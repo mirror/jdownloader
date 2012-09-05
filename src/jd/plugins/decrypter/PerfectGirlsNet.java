@@ -65,12 +65,13 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // drtuber.com embed v3
         externID = br.getRegex("(http://(www\\.)?drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        // drtuber.com handling 2
+        // drtuber.com embed v4
         externID = br.getRegex("\"(http://(www\\.)?drtuber\\.com/embed/\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -167,6 +168,17 @@ public class PerfectGirlsNet extends PluginForDecrypt {
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
+        }
+        externID = br.getRegex("embed src=\"http://www.deviantclip.com/.*?mediaid=(\\d+)").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.deviantclip.com/playlists/" + externID + "/playlist.xml");
+            String mediaUrl = br.getRegex("<mediaUrl>(.*?)</mediaUrl>").getMatch(0);
+            if (mediaUrl != null) {
+                mediaUrl = mediaUrl.trim();
+                mediaUrl = Encoding.htmlDecode(mediaUrl);
+                decryptedLinks.add(createDownloadlink(mediaUrl));
+                return decryptedLinks;
+            }
         }
         // filename needed for all IDs below here
         if (filename == null) {
