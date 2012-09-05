@@ -157,6 +157,7 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             final String getLink = "http://oneclickmoviez.com/wp-content/plugins/link-cloaking-plugin/wplc_redirector.php?post_id=" + id1 + "&link_num=" + id2 + "&cloaked_url=dwnl/" + host + "/" + id1 + "/" + id2;
             br.getPage(getLink);
             finallink = br.getRedirectLocation();
+            if (finallink == null) finallink = br.getRegex("<iframe SRC=\"([^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("1tool.biz/")) {
             final String id = new Regex(parameter, "1tool\\.biz/(\\d+)").getMatch(0);
             br.getPage("http://1tool.biz/2.php?id=" + id);

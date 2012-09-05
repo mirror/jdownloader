@@ -54,7 +54,11 @@ public class FreeVideoCz extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(<title>Vše \\- FreeVideo\\.cz \\– Nejnavštěvovanější erotický portál</title>|>Stránka nebyla nalezena<|Vámi požadovaná stránka bohužel nebyla nalezena|This section is not available for your country)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Vše \\- FreeVideo\\.cz \\– Nejnavštěvovanější erotický portál</title>|>Stránka nebyla nalezena<|Vámi požadovaná stránka bohužel nebyla nalezena)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("This section is not available for your country")) {
+            downloadLink.getLinkStatus().setStatusText("Not available for your country!");
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<div class=\"vid\\-header\" style=\"width: 700px;\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- FreeVideo\\.cz \\– Nejnavštěvovanější erotický portál</title>").getMatch(0);
         DLLINK = br.getRegex("clip: \\{[\t\n\r ]+url: \"(http://.*?)\"").getMatch(0);
@@ -87,6 +91,7 @@ public class FreeVideoCz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("This section is not available for your country")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not available for your country!");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

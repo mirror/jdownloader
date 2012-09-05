@@ -49,50 +49,6 @@ public class MyVideo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("myvideo.at/", "myvideo.de/").replaceFirst("fromDecrypter", "http"));
     }
 
-    private String decrypt(String cipher, String id) {
-        String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
-        byte[] ciphertext = JDHexUtils.getByteArray(cipher);
-        jd.crypt.RC4 rc4 = new jd.crypt.RC4();
-        byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
-        return Encoding.htmlDecode(new String(plain));
-    }
-
-    private void download(DownloadLink downloadLink) throws Exception {
-        if (CLIPURL.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, CLIPURL);
-            setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
-
-        } else if (CLIPURL.startsWith("http")) {
-            br.getHeaders().put("Referer", SWFURL);
-            br.getHeaders().put("x-flash-version", "10,3,183,7");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, CLIPURL + CLIPPATH, true, 1);
-            if (dl.getConnection().getContentType().contains("html")) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.startDownload();
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-    }
-
-    @Override
-    public String getAGBLink() {
-        return "http://www.myvideo.de/AGB";
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        download(downloadLink);
-    }
-
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
@@ -113,8 +69,8 @@ public class MyVideo extends PluginForHost {
             }
         }
 
-        String filename = br.getRegex("name=\'subject_title\' value=\'([^\'<]+)").getMatch(0);
-        if (filename == null) filename = br.getRegex("name=\'title\' content=\'(.*?)(Video)? -? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
+        String filename = br.getRegex("name=\\'subject_title\\' value=\\'([^\\'<]+)").getMatch(0);
+        if (filename == null) filename = br.getRegex("name=\\'title\\' content=\\'(.*?)(Video)? \\-? (Film|Musik|TV Serie|MyVideo)").getMatch(0);
         if (filename == null) {
             filename = br.getURL();
             if (filename != null) filename = filename.substring(filename.lastIndexOf("/") + 1);
@@ -168,6 +124,50 @@ public class MyVideo extends PluginForHost {
         filename = filename.replaceAll("\t", "").trim() + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
         return AvailableStatus.TRUE;
+    }
+
+    private String decrypt(String cipher, String id) {
+        String key = org.appwork.utils.Hash.getMD5(Encoding.Base64Decode(KEY) + org.appwork.utils.Hash.getMD5(id));
+        byte[] ciphertext = JDHexUtils.getByteArray(cipher);
+        jd.crypt.RC4 rc4 = new jd.crypt.RC4();
+        byte[] plain = rc4.decrypt(key.getBytes(), ciphertext);
+        return Encoding.htmlDecode(new String(plain));
+    }
+
+    private void download(DownloadLink downloadLink) throws Exception {
+        if (CLIPURL.startsWith("rtmp")) {
+            dl = new RTMPDownload(this, downloadLink, CLIPURL);
+            setupRTMPConnection(dl);
+            ((RTMPDownload) dl).startDownload();
+
+        } else if (CLIPURL.startsWith("http")) {
+            br.getHeaders().put("Referer", SWFURL);
+            br.getHeaders().put("x-flash-version", "10,3,183,7");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, CLIPURL + CLIPPATH, true, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://www.myvideo.de/AGB";
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        download(downloadLink);
     }
 
     @Override

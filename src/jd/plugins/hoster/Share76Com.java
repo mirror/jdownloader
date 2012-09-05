@@ -61,7 +61,8 @@ public class Share76Com extends PluginForHost {
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static final Object LOCK                = new Object();
 
-    // XfileSharingProBasic Version 2.5.4.6, added special "premiumonly"
+    // XfileSharingProBasic Version 2.5.4.6, added special "premiumonly", added
+    // special filename handling
     // errorhandling
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -103,16 +104,7 @@ public class Share76Com extends PluginForHost {
             link.getLinkStatus().setStatusText("Only downloadable via premium");
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-        if (filename == null) {
-            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-            if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
-                }
-            }
-        }
+        String filename = getFilename();
         String filesize = new Regex(correctedBR, "\\[<font style=\"color:#114\">([^<>\"]*?)</font>\\]</h2>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
@@ -129,13 +121,27 @@ public class Share76Com extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getFilename() {
+        String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+        if (filename == null) {
+            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            if (filename == null) {
+                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(correctedBR, "(?i)(File)?name ?:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(2);
+                }
+            }
+        }
+        return filename;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, false, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         if (br.getURL().contains("?op=login&redirect=")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium");
         String passCode = null;
         String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
@@ -153,7 +159,10 @@ public class Share76Com extends PluginForHost {
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+                final String filename = getFilename();
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(filename) + "&referer=&method_free=Free+Download");
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();
