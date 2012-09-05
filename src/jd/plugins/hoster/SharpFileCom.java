@@ -43,7 +43,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -153,8 +155,7 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         checkErrors(downloadLink, false, passCode);
         if (dllink == null) {
@@ -200,6 +201,14 @@ public class SharpFileCom extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                    PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    String code = getCaptchaCode(cf, downloadLink);
+                    String chid = sm.verify(code);
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
@@ -208,9 +217,9 @@ public class SharpFileCom extends PluginForHost {
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
                 dllink = getDllink();
-                if (dllink == null && (br.containsHTML("/securimage/securimage_show\\.php") || new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
+                if (dllink == null && (br.containsHTML("(/securimage/securimage_show\\.php|//api\\.solvemedia\\.com/papi)") || new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
                     continue;
-                } else if (dllink == null && (!br.containsHTML("/securimage/securimage_show\\.php") && !new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
+                } else if (dllink == null && (!br.containsHTML("(/securimage/securimage_show\\.php|//api\\.solvemedia\\.com/papi)") && !new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches())) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
