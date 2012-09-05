@@ -14,4 +14,6 @@ public interface MediaNode {
     public void setRoot(MediaRoot root);
 
     public void setParent(MediaFolder mediaFolder);
+
+    public String getThumbnailPath();
 }

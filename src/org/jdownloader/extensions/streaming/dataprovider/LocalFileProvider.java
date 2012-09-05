@@ -28,6 +28,10 @@ public class LocalFileProvider implements DataProvider<File> {
         return link.length();
     }
 
+    public String toString() {
+        return getClass().getSimpleName() + "<< File on Harddisk";
+    }
+
     @Override
     public InputStream getInputStream(File link, long startPosition, long stopPosition) throws IOException {
 

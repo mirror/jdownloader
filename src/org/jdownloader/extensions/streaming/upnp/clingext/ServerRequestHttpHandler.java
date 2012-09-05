@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming.upnp.clingext;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import org.appwork.storage.JSonStorage;
 import org.fourthline.cling.transport.Router;
 import org.fourthline.cling.transport.impl.HttpExchangeUpnpStream;
 
@@ -25,10 +24,10 @@ public class ServerRequestHttpHandler implements HttpHandler {
         // And we pass control to the service, which will (hopefully) start a new thread immediately so we can
         // continue the receiving thread ASAP
         logger.fine("Received HTTP exchange: " + httpExchange.getRequestMethod() + " " + httpExchange.getRequestURI());
-        logger.fine("Received HTTP exchange: " + httpExchange.getRequestBody());
+        // logger.fine("Received HTTP exchange: " + httpExchange.getRequestBody());
         router.received(new HttpExchangeUpnpStream(router.getProtocolFactory(), httpExchange));
-        logger.fine(httpExchange.getResponseCode() + "");
-        logger.fine(JSonStorage.toString(httpExchange.getResponseHeaders()));
+        // logger.fine(httpExchange.getResponseCode() + "");
+        // logger.fine(JSonStorage.toString(httpExchange.getResponseHeaders()));
 
     }
 }

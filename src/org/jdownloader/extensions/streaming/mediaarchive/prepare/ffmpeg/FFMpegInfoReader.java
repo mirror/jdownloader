@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
-import jd.plugins.DownloadLink;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Application;
@@ -18,6 +16,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
+import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.logging.LogController;
 
 public class FFMpegInfoReader {
@@ -28,19 +27,20 @@ public class FFMpegInfoReader {
      */
     // if the call takes longer than 10 minutes. interrupt it
     protected static final long FFMPEG_EXECUTE_TIMEOUT = 10 * 60 * 1000l;
-    private DownloadLink        downloadLink;
-    private ArrayList<Stream>   streams;
+    private MediaItem           mediaItem;
 
-    public DownloadLink getDownloadLink() {
-        return downloadLink;
+    public MediaItem getMediaItem() {
+        return mediaItem;
     }
 
-    private LogSource logger;
+    private ArrayList<Stream> streams;
 
-    private FFProbe   probeResult;
-    private Format    format;
-    private File      thumb;
-    private String    result;
+    private LogSource         logger;
+
+    private FFProbe           probeResult;
+    private Format            format;
+    private File              thumb;
+    private String            result;
 
     public Format getFormat() {
         return format;
@@ -50,42 +50,36 @@ public class FFMpegInfoReader {
         return streams;
     }
 
-    public FFMpegInfoReader(DownloadLink dl) {
-        this.downloadLink = dl;
+    public FFMpegInfoReader(MediaItem mediaItem) {
+        this.mediaItem = mediaItem;
         logger = LogController.getInstance().getLogger(FFMpegInfoReader.class.getName());
     }
 
-    public void load(StreamingExtension extension) throws InterruptedException, IOException {
+    public void load(StreamingExtension extension) throws Exception {
 
         String id = new UniqueAlltimeID().toString();
         String streamurl = extension.createStreamUrl(id, "ffmpeg", null, null);
         try {
-            extension.addDownloadLink(id, downloadLink);
+            extension.linkMediaItem(id, mediaItem);
             String path = getFFProbePath();
             if (path != null) {
-                for (int myTry = 0; myTry < 3; myTry++) {
-                    String[] results = execute(path, "-show_format", "-show_streams", "-probesize", "10000000", "-of", "json", "-i", streamurl);
-                    logger.info("Get STream Info: " + downloadLink.getDownloadURL());
+                String report = null;
 
-                    result = results[0];
-                    String report = results[1];
-                    logger.info(report);
-                    logger.info(result);
+                String[] results = execute(path, "-show_format", "-show_streams", "-probesize", "10000000", "-of", "json", "-i", streamurl);
+                logger.info("Get STream Info: " + mediaItem);
 
-                    if (result.trim().length() == 0 || report.trim().length() == 0 || report.contains("Input/output error")) {
-                        // hm.. bad luck.. new try
-                        continue;
+                result = results[0];
+                report = results[1];
+                logger.info(report);
+                logger.info(result);
 
-                    }
+                isError(results[0], results[1]);
 
-                    probeResult = JSonStorage.restoreFromString(result, new TypeRef<FFProbe>() {
+                probeResult = JSonStorage.restoreFromString(result, new TypeRef<FFProbe>() {
 
-                    });
-                    streams = probeResult.getStreams();
-                    format = probeResult.getFormat();
-                    break;
-
-                }
+                });
+                streams = probeResult.getStreams();
+                format = probeResult.getFormat();
 
             } else {
                 logger.info("ffprobe not found at " + path);
@@ -94,7 +88,7 @@ public class FFMpegInfoReader {
             if ("mp3".equals(getFormat().getFormat_name())) {
                 String ffmpeg = getFFMpegPath();
                 if (ffmpeg != null) {
-                    thumb = Application.getResource("tmp/streaming/cover/" + downloadLink.getUniqueID().toString() + ".jpg");
+                    thumb = Application.getResource("tmp/streaming/cover/" + mediaItem.getUniqueID().toString() + ".jpg");
                     thumb.getParentFile().mkdirs();
                     thumb.delete();
                     String[] ret = execute(ffmpeg, "-i", streamurl, "-c", "copy", thumb.getAbsolutePath());
@@ -113,7 +107,7 @@ public class FFMpegInfoReader {
 
                             String ffmpeg = getFFMpegPath();
                             if (ffmpeg != null) {
-                                thumb = Application.getResource("tmp/streaming/thumbs/" + downloadLink.getUniqueID().toString() + ".jpg");
+                                thumb = Application.getResource("tmp/streaming/thumbs/" + mediaItem.getUniqueID().toString() + ".jpg");
                                 thumb.getParentFile().mkdirs();
                                 thumb.delete();
                                 long duration = getFormat().parseDuration() / 1000;
@@ -122,6 +116,9 @@ public class FFMpegInfoReader {
                                 String[] ret = execute(ffmpeg, "-ss", "" + (offsetInSeconds), "-i", streamurl, "-vcodec", "mjpeg", "-vframes", "1", "-an", "-f", "rawvideo", "-s", info.getWidth() + "x" + info.getHeight(), thumb.getAbsolutePath());
                                 logger.info(ret[1]);
                                 System.out.println(2);
+
+                                isError(null, ret[1]);
+
                                 if (thumb.length() == 0) thumb = null;
                                 break;
                             } else {
@@ -134,11 +131,15 @@ public class FFMpegInfoReader {
                 }
             }
 
-        } catch (Throwable e) {
-            e.printStackTrace();
         } finally {
-            extension.removeDownloadLink(id);
+            extension.unlinkMediaItem(id);
         }
+    }
+
+    private void isError(String result, String report) throws Exception {
+        if (result != null && result.trim().length() == 0) throw new IOException("No Result");
+        if (report.contains("Input/output error")) throw new IOException(report);
+        if (report.contains("Invalid data found when processing input")) throw new IOException(report);
     }
 
     public String getResult() {

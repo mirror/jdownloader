@@ -86,7 +86,7 @@ public class RarStreamer implements Runnable, StreamingInterface {
 
             openArchiveInDialog();
 
-            extension.getVlcstreamingAPI().addHandler(ID, this);
+            // extension.getVlcstreamingAPI().addHandler(ID, this);
             rarStreamProvider.setReadyForExtract(true);
 
             extract();

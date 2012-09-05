@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Application;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.HTTPHeader;
@@ -39,7 +41,10 @@ import org.jdownloader.extensions.streaming.dlna.DLNATransferMode;
 import org.jdownloader.extensions.streaming.dlna.DLNATransportConstants;
 import org.jdownloader.extensions.streaming.dlna.Extensions;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
+import org.jdownloader.extensions.streaming.dlna.profiles.audio.MP3Audio;
 import org.jdownloader.extensions.streaming.dlna.profiles.image.JPEGImage;
+import org.jdownloader.extensions.streaming.dlna.profiles.image.PNGImage;
+import org.jdownloader.extensions.streaming.dlna.profiles.video.Mpeg2;
 import org.jdownloader.extensions.streaming.mediaarchive.AudioMediaItem;
 import org.jdownloader.extensions.streaming.mediaarchive.ExtDIDLParser;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
@@ -77,7 +82,7 @@ public abstract class AbstractDeviceHandler {
         }
     }
 
-    protected String createStreamUrl(MediaItem c, String format, String subpath) {
+    protected String createStreamUrl(MediaNode c, String format, String subpath) {
         return extension.createStreamUrl(c.getUniqueID(), getID(), format, subpath);
     }
 
@@ -175,7 +180,25 @@ public abstract class AbstractDeviceHandler {
 
             didlStrng = new ExtDIDLParser().generate(didl);
             // didlStrng =
-            // "<DIDL-Lite xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\" xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\">    <item id=\"{472F254D-1B25-49F5-B904-21B208A75C88}.0.8853685C\"  restricted=\"1\" parentID=\"8853685C\">        <dc:title>ahggbagh</dc:title>        <res size=\"1308243\" resolution=\"928x714\" protocolInfo=\"http-get:*:image/png:DLNA.ORG_PN=PNG_LRG;DLNA.ORG_OP=01;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/0_ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.png</res>        <res resolution=\"160x123\" protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.jpg?thumbnail=true,formatID=13,width=160,height=123</res>        <res resolution=\"623x480\" protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.jpg?formatID=16,width=623,height=480</res>        <res resolution=\"928x714\" protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.jpg?formatID=17,width=928,height=714</res>        <res resolution=\"136x90\" protocolInfo=\"http-get:*:image/x-ycbcr-yuv420:DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw?formatID=82,width=136,height=90,thumbnail=false,aspectRatio=9:8,rFill=20,gFill=20,bFill=20</res>        <res resolution=\"684x456\" protocolInfo=\"http-get:*:image/x-ycbcr-yuv420:DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw?formatID=83,width=684,height=456,thumbnail=false,aspectRatio=9:8,rFill=20,gFill=20,bFill=20</res>        <res resolution=\"928x714\" protocolInfo=\"http-get:*:image/x-ycbcr-yuv420:DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" colorDepth=\"24\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw?formatID=84,width=928,height=714,thumbnail=false,aspectRatio=1:1,rFill=20,gFill=20,bFill=20</res>        <upnp:class>object.item.imageItem.photo</upnp:class>        <upnp:album>[Keine Schl..sselw..rter]</upnp:album>        <dc:date>2012-03-28</dc:date>        <upnp:scheduledStartTime>2012-03-28T13:23:00</upnp:scheduledStartTime>        <upnp:albumArtURI xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\" dlna:profileID=\"JPEG_SM\">http://192.168.2.122:10243/WMPNSSv4/102445194/0_ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.jpg?albumArt=true</upnp:albumArtURI>        <upnp:albumArtURI xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\" dlna:profileID=\"JPEG_TN\">http://192.168.2.122:10243/WMPNSSv4/102445194/ezQ3MkYyNTRELTFCMjUtNDlGNS1COTA0LTIxQjIwOEE3NUM4OH0uMC44ODUzNjg1Qw.jpg?albumArt=true,formatID=13</upnp:albumArtURI>        <desc xmlns:microsoft=\"urn:schemas-microsoft-com:WMPNSS-1-0/\" id=\"folderPath\" nameSpace=\"urn:schemas-microsoft-com:WMPNSS-1-0/\">        <microsoft:folderPath>Pictures</microsoft:folderPath>    </desc></item></DIDL-Lite>";
+            // "<DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\">"
+            // + "<item id=\"1346331839294\" parentID=\"image\" restricted=\"0\">" + "<dc:title>hornoxe.com_userpicdump05_14.jpg</dc:title>"
+            // +
+            // // "<dc:creator>(directhttp) http://www.hornoxe.com/hornoxe-com-userpicdump-5/</dc:creator>" +
+            // "<upnp:class>object.item.imageItem</upnp:class>" +
+            // "<upnp:albumArtURI xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\" dlna:profileID=\"JPEG_TN\">http://192.168.2.122:3128/stream/xbmc/1346331839294/JPEG_TN</upnp:albumArtURI>"
+            // +
+            // "<upnp:albumArtURI xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\" dlna:profileID=\"JPEG_SM\">http://192.168.2.122:3128/stream/xbmc/1346331839294/JPEG_SM</upnp:albumArtURI>"
+            // +
+            // // "<upnp:icon>http://192.168.2.122:3128/stream/xbmc/1346331839294/JPEG_TN</upnp:icon>" +
+            // // "<dc:publisher>directhttp</dc:publisher><dc:date>2012-09-03</dc:date>" +
+            // "<res colorDepth=\"24\" protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" resolution=\"699x512\" size=\"63028\">http://192.168.2.122:3128/stream/xbmc/1346331839294/JPEG_MED</res>"
+            // +
+            // //
+            // "<res protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN;DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=00d00000000000000000000000000000\" resolution=\"160x160\">http://192.168.2.122:3128/stream/xbmc/1346331839294/JPEG_TN</res>"
+            // // +
+            // // "<sec:dcminfo xmlns:sec=\"urn:schemas-upnp-org:metadata-1-0/upnp/\">CREATIONDATE=0,BM=0</sec:dcminfo>" +
+            // "</item>" + "</DIDL-Lite>";
+            System.out.println(didlStrng);
             return new BrowseResult(didlStrng, 1, 1);
         } else {
             String didlStrng = new ExtDIDLParser().generate(new DIDLContent());
@@ -187,9 +210,29 @@ public abstract class AbstractDeviceHandler {
     private Item createAudioItem(AudioMediaItem c) {
         PersonWithRole artist = new PersonWithRole(c.getArtist(), "Performer");
 
-        Res res = new Res(MimeType.valueOf(c.getMimeTypeString()), c.getSize(), formatDuration(c.getStream().getDuration()), (long) c.getStream().getBitrate(), createStreamUrl(c, null, null));
+        MusicTrack ret = new MusicTrack(c.getUniqueID(), c.getParent().getUniqueID(), c.getTitle(), c.getArtist(), c.getAlbum(), artist);
 
-        MusicTrack ret = new MusicTrack(c.getUniqueID(), c.getParent().getUniqueID(), c.getTitle(), c.getArtist(), c.getAlbum(), artist, res);
+        if (c.getDlnaProfiles() != null && c.getDlnaProfiles().length > 0) {
+            main: for (String pString : c.getDlnaProfiles()) {
+                ArrayList<Profile> profiles = Profile.ALL_PROFILES_MAP.get(pString);
+                if (profiles != null) {
+                    for (Profile p : profiles) {
+
+                        Res res = new Res(createProtocolInfo(p, c), c.getSize(), formatDuration(c.getStream().getDuration()), (long) c.getStream().getBitrate(), createStreamUrl(c, p.getProfileID(), null));
+                        ret.addResource(res);
+
+                        break main;
+                    }
+                }
+
+            }
+
+        }
+        if (ret.getResources().size() == 0) {
+            Profile bestProfile = getBestProfileForTranscoding(c, null);
+            Res res = new Res(createProtocolInfo(bestProfile, c), c.getSize(), formatDuration(c.getStream().getDuration()), (long) c.getStream().getBitrate(), createStreamUrl(c, bestProfile.getProfileID(), null));
+            ret.addResource(res);
+        }
         addMetaInfos(c, ret);
 
         return ret;
@@ -241,10 +284,34 @@ public abstract class AbstractDeviceHandler {
         con.setId(c.getUniqueID());
         con.setChildCount(c.getChildren().size());
         con.setClazz(new org.fourthline.cling.support.model.DIDLObject.Class("object.container"));
+
         con.setRestricted(true);
         con.setSearchable(true);
         con.setTitle(c.getName());
 
+        try {
+            if (c.getThumbnailPath() != null && Application.getRessourceURL(c.getThumbnailPath()) != null) {
+                List<Property<DIDLAttribute>> attributes;
+
+                attributes = new ArrayList<Property<DIDLAttribute>>();
+                attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", PNGImage.PNG_LRG_ICO.getProfileID())));
+                con.addProperty(new UPNP.ALBUM_ART_URI(new URI(createStreamUrl(c, PNGImage.PNG_LRG_ICO.getProfileID(), null)), attributes));
+                attributes = new ArrayList<Property<DIDLAttribute>>();
+                attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", "JPEG_SM")));
+                con.addProperty(new UPNP.ALBUM_ART_URI(new URI(createStreamUrl(c, JPEGImage.JPEG_SM.getProfileID(), null)), attributes));
+
+                attributes = new ArrayList<Property<DIDLAttribute>>();
+                attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", PNGImage.PNG_SM_ICO.getProfileID())));
+                con.addProperty(new UPNP.ALBUM_ART_URI(new URI(createStreamUrl(c, PNGImage.PNG_SM_ICO.getProfileID(), null)), attributes));
+                attributes = new ArrayList<Property<DIDLAttribute>>();
+                attributes.add(new PROFILE_ID(new DIDLAttribute(DIDLObject.Property.DLNA.NAMESPACE.URI, "dlna", "JPEG_TN")));
+                con.addProperty(new UPNP.ALBUM_ART_URI(new URI(createStreamUrl(c, JPEGImage.JPEG_TN.getProfileID(), null)), attributes));
+
+                con.addProperty(new UPNP.ICON(new URI(createStreamUrl(c, JPEGImage.JPEG_TN.getProfileID(), null))));
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
         return con;
     }
 
@@ -319,9 +386,25 @@ public abstract class AbstractDeviceHandler {
         return hours + ":" + minutes + ":" + seconds + ".000";
     }
 
-    public abstract Profile getBestProfileForTranscoding(MediaItem mediaItem);
+    public Profile getBestProfileForTranscoding(MediaItem mediaItem, String formatID) {
+        if (formatID != null) {
+            ArrayList<Profile> ret = Profile.ALL_PROFILES_MAP.get(formatID);
+            if (ret != null) return ret.get(0);
+        }
+        if (mediaItem instanceof VideoMediaItem) {
+            //
+            return Mpeg2.MPEG_TS_SD_EU;
+        } else if (mediaItem instanceof ImageMediaItem) {
+            //
+            return JPEGImage.JPEG_MED;
+        } else if (mediaItem instanceof AudioMediaItem) {
+            //
+            return MP3Audio.MP3;
+        }
+        return null;
+    }
 
-    public Profile getBestProfileWithoutTranscoding(MediaItem mediaItem) {
+    public Profile getBestProfileWithoutTranscoding(MediaItem mediaItem, String formatID) {
         try {
             String profileString = mediaItem.getDlnaProfiles()[0];
             return Profile.ALL_PROFILES_MAP.get(profileString).get(0);
@@ -452,6 +535,22 @@ public abstract class AbstractDeviceHandler {
         }
         return ret != null ? ret : defaultValue;
 
+    }
+
+    public String[] getFFMpegTranscodeCommandline(MediaItem mediaItem, Profile profile, String dataUrl) {
+        if (mediaItem instanceof VideoMediaItem) {
+            //
+            return new String[] { "-i", dataUrl, "-y", "-sameq", "-s", "720x576", "-f", "mpegts", dataUrl };
+
+        } else if (mediaItem instanceof ImageMediaItem) {
+            //
+            throw new WTFException("Transcode Images with ffmpeg? no way");
+        } else if (mediaItem instanceof AudioMediaItem) {
+            //
+            return new String[] { "-i", dataUrl, "-vn", "-ar", "44100", "-ac", "2", "-ab", "192000", "-f", "mp3", dataUrl };
+
+        }
+        throw new WTFException("Transcode Unknown items with ffmpeg? no way");
     }
 
 }

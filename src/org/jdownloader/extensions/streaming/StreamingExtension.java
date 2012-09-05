@@ -19,7 +19,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import jd.Launcher;
-import jd.controlling.downloadcontroller.DownloadController;
 import jd.nutils.Executer;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -472,34 +471,35 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
 
     }
 
-    private HashMap<String, DownloadLink> linkIdMap = new HashMap<String, DownloadLink>();
+    private HashMap<String, MediaItem> linkIdMap = new HashMap<String, MediaItem>();
 
-    public void addDownloadLink(String id, DownloadLink link) {
-        linkIdMap.put(id, link);
+    public void linkMediaItem(String id, MediaItem mediaItem) {
+        linkIdMap.put(id, mediaItem);
     }
 
-    public void removeDownloadLink(String id) {
+    public void unlinkMediaItem(String id) {
         linkIdMap.remove(id);
     }
 
     public DownloadLink getLinkById(String id) {
 
-        DownloadLink dlink = linkIdMap.get(id);
-        if (dlink != null) return dlink;
+        MediaItem mi = getItemById(id);
+        if (mi != null) { return mi.getDownloadLink(); }
+        return null;
+    }
+
+    public MediaItem getItemById(String id) {
+
+        MediaItem mi = linkIdMap.get(id);
+        if (mi != null) return mi;
+
         try {
-            dlink = ((MediaItem) mediaArchive.getItemById(id)).getDownloadLink();
-            if (dlink != null) return dlink;
+            mi = ((MediaItem) mediaArchive.getItemById(id));
+            if (mi != null) return mi;
         } catch (Throwable e) {
 
         }
-        for (final DownloadLink dl : DownloadController.getInstance().getAllDownloadLinks()) {
-            if (dl.getUniqueID().toString().equals(id)) {
-                dlink = dl;
-                break;
-            }
-        }
-
-        return dlink;
+        return null;
     }
 
 }

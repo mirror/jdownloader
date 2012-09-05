@@ -56,10 +56,13 @@ public class VLCProfile extends AbstractDeviceHandler {
         return Math.max(maxResults, 5);
     }
 
-    @Override
-    public Profile getBestProfileForTranscoding(MediaItem mediaItem) {
-        // does not matter. vlc plays anything
+    public Profile getBestProfileWithoutTranscoding(MediaItem mediaItem) {
+        try {
+            String profileString = mediaItem.getDlnaProfiles()[0];
+            return Profile.ALL_PROFILES_MAP.get(profileString).get(0);
+        } catch (Exception e) {
 
+        }
         return null;
     }
 

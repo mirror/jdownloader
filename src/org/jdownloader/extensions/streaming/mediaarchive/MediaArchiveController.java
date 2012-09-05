@@ -1,16 +1,21 @@
 package org.jdownloader.extensions.streaming.mediaarchive;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownEvent;
+import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.MediaPreparerQueue;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareEntry;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareJob;
+import org.jdownloader.logging.LogController;
 
 public class MediaArchiveController implements MediaListListener {
 
@@ -21,9 +26,11 @@ public class MediaArchiveController implements MediaListListener {
     private AudioListController     audioController;
     private ImageListController     imageController;
     private MediaRoot               root;
+    private LogSource               logger;
 
     public MediaArchiveController(StreamingExtension streamingExtension) {
         extension = streamingExtension;
+        logger = LogController.getInstance().getLogger(MediaArchiveController.class.getName());
         preparerQueue = new MediaPreparerQueue(this);
         eventSender = new MediaArchiveEventSender();
         videoController = new VideoListController();
@@ -33,6 +40,15 @@ public class MediaArchiveController implements MediaListListener {
         audioController.getEventSender().addListener(this, true);
         imageController.getEventSender().addListener(this, true);
         update();
+        ShutdownController.getInstance().addShutdownEvent(new ShutdownEvent() {
+
+            @Override
+            public void run() {
+                videoController.save();
+                audioController.save();
+                imageController.save();
+            }
+        });
     }
 
     private void update() {
@@ -50,13 +66,28 @@ public class MediaArchiveController implements MediaListListener {
         // audioList = audioController.getList();
         // imageList = imageController.getList();
         put(root, new MediaFolder("video", T._.nodename_video()));
+        root.getFolder("video").setThumbnailPath(getPath("video.png"));
         put(root.getFolder("video"), new MediaFolder("Archive", "Video Archive").addChildren(videoController.getList()));
+
         put(root.getFolder("video"), new MediaFolder("DownloadList", "Download List"));
         put(root.getFolder("video"), new MediaFolder("Linkgrabber", "Linkgrabber"));
         put(root, new MediaFolder("audio", T._.nodename_audio()).addChildren(audioController.getList()));
         put(root, new MediaFolder("image", T._.nodename_image()).addChildren(imageController.getList()));
+        root.getFolder("image").setThumbnailPath(getPath("pictures.png"));
 
         this.root = root;
+    }
+
+    private String getPath(String string) {
+        try {
+            URL url = StreamingExtension.class.getResource("resources/" + string);
+            URL res = StreamingExtension.class.getResource("/");
+
+            return url.toString().substring(res.toString().length());
+        } catch (Exception e) {
+            logger.log(e);
+            return null;
+        }
     }
 
     private void put(MediaFolder parent, MediaNode child) {

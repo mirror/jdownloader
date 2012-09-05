@@ -101,7 +101,7 @@ public class VideoTableModel extends MediaTableModel<VideoMediaItem, VideoListCo
 
             @Override
             public String getStringValue(VideoMediaItem value) {
-                return "";
+                return value.getDownloadError() + "";
             }
         });
     }

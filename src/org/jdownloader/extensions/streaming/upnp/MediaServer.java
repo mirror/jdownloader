@@ -25,7 +25,6 @@ import javax.imageio.ImageIO;
 import org.appwork.exceptions.WTFException;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
-import org.appwork.storage.JSonStorage;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.fourthline.cling.UpnpServiceImpl;
@@ -230,9 +229,7 @@ public class MediaServer implements Runnable {
         headerDetails.put(new HeaderDeviceDetailsProvider.Key("X-AV-Client-Info", ".*PLAYSTATION 3.*"), ownDetails);
         HeaderDeviceDetailsProvider provider = new HeaderDeviceDetailsProvider(ownDetails, headerDetails) {
             public DeviceDetails provide(ControlPointInfo info) {
-                logger.info("Requesting Device Details:\r\n " + JSonStorage.toString(info));
                 DeviceDetails ret = super.provide(info);
-                logger.info("Response Device Details:\r\n " + JSonStorage.toString(ret));
                 return ret;
             }
         };

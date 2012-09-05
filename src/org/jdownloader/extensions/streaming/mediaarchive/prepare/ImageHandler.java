@@ -15,6 +15,8 @@ import org.appwork.utils.images.IconIO;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.StreamingExtension;
 import org.jdownloader.extensions.streaming.mediaarchive.ImageMediaItem;
+import org.jdownloader.extensions.streaming.mediaarchive.StreamError;
+import org.jdownloader.extensions.streaming.mediaarchive.StreamError.ErrorCode;
 
 public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
 
@@ -26,7 +28,7 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
         String streamurl = extension.createStreamUrl(id, "imagereader", null, null);
         FileOutputStream fos = null;
         try {
-            extension.addDownloadLink(id, dl);
+            extension.linkMediaItem(id, new UndefinedMediaItem(dl));
 
             BufferedImage image = ImageIO.read(new URL(streamurl).openStream());
             System.out.println(image.getWidth() + " - " + image.getHeight());
@@ -42,12 +44,13 @@ public class ImageHandler extends ExtensionHandler<ImageMediaItem> {
             return ret;
         } catch (Throwable e) {
             e.printStackTrace();
+            ret.setDownloadError(new StreamError(ErrorCode.LINK_OFFLINE));
         } finally {
             try {
                 fos.close();
             } catch (final Throwable e) {
             }
-            extension.removeDownloadLink(id);
+            extension.unlinkMediaItem(id);
         }
         return null;
 

@@ -4,6 +4,7 @@ import jd.controlling.downloadcontroller.DownloadLinkStorable;
 
 import org.appwork.storage.Storable;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
+import org.jdownloader.extensions.streaming.mediaarchive.StreamError;
 
 public class MediaItemStorable implements Storable {
     private String[] actors;
@@ -161,10 +162,33 @@ public class MediaItemStorable implements Storable {
         ret.setSize(getSize());
         ret.setThumbnailPath(getThumbnailPath());
         ret.setTitle(getTitle());
+        ret.setDownloadError(getDownloadError());
+        ret.setUniqueID(getUniqueID());
+    }
+
+    private StreamError downloadError;
+
+    public StreamError getDownloadError() {
+        return downloadError;
+    }
+
+    public void setDownloadError(StreamError downloadError) {
+        this.downloadError = downloadError;
+    }
+
+    private String uniqueID;
+
+    public void setUniqueID(String uniqueID) {
+        this.uniqueID = uniqueID;
+    }
+
+    public String getUniqueID() {
+        return uniqueID;
     }
 
     protected void init(MediaItem mi) {
         setDownloadLink(new DownloadLinkStorable(mi.getDownloadLink()));
+        setDownloadError(mi.getDownloadError());
         setActors(mi.getActors());
         setAlbum(mi.getAlbum());
         setArtist(mi.getArtist());
@@ -178,5 +202,6 @@ public class MediaItemStorable implements Storable {
         setSize(mi.getSize());
         setThumbnailPath(mi.getThumbnailPath());
         setTitle(mi.getTitle());
+        setUniqueID(mi.getUniqueID());
     }
 }

@@ -1,7 +1,6 @@
 package org.jdownloader.extensions.streaming.mediaarchive.prepare;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.plugins.DownloadLink;
@@ -18,10 +17,9 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
     @Override
     public VideoMediaItem handle(StreamingExtension extension, DownloadLink dl) {
         VideoMediaItem ret = new VideoMediaItem(dl);
+        FFMpegInfoReader ffmpeg = new FFMpegInfoReader(new UndefinedMediaItem(dl));
 
         try {
-
-            FFMpegInfoReader ffmpeg = new FFMpegInfoReader(dl);
 
             ffmpeg.load(extension);
 
@@ -57,12 +55,11 @@ public class VideoHandler extends ExtensionHandler<VideoMediaItem> {
                 return null;
             }
 
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
+        }
+        ret.setDownloadError(ffmpeg.getMediaItem().getDownloadError());
         return ret;
     }
 }

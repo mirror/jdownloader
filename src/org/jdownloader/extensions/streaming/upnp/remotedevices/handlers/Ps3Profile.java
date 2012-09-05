@@ -2,8 +2,6 @@ package org.jdownloader.extensions.streaming.upnp.remotedevices.handlers;
 
 import org.fourthline.cling.model.message.UpnpHeaders;
 import org.fourthline.cling.model.meta.RemoteDevice;
-import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
-import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.DeviceCache;
 
 public class Ps3Profile extends AbstractDeviceHandler {
@@ -42,16 +40,6 @@ public class Ps3Profile extends AbstractDeviceHandler {
         if (!cache.getServerName().matches("UPnP/.*, DLNADOC/1\\.50\\, Platinum/.*")) return false;
         if (!"XBMC".equals(d.getDetails().getModelDetails().getModelName())) return false;
         return true;
-    }
-
-    @Override
-    public Profile getBestProfileForTranscoding(MediaItem mediaItem) {
-        return null;
-    }
-
-    @Override
-    public Profile getBestProfileWithoutTranscoding(MediaItem mediaItem) {
-        return null;
     }
 
     @Override

@@ -44,6 +44,7 @@ public class MediaFolder implements MediaNode {
     }
 
     private MediaFolder parent;
+    private String      thumbnailPath;
 
     public MediaFolder getParent() {
         return parent;
@@ -67,7 +68,10 @@ public class MediaFolder implements MediaNode {
     public void addChild(MediaNode child) {
         children.add(child);
         child.setParent(this);
-        if (getRoot() != null) getRoot().mount(child);
+        if (getRoot() != null) {
+            //
+            getRoot().mount(child);
+        }
 
     }
 
@@ -89,6 +93,16 @@ public class MediaFolder implements MediaNode {
             getRoot().mount(mi);
 
         }
+    }
+
+    @Override
+    public String getThumbnailPath() {
+        return thumbnailPath;
+
+    }
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
     }
 
 }

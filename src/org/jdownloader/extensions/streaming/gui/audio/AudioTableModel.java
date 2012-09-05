@@ -108,7 +108,7 @@ public class AudioTableModel extends MediaTableModel<AudioMediaItem, AudioListCo
 
             @Override
             public String getStringValue(AudioMediaItem value) {
-                return "";
+                return value.getDownloadError() + "";
             }
         });
     }

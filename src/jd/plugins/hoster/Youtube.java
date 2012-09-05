@@ -301,30 +301,41 @@ public class Youtube extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         // For streaming extension to tell her that these links can be streamed without account
+        System.out.println("Youtube: " + downloadLink);
+
         downloadLink.setProperty("STREAMING", true);
-        if (downloadLink.getBooleanProperty("valid", true)) {
-            downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-            downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
-            return AvailableStatus.TRUE;
-        } else {
-            downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
-            downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
-            final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
+        for (int i = 0; i < 4; i++) {
+            if (downloadLink.getBooleanProperty("valid", true)) {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
+                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
+                return AvailableStatus.TRUE;
+            } else {
+                downloadLink.setFinalFileName(downloadLink.getStringProperty("name", "video.tmp"));
+                downloadLink.setDownloadSize((Long) downloadLink.getProperty("size", 0l));
+                final PluginForDecrypt plugin = JDUtilities.getPluginForDecrypt("youtube.com");
 
-            if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
-            if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
-            if (downloadLink.getStringProperty("videolink", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
+                if (plugin == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "cannot decrypt videolink"); }
+                if (downloadLink.getStringProperty("fmtNew", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
+                if (downloadLink.getStringProperty("videolink", null) == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "You have to add link again"); }
 
-            final HashMap<Integer, String[]> LinksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br);
+                final HashMap<Integer, String[]> LinksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
 
-            if (LinksFound.isEmpty()) {
-                if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!"); }
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                if (LinksFound.isEmpty()) {
+                    if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!"); }
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (LinksFound.get(downloadLink.getIntegerProperty("fmtNew", 0)) == null) {
+                    // too fast connections??
+                    Thread.sleep(5000);
+                    continue;
+
+                }
+                downloadLink.setUrlDownload(LinksFound.get(downloadLink.getIntegerProperty("fmtNew", 0))[0]);
+                return AvailableStatus.TRUE;
             }
-            downloadLink.setUrlDownload(LinksFound.get(downloadLink.getIntegerProperty("fmtNew", 0))[0]);
-            return AvailableStatus.TRUE;
         }
 
+        return AvailableStatus.FALSE;
     }
 
     @Override

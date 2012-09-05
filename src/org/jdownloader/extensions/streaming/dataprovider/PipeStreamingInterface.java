@@ -17,17 +17,18 @@ public class PipeStreamingInterface implements StreamingInterface {
     private DownloadLink                          link;
     private DelayedRunnable                       closer;
     private AtomicInteger                         counter  = new AtomicInteger();
+    private boolean                               closed;
 
     public PipeStreamingInterface(DownloadLink dlink, DataProvider rarProvider) {
         this.dataProvider = rarProvider;
         this.link = dlink;
         counter.set(0);
         // Close all streams if there is no read for 5 seconds
-        this.closer = new DelayedRunnable(EXECUTER, 2 * 1000l) {
+        this.closer = new DelayedRunnable(EXECUTER, 5 * 1000l) {
             @Override
             public void delayedrun() {
-                if (counter.get() > 0) return;
-                System.out.println("EXEC");
+                if (counter.get() > 0 || closed) return;
+                System.out.println("CLOSED " + PipeStreamingInterface.this);
                 try {
                     close();
                 } catch (IOException e) {
@@ -35,6 +36,10 @@ public class PipeStreamingInterface implements StreamingInterface {
                 }
             }
         };
+    }
+
+    public DataProvider getDataProvider() {
+        return dataProvider;
     }
 
     @Override
@@ -47,6 +52,10 @@ public class PipeStreamingInterface implements StreamingInterface {
         return dataProvider.getFinalFileSize(link);
     }
 
+    public String toString() {
+        return "PipeStreamingInterface<<" + dataProvider;
+    }
+
     @Override
     public InputStream getInputStream(long startPosition, long stopPosition) throws IOException {
 
@@ -55,6 +64,9 @@ public class PipeStreamingInterface implements StreamingInterface {
         counter.addAndGet(1);
         closer.stop();
         return new InputStream() {
+            public String toString() {
+                return "PipeStreamingInterface<<" + str;
+            }
 
             @Override
             public int read() throws IOException {
@@ -120,6 +132,7 @@ public class PipeStreamingInterface implements StreamingInterface {
 
     @Override
     public void close() throws IOException {
+        this.closed = true;
         dataProvider.close();
     }
 

@@ -3,7 +3,6 @@ package org.jdownloader.extensions.streaming;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -85,6 +84,17 @@ public class StreamingProvider {
                             }
                             final URLConnectionAdapter con = mirror.getDownloadInstance().getConnection();
                             if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
+                                if (remoteLink.getVerifiedFileSize() < 0) {
+                                    /* we don't have a verified filesize yet, let's check if we have it now! */
+                                    if (con.getRange() != null) {
+                                        if (con.getRange()[2] > 0) {
+                                            remoteLink.setVerifiedFileSize(con.getRange()[2]);
+                                        }
+                                    } else if (con.getRequestProperty("Range") == null && con.getLongContentLength() > 0 && con.isOK()) {
+                                        remoteLink.setVerifiedFileSize(con.getLongContentLength());
+                                    }
+                                }
+
                                 if (fileSize == -1) fileSize = con.getCompleteContentLength();
                                 new Thread("HTTP Reader Stream") {
                                     public void run() {
@@ -128,7 +138,7 @@ public class StreamingProvider {
                                 return false;
                             }
                         } catch (final Throwable e) {
-                            e.printStackTrace();
+
                             throw new IOException(e);
                         } finally {
                             Thread.currentThread().setContextClassLoader(oldClassLoader);

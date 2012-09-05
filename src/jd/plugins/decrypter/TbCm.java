@@ -273,7 +273,7 @@ public class TbCm extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 verifyAge = false;
-                final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br);
+                final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br, 0);
                 if ((LinksFound == null || LinksFound.isEmpty()) && br.containsHTML("<div id=\"unavailable\\-message\" class=\"\">[\\s]+Der betreffende Nutzer hat das Video in deinem Land nicht zur Verfügung gestellt\\.[\r\n]</div>")) {
                     // for action/method -insert here-
                     throw new DecrypterException("This video is not avaible from your IP address");
@@ -431,13 +431,19 @@ public class TbCm extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public HashMap<Integer, String[]> getLinks(final String video, final boolean prem, Browser br) throws Exception {
+    public HashMap<Integer, String[]> getLinks(final String video, final boolean prem, Browser br, int retrycount) throws Exception {
+        if (retrycount > 2) {
+            // do not retry more often than 2 time
+            return null;
+        }
         if (br == null) {
             br = this.br;
         }
+        String cookies = br.getCookies(getHost()).toString();
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         br.setCookie("youtube.com", "PREF", "f2=40100000");
+
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
         if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
@@ -448,6 +454,7 @@ public class TbCm extends PluginForDecrypt {
             YT_FILENAME = Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim());
             fileNameFound = true;
         }
+
         final String url = br.getURL();
         boolean ythack = false;
         if (url != null && !url.equals(video)) {
@@ -503,14 +510,19 @@ public class TbCm extends PluginForDecrypt {
         } else {
             /* new format since ca. 1.8.2011 */
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
+            if (!html5_fmt_map.contains("signature")) {
+                Thread.sleep(5000);
+                br.clearCookies(getHost());
+                return getLinks(video, prem, br, retrycount + 1);
+            }
             if (html5_fmt_map != null) {
                 String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
                 if (html5_hits != null) {
                     for (String hit : html5_hits) {
                         hit = unescape(hit);
-                        String hitUrl = new Regex(hit, "url=(http.*?)\\&").getMatch(0);
+                        String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
                         String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
-                        String hitQ = new Regex(hit, "quality=(.*?)&").getMatch(0);
+                        String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                         if (hitUrl != null && hitFmt != null && hitQ != null) {
                             hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
                             links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });

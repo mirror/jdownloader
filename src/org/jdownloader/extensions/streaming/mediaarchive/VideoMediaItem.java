@@ -134,6 +134,7 @@ public class VideoMediaItem extends MediaItem {
     }
 
     private Class<? extends AbstractAudioVideoContainer> mapDlnaContainer() {
+        if (getContainerFormat() == null) return null;
         if ("mov,mp4,m4a,3gp,3g2,mj2".equals(getContainerFormat())) {
             //
             if ("isom".equalsIgnoreCase(getMajorBrand())) {

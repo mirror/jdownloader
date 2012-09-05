@@ -6,6 +6,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.extensions.streaming.mediaarchive.prepare.PrepareJob;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
@@ -14,42 +15,52 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
 public abstract class MediaItem implements MediaNode {
     private static final LogSource LOGGER = LogController.getInstance().getLogger(PrepareJob.class.getName());
-    private String[] actors;
-    private String album;
+    private String[]               actors;
+    private String                 album;
 
-    private String artist;
+    private String                 artist;
 
-    private String containerFormat;
+    private String                 containerFormat;
 
-    private String   creator;
+    private String                 creator;
 
-    private long     date = 0l;
+    private long                   date   = 0l;
 
-    private String[] dlnaProfiles;
+    private String[]               dlnaProfiles;
 
     private DownloadLink           downloadLink;
 
-    private String[] genres;
+    private String[]               genres;
 
-    private String infoString;
+    private String                 infoString;
 
-    private String   majorBrand;
+    private String                 majorBrand;
 
-    private MediaFolder parent;
+    private MediaFolder            parent;
     private MediaRoot              root;
 
-    private long   size = -1;
+    private long                   size   = -1;
 
-    private String thumbnailPath;
+    private String                 thumbnailPath;
 
-    private String   title;
+    private String                 title;
+    private String                 uniqueID;
+
+    public void setUniqueID(String uniqueID) {
+        this.uniqueID = uniqueID;
+    }
+
+    @Override
+    public String getUniqueID() {
+        return uniqueID == null ? (getClass().getSimpleName() + ":" + getDownloadLink().getUniqueID()) : uniqueID;
+    }
 
     public MediaItem(DownloadLink dl) {
         this.downloadLink = dl;
         if (dl.getDefaultPlugin() == null) {
             restorePlugin();
         }
-
+        uniqueID = UniqueAlltimeID.create();
         date = System.currentTimeMillis();
     }
 
@@ -68,13 +79,16 @@ public abstract class MediaItem implements MediaNode {
     public String getContainerFormat() {
         return containerFormat;
     }
+
     public String getCreator() {
         return creator == null ? ("(" + downloadLink.getHost() + ") " + downloadLink.getBrowserUrl()) : creator;
     }
+
     public long getDate() {
         if (date <= 0) date = System.currentTimeMillis();
         return date;
     }
+
     public String[] getDlnaProfiles() {
         return dlnaProfiles;
     }
@@ -91,13 +105,17 @@ public abstract class MediaItem implements MediaNode {
     public ImageIcon getIcon() {
         return NewTheme.I().getIcon("video", 20);
     }
+
     public String getInfoString() {
         return infoString;
     }
+
     public String getMajorBrand() {
         return majorBrand;
     }
+
     public abstract String getMimeTypeString();
+
     @Override
     public String getName() {
         return downloadLink.getName();
@@ -115,17 +133,13 @@ public abstract class MediaItem implements MediaNode {
 
         return size <= 0 ? downloadLink.getDownloadSize() : size;
     }
+
     public String getThumbnailPath() {
         return thumbnailPath;
     }
 
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public String getUniqueID() {
-        return downloadLink.getUniqueID().toString();
     }
 
     private void restorePlugin() {
@@ -226,6 +240,16 @@ public abstract class MediaItem implements MediaNode {
         this.thumbnailPath = thumbnailPath;
     }
 
+    private StreamError downloadError;
+
+    public StreamError getDownloadError() {
+        return downloadError;
+    }
+
+    public void setDownloadError(StreamError downloadError) {
+        this.downloadError = downloadError;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -234,6 +258,7 @@ public abstract class MediaItem implements MediaNode {
         dlnaProfiles = node.dlnaProfiles;
         this.actors = node.actors;
         this.album = node.album;
+        uniqueID = node.getUniqueID();
         this.artist = node.artist;
         this.containerFormat = node.containerFormat;
         this.creator = node.creator;
@@ -244,6 +269,7 @@ public abstract class MediaItem implements MediaNode {
         this.size = node.size;
         this.thumbnailPath = node.thumbnailPath;
         this.title = node.title;
+        downloadError = node.getDownloadError();
     }
 
 }

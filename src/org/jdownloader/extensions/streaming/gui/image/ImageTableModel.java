@@ -80,5 +80,13 @@ public class ImageTableModel extends MediaTableModel<ImageMediaItem, ImageListCo
                 return Arrays.toString(value.getDlnaProfiles());
             }
         });
+
+        addColumn(new ExtTextColumn<ImageMediaItem>(T._.gui_video_status()) {
+
+            @Override
+            public String getStringValue(ImageMediaItem value) {
+                return value.getDownloadError() + "";
+            }
+        });
     }
 }

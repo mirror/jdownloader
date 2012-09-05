@@ -39,6 +39,7 @@ public abstract class MediaListController<T extends MediaItem> {
 
     public void onRefresh(T mi) {
         fireContentChanged();
+        save();
     }
 
     protected MediaListController() {
@@ -122,7 +123,7 @@ public abstract class MediaListController<T extends MediaItem> {
         save();
     }
 
-    private boolean save() {
+    public boolean save() {
         try {
             synchronized (list) {
                 File path = Application.getResource("cfg/medialibrary/" + getType().getSimpleName() + ".zip");

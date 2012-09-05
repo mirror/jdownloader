@@ -29,6 +29,10 @@ public class DownloadLinkProvider implements DataProvider<DownloadLink> {
         return link.getDownloadSize();
     }
 
+    public String toString() {
+        return getClass().getSimpleName() + "<< Downloadlink Streaming";
+    }
+
     @Override
     public InputStream getInputStream(DownloadLink link, long startPosition, long stopPosition) throws IOException {
         Streaming streaming = map.get(link);

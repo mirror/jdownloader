@@ -41,4 +41,8 @@ public class UniqueAlltimeID {
     public void setID(long ID) {
         this.id = ID;
     }
+
+    public static String create() {
+        return ID.incrementAndGet() + "";
+    }
 }

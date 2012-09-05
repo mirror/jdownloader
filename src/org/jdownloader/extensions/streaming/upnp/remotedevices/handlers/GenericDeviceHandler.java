@@ -3,8 +3,6 @@ package org.jdownloader.extensions.streaming.upnp.remotedevices.handlers;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.fourthline.cling.model.message.UpnpHeaders;
 import org.fourthline.cling.model.meta.RemoteDevice;
-import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
-import org.jdownloader.extensions.streaming.dlna.profiles.video.MPEG4Part2;
 import org.jdownloader.extensions.streaming.mediaarchive.MediaItem;
 import org.jdownloader.extensions.streaming.upnp.DeviceCache;
 
@@ -41,11 +39,6 @@ public class GenericDeviceHandler extends AbstractDeviceHandler {
     @Override
     public boolean matchesRemoteDevice(RemoteDevice d, DeviceCache cache) {
         return false;
-    }
-
-    @Override
-    public Profile getBestProfileForTranscoding(MediaItem mediaItem) {
-        return MPEG4Part2.MPEG4_P2_TS_ASP_AAC;
     }
 
     protected String createStreamUrl(MediaItem c, String format, String subpath) {
