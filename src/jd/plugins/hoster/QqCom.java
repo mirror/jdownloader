@@ -47,36 +47,6 @@ public class QqCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        String dllink = null;
-        requestFileInformation(downloadLink);
-        String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
-        if (dlValues == null) dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" filename=\"(.*?)\"></a>").getRow(0);
-        if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (dlValues.length == 3) {
-            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
-            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[2]);
-        } else if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
-            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
-            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[5]);
-        } else {
-            br.setCookie(br.getHost(), dlValues[3].toUpperCase(), dlValues[4]);
-            dllink = dlValues[2] + "/" + Encoding.Base64Encode(dlValues[5]);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-
-        if (dl.getConnection().getResponseCode() == 503) {
-            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!"); }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        }
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -110,6 +80,36 @@ public class QqCom extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String dllink = null;
+        requestFileInformation(downloadLink);
+        String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
+        if (dlValues == null) dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" filename=\"(.*?)\"></a>").getRow(0);
+        if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (dlValues.length == 3) {
+            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
+            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[2]);
+        } else if (dlValues[0] != null && dlValues[1] != null && dlValues[5] != null) {
+            br.setCookie(br.getHost(), "FTN5K", dlValues[1]);
+            dllink = dlValues[0] + "/" + Encoding.urlEncode(dlValues[5]);
+        } else {
+            br.setCookie(br.getHost(), dlValues[3].toUpperCase(), dlValues[4]);
+            dllink = dlValues[2] + "/" + Encoding.Base64Encode(dlValues[5]);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+
+        if (dl.getConnection().getResponseCode() == 503) {
+            if (dl.getConnection().getResponseMessage().equals("Service Unavailable")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, " Service Unavailable!"); }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

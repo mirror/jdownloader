@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -29,17 +28,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //This plugin only takes decrypted links from the livedrive decrypter
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?\\.decryptedlivedrive\\.com/frameset\\.php\\?path=/files/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrivedecrypted\\.com/item/[a-z0-9]{32}" }, flags = { 0 })
 public class LiveDriveCom extends PluginForHost {
-
-    private String DLLINKPART;
 
     public LiveDriveCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedlivedrive", "livedrive"));
+        link.setUrlDownload(link.getDownloadURL().replace("livedrivedecrypted.com/", "livedrive.com/"));
     }
 
     @Override
@@ -53,30 +50,29 @@ public class LiveDriveCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        final String filename = br.getRegex("<div id=\"Preview\">[\t\n\r ]+<img src=\"/Content/Images/filetypes/180x230/[^<>\"/]*?\" alt=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename);
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINKPART + downloadLink.getStringProperty("DOWNLOADID"), true, 0);
+        String liveDriveUrlUserPart = new Regex(downloadLink.getDownloadURL(), "(.*?)\\.livedrive\\.com").getMatch(0);
+        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
+        final String aid = br.getRegex("\\'(\\d+)\\'\\);\">Download</a>").getMatch(0);
+        if (aid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = "http://" + liveDriveUrlUserPart + ".livedrive.com/IO/DownloadSharedFile?NodeID=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0) + "&AID=" + aid;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String liveDriveUrlUserPart = new Regex(link.getDownloadURL(), "(.*?)\\.livedrive\\.com").getMatch(0);
-        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
-        DLLINKPART = "http://" + liveDriveUrlUserPart + ".livedrive.com/WebService/AjaxHandler.ashx?Type=Query&Method=DownloadData&ID=";
-        URLConnectionAdapter con = br.openGetConnection(DLLINKPART + link.getStringProperty("DOWNLOADID"));
-        if (con.getContentType().contains("html")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            link.setName(getFileNameFromHeader(con));
-            link.setDownloadSize(con.getLongContentLength());
-            return AvailableStatus.TRUE;
-        }
     }
 
     @Override

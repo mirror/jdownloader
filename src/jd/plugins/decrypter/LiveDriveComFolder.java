@@ -23,14 +23,12 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[\\w\\.]*?\\.livedrive\\.com/(frameset\\.php\\?path=/)?files/\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livedrive.com" }, urls = { "http://[a-z0-9]+\\.livedrive\\.com/(I|i)tem/\\d+" }, flags = { 0 })
 public class LiveDriveComFolder extends PluginForDecrypt {
 
     public LiveDriveComFolder(PluginWrapper wrapper) {
@@ -39,74 +37,41 @@ public class LiveDriveComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("/frameset.php?path=", "");
-        br.getPage(parameter);
-        String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
-        liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
-        String decryptedlinkpart = "http://" + liveDriveUrlUserPart + ".decryptedlivedrive.com/frameset.php?path=/files";
-        if (br.containsHTML("Item not found</span>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String fpName = br.getRegex("class=\"data_holder\">.*?'s Livedrive - (.*?)</span>").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<title>.*?'s Livedrive - (.*?)</title>").getMatch(0);
-        // Is it a single file or a folder ?
-        if (br.containsHTML("onclick=\"fd\\.downloadItem\\(")) {
-            String pathID = new Regex(parameter, "files/(\\d+)").getMatch(0);
-            String ID = br.getRegex("Type=Query\\&Method=GetThumbnail\\&ID=(.*?)'\\)").getMatch(0);
-            if (ID == null) {
-                ID = br.getRegex("ParentId=(.*?)\"").getMatch(0);
-            }
-            if (ID == null || pathID == null) {
-                logger.warning("Failed on single file, link = " + parameter);
-                return null;
-            }
-            DownloadLink theFinalLink = createDownloadlink(decryptedlinkpart + "/" + pathID);
-            theFinalLink.setProperty("DOWNLOADID", ID);
-            decryptedLinks.add(theFinalLink);
+        final String parameter = param.toString();
+        // Single link or folder
+        if (parameter.matches("http://[a-z0-9]+\\.livedrive\\.com/item/[a-z0-9]{32}")) {
+            decryptedLinks.add(createDownloadlink(parameter.replace("livedrive.com/", "livedrivedecrypter.com/")));
         } else {
-            String thereIsThisSecretID = br.getRegex("id=\"thisid\" class=\"data_holder\">(.*?)</span>").getMatch(0);
-            if (thereIsThisSecretID == null) {
-                logger.warning("Couldn't find the secret id for link: " + parameter);
-                return null;
+            br.getPage(parameter);
+            String liveDriveUrlUserPart = new Regex(parameter, "(.*?)\\.livedrive\\.com").getMatch(0);
+            liveDriveUrlUserPart = liveDriveUrlUserPart.replaceAll("(http://|www\\.)", "");
+            if (br.containsHTML("Item not found</span>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-            Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.postPage("http://" + liveDriveUrlUserPart + ".livedrive.com/WebService/AjaxHandler.ashx", "Method=GetFileList&Page=1&ParentID=" + thereIsThisSecretID);
-            // Regex those information
-            String[] fileInformation = br2.getRegex("(\\{\".*?\"\\})").getColumn(0);
-            if (fileInformation == null || fileInformation.length == 0) {
-                logger.warning("fileInformation not found for link: " + parameter);
-                return null;
-            }
-            for (String dl : fileInformation) {
-                String ID = new Regex(dl, "ID\":\"(.*?)\"").getMatch(0);
-                String filename = new Regex(dl, "\"Name\":\"(.*?)\"").getMatch(0);
-                String filesize = new Regex(dl, "\"Size\":\"(\\d+)\"").getMatch(0);
-                String filetype = new Regex(dl, "\"FileType\":\"(.*?)\"").getMatch(0);
-                String fileOrFolderPath = new Regex(dl, "\"Path\":\"(/\\d+)\"").getMatch(0);
-                if (ID == null || filename == null || filetype == null || fileOrFolderPath == null) {
-                    logger.warning("A part of the fileinformation couldn't be found for link: " + parameter);
+            final String[][] folders = br.getRegex("<div class=\"file\\-item\\-container\" name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\"").getMatches();
+            for (final String[] folderinfo : folders) {
+                Browser br2 = br.cloneBrowser();
+                br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br2.getPage("http://" + liveDriveUrlUserPart + ".livedrive.com/Files/FileList?fileId=" + folderinfo[1] + "&pageNo=1&viewMode=1&_=" + System.currentTimeMillis());
+                // Regex those information
+                String[][] fileInformation = br2.getRegex("name=\"([^<>\"]*?)\" data=\"([a-z0-9]{32})\"").getMatches();
+                if (fileInformation == null || fileInformation.length == 0) {
+                    logger.warning("fileInformation not found for link: " + parameter);
                     return null;
                 }
-                // Do we have a folder ? Just add it.
-                // Folders will go back into this decrypter so we don't change
-                // the hostname to match the regex of the hosterplugin for
-                // livedrive
-                // Do we have a file ? Add it with all given information
-                if (filetype.equals("Folder")) {
-                    decryptedLinks.add(createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrive.com/frameset.php?path=/files" + fileOrFolderPath));
-                } else {
-                    DownloadLink theFinalLink = createDownloadlink(decryptedlinkpart + fileOrFolderPath);
-                    theFinalLink.setName(filename.replace("\\u0027", "'"));
-                    theFinalLink.setDownloadSize(Long.parseLong(filesize));
-                    theFinalLink.setProperty("DOWNLOADID", ID);
+                final FilePackage thisFoldername = FilePackage.getInstance();
+                thisFoldername.setName(folderinfo[0]);
+                for (final String dlinfo[] : fileInformation) {
+                    final String ID = dlinfo[1];
+                    final String filename = dlinfo[0];
+                    final DownloadLink theFinalLink = createDownloadlink("http://" + liveDriveUrlUserPart + ".livedrivedecrypted.com/item/" + ID);
                     theFinalLink.setAvailable(true);
+                    theFinalLink.setFinalFileName(filename);
+                    theFinalLink._setFilePackage(thisFoldername);
                     decryptedLinks.add(theFinalLink);
                 }
             }
-        }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
