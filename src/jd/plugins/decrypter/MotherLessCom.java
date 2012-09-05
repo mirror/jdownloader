@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
 
     private String fpName = null;
@@ -61,7 +61,14 @@ public class MotherLessCom extends PluginForDecrypt {
         // alters 'domain/(g/name/)uid' by removing all but uid
         String parameter = param.toString().replaceAll("motherless\\.com/g/[\\w\\-]+/", "motherless.com/");
         br.getPage(parameter);
-        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to")) return decryptedLinks;
+        if (br.containsHTML("Not Available") || br.containsHTML("not found") || br.containsHTML("You will be redirected to") || br.containsHTML(">The page you\\'re looking for cannot be found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("class=\"red\\-pill\\-button rounded\\-corners\\-r5\">Reply</a>")) {
+            logger.info("This is a forum link without any downloadable content: " + parameter);
+            return decryptedLinks;
+        }
         // Common bug: It can happen that the texts that we use to differ
         // between the kinds of links change so the decrypter breaks down,
         // always check that first!

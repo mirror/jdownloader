@@ -25,26 +25,30 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minilink.us" }, urls = { "http://[\\w\\.]*?minilink\\.us/[A-Zaz0-9-_]+" }, flags = { 0 })
-public class MnlnkUs extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.karelia.pro" }, urls = { "http://(www\\.)?(disk\\.karelia\\.pro/fast/[A-Za-z0-9]+|fast\\.karelia\\.pro/[A-Za-z0-9]+/[^<>\"/]*?/)" }, flags = { 0 })
+public class KareliaPro extends PluginForDecrypt {
 
-    public MnlnkUs(PluginWrapper wrapper) {
+    public KareliaPro(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-        if (!br.containsHTML("Sorry, this short URL is not valid")) {
-            String linkurl = br.getRegex("<iframe.*?src=\"(.*?)\".*?>").getMatch(0);
-            if (linkurl == null) return null;
-            decryptedLinks.add(createDownloadlink(linkurl));
+        final String parameter = param.toString();
+        if (parameter.matches("http://(www\\.)?disk\\.karelia\\.pro/fast/[A-Za-z0-9]+")) {
+            br.getPage(parameter);
+            final String[] links = br.getRegex("18px center no\\-repeat;\">[\t\n\r ]+<a href=\"(http://disk\\.karelia\\.pro/fast/[^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink("directhttp://" + singleLink));
+        } else {
+            decryptedLinks.add(createDownloadlink("directhttp://" + parameter.replaceAll("(/)$", "").replace("fast.karelia.pro/", "disk.karelia.pro/fast/")));
         }
+
         return decryptedLinks;
     }
 
-    // @Override
 }

@@ -22,29 +22,30 @@ import java.util.Random;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//EmbedDecrypter 0.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "perfectgirls.net" }, urls = { "http://(www\\.)?(perfectgirls\\.net/\\d+/|(ipad|m)\\.perfectgirls\\.net/gal/\\d+/).{1}" }, flags = { 0 })
-public class PerfectGirlsNet extends PluginForDecrypt {
+//EmbedDecrypter 0.1.1
+//Mods: removed pornrabbit decrypt, added youporn.com decrypt
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
+public class PornRabbitComDecrypter extends PluginForDecrypt {
 
-    public PerfectGirlsNet(PluginWrapper wrapper) {
+    public PornRabbitComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceAll("(ipad|m)\\.perfectgirls\\.net/gal/", "perfectgirls.net/");
+        String parameter = param.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        String filename = br.getRegex("<title>([^<>\"]*?) ::: PERFECT GIRLS</title>").getMatch(0);
-        String externID = br.getRegex("\"perfectgirls\\.url\", \"(http://(www\\.)xvideos\\.com/video[^<>\"]*?)\"").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?) : pornrabbit\\.com</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">Report this video!</a></div>[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
         }
         externID = br.getRegex("madthumbs\\.com%2Fvideos%2Fembed_config%3Fid%3D(\\d+)").getMatch(0);
@@ -53,7 +54,7 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        externID = br.getRegex("\"(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)\"").getMatch(0);
+        externID = br.getRegex("(\"|\\')(http://(www\\.)?tube8\\.com/embed/[^<>\"/]*?/[^<>\"/]*?/\\d+/?)(\"|\\')").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID.replace("tube8.com/embed/", "tube8.com/")));
             return decryptedLinks;
@@ -91,24 +92,9 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.pornerbros.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("freeporn\\.com/swf/player/AppLauncher_secure\\.swf\\'><param.*?<param name=\\'flashvars\\' value=\\'file=([^<>\"]*?)\\&").getMatch(0);
-        if (externID != null) {
-            externID = Encoding.urlEncode(externID.trim());
-            br.postPage("http://www.freeporn.com/getcdnurl/", "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22" + externID + "%22%2C%22request%22%3A%22getAllData%22%2C%22width%22%3A%22505%22%2C%22path%22%3A%22" + externID + "%22%2C%22height%22%3A%22400%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Eimage%2Efreeporn%2Ecom%2Fswf%2Fplayer%2FAppLauncher%5Fsecure%2Eswf%22%2C%22htmlHostDomain%22%3A%22www%2Evoayeurs%2Ecom%22%7D&cacheBuster=1339506847983");
-            externID = new Regex(br.toString().replace("\\", ""), "image\\.freeporn\\.com/media/videos/tmb/(\\d+)/").getMatch(0);
-            if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.freeporn.com/video/" + externID + "/"));
-                return decryptedLinks;
-            }
-        }
         externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
-            return decryptedLinks;
-        }
-        externID = br.getRegex("embed\\.pornrabbit\\.com/player\\.swf\\?movie_id=(\\d+)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink("http://pornrabbit.com/" + externID + "/" + System.currentTimeMillis() + ".html"));
             return decryptedLinks;
         }
         externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
@@ -158,14 +144,26 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
             return decryptedLinks;
         }
-        externID = br.getRegex("name=\\'yp_embed_video\\'><a href=\\'(http://(www\\.)?youporn\\.com/watch/\\d+)").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
-            return decryptedLinks;
-        }
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("stileproject\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://stileproject.com/video/" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("book\\-mark\\.net/playerconfig/(\\d+)/").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.book-mark.net/videos/" + externID + "/x.html");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("youporn\\.com/embed/(\\d+)\\'").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // filename needed for all IDs below here
@@ -181,12 +179,31 @@ public class PerfectGirlsNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        if (br.containsHTML("src=\"http://(www\\.)?dachix\\.com/flashplayer/flvplayer\\.swf\"|\"http://(www\\.)?deviantclip\\.com/flashplayer/flvplayer\\.swf\"")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        externID = br.getRegex("src=\"http://videos\\.allelitepass\\.com/txc/([^<>\"/]*?)\\.swf\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://videos.allelitepass.com/txc/player.php?video=" + Encoding.htmlDecode(externID));
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+
         }
-        logger.warning("Decrypter broken for link: " + parameter);
-        return null;
+        // 2nd handling for tnaflix
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                return decryptedLinks;
+            }
+        }
+        // No extern link found->Add to hosterplugin
+        decryptedLinks.add(createDownloadlink(parameter.replace("pornrabbit.com/", "pornrabbitdecrypted.com/")));
+        return decryptedLinks;
     }
 
 }

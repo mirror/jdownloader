@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbit\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornrabbit.com" }, urls = { "http://(www\\.)?pornrabbitdecrypted\\.com/(\\d+/[a-z0-9_\\-]+\\.html|video/\\d+/)" }, flags = { 0 })
 public class PornRabbitCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -46,6 +46,10 @@ public class PornRabbitCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("pornrabbitdecrypted.com/", "pornrabbit.com/"));
     }
 
     @Override

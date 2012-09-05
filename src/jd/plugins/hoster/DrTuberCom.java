@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "drtuber.com" }, urls = { "http://(www\\.)?drtuber\\.com/(video/\\d+|player/config_embed3\\.php\\?vkey=[a-z0-9]+|embed/\\d+)" }, flags = { 0 })
 public class DrTuberCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -93,6 +93,11 @@ public class DrTuberCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             downloadLink.setUrlDownload(Encoding.htmlDecode(finallink));
+        } else if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/embed/\\d+")) {
+            // Not yet supported
+            if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.getPage(downloadLink.getDownloadURL());
+            br.getPage("http://www.drtuber.com/player/config_embed4.php?id_video=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&t=1346839751&pkey=2a3d1b2d24db28888e4dfe83e9e02da4");
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(This video cannot be found\\.|Are you sure you typed in the correct url\\?<)") || br.getURL().contains("missing=true")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

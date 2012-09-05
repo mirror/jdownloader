@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,15 +37,27 @@ public class GlumboUploadsComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> pages = new ArrayList<String>();
         String parameter = param.toString();
+        pages.add(parameter);
         br.setFollowRedirects(true);
         br.setCookie("http://" + HOST, "lang", "english");
         br.getPage(parameter);
         if (br.containsHTML("No such user exist")) return decryptedLinks;
-        String[] links = br.getRegex("<div class=\"link\"><a href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12}.*?)\"").getColumn(0);
-        if (links == null) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        final String[] allpages = br.getRegex(">\\d+</a><a href=\\'(\\?fld_id=\\d+\\&amp;[^<>\"/]*?page=\\d+)\\'").getColumn(0);
+        if (allpages != null && allpages.length != 0) {
+            for (final String aPage : allpages)
+                if (!pages.contains(aPage)) pages.add(aPage);
+        }
+        int counter = 0;
+        for (final String currentPage : pages) {
+            if (counter != 0) br.getPage("http://glumbouploads.com/" + Encoding.htmlDecode(currentPage));
+            final String[] links = br.getRegex("<div class=\"link\"><a href=\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12}.*?)\"").getColumn(0);
+            if (links == null) return null;
+            for (String dl : links)
+                decryptedLinks.add(createDownloadlink(dl));
+            counter++;
+        }
         return decryptedLinks;
     }
 

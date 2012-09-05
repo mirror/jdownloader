@@ -55,6 +55,8 @@ public class AllMyVideosNet extends PluginForHost {
     private static final String  COOKIE_HOST                  = "http://allmyvideos.net";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
+    private static final String  ENCODINGVIDEO                = "Video is currently being encoded";
+    private static final String  ENCODINGVIDEOUSERTEXT        = JDL.L("hoster.allmyvideosnet.videoisencoding", "Video is currently being encoded");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
@@ -117,6 +119,10 @@ public class AllMyVideosNet extends PluginForHost {
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+            return AvailableStatus.TRUE;
+        }
+        if (correctedBR.contains(ENCODINGVIDEO)) {
+            link.getLinkStatus().setStatusText(ENCODINGVIDEOUSERTEXT);
             return AvailableStatus.TRUE;
         }
         String[] fileInfo = new String[3];
@@ -384,6 +390,7 @@ public class AllMyVideosNet extends PluginForHost {
             }
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(ENCODINGVIDEO)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ENCODINGVIDEOUSERTEXT, 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {

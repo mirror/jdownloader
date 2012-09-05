@@ -155,26 +155,9 @@ public class UploadozCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "<h3>Download File : ([^<>\"]*?)\\&nbsp; <small>").getMatch(0);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // traits from download1 page below.
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                            // next two are details from sharing box
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                                if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
-                            }
-                        }
-                    }
-                }
+                fileInfo[0] = new Regex(correctedBR, "cols=24 rows=3 onFocus=\"copy\\(this\\);\">http://(www\\.)?uploadoz\\.com/[a-z0-9]{12}/([^<>\"]*?)\\.html</textarea>").getMatch(1);
             }
         }
         if (fileInfo[1] == null) {
