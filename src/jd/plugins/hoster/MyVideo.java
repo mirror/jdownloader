@@ -98,10 +98,12 @@ public class MyVideo extends PluginForHost {
         br.getPage(next);
         String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        input = input.replaceAll("%0D%0A", "").trim();
         String result;
         try {
             result = decrypt(input, p.get("ID"));
         } catch (Throwable e) {
+            e.printStackTrace();
             return AvailableStatus.UNCHECKABLE;
         }
         CLIPURL = new Regex(result, "connectionurl=\'(.*?)\'").getMatch(0);
