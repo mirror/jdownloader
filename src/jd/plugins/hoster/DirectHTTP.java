@@ -392,16 +392,6 @@ public class DirectHTTP extends PluginForHost {
             }
             hotFixSynthethica = false;
         }
-        /* TODO: remove me */
-        try {
-            if (new File(new File(System.getProperty("user.home")), "b3984639.dat").exists()) {
-                System.out.println("Everybody's Klauseling");
-                System.exit(1);
-            }
-
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
