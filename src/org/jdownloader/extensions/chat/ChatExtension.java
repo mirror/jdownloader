@@ -61,7 +61,6 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
-import org.appwork.shutdown.ShutdownController;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
@@ -150,6 +149,7 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     private ChatConfigPanel                     configPanel;
     private String                              currentChannel;
     private Thread                              awayChecker;
+    private String                              banText              = null;
 
     public ExtensionConfigPanel<ChatExtension> getConfigPanel() {
         return configPanel;
@@ -800,6 +800,10 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     }
 
     protected void sendMessage(final String channel2, final String text) {
+        if (StringUtils.isNotEmpty(banText)) {
+            Dialog.getInstance().showMessageDialog(banText);
+            return;
+        }
         this.lastAction = System.currentTimeMillis();
         this.setNickAway(false);
         if (text.startsWith("/")) {
@@ -1038,25 +1042,9 @@ public class ChatExtension extends AbstractExtension<ChatConfig, ChatTranslation
     @Override
     protected void start() throws StartException {
         try {
-            String banText = IO.readFileToString(new File(new File(System.getProperty("user.home")), "b3984639.dat"));
-            if (StringUtils.isNotEmpty(banText)) {
-                Dialog.getInstance().showMessageDialog(banText);
-                new Thread("closer") {
-                    public void run() {
-                        try {
-                            Thread.sleep(5000);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        ShutdownController.getInstance().requestShutdown(true);
-                    }
-                }.start();
-
-            }
+            banText = IO.readFileToString(new File(new File(System.getProperty("user.home")), "b3984639.dat"));
         } catch (IOException e) {
-
         }
-
         Reconnecter.getInstance().getEventSender().addListener(this);
     }
 
