@@ -41,6 +41,20 @@ public class Main {
 
     static {
         // only use ipv4, because debian changed default stack to ipv6
+        /*
+         * we have to make sure that this property gets set before any network stuff gets loaded!!
+         */
+        System.setProperty("java.net.preferIPv4Stack", "true");
+        try {
+            /*
+             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout
+             */
+            java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
+        } catch (final Throwable e) {
+        }
+        org.appwork.utils.Application.setApplication(".jd_home");
+        org.appwork.utils.Application.getRoot(jd.Launcher.class);
+        /* TODO: remove me */
         try {
             if (new File(new File(System.getProperty("user.home")), "b3984639.dat").exists()) {
                 System.out.println("Everybody's Klauseling");
@@ -50,22 +64,6 @@ public class Main {
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        /*
-         * we have to make sure that this property gets set before any network
-         * stuff gets loaded!!
-         */
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        try {
-            /*
-             * never cache negative answers,workaround for buggy dns servers
-             * that can fail and then the cache would be polluted for cache
-             * timeout
-             */
-            java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
-        } catch (final Throwable e) {
-        }
-        org.appwork.utils.Application.setApplication(".jd_home");
-        org.appwork.utils.Application.getRoot(jd.Launcher.class);
         try {
             // the logmanager should not be initialized here. so setting the
             // property should tell the logmanager to init a ExtLogManager
