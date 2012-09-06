@@ -67,7 +67,7 @@ public class LiveDriveCom extends PluginForHost {
         final String aid = br.getRegex("\\'(\\d+)\\'\\);\">Download</a>").getMatch(0);
         if (aid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         final String dllink = "http://" + liveDriveUrlUserPart + ".livedrive.com/IO/DownloadSharedFile?NodeID=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]{32})$").getMatch(0) + "&AID=" + aid;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

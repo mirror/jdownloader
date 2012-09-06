@@ -75,8 +75,7 @@ public class VimeoCom extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for
-                 * svn/next major version
+                 * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
@@ -90,8 +89,7 @@ public class VimeoCom extends PluginForHost {
                     if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
                     if (br.containsHTML("iconify_down_b")) {
                         /*
-                         * little pause needed so the next call does not return
-                         * trash
+                         * little pause needed so the next call does not return trash
                          */
                         Thread.sleep(1000);
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -162,8 +160,7 @@ public class VimeoCom extends PluginForHost {
                                 }
                             }
                             /*
-                             * only replace original found links by new ones,
-                             * when we have some
+                             * only replace original found links by new ones, when we have some
                              */
                             if (fp != null) {
                                 fp.addLinks(newRet);
@@ -381,7 +378,7 @@ public class VimeoCom extends PluginForHost {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                br.postPage(MAINPAGE + "/log_in", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(xsrft));
+                br.postPage(MAINPAGE + "/log_in", "action=login&service=vimeo&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + Encoding.urlEncode(xsrft));
                 if (br.getCookie(MAINPAGE, "vimeo") == null) {
                     account.setProperty("cookies", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
