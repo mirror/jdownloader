@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -107,7 +108,10 @@ public class AsFileCom extends PluginForHost {
             passCode = downloadLink.getStringProperty("pass", null);
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
             br.postPage(br.getURL(), "password=" + passCode);
-            if (br.getURL().contains("/password/")) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            if (br.getURL().contains("/password/")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
         }
 
         if (!br.containsHTML("/free\\-download/")) {
@@ -131,15 +135,16 @@ public class AsFileCom extends PluginForHost {
         int wait = 60;
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
-        final String correctedBR = br.toString().replace("\\", "");
+        Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        brc.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
+        final String correctedBR = brc.toString().replace("\\", "");
         dllink = new Regex(correctedBR, "\"url\":\"(http:[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) dllink = new Regex(correctedBR, "\"(http://s\\d+\\.asfile\\.com/file/free/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
-        br.getHeaders().remove("X-Requested-With");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        /* resume no longer possible? at least with a given password it does not work */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
