@@ -1,3 +1,5 @@
-gui_config_antistandby_whiledl2=Téléchargement en cours
+gui_config_antistandby_whiledl2=Téléchargement est en cours
+gui_config_antistandby_whilejd2=JDownloader est en cours d'exécution
 jd_plugins_optional_antistandby_jdantistandby=Anti Extinction
 jd_plugins_optional_antistandby_jdantistandby_description=Empêche la mise en veille ou l'extinction pour favoriser les téléchargements
+mode=Empêche la mise en veille / veille prolongée quand
