@@ -488,7 +488,7 @@ public class Rapidshare extends PluginForHost {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
 
-        String filename = new Regex(link, "https?://[\\w\\.]*?rapidshare\\.com/files/\\d+/?(.*?)($|\\?|&|\"|\r|$)").getMatch(0);
+        String filename = new Regex(link, "https?://[\\w\\.]*?rapidshare\\.com/files/\\d+/?(.*?)(\\?|\"|\r|$)").getMatch(0);
         if (filename == null) {
             filename = new Regex(link, "\\#\\!download(\\||%7C)(\\d+.*?)(\\||%7C)(\\d+)(\\||%7C)(.+?)($|\\||%7C)").getMatch(5);
 
@@ -522,7 +522,7 @@ public class Rapidshare extends PluginForHost {
             name = new Regex(link.getDownloadURL(), "files/\\d+/(.*?/)?(.*?)$").getMatch(1);
         }
 
-        return name;
+        return name.replaceAll("&", "%26");
     }
 
     @Override
