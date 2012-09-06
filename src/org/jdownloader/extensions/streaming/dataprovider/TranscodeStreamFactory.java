@@ -64,7 +64,7 @@ public class TranscodeStreamFactory extends AbstractStreamFactory {
             }
 
         }
-        return streamingChunk.getInputStream(start, end);
+        return new PrintSpeedInputStream(new ListenerInputstreamWrapper(streamingChunk.getInputStream(start, end), 5000, null), "Transcoder");
     }
 
     private Transcoder transcoder;

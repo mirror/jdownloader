@@ -27,6 +27,10 @@ public class ListenerInputstreamWrapper extends InputStream {
         }
     }
 
+    public void setListener(StreamListener listener) {
+        this.listener = listener;
+    }
+
     @Override
     public int read() throws IOException {
         try {

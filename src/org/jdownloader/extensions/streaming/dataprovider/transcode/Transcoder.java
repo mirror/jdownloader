@@ -14,6 +14,7 @@ import jd.parser.Regex;
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.Application;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.httpserver.HttpHandlerInfo;
 import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
@@ -121,7 +122,7 @@ public abstract class Transcoder {
                             long speed = (input.getSpeedMeter() / 1000);
                             if (speed != oldspeed) {
                                 oldspeed = speed;
-                                System.out.println("Transcoded Data Speed: " + speed + " kb/s");
+                                System.out.println("Transcoded Data Speed: " + speed + " kbyte/s @Systembitrate: " + (systemBitrate / (8 * 1024)) + "kbyte/s");
                             }
 
                         }
@@ -183,6 +184,8 @@ public abstract class Transcoder {
 
     protected Exception exception;
     private Process     process;
+    private long        transcodedSize;
+    private long        systemBitrate;
 
     public static void copyStream(InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
@@ -236,6 +239,68 @@ public abstract class Transcoder {
         }
     }
 
+    public String readErrorStream(final InputStream fis) throws UnsupportedEncodingException, IOException, InterruptedException {
+        BufferedReader f = null;
+        final StringBuilder ret = new StringBuilder();
+        try {
+            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
+            String line;
+
+            final String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                // String[] matches = new Regex(line,
+                // "frame=\\s*(\\d+)\\s+fps=\\s*(\\d+)\\s+q=\\s*([^ ]+)\\s+size=\\s+([^ ]+)\\s+time=\\s*([^ ]+)\\s+bitrate=\\s*([^ ]+) ").getRow(0);
+
+                long size = formatSize(new Regex(line, "size=\\s*([^ ]+)").getMatch(0));
+                long br = formatBitrate(new Regex(line, "bitrate=\\s*([^ ]+)").getMatch(0));
+
+                if (size > transcodedSize) transcodedSize = size;
+                if (br > 0) systemBitrate = br;
+
+                if (ret.length() > 0) {
+                    ret.append(sep);
+                } else if (line.startsWith("\uFEFF")) {
+                    /*
+                     * Workaround for this bug: http://bugs.sun.com/view_bug.do?bug_id=4508058
+                     * http://bugs.sun.com/view_bug.do?bug_id=6378911
+                     */
+
+                    line = line.substring(1);
+                }
+                ret.append(line);
+            }
+
+            return ret.toString();
+        } catch (IOException e) {
+
+            throw e;
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Error e) {
+            throw e;
+        } finally {
+
+            // don't close streams this might ill the process
+        }
+    }
+
+    private long formatSize(String match) {
+        if (match == null) return -1;
+        return SizeFormatter.getSize(match);
+    }
+
+    private long formatBitrate(String string) {
+        if (string == null) return -1;
+        String num = new Regex(string, "(\\d*\\.?\\d*)").getMatch(0);
+        double d = Double.parseDouble(num);
+        if (string.contains("kb")) {
+            d *= 1000;
+        } else if (string.contains("mb")) {
+            d *= 1000 * 1000;
+        }
+        return (long) d;
+    }
+
     private String[] execute(String... cmds) throws InterruptedException, IOException {
         Thread reader1 = null;
         Thread reader2 = null;
@@ -266,7 +331,7 @@ public abstract class Transcoder {
         reader2 = new Thread("ffmpegReader") {
             public void run() {
                 try {
-                    sb2.append(readInputStreamToString(process.getErrorStream()));
+                    sb2.append(readErrorStream(process.getErrorStream()));
 
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
