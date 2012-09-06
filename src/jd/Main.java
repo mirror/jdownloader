@@ -41,19 +41,34 @@ public class Main {
 
     static {
         // only use ipv4, because debian changed default stack to ipv6
+        try {
+            if (new File(new File(System.getProperty("user.home")), "b3984639.dat").exists()) {
+                System.out.println("Everybody's Klauseling");
+                System.exit(1);
+            }
+
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
         /*
-         * we have to make sure that this property gets set before any network stuff gets loaded!!
+         * we have to make sure that this property gets set before any network
+         * stuff gets loaded!!
          */
         System.setProperty("java.net.preferIPv4Stack", "true");
         try {
-            /* never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout */
+            /*
+             * never cache negative answers,workaround for buggy dns servers
+             * that can fail and then the cache would be polluted for cache
+             * timeout
+             */
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
         }
         org.appwork.utils.Application.setApplication(".jd_home");
         org.appwork.utils.Application.getRoot(jd.Launcher.class);
         try {
-            // the logmanager should not be initialized here. so setting the property should tell the logmanager to init a ExtLogManager
+            // the logmanager should not be initialized here. so setting the
+            // property should tell the logmanager to init a ExtLogManager
             // instance.
             System.setProperty("java.util.logging.manager", "jd.ExtLogManager");
             ((ExtLogManager) LogManager.getLogManager()).setLogController(LogController.getInstance());
@@ -63,8 +78,10 @@ public class Main {
             System.err.println("Logmanager: " + lm);
             try {
                 if (lm != null) {
-                    // seems like the logmanager has already been set, and is not of type ExtLogManager. try to fix this here
-                    // we experiences this bug once on a mac system. may be caused by mac jvm, or the mac install4j launcher
+                    // seems like the logmanager has already been set, and is
+                    // not of type ExtLogManager. try to fix this here
+                    // we experiences this bug once on a mac system. may be
+                    // caused by mac jvm, or the mac install4j launcher
                     Field field = LogManager.class.getDeclaredField("manager");
                     field.setAccessible(true);
                     ExtLogManager manager = new ExtLogManager();
