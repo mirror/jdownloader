@@ -8,7 +8,6 @@ import net.sf.sevenzipjbinding.IInStream;
 import net.sf.sevenzipjbinding.SevenZipException;
 
 import org.jdownloader.extensions.extraction.ArchiveFile;
-import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
 
 public class RarFromDataproviderStream implements IInStream {
 

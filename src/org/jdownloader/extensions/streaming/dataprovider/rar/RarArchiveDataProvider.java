@@ -47,7 +47,6 @@ import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.T;
-import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
 import org.jdownloader.logging.LogController;
 
 public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOpenVolumeCallback, IArchiveOpenCallback, ICryptoGetTextPassword {
@@ -561,12 +560,12 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         updateContentView(rarArchive.getSimpleInterface());
     }
 
-    @Override
+    // @Override
     public boolean isRangeRequestSupported(Archive archive) {
         return true;
     }
 
-    @Override
+    // @Override
     public long getFinalFileSize(Archive archive) {
         if (sizeOfItemToExtract <= 0) {
 
@@ -651,7 +650,7 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     }
 
-    @Override
+    // @Override
     public InputStream getInputStream(Archive archive, final long startPosition, long stopPosition) throws IOException {
         try {
             if (!isOpen()) {
@@ -718,12 +717,12 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
         return rarArchive != null;
     }
 
-    @Override
+    // @Override
     public boolean canHandle(Archive link, DataProvider<?>... dataProviders) {
         return link instanceof Archive;
     }
 
-    @Override
+    // @Override
     public void close() throws IOException {
 
         try {
@@ -763,6 +762,21 @@ public class RarArchiveDataProvider implements DataProvider<Archive>, IArchiveOp
 
     public void setException(Throwable e) {
         this.exception = e;
+    }
+
+    @Override
+    public boolean canHandle(ArchiveFile archiveFile, DataProvider[] dataProviders) {
+        return false;
+    }
+
+    @Override
+    public InputStream getInputStream(ArchiveFile archiveFile, long l, int i) {
+        return null;
+    }
+
+    @Override
+    public long getFinalFileSize(ArchiveFile archiveFile) {
+        return 0;
     }
 
 }

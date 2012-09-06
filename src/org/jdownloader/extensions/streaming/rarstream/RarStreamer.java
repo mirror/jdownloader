@@ -40,12 +40,11 @@ import org.jdownloader.extensions.extraction.Signature;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.streaming.StreamingExtension;
-import org.jdownloader.extensions.streaming.StreamingInterface;
 import org.jdownloader.extensions.streaming.StreamingProvider;
 import org.jdownloader.extensions.streaming.T;
 import org.jdownloader.logging.LogController;
 
-public class RarStreamer implements Runnable, StreamingInterface {
+public class RarStreamer implements Runnable {
 
     private Archive              archive;
     private ISevenZipInArchive   rarArchive;
@@ -537,17 +536,17 @@ public class RarStreamer implements Runnable, StreamingInterface {
         }
     }
 
-    @Override
+    // @Override
     public boolean isRangeRequestSupported() {
         return true;
     }
 
-    @Override
+    // @Override
     public long getFinalFileSize() {
         return bestItemSize;
     }
 
-    @Override
+    // @Override
     public InputStream getInputStream(final long startPosition, final long stopPosition) throws IOException {
 
         logger.info("New Stream: " + startPosition + " -> " + stopPosition);

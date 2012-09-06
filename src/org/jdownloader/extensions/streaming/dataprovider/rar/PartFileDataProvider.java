@@ -9,11 +9,8 @@ import jd.plugins.DownloadLink;
 import org.jdownloader.extensions.extraction.ArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFile;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFile;
-import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
-import org.jdownloader.extensions.streaming.dataprovider.DownloadLinkProvider;
-import org.jdownloader.extensions.streaming.dataprovider.LocalFileProvider;
 
-public class PartFileDataProvider implements DataProvider<ArchiveFile> {
+public class PartFileDataProvider {
 
     private DownloadLinkProvider downloadLinkProvider;
     private LocalFileProvider    localFileProvider;
@@ -21,25 +18,25 @@ public class PartFileDataProvider implements DataProvider<ArchiveFile> {
     public PartFileDataProvider(DownloadLinkProvider downloadLinkProvider) {
 
         this.downloadLinkProvider = downloadLinkProvider;
-        localFileProvider = new LocalFileProvider();
+        // localFileProvider = new LocalFileProvider();
     }
 
-    @Override
+    // @Override
     public boolean canHandle(ArchiveFile link, DataProvider<?>... dataProviders) {
         return link instanceof ArchiveFile;
     }
 
-    @Override
+    // @Override
     public boolean isRangeRequestSupported(ArchiveFile link) {
         return true;
     }
 
-    @Override
+    // @Override
     public long getFinalFileSize(ArchiveFile link) {
         return link.getFileSize();
     }
 
-    @Override
+    // @Override
     public InputStream getInputStream(ArchiveFile link, long startPosition, long stopPosition) throws IOException {
 
         if (link instanceof DownloadLinkArchiveFile) {
@@ -56,7 +53,7 @@ public class PartFileDataProvider implements DataProvider<ArchiveFile> {
         throw new IOException("Not SUpported: " + link);
     }
 
-    @Override
+    // @Override
     public void close() throws IOException {
         Throwable t = null;
         try {

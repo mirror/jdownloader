@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.streaming.dataprovider.transcode;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +10,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import jd.parser.Regex;
-import jd.plugins.DownloadLink;
 
 import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
 import org.appwork.utils.Application;
@@ -22,33 +20,38 @@ import org.appwork.utils.net.httpserver.handler.HttpRequestHandler;
 import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
+import org.appwork.utils.net.meteredconnection.MeteredInputStream;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.processes.ProcessBuilderFactory;
+import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.jdownloader.api.HttpServer;
 import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.extensions.streaming.ByteRange;
 import org.jdownloader.extensions.streaming.StreamLinker;
-import org.jdownloader.extensions.streaming.dataprovider.DataProvider;
-import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
+import org.jdownloader.extensions.streaming.dataprovider.StreamFactoryInterface;
 import org.jdownloader.logging.LogController;
 
 public abstract class Transcoder {
 
-    private int             port;
-    private HttpHandlerInfo streamHandler;
-    private String          sessionID;
-    private LogSource       logger;
-
-    private Thread          thread;
+    private int               port;
+    private HttpHandlerInfo   streamHandler;
+    private String            sessionID;
+    private LogSource         logger;
+    private ArrayList<String> commands;
 
     public Transcoder(int port) {
         this.port = port;
         logger = LogController.getInstance().getLogger(Transcoder.class.getName());
         sessionID = new UniqueAlltimeID().toString();
-        thread = Thread.currentThread();
+
+    }
+
+    public String toString() {
+        return "Transcoder: " + commands;
     }
 
     public void close() {
-
+        logger.info("Closed: " + this);
         if (streamHandler != null) {
             HttpServer.getInstance().unregisterRequestHandler(streamHandler);
         }
@@ -57,12 +60,6 @@ public abstract class Transcoder {
         }
         exception = null;
     }
-
-    public String toString() {
-        return "Transcoder<<" + streamingInterface;
-    }
-
-    private PipeStreamingInterface streamingInterface;
 
     public void run() throws Exception {
 
@@ -85,19 +82,20 @@ public abstract class Transcoder {
             for (String s : getFFMpegCommandLine("http://127.0.0.1:" + port + "/ffmpeg/" + sessionID)) {
                 ffmpegcommands.add(s);
             }
+            commands = ffmpegcommands;
             results = execute(ffmpegcommands.toArray(new String[] {}));
-            logger.info(results[0]);
-            logger.info(results[1]);
 
         } catch (Exception e) {
-            logger.log(e);
-            setException(e);
+
+            addException(e);
 
         } finally {
             HttpServer.getInstance().unregisterRequestHandler(streamHandler);
             if (exception != null) throw exception;
         }
     }
+
+    protected abstract void addException(Exception e);
 
     protected abstract String[] getFFMpegCommandLine(String string);
 
@@ -108,17 +106,24 @@ public abstract class Transcoder {
             public boolean onPostRequest(PostRequest request, HttpResponse response) {
                 if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) return false;
                 logger.info("Incoming transcoded data\r\n" + request);
-                InputStream input;
+                MeteredInputStream input;
                 try {
-                    input = new BufferedInputStream(request.getInputStream());
+                    input = new MeteredInputStream(request.getInputStream(), new AverageSpeedMeter(10));
 
                     int len;
-                    byte[] buffer = new byte[10 * 1024];
+                    byte[] buffer = new byte[100 * 1024];
+                    long oldspeed = 0;
                     while ((len = input.read(buffer)) != -1) {
-                        if (thread.isInterrupted()) throw new InterruptedException("Owner Thread Interrupted");
                         if (len > 0) {
-                            System.out.println("Write Transcoded Data: " + len);
+
                             write(buffer, len);
+
+                            long speed = (input.getSpeedMeter() / 1000);
+                            if (speed != oldspeed) {
+                                oldspeed = speed;
+                                System.out.println("Transcoded Data Speed: " + speed + " kb/s");
+                            }
+
                         }
                     }
 
@@ -131,24 +136,16 @@ public abstract class Transcoder {
 
                         // ffmpeg killed;
                         logger.info("FFMPeg killed transcoded Stream");
-
                         return true;
                     }
-                    logger.log(e);
-                    setException(e);
+
+                    addException(e);
                     try {
                         response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
                     } catch (Exception e1) {
 
                     }
 
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    try {
-                        response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes("UTF-8"));
-                    } catch (Exception e1) {
-
-                    }
                 }
 
                 return true;
@@ -159,20 +156,16 @@ public abstract class Transcoder {
 
                 if (!request.getRequestedURL().equals("/ffmpeg/" + sessionID)) return false;
 
-                if (streamingInterface == null) {
-                    streamingInterface = new PipeStreamingInterface(getDownloadLink(), getDataProvider());
-                }
                 try {
-                    new StreamLinker(response, request).run(streamingInterface);
+                    new StreamLinker(response).run(getStreamFactory(), new ByteRange(request));
 
                 } catch (Exception e) {
                     if (e.getMessage().contains("socket write error")) {
                         // output closed by ffmpeg
                         return true;
                     }
-                    setException(e);
-                    logger.log(e);
-                    thread.interrupt();
+                    addException(e);
+
                     try {
                         response.getOutputStream().write(Exceptions.getStackTrace(e).getBytes());
                     } catch (IOException e1) {
@@ -185,6 +178,8 @@ public abstract class Transcoder {
             }
         });
     }
+
+    protected abstract StreamFactoryInterface getStreamFactory();
 
     protected Exception exception;
     private Process     process;
@@ -205,10 +200,6 @@ public abstract class Transcoder {
 
     protected abstract void write(byte[] buffer, int length) throws IOException;
 
-    protected abstract DownloadLink getDownloadLink();
-
-    protected abstract DataProvider getDataProvider();
-
     public String readInputStreamToString(final InputStream fis) throws UnsupportedEncodingException, IOException, InterruptedException {
         BufferedReader f = null;
         final StringBuilder ret = new StringBuilder();
@@ -218,8 +209,6 @@ public abstract class Transcoder {
 
             final String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
-                logger.info(line);
-                if (Thread.currentThread().isInterrupted()) throw new InterruptedException("Owner Thread Interrupted");
                 if (ret.length() > 0) {
                     ret.append(sep);
                 } else if (line.startsWith("\uFEFF")) {
@@ -242,7 +231,7 @@ public abstract class Transcoder {
         } catch (Error e) {
             throw e;
         } finally {
-            logger.info(ret.toString());
+
             // don't close streams this might ill the process
         }
     }

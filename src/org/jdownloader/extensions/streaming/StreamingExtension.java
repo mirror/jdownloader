@@ -44,7 +44,6 @@ import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveItem;
 import org.jdownloader.extensions.extraction.ExtractionExtension;
 import org.jdownloader.extensions.extraction.ValidateArchiveAction;
-import org.jdownloader.extensions.streaming.dataprovider.DownloadLinkProvider;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
 import org.jdownloader.extensions.streaming.gui.VLCGui;
 import org.jdownloader.extensions.streaming.gui.actions.AddToLibraryAction;
@@ -430,10 +429,6 @@ public class StreamingExtension extends AbstractExtension<StreamingConfig, Strea
             logger.log(e);
         }
         return "127.0.0.1";
-    }
-
-    public DownloadLinkProvider getDownloadLinkDataProvider() {
-        return new DownloadLinkProvider(this);
     }
 
     public String createStreamUrl(String id, String deviceID, String format, String subpath) {

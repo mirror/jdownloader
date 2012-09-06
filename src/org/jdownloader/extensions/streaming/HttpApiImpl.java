@@ -39,8 +39,9 @@ import org.appwork.utils.net.httpserver.requests.GetRequest;
 import org.appwork.utils.net.httpserver.requests.HeadRequest;
 import org.appwork.utils.net.httpserver.requests.PostRequest;
 import org.appwork.utils.net.httpserver.responses.HttpResponse;
-import org.jdownloader.extensions.streaming.dataprovider.PipeStreamingInterface;
-import org.jdownloader.extensions.streaming.dataprovider.TranscodeDataProvider;
+import org.jdownloader.extensions.streaming.dataprovider.DownloadStreamManager;
+import org.jdownloader.extensions.streaming.dataprovider.StreamFactoryInterface;
+import org.jdownloader.extensions.streaming.dataprovider.TranscodeStreamManager;
 import org.jdownloader.extensions.streaming.dlna.DLNATransferMode;
 import org.jdownloader.extensions.streaming.dlna.DLNATransportConstants;
 import org.jdownloader.extensions.streaming.dlna.profiles.Profile;
@@ -62,12 +63,16 @@ public class HttpApiImpl implements HttpRequestHandler {
     private StreamingExtension extension;
     private LogSource          logger;
     private MediaServer        mediaServer;
+    private TranscodeStreamManager   transcodeManager;
+    private DownloadStreamManager    downloadManager;
 
     public HttpApiImpl(StreamingExtension extension, MediaServer mediaServer) {
         this.extension = extension;
         this.mediaServer = mediaServer;
         logger = LogController.getInstance().getLogger(getClass().getName());
         Profile.init();
+        transcodeManager = new TranscodeStreamManager(extension);
+        downloadManager = new DownloadStreamManager(extension);
 
     }
 
@@ -131,6 +136,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 return true;
 
             }
+            ByteRange range = new ByteRange(request);
             // can be null if this has been a playto from downloadlist or linkgrabber
             mediaItem = (MediaItem) extension.getItemById(id);
             dlink = extension.getLinkById(id);
@@ -166,7 +172,6 @@ public class HttpApiImpl implements HttpRequestHandler {
                 ct = callingDevice.getHandler().createContentType(dlnaProfile, mediaItem);
 
             }
-            StreamingInterface streamingInterface = null;
 
             // boolean archiveIsOpen = true;
             // if (streamingInterface == null) {
@@ -186,7 +191,14 @@ public class HttpApiImpl implements HttpRequestHandler {
             //
             // } else {
 
-            streamingInterface = new PipeStreamingInterface(dlink, new TranscodeDataProvider(extension.getSettings().getStreamServerPort(), mediaItem, callingDevice, isTranscodeRequired, dlnaProfile, extension.getDownloadLinkDataProvider()));
+            StreamFactoryInterface streamfactory = downloadManager.getStreamFactory(dlink);
+            if (isTranscodeRequired) {
+                streamfactory = transcodeManager.getStreamFactory(streamfactory, mediaItem, callingDevice, dlnaProfile);
+            }
+
+            // streamingInterface = new PipeStreamingInterface(dlink, new
+            // TranscodeDataProvider(extension.getSettings().getStreamServerPort(), mediaItem, callingDevice, isTranscodeRequired,
+            // dlnaProfile, extension.getDownloadLinkDataProvider()));
             // addHandler(id + "DeviceHandler:" + callingDevice.getHandler().getID(), streamingInterface);
             //
             // }
@@ -212,7 +224,7 @@ public class HttpApiImpl implements HttpRequestHandler {
             if (request instanceof HeadRequest) {
                 System.out.println("HEAD " + request.getRequestHeaders());
                 response.setResponseCode(ResponseCode.SUCCESS_OK);
-                length = streamingInterface.getFinalFileSize();
+                length = streamfactory.getContentLength();
                 if (length > 0) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_LENGTH, length + ""));
                 if (ct != null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
@@ -225,7 +237,7 @@ public class HttpApiImpl implements HttpRequestHandler {
                 if (ct != null) response.getResponseHeaders().add(new HTTPHeader(HTTPConstants.HEADER_RESPONSE_CONTENT_TYPE, ct));
                 if (dlnaFeatures != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_FEATURES, dlnaFeatures));
                 if (transferMode != null) response.getResponseHeaders().add(new HTTPHeader(DLNATransportConstants.HEADER_TRANSFERMODE, transferMode));
-                new StreamLinker(response, request).run(streamingInterface);
+                new StreamLinker(response).run(streamfactory, range);
 
             }
         } catch (final Throwable e) {
