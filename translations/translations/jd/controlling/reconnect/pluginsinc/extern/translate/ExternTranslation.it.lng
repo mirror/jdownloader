@@ -1,4 +1,4 @@
-interaction_externreconnect_command=Commando (usa percorso assoluto)
+interaction_externreconnect_command=Commando (usa percorso assoluto della cartella)
 interaction_externreconnect_dummybat=Usa esecuzione speciale per windows
-interaction_externreconnect_parameter=Parametro (1 comando per riga)
+interaction_externreconnect_parameter=Parametro (1 parametro per riga)
 jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Strumento esterno riconnessione
