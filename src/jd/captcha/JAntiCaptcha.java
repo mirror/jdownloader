@@ -248,19 +248,19 @@ public class JAntiCaptcha {
         return extern;
     }
 
-    private String                         command;
+    private String                      command;
 
-    private String                         dstFile;
+    private String                      dstFile;
 
-    private String                         srcFile;
+    private String                      srcFile;
 
-    private Image                          sourceImage;
+    private Image                       sourceImage;
 
-    private final LogSource                logger;
+    private final LogSource             logger;
 
-    private final JACMethod                method;
+    private final JACMethod             method;
 
-    public static final HashSet<JACMethod> SYNCMAP = new HashSet<JACMethod>();
+    public static final HashSet<String> SYNCMAP = new HashSet<String>();
 
     public JAntiCaptcha(String methodName) {
         logger = LogController.CL();
@@ -456,11 +456,11 @@ public class JAntiCaptcha {
 
     private String callExtern() {
         /* wait till locked */
-        logger.info("acquire lock: " + method.getServiceName());
+        logger.info("acquire lock: " + methodDirName);
         while (true) {
             synchronized (SYNCMAP) {
-                if (SYNCMAP.add(method) == true) {
-                    logger.info("locked: " + method.getServiceName());
+                if (SYNCMAP.add(methodDirName) == true) {
+                    logger.info("locked: " + methodDirName);
                     break;
                 }
             }
@@ -508,8 +508,8 @@ public class JAntiCaptcha {
         } finally {
             /* remove lock */
             synchronized (SYNCMAP) {
-                logger.info("release lock: " + method.getServiceName());
-                SYNCMAP.remove(method);
+                logger.info("release lock: " + methodDirName);
+                SYNCMAP.remove(methodDirName);
             }
         }
     }

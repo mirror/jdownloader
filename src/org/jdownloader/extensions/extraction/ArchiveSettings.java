@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.appwork.storage.config.ConfigInterface;
@@ -10,7 +9,18 @@ public interface ArchiveSettings extends ConfigInterface {
     public static enum BooleanStatus {
         UNSET,
         TRUE,
-        FALSE
+        FALSE;
+
+        public Boolean getBoolean() {
+            switch (this) {
+            case FALSE:
+                return Boolean.FALSE;
+            case TRUE:
+                return Boolean.TRUE;
+            default:
+                return null;
+            }
+        }
     }
 
     public HashSet<String> getPasswords();

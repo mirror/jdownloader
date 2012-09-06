@@ -1,8 +1,9 @@
 package org.jdownloader.extensions.extraction;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
+
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 
 public interface ArchiveFactory extends ArchiveFile {
     public static final String SUBFOLDER   = "%SUBFOLDER%";
@@ -34,6 +35,8 @@ public interface ArchiveFactory extends ArchiveFile {
     String createDefaultExtractToPath(Archive archive);
 
     String createExtractSubPath(String path, Archive archiv);
+
+    BooleanStatus getDefaultAutoExtract();
 
     Archive createArchive();
 

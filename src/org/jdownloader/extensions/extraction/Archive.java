@@ -50,8 +50,8 @@ public class Archive {
     }
 
     /**
-     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this
-     * setter is used to set the CORRECT password in the password finding algorithm only
+     * do not use this setter. if you feel like setting a password outside the extracting internals, use getSettings().setPasswords.. this setter is used to set
+     * the CORRECT password in the password finding algorithm only
      * 
      * @param password
      */
@@ -68,32 +68,32 @@ public class Archive {
     /**
      * First part of the archives.
      */
-    private ArchiveFile            firstArchiveFile = null;
+    private ArchiveFile                 firstArchiveFile = null;
 
     /**
      * Exitcode of the extrraction.
      */
-    private int                    exitCode         = -1;
+    private int                         exitCode         = -1;
 
     /**
      * Extractionprocress got interrupted
      */
-    private boolean                gotInterrupted   = false;
+    private boolean                     gotInterrupted   = false;
 
     /**
      * Size of the corrent extracted files.
      */
-    private long                   extracted        = 0;
+    private long                        extracted        = 0;
 
     /**
      * Is extraction process active.
      */
-    private boolean                active           = false;
+    private boolean                     active           = false;
 
     /**
      * Type of the archive.
      */
-    private ArchiveType            type             = null;
+    private ArchiveType                 type             = null;
 
     /**
      * ArchiveFiles CRC error.
@@ -108,14 +108,14 @@ public class Archive {
     /**
      * The extractor for the archive.
      */
-    private IExtraction            extractor;
-    private ArchiveFactory         factory;
+    private IExtraction                 extractor;
+    private ArchiveFactory              factory;
 
-    private String                 name;
+    private String                      name;
 
-    private ContentView            contents;
+    private ContentView                 contents;
 
-    private ArchiveSettings        settings;
+    private ArchiveSettings             settings;
 
     public ArchiveFactory getFactory() {
         return factory;
@@ -176,8 +176,8 @@ public class Archive {
     }
 
     /**
-     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not
-     * extracted due to overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
+     * Returns how much bytes got extracted. this is NOT getSize() after extracting in some cases. Because files may be filtered, or not extracted due to
+     * overwrite rules. user {@link ExtractionController#getProgress()} to get the extraction progress
      * 
      * @return
      */
@@ -285,7 +285,7 @@ public class Archive {
             if (settings != null) return settings;
             Application.getResource("cfg/archives/").mkdirs();
             settings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
-
+            settings.setAutoExtract(getFactory().getDefaultAutoExtract());
         }
         return settings;
     }

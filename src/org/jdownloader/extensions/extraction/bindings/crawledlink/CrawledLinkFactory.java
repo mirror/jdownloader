@@ -15,6 +15,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.downloadlink.DownloadLinkArchiveFactory;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.settings.GeneralSettings;
@@ -171,6 +172,11 @@ public class CrawledLinkFactory extends CrawledLinkArchiveFile implements Archiv
 
         }
 
+    }
+
+    @Override
+    public BooleanStatus getDefaultAutoExtract() {
+        return getLinks().get(0).getArchiveInfo().getAutoExtract();
     }
 
 }

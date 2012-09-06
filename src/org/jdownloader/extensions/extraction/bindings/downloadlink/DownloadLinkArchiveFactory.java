@@ -23,6 +23,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.bindings.file.FileArchiveFactory;
 import org.jdownloader.settings.GeneralSettings;
 
@@ -233,6 +234,11 @@ public class DownloadLinkArchiveFactory extends DownloadLinkArchiveFile implemen
         if (time == LAST_USED_TIMESTAMP) time++;
         LAST_USED_TIMESTAMP = time;
         return time + "";
+    }
+
+    @Override
+    public BooleanStatus getDefaultAutoExtract() {
+        return BooleanStatus.UNSET;
     }
 
 }

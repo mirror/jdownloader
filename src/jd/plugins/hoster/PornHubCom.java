@@ -76,6 +76,7 @@ public class PornHubCom extends PluginForHost {
         dlUrl = null;
         String file_name = br.getRegex("class=\"section_bar\"><h1 class=\"section_title\">([^<>]*?)</h1>").getMatch(0);
         if (file_name == null) file_name = br.getRegex("<title([^<>]*?) \\- Pornhub\\.com</title>").getMatch(0);
+        if (file_name == null) file_name = br.getRegex("<h1 class=\"section_title\">([^<>]*?)</h1>").getMatch(0);
         if (file_name == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String[] linksplit = downloadLink.getDownloadURL().split("=");
         final String video_id = linksplit[linksplit.length - 1];
