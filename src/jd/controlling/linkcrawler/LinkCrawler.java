@@ -47,13 +47,13 @@ public class LinkCrawler implements IOPermission {
 
     private LazyHostPlugin              directHTTP                  = null;
     private LazyHostPlugin              ftp                         = null;
-    private java.util.List<CrawledLink>      crawledLinks                = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink> crawledLinks                = new ArrayList<CrawledLink>();
     private AtomicInteger               crawledLinksCounter         = new AtomicInteger(0);
-    private java.util.List<CrawledLink>      filteredLinks               = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink> filteredLinks               = new ArrayList<CrawledLink>();
     private AtomicInteger               filteredLinksCounter        = new AtomicInteger(0);
-    private java.util.List<CrawledLink>      brokenLinks                 = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink> brokenLinks                 = new ArrayList<CrawledLink>();
     private AtomicInteger               brokenLinksCounter          = new AtomicInteger(0);
-    private java.util.List<CrawledLink>      unhandledLinks              = new ArrayList<CrawledLink>();
+    private java.util.List<CrawledLink> unhandledLinks              = new ArrayList<CrawledLink>();
     private AtomicInteger               unhandledLinksCounter       = new AtomicInteger(0);
     private AtomicInteger               crawler                     = new AtomicInteger(0);
     private static AtomicInteger        CRAWLER                     = new AtomicInteger(0);
@@ -184,8 +184,7 @@ public class LinkCrawler implements IOPermission {
     /**
      * returns the generation of this LinkCrawler if thisGeneration is true.
      * 
-     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this
-     * child
+     * if a parent LinkCrawler does exist and thisGeneration is false, we return the older generation of the parent LinkCrawler or this child
      * 
      * @param thisGeneration
      * @return
@@ -247,8 +246,8 @@ public class LinkCrawler implements IOPermission {
             if (possibleCryptedLinks == null || possibleCryptedLinks.size() == 0) return;
             if (insideDecrypterPlugin()) {
                 /*
-                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting
-                 * for linkcrawler results
+                 * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin waiting for linkcrawler
+                 * results
                  */
                 distribute(possibleCryptedLinks);
                 return;
@@ -362,15 +361,22 @@ public class LinkCrawler implements IOPermission {
                 br = new Browser();
                 String url = source.getURL();
                 br.openGetConnection(url);
-                if (br.getRedirectLocation() != null) {
-                    try {
-                        br.getHttpConnection().disconnect();
-                    } catch (Throwable e) {
+                HashSet<String> loopAvoid = new HashSet<String>();
+                loopAvoid.add(url);
+                for (int i = 0; i < 10; i++) {
+                    if (br.getRedirectLocation() != null) {
+                        try {
+                            br.getHttpConnection().disconnect();
+                        } catch (Throwable e) {
+                        }
+                        url = br.getRedirectLocation();
+                        if (loopAvoid.add(url) == false) break;
+                        br.openGetConnection(url);
+                    } else {
+                        break;
                     }
-                    url = br.getRedirectLocation();
-                    br.openGetConnection(url);
                 }
-                if (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text"))) {
+                if (br.getRedirectLocation() == null && (br.getHttpConnection().isContentDisposition() || (br.getHttpConnection().getContentType() != null && !br.getHttpConnection().getContentType().contains("text")))) {
                     try {
                         br.getHttpConnection().disconnect();
                     } catch (Throwable e) {
@@ -386,10 +392,26 @@ public class LinkCrawler implements IOPermission {
                     if (baseUrl != null && !baseUrl.endsWith("/")) {
                         baseUrl = baseUrl + "/";
                     }
-                    possibleCryptedLinks = _crawl(br.toString(), baseUrl, false);
-                }
-                if (possibleCryptedLinks != null && possibleCryptedLinks.size() > 0) {
-                    crawl(possibleCryptedLinks);
+                    final String finalBaseUrl = baseUrl;
+                    final String browserContent = br.toString();
+                    possibleCryptedLinks = _crawl(url, null, false);
+                    if (possibleCryptedLinks != null) {
+                        if (possibleCryptedLinks.size() == 1) {
+                            /* first check if the url itself can be handled */
+                            CrawledLink link = possibleCryptedLinks.get(0);
+                            link.setUnknownHandler(new UnknownCrawledLinkHandler() {
+
+                                @Override
+                                public void unhandledCrawledLink(CrawledLink link, LinkCrawler lc) {
+                                    /* unhandled url, lets parse the content on it */
+                                    List<CrawledLink> possibleCryptedLinks2 = lc._crawl(browserContent, finalBaseUrl, false);
+                                    if (possibleCryptedLinks2 != null && possibleCryptedLinks2.size() > 0) lc.crawl(possibleCryptedLinks2);
+                                }
+                            });
+                        }
+                        crawl(possibleCryptedLinks);
+                    }
+
                 }
             } catch (Throwable e) {
             } finally {
@@ -448,8 +470,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -490,8 +512,8 @@ public class LinkCrawler implements IOPermission {
                                     if (allPossibleCryptedLinks != null) {
                                         if (insideDecrypterPlugin()) {
                                             /*
-                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids
-                                             * deadlocks on plugin waiting for linkcrawler results
+                                             * direct decrypt this link because we are already inside a LinkCrawlerThread and this avoids deadlocks on plugin
+                                             * waiting for linkcrawler results
                                              */
                                             for (final CrawledLink decryptThis : allPossibleCryptedLinks) {
                                                 if (generation != this.getCrawlerGeneration(false)) {
@@ -565,8 +587,7 @@ public class LinkCrawler implements IOPermission {
                     }
                     if (unnknownHandler != null) {
                         /*
-                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable
-                         * by a Plugin
+                         * CrawledLink is unhandled till now , but has an UnknownHandler set, lets call it, maybe it makes the Link handable by a Plugin
                          */
                         try {
                             unnknownHandler.unhandledCrawledLink(possibleCryptedLink, this);

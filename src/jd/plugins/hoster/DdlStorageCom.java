@@ -116,7 +116,7 @@ public class DdlStorageCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
-        getPage(link.getDownloadURL());
+        getPage(link.getDownloadURL(), true);
         if (new Regex(correctedBR, "(>File Not Found<|The file you were looking for could not be found)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
@@ -336,19 +336,14 @@ public class DdlStorageCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -414,9 +409,15 @@ public class DdlStorageCom extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
-        br.getPage(page);
-        correctBR();
+    private void getPage(String page, boolean follow) throws Exception {
+        boolean before = br.isFollowingRedirects();
+        try {
+            if (follow) br.setFollowRedirects(true);
+            br.getPage(page);
+            correctBR();
+        } finally {
+            br.setFollowRedirects(before);
+        }
     }
 
     private void postPage(String page, String postdata) throws Exception {
@@ -621,14 +622,14 @@ public class DdlStorageCom extends PluginForHost {
                         return;
                     }
                 }
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST + "/login.html", true);
                 Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/?op=my_account");
+                getPage(COOKIE_HOST + "/?op=my_account", true);
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
@@ -658,12 +659,12 @@ public class DdlStorageCom extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
-            getPage(link.getDownloadURL());
+            getPage(link.getDownloadURL(), true);
             doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
-                getPage(link.getDownloadURL());
+                getPage(link.getDownloadURL(), true);
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(link, true, passCode);

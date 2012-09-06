@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.URL;
 import java.util.logging.Level;
 
 import jd.PluginWrapper;
@@ -69,7 +70,8 @@ public class XunleiCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             if (!con.getContentType().contains("html")) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                String name = getFileNameFromURL(new URL(downloadLink.getDownloadURL()));
+                if (downloadLink.getFinalFileName() == null) downloadLink.setFinalFileName(Encoding.htmlDecode(name));
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -439,11 +439,9 @@ public class TbCm extends PluginForDecrypt {
         if (br == null) {
             br = this.br;
         }
-        String cookies = br.getCookies(getHost()).toString();
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         br.setCookie("youtube.com", "PREF", "f2=40100000");
-
         br.getHeaders().put("User-Agent", "Wget/1.12");
         br.getPage(video);
         if (br.containsHTML("id=\"unavailable-submessage\" class=\"watch-unavailable-submessage\"")) { return null; }
@@ -454,7 +452,6 @@ public class TbCm extends PluginForDecrypt {
             YT_FILENAME = Encoding.htmlDecode(br.getRegex("&title=([^&$]+)").getMatch(0).replaceAll("\\+", " ").trim());
             fileNameFound = true;
         }
-
         final String url = br.getURL();
         boolean ythack = false;
         if (url != null && !url.equals(video)) {
