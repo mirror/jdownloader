@@ -123,7 +123,9 @@ public class DevArtCm extends PluginForDecrypt {
         if (br.containsHTML(">Mature Content</span>") && !br.containsHTML(">Mature Content Filter<")) {
             ratedContent = true;
         }
-        String dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
+        /* download high res version if available */
+        String dllink = br.getRegex("id=\"download-button\".*?href=\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("id=\"gmi\\-ResViewSizer_fullimg\" data\\-gmiclass=\"ResViewSizer_fullimg\".*?src=\"(http://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink != null) {
             final DownloadLink dl = createDownloadlink("directhttp://" + dllink);

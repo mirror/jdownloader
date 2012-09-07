@@ -324,6 +324,8 @@ public class Freaksharenet extends PluginForHost {
         if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
             NOPREMIUM = true;
             MAXPREMDLS = 1;
+        } else {
+            MAXPREMDLS = -1;
         }
     }
 

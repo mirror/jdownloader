@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hippohosted.com" }, urls = { "http://(www\\.)?hippohosted\\.com/\\?d=[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hippohosted.com" }, urls = { "http://(www\\.)?hippohosted\\.com/(\\?d=[A-Z0-9]+|files/[a-zA-Z0-9]+\\.html)" }, flags = { 0 })
 public class HippoHostedCom extends PluginForHost {
 
     public HippoHostedCom(PluginWrapper wrapper) {
