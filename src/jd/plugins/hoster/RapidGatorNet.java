@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
@@ -111,12 +113,52 @@ public class RapidGatorNet extends PluginForHost {
         return prepBr;
     }
 
+    private String handleJavaScriptRedirect() {
+        /* check for js redirect */
+        int c = br.getRegex("\n").count();
+        boolean isJsRedirect = br.getRegex("<html><head><meta http\\-equiv=\"Content\\-Type\" content=\"[\\w\\-/;=]{20,50}\"></head>").matches();
+        String[] jsRedirectScripts = br.getRegex("<script language=\"JavaScript\">(.*?)</script>").getColumn(0);
+        if (jsRedirectScripts != null && jsRedirectScripts.length == 1) {
+            if (c == 0 && isJsRedirect) {
+                /* final jsredirectcheck */
+                String jsRedirectScript = jsRedirectScripts[0];
+                int scriptLen = jsRedirectScript.length();
+                int jsFactor = (int) Math.round(((float) scriptLen / (float) br.toString().length() * 100));
+                /* min 75% of html contains js */
+                if (jsFactor > 75) {
+                    String returnValue = new Regex(jsRedirectScript, ";(\\w+)=\'\';$").getMatch(0);
+                    jsRedirectScript = jsRedirectScript.substring(0, jsRedirectScript.lastIndexOf("window.location.href"));
+                    if (scriptLen > jsRedirectScript.length() && returnValue != null) return executeJavaScriptRedirect(returnValue, jsRedirectScript);
+                }
+            }
+        }
+        return null;
+    }
+
+    private String executeJavaScriptRedirect(String retVal, String script) {
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        try {
+            engine.eval(script);
+            result = engine.get(retVal);
+        } catch (final Throwable e) {
+            return null;
+        }
+        return result != null ? result.toString() : null;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepareBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+
+        /* jsRedirect */
+        String reDirHash = handleJavaScriptRedirect();
+        if (reDirHash != null) br.getPage(link.getDownloadURL() + "?" + reDirHash);
+
         if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
             link.setUrlDownload(link.getDownloadURL().replace("%", ""));
             br.getPage(link.getDownloadURL());
