@@ -48,14 +48,17 @@ public class FlStbCm extends PluginForDecrypt {
         if (parameter.contains("/go.html")) {
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) return null;
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("video.filestube.com/watch")) {
             if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/v/([^<>\"\\'/\\&]+)(\\&|\")").getMatch(1);
+            String externID = br.getRegex("name=\"src\" value=\"http://(www\\.)?youtube\\.com/(v/|watch\\?v=)([^<>\"\\'/\\&]+)(\\&|\")").getMatch(2);
             if (externID != null) {
                 decryptedLinks.add(createDownloadlink("http://www.youtube.com/watch?v=" + externID));
                 return decryptedLinks;
@@ -190,9 +193,15 @@ public class FlStbCm extends PluginForDecrypt {
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             // Find IDs for alternative links
             String[][] alternativeLinks = br.getRegex("alternate_files\\.push\\(\\{key: \\'([a-z0-9]+)\\',token: \\'([a-z0-9]+)\\'\\}\\)").getMatches();
-            if (pagePiece == null) return null;
+            if (pagePiece == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             String temp[] = pagePiece.split("\r\n");
-            if (temp == null) return null;
+            if (temp == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (temp == null || temp.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

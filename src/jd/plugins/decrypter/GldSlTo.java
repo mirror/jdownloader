@@ -62,9 +62,10 @@ public class GldSlTo extends PluginForDecrypt {
             return null;
         }
         final String[] streamIDs = br.getRegex("onClick=\"load_Stream\\(\\'(\\d+)\\'\\)").getColumn(0);
+        final String ajaxPost = getAjaxPost();
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         for (final String cryptID : decryptIDs) {
-            br.postPage("http://goldesel.to/ajax/lddl.php", "ID=" + cryptID);
+            br.postPage(ajaxPost, "ID=" + cryptID);
             String finallink = br.toString();
             if (!finallink.startsWith("http") || finallink.length() > 500) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -91,4 +92,12 @@ public class GldSlTo extends PluginForDecrypt {
         return decryptedLinks;
     }
 
+    private String getAjaxPost() {
+        String post = br.getRegex("function [A-Za-z0-9\\-_]+\\(ID\\) \\{ \\$\\.post\\(\"(ajax[^<>\"]*?)\"").getMatch(0);
+        if (post != null)
+            post = "http://goldesel.to/" + post;
+        else
+            post = "http://goldesel.to/ajax/gDL.php";
+        return post;
+    }
 }

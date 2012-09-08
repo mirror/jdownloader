@@ -27,7 +27,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beemp3.com" }, urls = { "http://(www\\.)?beemp3\\.com/download\\.php\\?file=\\d+\\&song=.+" }, flags = { 0 })
 public class BeeEmPeThreeCom extends PluginForDecrypt {
@@ -44,7 +43,10 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(>Sorry\\! Something is wrong|>Page Not Found<)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML(">Error: This file has been removed")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String finalFilename = br.getRegex("<div class=\"download_block\">[\t\n\r ]+<h3 class=\"my_h\">(.*?)</h3><br>").getMatch(0);
         String captchaUrl = null;
         boolean failed = true;

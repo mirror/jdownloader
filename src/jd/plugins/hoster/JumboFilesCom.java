@@ -191,7 +191,7 @@ public class JumboFilesCom extends PluginForHost {
             }
         }
         boolean resume = true;
-        int chunks = 0;
+        int chunks = -5;
         if (downloadLink.getBooleanProperty(JumboFilesCom.NOCHUNKS, false) || resume == false) {
             chunks = 1;
         }

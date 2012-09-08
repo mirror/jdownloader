@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "e-bol.net" }, urls = { "http://(www\\.)?e\\-bol\\.net/(?!wp\\-content).*/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "e-bol.net" }, urls = { "http://(www\\.)?e\\-bol\\.net/(?!wp\\-content|kategorie|feed).*/" }, flags = { 0 })
 public class EBlNt extends PluginForDecrypt {
 
     public EBlNt(PluginWrapper wrapper) {
@@ -40,16 +40,20 @@ public class EBlNt extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML(">Sorry, the page your requested could not be found, or no longer exists\\. </div>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String theID = br.getRegex("id=\"post-ratings-(\\d+)\"").getMatch(0);
-        if (theID == null) return null;
-        progress.setRange(3);
+        if (theID == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (int i = 0; i <= 3; i++) {
             String postData = "Download%5B" + i + "%5D.x=&Download%5B" + i + "%5D.y=&p_id=" + theID;
             br.postPage("http://e-bol.net/wp-content/themes/Basic/download.php", postData);
             String finallink = br.getRegex("name=\"Download\">-->[\t\n\r ]+<frame src=\"(.*?)\"").getMatch(0);
             if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
         }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) return null;
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         return decryptedLinks;
     }
 

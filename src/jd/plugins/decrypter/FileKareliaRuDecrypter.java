@@ -52,23 +52,22 @@ public class FileKareliaRuDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String[][] fileInfo = br.getRegex("<a  href=\"http://[a-z0-9]+\\.file\\.karelia\\.ru/" + fid + "/[a-z0-9]+/[a-z0-9]+/([^<>\"/]*?)\">[\t\n\r ]+<span class=\"filename binary\">[^<>\"/]*?</span><i>\\&mdash;\\&nbsp;\\&nbsp;([^<>\"/]*?)</i></a>").getMatches();
-        if (fileInfo == null || fileInfo.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (final String singleLink[] : fileInfo) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
-            dl.setFinalFileName(Encoding.htmlDecode(singleLink[0]));
-            dl.setProperty("plainfilename", singleLink[0]);
-            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLink[1].replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
-            dl.setProperty("partlink", true);
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
+        // Decrypter could also be broken but we can't know it so no exception!
+        if (fileInfo != null && fileInfo.length != 0) {
+            for (final String singleLink[] : fileInfo) {
+                final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
+                dl.setFinalFileName(Encoding.htmlDecode(singleLink[0]));
+                dl.setProperty("plainfilename", singleLink[0]);
+                dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(singleLink[1].replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
+                dl.setProperty("partlink", true);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+            }
         }
         final DownloadLink dl = createDownloadlink(parameter.replace("file.karelia.ru/", "file.kareliadecrypted.ru/") + System.currentTimeMillis() + new Random().nextInt(100000));
         dl.setFinalFileName(fid + ".zip");
         final String filesize = br.getRegex("общим размером <strong id=\"totalSize\">([^<>\"]*?)</strong>").getMatch(0);
-        if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.replace("Гбайта", "GB").replace("Мбайта", "MB").replace("Кбайта", "kb"))));
+        if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize).replace("Гбайта", "GB").replace("Мбайт", "MB").replace("Кбайта", "kb")));
         dl.setAvailable(true);
         decryptedLinks.add(dl);
         FilePackage fp = FilePackage.getInstance();

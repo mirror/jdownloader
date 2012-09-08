@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -42,20 +43,22 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "http://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends PluginForHost {
 
-    private final String        useragent               = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
+    private final String         useragent               = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:12.0) Gecko/20100101 Firefox/12.0";
     /* must be static so all plugins share same lock */
-    private static final Object LOCK                    = new Object();
-    private boolean             showDialog              = false;
-    private int                 MAXFREECHUNKS           = 1;
-    private static final String ONLY4REGISTERED         = "\"message\":\"signup\"";
-    private static final String ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
-    private static final String NOCHUNKS                = "NOCHUNKS";
-    private static final String NORESUME                = "NORESUME";
-    private static final String MAINPAGE                = "http://filecloud.io/";
+    private static final Object  LOCK                    = new Object();
+    private boolean              showDialog              = false;
+    private int                  MAXFREECHUNKS           = 1;
+    private static final String  ONLY4REGISTERED         = "\"message\":\"signup\"";
+    private static final String  ONLY4REGISTEREDUSERTEXT = JDL.LF("plugins.hoster.ifileit.only4registered", "Wait or register to download the files");
+    private static final String  NOCHUNKS                = "NOCHUNKS";
+    private static final String  NORESUME                = "NORESUME";
+    private static final String  MAINPAGE                = "http://filecloud.io/";
+    private static AtomicInteger maxPrem                 = new AtomicInteger(1);
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://filecloud.io/user-register.html");
+        this.setStartIntervall(5 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -84,6 +87,7 @@ public class IFileIt extends PluginForHost {
         br2.setReadTimeout(40 * 1000);
         final String ukey = new Regex(downloadLink.getDownloadURL(), "filecloud\\.io/(.+)").getMatch(0);
         xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1);
+        if (br.containsHTML("message\":\"invalid request\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
         if (br2.containsHTML("\"captcha\":1")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -105,11 +109,13 @@ public class IFileIt extends PluginForHost {
             }
         }
         if (br2.containsHTML("(\"retry\":1|\"captcha\":1)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br2.containsHTML("\"message\":\"signup\"")) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
         br.getPage("http://filecloud.io/download.html");
         String dllink = br.getRegex("id=\"requestBtnHolder\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br2.getRegex("\"(http://s\\d+\\.filecloud\\.io/[a-z0-9]+/\\d+/[^<>\"/]*?)\"").getMatch(0);
         if (dllink == null) {
             logger.info("last try getting dllink failed, plugin must be defect!");
+            System.out.println(br.toString() + "n");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(false);
@@ -237,6 +243,8 @@ public class IFileIt extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         showDialog = true;
         try {
             // Use cookies, check and refresh if needed
@@ -257,12 +265,26 @@ public class IFileIt extends PluginForHost {
         if (br.containsHTML("<span class=\"label label\\-important\">no</span>")) {
             ai.setStatus("Normal User");
             account.setProperty("typ", "free");
+            try {
+                maxPrem.set(2);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(false);
+            } catch (final Throwable e) {
+            }
         } else if (br.containsHTML("<span class=\"label label\\-success\">yes</span>")) {
             ai.setStatus("Premium User");
             account.setProperty("typ", "premium");
             final String expires = br.getRegex("\\$\\(\\'#expires\\'\\)\\.empty\\(\\)\\.append\\(  show_local_dt\\( (\\d+) \\) \\);").getMatch(0);
             if (expires != null) {
                 ai.setValidUntil(Long.parseLong(expires) * 1000);
+            }
+            try {
+                maxPrem.set(-1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
             }
         } else {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -292,7 +314,7 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     private void updateBrowser(Browser br) {

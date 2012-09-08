@@ -322,7 +322,8 @@ public class FileMatesCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "onclick=\"downLinkDo\\(\\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\\'(http://filemates\\-srv\\d+\\.com/cgi\\-bin/dl\\.cgi/[^<>\"]*?)\\'").getMatch(0);
+                // "http://filemates-srv25.com/cgi-bin/dl.cgi/acnmdlfy5udvpbhoxicohvny3dgobq3tfal6iezjl4/Alec_Hall-Selva_Febre-BUR031-WEB-2012-TraX.rar"
+                dllink = new Regex(correctedBR, "(\\'|\")(http://filemates\\-srv\\d+\\.com/cgi\\-bin/dl\\.cgi/[^<>\"]*?)(\\'|\")").getMatch(1);
             }
         }
         return dllink;
@@ -379,6 +380,7 @@ public class FileMatesCom extends PluginForHost {
             }
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (correctedBR.contains(">Software error:<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {

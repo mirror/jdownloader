@@ -21,13 +21,16 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.UserIO;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
@@ -46,6 +49,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
@@ -53,6 +57,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String FREEDOWNLOADPOSSIBLE = "download4";
     private static final Object LOCK                 = new Object();
     private static final String FREELIMIT            = ">Your limit for free downloads is over for today<";
+    private static final String COOKIE_HOST          = "http://shareflare.net";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,17 +100,73 @@ public class ShareFlareNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (LOCK) {
             AccountInfo ai = new AccountInfo();
             if (account.getUser() != null && account.getUser().length() > 0) {
-                ai.setStatus("Please leave username empty and enter premium code as password only!");
-                account.setValid(false);
+                login(account, true);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://shareflare.net/ajax/get_attached_passwords.php", "act=get_attached_passwords");
+                final String availableTraffic = br.getRegex("<td>(\\d+\\.\\d+)</td>").getMatch(0);
+                final String expire = br.getRegex("<td>(\\d{4}\\-\\d{2}\\-\\d{2})</td>").getMatch(0);
+                if (availableTraffic == null || expire == null) {
+                    ai.setStatus("This is no premium account!");
+                    account.setValid(false);
+                    return ai;
+                }
+                ai.setTrafficLeft(SizeFormatter.getSize(availableTraffic + "GB"));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+                ai.setStatus("Premium User");
             } else {
                 ai.setStatus("Status can only be checked while downloading!");
                 account.setValid(true);
             }
             return ai;
+        }
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                this.setBrowserExclusive();
+                br.setCustomCharset("UTF-8");
+                br.setCookie(COOKIE_HOST, "lang", "en");
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return false;
+                    }
+                }
+                /*
+                 * we must save the cookies, because shareflare maybe only
+                 * allows 100 logins per 24hours
+                 */
+                br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+                String check = br.getCookie(COOKIE_HOST, "log");
+                if (check == null) check = br.getCookie(COOKIE_HOST, "pas");
+                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                return true;
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
         }
     }
 
@@ -226,49 +287,51 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (account.getUser() != null && account.getUser().length() > 0) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-        requestFileInformation(downloadLink);
-        Form premForm = null;
-        Form allForms[] = br.getForms();
-        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        for (Form aForm : allForms) {
-            if (aForm.containsHTML("\"pass\"")) {
-                premForm = aForm;
-                break;
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        String url = null;
+        if (account.getUser() != null && account.getUser().length() > 0) {
+            login(account, false);
+            br.setFollowRedirects(true);
+            br.getPage(downloadLink.getDownloadURL());
+            url = getPremiumDllink();
+        } else {
+            requestFileInformation(downloadLink);
+            Form premForm = null;
+            Form allForms[] = br.getForms();
+            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (Form aForm : allForms) {
+                if (aForm.containsHTML("\"pass\"")) {
+                    premForm = aForm;
+                    break;
+                }
             }
-        }
-        if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        premForm.put("pass", Encoding.urlEncode(account.getPass()));
-        br.submitForm(premForm);
-        if (br.containsHTML("<b>Given password does not exist")) {
-            logger.info("Downloadpassword seems to be wrong, disabeling account now!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        /** 1 point = 1 GB */
-        String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
-        if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
-        if (points != null) {
-            AccountInfo ai = account.getAccountInfo();
-            if (ai == null) {
-                ai = new AccountInfo();
-                account.setAccountInfo(ai);
-            }
-            ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
-        }
-        if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
-        String url = Encoding.htmlDecode(br.getRegex(Pattern.compile("valign=\"middle\"><br><span style=\"font-size:12px;\"><a href='(http://.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (url == null) {
-            url = br.getRegex("('|\")(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[^<>\"\\']+\\d+/[^<>\"\\']+/" + downloadLink.getName() + ")('|\")").getMatch(1);
-            if (url == null) url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']+)\\'").getMatch(0);
-            if (url == null) url = br.getRegex("Link to the file download\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        }
-        if (url == null) {
-            if (br.containsHTML("The premium key you provided does not exist")) {
-                logger.info("The premium key you provided does not exist");
+            if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            premForm.put("pass", Encoding.urlEncode(account.getPass()));
+            br.submitForm(premForm);
+            if (br.containsHTML("<b>Given password does not exist")) {
+                logger.info("Downloadpassword seems to be wrong, disabeling account now!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /** 1 point = 1 GB */
+            String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
+            if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
+            if (points != null) {
+                AccountInfo ai = account.getAccountInfo();
+                if (ai == null) {
+                    ai = new AccountInfo();
+                    account.setAccountInfo(ai);
+                }
+                ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
+            }
+            if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+            url = getPremiumDllink();
+            if (url == null) {
+                if (br.containsHTML("The premium key you provided does not exist")) {
+                    logger.info("The premium key you provided does not exist");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -276,6 +339,12 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getPremiumDllink() {
+        String url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']*?)\\'").getMatch(0);
+        if (url == null) url = br.getRegex("Link to the file download\" href=\"(http://[^<>\"\\']*?)\"").getMatch(0);
+        return url;
     }
 
     // do not add @Override here to keep 0.* compatibility

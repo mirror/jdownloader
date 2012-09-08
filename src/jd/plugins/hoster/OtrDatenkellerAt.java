@@ -50,6 +50,8 @@ public class OtrDatenkellerAt extends PluginForHost {
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        // Prevents premium problems
+        this.setStartIntervall(15 * 1000l);
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -203,7 +205,8 @@ public class OtrDatenkellerAt extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        // Force login or download fails
+        login(account, true);
         br.setFollowRedirects(false);
         br.getPage(getDlpage(link));
         String dllink = br.getRegex("type=\"text\" id=\"dlInp\" value=\"(http://.*?)\"").getMatch(0);

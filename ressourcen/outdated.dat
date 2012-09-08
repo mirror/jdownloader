@@ -903,3 +903,5 @@ jd/plugins/hoster/CoralDriveNet.class
 jd/plugins/decrypter/Hdrlbz.class
 jd/plugins/decrypter/MnlnkUs.class
 jd/plugins/hoster/MovBayOrg.class
+jd/plugins/hoster/BzLinkUs.class
+jd/plugins/decrypter/NrCm.class
