@@ -128,6 +128,7 @@ public class AsFileCom extends PluginForHost {
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
         br.getPage("http://asfile.com/en/free-download/file/" + fileID);
         if (br.containsHTML("You have exceeded the download limit for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML(">This file TEMPORARY unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable due technical problems", 60 * 60 * 1000l);
         final String hash = br.getRegex("hash: \\'([a-z0-9]+)\\'").getMatch(0);
         final String storage = br.getRegex("storage: \\'([^<>\"\\']+)\\'").getMatch(0);
         if (hash == null || storage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -143,7 +144,10 @@ public class AsFileCom extends PluginForHost {
         if (dllink == null) dllink = new Regex(correctedBR, "\"(http://s\\d+\\.asfile\\.com/file/free/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
-        /* resume no longer possible? at least with a given password it does not work */
+        /*
+         * resume no longer possible? at least with a given password it does not
+         * work
+         */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
