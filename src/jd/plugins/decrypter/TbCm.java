@@ -353,7 +353,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
@@ -409,7 +410,8 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already exists
+                             * because demuxer will fail when mp3 file already
+                             * exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
@@ -507,6 +509,13 @@ public class TbCm extends PluginForDecrypt {
         } else {
             /* new format since ca. 1.8.2011 */
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
+            if (html5_fmt_map == null) {
+                // TODO: Fix that!!
+                // html5_fmt_map =
+                // br.getRegex("url_encoded_fmt_stream_map=([^<>\"]*?)\\&").getMatch(0);
+                logger.warning("ythack age restricted video failed!");
+                return null;
+            }
             if (!html5_fmt_map.contains("signature")) {
                 Thread.sleep(5000);
                 br.clearCookies(getHost());

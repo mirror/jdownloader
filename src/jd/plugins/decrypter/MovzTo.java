@@ -60,6 +60,7 @@ public class MovzTo extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
+            int failedLinksCount = 0;
             final String linkPart = new Regex(parameter, "(http://(www\\.)?moviez\\.to/movies/\\d+[a-z0-9\\-]+/)releases/\\d+[a-z0-9\\-]+").getMatch(0);
             for (final String[] info : links) {
                 final String currentLink = info[0];
@@ -69,6 +70,7 @@ public class MovzTo extends PluginForDecrypt {
                     br.getPage(currentLink);
                 } catch (final Exception e) {
                     logger.info("Skipping broken link: " + currentLink);
+                    failedLinksCount++;
                     continue;
                 }
                 final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\\&amp;error=expression\"").getMatch(0);
@@ -86,8 +88,8 @@ public class MovzTo extends PluginForDecrypt {
                     final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                     final String c = getCaptchaCode(cf, param);
                     try {
-                        System.out.println(linkPart + "download?utf8=%E2%9C%93&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&download_id=" + movieID + "&security_token=" + secToken + "&commit=Download");
-                        br.getPage(linkPart + "download?utf8=%E2%9C%93&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&download_id=" + movieID + "&security_token=" + secToken + "&commit=Download");
+                        System.out.println(linkPart + Encoding.urlEncode("download?utf8=%E2%9C%93&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&download_id=" + movieID + "&security_token=" + secToken + "&commit=Download"));
+                        br.getPage(linkPart + Encoding.urlEncode("download?utf8=%E2%9C%93&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&download_id=" + movieID + "&security_token=" + secToken + "&commit=Download"));
                     } catch (Exception e) {
                         rc.reload();
                         forceConfinue = true;
@@ -109,6 +111,14 @@ public class MovzTo extends PluginForDecrypt {
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
+            }
+            if (failedLinksCount == links.length) {
+                logger.info("Site has server problems, all lins failed to decrypt for link: " + parameter);
+                return decryptedLinks;
+            }
+            if (decryptedLinks.size() == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
         } else {
             // Code not used at the moment

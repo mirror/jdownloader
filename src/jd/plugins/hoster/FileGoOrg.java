@@ -31,12 +31,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filego.org" }, urls = { "http://(www\\.)?filego\\.org/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es|de)/)?file/[0-9]+/)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filego.org" }, urls = { "http://(www\\.)?filego\\.org/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es|de)/)?file/[0-9]+/)" }, flags = { 0 })
 public class FileGoOrg extends PluginForHost {
 
     public FileGoOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(COOKIE_HOST + "/register.php?g=3");
+        // this.enablePremium(COOKIE_HOST + "/register.php?g=3");
     }
 
     // MhfScriptBasic 1.6
