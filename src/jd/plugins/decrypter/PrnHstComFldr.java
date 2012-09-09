@@ -45,7 +45,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
         }
         if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer)")) {
             String finallink = br.getURL();
-            decryptedLinks.add(createDownloadlink(finallink.replace("pornhost", "GhtjGEuzrjTU")));
+            decryptedLinks.add(createDownloadlink(finallink.replace("pornhost.com/", "pornhostdecrypted.com/")));
         } else {
             String[] links = br.getRegex("class=\"thumb\">.*?<img src=.*?.*?<a href=\"(.*?)\">").getColumn(0);
             if (links.length == 0) links = br.getRegex("\"(http://(www\\.)?pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
@@ -54,7 +54,7 @@ public class PrnHstComFldr extends PluginForDecrypt {
             if (fpName == null) fpName = br.getRegex("id=\"url\" value=\"http://(www\\.)?pornhost\\.com/(.*?)/\"").getMatch(1);
 
             for (String dl : links) {
-                decryptedLinks.add(createDownloadlink(dl.replace("pornhost", "GhtjGEuzrjTU")));
+                decryptedLinks.add(createDownloadlink(dl.replace("pornhost.com/", "pornhostdecrypted.com/")));
             }
             // If the plugin knows the name/number of the gallery we can
             // add all pics to one package...looks nicer and makes it easier

@@ -49,13 +49,13 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         String filename = br.getRegex("class=\"he2\"><span>(.*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Daily Free Homemade and Voyeur Videos - Beach Sex \\- Hidden Sex \\- Public Sex \\- Voyeur Videos  \\- (.*?)</title>").getMatch(0);
         tempID = br.getRegex("var playlist = \\[ \\{ url: \\'(http://.*?\\.flv)\\'").getMatch(0);
-        if (tempID == null) tempID = br.getRegex("(\\'|\")(http://hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv)(\\'|\")").getMatch(1);
+        if (tempID == null) tempID = br.getRegex("(\\'|\")(http://(hosted\\.yourvoyeurvideos\\.com/videos/\\d+\\.flv|[a-z0-9]+\\.yourvoyeurvideos\\.com/mp4/\\d+\\.mp4))(\\'|\")").getMatch(1);
         if (tempID == null || filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         final DownloadLink dl = createDownloadlink("directhttp://" + tempID);
-        dl.setFinalFileName(filename.trim() + ".flv");
+        dl.setFinalFileName(filename.trim() + tempID.substring(tempID.lastIndexOf(".")));
         decryptedLinks.add(dl);
 
         return decryptedLinks;

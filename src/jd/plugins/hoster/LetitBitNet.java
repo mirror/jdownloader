@@ -233,7 +233,7 @@ public class LetitBitNet extends PluginForHost {
             /* only available after 0.9xx version */
         }
         maxFree.set(1);
-        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS)) maxFree.set(-1);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
         requestFileInformation(downloadLink);
         String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         if (url == null) {

@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category)[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|\\d{4}/)[^/]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -67,7 +67,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         } else {
             // <em>Download all screenhots:</em>
             // <font size="3px">
-            contentReleaseLinks = br.getRegex("<strong>Download all screenhots:</strong>(.*?)<p><strong>Previews:</strong><br").getMatch(0);
+            contentReleaseLinks = br.getRegex(">Download all screenhots:(.*?)Previews:<").getMatch(0);
             if (contentReleaseLinks == null) {
                 logger.warning("contentReleaseLinks == null");
                 return null;

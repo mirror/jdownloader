@@ -41,6 +41,10 @@ public class AllSharesCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("=\"/images/deleted\\.png\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML(CAPTCHASTRING)) {
             for (int i = 0; i <= 3; i++) {
                 String captchaLink = br.getRegex(">Enter code to get links\\!</span>[\t\n\r ]+<br/><br/>[\t\n\r ]+<img src=\"(/.*?)\"").getMatch(0);
@@ -58,7 +62,7 @@ public class AllSharesCom extends PluginForDecrypt {
             if (br.containsHTML(CAPTCHASTRING)) throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         final String fpName = br.getRegex("\">Download <b>(.*?)</b></a>").getMatch(0);
-        String[] links = br.getRegex("\\?url=([^<>\"\\']*?)\\&").getColumn(0);
+        final String[] links = br.getRegex("url=([^<>\"\\']*?)\\&").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

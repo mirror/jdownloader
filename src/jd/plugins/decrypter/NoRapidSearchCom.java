@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -34,6 +35,7 @@ public class NoRapidSearchCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // Uses same script as AllMscFindCom
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -49,7 +51,27 @@ public class NoRapidSearchCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.postPage("http://www.norapidsearch.com/go/" + postID, "file_id=" + postID);
+        final String captchaLink = br.getRegex("\"(/captcha/\\d+)\"").getMatch(0);
+        if (captchaLink == null && br.containsHTML("class=\"captcha\"")) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (captchaLink != null) {
+            boolean failed = true;
+            for (int i = 0; i <= 3; i++) {
+                final String code = getCaptchaCode("http://www.norapidsearch.com" + captchaLink, param);
+                br.postPage("http://www.norapidsearch.com/go", "file_id=" + postID + "&captcha=" + Encoding.urlEncode(code));
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/no-rapid-id/")) {
+                    br.getPage(parameter);
+                    continue;
+                }
+                failed = false;
+                break;
+            }
+            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
+        } else {
+            br.postPage("http://www.norapidsearch.com/go/" + postID, "file_id=" + postID);
+        }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

@@ -148,7 +148,7 @@ public class DepositFiles extends PluginForHost {
                     account.setConcurrentUsePossible(false);
                 } catch (final Throwable e) {
                 }
-                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Account is OK.(Free User)"));
+                ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountokfree", "Free Account is ok"));
                 account.setValid(true);
                 return ai;
             } else {
@@ -169,7 +169,7 @@ public class DepositFiles extends PluginForHost {
                 account.setValid(false);
                 return ai;
             }
-            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Account is OK."));
+            ai.setStatus(JDL.L("plugins.hoster.depositfilescom.accountok", "Premium Account is ok"));
             Date date;
             account.setValid(true);
             try {
@@ -232,7 +232,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        String passCode = null;
+        String passCode = downloadLink.getStringProperty("pass", null);
         br.forceDebug(true);
         requestFileInformation(downloadLink);
         String link = downloadLink.getDownloadURL();
@@ -284,12 +284,7 @@ public class DepositFiles extends PluginForHost {
             if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             if (br.containsHTML("\"file_password\"")) {
                 logger.info("This file seems to be password protected.");
-                if (downloadLink.getStringProperty("pass", null) == null) {
-                    passCode = getUserInput(null, downloadLink);
-                } else {
-                    /* gespeicherten PassCode holen */
-                    passCode = downloadLink.getStringProperty("pass", null);
-                }
+                if (passCode == null) passCode = getUserInput(null, downloadLink);
                 br.postPage(br.getURL(), "file_password=" + passCode);
                 logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
                 if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
@@ -303,7 +298,8 @@ public class DepositFiles extends PluginForHost {
             dllink = getDllink();
             long timeBefore = System.currentTimeMillis();
             /*
-             * seems somethings wrong with waittime parsing so we do wait each time to be sure
+             * seems somethings wrong with waittime parsing so we do wait each
+             * time to be sure
              */
             if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Form dlForm = new Form();
@@ -352,9 +348,7 @@ public class DepositFiles extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
-            if (passCode != null) {
-                downloadLink.setProperty("pass", passCode);
-            }
+            if (passCode != null) downloadLink.setProperty("pass", passCode);
             if (con.getContentType().contains("html")) {
                 logger.warning("The finallink doesn't lead to a file, following connection...");
                 if (con.getHeaderField("Guest-Limit") != null) {
@@ -405,6 +399,18 @@ public class DepositFiles extends PluginForHost {
             br.getPage(link);
         }
         checkErrors();
+        String passCode = downloadLink.getStringProperty("pass", null);
+        if (br.containsHTML("\"file_password\"")) {
+            logger.info("This file seems to be password protected.");
+            if (passCode == null) passCode = getUserInput(null, downloadLink);
+            br.postPage(br.getURL(), "file_password=" + passCode);
+            logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+            if (br.containsHTML("(>The file's password is incorrect. Please check your password and try to enter it again\\.<|\"file_password\")")) {
+                logger.info("The entered password (" + passCode + ") was wrong, retrying...");
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
+        checkErrors();
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
         if (link == null) {
             synchronized (LOCK) {
@@ -431,6 +437,7 @@ public class DepositFiles extends PluginForHost {
             String fixedName = new Regex(name, "(.+)\\?").getMatch(0);
             downloadLink.setFinalFileName(fixedName);
         }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
     }
 

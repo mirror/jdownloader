@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hydroshare.tv" }, urls = { "http://(www\\.)?hydroshare\\.tv/(?!Log\\-yourself\\-in|popularalbums|User\\-registration|artists|djs|brands).*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hydroshare.tv" }, urls = { "http://(www\\.)?hydroshare\\.tv/(?!Log\\-yourself\\-in|popularalbums|User\\-registration|artists|djs|brands|dj\\-learn|privacypolicy|termsofuse|contact\\-us|myaccount|dmca|hydroshare\\-(faq|distribution)|brand\\-learn|updatedvideos|albumsearch|newsletter|how\\-it\\-works|upload|recentalbums|Channels|Forgotten\\-password).*?\\.html" }, flags = { 0 })
 public class HydroShareTvAlbum extends PluginForDecrypt {
 
     public HydroShareTvAlbum(PluginWrapper wrapper) {
@@ -38,6 +38,10 @@ public class HydroShareTvAlbum extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (!br.containsHTML("nmaplayer\\.swf")) {
+            logger.info("Wrong/Unsupported link: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         final String uid = br.getRegex("uid: \"([^<>\"]*?)\"").getMatch(0);

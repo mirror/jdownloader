@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -34,6 +34,7 @@ public class AllMscFindCom extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // Uses same script as NoRapidSearchCom
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -43,30 +44,31 @@ public class AllMscFindCom extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        String goLink = br.getRegex("\"(/go/\\d+)\"").getMatch(0);
-        if (goLink == null) {
+        final String fid = br.getRegex("name=\"file_id\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (fid == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        goLink = "http://www.allmusicfind.com" + goLink;
         final String captchaLink = br.getRegex("\"(/captcha/\\d+)\"").getMatch(0);
         if (captchaLink == null && br.containsHTML("class=\"captcha\"")) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         if (captchaLink != null) {
+            boolean failed = true;
             for (int i = 0; i <= 3; i++) {
                 final String code = getCaptchaCode("http://www.allmusicfind.com" + captchaLink, param);
-                br.postPage(goLink, "file_id=" + new Regex(goLink, "http://www\\.allmusicfind\\.com/go/(\\d+)").getMatch(0) + "&captcha=" + Encoding.urlEncode(code));
+                br.postPage("http://www.allmusicfind.com/go", "file_id=" + fid + "&captcha=" + Encoding.urlEncode(code));
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/audio-id/")) {
                     br.getPage(parameter);
                     continue;
                 }
+                failed = false;
                 break;
             }
-
+            if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         } else {
-            br.getPage(goLink);
+            br.postPage("http://www.allmusicfind.com/go", "file_id=" + Encoding.urlEncode(fid));
         }
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {

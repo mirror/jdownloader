@@ -42,6 +42,9 @@ public class MovzTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
         String fpName = null;
         if (parameter.matches("http://(www\\.)?moviez\\.to/movies/\\d+[a-z0-9\\-]+/releases/\\d+[a-z0-9\\-]+")) {
             br.getPage(parameter);
@@ -52,7 +55,7 @@ public class MovzTo extends PluginForDecrypt {
             }
 
             fpName = getFpName();
-            final String[][] links = new Regex(theCode, "\"(http://(www\\.)?moviez\\.to/movies/7159[a-z0-9\\-]+/download\\?download_id=(\\d+)\\&security_token=([a-z0-9]+))\"").getMatches();
+            final String[][] links = new Regex(theCode, "\"(http://(www\\.)?moviez\\.to/movies/[a-z0-9\\-]+/download\\?download_id=(\\d+)\\&security_token=([a-z0-9]+))\"").getMatches();
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -90,14 +93,14 @@ public class MovzTo extends PluginForDecrypt {
                         forceConfinue = true;
                         continue;
                     }
-                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.containsHTML(">Error 403 Forbidden<")) {
                         rc.reload();
                         forceConfinue = false;
                         continue;
                     }
                     break;
                 }
-                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || forceConfinue) {
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.containsHTML(">Error 403 Forbidden<") || forceConfinue) {
                     logger.info("Captcha failed, continuing: " + currentLink);
                 }
                 final String finallink = br.getRedirectLocation();

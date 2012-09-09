@@ -171,7 +171,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
         } else {
-            if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested file was not found<)")) {
+            if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }

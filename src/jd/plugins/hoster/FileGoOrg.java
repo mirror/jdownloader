@@ -59,8 +59,8 @@ public class FileGoOrg extends PluginForHost {
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 class=\"float\\-left\">([^<>\"]*?)</h2>").getMatch(0);
-        String filesize = getData("File size");
+        String filename = getData("Filename:");
+        String filesize = getData("File size:");
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -71,26 +71,29 @@ public class FileGoOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        if (br.containsHTML("value=\"Free Users\""))
-            br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
-        else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
-        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(rcID);
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
-        if (br.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        final String finalLink = findLink();
-        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int wait = 100;
-        final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001l, downloadLink);
+        String finalLink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (finalLink == null) {
+            if (br.containsHTML("value=\"Free Users\""))
+                br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
+            else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+            final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            String c = getCaptchaCode(cf, downloadLink);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
+            if (br.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            finalLink = findLink();
+            if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int wait = 100;
+            final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+            if (waittime != null) wait = Integer.parseInt(waittime);
+            sleep(wait * 1001l, downloadLink);
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -118,7 +121,7 @@ public class FileGoOrg extends PluginForHost {
     }
 
     private String getData(final String data) {
-        return br.getRegex("<strong>" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
+        return br.getRegex("<b>" + data + "</b></td>[\t\n\r ]+<td>(<font size=\"\\d+\">)?([^<>\"]*?)<").getMatch(1);
     }
 
     @Override

@@ -49,7 +49,7 @@ public class U115Com extends PluginForHost {
     private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
     private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
     private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
-    private static final String ACCOUNTNEEDED         = "(为加强知识产权的保护力度，营造健康有益的网络环境，115网盘暂时停止影视资源外链服务。|is_no_check=\"1\")";
+    private static final String ACCOUNTNEEDED         = ">115网盘已关闭大众分享功能，可以到发布资源者的<";
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
     private static final String EXACTLINKREGEX        = "\"(http://[a-z0-9]+\\.115\\.com/[a-z0-9_\\-]+\\d+/[^<>\"\\'/]*?/[^<>\"\\'/]*?/[^<>\"\\']*?)\"";
     private static final Object LOCK                  = new Object();
@@ -214,7 +214,8 @@ public class U115Com extends PluginForHost {
     public void doFree(DownloadLink link) throws Exception {
         if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
-        String dllink = findLink(link);
+        if (br.containsHTML(ACCOUNTNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
+        final String dllink = findLink(link);
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

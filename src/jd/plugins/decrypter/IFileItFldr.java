@@ -46,7 +46,13 @@ public class IFileItFldr extends PluginForDecrypt {
             fail = true;
             linkinformation = br.getRegex("ukey\":\"([^<>\"]*?)\"").getMatches();
         }
-        if (linkinformation == null || linkinformation.length == 0) return null;
+        if (linkinformation == null || linkinformation.length == 0) {
+            if (br.containsHTML("\">this tag belongs to another user<")) {
+                logger.info("No links to decrypt: " + parameter);
+                return decryptedLinks;
+            }
+            return null;
+        }
         for (final String[] info : linkinformation) {
             if (fail) {
                 decryptedLinks.add(createDownloadlink("http://filecloud.io/" + info[0]));

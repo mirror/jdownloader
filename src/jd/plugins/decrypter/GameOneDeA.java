@@ -33,12 +33,10 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -62,139 +60,141 @@ public class GameOneDeA extends PluginForDecrypt {
             parameter = br.getRedirectLocation();
             if (parameter != null) {
                 decryptedLinks.add(createDownloadlink(parameter));
-                return decryptedLinks;
             }
             return null;
-        }
-        setBrowserExclusive();
-        br.setFollowRedirects(false);
-        br.setReadTimeout(60 * 1000);
-        br.getPage(parameter);
-        br.setFollowRedirects(true);
-        if (br.getRedirectLocation() != null) {
-            if (br.getHttpConnection().getResponseCode() == 302) {
-                throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Wrong URL or the folder no longer exists."));
-            } else if (br.getHttpConnection().getResponseCode() == 301) {
-                br.getPage(parameter);
-            }
-        }
-
-        String dllink, filename;
-        boolean newEpisode = true;
-        final String episode = new Regex(parameter, "http://(www\\.)?gameone\\.de/tv/(\\d+)").getMatch(1);
-        if (episode != null && Integer.parseInt(episode) < 102) {
-            newEpisode = false;
-        }
-
-        final String[] swfUrl = br.getRegex("SWFObject\\(\"(.*?)\"").getColumn(0);
-        String fpName = br.getRegex("<title>(.*?)( \\||</title>)").getMatch(0);
-        fpName = fpName == null ? br.getRegex("<h2>\n?(.*?)\n?</h2>").getMatch(0) : fpName;
-
-        if (fpName == null) { return null; }
-
-        fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(fpName.trim());
-
-        /* audio, pictures */
-        if (swfUrl == null || swfUrl.length == 0) {
-            if (br.containsHTML("><img src=\"/images/dummys/dummy_agerated\\.jpg\"")) {
-                UserIO.getInstance().requestMessageDialog(UserIO.STYLE_HTML, "Link momentan inaktiv", "<b><font color=\"red\">" + parameter + "</font></b><br /><br />Vollstängiger Inhalt zu o.g. Link ist zwischen 22:00 und 06:00 Uhr verfügbar!");
-                return null;
-            }
-            String[] pictureOrAudio = null;
-            if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
-                pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
-            } else if (br.containsHTML("class=\"flash_container_audio\"")) {
-                pictureOrAudio = br.getRegex("<a href=\"(http://[^<>]+\\.mp3)").getColumn(0);
-                if (pictureOrAudio == null || pictureOrAudio.length == 0) {
-                    pictureOrAudio = br.getRegex(",\\s?file:\\s?\"(http://[^<>\",]+)").getColumn(0);
+        } else {
+            setBrowserExclusive();
+            br.setFollowRedirects(false);
+            br.setReadTimeout(60 * 1000);
+            br.getPage(parameter);
+            br.setFollowRedirects(true);
+            if (br.getRedirectLocation() != null) {
+                if (br.getHttpConnection().getResponseCode() == 302) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                } else if (br.getHttpConnection().getResponseCode() == 301) {
+                    br.getPage(parameter);
                 }
             }
-            if (pictureOrAudio == null || pictureOrAudio.length == 0) {
-                logger.warning("Decrypter out of date or no downloadable content found for link: " + parameter + ". Please check the Website!");
-                return null;
+            if (!br.containsHTML("player/js/swfobject\\.js")) {
+                logger.info("Wrong/Unsupported link: " + parameter);
+                return decryptedLinks;
             }
-            if (pictureOrAudio.length <= 10) {
+            String dllink, filename;
+            boolean newEpisode = true;
+            final String episode = new Regex(parameter, "http://(www\\.)?gameone\\.de/tv/(\\d+)").getMatch(1);
+            if (episode != null && Integer.parseInt(episode) < 102) {
                 newEpisode = false;
             }
-            for (final String ap : pictureOrAudio) {
-                final DownloadLink dlLink = createDownloadlink(ap);
-                if (newEpisode) {
-                    dlLink.setAvailable(true);
-                }
-                fp.add(dlLink);
-                decryptedLinks.add(dlLink);
-            }
-            return decryptedLinks;
-        }
 
-        /* video: blog, tv, playtube */
-        for (String startUrl : swfUrl) {
-            startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
+            final String[] swfUrl = br.getRegex("SWFObject\\(\"(.*?)\"").getColumn(0);
+            String fpName = br.getRegex("<title>(.*?)( \\||</title>)").getMatch(0);
+            fpName = fpName == null ? br.getRegex("<h2>\n?(.*?)\n?</h2>").getMatch(0) : fpName;
 
-            XPath xPath = xmlParser(startUrl);
-            NodeList linkList, partList;
-            XPathExpression expr = null;
-            try {
-                filename = xPath.evaluate("/rss/channel/item/title", doc);
-                expr = xPath.compile("/rss/channel/item/group/content[@type='text/xml']/@url");
-                partList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                if (partList == null || partList.getLength() == 0) { throw new Exception("PartList empty"); }
-            } catch (final Throwable e) {
-                return null;
-            }
-            final DecimalFormat df = new DecimalFormat("000");
-            for (int i = 0; i < partList.getLength(); ++i) {
-                final Node partNode = partList.item(i);
-                startUrl = partNode.getNodeValue();
-                if (startUrl == null) {
-                    continue;
-                }
-                /* Episode 1 - 101 */
-                startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
+            if (fpName == null) { return null; }
 
-                xPath = xmlParser(startUrl);
-                try {
-                    expr = xPath.compile("/package/video/item/src|//rendition/src");
-                    linkList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-                    if (linkList == null || linkList.getLength() == 0) { throw new Exception("LinkList empty"); }
-                } catch (final Throwable e) {
-                    continue;
+            fpName = fpName.replaceAll(" (-|~) Teil \\d+", "");
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(fpName.trim());
+
+            /* audio, pictures */
+            if (swfUrl == null || swfUrl.length == 0) {
+                if (br.containsHTML("><img src=\"/images/dummys/dummy_agerated\\.jpg\"")) {
+                    UserIO.getInstance().requestMessageDialog(UserIO.STYLE_HTML, "Link momentan inaktiv", "<b><font color=\"red\">" + parameter + "</font></b><br /><br />Vollstängiger Inhalt zu o.g. Link ist zwischen 22:00 und 06:00 Uhr verfügbar!");
+                    return null;
                 }
-                progress.setRange(linkList.getLength());
-                for (int j = 0; j < linkList.getLength(); ++j) {
-                    final Node node = linkList.item(j);
-                    dllink = node.getTextContent();
-                    if (dllink == null) {
-                        continue;
+                String[] pictureOrAudio = null;
+                if (br.containsHTML("<div class=\'gallery\' id=\'gallery_\\d+\'")) {
+                    pictureOrAudio = br.getRegex("<a href=\"(http://.*?/gallery_pictures/.*?/large/.*?)\"").getColumn(0);
+                } else if (br.containsHTML("class=\"flash_container_audio\"")) {
+                    pictureOrAudio = br.getRegex("<a href=\"(http://[^<>]+\\.mp3)").getColumn(0);
+                    if (pictureOrAudio == null || pictureOrAudio.length == 0) {
+                        pictureOrAudio = br.getRegex(",\\s?file:\\s?\"(http://[^<>\",]+)").getColumn(0);
                     }
-                    String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
-                    q = q == null ? "" : quality(Integer.parseInt(q));
-                    String ext = dllink.substring(dllink.lastIndexOf("."));
-                    ext = ext == null || ext.length() > 4 ? ".flv" : ext;
-
-                    /* Episode > 102 */
-                    dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
-                    /* Fallback */
-                    dllink = dllink.replace("rtmp", "gameonertmp");
-
-                    dllink = dllink.startsWith("http") ? "directhttp://" + dllink : dllink;
-                    final DownloadLink dlLink = createDownloadlink(dllink);
-                    if (!newEpisode) {
-                        dlLink.setFinalFileName(filename + q + "_Part_" + df.format(i + 1) + ext);
-                    } else {
-                        dlLink.setFinalFileName(filename + "_" + q + ext);
+                }
+                if (pictureOrAudio == null || pictureOrAudio.length == 0) {
+                    logger.warning("Decrypter out of date or no downloadable content found for link: " + parameter + ". Please check the Website!");
+                    return null;
+                }
+                if (pictureOrAudio.length <= 10) {
+                    newEpisode = false;
+                }
+                for (final String ap : pictureOrAudio) {
+                    final DownloadLink dlLink = createDownloadlink(ap);
+                    if (newEpisode) {
+                        dlLink.setAvailable(true);
                     }
                     fp.add(dlLink);
                     decryptedLinks.add(dlLink);
-                    progress.increase(1);
+                }
+                return decryptedLinks;
+            }
+
+            /* video: blog, tv, playtube */
+            for (String startUrl : swfUrl) {
+                startUrl = startUrl.replaceAll("http://(.*?)/", "http://www.gameone.de/api/mrss/");
+
+                XPath xPath = xmlParser(startUrl);
+                NodeList linkList, partList;
+                XPathExpression expr = null;
+                try {
+                    filename = xPath.evaluate("/rss/channel/item/title", doc);
+                    expr = xPath.compile("/rss/channel/item/group/content[@type='text/xml']/@url");
+                    partList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                    if (partList == null || partList.getLength() == 0) { throw new Exception("PartList empty"); }
+                } catch (final Throwable e) {
+                    return null;
+                }
+                final DecimalFormat df = new DecimalFormat("000");
+                for (int i = 0; i < partList.getLength(); ++i) {
+                    final Node partNode = partList.item(i);
+                    startUrl = partNode.getNodeValue();
+                    if (startUrl == null) {
+                        continue;
+                    }
+                    /* Episode 1 - 101 */
+                    startUrl = startUrl.replaceAll("media/mediaGen\\.jhtml\\?uri.*?\\.de:", "flv/flvgen.jhtml?vid=");
+
+                    xPath = xmlParser(startUrl);
+                    try {
+                        expr = xPath.compile("/package/video/item/src|//rendition/src");
+                        linkList = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                        if (linkList == null || linkList.getLength() == 0) { throw new Exception("LinkList empty"); }
+                    } catch (final Throwable e) {
+                        continue;
+                    }
+                    for (int j = 0; j < linkList.getLength(); ++j) {
+                        final Node node = linkList.item(j);
+                        dllink = node.getTextContent();
+                        if (dllink == null) {
+                            continue;
+                        }
+                        String q = new Regex(dllink, "(\\d+)k_").getMatch(0);
+                        q = q == null ? "" : quality(Integer.parseInt(q));
+                        String ext = dllink.substring(dllink.lastIndexOf("."));
+                        ext = ext == null || ext.length() > 4 ? ".flv" : ext;
+
+                        /* Episode > 102 */
+                        dllink = dllink.replaceAll("^.*?/r2/", "http://cdn.riptide-mtvn.com/r2/");
+                        /* Fallback */
+                        dllink = dllink.replace("rtmp", "gameonertmp");
+
+                        dllink = dllink.startsWith("http") ? "directhttp://" + dllink : dllink;
+                        final DownloadLink dlLink = createDownloadlink(dllink);
+                        if (!newEpisode) {
+                            dlLink.setFinalFileName(filename + q + "_Part_" + df.format(i + 1) + ext);
+                        } else {
+                            dlLink.setFinalFileName(filename + "_" + q + ext);
+                        }
+                        fp.add(dlLink);
+                        decryptedLinks.add(dlLink);
+                    }
                 }
             }
-        }
-        if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter out of date for link: " + parameter);
-            return null;
+            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+                logger.warning("Decrypter out of date for link: " + parameter);
+                return null;
+            }
         }
         return decryptedLinks;
     }

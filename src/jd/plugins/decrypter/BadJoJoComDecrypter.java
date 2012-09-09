@@ -87,6 +87,11 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink("http://www.spankwire.com/" + System.currentTimeMillis() + "/video" + externID));
             return decryptedLinks;
         }
+        externID = br.getRegex("dl\\.pornhost\\.com%2F0%2F\\d+%2F(\\d+)%2F").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://pornhost.com/" + externID));
+            return decryptedLinks;
+        }
         // filename needed for stuff below
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

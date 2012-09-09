@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2010  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,16 +28,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "boojour.eu" }, urls = { "http://(www\\.)?boojour\\.eu/\\?v=[A-Z0-9]+" }, flags = { 0 })
-public class BooJourEu extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public BooJourEu(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primeshare.tv" }, urls = { "http://(www\\.)?primeshare\\.tv/download/[A-Z0-9]+" }, flags = { 0 })
+public class PrimeShareTv extends PluginForHost {
+
+    public PrimeShareTv(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.boojour.eu/";
+        return "http://primeshare.tv/help/terms";
     }
 
     @Override
@@ -45,24 +47,30 @@ public class BooJourEu extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Removed for Copyright Infringement")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<h1 style=\"margin:0;padding:10px 3px 3px;color:#222;font\\-size:20px;\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex info = br.getRegex("<div class=\"box\">[\t\n\r ]+<h1>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)</h1>");
+        final String filename = info.getMatch(0);
+        final String filesize = info.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String varA = br.getRegex("name=\"([^<>\"]*?)\" id=\"a\"").getMatch(0);
-        final String varB = br.getRegex("name=\"([^<>\"]*?)\" id=\"b\"").getMatch(0);
-        if (varA == null || varB == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), varA + "=" + varB + "&" + varB + "=" + varA + "&x=" + new Random().nextInt(100) + "&y=" + new Random().nextInt(100));
-        String dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://\\d+\\.boojour\\.eu/v/\\d+/[a-z0-9]+\\.flv)\\'").getMatch(0);
+        int wait = 10;
+        final String waittime = br.getRegex("var qTime = (\\d+);").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001, downloadLink);
+        br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+        if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        String dllink = br.getRegex("<param name=\"src\" value=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.primeshare\\.tv:\\d+/get/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        // Chunkload possible but deactivated because of server problems
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

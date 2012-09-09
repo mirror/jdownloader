@@ -20,7 +20,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -41,27 +40,21 @@ public class ElectroPplOrg extends PluginForDecrypt {
         br.getPage(parameter);
         String fpName = br.getRegex("width=1 height=1 border=0></td><td bgcolor=\"#FFFFFF\" style=\"padding: 3px;\">(.*?)</td>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?) \\&raquo; ELECTROPEOPLE\\.ORG \\- Скачать MP3 бесплатно\\!</title>").getMatch(0);
-        String theLinks = br.getRegex("><b>Download(.*?)class=\"twitter\\-share\\-button\"").getMatch(0);
-        if (theLinks == null) theLinks = br.getRegex("><\\!\\-\\-TEnd\\-\\-></div><br(.*?)class=\"scriptcode\">").getMatch(0);
-        if (theLinks == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        String[] links = new Regex(theLinks, "\"(http://(www\\.)?electropeople\\.org/engine/.*?)\"").getColumn(0);
+        final String[] links = br.getRegex("\"(http://(www\\.)?electropeople\\.org/engine/go\\.php\\?url=.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        progress.setRange(links.length);
-        for (String dl : links) {
-            br.getPage(dl);
-            String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        if (links != null && links.length != 0) {
+            for (final String dl : links) {
+                br.getPage(dl);
+                String finallink = br.getRedirectLocation();
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink(finallink));
             }
-            decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

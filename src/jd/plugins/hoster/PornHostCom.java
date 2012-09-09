@@ -29,7 +29,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://[\\w\\.]*?GhtjGEuzrjTU\\.com/([0-9]+/[0-9]+\\.html|[0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "http://(www\\.)?pornhostdecrypted\\.com/([0-9]+/[0-9]+\\.html|[0-9]+)" }, flags = { 0 })
 public class PornHostCom extends PluginForHost {
 
     private String ending = null;
@@ -39,11 +39,7 @@ public class PornHostCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        // This is neded because we also got a pornhost decrypter, the decrypter
-        // gives the links out like "GhtjGEuzrjTU.com" instead of "pornhost.com"
-        // because otherwise there would be a conflict (2 plugins having the
-        // same regexes)
-        link.setUrlDownload(link.getDownloadURL().replace("GhtjGEuzrjTU", "pornhost"));
+        link.setUrlDownload(link.getDownloadURL().replace("pornhostdecrypted.com/", "pornhost.com/"));
     }
 
     @Override
@@ -70,6 +66,7 @@ public class PornHostCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename.equals("")) filename = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         downloadLink.setFinalFileName(filename.trim() + ".flv");
         return AvailableStatus.TRUE;
     }

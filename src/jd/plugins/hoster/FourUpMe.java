@@ -44,12 +44,12 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4up.me" }, urls = { "https?://(www\\.)?4up\\.me/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4up.me" }, urls = { "https?://(www\\.)?4up\\.(me|im)/[a-z0-9]{12}" }, flags = { 0 })
 public class FourUpMe extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://4up.me";
+    private static final String COOKIE_HOST         = "http://4up.im";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -59,12 +59,12 @@ public class FourUpMe extends PluginForHost {
     // XfileSharingProBasic Version 2.5.2.0
     // free: tested: up to 20 connects.
     // protocol: doesn't have https
-    // captchatype: 4dignum
+    // captchatype: null
     // other: linkcheck requires going into the second page.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("4up.me/", "4up.im/"));
     }
 
     @Override

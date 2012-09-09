@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -54,10 +55,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
-    private static final String FREEDOWNLOADPOSSIBLE = "download4";
-    private static final Object LOCK                 = new Object();
-    private static final String FREELIMIT            = ">Your limit for free downloads is over for today<";
-    private static final String COOKIE_HOST          = "http://shareflare.net";
+    private static final String  FREEDOWNLOADPOSSIBLE              = "download4";
+    private static final Object  LOCK                              = new Object();
+    private static final String  FREELIMIT                         = ">Your limit for free downloads is over for today<";
+    private static final String  COOKIE_HOST                       = "http://shareflare.net";
+    private static AtomicInteger maxFree                           = new AtomicInteger(1);
+    private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -96,7 +99,6 @@ public class ShareFlareNet extends PluginForHost {
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (!br.containsHTML(FREEDOWNLOADPOSSIBLE) && !br.containsHTML(FREELIMIT)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
         return AvailableStatus.TRUE;
     }
 
@@ -177,7 +179,7 @@ public class ShareFlareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return maxFree.get();
     }
 
     private boolean validateEmail(String email) {
@@ -226,54 +228,16 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        maxFree.set(1);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
         String dllink = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         if (dllink == null) {
-            String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
-            if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
-            if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
-            if (br.containsHTML(FREELIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-            br.setFollowRedirects(false);
-            String debug = br.toString();
-            final Form fastDl = br.getFormbyProperty("id", "fast_download_form");
-            if (fastDl != null) br.submitForm(fastDl);
-            Form dlform = br.getFormbyProperty("id", "dvifree");
-            if (dlform == null) {
-                if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
-                logger.warning("dlform is null");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            debug = debug + br.submitForm(dlform);
-            dlform = br.getFormbyProperty("id", "dvifree");
-            if (dlform == null) {
-                logger.warning("dlform#2 is null...");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.submitForm(dlform);
-            // Waittime before captcha is skippable
-            final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            final Browser ajaxBR = br.cloneBrowser();
-            ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.setId(rcID);
-            rc.load();
-            for (int i = 0; i <= 3; i++) {
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                final String c = getCaptchaCode(cf, downloadLink);
-                ajaxBR.postPage("http://shareflare.net/ajax/check_recaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-                if (ajaxBR.containsHTML("error_wrong_captcha")) {
-                    rc.reload();
-                    continue;
-                }
-                break;
-            }
-            if (ajaxBR.containsHTML("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dllink = getDllink(ajaxBR);
+            dllink = handleFreeFallback(downloadLink);
+        } else {
+            // Enable unlimited simultan downloads for skymonk users
+            maxFree.set(-1);
         }
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dllink = dllink.replace("\\", "");
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         URLConnectionAdapter con = dl.getConnection();
         if (con.getContentType().contains("html") && con.getLongContentLength() < (downloadLink.getDownloadSize() / 2)) {
@@ -284,6 +248,55 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
+        final Browser ajaxBR = br.cloneBrowser();
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
+        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
+        if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        if (br.containsHTML(FREELIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        br.setFollowRedirects(false);
+        String debug = br.toString();
+        final Form fastDl = br.getFormbyProperty("id", "fast_download_form");
+        if (fastDl != null) br.submitForm(fastDl);
+        Form dlform = br.getFormbyProperty("id", "dvifree");
+        if (dlform == null) {
+            if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
+            logger.warning("dlform is null");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        debug = debug + br.submitForm(dlform);
+        dlform = br.getFormbyProperty("id", "d3_form");
+        if (dlform == null) {
+            logger.warning("dlform#2 is null...");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.submitForm(dlform);
+        // Waittime before captcha is skippable
+        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcID);
+        rc.load();
+        for (int i = 0; i <= 3; i++) {
+            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode(cf, downloadLink);
+            ajaxBR.postPage("http://shareflare.net/ajax/check_recaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+            if (ajaxBR.containsHTML("error_wrong_captcha")) {
+                rc.reload();
+                continue;
+            }
+            break;
+        }
+        if (ajaxBR.containsHTML("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        String dllink = getDllink(ajaxBR);
+        if (ajaxBR.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (dllink == null) return null;
+        return dllink.replace("\\", "");
     }
 
     @Override
@@ -444,5 +457,7 @@ public class ShareFlareNet extends PluginForHost {
 
             }
         }, "Activation", null, null));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ShareFlareNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.shareflarenet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads (can cause problems, use at your own risc)")).setDefaultValue(false));
     }
 }

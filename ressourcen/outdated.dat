@@ -905,3 +905,5 @@ jd/plugins/decrypter/MnlnkUs.class
 jd/plugins/hoster/MovBayOrg.class
 jd/plugins/hoster/BzLinkUs.class
 jd/plugins/decrypter/NrCm.class
+jd/captcha/methods/mgshre
+jd/plugins/hoster/MegaShareCom.class
