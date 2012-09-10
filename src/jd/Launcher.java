@@ -187,6 +187,10 @@ public class Launcher {
         }
         if (Application.isOutdatedJavaVersion(true)) {
             try {
+                if (CrossSystem.isMac() && Application.getJavaVersion() == 17005000l) {
+                    /* TODO: remove me after we've upgraded mac installer */
+                    return;
+                }
                 Dialog.getInstance().showConfirmDialog(Dialog.BUTTONS_HIDE_CANCEL, _JDT._.gui_javacheck_newerjavaavailable_title(Application.getJavaVersion()), _JDT._.gui_javacheck_newerjavaavailable_msg(), NewTheme.I().getIcon("warning", 32), null, null);
                 CrossSystem.openURLOrShowMessage("http://jdownloader.org/download/index?updatejava=1");
             } catch (DialogNoAnswerException e) {

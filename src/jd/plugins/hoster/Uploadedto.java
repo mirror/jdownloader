@@ -230,8 +230,7 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content
-                     * length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
@@ -421,8 +420,7 @@ public class Uploadedto extends PluginForHost {
             if (br.containsHTML("<title>[^<].*?\\- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between
-             * free accounts instead of reconnecting if a limit is reached
+             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
             if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
                 final long lastdownload = account.getLongProperty("LASTDOWNLOAD", 0);
@@ -433,8 +431,7 @@ public class Uploadedto extends PluginForHost {
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 /**
-                 * Experimental reconnect handling to prevent having to enter a
-                 * captcha just to see that a limit has been reached
+                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
                  */
                 logger.info("New Download: currentIP = " + currentIP);
                 if (hasDled && ipChanged(currentIP, downloadLink) == false) {
@@ -520,8 +517,7 @@ public class Uploadedto extends PluginForHost {
                 if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
                 if (br.containsHTML("Datei herunterladen")) {
                     /*
-                     * we get fresh entry page after clicking download, means we
-                     * have to start from beginning
+                     * we get fresh entry page after clicking download, means we have to start from beginning
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
                 }
@@ -545,7 +541,7 @@ public class Uploadedto extends PluginForHost {
 
     private void generalFreeErrorhandling(final Account account) throws PluginException {
         if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-        if (br.containsHTML("Sie haben die max\\. Anzahl an Free\\-Downloads")) {
+        if (br.containsHTML("Sie haben die max\\. Anzahl an Free\\-Downloads") || br.containsHTML("err\":\"limit-dl")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);

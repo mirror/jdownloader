@@ -85,7 +85,6 @@ public class AsFileCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
         String passCode = null;
         String dllink = downloadLink.getStringProperty("directFree", null);
         if (dllink != null) {
@@ -93,8 +92,12 @@ public class AsFileCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 /* direct link no longer valid */
-                br.followConnection();
-                dllink = null;
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                } finally {
+                    dllink = null;
+                }
             }
             if (dllink != null) {
                 /* direct link still valid */
@@ -103,6 +106,8 @@ public class AsFileCom extends PluginForHost {
                 return;
             }
         }
+        br.setFollowRedirects(false);
+        requestFileInformation(downloadLink);
         // Password handling
         if (br.getURL().contains("/password/")) {
             passCode = downloadLink.getStringProperty("pass", null);
@@ -145,8 +150,7 @@ public class AsFileCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
         /*
-         * resume no longer possible? at least with a given password it does not
-         * work
+         * resume no longer possible? at least with a given password it does not work
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -249,7 +253,6 @@ public class AsFileCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
         login(account, false);
         /* try direct link */
         String dllink = link.getStringProperty("direct", null);
@@ -258,8 +261,12 @@ public class AsFileCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 /* direct link no longer valid */
-                br.followConnection();
-                dllink = null;
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                } finally {
+                    dllink = null;
+                }
             }
             if (dllink != null) {
                 /* direct link still valid */
@@ -269,6 +276,8 @@ public class AsFileCom extends PluginForHost {
             }
         }
         br.setFollowRedirects(false);
+        requestFileInformation(link);
+        login(account, false);
         try {
             br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
         } catch (Exception e) {

@@ -157,7 +157,10 @@ public class RapidGatorNet extends PluginForHost {
 
         /* jsRedirect */
         String reDirHash = handleJavaScriptRedirect();
-        if (reDirHash != null) br.getPage(link.getDownloadURL() + "?" + reDirHash);
+        if (reDirHash != null) {
+            logger.info("JSRedirect in requestFileInformation");
+            br.getPage(link.getDownloadURL() + "?" + reDirHash);
+        }
 
         if (br.containsHTML("400 Bad Request") && link.getDownloadURL().contains("%")) {
             link.setUrlDownload(link.getDownloadURL().replace("%", ""));
@@ -470,7 +473,10 @@ public class RapidGatorNet extends PluginForHost {
 
                 /* jsRedirect */
                 String reDirHash = handleJavaScriptRedirect();
-                if (reDirHash != null) br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                if (reDirHash != null) {
+                    logger.info("JSRedirect in login");
+                    br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+                }
 
                 if (br.getCookie(MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
@@ -502,7 +508,10 @@ public class RapidGatorNet extends PluginForHost {
 
         /* jsRedirect */
         String reDirHash = handleJavaScriptRedirect();
-        if (reDirHash != null) br.getPage(link.getDownloadURL() + "?" + reDirHash);
+        if (reDirHash != null) {
+            logger.info("JSRedirect in premium");
+            br.getPage(link.getDownloadURL() + "?" + reDirHash);
+        }
 
         String dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);

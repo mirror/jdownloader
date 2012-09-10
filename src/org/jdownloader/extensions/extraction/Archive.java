@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.jdownloader.extensions.extraction.ArchiveSettings.BooleanStatus;
 import org.jdownloader.extensions.extraction.content.ContentView;
 import org.jdownloader.extensions.extraction.content.PackedFile;
 import org.jdownloader.extensions.extraction.multi.ArchiveType;
@@ -285,7 +286,10 @@ public class Archive {
             if (settings != null) return settings;
             Application.getResource("cfg/archives/").mkdirs();
             settings = JsonConfig.create(Application.getResource("cfg/archives/" + getFactory().getID()), ArchiveSettings.class);
-            settings.setAutoExtract(getFactory().getDefaultAutoExtract());
+            if (settings.getAutoExtract() == null || BooleanStatus.UNSET.equals(settings.getAutoExtract())) {
+                /* only set AutoExtract value when it is UNSET */
+                settings.setAutoExtract(getFactory().getDefaultAutoExtract());
+            }
         }
         return settings;
     }

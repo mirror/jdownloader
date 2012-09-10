@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -150,24 +151,40 @@ public class MdfrFldr extends PluginForDecrypt {
         }
         if (ID != null) {
             br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=2");
+            String fileCounter = br.getRegex("file_count\":\"(\\d+)").getMatch(0);
             fpName = br.getRegex("name\":\"([^\"]+)").getMatch(0);
+            HashSet<String> avoidDuplicates = new HashSet<String>();
             /* folder */
             // br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=nuul&content_type=folders&order_by=name&order_direction=asc&version=2.6&folder_key="
             // + ID + "&response_format=json");
-            br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&version=2.6&folder_key=" + ID + "&response_format=json");
-            String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
-            progress.setRange(links.length);
-
-            for (String[] element : links) {
-                if (!element[2].equalsIgnoreCase("0")) {
-                    DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                    link.setName(unescape(element[1]));
-                    link.setDownloadSize(Long.parseLong(element[2]));
-                    link.setProperty("origin", "decrypter");
-                    link.setAvailable(true);
-                    decryptedLinks.add(link);
+            int loop = 1;
+            while (true) {
+                if (loop > 1) {
+                    br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&chunk=" + loop + "&version=2.6&folder_key=" + ID + "&response_format=json");
+                } else {
+                    br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&version=2.6&folder_key=" + ID + "&response_format=json");
                 }
-                progress.increase(1);
+                String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
+                progress.setRange(links.length);
+                boolean freshAdded = false;
+                for (String[] element : links) {
+                    if (!element[2].equalsIgnoreCase("0") && avoidDuplicates.add(element[0]) == true) {
+                        DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
+                        link.setName(unescape(element[1]));
+                        link.setDownloadSize(Long.parseLong(element[2]));
+                        link.setProperty("origin", "decrypter");
+                        link.setAvailable(true);
+                        decryptedLinks.add(link);
+                        freshAdded = true;
+
+                    }
+                    progress.increase(1);
+                }
+                if (freshAdded == false) {
+                    break;
+                } else {
+                    loop++;
+                }
             }
         }
         if (fpName != null) {

@@ -61,8 +61,8 @@ public class LibGenInfo extends PluginForHost {
         String var1 = br.getRegex("name=\\'hidden\\'  type=\\'hidden\\'  value=\"([^<>\"\\']+)\"").getMatch(0);
         String submit = br.getRegex("type=\"submit\" name=\"submit\" value=\"([^<>\"\\']+)\"").getMatch(0);
         if (var1 == null || submit == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = "http://libgen.info/noleech1.php?hidden=" + Encoding.urlEncode(var1) + "&hidden0=" + Encoding.urlEncode(downloadLink.getName()) + "&submit=" + Encoding.urlEncode(submit);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
+        String dllink = "http://libgen.info/noleech1.php?hidden=" + Encoding.urlEncode(var1) + "&hidden0=" + Encoding.urlEncode(downloadLink.getName());
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">Sorry, huge and large files are available to download in local network only, try later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);

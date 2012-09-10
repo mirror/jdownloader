@@ -61,8 +61,15 @@ public class BrontoFileCom extends PluginForHost {
         }
         String filesize = br.getRegex(">File size</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        parameter.setFinalFileName(filename.trim());
-        if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (parameter.getFinalFileName() == null) parameter.setFinalFileName(filename.trim());
+        if (filesize != null) {
+            try {
+                parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+            } catch (final Throwable e) {
+                e.printStackTrace();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         return AvailableStatus.TRUE;
     }
 

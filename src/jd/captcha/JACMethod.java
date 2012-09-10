@@ -103,6 +103,7 @@ public class JACMethod implements Comparable<JACMethod> {
         java.util.List<JACMethod> methods = new ArrayList<JACMethod>();
         if (services != null) {
             for (String service : services) {
+                LogController.CL().info("Method " + dir.getName() + " supports " + service);
                 methods.add(new JACMethod(dir.getName(), service));
             }
         }
