@@ -83,7 +83,7 @@ public class GameTrailersCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        long gt = downloadLink.getLongProperty("GRABBEDTIME", -1);
+        long gt = (Long) downloadLink.getProperty("GRABBEDTIME", -1l);
         if (gt > 0) {
             /* Expiration date has not been verified */
             if (System.currentTimeMillis() - gt >= 24 * 60 * 60 * 1000) requestFileInformation(downloadLink);

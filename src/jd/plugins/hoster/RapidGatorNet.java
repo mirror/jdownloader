@@ -492,6 +492,11 @@ public class RapidGatorNet extends PluginForHost {
         prepareBrowser(br);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+
+        /* jsRedirect */
+        String reDirHash = handleJavaScriptRedirect();
+        if (reDirHash != null) br.getPage(link.getDownloadURL() + "?" + reDirHash);
+
         String dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
         if (dllink == null) {
