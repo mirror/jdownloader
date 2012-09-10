@@ -510,9 +510,11 @@ public class TbCm extends PluginForDecrypt {
             /* new format since ca. 1.8.2011 */
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
             if (html5_fmt_map == null) {
-                // TODO: Fix that!!
+                // TODO: Fix that, encoding problem!
                 // html5_fmt_map =
                 // br.getRegex("url_encoded_fmt_stream_map=([^<>\"]*?)\\&").getMatch(0);
+                // TESTLINK:
+                // http://www.youtube.com/watch?v=Yxgl027CT00&feature=plcp
                 logger.warning("ythack age restricted video failed!");
                 return null;
             }

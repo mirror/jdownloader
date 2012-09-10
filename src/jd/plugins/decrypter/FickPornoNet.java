@@ -70,7 +70,7 @@ public class FickPornoNet extends PluginForDecrypt {
                 logger.warning("fickporno -> youporn link invalid, please check browser to confirm: " + parameter);
                 return null;
             }
-            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+            if (br.containsHTML("download\\.youporn\\.com/agecheck") || br.containsHTML("http\\-equiv=\"refresh\" content=\"\\d+;url=http://(www\\.)?download\\.youporn\\.com/")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -79,7 +79,7 @@ public class FickPornoNet extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
             if (type == null) type = "flv";
             dl.setFinalFileName(filename + "." + type);

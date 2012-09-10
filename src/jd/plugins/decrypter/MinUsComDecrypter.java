@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/(?!directory|search|explore|pref|https|smedia)[A-Za-z0-9]{2,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "minus.com" }, urls = { "http://((www|dev)\\.)?(minus\\.com|min\\.us)/(?!directory|search|explore|pref|https|smedia|recent)[A-Za-z0-9]{2,}" }, flags = { 0 })
 public class MinUsComDecrypter extends PluginForDecrypt {
 
     public MinUsComDecrypter(PluginWrapper wrapper) {
@@ -62,10 +62,6 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         // fail over for single items ?. Either that or they changed website yet
         // again and do not display the full gallery array.
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
-        if (!br.containsHTML("class=\"btn\\-action btn\\-download no\\-counter\"") && (items == null || items.length == 0)) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         if (items != null && items.length != 0) {
             for (String singleitems : items) {
                 String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
@@ -85,10 +81,9 @@ public class MinUsComDecrypter extends PluginForDecrypt {
                 dl.setAvailable(true);
                 decryptedLinks.add(dl);
             }
-        }
-        // Only one link available, add it!
-        if (br.containsHTML("class=\"btn\\-action btn\\-download no\\-counter\"") && (items == null || items.length == 0)) {
-            final String filesize = br.getRegex("<span class=\"text\">Download \\(([^<>\"]*?)\\)</span>").getMatch(0);
+        } else {
+            // Only one link available, add it!
+            final String filesize = br.getRegex("<div class=\"item\\-actions\\-right\">[\t\n\r ]+<a title=\"([^<>\"]*?)\"").getMatch(0);
             final DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             if (filesize != null) dl.setDownloadSize(SizeFormatter.getSize(filesize));
             decryptedLinks.add(dl);

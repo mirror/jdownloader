@@ -82,12 +82,8 @@ public class Wrdprss extends PluginForDecrypt {
         defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
         defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
         defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
-        defaultPasswords.put("zeitungsjunge.info", new String[] { "www.zeitungsjunge.info" });
         defaultPasswords.put("sound-blog.org", new String[] { "sound-blog.org" });
         defaultPasswords.put("cinetopia.ws", new String[] { "cinetopia.ws" });
-        defaultPasswords.put("ladekabel.us", new String[] { "Ladekabel.us" });
-        defaultPasswords.put("load-it.biz", new String[] { "load-it.biz" });
-        defaultPasswords.put("blogload.org", new String[] { "blogload.org" });
     }
 
     // @Override

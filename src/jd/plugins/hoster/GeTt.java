@@ -29,13 +29,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api\\d+?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
     private String              DLLINK               = null;
-
     private static final String LIMITREACHED         = "overloaded.html";
-
     private static final String LIMITREACHEDUSERTEXT = "Traffic limit for this file is reached";
 
     public GeTt(PluginWrapper wrapper) {
@@ -53,26 +51,13 @@ public class GeTt extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        // Limit is on the file, reconnect doesn't remove it
-        if (DLLINK.contains(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage("http://ge.tt");
         Browser brc = br.cloneBrowser();
         brc.getPage(downloadLink.getDownloadURL());
-        if (brc.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (brc.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = brc.getRedirectLocation();
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK.contains(LIMITREACHED)) {
@@ -97,6 +82,19 @@ public class GeTt extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        // Limit is on the file, reconnect doesn't remove it
+        if (DLLINK.contains(LIMITREACHED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, LIMITREACHEDUSERTEXT, 30 * 60 * 1000l);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

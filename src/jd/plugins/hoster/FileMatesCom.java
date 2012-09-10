@@ -322,8 +322,7 @@ public class FileMatesCom extends PluginForHost {
         if (dllink == null) {
             dllink = new Regex(correctedBR, "onclick=\"downLinkDo\\(\\'(http://[^<>\"]*?)\\'").getMatch(0);
             if (dllink == null) {
-                // "http://filemates-srv25.com/cgi-bin/dl.cgi/acnmdlfy5udvpbhoxicohvny3dgobq3tfal6iezjl4/Alec_Hall-Selva_Febre-BUR031-WEB-2012-TraX.rar"
-                dllink = new Regex(correctedBR, "(\\'|\")(http://filemates\\-srv\\d+\\.com/cgi\\-bin/dl\\.cgi/[^<>\"]*?)(\\'|\")").getMatch(1);
+                dllink = new Regex(correctedBR, "(\\'|\")(http://filemates\\-srv\\d+\\.com/[^<>\"]*?)(\\'|\")").getMatch(1);
             }
         }
         return dllink;

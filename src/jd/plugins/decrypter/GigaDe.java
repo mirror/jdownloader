@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/[a-z0-9\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/(?!live|alle\\-videos)[a-z0-9\\-]+/" }, flags = { 0 })
 public class GigaDe extends PluginForDecrypt {
 
     public GigaDe(PluginWrapper wrapper) {
@@ -39,21 +39,37 @@ public class GigaDe extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        final String fpName = br.getRegex("<h1 class=\"entry\\-title\">([^<>\"/]+)</h1>").getMatch(0);
-        String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
-        if (links == null || links.length == 0) {
+        String fpName = br.getRegex("<h1 class=\"entry\\-title\">([^<>\"/]+)</h1>").getMatch(0);
+        final String[][] links = br.getRegex("id=\"NVBPlayer(\\d+\\-\\d+)\">.*?<span property=\"media:title\" content=\"([^<>\"/]+)\".*?<source src=\"(http://video\\.giga\\.de/data/[a-z0-9\\-]+\\-normal\\.mp4)\"").getMatches();
+        final String[] otherLinks = br.getRegex("rel=\"media:video\" resource=\"(http://(www\\.)?video\\.giga\\.de/data/[^<>/\"]*?\\.mp4)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (otherLinks == null || otherLinks.length == 0) || fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String[] singleLink : links) {
-            /**
-             * Change normal links to HD links, this will work as long as they
-             * always look the same. If this is changed we can use the ID
-             * (singleLink[0]) to get the HD link
-             */
-            DownloadLink dl = createDownloadlink("directhttp://" + singleLink[2].replace("-normal.mp4", "-hd.mp4"));
-            dl.setFinalFileName(Encoding.htmlDecode(singleLink[1].trim()) + ".mp4");
-            decryptedLinks.add(dl);
+        fpName = Encoding.htmlDecode(fpName.trim());
+        if (links != null && links.length != 0) {
+            for (String[] singleLink : links) {
+                /**
+                 * Change normal links to HD links, this will work as long as
+                 * they always look the same. If this is changed we can use the
+                 * ID (singleLink[0]) to get the HD link
+                 */
+                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink[2].replace("-normal.mp4", "-hd.mp4"));
+                dl.setFinalFileName(Encoding.htmlDecode(singleLink[1].trim()) + ".mp4");
+                decryptedLinks.add(dl);
+            }
+        }
+        if (otherLinks != null && otherLinks.length != 0) {
+            for (String singleLink : otherLinks) {
+                /**
+                 * Change normal links to HD links, this will work as long as
+                 * they always look the same. If this is changed we can use the
+                 * ID (singleLink[0]) to get the HD link
+                 */
+                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace("-normal.mp4", "-hd.mp4"));
+                dl.setFinalFileName(fpName + ".mp4");
+                decryptedLinks.add(dl);
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

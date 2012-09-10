@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixbird.com" }, urls = { "http://(www\\.)?mixbird\\.com/mixtapes/(listen|download)/[a-z0-9_\\-]+" }, flags = { 0 })
 public class MixBirdCom extends PluginForDecrypt {
@@ -40,7 +38,10 @@ public class MixBirdCom extends PluginForDecrypt {
         String parameter = param.toString().replace("/download/", "/listen/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("GO Back\\! Ya dun fucked up\\!")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(GO Back\\! Ya dun fucked up\\!|>404 Not Found<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String tapeID = br.getRegex("\"playMixtape\\((\\d+)").getMatch(0);
         if (tapeID == null) return null;
         String artist = br.getRegex("\"> Artist: (.*?)</font>").getMatch(0);

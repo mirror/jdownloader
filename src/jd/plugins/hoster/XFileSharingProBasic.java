@@ -477,10 +477,10 @@ public class XFileSharingProBasic extends PluginForHost {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
-                logger.warning("As free user you can download files up to " + filesizelimit + " only");
+                logger.info("As free user you can download files up to " + filesizelimit + " only");
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
-                logger.warning("Only downloadable via premium");
+                logger.info("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }

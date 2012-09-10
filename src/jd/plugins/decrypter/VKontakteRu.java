@@ -143,7 +143,7 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> decryptAudioAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
         int overallCounter = 1;
-        DecimalFormat df = new DecimalFormat("00000");
+        final DecimalFormat df = new DecimalFormat("00000");
         /* not needed as we already have requested this page */
         // br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");

@@ -71,7 +71,7 @@ public class QtyFilesCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
-    // mods:
+    // mods:many, do NOT update xfilesharing version!!
     // non account: 1(no resume) * ? with waits after captcha
     // free account: same as above
     // premium account: **not tested**
@@ -111,15 +111,18 @@ public class QtyFilesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
+        }
+        if (br.getURL().contains("/?op=login&redirect=")) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.qtyfilescom.premiumonly", PREMIUMONLY2));
+            return AvailableStatus.UNCHECKABLE;
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
@@ -162,6 +165,7 @@ public class QtyFilesCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+        br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -296,14 +300,19 @@ public class QtyFilesCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which
-     * allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival
-     * does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting
-     * peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots
-     * are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -424,11 +433,15 @@ public class QtyFilesCom extends PluginForHost {
                 logger.warning("As free user you can download files up to " + filesizelimit + " only");
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY1 + " " + filesizelimit);
             } else {
-                logger.warning("Only downloadable via premium");
+                logger.info("Only downloadable via premium");
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (br.getURL().contains("/?op=login&redirect=")) {
+            logger.info("Only downloadable via premium");
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+        }
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -609,12 +622,14 @@ public class QtyFilesCom extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
-            getPage(link.getDownloadURL());
+            // Check status again to make sure that we got the filename
+            requestFileInformation(link);
             doFree(link, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
-                getPage(link.getDownloadURL());
+                // Check status again to make sure that we got the filename
+                requestFileInformation(link);
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(link, true, passCode);

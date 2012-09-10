@@ -25,37 +25,25 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yurl.ru" }, urls = { "http://[\\w\\.]*?yurl\\.ru/[0-9]+" }, flags = { 0 })
-public class YRlR extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primejailbait.com" }, urls = { "http://(www\\.)?primejailbait\\.com/id/\\d+/" }, flags = { 0 })
+public class PrimeJailBaitCom extends PluginForDecrypt {
 
-    public YRlR(PluginWrapper wrapper) {
+    public PrimeJailBaitCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(false);
+        final String parameter = param.toString();
         br.getPage(parameter);
-        // single (redirect) links handling
-        String redirectcheck = br.getRegex("window\\.location = \"(.*?)\";").getMatch(0);
-        if (redirectcheck != null) {
-            decryptedLinks.add(createDownloadlink(redirectcheck));
-            return decryptedLinks;
+        String finallink = br.getRegex("<div id=\"bigwall\" class=\"right\">[\t\n\r ]+<img border=0 src=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\\'(http://pics\\.primejailbait\\.com/pics/original/[a-z0-9]+\\.jpg)\\'").getMatch(0);
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        // Multiple-links handling
-        String[] redirectLinks = br.getRegex("javascript:window\\.open\\('(.*?)'\\)").getColumn(0);
-        progress.setRange(redirectLinks.length);
-        if (redirectLinks.length == 0) return null;
-        for (String link : redirectLinks) {
-            br.getPage(link);
-            System.out.print(br.toString());
-            String finallink = br.getRegex("src=\"(.*?)\"").getMatch(0);
-            
-            decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
-        }
+
+        decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
 
         return decryptedLinks;
     }

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button)#?[A-Za-z0-9]+(/v/0)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms)#?[A-Za-z0-9]+(/v/0)?" }, flags = { 0 })
 public class GeTtDecrypter extends PluginForDecrypt {
 
     public GeTtDecrypter(PluginWrapper wrapper) {
@@ -52,8 +52,8 @@ public class GeTtDecrypter extends PluginForDecrypt {
         } else {
             String fid = new Regex(parameter, IDREGEX).getMatch(0);
             br.getPage("http://api.ge.tt/0/" + fid + "?jsonp=_tmp_jsonp.cb" + System.currentTimeMillis());
-            if (br.containsHTML("\"error\":\"share not found\"")) {
-                DownloadLink dlink = createDownloadlink("http://api.ge.tt/0/" + fid + "/0/" + fid);
+            if (br.containsHTML("\"error\":\"share not found\"") || br.containsHTML(">404 Not Found<")) {
+                final DownloadLink dlink = createDownloadlink("http://api.ge.tt/0/" + fid + "/0/" + fid);
                 dlink.setAvailable(false);
                 decryptedLinks.add(dlink);
                 return decryptedLinks;
