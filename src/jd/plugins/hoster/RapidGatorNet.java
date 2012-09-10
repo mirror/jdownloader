@@ -464,7 +464,14 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://rapidgator.net/auth/login", "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=1");
+
+                String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=1";
+                br.postPage("http://rapidgator.net/auth/login", loginPostData);
+
+                /* jsRedirect */
+                String reDirHash = handleJavaScriptRedirect();
+                if (reDirHash != null) br.postPage("http://rapidgator.net/auth/login", loginPostData + "&" + reDirHash);
+
                 if (br.getCookie(MAINPAGE, "user__") == null) {
                     logger.info("disabled because of" + br.toString());
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
