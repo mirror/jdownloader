@@ -139,7 +139,7 @@ public class ShareOnlineBiz extends PluginForHost {
         if (hideID) link.setName("download.php");
     }
 
-    private void errorHandling(Browser br, DownloadLink downloadLink, Account acc) throws PluginException {
+    private void errorHandling(Browser br, DownloadLink downloadLink, Account acc, HashMap<String, String> usedPremiumInfos) throws PluginException {
         /* file is offline */
         if (br.containsHTML("The requested file is not available")) {
             logger.info("The following link was marked as online by the API but is offline: " + downloadLink.getDownloadURL());
@@ -208,10 +208,16 @@ public class ShareOnlineBiz extends PluginForHost {
         if (url.contains("failure/size")) { throw new PluginException(LinkStatus.ERROR_FATAL, "File too big. Premium needed!"); }
         if (url.contains("failure/expired") || url.contains("failure/session")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for new ticket", 60 * 1000l); }
         if (url.contains("failure/cookie")) {
-            synchronized (LOCK) {
-                if (acc != null) ACCOUNTINFOS.remove(acc);
+            if (acc != null) {
+                synchronized (LOCK) {
+                    HashMap<String, String> infos = ACCOUNTINFOS.get(acc);
+                    if (infos != null && usedPremiumInfos == infos) {
+                        logger.info("Force refresh of cookies");
+                        ACCOUNTINFOS.remove(acc);
+                    }
+                }
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "CookieError", 3 * 60 * 1000l);
         }
         if (br.containsHTML("nput invalid, halting. please avoid more of these requests")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
     }
@@ -399,11 +405,11 @@ public class ShareOnlineBiz extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        errorHandling(br, downloadLink, null);
+        errorHandling(br, downloadLink, null, null);
         if (!br.containsHTML(">>> continue for free <<<")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ID = getID(downloadLink);
         br.postPage("http://www.share-online.biz/dl/" + ID + "/free/", "dl_free=1");
-        errorHandling(br, downloadLink, null);
+        errorHandling(br, downloadLink, null, null);
         String wait = br.getRegex("var wait=(\\d+)").getMatch(0);
         boolean captcha = br.containsHTML("RECAPTCHA active");
         long startWait = 0;
@@ -448,7 +454,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            errorHandling(br, downloadLink, null);
+            errorHandling(br, downloadLink, null, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -496,7 +502,7 @@ public class ShareOnlineBiz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dlURL, true, maxChunksnew.get());
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
-            errorHandling(br, parameter, account);
+            errorHandling(br, parameter, account, infos);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
