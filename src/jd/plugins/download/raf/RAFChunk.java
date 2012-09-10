@@ -300,6 +300,7 @@ public class RAFChunk extends Thread {
                         }
                     }
                 } catch (NullPointerException e) {
+                    LogSource.exception(logger, e);
                     if (inputStream == null) {
                         /* connection is closed and steam is null */
                         if (!isExternalyAborted() && !connectionclosed) throw e;
@@ -308,10 +309,12 @@ public class RAFChunk extends Thread {
                     }
                     throw e;
                 } catch (SocketException e2) {
+                    LogSource.exception(logger, e2);
                     if (!isExternalyAborted()) throw e2;
                     towrite = -1;
                     break;
                 } catch (ClosedByInterruptException e) {
+                    LogSource.exception(logger, e);
                     if (!isExternalyAborted()) {
                         logger.severe("Timeout detected");
                         dl.error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
@@ -319,10 +322,12 @@ public class RAFChunk extends Thread {
                     towrite = -1;
                     break;
                 } catch (AsynchronousCloseException e3) {
+                    LogSource.exception(logger, e3);
                     if (!isExternalyAborted() && !connectionclosed) throw e3;
                     towrite = -1;
                     break;
                 } catch (IOException e4) {
+                    LogSource.exception(logger, e4);
                     if (!isExternalyAborted() && !connectionclosed) throw e4;
                     towrite = -1;
                     break;
@@ -341,6 +346,7 @@ public class RAFChunk extends Thread {
                     break;
                 }
             }
+            logger.info("ExternalAbort: " + isExternalyAborted());
             if (getCurrentBytesPosition() < endByte && endByte > 0 || getCurrentBytesPosition() <= 0) {
                 logger.warning("Download not finished. Loaded until now: " + getCurrentBytesPosition() + "/" + endByte);
                 dl.error(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT._.download_error_message_incomplete());
