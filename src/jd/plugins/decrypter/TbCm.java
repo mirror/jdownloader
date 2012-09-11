@@ -353,8 +353,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -410,8 +409,7 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already
-                             * exists
+                             * because demuxer will fail when mp3 file already exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
@@ -510,15 +508,10 @@ public class TbCm extends PluginForDecrypt {
             /* new format since ca. 1.8.2011 */
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
             if (html5_fmt_map == null) {
-                // TODO: Fix that, encoding problem!
-                // html5_fmt_map =
-                // br.getRegex("url_encoded_fmt_stream_map=([^<>\"]*?)\\&").getMatch(0);
-                // TESTLINK:
-                // http://www.youtube.com/watch?v=Yxgl027CT00&feature=plcp
-                logger.warning("ythack age restricted video failed!");
-                return null;
+                html5_fmt_map = br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
+                html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
             }
-            if (!html5_fmt_map.contains("signature")) {
+            if (html5_fmt_map != null && !html5_fmt_map.contains("signature")) {
                 Thread.sleep(5000);
                 br.clearCookies(getHost());
                 return getLinks(video, prem, br, retrycount + 1);

@@ -570,6 +570,7 @@ public class RyuShareCom extends PluginForHost {
                 account.setProperty("cookies", cookies);
             } catch (final PluginException e) {
                 account.setProperty("cookies", Property.NULL);
+                account.setProperty("nopremium", false);
                 throw e;
             }
         }
@@ -582,10 +583,12 @@ public class RyuShareCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
-        if (account.getBooleanProperty("nopremium")) {
+        if (account.getBooleanProperty("nopremium", false)) {
+            logger.info("no premium");
             getPage(link.getDownloadURL());
             doFree(link, true, 1, "freelink2");
         } else {
+            logger.info("premium");
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
                 getPage(link.getDownloadURL());
