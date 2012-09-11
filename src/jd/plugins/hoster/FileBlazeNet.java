@@ -25,7 +25,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "http://(stream|betastageflash)\\.fileblaze\\.net/soundblaze/download/file\\?key=[0-9a-z\\-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileblaze.net" }, urls = { "http://(www|stream|betastageflash)\\.fileblaze\\.net/soundblaze/(download/file|external/music;jsessionid=[0-9A-F]+)\\?key=[0-9a-z\\-]+" }, flags = { 0 })
 public class FileBlazeNet extends PluginForHost {
 
     public FileBlazeNet(final PluginWrapper wrapper) {
@@ -62,7 +62,7 @@ public class FileBlazeNet extends PluginForHost {
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
             downloadLink.setDownloadSize(con.getLongContentLength());
-            downloadLink.setFinalFileName(FileBlazeNet.getFileNameFromHeader(con));
+            if (downloadLink.getStringProperty("title", null) == null) downloadLink.setFinalFileName(FileBlazeNet.getFileNameFromHeader(con));
             if (con.getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             return AvailableStatus.TRUE;
         } finally {
