@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestjailbaitphotos.com" }, urls = { "http://(www\\.)?bestjailbaitphotos\\.com/index\\.php/component/joomgallery/user\\-gallerys/[a-z0-9\\-_]+/[a-z0-9\\-_]+(\\?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestjailbaitphotos.com" }, urls = { "http://(www\\.)?bestjailbaitphotos\\.com/index\\.php/component/joomgallery/(user\\-gallerys/[a-z0-9\\-_]+/)?[a-z0-9\\-_]+(\\?page=\\d+)?" }, flags = { 0 })
 public class BestJailBaitPhotosCom extends PluginForDecrypt {
 
     public BestJailBaitPhotosCom(PluginWrapper wrapper) {
@@ -46,9 +46,9 @@ public class BestJailBaitPhotosCom extends PluginForDecrypt {
             return null;
         }
         fpName = Encoding.htmlDecode(fpName.trim());
-        String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
         boolean stop = false;
         int maxPage = 1;
+        final String page = new Regex(parameter, "\\?page=(\\d+)").getMatch(0);
         if (page != null) {
             // Stop after first page
             maxPage = Integer.parseInt(page);
@@ -57,14 +57,17 @@ public class BestJailBaitPhotosCom extends PluginForDecrypt {
             else
                 maxPage = getMaxpage();
         } else {
-            getMaxpage();
+            maxPage = getMaxpage();
         }
         final DecimalFormat df = new DecimalFormat("0000");
         int counter = 1;
         final String pagePiece = parameter.replaceAll("\\?page=\\d+", "");
         for (int i = 1; i <= maxPage; i++) {
-            if (i > 1) br.getPage(pagePiece + "?page=" + i);
-            final String[] links = br.getRegex("gf\\-\\d+\\-(\\d+)\" class=\"").getColumn(0);
+            if (i > 1) {
+                logger.info("Decrypting page " + i + " of " + maxPage);
+                br.getPage(pagePiece + "?page=" + i);
+            }
+            final String[] links = br.getRegex("(\\d+)\" class=\"jg_catelem_photo").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
