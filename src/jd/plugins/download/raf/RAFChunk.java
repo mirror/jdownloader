@@ -333,6 +333,7 @@ public class RAFChunk extends Thread {
                     break;
                 }
                 if (towrite == -1 || isExternalyAborted() || connectionclosed) {
+                    logger.warning("towrite: " + towrite + " exClosed: " + isExternalyAborted() + " conClosed: " + connectionclosed);
                     break;
                 }
                 if (towrite > 0) {
