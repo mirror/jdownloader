@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestjailbaitphotos.com" }, urls = { "http://(www\\.)?bestjailbaitphotos\\.com/index\\.php/component/joomgallery/(user\\-gallerys/[a-z0-9\\-_]+/)?[a-z0-9\\-_]+(\\?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bestjailbaitphotos.com" }, urls = { "http://(www\\.)?bestjailbaitphotos\\.com/index\\.php/component/joomgallery/(user\\-gallerys/[a-z0-9\\-_]+)?[a-z0-9\\-_]+(\\?page=\\d+)?" }, flags = { 0 })
 public class BestJailBaitPhotosCom extends PluginForDecrypt {
 
     public BestJailBaitPhotosCom(PluginWrapper wrapper) {
