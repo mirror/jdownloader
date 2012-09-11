@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback\\.html|privacy\\.html|terms\\.html|trends/)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filestube.com" }, urls = { "http://(www\\.)?(filestube\\.com/(?!source|advanced_search\\.html|search|look_for\\.html.+|sponsored_go\\.html.+|account|about\\.html|alerts/|api\\.html|contact\\.html|dmca\\.html|feedback|privacy\\.html|terms\\.html|trends/|last_added_files\\.html|add_contact\\.html|apidoc\\.html)|video\\.filestube\\.com/watch,[a-z0-9]+/).+\\.html" }, flags = { 0 })
 public class FlStbCm extends PluginForDecrypt {
 
     public FlStbCm(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class FlStbCm extends PluginForDecrypt {
             }
             decryptedLinks.add(createDownloadlink(finallink));
         } else if (parameter.contains("video.filestube.com/watch")) {
-            if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist)")) {
+            if (br.containsHTML("(>Error 404 video not found<|>Sorry, the video you requested does not exist|>This video has been removed)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
@@ -166,28 +166,27 @@ public class FlStbCm extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
+            if (br.containsHTML("api\\.kewego\\.com")) {
+                logger.info("Cannot decrypt link (not a bug): " + parameter);
+                return decryptedLinks;
+            }
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
         } else {
-            if (br.containsHTML("(> File no longer available|>Error 404 \\- Requested)")) {
+            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.containsHTML("(>File no longer available<|>Error 404 \\- Requested)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String fpName = br.getRegex("<title>(.*?)\\- Download").getMatch(0);
+            String fpName = br.getRegex("<title>(.*?)\\- Free Download").getMatch(0);
             // Hmm this plugin should always have a name with that mass of
             // alternative ways to get the name
             if (fpName == null) {
-                fpName = br.getRegex("content=\"Download(.*?)from").getMatch(0);
+                fpName = br.getRegex("<h1 style=\"float:left;width:450px;font\\-size:19px;margin:0 0 15px;padding:0;\">([^<>\"]*?)</h1>").getMatch(0);
                 if (fpName == null) {
-                    fpName = br.getRegex("\">Download:(.*?)</h2>").getMatch(0);
-                    if (fpName == null) {
-                        fpName = br.getRegex("widgetTitle: \\'(.*?)\\',").getMatch(0);
-                        if (fpName == null) {
-                            fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
-                        }
-                    }
+                    fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
                 }
             }
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);

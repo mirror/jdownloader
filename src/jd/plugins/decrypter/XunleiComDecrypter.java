@@ -26,6 +26,7 @@ import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -50,6 +51,21 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML("验证码：<")) {
+            logger.info("xunlei.com decrypter: found captcha, let's see if the experimental captcha implementation works...");
+            for (int i = 0; i <= 3; i++) {
+                final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
+                if (captchaLink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final String code = getCaptchaCode(captchaLink, param);
+                br.postPage(br.getURL(), "ref=&shortkey=" + new Regex(parameter, "([A-Z]+)$") + "&check_verify=" + code);
+                if (!br.containsHTML("验证码：<")) break;
+            }
+            if (br.containsHTML("验证码：<")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            logger.info("Passed experimental captcha handling!");
+        }
         checks(parameter, br.getURL());
         // hoster download links
         if (parameter.matches("http://(www\\.)?kuai\\.xunlei\\.com/(d/[A-Z]{12}|download\\?[^\"\\'<>]+)")) {

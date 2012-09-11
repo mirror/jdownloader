@@ -96,8 +96,15 @@ public class VKontakteRu extends PluginForDecrypt {
                 /** Decryption process START */
                 br.setFollowRedirects(false);
                 if (parameter.matches(".*?vk\\.com/audio.*?")) {
-                    /** Audio playlists */
-                    decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
+                    if (parameter.matches("http://(www\\.)?vk\\.com/audio(\\.php)?\\?id=(\\-)?\\d+")) {
+                        /** Audio links */
+                        decryptedLinks = decryptAudioAlbum(decryptedLinks, parameter);
+                    } else {
+                        /** Single playlists */
+                        decryptedLinks = decryptAudioPlaylist(decryptedLinks, parameter);
+                    }
+                    // final String[] playlists =
+                    // br.getRegex("</div><div id=\"album(\\d+)").getColumn(0);
                 } else if (parameter.matches(".*?vk\\.com/(video(\\-)?\\d+_\\d+|video_ext\\.php\\?oid=\\d+\\&id=\\d+)")) {
                     /** Single video */
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
@@ -141,11 +148,9 @@ public class VKontakteRu extends PluginForDecrypt {
 
     }
 
-    private ArrayList<DownloadLink> decryptAudioAlbum(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+    private ArrayList<DownloadLink> decryptAudioAlbum(final ArrayList<DownloadLink> decryptedLinks, final String parameter) throws IOException {
         int overallCounter = 1;
         final DecimalFormat df = new DecimalFormat("00000");
-        /* not needed as we already have requested this page */
-        // br.getPage(parameter);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         String postData = null;
         if (new Regex(parameter, "vk\\.com/audio\\?id=\\-\\d+").matches()) {
@@ -154,19 +159,52 @@ public class VKontakteRu extends PluginForDecrypt {
             postData = "act=load_audios_silent&al=1&edit=0&gid=0&id=" + new Regex(parameter, "(\\d+)$").getMatch(0);
         }
         br.postPage("http://vk.com/audio", postData);
-        String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
+        final String[][] audioLinks = br.getRegex("\\'(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audio/[a-z0-9]+\\.mp3)\\',\\'\\d+\\',\\'\\d+:\\d+\\',\\'(.*?)\\',\\'(.*?)\\'").getMatches();
         if (audioLinks == null || audioLinks.length == 0) return null;
         for (String audioInfo[] : audioLinks) {
             String finallink = audioInfo[0];
             if (finallink == null) return null;
             finallink = "directhttp://" + finallink;
-            DownloadLink dl = createDownloadlink(finallink);
+            final DownloadLink dl = createDownloadlink(finallink);
             // Set filename so we have nice filenames here ;)
             dl.setFinalFileName(Encoding.htmlDecode(audioInfo[2].trim()) + " - " + Encoding.htmlDecode(audioInfo[3].trim()) + ".mp3");
             dl.setAvailable(true);
             decryptedLinks.add(dl);
             logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
             overallCounter++;
+        }
+        return decryptedLinks;
+    }
+
+    private ArrayList<DownloadLink> decryptAudioPlaylist(ArrayList<DownloadLink> decryptedLinks, String parameter) throws IOException {
+        if (br.containsHTML("id=\"not_found\"")) {
+            logger.info("Empty link: " + parameter);
+            return decryptedLinks;
+        }
+
+        final String albumID = new Regex(parameter, "album_id=(\\d+)").getMatch(0);
+        final String fpName = br.getRegex("onclick=\"Audio\\.loadAlbum\\(" + albumID + "\\)\">[\t\n\r ]+<div class=\"label\">([^<>\"]*?)</div>").getMatch(0);
+
+        int overallCounter = 1;
+        final DecimalFormat df = new DecimalFormat("00000");
+        final String[][] audioLinks = br.getRegex("\"(http://cs\\d+\\.(vk\\.com|userapi\\.com)/u\\d+/audio/[a-z0-9]+\\.mp3),\\d+\".*?return false\">([^<>\"]*?)</a></b> &ndash; <span class=\"title\">([^<>\"]*?)</span><span class=\"user\"").getMatches();
+        if (audioLinks == null || audioLinks.length == 0) return null;
+        for (String audioInfo[] : audioLinks) {
+            String finallink = audioInfo[0];
+            if (finallink == null) return null;
+            finallink = "directhttp://" + finallink;
+            final DownloadLink dl = createDownloadlink(finallink);
+            // Set filename so we have nice filenames here ;)
+            dl.setFinalFileName(Encoding.htmlDecode(audioInfo[3].trim()) + " - " + Encoding.htmlDecode(audioInfo[2].trim()) + ".mp3");
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+            logger.info("Decrypted link number " + df.format(overallCounter) + " :" + finallink);
+            overallCounter++;
+        }
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

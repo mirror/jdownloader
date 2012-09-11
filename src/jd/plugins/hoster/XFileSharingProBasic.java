@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.6.8-raz
+    // XfileSharingProBasic Version 2.5.6.9
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -119,14 +119,18 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
+        }
+        if (br.getURL().contains("/?op=login&redirect=")) {
+            link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            return AvailableStatus.UNCHECKABLE;
         }
         String[] fileInfo = new String[3];
         // scan the first page
@@ -484,6 +488,10 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
             }
         }
+        if (br.getURL().contains("/?op=login&redirect=")) {
+            logger.info("Only downloadable via premium");
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
+        }
         if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
@@ -658,14 +666,14 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
-            getPage(link.getDownloadURL());
+            requestFileInformation(link);
             doFree(link, true, 0, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");

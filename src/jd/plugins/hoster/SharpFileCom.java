@@ -155,7 +155,8 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         checkErrors(downloadLink, false, passCode);
         if (dllink == null) {
@@ -549,9 +550,7 @@ public class SharpFileCom extends PluginForHost {
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "sf_hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/account.php");
-                System.out.println(br.toString() + "n");
-                if (!new Regex(correctedBR, "(>Buy Premium</a>|\"Extend Premium Account\")").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "\"Extend Premium Account\"").matches()) {
+                if (br.containsHTML("value=\"Purchase Premium Account\"")) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

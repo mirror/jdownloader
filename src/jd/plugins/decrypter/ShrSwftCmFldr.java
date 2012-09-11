@@ -46,7 +46,12 @@ public class ShrSwftCmFldr extends PluginForDecrypt {
         } else {
             if (parameter.matches("http://[\\w\\.]*?shareswift\\.com/\\w+/.+")) {
                 String[] links = br.getRegex("<TR><TD><a href=\"(.*?)\" target=\"_blank\">").getColumn(0);
-                if (links.length == 0) return null;
+                // No links found? Let's just try to add it as normal
+                // hosterlink!
+                if (links.length == 0) {
+                    decryptedLinks.add(createDownloadlink(parameter.replace("shareswift.com", THEREPLACE)));
+                    return decryptedLinks;
+                }
                 for (String dl : links) {
                     dl = dl.replace("shareswift.com", THEREPLACE);
                     decryptedLinks.add(createDownloadlink(dl));

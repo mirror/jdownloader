@@ -25,7 +25,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "http://(www\\.)?soundsnap\\.com/.{2,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "http://(www\\.)?soundsnap\\.com/(?!advertise|contact|education|licence|privacy|tos|learn|faq|user|store|products|browse|search|themes|modules|misc|imprint|community\\-guidelines|mailto|terms\\-of\\-use|videos|jobs|sounds|mobile|press).{2,}" }, flags = { 0 })
 public class SndSnapDecrypt extends PluginForDecrypt {
 
     public SndSnapDecrypt(PluginWrapper wrapper) {
