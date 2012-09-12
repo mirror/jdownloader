@@ -80,7 +80,7 @@ public class UpajPl extends PluginForHost {
     // XfileSharingProBasic Version 2.5.7.0
     // mods: waitTime
     // non account: 1 * 20
-    // free account: untested, set same as free
+    // free account: 20 * 20
     // premium account: untested, set standard limits
     // protocol: no https
     // captchatype: null
@@ -673,7 +673,7 @@ public class UpajPl extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(link);
-            doFree(link, false, 1, "freelink2");
+            doFree(link, true, 0, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {

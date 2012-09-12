@@ -194,7 +194,10 @@ public class OneFichierCom extends PluginForHost {
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
         if (timeStamp == null || "error".equalsIgnoreCase(timeStamp)) {
-            /** API might be wrong */
+            /**
+             * Only used if the API fails and is wrong but that usually doesn't
+             * happen!
+             */
             logger.info("Username/Password invalid via API, trying non-API login");
             br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
             final String logincheck = br.getCookie("http://1fichier.com/", "SID");
@@ -323,6 +326,10 @@ public class OneFichierCom extends PluginForHost {
             }
         }
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
+            /**
+             * Only used if the API fails and is wrong but that usually doesn't
+             * happen!
+             */
             doFree(link);
         } else {
             br.setFollowRedirects(false);
