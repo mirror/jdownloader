@@ -172,13 +172,7 @@ public class HenchFileCom extends PluginForHost {
             }
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                }
-            }
+            fileInfo[1] = new Regex(correctedBR, "</font> \\[<font style=\"color:#b0b0b0\">([^<>\"]*?)</font>]").getMatch(0);
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;

@@ -25,6 +25,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -46,6 +47,7 @@ public class BrontoFileCom extends PluginForHost {
     private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+    private static final String NOCHUNKS         = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
@@ -85,12 +87,28 @@ public class BrontoFileCom extends PluginForHost {
         final String waittime = br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, -5);
+        int chunks = -5;
+        if (downloadLink.getBooleanProperty(BrontoFileCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(BrontoFileCom.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(BrontoFileCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     private String findLink() throws Exception {

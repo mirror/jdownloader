@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -53,12 +53,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
-public class XFileSharingProBasic extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upaj.pl" }, urls = { "https?://(www\\.)?upaj\\.pl/[a-z0-9]{12}" }, flags = { 2 })
+public class UpajPl extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://ForDevsToPlayWith.com";
+    private final String         COOKIE_HOST                  = "http://upaj.pl";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
@@ -78,12 +78,12 @@ public class XFileSharingProBasic extends PluginForHost {
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.7.0
-    // mods:
-    // non account: chunk * maxdl
-    // free account: chunk * maxdl
-    // premium account: chunk * maxdl
+    // mods: waitTime
+    // non account: 1 * 20
+    // free account: untested, set same as free
+    // premium account: untested, set standard limits
     // protocol: no https
-    // captchatype: null 4dignum recaptcha
+    // captchatype: null
     // other: no redirects
 
     @Override
@@ -96,9 +96,9 @@ public class XFileSharingProBasic extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public XFileSharingProBasic(PluginWrapper wrapper) {
+    public UpajPl(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(COOKIE_HOST + "/premium.html");
+        this.enablePremium(COOKIE_HOST + "/premium.html");
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -179,6 +179,7 @@ public class XFileSharingProBasic extends PluginForHost {
                             }
                         }
                     }
+
                 }
             }
         }
@@ -198,7 +199,7 @@ public class XFileSharingProBasic extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -602,7 +603,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(1);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -672,7 +673,7 @@ public class XFileSharingProBasic extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(link);
-            doFree(link, true, 0, "freelink2");
+            doFree(link, false, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -693,7 +694,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -724,7 +725,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds<").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;
