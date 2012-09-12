@@ -198,6 +198,8 @@ public class RTLnowDe extends PluginForHost {
         rtmp.setApp(DLCONTENT.split("@")[1]);
         rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
         rtmp.setResume(true);
+        /* test */
+        rtmp.setTimeOut(-1);
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {
