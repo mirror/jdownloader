@@ -510,6 +510,10 @@ public class TbCm extends PluginForDecrypt {
             if (html5_fmt_map == null) {
                 html5_fmt_map = br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
                 html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
+                if (!html5_fmt_map.contains("url=")) {
+                    html5_fmt_map = html5_fmt_map.replaceAll("%3D", "=");
+                    html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
+                }
             }
             if (html5_fmt_map != null && !html5_fmt_map.contains("signature")) {
                 Thread.sleep(5000);
@@ -526,7 +530,11 @@ public class TbCm extends PluginForDecrypt {
                         String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                         if (hitUrl != null && hitFmt != null && hitQ != null) {
                             hitUrl = unescape(hitUrl.replaceAll("\\\\/", "/"));
-                            links.put(Integer.parseInt(hitFmt), new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ });
+                            if (hitUrl.startsWith("http%253A")) {
+                                hitUrl = Encoding.htmlDecode(hitUrl);
+                            }
+                            String[] inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
+                            links.put(Integer.parseInt(hitFmt), inst);
                         }
                     }
                 }
