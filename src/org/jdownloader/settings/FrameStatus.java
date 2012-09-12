@@ -10,8 +10,7 @@ import org.appwork.storage.Storable;
 public class FrameStatus implements Storable {
     public static enum ExtendedState {
         /**
-         * Frame is in the "normal" state. This symbolic constant names a frame
-         * state with all state bits cleared.
+         * Frame is in the "normal" state. This symbolic constant names a frame state with all state bits cleared.
          * 
          * @see #setExtendedState(int)
          * @see #getExtendedState
@@ -27,8 +26,7 @@ public class FrameStatus implements Storable {
         ICONIFIED(Frame.ICONIFIED),
 
         /**
-         * This state bit indicates that frame is maximized in the horizontal
-         * direction.
+         * This state bit indicates that frame is maximized in the horizontal direction.
          * 
          * @see #setExtendedState(int)
          * @see #getExtendedState
@@ -37,8 +35,7 @@ public class FrameStatus implements Storable {
         MAXIMIZED_HORIZ(Frame.MAXIMIZED_HORIZ),
 
         /**
-         * This state bit indicates that frame is maximized in the vertical
-         * direction.
+         * This state bit indicates that frame is maximized in the vertical direction.
          * 
          * @see #setExtendedState(int)
          * @see #getExtendedState
@@ -47,8 +44,7 @@ public class FrameStatus implements Storable {
         MAXIMIZED_VERT(Frame.MAXIMIZED_VERT),
 
         /**
-         * This state bit mask indicates that frame is fully maximized (that is
-         * both horizontally and vertically). It is just a convenience alias for
+         * This state bit mask indicates that frame is fully maximized (that is both horizontally and vertically). It is just a convenience alias for
          * <code>MAXIMIZED_VERT&nbsp;|&nbsp;MAXIMIZED_HORIZ</code>.
          * 
          * <p>
@@ -185,11 +181,11 @@ public class FrameStatus implements Storable {
             if (mainFrame.getExtendedState() == Frame.NORMAL) {
                 ret.width = mainFrame.getSize().width;
                 ret.height = mainFrame.getSize().height;
-                ret.x = mainFrame.getLocationOnScreen().x;
-                ret.y = mainFrame.getLocationOnScreen().y;
-                ret.locationSet = true;
             }
-
+            /* we also have to save location in other modes! */
+            ret.x = mainFrame.getLocationOnScreen().x;
+            ret.y = mainFrame.getLocationOnScreen().y;
+            ret.locationSet = true;
         }
         ret.visible = mainFrame.isVisible();
         ret.silentShutdown = ShutdownController.getInstance().isSilentShutDown();

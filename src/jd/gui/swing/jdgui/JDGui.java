@@ -302,7 +302,6 @@ public class JDGui extends SwingGui {
         FrameStatus status = JsonConfig.create(GraphicalUserInterfaceSettings.class).getLastFrameStatus();
 
         if (status == null) {
-
             status = new FrameStatus();
         }
         Dimension dim = null;

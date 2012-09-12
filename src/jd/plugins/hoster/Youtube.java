@@ -319,7 +319,7 @@ public class Youtube extends PluginForHost {
 
                 final HashMap<Integer, String[]> LinksFound = ((TbCm) plugin).getLinks(downloadLink.getStringProperty("videolink", null), this.prem, this.br, 0);
 
-                if (LinksFound.isEmpty()) {
+                if (LinksFound == null || LinksFound.isEmpty()) {
                     if (this.br.containsHTML("<div\\s+id=\"verify-age-actions\">")) { throw new PluginException(LinkStatus.ERROR_FATAL, "The entered account couldn't pass the age verification!"); }
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
