@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt2.be" }, urls = { "http://(www\\.)?crypt2\\.be/file/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "crypt2.net" }, urls = { "http://(www\\.)?crypt2\\.(be|net)/file/[a-z0-9]+" }, flags = { 0 })
 public class Crypt2Be extends PluginForDecrypt {
 
     public Crypt2Be(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class Crypt2Be extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString().replace("crypt2.be/", "crypt2.net/");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String finallink = findLink();

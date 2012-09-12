@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.6.9
+    // XfileSharingProBasic Version 2.5.7.0
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -226,7 +226,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 3;
-            for (int i = 1; i < repeat; i++) {
+            for (int i = 1; i <= repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -311,8 +311,9 @@ public class XFileSharingProBasic extends PluginForHost {
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
                     continue;
-                } else
+                } else {
                     break;
+                }
             }
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");

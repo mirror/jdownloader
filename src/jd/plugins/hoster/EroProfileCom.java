@@ -59,6 +59,7 @@ public class EroProfileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
         br.setCookie("http://eroprofile.com/", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(NOACCESS)) {
@@ -148,7 +149,6 @@ public class EroProfileCom extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
-                // br.getPage("");
                 br.postPage("http://www.eroprofile.com/process.php?0." + System.currentTimeMillis(), "a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "memberID") == null || !br.toString().trim().equals("OK")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies

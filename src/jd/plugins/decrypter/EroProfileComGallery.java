@@ -48,6 +48,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
         ArrayList<String> correctedpages = new ArrayList<String>();
         correctedpages.add("1");
         String parameter = param.toString();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setCookiesExclusive(false);
         br.setCookie("http://eroprofile.com/", "lang", "en");
         boolean loggedin = false;

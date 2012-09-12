@@ -222,7 +222,7 @@ public class UpllyCom extends PluginForHost {
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
             int repeat = 3;
-            for (int i = 1; i < repeat; i++) {
+            for (int i = 1; i <= repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -419,11 +419,6 @@ public class UpllyCom extends PluginForHost {
 
     private void getPage(String page) throws Exception {
         br.getPage(page);
-        correctBR();
-    }
-
-    private void postPage(String page, String postdata) throws Exception {
-        br.postPage(page, postdata);
         correctBR();
     }
 
@@ -718,7 +713,7 @@ public class UpllyCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">Wait <span style=\\'[^<>\"/\\']*?\\' id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

@@ -135,6 +135,7 @@ public class RTLnowDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Download nicht möglich (muss gekauft werden)"); }
         final String ageCheck = br.getRegex("(Aus Jugendschutzgründen nur zwischen \\d+ und \\d+ Uhr abrufbar\\!)").getMatch(0);
         if (ageCheck != null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, ageCheck, 10 * 60 * 60 * 1000l); }
         download(downloadLink);
@@ -146,8 +147,8 @@ public class RTLnowDe extends PluginForHost {
         final String dllink = downloadLink.getDownloadURL();
         br.getPage(dllink);
         if (br.containsHTML("<\\!\\-\\- Payment\\-Teaser \\-\\->")) {
-            downloadLink.setName(downloadLink.getName() + "(PAYMENT_IS_NEEDED)");
-            return AvailableStatus.UNCHECKED;
+            downloadLink.getLinkStatus().setStatusText("Download nicht möglich (muss gekauft werden)");
+            return AvailableStatus.TRUE;
         }
         String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\">").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
