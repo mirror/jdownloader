@@ -16,16 +16,15 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
-import jd.controlling.AccountController;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -50,9 +49,10 @@ public class RealDebridCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String mName = "real-debrid.com";
-    private static final String mProt = "http://";
-    private static final Object LOCK  = new Object();
+    private static final String mName    = "real-debrid.com";
+    private static final String mProt    = "http://";
+    private static final Object LOCK     = new Object();
+    private static final String DIRECTRD = "directRD";
 
     public RealDebridCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,55 +74,37 @@ public class RealDebridCom extends PluginForHost {
         br.setReadTimeout(60 * 1000);
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
-        prepBrowser();
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            LinkedList<Account> accs = AccountController.getInstance().getValidAccounts(this.getHost());
-            if (accs == null || accs.size() == 0) {
-                logger.info("No account present, Please add a premium" + mName + "account.");
-                for (DownloadLink dl : urls) {
-                    /* no check possible */
-                    dl.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-                }
-                return false;
-            }
-            login(accs.get(0), false);
-            br.setFollowRedirects(true);
-            for (DownloadLink dl : urls) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(dl.getDownloadURL());
-                    if (con.isContentDisposition()) {
-                        dl.setFinalFileName(getFileNameFromHeader(con));
-                        dl.setDownloadSize(con.getLongContentLength());
-                        dl.setAvailable(true);
-                    } else {
-                        dl.setAvailable(false);
-                    }
-                } finally {
-                    try {
-                        /* make sure we close connection */
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws PluginException {
-        checkLinks(new DownloadLink[] { link });
-        if (!link.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        return link.getAvailableStatus();
+    public AvailableStatus requestFileInformation(DownloadLink dl) throws PluginException, IOException {
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(dl.getDownloadURL());
+            if (con.isContentDisposition()) {
+                dl.setProperty(DIRECTRD, true);
+                if (dl.getFinalFileName() == null) dl.setFinalFileName(getFileNameFromHeader(con));
+                dl.setVerifiedFileSize(con.getLongContentLength());
+                dl.setAvailable(true);
+                return AvailableStatus.TRUE;
+            } else {
+                dl.setProperty("directRD", false);
+                dl.setAvailable(false);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } finally {
+            try {
+                /* make sure we close connection */
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
     public boolean canHandle(DownloadLink downloadLink, Account account) {
+        if (downloadLink.getBooleanProperty(DIRECTRD, false) == true) {
+            /* direct link */
+            return true;
+        }
         if (account == null) {
             /* without account its not possible to download the link */
             return false;
@@ -132,12 +114,13 @@ public class RealDebridCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Download only works with a premium" + mName + "account.", PluginException.VALUE_ID_PREMIUM_ONLY);
+        requestFileInformation(downloadLink);
+        handleDL(downloadLink, downloadLink.getDownloadURL());
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 0;
+        return -1;
     }
 
     @Override

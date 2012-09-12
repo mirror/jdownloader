@@ -85,6 +85,7 @@ public class FrameStatus implements Storable {
     private boolean       visible        = true;
     private int           y              = -1;
     private boolean       silentShutdown = false;
+    private String        screenID       = null;
 
     public ExtendedState getExtendedState() {
         return extendedState;
@@ -178,6 +179,11 @@ public class FrameStatus implements Storable {
     public static FrameStatus create(JFrame mainFrame, FrameStatus ret) {
         if (ret == null) ret = new FrameStatus();
         if (mainFrame.isShowing()) {
+            try {
+                ret.setScreenID(mainFrame.getGraphicsConfiguration().getDevice().getIDstring());
+            } catch (final Throwable e) {
+                e.printStackTrace();
+            }
             if (mainFrame.getExtendedState() == Frame.NORMAL) {
                 ret.width = mainFrame.getSize().width;
                 ret.height = mainFrame.getSize().height;
@@ -200,5 +206,20 @@ public class FrameStatus implements Storable {
         }
 
         return ret;
+    }
+
+    /**
+     * @return the screenID
+     */
+    public String getScreenID() {
+        return screenID;
+    }
+
+    /**
+     * @param screenID
+     *            the screenID to set
+     */
+    public void setScreenID(String screenID) {
+        this.screenID = screenID;
     }
 }
