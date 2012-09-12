@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -75,7 +77,7 @@ public class MyVideo extends PluginForHost {
             filename = br.getURL();
             if (filename != null) filename = filename.substring(filename.lastIndexOf("/") + 1);
         }
-        // get encUrl
+        /* get encUrl */
         HashMap<String, String> p = new HashMap<String, String>();
         String values = br.getRegex("flashvars=\\{(.*?)\\}").getMatch(0);
         for (String[] tmp : new Regex(values == null ? "NPE" : values, "(.*?):\'(.*?)\',").getMatches()) {
@@ -93,9 +95,9 @@ public class MyVideo extends PluginForHost {
             }
             next = next + valuePair.getKey() + "=" + valuePair.getValue();
         }
-        SWFURL = br.getRegex("SWFObject\\(\'(.*?)\',").getMatch(0);
+        SWFURL = br.getRegex("(SWFObject|embedSWF)\\(\'(.*?)\',").getMatch(1);
         SWFURL = SWFURL == null ? "http://is4.myvideo.de/de/player/mingR11q/ming.swf" : SWFURL;
-        br.getPage(next);
+        br.getPage(next + "&domain=www.myvideo.de");
         String input = br.getRegex("_encxml=(\\w+)").getMatch(0);
         if (input == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         input = input.replaceAll("%0D%0A", "").trim();
@@ -125,6 +127,24 @@ public class MyVideo extends PluginForHost {
         if (filename == null) filename = "unknown_myvideo_title__ID(" + p.get("ID") + ")_" + System.currentTimeMillis();
         filename = filename.replaceAll("\t", "").trim() + ext;
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        /* filesize */
+        if (CLIPURL.startsWith("http://")) {
+            Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(CLIPURL + CLIPPATH);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
