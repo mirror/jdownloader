@@ -909,3 +909,9 @@ jd/captcha/methods/mgshre
 jd/plugins/hoster/MegaShareCom.class
 jd/plugins/decrypter/YRlR.class
 jd/plugins/hoster/File4SharingCom.class
+jd/plugins/decrypter/FlsncCm.class
+jd/plugins/decrypter/ShrngMtrxCm.class
+jd/plugins/hoster/FileSonicCom.class
+jd/plugins/hoster/File4SharingCom.class
+jd/plugins/decrypter/WUploadComFolder.class
+jd/plugins/hoster/WUploadCom.class

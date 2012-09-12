@@ -19,13 +19,19 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.EroProfileCom;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eroprofile.com" }, urls = { "http://(www\\.)?eroprofile\\.com/m/photos/album/[A-Za-z0-9\\-_]+" }, flags = { 0 })
 public class EroProfileComGallery extends PluginForDecrypt {
@@ -34,13 +40,27 @@ public class EroProfileComGallery extends PluginForDecrypt {
         super(wrapper);
     }
 
+    /* must be static so all plugins share same lock */
+    private static final Object LOCK = new Object();
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> correctedpages = new ArrayList<String>();
         correctedpages.add("1");
         String parameter = param.toString();
+        br.setCookiesExclusive(false);
         br.setCookie("http://eroprofile.com/", "lang", "en");
+        boolean loggedin = false;
+        synchronized (LOCK) {
+            /** Login process */
+            loggedin = getUserLogin(false);
+        }
         br.getPage(parameter);
+        // Check if account needed but none account entered
+        if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
+            logger.info("Account needed to decrypt link: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
         final String[] pages = br.getRegex("\\?pnum=(\\d+)\"").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -68,6 +88,22 @@ public class EroProfileComGallery extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private boolean getUserLogin(final boolean force) throws Exception {
+        final PluginForHost hostPlugin = JDUtilities.getPluginForHost("eroprofile.com");
+        Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
+        if (aa == null) { return false; }
+        try {
+            ((EroProfileCom) hostPlugin).login(this.br, aa, force);
+        } catch (final PluginException e) {
+            aa.setEnabled(false);
+            aa.setValid(false);
+            return false;
+        }
+        // Account is valid, let's just add it
+        AccountController.getInstance().addAccount(hostPlugin, aa);
+        return true;
     }
 
 }

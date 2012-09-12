@@ -121,7 +121,8 @@ public class PutLockerCom extends PluginForHost {
         final Form freeform = br.getForm(0);
         if (freeform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         /** Can still be skipped */
-        // final String waittime = br.getRegex("var countdownNum = (\\d+);").getMatch(0);
+        // final String waittime =
+        // br.getRegex("var countdownNum = (\\d+);").getMatch(0);
         // int wait = 5;
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
@@ -135,7 +136,7 @@ public class PutLockerCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
         }
-        if (br.containsHTML(">You have exceeded the daily stream limit for your country\\. You can wait until tomorrow")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String dllink = getDllink(downloadLink);
         if (dllink == null) {
@@ -146,7 +147,8 @@ public class PutLockerCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            // My experience was that such files just don't work, i wasn't able to download a link with this error in 3 days!
+            // My experience was that such files just don't work, i wasn't able
+            // to download a link with this error in 3 days!
             if (br.getURL().equals("http://www.putlocker.com/")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.MAINPAGEer.putlockercom.servererrorfilebroken", "Server error - file offline?"));
             if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -266,7 +268,8 @@ public class PutLockerCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("<title>(.*?) |").getMatch(0);
         String filesize = br.getRegex("site-content.*?<h1>.*?<strong>\\((.*?)\\)").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // User sometimes adds random stuff to filenames when downloading so we better set the final name here
+        // User sometimes adds random stuff to filenames when downloading so we
+        // better set the final name here
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
