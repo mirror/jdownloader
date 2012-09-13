@@ -46,7 +46,7 @@ public class Dwmp3Com extends PluginForDecrypt {
         }
         final String fpName = br.getRegex("<title>([^<>\"]*?) \\| Zippyshare Mp3 Download</title>").getMatch(0);
         final Regex zippy = br.getRegex(">var zippywww=\"(\\d+)\";var zippyfile=\"(\\d+)\"");
-        if (zippy.getMatches().length > 1) {
+        if (zippy.getMatches().length > 0) {
             decryptedLinks.add(createDownloadlink("http://www" + zippy.getMatch(0) + ".zippyshare.com/v/" + zippy.getMatch(1) + "/file.html"));
             return decryptedLinks;
         }

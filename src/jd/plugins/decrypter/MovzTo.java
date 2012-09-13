@@ -104,6 +104,7 @@ public class MovzTo extends PluginForDecrypt {
                 }
                 if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)") || br.containsHTML(">Error 403 Forbidden<") || forceConfinue) {
                     logger.info("Captcha failed, continuing: " + currentLink);
+                    continue;
                 }
                 final String finallink = br.getRedirectLocation();
                 if (finallink == null) {

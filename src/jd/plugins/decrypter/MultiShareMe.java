@@ -48,8 +48,10 @@ public class MultiShareMe extends PluginForDecrypt {
         }
         String[] redirectLinks = br.getRegex("(/(redirect|rd)/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
-        if (redirectLinks == null || redirectLinks.length == 0) return null;
-        progress.setRange(redirectLinks.length);
+        if (redirectLinks == null || redirectLinks.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");
         logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
         for (String singlelink : redirectLinks) {
@@ -67,10 +69,12 @@ public class MultiShareMe extends PluginForDecrypt {
                 // Handling for already regexed final-links
                 dllink = singlelink;
             }
-            if (dllink == null) return null;
+            if (dllink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             if (dllink.matches("")) logger.info("Found one broken link!");
             decryptedLinks.add(createDownloadlink(dllink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

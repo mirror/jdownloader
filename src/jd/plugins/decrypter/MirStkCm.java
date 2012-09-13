@@ -55,7 +55,7 @@ public class MirStkCm extends PluginForDecrypt {
      */
 
     // version 0.5
-    private static final String MULTISHARED = "http://(www\\.)?multishared\\.com/[a-z0-9]+";
+    private static final String MULTISHARED = "http://(www\\.)?multishared\\.com/([a-z0-9]{1,2}_)?[a-z0-9]{12}";
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -93,7 +93,9 @@ public class MirStkCm extends PluginForDecrypt {
         // requirement and outcome
         for (String singleLink : singleLinks) {
             if (parameter.matches(MULTISHARED)) {
-                finallink = singleLink;
+                br.getHeaders().put("Referer", "http://multishared.com/r_counter");
+                br.getPage(singleLink);
+                finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
             } else if (parameter.contains("uploading.to/")) {
                 br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
                 br.getPage(singleLink);
