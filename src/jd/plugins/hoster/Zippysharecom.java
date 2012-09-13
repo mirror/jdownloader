@@ -151,7 +151,7 @@ public class Zippysharecom extends PluginForHost {
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, false, 1);
-        dl.setFilenameFix(true);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -170,26 +170,17 @@ public class Zippysharecom extends PluginForHost {
         prepareBrowser(downloadLink);
         if (br.containsHTML("(File has expired and does not exist anymore on this server|<title>Zippyshare.com \\- File does not exist</title>|File does not exist on this server)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-        String filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+        String filename = br.getRegex("<title>Zippyshare\\.com \\- (.*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<title>Zippyshare\\.com \\- (.*?)</title>").getMatch(0);
+            filename = br.getRegex(Pattern.compile("Name:(\\s+)?</font>(\\s+)?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(2);
         }
+        if (filename != null && filename.contains("fileName?key=")) filename = null;
         if (filename == null) {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
-        if (filename.contains("/fileName?key=")) {
-            final String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
-            if (url != null) filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
-        }
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("getElementById\\(\'dlbutton\'\\)\\.href = \"([^\\;]+)\"").getMatch(0);
-            if (filename != null) {
-                filename = filename.substring(filename.lastIndexOf("/") + 1);
-            }
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(Encoding.htmlDecode(filename.trim()));

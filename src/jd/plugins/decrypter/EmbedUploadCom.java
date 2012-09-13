@@ -56,7 +56,6 @@ public class EmbedUploadCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            progress.setRange(redirectLinks.length);
             for (String singleLink : redirectLinks) {
                 if (!singleLink.contains("&urlkey=")) {
                     br.getPage(singleLink);
@@ -66,8 +65,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
                     }
                     // some links are not provided by redirect.
                     else if (br.getHttpConnection().getContentType().contains("html")) {
-                        String link = br.getRegex("<b>[\r\n\t ]+(https?://[^\t ]+)").getMatch(0);
-                        if (link == null || link.length() == 0) link = br.getRegex("You should click on the download link.*?href='(https?://.*?)'").getMatch(0);
+                        final String link = getSingleLink();
                         if (link != null && link.length() != 0) {
                             decryptedLinks.add(createDownloadlink(link));
                         }
@@ -78,14 +76,23 @@ public class EmbedUploadCom extends PluginForDecrypt {
                         return null;
                     }
                 }
-                progress.increase(1);
             }
         }
         // redirects within the non ?d= links
         else {
-            if (br.getRedirectLocation() == null) return null;
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            final String finallink = getSingleLink();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(finallink));
         }
         return decryptedLinks;
+    }
+
+    private String getSingleLink() {
+        String link = br.getRegex("<b>[\r\n\t ]+(https?://[^\t ]+)").getMatch(0);
+        if (link == null || link.length() == 0) link = br.getRegex("You should click on the download link.*?href='(https?://.*?)'").getMatch(0);
+        return link;
     }
 }

@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.0
+    // XfileSharingProBasic Version 2.5.7.1
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -111,16 +111,16 @@ public class XFileSharingProBasic extends PluginForHost {
         return true;
     }
 
-    public void prepBrowser() {
+    public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setFollowRedirects(true);
-        prepBrowser();
+        prepBrowser(br);
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -160,7 +160,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String[] scanInfo(String[] fileInfo) {
+    private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
             fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
@@ -196,12 +196,12 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         doFree(downloadLink, true, 0, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -358,7 +358,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * @param controlFree
      *            (+1|-1)
      */
-    public synchronized void controlFree(int num) {
+    public synchronized void controlFree(final int num) {
         logger.info("maxFree was = " + maxFree.get());
         maxFree.set(Math.min(Math.max(1, maxFree.addAndGet(num)), totalMaxSimultanFreeDownload.get()));
         logger.info("maxFree now = " + maxFree.get());
@@ -419,22 +419,22 @@ public class XFileSharingProBasic extends PluginForHost {
         return dllink;
     }
 
-    private void getPage(String page) throws Exception {
+    private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
     }
 
-    private void postPage(String page, String postdata) throws Exception {
+    private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
     }
 
-    private void sendForm(Form form) throws Exception {
+    private void sendForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
     }
 
-    public void checkErrors(DownloadLink theLink, boolean checkAll, String passCode) throws NumberFormatException, PluginException {
+    public void checkErrors(final DownloadLink theLink, final boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
         if (checkAll) {
             if (new Regex(correctedBR, PASSWORDTEXT).matches() || correctedBR.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
@@ -501,7 +501,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    private String decodeDownloadLink(String s) {
+    private String decodeDownloadLink(final String s) {
         String decoded = null;
 
         try {
@@ -534,7 +534,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return finallink;
     }
 
-    private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
+    private String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {
         passCode = thelink.getStringProperty("pass", null);
         if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
         pwform.put("password", passCode);
@@ -542,7 +542,7 @@ public class XFileSharingProBasic extends PluginForHost {
         return Encoding.urlEncode(passCode);
     }
 
-    private String checkDirectLink(DownloadLink downloadLink, String property) {
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
@@ -614,12 +614,12 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                prepBrowser();
+                prepBrowser(br);
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -635,7 +635,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     }
                 }
                 getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getFormbyProperty("name", "FL");
+                final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));

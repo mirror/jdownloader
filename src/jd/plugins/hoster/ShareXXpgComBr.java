@@ -45,6 +45,7 @@ public class ShareXXpgComBr extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("/?NOT_FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -63,13 +64,17 @@ public class ShareXXpgComBr extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(link);
-        String dllink = br.getRegex("<div class=\"downbut\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://sharex\\.xpg\\.com\\.br/download/[0-9]+/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replaceAll("\\{", "%7B");
         dllink = dllink.replaceAll("\\[", "%5B");
         dllink = dllink.replaceAll("\\]", "%5D");
         dllink = dllink.replaceAll("\\}", "%7D");
+
+        int wait = 15;
+        final String waittime = br.getRegex("id=\"tempo_espera\">(\\d+)</span>").getMatch(0);
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        sleep(wait * 1001l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if ((dl.getConnection().getContentType().contains("html"))) {
             if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);

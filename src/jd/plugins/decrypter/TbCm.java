@@ -274,9 +274,11 @@ public class TbCm extends PluginForDecrypt {
                 }
                 verifyAge = false;
                 final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br, 0);
-                if ((LinksFound == null || LinksFound.isEmpty()) && br.containsHTML("<div id=\"unavailable\\-message\" class=\"\">[\\s]+Der betreffende Nutzer hat das Video in deinem Land nicht zur Verfügung gestellt\\.[\r\n]</div>")) {
-                    // for action/method -insert here-
-                    throw new DecrypterException("This video is not avaible from your IP address");
+                final String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
+                if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
+                    logger.info("Video unavailable: " + parameter);
+                    logger.info("Reason: " + error.trim());
+                    return decryptedLinks;
                 }
                 if (LinksFound == null || LinksFound.isEmpty()) {
                     if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
@@ -353,7 +355,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
@@ -409,7 +412,8 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already exists
+                             * because demuxer will fail when mp3 file already
+                             * exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);

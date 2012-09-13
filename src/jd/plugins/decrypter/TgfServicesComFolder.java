@@ -60,7 +60,7 @@ public class TgfServicesComFolder extends PluginForDecrypt {
                 String[] subFileIDs = allIDs.split(",");
                 int counter = 1;
                 for (String subFileID : subFileIDs) {
-                    DownloadLink dl = createDownloadlink(parameter.replace("/UserDownloads/", "/UserDownloadsdecrypted" + subFileID + "/"));
+                    DownloadLink dl = createDownloadlink(br.getURL().replace("/UserDownloads/", "/UserDownloadsdecrypted" + subFileID + "/"));
                     dl.setProperty("startNumber", counter);
                     // Do available check directly, works very fast
                     String filename = br.getRegex("<td width=\"5%\" align=\"right\">" + counter + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]+)</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"free\\-download\" id=\"free\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"premium\\-download\" id=\"premium\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<\\!\\-\\-DOWNLOAD TR\\-\\->[\t\n\r ]+<td colspan=\"4\">[\t\n\r ]+<\\!\\-\\-PREMIUM\\-\\->[\t\n\r ]+<div align=\"center\" style=\"display: none;\" class=\"download\\-premium\\-window\" id=\"download\\-premium\\-window\\-" + subFileID + "\">").getMatch(0);

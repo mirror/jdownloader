@@ -33,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -51,6 +52,7 @@ public class MakinaManiaCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://makinamania.com";
     private static final Object LOCK     = new Object();
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -136,11 +138,23 @@ public class MakinaManiaCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("class=\"btn_descargar\" align=\"center\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://machines\\.makinamania\\.com/descargas/descarga\\.php\\?id=[^<>\"]*?)\"").getMatch(0);
+        br.setFollowRedirects(false);
+        String dllink = br.getRegex("\"javascript:download\\(\\'(http://[^<>\"]*?)\\'\\)").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://machines\\.makinamania\\.com/descargas/descarga\\.php\\?id=[^<>\"]*?)(\"|\\')").getMatch(1);
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(dllink);
+        if (br.containsHTML("No se ha encontrado el archivo")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        int chunks = 0;
+        if (link.getBooleanProperty(MakinaManiaCom.NOCHUNKS, false)) {
+            chunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -148,7 +162,20 @@ public class MakinaManiaCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (link.getLinkStatus().getErrorMessage() != null && link.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                /* unknown error, we disable multiple chunks */
+                if (link.getBooleanProperty(MakinaManiaCom.NOCHUNKS, false) == false) {
+                    link.setProperty(MakinaManiaCom.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     @Override

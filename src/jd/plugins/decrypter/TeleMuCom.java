@@ -69,11 +69,9 @@ public class TeleMuCom extends PluginForDecrypt {
 
         String[] TabPassword = br.getRegex("</a>[ \t]+([A-Z0-9][^ ]*)[ \t]+<a href").getColumn(0);
 
-        String[] TabTemp = br.getRegex("href=\"(.*?)\"").getColumn(0);
-        if (TabTemp == null || TabTemp.length == 0) return null;
-
         // Creation of the array of link that is supported by all plug-in
-        String[] links = TabTemp;
+        final String[] links = br.getRegex("href=\"(.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) return null;
 
         String[] linksCrypted = br.getRegex("\"(http://telechargementmu\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
@@ -81,8 +79,8 @@ public class TeleMuCom extends PluginForDecrypt {
         int iImage = TabImage == null ? 0 : TabImage.length;
 
         // Added links
-        for (String redirectlink : links) {
-            decryptedLinks.add(createDownloadlink(redirectlink));
+        for (final String directlink : links) {
+            if (!directlink.matches("http://(www\\.)?telechargementmu\\.com/.*\\.html.*|http://feedproxy\\.google\\.com/~r/telechargementmu/.*\\.html.*")) decryptedLinks.add(createDownloadlink(directlink));
         }
 
         // Added crypted links

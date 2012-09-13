@@ -92,12 +92,8 @@ public class TusFilesNet extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        final Regex fileInfo = new Regex(correctedBR, "<li>([^<>\"]*?)</li>[\t\n\r ]+<li><b>Size:</b> <small>([^<>\"]*?)</small>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "(?i)([\\d\\.]+ ?(GB|MB))").getMatch(0);
-        }
+        String filename = new Regex(correctedBR, "property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        final String filesize = new Regex(correctedBR, "<b>Size:</b> <small>([^<>\"]*?)</small></li>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien={2,}|fichiers/download{2,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "http://(www\\.)?multiup\\.org/(\\?lien=.{2,}|fichiers/download/.{2,})" }, flags = { 0 })
 public class MultiupOrg extends PluginForDecrypt {
 
     public MultiupOrg(PluginWrapper wrapper) {
