@@ -155,7 +155,7 @@ public class PutLockerCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_FATAL, "Download only works with an account");
         }
-        if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        if (br.containsHTML(">You have exceeded the daily")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Limit reached");
         if (br.containsHTML("(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server temporarily disabled!", 2 * 60 * 60 * 1000l);
         String dllink = getDllink(downloadLink);
         if (dllink == null) {

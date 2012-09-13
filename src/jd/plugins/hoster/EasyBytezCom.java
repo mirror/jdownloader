@@ -342,48 +342,51 @@ public class EasyBytezCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true, true);
-        } catch (PluginException e) {
-            if (br.containsHTML("Your IP is temporarily blocked due to 3 incorrect login attempts")) {
-                ai.setStatus("Your IP is temporarily blocked due to 3 incorrect login attempts");
-            }
-            account.setValid(false);
-            return ai;
-        }
-        String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (space != null) ai.setUsedSpace(space.trim() + " Mb");
-        String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (points != null) {
-            /**
-             * Who needs half points ? If we have a dot in the points, just remove it
-             */
-            if (points.contains(".")) {
-                String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
-                points = points.replace(dot, "");
-            }
-            ai.setPremiumPoints(Long.parseLong(points.trim()));
-        }
-        account.setValid(true);
-        String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
-        if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
-        } else {
-            ai.setUnlimitedTraffic();
-        }
-        if (account.getBooleanProperty("nopremium")) {
-            ai.setStatus("Registered (free) User");
-        } else {
-            String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
-            if (expire == null) {
-                ai.setExpired(true);
+        synchronized (LOCK) {
+            try {
+                login(account, true, true);
+            } catch (PluginException e) {
+                if (br.containsHTML("Your IP is temporarily blocked due to 3 incorrect login attempts")) {
+                    ai.setStatus("Your IP is temporarily blocked due to 3 incorrect login attempts");
+                }
                 account.setValid(false);
                 return ai;
-            } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
-            ai.setStatus("Premium User");
+            String space = br.getRegex(Pattern.compile("<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (space != null) ai.setUsedSpace(space.trim() + " Mb");
+            String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (points != null) {
+                /**
+                 * Who needs half points ? If we have a dot in the points, just remove it
+                 */
+                if (points.contains(".")) {
+                    String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
+                    points = points.replace(dot, "");
+                }
+                ai.setPremiumPoints(Long.parseLong(points.trim()));
+            }
+            account.setValid(true);
+            String availabletraffic = new Regex(BRBEFORE, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+            if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setUnlimitedTraffic();
+            }
+            if (account.getBooleanProperty("nopremium")) {
+                ai.setStatus("Registered (free) User");
+            } else {
+                String expire = new Regex(BRBEFORE, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+                if (expire == null) {
+                    account.setProperty("cookies", null);
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                } else {
+                    expire = expire.replaceAll("(<b>|</b>)", "");
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+                }
+                ai.setStatus("Premium User");
+            }
         }
         return ai;
     }
@@ -596,6 +599,7 @@ public class EasyBytezCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 br.setCookie(COOKIE_HOST, "lang", "english");
                 final Object ret = account.getProperty("cookies", null);
+                boolean refreshCookies = true;
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
                 if (acmatch && ret != null && ret instanceof HashMap<?, ?>) {
@@ -611,9 +615,10 @@ public class EasyBytezCom extends PluginForHost {
                             doSomething();
                             if ((br.getCookie(COOKIE_HOST, "login")) == null || br.getCookie(COOKIE_HOST, "xfss") == null) {
                                 /* cookies are no longer valid, refresh them */
+                                refreshCookies = true;
                             } else {
                                 /* cookies are still okay, no need to refresh */
-                                return;
+                                refreshCookies = false;
                             }
                         } else {
                             /* no doCheck */
@@ -621,39 +626,45 @@ public class EasyBytezCom extends PluginForHost {
                         }
                     }
                 }
-                br.getPage(COOKIE_HOST + "/login.html");
-                Form loginform = br.getForm(0);
-                if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                if (br.containsHTML("RecaptchaOptions")) {
-                    /* too many logins result in recaptcha login */
-                    if (showCaptcha == false) {
-                        AccountInfo ai = account.getAccountInfo();
-                        if (ai != null) {
-                            ai.setStatus("Logout/Login in Browser please!");
+                if (refreshCookies) {
+                    /* fresh login = new cookies */
+                    br.getPage(COOKIE_HOST + "/login.html");
+                    Form loginform = br.getForm(0);
+                    if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    loginform.put("login", Encoding.urlEncode(account.getUser()));
+                    loginform.put("password", Encoding.urlEncode(account.getPass()));
+                    if (br.containsHTML("RecaptchaOptions")) {
+                        /* too many logins result in recaptcha login */
+                        if (showCaptcha == false) {
+                            AccountInfo ai = account.getAccountInfo();
+                            if (ai != null) {
+                                ai.setStatus("Logout/Login in Browser please!");
+                            }
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        } else {
+                            /* recaptcha needed */
+                            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                            rc.setForm(loginform);
+                            String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                            rc.setId(id);
+                            rc.load();
+                            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                            DownloadLink dummyLink = new DownloadLink(null, "Account", "easybytez.com", "http://easybytez.com", true);
+                            String c = getCaptchaCode(cf, dummyLink);
+                            rc.setCode(c);
                         }
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                     } else {
-                        /* recaptcha needed */
-                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                        rc.setForm(loginform);
-                        String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-                        rc.setId(id);
-                        rc.load();
-                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        DownloadLink dummyLink = new DownloadLink(null, "Account", "easybytez.com", "http://easybytez.com", true);
-                        String c = getCaptchaCode(cf, dummyLink);
-                        rc.setCode(c);
+                        /* no recaptcha needed */
+                        br.submitForm(loginform);
                     }
-                } else {
-                    /* no recaptcha needed */
-                    br.submitForm(loginform);
                 }
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage(COOKIE_HOST + "/?op=my_account");
-                doSomething();
+                if (refreshCookies) {
+                    /* we have to fetch my_account page again */
+                    br.getPage(COOKIE_HOST + "/?op=my_account");
+                    doSomething();
+                }
                 if (!new Regex(BRBEFORE, "(Premium\\-Account expire|/\\?op=payments\">Get Premium<|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);

@@ -98,6 +98,7 @@ public class PluginClassLoader extends URLClassLoader {
                     c = findLoadedClass(name);
                     if (c != null) { return c; }
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
+                    if (myUrl == null) throw new ClassNotFoundException("Class does not exist(anymore): " + name);
                     byte[] data;
                     data = IO.readURL(myUrl);
                     return defineClass(name, data, 0, data.length);
@@ -157,7 +158,7 @@ public class PluginClassLoader extends URLClassLoader {
     // parentClassLoader.getResources(name);
     // return ret;
     // }
-    private static final PluginClassLoader       INSTANCE                 = new PluginClassLoader();
+    private static final PluginClassLoader       INSTANCE                   = new PluginClassLoader();
     private static final HashMap<String, String> DYNAMIC_LOADABLE_LOBRARIES = new HashMap<String, String>();
     static {
         synchronized (DYNAMIC_LOADABLE_LOBRARIES) {

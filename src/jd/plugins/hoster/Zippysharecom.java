@@ -179,6 +179,17 @@ public class Zippysharecom extends PluginForHost {
             final String var = br.getRegex("var fulllink.*?'\\+(.*?)\\+'").getMatch(0);
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
+
+        if (filename.contains("/fileName?key=")) {
+            String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
+            if (url != null) {
+                filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
+            } else {
+                url = br.getRegex("dlbutton'\\).href.*?=.*?\\+\"/(.*?)\"").getMatch(0);
+                if (url != null) filename = url;
+            }
+        }
+
         if (filename == null) {
             filename = br.getRegex("\\+\"/(.*?)\";").getMatch(0);
         }

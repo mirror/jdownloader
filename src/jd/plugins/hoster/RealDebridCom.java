@@ -153,6 +153,16 @@ public class RealDebridCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    private void removeHostFromMultiHost(DownloadLink link, Account acc) throws PluginException {
+        Object supportedHosts = acc.getAccountInfo().getProperty("multiHostSupport", null);
+        if (supportedHosts != null && supportedHosts instanceof List) {
+            ArrayList<String> newList = new ArrayList<String>((List<String>) supportedHosts);
+            newList.remove(link.getHost());
+            acc.getAccountInfo().setProperty("multiHostSupport", newList);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
         prepBrowser();
@@ -170,24 +180,35 @@ public class RealDebridCom extends PluginForHost {
         if (dlLinks == null || dlLinks.length == 0) {
             if (br.containsHTML("error\":9")) {
                 logger.info("Host is currently not possible because no server is available!");
-                Object supportedHosts = acc.getAccountInfo().getProperty("multiHostSupport", null);
-                if (supportedHosts != null && supportedHosts instanceof List) {
-                    ArrayList<String> newList = new ArrayList<String>((List<String>) supportedHosts);
-                    newList.remove(link.getHost());
-                    acc.getAccountInfo().setProperty("multiHostSupport", newList);
-                    throw new PluginException(LinkStatus.ERROR_RETRY);
-                }
+                removeHostFromMultiHost(link, acc);
+            }
+            if (br.containsHTML("error\":11")) {
+                logger.info("Host seems buggy, remove it from list");
+                removeHostFromMultiHost(link, acc);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
+        int counter = 0;
         for (String dllink : dlLinks) {
+            counter++;
             if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) continue;
             dllink = dllink.replaceAll("\\\\/", "/");
             try {
                 handleDL(link, dllink);
                 return;
             } catch (PluginException e1) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                if (br.containsHTML("An error occured while generating a premium link, please contact an Administrator")) {
+                    logger.info("Error while generating premium link, remove it from list");
+                    removeHostFromMultiHost(link, acc);
+                }
+                if (br.containsHTML("An error occured while attempting to download the file. Multiple")) {
+                    if (counter == dlLinks.length) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+                }
             }
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

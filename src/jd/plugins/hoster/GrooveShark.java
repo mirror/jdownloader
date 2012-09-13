@@ -292,6 +292,11 @@ public class GrooveShark extends PluginForHost {
         try {
             ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + token + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
         } catch (Throwable e) {
+            try {
+                org.appwork.utils.logging2.LogSource.exception(logger, e);
+            } catch (final Throwable e2) {
+                /* does not exist in stable */
+            }
             String msg = "Der Aufruf von https-Adressen über einen Proxyserver funktioniert in dieser Version nicht, bitte \"JDownloader 2\" verwenden!";
             if (!isStableEnviroment()) {
                 msg = "Der aktuell verwendete Proxyserver unterstützt kein https!";
