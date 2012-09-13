@@ -365,7 +365,7 @@ public class RapidGatorNet extends PluginForHost {
                     code = getCaptchaCode(cf, downloadLink);
                     String chid = sm.verify(code);
                     captcha.put("adcopy_challenge", chid);
-                    captcha.put("adcopy_response", "manual_challenge");
+                    captcha.put("adcopy_response", code);
 
                 } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
                     String captchaAdress = captcha.getRegex("<iframe src=\'(http://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+\\&PublicKey=[^\'<>]+)").getMatch(0);
@@ -394,6 +394,7 @@ public class RapidGatorNet extends PluginForHost {
             String dllink = br.getRegex("location\\.href = \\'(http://.*?)\\'").getMatch(0);
             if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
             if (dllink == null) {
+                if (br.getRegex("location\\.href = \\'/\\?r=download/index\\&session_id=[A-Za-z0-9]+\\'").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 logger.info(br.toString());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
