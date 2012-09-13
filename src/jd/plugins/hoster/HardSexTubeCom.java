@@ -52,14 +52,14 @@ public class HardSexTubeCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<title>(.*?)- HardSexTube").getMatch(0);
+        String filename = br.getRegex("<title>(.*?)\\- HardSexTube").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div style='margin-top:-10px; height:15px'> \\&raquo; <b>(.*?)</b>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<div id='tabdetails' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        dllink = br.getRegex("flvpathValue: \"(http://[^<>\"]*?)\"").getMatch(0);
+        dllink = br.getRegex("name=\"vserver\" value=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         filename = filename.trim();
         String ext = new Regex(dllink, ".+(\\..*?)$").getMatch(0);

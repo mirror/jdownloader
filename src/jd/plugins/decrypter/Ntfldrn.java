@@ -43,6 +43,10 @@ public class Ntfldrn extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        if (br.containsHTML(">Folder not found\\.")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (new Regex(parameter, Pattern.compile(patternSupported_2, Pattern.CASE_INSENSITIVE)).matches()) {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         } else if (new Regex(parameter, Pattern.compile(patternSupported_1, Pattern.CASE_INSENSITIVE)).matches()) {

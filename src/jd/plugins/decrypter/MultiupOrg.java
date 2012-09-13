@@ -49,13 +49,12 @@ public class MultiupOrg extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        int result = 0;
+        int result;
         if (additionValues.getMatches().length > 1) {
             result = (Integer.parseInt(additionValues.getMatch(0)) + Integer.parseInt(additionValues.getMatch(1)));
         } else {
             result = (Integer.parseInt(multiplyValues.getMatch(0)) * Integer.parseInt(multiplyValues.getMatch(1)));
         }
-        if (br.containsHTML("(Sorry but your file does not exist or no longer exists|The file does not exist any more|It was deleted either further to a complaint or further to a not access for several weeks|<h2>Not Found</h2>)")) return decryptedLinks;
         Thread.sleep(1000l);
         br.postPage(br.getURL(), "_method=POST&data%5BFichier%5D%5Bsecurity_code%5D=" + result + "&data%5BFichier%5D%5BindiceQuestion%5D=" + quest);
         boolean decrypt = false;

@@ -26,7 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/(?!blog|api|content|category|search|shows|login)[a-z0-9]+/(?!feed)[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "revision3.com" }, urls = { "http://(www\\.)?revision3\\.com/(?!blog|api|content|category|search|shows|login|forum|episodes)[a-z0-9]+/(?!feed|about)[a-z0-9\\-]+" }, flags = { 0 })
 public class RevisionThreeCom extends PluginForDecrypt {
 
     public RevisionThreeCom(PluginWrapper wrapper) {
@@ -54,6 +54,10 @@ public class RevisionThreeCom extends PluginForDecrypt {
                 decryptedLinks.add(fina);
             }
         } else {
+            if (br.containsHTML("ey there\\! You look a little lo|404: Page Not Found<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String videoID = br.getRegex("\\'video_id\\', (\\d+)\\);").getMatch(0);
             if (videoID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

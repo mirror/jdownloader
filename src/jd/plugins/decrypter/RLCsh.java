@@ -49,7 +49,7 @@ public class RLCsh extends PluginForDecrypt {
         String[] ret = new String[names.length];
 
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|reset_password|register_new|index\\.php).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|reset_password|register_new|(index|advertise|create_links|index_new|learnmore)\\.php).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
 
         }
         return ret;

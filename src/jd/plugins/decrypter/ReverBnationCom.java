@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(?!facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion)(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "reverbnation.com" }, urls = { "http://(www\\.)?reverbnation\\.com/(?!facebook_channel|main|mailto|user|promoter\\-promotion|fan\\-promotion|venue\\-promotion|label\\-promotion|javascript:|signup|appending|head|css|images|data:|band\\-promotion|static|https|press_releases|widgets|controller|yourboitc|artist)(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|play_now/song_\\d+|page_object/page_object_photos/artist_\\d+|artist/downloads/\\d+|[A-Za-z0-9\\-_]{5,})" }, flags = { 0 })
 public class ReverBnationCom extends PluginForDecrypt {
 
     public ReverBnationCom(final PluginWrapper wrapper) {
@@ -95,6 +95,10 @@ public class ReverBnationCom extends PluginForDecrypt {
                 allInfo = br.getRegex("production_public/Artist/(\\d+)/image/thumb/[a-z0-9_\\-]+\\.jpg\" /><a href=\"#\" class=\"size_48  standard_play_button song\\-action play\" data\\-song\\-id=\"(\\d+)\" title=\"Play &quot;([^<>\"]*?)&quot;\"").getMatches();
             } else {
                 br.getPage(parameter);
+                if (br.containsHTML(">Page Not Found<")) {
+                    logger.info("Link offline/invalid: " + parameter);
+                    return decryptedLinks;
+                }
                 fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
                 allInfo = br.getRegex("reverbnation\\.com/artist/artist_songs/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\"standard_play_button black_34 song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
             }
