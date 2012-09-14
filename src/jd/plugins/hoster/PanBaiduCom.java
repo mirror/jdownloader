@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -45,8 +46,9 @@ public class PanBaiduCom extends PluginForHost {
         return "http://pan.baidu.com/";
     }
 
-    private String              DLLINK    = null;
-    private static final String OTHERTYPE = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+";
+    private String              DLLINK       = null;
+    private static final String OTHERTYPE    = "http://(www\\.)?pan\\.baidu\\.com/share/link\\?shareid=\\d+\\&uk=\\d+";
+    private static boolean      pluginloaded = false;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -58,13 +60,18 @@ public class PanBaiduCom extends PluginForHost {
         br.getPage(mainlink);
         if (mainlink.matches(OTHERTYPE)) {
             if (br.containsHTML(">很抱歉，您要访问的页面不存在。<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String shareid = new Regex(mainlink, "shareid=(\\d+)").getMatch(0);
+            final String uk = new Regex(mainlink, "uk=(\\d+)").getMatch(0);
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final String listPage = "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=%2F" + dirName + "&t=0." + +System.currentTimeMillis() + "&uk=" + uk + "&shareid=" + shareid + "&_=" + System.currentTimeMillis();
+            br.getPage(listPage);
             final String correctedBR = br.toString().replace("\\", "");
-            final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"(" + plainfilename + ")\",\"size\":\"(\\d+)\"");
-            if (fileInfo.getMatches().length < 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Regex fileInfo = new Regex(correctedBR, "\"server_filename\":\"(" + plainfilename.replace("\\", "") + ")\",\"size\":(\\d+)");
+            if (fileInfo.getMatches().length != 1) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String filesize = fileInfo.getMatch(1) + "b";
-            link.setFinalFileName(Encoding.htmlDecode(plainfilename.trim()));
+            link.setFinalFileName(Encoding.htmlDecode(unescape(plainfilename)));
             link.setDownloadSize(SizeFormatter.getSize(filesize));
-            DLLINK = new Regex(correctedBR, "filename=" + plainfilename + "\",\"dlink\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            DLLINK = new Regex(correctedBR, "\"md5\":\"" + link.getMD5Hash() + "\",\"dlink\":\"(http:[^<>\"]*?)\"").getMatch(0);
         } else {
             final DecimalFormat df = new DecimalFormat("0000");
             if (dirName != null) {
@@ -94,6 +101,16 @@ public class PanBaiduCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private static synchronized String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

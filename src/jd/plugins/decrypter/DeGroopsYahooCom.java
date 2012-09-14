@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv)\\.)?groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/ %]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
 public class DeGroopsYahooCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -146,8 +146,18 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         String password = null;
         Form loginForm = null;
         synchronized (LOCK) {
-            username = this.getPluginConfig().getStringProperty("user", null);
-            password = this.getPluginConfig().getStringProperty("pass", null);
+            final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("yahoo.com");
+            final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
+            if (aa == null) {
+                username = this.getPluginConfig().getStringProperty("user", null);
+                password = this.getPluginConfig().getStringProperty("pass", null);
+            } else {
+                this.getPluginConfig().setProperty("user", aa.getUser());
+                this.getPluginConfig().setProperty("pass", aa.getPass());
+                this.getPluginConfig().save();
+                username = aa.getUser();
+                password = aa.getPass();
+            }
             if (username != null && password != null) {
                 // Load cookies
                 final Object ret = this.getPluginConfig().getProperty("cookies", null);
