@@ -22,6 +22,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -53,23 +55,23 @@ public class LinkChecker<E extends CheckableLink> {
     }
 
     /* static variables */
-    private static AtomicInteger                                                    CHECKER                = new AtomicInteger(0);
-    private static AtomicInteger                                                    LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
-    private final static int                                                        MAX_THREADS;
-    private final static int                                                        KEEP_ALIVE;
-    private static HashMap<String, Thread>                                          CHECK_THREADS          = new HashMap<String, Thread>();
+    private static AtomicInteger                                                         CHECKER                = new AtomicInteger(0);
+    private static AtomicInteger                                                         LINKCHECKER_THREAD_NUM = new AtomicInteger(0);
+    private final static int                                                             MAX_THREADS;
+    private final static int                                                             KEEP_ALIVE;
+    private static HashMap<String, Thread>                                               CHECK_THREADS          = new HashMap<String, Thread>();
     private static HashMap<String, java.util.List<LinkChecker<? extends CheckableLink>>> LINKCHECKER            = new HashMap<String, java.util.List<LinkChecker<? extends CheckableLink>>>();
-    private static final Object                                                     LOCK                   = new Object();
+    private static final Object                                                          LOCK                   = new Object();
 
     /* local variables for this LinkChecker */
-    private AtomicLong                                                              linksRequested         = new AtomicLong(0);
-    private AtomicLong                                                              linksDone              = new AtomicLong(0);
-    private HashMap<String, LinkedList<InternCheckableLink>>                        links2Check            = new HashMap<String, LinkedList<InternCheckableLink>>();
-    private boolean                                                                 forceRecheck           = false;
-    private LinkCheckerHandler<E>                                                   handler                = null;
-    private static int                                                              SPLITSIZE              = 80;
-    private static LinkCheckerEventSender                                           EVENTSENDER            = new LinkCheckerEventSender();
-    protected AtomicInteger                                                         checkerGeneration      = new AtomicInteger(0);
+    private AtomicLong                                                                   linksRequested         = new AtomicLong(0);
+    private AtomicLong                                                                   linksDone              = new AtomicLong(0);
+    private HashMap<String, LinkedList<InternCheckableLink>>                             links2Check            = new HashMap<String, LinkedList<InternCheckableLink>>();
+    private boolean                                                                      forceRecheck           = false;
+    private LinkCheckerHandler<E>                                                        handler                = null;
+    private static int                                                                   SPLITSIZE              = 80;
+    private static LinkCheckerEventSender                                                EVENTSENDER            = new LinkCheckerEventSender();
+    protected AtomicInteger                                                              checkerGeneration      = new AtomicInteger(0);
 
     public static LinkCheckerEventSender getEventSender() {
         return EVENTSENDER;
@@ -270,9 +272,10 @@ public class LinkChecker<E extends CheckableLink> {
                                     /* now we check the links */
                                     if (plg == null && massLinkCheck.size() > 0) {
                                         /* create plugin if not done yet */
+                                        PluginClassLoaderChild cl;
+                                        Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
                                         LazyHostPlugin lazyp = HostPluginController.getInstance().get(massLinkCheck.get(0).getDefaultPlugin().getHost());
-                                        plg = lazyp.newInstance();
-
+                                        plg = lazyp.newInstance(cl);
                                         plg.setLogger(logger = LogController.getInstance().getLogger(plg));
                                         logger.info("LinkChecker: " + threadHost);
                                         logger.setAllowTimeoutFlush(false);
@@ -280,10 +283,6 @@ public class LinkChecker<E extends CheckableLink> {
                                         plg.setBrowser(new Browser());
                                         plg.init();
                                     }
-                                    /*
-                                     * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
-                                     */
-                                    Thread.currentThread().setContextClassLoader(plg.getLazyP().getClassLoader());
                                     try {
                                         /* try mass link check */
                                         logger.clear();

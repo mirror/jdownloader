@@ -147,14 +147,14 @@ public abstract class MediaItem implements MediaNode {
             PluginForHost pluginForHost = null;
             LazyHostPlugin hPlugin = HostPluginController.getInstance().get(downloadLink.getHost());
             if (hPlugin != null) {
-                pluginForHost = hPlugin.getPrototype();
+                pluginForHost = hPlugin.getPrototype(null);
             }
 
             if (pluginForHost == null) {
                 try {
                     for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                        if (p.getPrototype().rewriteHost(downloadLink)) {
-                            pluginForHost = p.getPrototype();
+                        if (p.getPrototype(null).rewriteHost(downloadLink)) {
+                            pluginForHost = p.getPrototype(null);
                             break;
                         }
                     }

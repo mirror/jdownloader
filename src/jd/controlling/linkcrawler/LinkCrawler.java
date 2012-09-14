@@ -35,6 +35,7 @@ import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.container.ContainerPluginController;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
@@ -749,10 +750,11 @@ public class LinkCrawler implements IOPermission {
             oldClassLoader = Thread.currentThread().getContextClassLoader();
             PluginForHost wplg = null;
             /*
-             * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
+             * use a new PluginClassLoader here
              */
-            Thread.currentThread().setContextClassLoader(pHost.getClassLoader());
-            wplg = pHost.newInstance();
+            PluginClassLoaderChild cl;
+            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+            wplg = pHost.newInstance(cl);
             if (wplg != null) {
                 /* now we run the plugin and let it find some links */
                 LinkCrawlerThread lct = null;
@@ -1063,11 +1065,12 @@ public class LinkCrawler implements IOPermission {
             if (lazyC == null || cryptedLink.getCryptedLink() == null) return;
             PluginForDecrypt wplg = null;
             /*
-             * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
+             * we want a fresh pluginClassLoader here
              */
-            Thread.currentThread().setContextClassLoader(lazyC.getClassLoader());
+            PluginClassLoaderChild cl;
+            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
             try {
-                wplg = lazyC.newInstance();
+                wplg = lazyC.newInstance(cl);
             } catch (UpdateRequiredClassNotFoundException e1) {
                 LogController.CL().log(e1);
                 return;

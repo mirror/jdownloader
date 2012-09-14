@@ -47,10 +47,10 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     }
 
     @Override
-    public PluginForDecrypt newInstance() throws UpdateRequiredClassNotFoundException {
+    public PluginForDecrypt newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         PluginForDecrypt ret = null;
         try {
-            ret = super.newInstance();
+            ret = super.newInstance(classLoader);
             ret.setLazyC(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
@@ -60,10 +60,10 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
     }
 
     @Override
-    public PluginForDecrypt getPrototype() throws UpdateRequiredClassNotFoundException {
+    public PluginForDecrypt getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         PluginForDecrypt ret = null;
         try {
-            ret = super.getPrototype();
+            ret = super.getPrototype(classLoader);
             ret.setLazyC(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {

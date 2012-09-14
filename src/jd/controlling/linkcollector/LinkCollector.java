@@ -443,7 +443,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             PluginForHost plg2 = null;
                             if (lazyPlg != null) {
                                 try {
-                                    plg2 = lazyPlg.getPrototype();
+                                    plg2 = lazyPlg.getPrototype(null);
                                 } catch (UpdateRequiredClassNotFoundException e) {
                                     logger.log(e);
                                 }
@@ -1124,7 +1124,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             /* permanent offline are offline */
                             dlLink.setAvailable(false);
                         }
-                        pluginForHost = hPlugin.getPrototype();
+                        pluginForHost = hPlugin.getPrototype(null);
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -1132,9 +1132,13 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (pluginForHost == null) {
                     try {
                         for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                            if (p.getPrototype().rewriteHost(dlLink)) {
-                                pluginForHost = p.getPrototype();
-                                break;
+                            try {
+                                if (p.getPrototype(null).rewriteHost(dlLink)) {
+                                    pluginForHost = p.getPrototype(null);
+                                    break;
+                                }
+                            } catch (final Throwable e) {
+                                logger.log(e);
                             }
                         }
                         if (pluginForHost != null) {

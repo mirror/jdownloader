@@ -108,7 +108,7 @@ public class PremiumInfoDialog extends AbstractDialog<Object> {
     public JComponent layoutDialogContent() {
         PluginForHost plg = null;
         try {
-            plg = HostPluginController.getInstance().get(info.getTld()).getPrototype();
+            plg = HostPluginController.getInstance().get(info.getTld()).getPrototype(null);
         } catch (UpdateRequiredClassNotFoundException e) {
             Log.exception(e);
         }

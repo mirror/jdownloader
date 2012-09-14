@@ -53,6 +53,8 @@ import org.jdownloader.controlling.FileCreationEvent;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.uiserio.NewUIO;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
@@ -210,18 +212,10 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                                  * 
                                  * let's use original one to do a linkcheck and then use livePlugin(multihost service) to download the link
                                  */
-                                /*
-                                 * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
-                                 */
-                                this.setContextClassLoader(originalPlugin.getLazyP().getClassLoader());
                                 originalPlugin.init();
                                 originalPlugin.requestFileInformation(downloadLink);
                                 if (AvailableStatus.FALSE == downloadLink.getAvailableStatus()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                             }
-                            /*
-                             * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
-                             */
-                            this.setContextClassLoader(livePlugin.getLazyP().getClassLoader());
                             livePlugin.init();
                             livePlugin.handle(downloadLink, account);
                         } catch (BrowserException e) {
@@ -648,8 +642,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             /*
              * we are going to download this link, create new liveplugin instance here
              */
+            /* we want a fresh ClassLoader for this download! */
+            PluginClassLoaderChild cl;
+            this.setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
             try {
-                originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance();
+                originalPlugin = downloadLink.getDefaultPlugin().getLazyP().newInstance(cl);
             } catch (UpdateRequiredClassNotFoundException e) {
                 downloadLogger.log(e);
                 downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -658,7 +655,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 /* another plugin to handle this download! ->multihoster */
                 try {
                     LazyHostPlugin lazy = HostPluginController.getInstance().get(account.getHoster());
-                    downloadLink.setLivePlugin(lazy.newInstance());
+                    downloadLink.setLivePlugin(lazy.newInstance(cl));
                 } catch (UpdateRequiredClassNotFoundException e) {
                     downloadLogger.log(e);
                     downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -751,6 +748,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
                 exception = null;
                 livePlugin = null;
                 originalPlugin = null;
+                this.setContextClassLoader(null);
             }
         }
     }

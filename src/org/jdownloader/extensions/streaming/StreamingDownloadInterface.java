@@ -91,4 +91,8 @@ public class StreamingDownloadInterface extends DownloadInterface {
         return 0;
     }
 
+    @Override
+    public void close() {
+    }
+
 }

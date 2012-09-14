@@ -41,6 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.Application;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -160,7 +161,7 @@ public class JDUtilities {
     public static PluginForDecrypt getPluginForDecrypt(final String host) {
         LazyCrawlerPlugin l = CrawlerPluginController.getInstance().get(host);
         if (l != null) try {
-            return l.getPrototype();
+            return l.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
         } catch (UpdateRequiredClassNotFoundException e) {
             LogController.CL().log(e);
             return null;
@@ -171,7 +172,7 @@ public class JDUtilities {
     public static PluginForHost getPluginForHost(final String host) {
         LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
         if (lplugin != null) try {
-            return lplugin.getPrototype();
+            return lplugin.getPrototype(PluginClassLoader.getThreadPluginClassLoaderChild());
         } catch (UpdateRequiredClassNotFoundException e) {
             LogController.CL().log(e);
             return null;
@@ -182,7 +183,7 @@ public class JDUtilities {
     public static PluginForHost getNewPluginForHostInstance(final String host) {
         LazyHostPlugin lplugin = HostPluginController.getInstance().get(host);
         if (lplugin != null) try {
-            return lplugin.newInstance();
+            return lplugin.newInstance(PluginClassLoader.getThreadPluginClassLoaderChild());
         } catch (UpdateRequiredClassNotFoundException e) {
             LogController.CL().log(e);
             return null;

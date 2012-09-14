@@ -25,6 +25,8 @@ import org.appwork.utils.io.streamingio.Streaming;
 import org.appwork.utils.io.streamingio.StreamingInputStream;
 import org.appwork.utils.io.streamingio.StreamingOutputStream;
 import org.appwork.utils.io.streamingio.StreamingOverlapWrite;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 
 public class StreamingProvider {
 
@@ -54,7 +56,9 @@ public class StreamingProvider {
                             oldClassLoader = Thread.currentThread().getContextClassLoader();
                             final DownloadLink mirror = new DownloadLink(remoteLink.getDefaultPlugin(), remoteLink.getName(), remoteLink.getHost(), remoteLink.getDownloadURL(), true);
                             remoteLink.copyTo(mirror);
-                            final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance();
+                            PluginClassLoaderChild cl;
+                            Thread.currentThread().setContextClassLoader(cl = PluginClassLoader.getInstance().getChild());
+                            final PluginForHost plugin = remoteLink.getDefaultPlugin().getLazyP().newInstance(cl);
                             plugin.setBrowser(new Browser());
                             plugin.setCustomizedDownloadFactory(new DownloadInterfaceFactory() {
 
@@ -69,7 +73,6 @@ public class StreamingProvider {
                                 }
                             });
                             mirror.setLivePlugin(plugin);
-                            Thread.currentThread().setContextClassLoader(plugin.getLazyP().getClassLoader());
                             plugin.init();
                             /* forward requested range for DownloadInterface */
                             if (endPosition > 0) {

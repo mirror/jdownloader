@@ -35,7 +35,7 @@ public class PluginConfigPanel extends SwitchPanel {
     public static PluginConfigPanel create(LazyPlugin<?> selectedItem) {
         Plugin proto = null;
         try {
-            if (selectedItem != null) proto = selectedItem.getPrototype();
+            if (selectedItem != null) proto = selectedItem.getPrototype(null);
         } catch (UpdateRequiredClassNotFoundException e) {
             Log.exception(e);
         }

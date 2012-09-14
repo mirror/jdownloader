@@ -55,7 +55,9 @@ public class HostPluginController extends PluginController<PluginForHost> {
         logger.info("HostPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
         LogController.setRebirthLogger(logger);
+        ClassLoader oldClassLoader = null;
         try {
+            oldClassLoader = Thread.currentThread().getContextClassLoader();
             final long t = System.currentTimeMillis();
             try {
                 if (noCache) {
@@ -106,6 +108,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
         } finally {
             logger.close();
             LogController.setRebirthLogger(null);
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
         for (LazyHostPlugin plugin : plugins) {
             plugin.setPluginClass(null);
@@ -187,7 +190,7 @@ public class HostPluginController extends PluginController<PluginForHost> {
                             ap.setInterfaceVersion(a.interfaceVersion());
                             l = new LazyHostPlugin(ap, null, classLoader);
                             try {
-                                PluginForHost plg = l.newInstance();
+                                PluginForHost plg = l.newInstance(classLoader);
                                 ap.setPremium(plg.isPremiumEnabled());
                                 String purl = plg.getBuyPremiumUrl();
                                 if (purl != null) purl = new String(purl);

@@ -179,4 +179,10 @@ public class PluginClassLoader extends URLClassLoader {
         return new PluginClassLoaderChild(this);
     }
 
+    public static PluginClassLoaderChild getThreadPluginClassLoaderChild() {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl != null && cl instanceof PluginClassLoaderChild) return (PluginClassLoaderChild) cl;
+        return null;
+    }
+
 }

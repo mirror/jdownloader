@@ -6,7 +6,6 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.AccountController;
-import jd.http.BrowserSettingsThread;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 
@@ -81,7 +80,7 @@ public class AccountChecker {
 
     private HashMap<String, Thread>                      checkThreads  = new HashMap<String, Thread>();
     private HashMap<String, LinkedList<AccountCheckJob>> jobs          = new HashMap<String, LinkedList<AccountCheckJob>>();
-    private java.util.List<Account>                           accountJobs   = new ArrayList<Account>();
+    private java.util.List<Account>                      accountJobs   = new ArrayList<Account>();
     private AtomicLong                                   jobsRequested = new AtomicLong(0);
     private AtomicLong                                   jobsDone      = new AtomicLong(0);
 
@@ -121,7 +120,7 @@ public class AccountChecker {
             Thread thread = checkThreads.get(hoster);
             if (thread == null || !thread.isAlive()) {
                 started = checkThreads.isEmpty();
-                thread = new BrowserSettingsThread(new Runnable() {
+                thread = new AccountCheckerThread(new Runnable() {
 
                     public void run() {
                         AccountCheckJob job = null;

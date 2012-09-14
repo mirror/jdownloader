@@ -317,7 +317,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 job.setAutoStart("1".equalsIgnoreCase(HttpRequest.getParameterbyKey(request, "autostart")));
 
                 LazyHostPlugin lazyp = HostPluginController.getInstance().get("DirectHTTP");
-                final PluginForHost defaultplg = lazyp.getPrototype();
+                final PluginForHost defaultplg = lazyp.getPrototype(null);
 
                 java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
                 for (int index = 0; index <= urls.length - 1; index++) {

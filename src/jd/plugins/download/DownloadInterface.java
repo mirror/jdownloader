@@ -70,4 +70,6 @@ abstract public class DownloadInterface {
 
     public abstract long getStartTimeStamp();
 
+    public abstract void close();
+
 }

@@ -19,6 +19,7 @@ package jd.plugins;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.AccountControllerEvent;
+import jd.controlling.accountchecker.AccountCheckerThread;
 
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.UniqueAlltimeID;
@@ -203,6 +204,9 @@ public class Account extends Property {
     private void notifyUpdate(boolean recheckRequired) {
         AccountController lac = ac;
         if (lac != null) {
+            if (Thread.currentThread() instanceof AccountCheckerThread) {
+                recheckRequired = false;
+            }
             AccountControllerEvent event = new AccountControllerEvent(lac, AccountControllerEvent.Types.UPDATE, this);
             event.setRecheckRequired(recheckRequired);
             lac.getBroadcaster().fireEvent(event);

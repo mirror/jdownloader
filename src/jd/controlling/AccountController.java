@@ -51,6 +51,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
@@ -154,6 +155,7 @@ public class AccountController implements AccountControllerListener {
                 return ai;
             }
         }
+        Thread.currentThread().setContextClassLoader(PluginClassLoader.getInstance().getChild());
         final PluginForHost plugin = JDUtilities.getNewPluginForHostInstance(account.getHoster());
         if (plugin == null) {
             LogController.CL().severe("AccountCheck: Failed because plugin " + account.getHoster() + " is missing!");
@@ -195,7 +197,6 @@ public class AccountController implements AccountControllerListener {
                 /*
                  * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
                  */
-                currentThread.setContextClassLoader(plugin.getLazyP().getClassLoader());
                 ai = plugin.fetchAccountInfo(account);
                 account.setAccountInfo(ai);
             } finally {

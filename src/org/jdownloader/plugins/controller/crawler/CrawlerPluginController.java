@@ -74,7 +74,9 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         logger.info("CrawlerPluginController: init " + noCache);
         logger.setAllowTimeoutFlush(false);
         LogController.setRebirthLogger(logger);
+        ClassLoader oldClassLoader = null;
         try {
+            oldClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 if (noCache) {
                     try {
@@ -113,6 +115,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
         } finally {
             logger.close();
             LogController.setRebirthLogger(null);
+            Thread.currentThread().setContextClassLoader(oldClassLoader);
         }
         for (LazyCrawlerPlugin plugin : plugins) {
             plugin.setPluginClass(null);
@@ -198,7 +201,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                 existingPlugin.add(ap);
                             }
                             try {
-                                PluginForDecrypt plg = l.newInstance();
+                                PluginForDecrypt plg = l.newInstance(classLoader);
                                 ap.setHasConfig(plg.hasConfig());
                                 ap.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
                                 l.setMaxConcurrentInstances(ap.getMaxConcurrentInstances());

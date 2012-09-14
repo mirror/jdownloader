@@ -67,7 +67,7 @@ public class AddAccountDialog extends AbstractDialog<Integer> {
             ac.setHoster(dialog.getHoster().getDisplayName());
 
             if (!addAccount(ac)) {
-                showDialog(dialog.getHoster().getPrototype(), ac);
+                showDialog(dialog.getHoster().getPrototype(null), ac);
             }
         } catch (DialogClosedException e) {
             e.printStackTrace();

@@ -635,7 +635,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     pluginForHost = null;
                     LazyHostPlugin hPlugin = HostPluginController.getInstance().get(localLink.getHost());
                     if (hPlugin != null) {
-                        pluginForHost = hPlugin.getPrototype();
+                        pluginForHost = hPlugin.getPrototype(null);
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
@@ -644,8 +644,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     try {
                         for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
                             try {
-                                if (p.getPrototype().rewriteHost(localLink)) {
-                                    pluginForHost = p.getPrototype();
+                                if (p.getPrototype(null).rewriteHost(localLink)) {
+                                    pluginForHost = p.getPrototype(null);
                                     break;
                                 }
                             } catch (final Throwable e) {

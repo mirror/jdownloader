@@ -78,23 +78,23 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     @Override
-    public PluginForHost newInstance() throws UpdateRequiredClassNotFoundException {
+    public PluginForHost newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         PluginForHost ret = null;
         try {
-            ret = super.newInstance();
+            ret = super.newInstance(classLoader);
             ret.setLazyP(this);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
             if (fallBackPlugin != null) {
                 /* we could not create new instance, so let us use fallback LazyHostPlugin to instance a new Plugin */
                 this.setClassname(fallBackPlugin.getClassname());
-                this.setPluginClass(fallBackPlugin.getPluginClass());
-                this.setClassLoader(fallBackPlugin.getClassLoader());
+                this.setPluginClass(null);
+                this.setClassLoader(null);
                 /* remove reference from fallBackPlugin */
                 fallBackPlugin = null;
                 /* our fallBack Plugin does not have any settings */
                 this.setHasConfig(false);
-                ret = super.newInstance();
+                ret = super.newInstance(classLoader);
                 ret.setLazyP(this);
                 return ret;
             } else
@@ -103,22 +103,22 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
     }
 
     @Override
-    public PluginForHost getPrototype() throws UpdateRequiredClassNotFoundException {
+    public PluginForHost getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         PluginForHost ret = null;
         try {
-            ret = super.getPrototype();
+            ret = super.getPrototype(classLoader);
             return ret;
         } catch (UpdateRequiredClassNotFoundException e) {
             if (fallBackPlugin != null) {
                 /* we could not create protoType, so let us use fallback LazyHostPlugin to instance a new Prototype */
                 this.setClassname(fallBackPlugin.getClassname());
-                this.setPluginClass(fallBackPlugin.getPluginClass());
-                this.setClassLoader(fallBackPlugin.getClassLoader());
+                this.setPluginClass(null);
+                this.setClassLoader(null);
                 /* remove reference from fallBackPlugin */
                 fallBackPlugin = null;
                 /* our fallBack Plugin does not have any settings */
                 this.setHasConfig(false);
-                ret = super.getPrototype();
+                ret = super.getPrototype(classLoader);
                 ret.setLazyP(this);
                 return ret;
             } else

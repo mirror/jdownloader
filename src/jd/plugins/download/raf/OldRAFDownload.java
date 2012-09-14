@@ -1083,4 +1083,8 @@ public class OldRAFDownload extends DownloadInterface {
         return logger;
     }
 
+    @Override
+    public void close() {
+    }
+
 }

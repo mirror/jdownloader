@@ -25,7 +25,7 @@ public abstract class LazyPlugin<T extends Plugin> {
     private String                                displayName;
     protected WeakReference<Class<T>>             pluginClass;
 
-    protected T                                   prototypeInstance;
+    protected WeakReference<T>                    prototypeInstance;
     /* PluginClassLoaderChild used to load this Class */
     private WeakReference<PluginClassLoaderChild> classLoader;
 
@@ -58,7 +58,7 @@ public abstract class LazyPlugin<T extends Plugin> {
         this.classname = classname;
     }
 
-    public void setPluginClass(Class<T> pluginClass) {
+    public synchronized void setPluginClass(Class<T> pluginClass) {
         if (pluginClass == null) {
             this.pluginClass = null;
         } else {
@@ -76,25 +76,22 @@ public abstract class LazyPlugin<T extends Plugin> {
         }
     }
 
-    public T getPrototype() throws UpdateRequiredClassNotFoundException {
-        ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-        if (lcl != null && (lcl != getClassLoader()) && (lcl instanceof PluginClassLoaderChild)) {
-            /*
-             * current Thread uses a different PluginClassLoaderChild, so lets use it to generate a new instance
-             */
-            return newInstance();
+    public synchronized T getPrototype(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
+        if (classLoader != null && classLoader != getClassLoader(false)) {
+            /* create new Instance because we have different classLoader given than ProtoTypeClassLoader */
+            return newInstance(classLoader);
         }
-        if (prototypeInstance != null) return prototypeInstance;
-        synchronized (this) {
-            if (prototypeInstance != null) return prototypeInstance;
-            prototypeInstance = newInstance();
-        }
-        return prototypeInstance;
+        T ret = null;
+        if (prototypeInstance != null && (ret = prototypeInstance.get()) != null) return ret;
+        prototypeInstance = null;
+        ret = newInstance(null);
+        if (ret != null) prototypeInstance = new WeakReference<T>(ret);
+        return ret;
     }
 
-    public T newInstance() throws UpdateRequiredClassNotFoundException {
+    public T newInstance(PluginClassLoaderChild classLoader) throws UpdateRequiredClassNotFoundException {
         try {
-            ConstructorInfo<T> cons = getConstructor(getPluginClass());
+            ConstructorInfo<T> cons = getConstructor(getPluginClass(classLoader));
             return cons.constructor.newInstance(cons.constructorParameters);
         } catch (final Throwable e) {
             handleUpdateRequiredClassNotFoundException(e, true);
@@ -129,7 +126,7 @@ public abstract class LazyPlugin<T extends Plugin> {
                 NoClassDefFoundError ncdf = (NoClassDefFoundError) e;
                 String classNotFound = ncdf.getMessage();
                 ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-                if (lcl == null || !(lcl instanceof PluginClassLoaderChild)) lcl = getClassLoader();
+                if (lcl == null || !(lcl instanceof PluginClassLoaderChild)) lcl = getClassLoader(true);
                 if (lcl != null && lcl instanceof PluginClassLoaderChild) {
                     PluginClassLoaderChild pcl = (PluginClassLoaderChild) lcl;
                     if (pcl.isUpdateRequired(classNotFound)) throw new UpdateRequiredClassNotFoundException(classNotFound);
@@ -141,40 +138,27 @@ public abstract class LazyPlugin<T extends Plugin> {
     }
 
     @SuppressWarnings("unchecked")
-    protected Class<T> getPluginClass() {
-        ClassLoader lcl = Thread.currentThread().getContextClassLoader();
-        if (lcl != null && (lcl != getClassLoader()) && (lcl instanceof PluginClassLoaderChild)) {
-            /*
-             * current Thread uses a different PluginClassLoaderChild, so lets use it to get PluginClass
-             */
+    protected synchronized Class<T> getPluginClass(PluginClassLoaderChild classLoader) {
+        if (classLoader != null && classLoader != getClassLoader(false)) {
+            /* load class with custom classLoader because it's not default one */
             try {
-                return (Class<T>) lcl.loadClass(classname);
+                return (Class<T>) classLoader.loadClass(classname);
             } catch (Throwable e) {
                 e.printStackTrace();
                 throw new WTFException(e);
             }
         }
-        Class<T> ret = null;
-        if ((ret = getWeakPluginClass()) != null) return ret;
-        synchronized (this) {
-            if ((ret = getWeakPluginClass()) != null) return ret;
-            try {
-                ret = (Class<T>) getClassLoader().loadClass(classname);
-            } catch (Throwable e) {
-                e.printStackTrace();
-                throw new WTFException(e);
-            }
-            setPluginClass(ret);
-            return ret;
-        }
-
-    }
-
-    private Class<T> getWeakPluginClass() {
         Class<T> ret = null;
         if (pluginClass != null && (ret = pluginClass.get()) != null) return ret;
         pluginClass = null;
-        return null;
+        try {
+            ret = (Class<T>) getClassLoader(true).loadClass(classname);
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw new WTFException(e);
+        }
+        if (ret != null) pluginClass = new WeakReference<Class<T>>(ret);
+        return ret;
     }
 
     public Pattern getPattern() {
@@ -184,15 +168,16 @@ public abstract class LazyPlugin<T extends Plugin> {
     /**
      * @return the classLoader
      */
-    public PluginClassLoaderChild getClassLoader() {
+    public synchronized PluginClassLoaderChild getClassLoader(boolean createNew) {
         PluginClassLoaderChild ret = null;
         if (classLoader != null && (ret = classLoader.get()) != null) return ret;
+        if (createNew == false) return null;
         ret = PluginClassLoader.getInstance().getChild();
-        classLoader = new WeakReference<PluginClassLoader.PluginClassLoaderChild>(ret);
+        setClassLoader(ret);
         return ret;
     }
 
-    public void setClassLoader(PluginClassLoaderChild cl) {
+    public synchronized void setClassLoader(PluginClassLoaderChild cl) {
         if (cl == null) {
             classLoader = null;
         } else {

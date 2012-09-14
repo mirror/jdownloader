@@ -219,7 +219,7 @@ public abstract class PluginForHost extends Plugin {
             dl.getConnection().disconnect();
         } catch (Throwable e) {
         } finally {
-            dl = null;
+            setDownloadInterface(null);
         }
         try {
             br.disconnect();
@@ -231,7 +231,15 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void setDownloadInterface(DownloadInterface dl) {
+        DownloadInterface oldDl = this.dl;
         this.dl = dl;
+        if (oldDl != null && oldDl != dl) {
+            try {
+                oldDl.close();
+            } catch (final Throwable e) {
+                LogSource.exception(getLogger(), e);
+            }
+        }
     }
 
     protected void setBrowserExclusive() {
@@ -298,7 +306,8 @@ public abstract class PluginForHost extends Plugin {
                     /*
                      * use this REGEX to cut of following http links, (?=https?:|$|\r|\n|)
                      */
-                    final DownloadLink link = new DownloadLink(this, null, getHost(), file, true);
+                    /* we use null as ClassLoader to make sure all share the same ProtoTypeClassLoader */
+                    final DownloadLink link = new DownloadLink(getLazyP().getPrototype(null), null, getHost(), file, true);
                     links.add(link);
                 } catch (Throwable e) {
                     LogSource.exception(logger, e);
@@ -462,12 +471,11 @@ public abstract class PluginForHost extends Plugin {
                 handleFree(downloadLink);
             }
         } finally {
-            clean();
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(dl.getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
-            setDownloadInterface(null);
+            clean();
         }
     }
 
