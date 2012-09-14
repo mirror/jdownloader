@@ -54,7 +54,11 @@ public class DeditvCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String dllink = downloadLink.getDownloadURL();
-        br.getPage(dllink);
+        try {
+            br.getPage(dllink);
+        } catch (final Exception e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (br.containsHTML(">404 error , this file do not exist any more") || br.getURL().endsWith("removed.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(dllink);
 

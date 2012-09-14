@@ -38,6 +38,12 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if ("http://www.badjojo.com/".equals(br.getRedirectLocation())) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("badjojo.com", "decryptedbadjojo.com"));
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         String decrypted = null;
         String externID = br.getRegex("name=\"FlashVars\" value=\"id=(\\d+)\\&style=redtube\"").getMatch(0);
@@ -54,6 +60,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             return decryptedLinks;
         }
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+        if (externID == null) externID = br.getRegex("value=\"http://(www\\.)?xvideos\\.com/sitevideos/.*?value=\"id_video=(\\d+)\"").getMatch(1);
         if (externID != null) {
             decrypted = "http://www.xvideos.com/video" + externID;
             decryptedLinks.add(createDownloadlink(decrypted));

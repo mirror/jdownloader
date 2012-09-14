@@ -58,6 +58,7 @@ public class BadJoJoCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(images/unavailablevideo\\.jpg\"|HTTP\\-EQUIV=\"REFRESH\" content=\"\\d+; url=http://www\\.badjojo\\.com/)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if ("http://www.badjojo.com/".equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- badjojo\\.com</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\"content_video\", \"(files/.*?)\"\\)").getMatch(0);

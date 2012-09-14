@@ -327,7 +327,7 @@ public class LetitBitNet extends PluginForHost {
         /* we need to remove the newline in old browser */
         final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
         if (!"1".equals(resp)) {
-            if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 1000l);
+            if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // reCaptcha handling
@@ -353,13 +353,13 @@ public class LetitBitNet extends PluginForHost {
             // Normal captcha handling, UNTESTED!
             final DecimalFormat df = new DecimalFormat("0000");
             for (int i = 0; i <= 5; i++) {
-                String code = getCaptchaCode("letitbitnew", ajaxPostpage + df.format(new Random().nextInt(1000)), downloadLink);
+                String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                 sleep(2000, downloadLink);
-                br2.postPage(ajaxPostpage + "/ajax/check_captcha.php", "code=" + Encoding.urlEncode(code));
-                if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) continue;
+                br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
+                if (br2.toString().contains("error_wrong_captcha")) continue;
                 break;
             }
-            if (br2.toString().length() < 2 || br2.toString().contains("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         // Downloadlimit is per day so let's just wait 3 hours
         if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);

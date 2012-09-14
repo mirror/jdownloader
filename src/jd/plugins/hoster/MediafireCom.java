@@ -397,10 +397,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array.
+     * This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release
+     * dates are valid.
      * 
-     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @return eg.
+     *         "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
         final Random rand = new Random();
@@ -465,10 +468,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified
+     * array. This array contains current user agents gathered from httpd access
+     * logs. Benefits over RandomUserAgent.* are: versions and respective
+     * release dates are valid.
      * 
-     * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
+     * @return eg.
+     *         "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
         final Random rand = new Random();
@@ -479,12 +485,14 @@ public class MediafireCom extends PluginForHost {
 
     /** end of random agents **/
 
-    private static final String                                    PRIVATEFILE        = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
-    private static AtomicInteger                                   maxPrem            = new AtomicInteger(1);
+    private static final String                                    PRIVATEFILE             = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+    private static AtomicInteger                                   maxPrem                 = new AtomicInteger(1);
+    private static final String                                    TEMPUNAVAILABLE         = ">Temporarily Unavailable<";
+    private static final String                                    TEMPUNAVAILABLEUSERTEXT = JDL.L("plugins.hoster.mediafirecom.temporarilyunavailble", "This file is temporarily unavailable");
     /**
      * Map to cache the configuration keys
      */
-    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS = new HashMap<Account, HashMap<String, String>>();
+    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS      = new HashMap<Account, HashMap<String, String>>();
 
     public static abstract class PasswordSolver {
 
@@ -546,7 +554,8 @@ public class MediafireCom extends PluginForHost {
     /** The name of the error page used by MediaFire */
     private static final String ERROR_PAGE        = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is available
+     * The number of retries to be performed in order to determine if a file is
+     * available
      */
     private static final int    NUMBER_OF_RETRIES = 3;
 
@@ -644,6 +653,7 @@ public class MediafireCom extends PluginForHost {
                 break;
             }
             this.requestFileInformation(downloadLink);
+            if (br.containsHTML(TEMPUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, TEMPUNAVAILABLEUSERTEXT, 2 * 60 * 60 * 1000l);
             if (downloadLink.getBooleanProperty("privatefile") && account == null) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
             try {
                 captchaCorrect = false;
@@ -986,7 +996,8 @@ public class MediafireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         /**
-         * Don't delete cookies as the user might uses a free account to download
+         * Don't delete cookies as the user might uses a free account to
+         * download
          */
         // this.setBrowserExclusive();
         this.br.setFollowRedirects(false);
@@ -1076,6 +1087,10 @@ public class MediafireCom extends PluginForHost {
                         }
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
+                        if (br.containsHTML(">Temporarily Unavailable<")) {
+                            downloadLink.getLinkStatus().setStatusText(TEMPUNAVAILABLEUSERTEXT);
+                            return AvailableStatus.UNCHECKABLE;
+                        }
                         String name = br.getRegex("<div class=\"download_file_title\"> (.*?) </div>").getMatch(0);
                         String size = br.getRegex(" <input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
                         if (size == null) size = br.getRegex("(?i)\\(([\\d\\.]+ (KB|MB|GB|TB))\\)").getMatch(0);

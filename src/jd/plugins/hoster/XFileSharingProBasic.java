@@ -68,8 +68,6 @@ public class XFileSharingProBasic extends PluginForHost {
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static final Object  LOCK                         = new Object();
 
     // DEV NOTES
     /**
@@ -77,7 +75,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.1
+    // XfileSharingProBasic Version 2.5.7.2
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -141,6 +139,7 @@ public class XFileSharingProBasic extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), link);
                 sendForm(download1);
                 scanInfo(fileInfo);
             }
@@ -324,6 +323,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        fixFilename(downloadLink);
         try {
             // add a download slot
             controlFree(+1);
@@ -419,6 +419,58 @@ public class XFileSharingProBasic extends PluginForHost {
         return dllink;
     }
 
+    private String decodeDownloadLink(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+
+        String finallink = null;
+        if (decoded != null) {
+            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
+                if (finallink == null) {
+                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
+                }
+            }
+        }
+        return finallink;
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
+    }
+
     private void getPage(final String page) throws Exception {
         br.getPage(page);
         correctBR();
@@ -432,6 +484,62 @@ public class XFileSharingProBasic extends PluginForHost {
     private void sendForm(final Form form) throws Exception {
         br.submitForm(form);
         correctBR();
+    }
+
+    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt != null) {
+            int tt = Integer.parseInt(ttt);
+            tt -= passedTime;
+            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+            if (tt > 0) sleep(tt * 1000l, downloadLink);
+        }
+    }
+
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
+            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
+            if (oldExtension != null)
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
+            else
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+        }
+    }
+
+    private String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {
+        passCode = thelink.getStringProperty("pass", null);
+        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
+        pwform.put("password", passCode);
+        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
+        return Encoding.urlEncode(passCode);
     }
 
     public void checkErrors(final DownloadLink theLink, final boolean checkAll, final String passCode) throws NumberFormatException, PluginException {
@@ -501,65 +609,8 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    private String decodeDownloadLink(final String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-        }
-
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                }
-            }
-        }
-        return finallink;
-    }
-
-    private String handlePassword(String passCode, final Form pwform, final DownloadLink thelink) throws IOException, PluginException {
-        passCode = thelink.getStringProperty("pass", null);
-        if (passCode == null) passCode = Plugin.getUserInput("Password?", thelink);
-        pwform.put("password", passCode);
-        logger.info("Put password \"" + passCode + "\" entered by user in the DLForm.");
-        return Encoding.urlEncode(passCode);
-    }
-
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openGetConnection(dllink);
-                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
+    private static final Object  LOCK    = new Object();
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -664,28 +715,28 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String passCode = null;
-        requestFileInformation(link);
+        requestFileInformation(downloadLink);
         login(account, false);
         br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
-            requestFileInformation(link);
-            doFree(link, true, 0, "freelink2");
+            requestFileInformation(downloadLink);
+            doFree(downloadLink, true, 0, "freelink2");
         } else {
-            dllink = checkDirectLink(link, "premlink");
+            dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
-                getPage(link.getDownloadURL());
+                getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
-                    checkErrors(link, true, passCode);
+                    checkErrors(downloadLink, true, passCode);
                     Form dlform = br.getFormbyProperty("name", "F1");
                     if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, link);
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
                     sendForm(dlform);
                     dllink = getDllink();
-                    checkErrors(link, true, passCode);
+                    checkErrors(downloadLink, true, passCode);
                 }
             }
             if (dllink == null) {
@@ -693,7 +744,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -701,8 +752,9 @@ public class XFileSharingProBasic extends PluginForHost {
                 checkServerErrors();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (passCode != null) link.setProperty("pass", passCode);
-            link.setProperty("premlink", dllink);
+            if (passCode != null) downloadLink.setProperty("pass", passCode);
+            fixFilename(downloadLink);
+            downloadLink.setProperty("premlink", dllink);
             dl.startDownload();
         }
     }
@@ -719,42 +771,6 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
-        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
-        /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
-        }
-    }
-
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
-    /**
-     * Returns the first form that has a 'key' that equals 'value'.
-     * 
-     * @param key
-     * @param value
-     * @return
-     */
-    private Form getFormByKey(final String key, final String value) {
-        Form[] workaround = br.getForms();
-        if (workaround != null) {
-            for (Form f : workaround) {
-                for (InputField field : f.getInputFields()) {
-                    if (key != null && key.equals(field.getKey())) {
-                        if (value == null && field.getValue() == null) return f;
-                        if (value != null && value.equals(field.getValue())) return f;
-                    }
-                }
-            }
-        }
-        return null;
     }
 
 }

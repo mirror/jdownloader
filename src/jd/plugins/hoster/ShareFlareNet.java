@@ -20,9 +20,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -174,6 +176,10 @@ public class ShareFlareNet extends PluginForHost {
 
     private String getDllink(final Browser br) {
         String dllink = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.toString().trim();
+            if (!dllink.startsWith("http") || dllink.length() > 500) return null;
+        }
         return dllink;
     }
 
@@ -253,8 +259,8 @@ public class ShareFlareNet extends PluginForHost {
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
         final Browser ajaxBR = br.cloneBrowser();
         ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        String waittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
-        if (waittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waittime.trim()) * 60 * 1001l);
+        String reconnectWaittime = br.getRegex("You can wait download for ([\t\n\r0-9]+) minutes or upgrade to premium").getMatch(0);
+        if (reconnectWaittime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWaittime.trim()) * 60 * 1001l);
         if (br.containsHTML("You reached your hourly traffic limit\\.")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
         if (br.containsHTML(FREELIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
@@ -275,24 +281,66 @@ public class ShareFlareNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.submitForm(dlform);
-        // Waittime before captcha is skippable
-        final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setId(rcID);
-        rc.load();
-        for (int i = 0; i <= 3; i++) {
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            final String c = getCaptchaCode(cf, downloadLink);
-            ajaxBR.postPage("http://shareflare.net/ajax/check_recaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
-            if (ajaxBR.containsHTML("error_wrong_captcha")) {
-                rc.reload();
-                continue;
-            }
-            break;
+
+        final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
+        if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
+        if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        ajaxPostpage = "http://shareflare.net" + ajaxPostpage;
+        int wait = 60;
+        String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
+        if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
+        if (waittime != null) {
+            logger.info("Waittime found, waittime is " + waittime + " seconds .");
+            wait = Integer.parseInt(waittime);
+        } else {
+            logger.info("No waittime found, continuing...");
         }
-        if (ajaxBR.containsHTML("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        sleep((wait + 1) * 1001l, downloadLink);
+        /*
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
+         */
+        ajaxBR.getHeaders().put("Content-Length", "0");
+        ajaxBR.postPage("http://shareflare.net/ajax/download3.php", "");
+        ajaxBR.getHeaders().remove("Content-Length");
+        /* we need to remove the newline in old browser */
+        final String resp = ajaxBR.toString().replaceAll("%0D%0A", "").trim();
+        if (!"1".equals(resp)) {
+            if (ajaxBR.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily limit reached", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        if (ajaxPostpage.contains("recaptcha")) {
+            final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 3; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, downloadLink);
+                ajaxBR.postPage("http://shareflare.net/ajax/check_recaptcha.php", "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                if (ajaxBR.containsHTML("error_wrong_captcha")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (ajaxBR.containsHTML("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            // Normal captcha handling, UNTESTED!
+            final DecimalFormat df = new DecimalFormat("0000");
+            for (int i = 0; i <= 5; i++) {
+                String code = getCaptchaCode("http://shareflare.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+                sleep(2000, downloadLink);
+                ajaxBR.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
+                if (ajaxBR.toString().contains("error_wrong_captcha")) continue;
+                break;
+            }
+            if (ajaxBR.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
         String dllink = getDllink(ajaxBR);
         if (ajaxBR.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (dllink == null) return null;
