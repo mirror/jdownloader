@@ -1099,6 +1099,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         PluginForHost pluginForHost = null;
         Iterator<CrawledLink> it;
         CrawledPackage fp;
+        HashMap<String, PluginForHost> fixWith = new HashMap<String, PluginForHost>();
         while (iterator.hasNext()) {
             fp = iterator.next();
             if (fp.getChildren().size() == 0) {
@@ -1131,14 +1132,22 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 }
                 if (pluginForHost == null) {
                     try {
-                        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                            try {
-                                if (p.getPrototype(null).rewriteHost(dlLink)) {
-                                    pluginForHost = p.getPrototype(null);
-                                    break;
+                        if (fixWith.containsKey(dlLink.getHost()) == false) {
+                            for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+                                try {
+                                    if (p.getPrototype(null).rewriteHost(dlLink)) {
+                                        pluginForHost = p.getPrototype(null);
+                                        break;
+                                    }
+                                } catch (final Throwable e) {
+                                    logger.log(e);
                                 }
-                            } catch (final Throwable e) {
-                                logger.log(e);
+                            }
+                        } else {
+                            PluginForHost rewriteWith = fixWith.get(dlLink.getHost());
+                            if (rewriteWith != null) {
+                                rewriteWith.rewriteHost(dlLink);
+                                pluginForHost = rewriteWith;
                             }
                         }
                         if (pluginForHost != null) {
@@ -1147,6 +1156,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
+                    fixWith.put(dlLink.getHost(), pluginForHost);
                 }
                 if (pluginForHost != null) {
                     dlLink.setDefaultPlugin(pluginForHost);

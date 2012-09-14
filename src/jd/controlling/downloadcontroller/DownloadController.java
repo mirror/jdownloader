@@ -23,7 +23,6 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -615,7 +614,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         PluginForHost pluginForHost = null;
         Iterator<DownloadLink> it;
         FilePackage fp;
-        HashSet<String> dontTryAgain = new HashSet<String>();
+        HashMap<String, PluginForHost> fixWith = new HashMap<String, PluginForHost>();
         while (iterator.hasNext()) {
             fp = iterator.next();
             java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
@@ -642,16 +641,24 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-                if (pluginForHost == null && !dontTryAgain.contains(localLink.getHost())) {
+                if (pluginForHost == null) {
                     try {
-                        for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
-                            try {
-                                if (p.getPrototype(null).rewriteHost(localLink)) {
-                                    pluginForHost = p.getPrototype(null);
-                                    break;
+                        if (fixWith.containsKey(localLink.getHost()) == false) {
+                            for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
+                                try {
+                                    if (p.getPrototype(null).rewriteHost(localLink)) {
+                                        pluginForHost = p.getPrototype(null);
+                                        break;
+                                    }
+                                } catch (final Throwable e) {
+                                    logger.log(e);
                                 }
-                            } catch (final Throwable e) {
-                                logger.log(e);
+                            }
+                        } else {
+                            PluginForHost rewriteWith = fixWith.get(localLink.getHost());
+                            if (rewriteWith != null) {
+                                rewriteWith.rewriteHost(localLink);
+                                pluginForHost = rewriteWith;
                             }
                         }
                         if (pluginForHost != null) {
@@ -660,11 +667,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
+                    fixWith.put(localLink.getHost(), pluginForHost);
                 }
                 if (pluginForHost != null) {
                     localLink.setDefaultPlugin(pluginForHost);
                 } else {
-                    dontTryAgain.add(localLink.getHost());
                     logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                 }
             }
