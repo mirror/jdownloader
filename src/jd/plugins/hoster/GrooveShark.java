@@ -188,13 +188,15 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static boolean getFileVersion(Browser br) {
-        APPJSURL = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
-        CLIENTREVISION = getClientVersion(br);
-        CLIENTREVISION = CLIENTREVISION == null ? new Regex(APPJSURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-        FLASHURL = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
-        CLIENTREVISION = CLIENTREVISION == null ? new Regex(FLASHURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-        FLASHURL = FLASHURL == null ? null : LISTEN + FLASHURL;
-        COUNTRY = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
+        if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
+            APPJSURL = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
+            CLIENTREVISION = getClientVersion(br);
+            CLIENTREVISION = CLIENTREVISION == null ? new Regex(APPJSURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
+            FLASHURL = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
+            CLIENTREVISION = CLIENTREVISION == null ? new Regex(FLASHURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
+            FLASHURL = FLASHURL == null ? null : LISTEN + FLASHURL;
+            COUNTRY = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
+        }
         if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
             CLIENTREVISION = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
             if (CLIENTREVISION == null) {
@@ -555,8 +557,8 @@ public class GrooveShark extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.grooveshark.status", "Use Proxy-Server?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyhost", "Host:")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYPORT", JDL.L("plugins.hoster.grooveshark.proxyport", "Port:")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYSERVER", JDL.L("plugins.hoster.grooveshark.proxyhost", "Host:")).setDefaultValue("proxy.personalitycores.com"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "PROXYPORT", JDL.L("plugins.hoster.grooveshark.proxyport", "Port:")).setDefaultValue("8000"));
     }
 
 }
