@@ -355,8 +355,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -412,8 +411,7 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already
-                             * exists
+                             * because demuxer will fail when mp3 file already exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
@@ -519,7 +517,7 @@ public class TbCm extends PluginForDecrypt {
                     html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
                 }
             }
-            if (html5_fmt_map != null && !html5_fmt_map.contains("signature")) {
+            if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig")) {
                 Thread.sleep(5000);
                 br.clearCookies(getHost());
                 return getLinks(video, prem, br, retrycount + 1);
@@ -530,6 +528,7 @@ public class TbCm extends PluginForDecrypt {
                     for (String hit : html5_hits) {
                         hit = unescape(hit);
                         String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
+                        String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
                         String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                         String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                         if (hitUrl != null && hitFmt != null && hitQ != null) {
@@ -537,7 +536,12 @@ public class TbCm extends PluginForDecrypt {
                             if (hitUrl.startsWith("http%253A")) {
                                 hitUrl = Encoding.htmlDecode(hitUrl);
                             }
-                            String[] inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
+                            String[] inst = null;
+                            if (hitUrl.contains("sig")) {
+                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true)), hitQ };
+                            } else {
+                                inst = new String[] { Encoding.htmlDecode(Encoding.urlDecode(hitUrl, true) + "&signature=" + sig), hitQ };
+                            }
                             links.put(Integer.parseInt(hitFmt), inst);
                         }
                     }
