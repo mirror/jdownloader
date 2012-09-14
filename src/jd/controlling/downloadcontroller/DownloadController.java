@@ -23,6 +23,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -614,6 +615,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         PluginForHost pluginForHost = null;
         Iterator<DownloadLink> it;
         FilePackage fp;
+        HashSet<String> dontTryAgain = new HashSet<String>();
         while (iterator.hasNext()) {
             fp = iterator.next();
             java.util.List<DownloadLink> removeList = new ArrayList<DownloadLink>();
@@ -640,7 +642,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 } catch (final Throwable e) {
                     logger.log(e);
                 }
-                if (pluginForHost == null) {
+                if (pluginForHost == null && !dontTryAgain.contains(localLink.getHost())) {
                     try {
                         for (LazyHostPlugin p : HostPluginController.getInstance().list()) {
                             try {
@@ -662,6 +664,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 if (pluginForHost != null) {
                     localLink.setDefaultPlugin(pluginForHost);
                 } else {
+                    dontTryAgain.add(localLink.getHost());
                     logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
                 }
             }
