@@ -10,6 +10,7 @@ DataCompareDialog_layoutDialogContent_webinterface=Webové rozhraní routeru
 DataCompareDialog_open_webinterface=Otevřít webové rozhraní
 EditScriptAction_EditScriptAction_=Upravit skript
 GetIPAction_GetIPAction_=Získat IP routeru
+GetIPAction_GetIPAction_tt=Proskenuje Vaši síť a pokusí se najít IP routeru
 GetIPAction_actionPerformed_d_msg=Hledat IP routeru
 GetIPAction_actionPerformed_d_title=Hledat IP routeru
 GetIPAction_getString_progress=Skenuji síť...
@@ -44,6 +45,7 @@ jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Vypnuli jste IP-Check. Toto nastavení výrazně zvýší počet Reconnectu!\n\n\n\nNěkolik dalších modulů (např. Reconnect Recorder) bylo deaktivováno.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Check deaktivován!
 jd_nrouter_recorder_Gui_info1=Zkontroluje IP adresu routeru a stiskněte tlačítko Start
+jd_nrouter_recorder_Gui_info3=Po Reconnectu stiskněte tlačítko Stop a uložte
 literally_password=Heslo
 literally_router_ip=IP routeru
 literally_router_model=Model routeru

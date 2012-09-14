@@ -13,6 +13,7 @@ udpates_found=Aktualizace nalezena!
 update_already_running=Aktulizace již probíhá
 update_dialog_cancel=Zrušit
 update_dialog_later=Zeptat se později
+update_dialog_msg_x_updates_available=Jsou dostupné aktulalizace. Chcete teď aktualizaci provést?
 update_dialog_news_button=Otevřít seznam změn
 update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=Aktualizace dostupná

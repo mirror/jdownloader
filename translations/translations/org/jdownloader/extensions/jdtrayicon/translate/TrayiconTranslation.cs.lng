@@ -31,4 +31,6 @@ popup_clipboardtoggle=Monitor schránky zapnut
 popup_downloadfolder=Otevřít složku pro stahování
 popup_exit=Ukončit JDownloader
 popup_pause=Pozastavit stahování
+popup_premiumtoggle=Premium zapnuto
+popup_reconnecttoggle=Automatický Reconnect zapnut
 popup_update=Zkontrolovat aktualizace
