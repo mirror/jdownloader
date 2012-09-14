@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,6 +33,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.JSonStorage;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumizeMe extends PluginForHost {
@@ -87,9 +90,20 @@ public class PremiumizeMe extends PluginForHost {
         return true;
     }
 
+    private Object getConnectionSettingsValue(String host, Account account, String key) {
+        Map<String, Object> connection_settings = null;
+        AccountInfo ai = null;
+        if (account != null && (ai = account.getAccountInfo()) != null && (connection_settings = (Map<String, Object>) ai.getProperty("connection_settings")) != null) {
+            Map<String, Object> settings = (Map<String, Object>) connection_settings.get(host);
+            if (settings != null) { return settings.get(key); }
+        }
+        return null;
+    }
+
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        if (account != null && "uploaded.to".equalsIgnoreCase(link.getHost())) return 1;
+        Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_hoster");
+        if (ret != null && ret instanceof Integer) return (Integer) ret;
         return super.getMaxSimultanDownload(link, account);
     }
 
@@ -113,7 +127,21 @@ public class PremiumizeMe extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         int maxConnections = 0;
-        if ("uploaded.to".equalsIgnoreCase(link.getHost())) maxConnections = 1;
+        boolean resume = true;
+        Object ret = getConnectionSettingsValue(link.getHost(), account, "max_connections_per_file");
+        if (ret != null && ret instanceof Integer) {
+            maxConnections = (Integer) ret;
+            logger.info("Host:" + link.getHost() + " is limited to " + maxConnections + " chunks");
+        }
+        ret = getConnectionSettingsValue(link.getHost(), account, "resume");
+        if (ret != null && ret instanceof Boolean) {
+            resume = (Boolean) ret;
+            logger.info("Host:" + link.getHost() + " allows resume: " + resume);
+        }
+        if (resume == false) {
+            logger.info("Host:" + link.getHost() + " does not allow resume, set chunks to 1");
+            maxConnections = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxConnections);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
@@ -168,10 +196,13 @@ public class PremiumizeMe extends PluginForHost {
         }
         String hostsSup = br.getPage("https://api.premiumize.me/pm-api/v1.php?method=hosterlist&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()));
         handleAPIErrors(br, account, null);
+        HashMap<String, Object> response = JSonStorage.restoreFromString(br.toString(), new HashMap<String, Object>().getClass());
+        if (response == null || (response = (HashMap<String, Object>) response.get("result")) == null) response = new HashMap<String, Object>();
         String HostsJSON = new Regex(hostsSup, "\"tldlist\":\\[([^\\]]+)\\]").getMatch(0);
         String[] hosts = new Regex(HostsJSON, "\"([a-zA-Z0-9\\.\\-]+)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
         ai.setProperty("multiHostSupport", supportedHosts);
+        ai.setProperty("connection_settings", response.get("connection_settings"));
         return ai;
     }
 
