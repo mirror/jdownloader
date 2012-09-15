@@ -42,7 +42,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 //Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
@@ -154,7 +153,6 @@ public class SflnkgNt extends PluginForDecrypt {
             }
 
             logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this host.");
-
             for (int i = 0; i <= 5; i++) {
                 String data = "post-protect=1";
                 if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
@@ -220,14 +218,19 @@ public class SflnkgNt extends PluginForDecrypt {
                     if (br.getHttpConnection().getResponseCode() == 500) logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
                 }
 
+                if ("notDetected".equals(cType)) break;
                 if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT) || br.containsHTML("<strong>Prove you are human</strong>")) {
+                    logger.info("wtf");
                     continue;
                 }
                 break;
             }
-            if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>"))) { throw new DecrypterException(DecrypterException.CAPTCHA); }
             if (br.containsHTML(PASSWORDPROTECTEDTEXT)) { throw new DecrypterException(DecrypterException.PASSWORD); }
-            if (br.containsHTML(">All links are dead\\.<|>Links dead<")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+            if (br.containsHTML(">All links are dead\\.<|>Links dead<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             // container handling (if no containers found, use webprotection
             if (br.containsHTML("\\.dlc")) {
                 decryptedLinks = loadcontainer(".dlc", param);
@@ -255,8 +258,6 @@ public class SflnkgNt extends PluginForDecrypt {
                 }
             }
 
-            progress.setRange(cryptedLinks.size());
-
             for (String link : cryptedLinks) {
                 if (link.matches(".*safelinking\\.net/d/.+")) {
                     get(link);
@@ -275,7 +276,6 @@ public class SflnkgNt extends PluginForDecrypt {
                     /* does not exist in 09581 */
                 }
                 decryptedLinks.add(dl);
-                progress.increase(1);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {

@@ -21,11 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "embedupload.com" }, urls = { "http://(www\\.)?embedupload\\.com/\\?([A-Z0-9]{2}|d)=[A-Z0-9]+" }, flags = { 0 })
 public class EmbedUploadCom extends PluginForDecrypt {
@@ -39,7 +37,10 @@ public class EmbedUploadCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML("Copyright Abuse <br>")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Copyright Abuse <br>") || br.containsHTML("Invalid file name <")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.contains("embedupload.com/?d=")) {
             String embedUploadDirectlink = br.getRegex("div id=\"embedupload\" style=\"padding\\-left:43px;padding\\-right:20px;padding\\-bottom:20px;font\\-size:17px;font\\-style:italic\" >[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
             if (embedUploadDirectlink == null) embedUploadDirectlink = br.getRegex("\"(http://(www\\.)?embedupload\\.com/\\?EU=[A-Z0-9]+\\&urlkey=[A-Za-z0-9]+)\"").getMatch(0);
@@ -91,8 +92,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
     }
 
     private String getSingleLink() {
-        String link = br.getRegex("<b>[\r\n\t ]+(https?://[^\t ]+)").getMatch(0);
-        if (link == null || link.length() == 0) link = br.getRegex("You should click on the download link.*?href='(https?://.*?)'").getMatch(0);
+        String link = br.getRegex("link on a new browser window : ([^<>\"]*?)</b>").getMatch(0);
         return link;
     }
 }
