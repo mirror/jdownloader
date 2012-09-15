@@ -220,7 +220,6 @@ public class SflnkgNt extends PluginForDecrypt {
 
                 if ("notDetected".equals(cType)) break;
                 if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT) || br.containsHTML("<strong>Prove you are human</strong>")) {
-                    logger.info("wtf");
                     continue;
                 }
                 break;
