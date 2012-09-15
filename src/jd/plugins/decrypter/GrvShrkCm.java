@@ -348,12 +348,12 @@ public class GrvShrkCm extends PluginForDecrypt {
         String sid = br.getCookie(parameter, "PHPSESSID");
         if (sid == null) return null;
         String secretKey = getSecretKey(br, sid);
-        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION + "\",\"privacy\":0," + jd.plugins.hoster.GrooveShark.COUNTRY + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
+        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.string + "\",\"privacy\":0," + jd.plugins.hoster.GrooveShark.COUNTRY.string + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + sid + "\",\"token\":\"" + getToken(method, secretKey) + "\"},\"method\":\"" + method + "\",";
     }
 
     private String getSecretKey(Browser ajax, String sid) throws IOException {
         try {
-            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(sid) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(sid) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + jd.plugins.hoster.GrooveShark.CLIENTREVISION.string + "\",\"session\":\"" + sid + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
         } catch (Throwable e) {
             try {
                 org.appwork.utils.logging2.LogSource.exception(logger, e);
