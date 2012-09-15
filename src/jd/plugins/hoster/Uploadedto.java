@@ -63,7 +63,7 @@ import org.appwork.utils.os.CrossSystem;
 public class Uploadedto extends PluginForHost {
 
     public static class StringContainer {
-        private String string = null;
+        public String string = null;
     }
 
     private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
