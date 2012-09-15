@@ -93,7 +93,8 @@ public class PluginClassLoader extends URLClassLoader {
                 if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
                 Class<?> c = null;
-                if (name.endsWith("StringContainer")) {
+                boolean helperClass = name.endsWith("StringContainer");
+                if (helperClass) {
                     synchronized (helperClasses) {
                         c = helperClasses.get(name);
                     }
@@ -108,7 +109,7 @@ public class PluginClassLoader extends URLClassLoader {
                     /*
                      * we have to synchronize this because concurrent defineClass for same class throws exception
                      */
-                    if (name.endsWith("StringContainer")) {
+                    if (helperClass) {
                         synchronized (helperClasses) {
                             c = helperClasses.get(name);
                         }
@@ -119,7 +120,7 @@ public class PluginClassLoader extends URLClassLoader {
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                     if (myUrl == null) throw new ClassNotFoundException("Class does not exist(anymore): " + name);
                     byte[] data;
-                    if (name.endsWith("StringContainer")) {
+                    if (helperClass) {
                         synchronized (helperClasses) {
                             c = helperClasses.get(name);
                             if (c == null) {
