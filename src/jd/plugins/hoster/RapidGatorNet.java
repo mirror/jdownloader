@@ -72,7 +72,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     public static class StringContainer {
-        private String string = null;
+        public String string = null;
     }
 
     private static final String    MAINPAGE             = "http://rapidgator.net/";
