@@ -93,17 +93,17 @@ public class GrvShrkCm extends PluginForDecrypt {
             return null;
         }
 
-        parameter = parameter.replace("http://listen.", "http://").replace("/#!/", "/#/").replace("/#%21/", "/#/");
+        parameter = parameter.replace("http://listen.", "http://").replace("/#%21/", "/#!/");
         /* single */
         if (parameter.contains("/s/")) {
             parameter = parameter.replaceFirst(LISTEN, "http://grooveshark.viajd/");
-            parameter = parameter.replace("#/", "");
+            parameter = parameter.replace("#!/", "");
             DownloadLink dlLink = createDownloadlink(parameter);
             decryptedLinks.add(dlLink);
             return decryptedLinks;
         }
-        if (!parameter.contains("/#/")) {
-            parameter = parameter.replaceFirst(LISTEN, LISTEN + "#/");
+        if (!parameter.contains("/#!/")) {
+            parameter = parameter.replaceFirst(LISTEN, LISTEN + "#!/");
         }
 
         try {
@@ -121,17 +121,17 @@ public class GrvShrkCm extends PluginForDecrypt {
         }
 
         /* favourites */
-        if (parameter.matches(LISTEN + "#/user/.*?/\\d+/music/favorites")) {
+        if (parameter.matches(LISTEN + "#!/user/.*?/\\d+/music/favorites")) {
             getFavourites(parameter, progress);
         }
 
         /* playlists */
-        if (parameter.matches(LISTEN + "#/playlist/.*?/\\d+")) {
+        if (parameter.matches(LISTEN + "#!/playlist/.*?/\\d+")) {
             getPlaylists(parameter, progress);
         }
 
         /* album/artist/popular */
-        if (parameter.matches(LISTEN + "#/((album|artist)/.*?/\\d+|popular)")) {
+        if (parameter.matches(LISTEN + "#!/((album|artist)/.*?/\\d+|popular)")) {
             getAlbum(parameter, progress);
         }
 
@@ -146,7 +146,7 @@ public class GrvShrkCm extends PluginForDecrypt {
         HashMap<String, String> titleContent = new HashMap<String, String>();
         if (parameter.contains("/artist") || parameter.contains("/album") || parameter.contains("/popular")) {
             String ID = parameter.substring(parameter.lastIndexOf("/") + 1);
-            String method = new Regex(parameter, "#/(.*?)/").getMatch(0);
+            String method = new Regex(parameter, "#!/(.*?)/").getMatch(0);
             if (method == null) {
                 method = "popular";
             }
@@ -171,9 +171,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
                     if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                         logger.warning("Existing keys are old, looking for new keys.");
-                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
-                            break;
-                        }
+                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
                         rawPost = getPostParameterString(parameter, method);
                         logger.info("Found new keys. Retrying...");
                     } else {
@@ -237,8 +235,8 @@ public class GrvShrkCm extends PluginForDecrypt {
     }
 
     private void getFavourites(String parameter, ProgressController progress) throws Exception {
-        USERID = new Regex(parameter, "/#/user/.*?/(\\d+)/").getMatch(0);
-        USERNAME = new Regex(parameter, "/#/user/(.*?)/(\\d+)/").getMatch(0);
+        USERID = new Regex(parameter, "/#!/user/.*?/(\\d+)/").getMatch(0);
+        USERNAME = new Regex(parameter, "/#!/user/(.*?)/(\\d+)/").getMatch(0);
         String method = "getFavorites";
 
         for (int j = 0; j < 2; j++) {
@@ -248,9 +246,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
-                    break;
-                }
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
                 logger.info("Found new keys. Retrying...");
             } else {
                 break;
@@ -296,9 +292,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
-                    break;
-                }
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br)) break;
                 logger.info("Found new keys. Retrying...");
             } else {
                 break;
