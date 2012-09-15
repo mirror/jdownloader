@@ -132,17 +132,21 @@ public class GrooveShark extends PluginForHost {
 
     }
 
-    public static String APPJSURL;
-    public static String FLASHURL;
-    public static String COUNTRY;
-    public static String CLIENTREVISION;
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    public static StringContainer APPJSURL       = new StringContainer();
+    public static StringContainer FLASHURL       = new StringContainer();
+    public static StringContainer COUNTRY        = new StringContainer();
+    public static StringContainer CLIENTREVISION = new StringContainer();
 
     public static boolean fetchingKeys(Browser br) throws Exception {
         Browser br2 = br.cloneBrowser();
-        br2.getPage(APPJSURL); // ~2000ms
+        br2.getPage(APPJSURL.string); // ~2000ms
         String jsKey = br2.getRegex("revToken:\"(.*?)\"").getMatch(0);
         SWFDecompressor swfd = new SWFDecompressor();
-        byte[] swfdec = swfd.decompress(FLASHURL);
+        byte[] swfdec = swfd.decompress(FLASHURL.string);
         if (swfdec == null || swfdec.length == 0) { return false; }
 
         for (int i = 0; i < swfdec.length; i++) {
@@ -177,10 +181,10 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static String getClientVersion(Browser br) {
-        if (APPJSURL == null) { return CLIENTREVISION; }
+        if (APPJSURL.string == null) { return CLIENTREVISION.string; }
         Browser appjs = br.cloneBrowser();
         try {
-            appjs.getPage(APPJSURL);
+            appjs.getPage(APPJSURL.string);
         } catch (Throwable e) {
             return null;
         }
@@ -188,31 +192,31 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static boolean getFileVersion(Browser br) {
-        if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
-            APPJSURL = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
-            CLIENTREVISION = getClientVersion(br);
-            CLIENTREVISION = CLIENTREVISION == null ? new Regex(APPJSURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-            FLASHURL = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
-            CLIENTREVISION = CLIENTREVISION == null ? new Regex(FLASHURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-            FLASHURL = FLASHURL == null ? null : LISTEN + FLASHURL;
-            COUNTRY = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
+        if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
+            APPJSURL.string = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
+            CLIENTREVISION.string = getClientVersion(br);
+            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(APPJSURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
+            FLASHURL.string = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
+            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(FLASHURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
+            FLASHURL.string = FLASHURL.string == null ? null : LISTEN + FLASHURL.string;
+            COUNTRY.string = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
         }
-        if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
-            CLIENTREVISION = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
-            if (CLIENTREVISION == null) {
-                CLIENTREVISION = br.getRegex("/themes/themes\\.js\\?(\\d+)\\.").getMatch(0);
-                if (CLIENTREVISION == null) {
-                    CLIENTREVISION = br.getRegex("uri\\.css\\?(\\d+)\\.").getMatch(0);
-                    if (CLIENTREVISION == null) { return false; }
-                    if (!CLIENTREVISION.matches("[\\d+]{8}\\.\\d\\d")) {
-                        CLIENTREVISION = CLIENTREVISION + ".01";
+        if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
+            CLIENTREVISION.string = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
+            if (CLIENTREVISION.string == null) {
+                CLIENTREVISION.string = br.getRegex("/themes/themes\\.js\\?(\\d+)\\.").getMatch(0);
+                if (CLIENTREVISION.string == null) {
+                    CLIENTREVISION.string = br.getRegex("uri\\.css\\?(\\d+)\\.").getMatch(0);
+                    if (CLIENTREVISION.string == null) { return false; }
+                    if (!CLIENTREVISION.string.matches("[\\d+]{8}\\.\\d\\d")) {
+                        CLIENTREVISION.string = CLIENTREVISION.string + ".01";
                     }
                 }
             }
-            APPJSURL = APPJSURL == null ? "http://static.a.gs-cdn.net/gs/app.js?" + CLIENTREVISION + ".03" : APPJSURL;
-            FLASHURL = FLASHURL == null ? LISTEN + "JSQueue.swf?" + CLIENTREVISION + ".01" : FLASHURL;
+            APPJSURL.string = APPJSURL.string == null ? "http://static.a.gs-cdn.net/gs/app.js?" + CLIENTREVISION.string + ".03" : APPJSURL.string;
+            FLASHURL.string = FLASHURL.string == null ? LISTEN + "JSQueue.swf?" + CLIENTREVISION.string + ".01" : FLASHURL.string;
         }
-        if (COUNTRY == null) { return false; }
+        if (COUNTRY.string == null) { return false; }
         return true;
     }
 
@@ -225,14 +229,14 @@ public class GrooveShark extends PluginForHost {
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
-    private String        DLLINK         = null;
-    private String        STREAMKEY      = null;
-    private String        TOKEN          = "";
-    private String        SID            = null;
-    private static String LISTEN         = "http://grooveshark.com/";
-    private static String USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
-    public static String  INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
-    public static String  BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
+    private String             DLLINK         = null;
+    private String             STREAMKEY      = null;
+    private String             TOKEN          = "";
+    private String             SID            = null;
+    private static String      LISTEN         = "http://grooveshark.com/";
+    private static String      USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
+    public static final String INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
+    public static final String BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
 
     public GrooveShark(PluginWrapper wrapper) {
         super(wrapper);
@@ -288,12 +292,12 @@ public class GrooveShark extends PluginForHost {
     }
 
     private String getPostParameterString(Browser ajax, String method) throws IOException, PluginException {
-        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + COUNTRY + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + SID + "\",\"token\":\"" + getToken(method, getSecretKey(ajax)) + "\"},\"method\":\"" + method + "\",";
+        return "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION.string + "\",\"privacy\":0," + COUNTRY.string + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + SID + "\",\"token\":\"" + getToken(method, getSecretKey(ajax)) + "\"},\"method\":\"" + method + "\",";
     }
 
     private String getSecretKey(Browser ajax) throws IOException, PluginException {
         try {
-            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(SID) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"session\":\"" + SID + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
+            ajax.postPageRaw("https://grooveshark.com/" + "more.php?getCommunicationToken", "{\"parameters\":{\"secretKey\":\"" + JDHash.getMD5(SID) + "\"},\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION.string + "\",\"session\":\"" + SID + "\",\"uuid\":\"" + USERUID + "\"},\"method\":\"getCommunicationToken\"}");
         } catch (Throwable e) {
             try {
                 org.appwork.utils.logging2.LogSource.exception(logger, e);
@@ -353,7 +357,7 @@ public class GrooveShark extends PluginForHost {
             if (songID == null) {
                 for (int i = 0; i < 2; i++) {
                     br.getHeaders().put("Content-Type", "application/json");
-                    songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION + "\",\"privacy\":0," + COUNTRY + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + SID + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + COUNTRY + "}}";
+                    songID = "{\"header\":{\"client\":\"htmlshark\",\"clientRevision\":\"" + CLIENTREVISION.string + "\",\"privacy\":0," + COUNTRY.string + ",\"uuid\":\"" + USERUID + "\",\"session\":\"" + SID + "\",\"token\":\"" + getToken("getSongFromToken", secretKey) + "\"},\"method\":\"getSongFromToken\",\"parameters\":{\"token\":\"" + TOKEN + "\"," + COUNTRY.string + "}}";
                     br.postPageRaw(LISTEN + "more.php?getSongFromToken", songID);
 
                     if (i == 0 && br.getRegex(INVALIDTOKEN).matches()) {
@@ -372,7 +376,7 @@ public class GrooveShark extends PluginForHost {
             // get streamKey
             for (int i = 0; i < 2; i++) {
                 br.getHeaders().put("Content-Type", "application/json");
-                STREAMKEY = "{\"method\":\"getStreamKeyFromSongIDEx\",\"parameters\":{\"songID\":" + songID + ",\"mobile\":false," + COUNTRY + ",\"prefetch\":false},\"header\":{\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"uuid\":\"" + USERUID + "\"," + COUNTRY + ",\"privacy\":0,\"client\":\"jsqueue\",\"session\":\"" + SID + "\",\"clientRevision\":\"" + CLIENTREVISION + "\"}}";
+                STREAMKEY = "{\"method\":\"getStreamKeyFromSongIDEx\",\"parameters\":{\"songID\":" + songID + ",\"mobile\":false," + COUNTRY.string + ",\"prefetch\":false},\"header\":{\"token\":\"" + getToken("getStreamKeyFromSongIDEx", secretKey) + "\",\"uuid\":\"" + USERUID + "\"," + COUNTRY.string + ",\"privacy\":0,\"client\":\"jsqueue\",\"session\":\"" + SID + "\",\"clientRevision\":\"" + CLIENTREVISION.string + "\"}}";
                 br.postPageRaw(LISTEN + "more.php?getStreamKeyFromSongIDEx", STREAMKEY);
 
                 if (i == 0 && br.getRegex(INVALIDTOKEN).matches()) {
@@ -433,7 +437,7 @@ public class GrooveShark extends PluginForHost {
             Browser ajax = br.cloneBrowser();
 
             for (int i = 0; i < 2; i++) {
-                String rawPost = getPostParameterString(ajax, "getTokenForSong") + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + COUNTRY + "}}";
+                String rawPost = getPostParameterString(ajax, "getTokenForSong") + "\"parameters\":{\"songID\":\"" + downloadLink.getStringProperty("SongID") + "\"," + COUNTRY.string + "}}";
                 ajax.getHeaders().put("Content-Type", "application/json");
                 ajax.postPageRaw(LISTEN + "more.php?getTokenForSong", rawPost);
                 TOKEN = ajax.getRegex("Token\":\"(\\w+)\"").getMatch(0);
