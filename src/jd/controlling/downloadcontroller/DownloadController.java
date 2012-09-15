@@ -672,7 +672,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 if (pluginForHost != null) {
                     localLink.setDefaultPlugin(pluginForHost);
                 } else {
-                    logger.severe("Could not find plugin " + localLink.getHost() + " for " + localLink.getName());
+                    logger.severe("Could not find plugin: " + localLink.getHost() + " for " + localLink.getName());
                 }
             }
             if (removeList.size() > 0) {
