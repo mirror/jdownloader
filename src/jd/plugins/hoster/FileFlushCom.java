@@ -56,7 +56,7 @@ public class FileFlushCom extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://fileflush.com";
-    private static final Object LOCK        = new Object();
+    private static Object LOCK        = new Object();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));

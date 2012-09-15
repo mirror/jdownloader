@@ -33,14 +33,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "l4dmaps.com" }, urls = { "http://(www\\.)?l4dmaps\\.com/(details|mirrors|file\\-download)\\.php\\?file=[0-9]+" }, flags = { 0 })
 public class L4dMapsCom extends PluginForHost {
-    private static final String   l4dservers = "l4dservers";
+    private static final String l4dservers = "l4dservers";
 
     /** The list of server values displayed to the user */
-    private static final String[] servers;
-
-    static {
-        servers = new String[] { "E-Frag #1", "GameServers.com" };
-    }
+    private final String[]      servers    = new String[] { "E-Frag #1", "GameServers.com" };
 
     public L4dMapsCom(PluginWrapper wrapper) {
         super(wrapper);

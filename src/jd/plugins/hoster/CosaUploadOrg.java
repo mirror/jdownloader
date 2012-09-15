@@ -54,7 +54,7 @@ public class CosaUploadOrg extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://cosaupload.org";
-    private static final Object LOCK        = new Object();
+    private static Object LOCK        = new Object();
     private String              FINALLINK   = null;
 
     public void correctDownloadLink(DownloadLink link) {

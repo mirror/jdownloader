@@ -68,7 +68,7 @@ public class FireGetCom extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static final Object  LOCK                         = new Object();
+    private static Object LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.7-raz

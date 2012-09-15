@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#(\\!|%21)?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
-    private static String           LISTEN  = "http://grooveshark.com/";
+    private String                  LISTEN  = "http://grooveshark.com/";
     private static String           USERUID = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
     private String                  USERID;
     private String                  USERNAME;
@@ -171,7 +171,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
                     if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                         logger.warning("Existing keys are old, looking for new keys.");
-                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL, jd.plugins.hoster.GrooveShark.FLASHURL)) {
+                        if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
                             break;
                         }
                         rawPost = getPostParameterString(parameter, method);
@@ -248,7 +248,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL, jd.plugins.hoster.GrooveShark.FLASHURL)) {
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
                     break;
                 }
                 logger.info("Found new keys. Retrying...");
@@ -296,7 +296,7 @@ public class GrvShrkCm extends PluginForDecrypt {
 
             if (j == 0 && br.containsHTML(jd.plugins.hoster.GrooveShark.INVALIDTOKEN)) {
                 logger.warning("Existing keys are old, looking for new keys.");
-                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL, jd.plugins.hoster.GrooveShark.FLASHURL)) {
+                if (!jd.plugins.hoster.GrooveShark.fetchingKeys(br, jd.plugins.hoster.GrooveShark.APPJSURL.string, jd.plugins.hoster.GrooveShark.FLASHURL.string)) {
                     break;
                 }
                 logger.info("Found new keys. Retrying...");

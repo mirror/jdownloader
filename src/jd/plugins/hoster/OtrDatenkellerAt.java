@@ -42,10 +42,10 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "otr.datenkeller.at" }, urls = { "http://(www\\.)?otr\\.datenkeller\\.at/\\?(file|getFile)=.+" }, flags = { 2 })
 public class OtrDatenkellerAt extends PluginForHost {
 
-    public static String        agent             = RandomUserAgent.generate();
-    private static final String DOWNLOADAVAILABLE = "onclick=\"startCount";
-    private static final String MAINPAGE          = "http://otr.datenkeller.at";
-    private static final Object LOCK              = new Object();
+    public static String  agent             = RandomUserAgent.generate();
+    private final String  DOWNLOADAVAILABLE = "onclick=\"startCount";
+    private final String  MAINPAGE          = "http://otr.datenkeller.at";
+    private static Object LOCK              = new Object();
 
     public OtrDatenkellerAt(PluginWrapper wrapper) {
         super(wrapper);

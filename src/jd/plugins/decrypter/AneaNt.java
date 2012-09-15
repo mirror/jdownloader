@@ -42,7 +42,7 @@ public class AneaNt extends PluginForDecrypt {
     // because jd urldecodes %23 into #. Which results in 404. Impractical to
     // use directhttp
 
-    private static String agent = null;
+    private String agent = null;
 
     public AneaNt(PluginWrapper wrapper) {
         super(wrapper);

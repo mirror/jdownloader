@@ -62,7 +62,7 @@ public class UploadBazCom extends PluginForHost {
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static final Object  LOCK                = new Object();
+    private static Object        LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES

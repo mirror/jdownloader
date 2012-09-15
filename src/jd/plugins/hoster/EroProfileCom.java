@@ -52,7 +52,7 @@ public class EroProfileCom extends PluginForHost {
     }
 
     private static final String VIDEOLINK = "http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-]+";
-    private static final Object LOCK      = new Object();
+    private static Object LOCK      = new Object();
     private static final String MAINPAGE  = "http://eroprofile.com";
     public static final String  NOACCESS  = "(>You do not have the required privileges to view this page|>No access<)";
 

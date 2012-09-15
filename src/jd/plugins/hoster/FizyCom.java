@@ -34,11 +34,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fizy.com" }, urls = { "rtmphttp://((www|[a-z]+)\\.)?fizy\\.com/(#?s/)?[a-z0-9]{2,}" }, flags = { 32 })
 public class FizyCom extends PluginForHost {
 
-    private String        clipUrl              = null;
+    private String clipUrl              = null;
 
-    private static String clipNetConnectionUrl = "rtmp://fizy.mncdn.net/fizy/";
+    private String clipNetConnectionUrl = "rtmp://fizy.mncdn.net/fizy/";
 
-    private static String INCLUDING_YT         = "INCLUDING_YT";
+    private String INCLUDING_YT         = "INCLUDING_YT";
 
     public FizyCom(final PluginWrapper wrapper) {
         super(wrapper);

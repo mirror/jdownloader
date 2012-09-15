@@ -50,17 +50,17 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
-    private final static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
-    private final static Object                                    LOCK                 = new Object();
-    private final static HashMap<Long, Long>                       noFreeSlot           = new HashMap<Long, Long>();
-    private final static HashMap<Long, Long>                       overloadedServer     = new HashMap<Long, Long>();
-    private long                                                   server               = -1;
-    private final static long                                      waitNoFreeSlot       = 10 * 60 * 1000l;
-    private final static long                                      waitOverloadedServer = 5 * 60 * 1000l;
-    private final static String                                    UA                   = RandomUserAgent.generate();
-    private boolean                                                hideID               = true;
-    private static AtomicInteger                                   maxChunksnew         = new AtomicInteger(-2);
-    private static char[]                                          FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
+    private static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
+    private static Object                                    LOCK                 = new Object();
+    private static HashMap<Long, Long>                       noFreeSlot           = new HashMap<Long, Long>();
+    private static HashMap<Long, Long>                       overloadedServer     = new HashMap<Long, Long>();
+    private long                                             server               = -1;
+    private long                                             waitNoFreeSlot       = 10 * 60 * 1000l;
+    private long                                             waitOverloadedServer = 5 * 60 * 1000l;
+    private static String                                    UA                   = RandomUserAgent.generate();
+    private boolean                                          hideID               = true;
+    private static AtomicInteger                             maxChunksnew         = new AtomicInteger(-2);
+    private char[]                                           FILENAMEREPLACES     = new char[] { '_', '&', 'ü' };
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);

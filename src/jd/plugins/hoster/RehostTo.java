@@ -36,9 +36,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rehost.to" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs-rehost" }, flags = { 2 })
 public class RehostTo extends PluginForHost {
 
-    private static final HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static final String                                  mName              = "rehost.to";
-    private static final String                                  mProt              = "https://";
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            mName              = "rehost.to";
+    private static final String                            mProt              = "https://";
 
     public RehostTo(PluginWrapper wrapper) {
         super(wrapper);

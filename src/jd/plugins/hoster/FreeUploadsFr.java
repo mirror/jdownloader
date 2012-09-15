@@ -41,7 +41,7 @@ public class FreeUploadsFr extends PluginForHost {
     }
 
     private static final String COOKIE_HOST     = "http://freeuploads.fr";
-    private static final int    DEFAULTWAITTIME = 0;
+    private final int           DEFAULTWAITTIME = 0;
 
     // MhfScriptBasic 1.7
     // FREE limits: 1 * 1

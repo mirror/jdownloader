@@ -48,7 +48,7 @@ public class FileniumCom extends PluginForHost {
     /**
      * TODO: better error handling, as there exits none at the moment
      */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public FileniumCom(PluginWrapper wrapper) {
         super(wrapper);

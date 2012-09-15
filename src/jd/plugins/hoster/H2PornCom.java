@@ -36,8 +36,8 @@ import org.appwork.utils.Hash;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "h2porn.com" }, urls = { "http://(www\\.)?h2porn\\.com/videos/[\\w\\-]+" }, flags = { 0 })
 public class H2PornCom extends PluginForHost {
 
-    private String        DLLINK = null;
-    private static String AHV    = "MDcyOWE3MDFmNmJjMTI2NzcwNzYyZTAwODZmZTUxNGY=";
+    private String DLLINK = null;
+    private String AHV    = "MDcyOWE3MDFmNmJjMTI2NzcwNzYyZTAwODZmZTUxNGY=";
 
     public H2PornCom(final PluginWrapper wrapper) {
         super(wrapper);

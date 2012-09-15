@@ -32,16 +32,15 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "protected.socadvnet.com" }, urls = { "http://(www\\.)?protected\\.socadvnet\\.com/\\?[a-z0-9-]+" }, flags = { 0 })
 public class PrtctdScdvntCm extends PluginForDecrypt {
 
-    private static String MAINPAGE = "http://protected.socadvnet.com/";
+    private String MAINPAGE = "http://protected.socadvnet.com/";
 
     public PrtctdScdvntCm(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     /*
-     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com
-     * links as "protected.socadvnet.com" only allows crypting links of this
-     * host!
+     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com links as "protected.socadvnet.com" only allows crypting links
+     * of this host!
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {

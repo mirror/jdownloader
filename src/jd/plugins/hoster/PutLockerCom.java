@@ -44,9 +44,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/(file|embed)/[A-Z0-9]+" }, flags = { 2 })
 public class PutLockerCom extends PluginForHost {
 
-    private static final String MAINPAGE = "http://www.putlocker.com";
-    private static final Object LOCK     = new Object();
-    private static String       agent    = null;
+    private final String  MAINPAGE = "http://www.putlocker.com";
+    private static Object LOCK     = new Object();
+    private String        agent    = null;
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);

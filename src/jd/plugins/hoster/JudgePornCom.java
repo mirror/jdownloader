@@ -36,8 +36,8 @@ import org.appwork.utils.Hash;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "judgeporn.com" }, urls = { "http://(www\\.)?judgeporn.com/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class JudgePornCom extends PluginForHost {
 
-    private String        DLLINK = null;
-    private static String AHV    = "ZmFlZWViODhhMzkwZDk3NzAyNWRhMjlhNTEyNTQ2MDA=";
+    private String DLLINK = null;
+    private String AHV    = "ZmFlZWViODhhMzkwZDk3NzAyNWRhMjlhNTEyNTQ2MDA=";
 
     public JudgePornCom(PluginWrapper wrapper) {
         super(wrapper);

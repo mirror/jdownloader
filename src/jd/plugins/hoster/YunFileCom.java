@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class YunFileCom extends PluginForHost {
     private static final String MAINPAGE = "http://yunfile.com/";
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     // Works like HowFileCom
     public YunFileCom(PluginWrapper wrapper) {

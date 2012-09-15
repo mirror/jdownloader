@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rapidshare.com" }, urls = { "https?://(www\\.)?rapidshare\\.com/(users/\\w+(/\\d+)?|\\#\\!users\\|\\d+-[0-9a-f]+(\\|\\d+)?)" }, flags = { 0 })
 public class RapidshareFolder extends PluginForDecrypt {
-    public static final int MAX_FOLDERS = 10;
+    public final int MAX_FOLDERS = 10;
 
     public RapidshareFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,10 +43,10 @@ public class RapidshareFolder extends PluginForDecrypt {
 
         String[] folderInfo = new Regex(br.getURL(), "https?://(?:www\\.)?rapidshare\\.com/\\#\\!users\\|(\\d+-[0-9a-f]+)(?:\\|(\\d+))?").getRow(0);
         if (folderInfo == null || folderInfo[0] == null) return decryptedLinks;
-        
+
         String contact = folderInfo[0];
         String folder = folderInfo[1];
-        if (folderInfo[1] == null){
+        if (folderInfo[1] == null) {
             folder = new Regex(parameter, "https?://(?:www\\.)?rapidshare\\.com/users/\\w+/(\\d+)").getMatch(0);
         }
 

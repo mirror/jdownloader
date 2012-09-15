@@ -53,7 +53,7 @@ import jd.utils.locale.JDL;
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginForDecrypt {
 
-    private static final String NEWSREGEX2 = "<div id=\\'prep2\\' dir=\\'ltr\\' ><a  href=\\'(.*?)\\'";
+    private final String NEWSREGEX2 = "<div id=\\'prep2\\' dir=\\'ltr\\' ><a  href=\\'(.*?)\\'";
 
     public DecrypterForRedirectServicesWithoutDirectRedirects(final PluginWrapper wrapper) {
         super(wrapper);

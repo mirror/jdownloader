@@ -44,7 +44,7 @@ import jd.utils.JDUtilities;
 public class NkPlGallery extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK            = new Object();
+    private static Object       LOCK            = new Object();
 
     private static final String MAINPAGE        = "http://nk.pl/";
     private static final String POSTPAGE        = "https://nk.pl/login";

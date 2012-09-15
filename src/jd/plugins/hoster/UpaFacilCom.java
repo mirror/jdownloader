@@ -147,7 +147,7 @@ public class UpaFacilCom extends PluginForHost {
         return br.getRegex(">" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
     }
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     public void login(Account account, boolean force) throws Exception {

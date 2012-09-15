@@ -51,7 +51,7 @@ public class NetKupsCom extends PluginForHost {
         return "http://netkups.com/?page=legal";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private final String        MAINPAGE = "http://netkups.com";
 
     @Override

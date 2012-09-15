@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -44,11 +45,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "freakshare.net" }, urls = { "http://(www\\.)?freakshare\\.(net|com)/files?/[\\w]+/.+(\\.html)?" }, flags = { 2 })
 public class Freaksharenet extends PluginForHost {
 
-    private boolean             NOPREMIUM          = false;
-    private static final String WAIT1              = "WAIT1";
-    private static int          MAXPREMDLS         = -1;
-    private static final String MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
-    private static final String LIMITREACHED       = "Your Traffic is used up for today";
+    private boolean              NOPREMIUM          = false;
+    private static final String  WAIT1              = "WAIT1";
+    private static AtomicInteger MAXPREMDLS         = new AtomicInteger(-1);
+    private static final String  MAXDLSLIMITMESSAGE = "Sorry, you cant download more then";
+    private static final String  LIMITREACHED       = "Your Traffic is used up for today";
 
     public Freaksharenet(final PluginWrapper wrapper) {
         super(wrapper);
@@ -231,7 +232,7 @@ public class Freaksharenet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return MAXPREMDLS;
+        return MAXPREMDLS.get();
     }
 
     @Override
@@ -323,9 +324,9 @@ public class Freaksharenet extends PluginForHost {
         }
         if (!br.containsHTML("<td><b>Member \\(premium\\)</b></td>")) {
             NOPREMIUM = true;
-            MAXPREMDLS = 1;
+            MAXPREMDLS.set(1);
         } else {
-            MAXPREMDLS = -1;
+            MAXPREMDLS.set(-1);
         }
     }
 

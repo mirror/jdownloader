@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -59,7 +60,7 @@ public class Srnnks extends PluginForDecrypt {
             // this makes the jobber useless... but we have to use the 300 ms to
             // work around sj's firewall
             try {
-                Thread.sleep(Srnnks.FW_WAIT);
+                Thread.sleep(FW_WAIT);
                 try {
                     if (isAbort()) return;
                 } catch (final Throwable e) {
@@ -74,7 +75,7 @@ public class Srnnks extends PluginForDecrypt {
                     final String link = this.br.getRegex("SRC=\"(http://download\\.serienjunkies\\.org.*?)\"").getMatch(0);
 
                     if (link != null) {
-                        Thread.sleep(Srnnks.FW_WAIT);
+                        Thread.sleep(FW_WAIT);
                         try {
                             if (isAbort()) return;
                         } catch (final Throwable e) {
@@ -101,21 +102,21 @@ public class Srnnks extends PluginForDecrypt {
         }
     }
 
-    private final static ArrayList<String> passwords           = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
-    private static long                    LATEST_BLOCK_DETECT = 0;
+    private final ArrayList<String> passwords           = new ArrayList<String>(Arrays.asList(new String[] { "serienjunkies.dl.am", "serienjunkies.org", "dokujunkies.org" }));
+    private static AtomicLong       LATEST_BLOCK_DETECT = new AtomicLong(0);
 
-    private static long                    LATEST_RECONNECT    = 0;
-    private static Object                  GLOBAL_LOCK         = new Object();
+    private static AtomicLong       LATEST_RECONNECT    = new AtomicLong(0);
+    private static Object           GLOBAL_LOCK         = new Object();
 
     // seems like sj does block ips if requestlimit is not ok
-    private static final long              FW_WAIT             = 300;
-    private static final Object            LOCK                = new Object();
-    private static AtomicInteger           RUNNING             = new AtomicInteger(0);
+    private final long              FW_WAIT             = 300;
+    private static Object           LOCK                = new Object();
+    private static AtomicInteger    RUNNING             = new AtomicInteger(0);
 
     private synchronized static boolean limitsReached(final Browser br) throws IOException {
         int ret = -100;
-        long OldBlock = Srnnks.LATEST_BLOCK_DETECT;
-        long OldReconnect = Srnnks.LATEST_RECONNECT;
+        long OldBlock = Srnnks.LATEST_BLOCK_DETECT.get();
+        long OldReconnect = Srnnks.LATEST_RECONNECT.get();
 
         if (br == null) {
             ret = UserIO.RETURN_OK;
@@ -126,7 +127,7 @@ public class Srnnks extends PluginForDecrypt {
             }
 
             if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
-                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
+                Srnnks.LATEST_BLOCK_DETECT.set(System.currentTimeMillis());
                 if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
@@ -137,7 +138,7 @@ public class Srnnks extends PluginForDecrypt {
 
             }
             if (br.containsHTML("Download-Limit")) {
-                Srnnks.LATEST_BLOCK_DETECT = System.currentTimeMillis();
+                Srnnks.LATEST_BLOCK_DETECT.set(System.currentTimeMillis());
                 if (System.currentTimeMillis() - OldBlock < 60000) { return true; }
                 if (System.currentTimeMillis() - OldReconnect < 15000) {
                     // redo the request
@@ -151,7 +152,7 @@ public class Srnnks extends PluginForDecrypt {
             if (UserIO.isOK(ret)) {
 
                 if (Reconnecter.waitForNewIP(15000, false)) {
-                    Srnnks.LATEST_RECONNECT = System.currentTimeMillis();
+                    Srnnks.LATEST_RECONNECT.set(System.currentTimeMillis());
                     // redo the request
                     br.loadConnection(br.openRequestConnection(br.getRequest().cloneRequest()));
 
@@ -172,7 +173,7 @@ public class Srnnks extends PluginForDecrypt {
     @Override
     protected DownloadLink createDownloadlink(final String link) {
         final DownloadLink dlink = super.createDownloadlink(link);
-        dlink.setSourcePluginPasswordList(Srnnks.passwords);
+        dlink.setSourcePluginPasswordList(passwords);
         try {
             this.distribute(dlink);
         } catch (Throwable t) {
@@ -230,7 +231,7 @@ public class Srnnks extends PluginForDecrypt {
                         synchronized (LOCK) {
                             System.out.println(parameter.getCryptedUrl());
                             synchronized (Srnnks.GLOBAL_LOCK) {
-                                Thread.sleep(Srnnks.FW_WAIT);
+                                Thread.sleep(FW_WAIT);
                                 try {
                                     if (isAbort()) return new ArrayList<DownloadLink>(ret);
                                 } catch (final Throwable e) {
@@ -243,7 +244,7 @@ public class Srnnks extends PluginForDecrypt {
                             if (this.br.containsHTML("<FRAME SRC")) {
                                 // progress.setStatusText("Lade Downloadseitenframe");
                                 synchronized (Srnnks.GLOBAL_LOCK) {
-                                    Thread.sleep(Srnnks.FW_WAIT);
+                                    Thread.sleep(FW_WAIT);
                                     try {
                                         if (isAbort()) return new ArrayList<DownloadLink>(ret);
                                     } catch (final Throwable e) {
@@ -310,7 +311,7 @@ public class Srnnks extends PluginForDecrypt {
                                 final File captcha = this.getLocalCaptchaFile(".png");
                                 // captcha laden
                                 synchronized (Srnnks.GLOBAL_LOCK) {
-                                    Thread.sleep(Srnnks.FW_WAIT);
+                                    Thread.sleep(FW_WAIT);
                                     try {
                                         if (isAbort()) return new ArrayList<DownloadLink>(ret);
                                     } catch (final Throwable e) {
@@ -355,7 +356,7 @@ public class Srnnks extends PluginForDecrypt {
                                 form.getInputFieldByType("text").setValue(code);
                                 // System.out.println(code);
                                 synchronized (Srnnks.GLOBAL_LOCK) {
-                                    Thread.sleep(Srnnks.FW_WAIT);
+                                    Thread.sleep(FW_WAIT);
                                     this.br.submitForm(form);
                                 }
 

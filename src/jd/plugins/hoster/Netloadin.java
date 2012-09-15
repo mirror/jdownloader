@@ -51,7 +51,7 @@ import org.appwork.utils.os.CrossSystem;
 public class Netloadin extends PluginForHost {
     static private final String AGB_LINK  = "http://netload.in/index.php?id=13";
 
-    static public final Object  LOGINLOCK = new Object();
+    static public Object        LOGINLOCK = new Object();
 
     private static String getID(String link) {
         String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);

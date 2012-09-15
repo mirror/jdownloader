@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import jd.PluginWrapper;
 import jd.captcha.easy.load.LoadImage;
 import jd.http.RandomUserAgent;
@@ -30,9 +32,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "books.google.com" }, urls = { "http://googlebooksdecrypter.[a-z]+/books\\?id=.*&pg=.*" }, flags = { 0 })
 public class GoogleBooks extends PluginForHost {
 
-    private static int    counter = 0;
+    private static AtomicInteger counter = new AtomicInteger(0);
 
-    private static Object LOCK    = new Object();
+    private static Object        LOCK    = new Object();
 
     public GoogleBooks(PluginWrapper wrapper) {
         super(wrapper);
@@ -79,13 +81,13 @@ public class GoogleBooks extends PluginForHost {
         if (con.getContentType().contains("html")) {
             br.followConnection();
             synchronized (LOCK) {
-                if (counter > 10) {
+                if (counter.get() > 10) {
                     /* too many failed lets wait and retry later */
-                    counter = 0;
+                    counter.set(0);
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 } else {
                     /* lets temp unavail this download, maybe it works later */
-                    counter++;
+                    counter.incrementAndGet();
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
                 }
             }
@@ -113,7 +115,7 @@ public class GoogleBooks extends PluginForHost {
 
     @Override
     public void reset() {
-        counter = 0;
+        counter.set(0);
     }
 
     @Override

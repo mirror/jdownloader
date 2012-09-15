@@ -132,10 +132,14 @@ public class GrooveShark extends PluginForHost {
 
     }
 
-    public static String APPJSURL;
-    public static String FLASHURL;
-    public static String COUNTRY;
-    public static String CLIENTREVISION;
+    public static class StringContainer {
+        public String string = null;
+    }
+
+    public static StringContainer APPJSURL       = new StringContainer();
+    public static StringContainer FLASHURL       = new StringContainer();
+    public static StringContainer COUNTRY        = new StringContainer();
+    public static StringContainer CLIENTREVISION = new StringContainer();
 
     public static boolean fetchingKeys(Browser br, String jurl, String furl) throws Exception {
         Browser br2 = br.cloneBrowser();
@@ -177,10 +181,10 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static String getClientVersion(Browser br) {
-        if (APPJSURL == null) { return CLIENTREVISION; }
+        if (APPJSURL.string == null) { return CLIENTREVISION.string; }
         Browser appjs = br.cloneBrowser();
         try {
-            appjs.getPage(APPJSURL);
+            appjs.getPage(APPJSURL.string);
         } catch (Throwable e) {
             return null;
         }
@@ -188,29 +192,29 @@ public class GrooveShark extends PluginForHost {
     }
 
     public static boolean getFileVersion(Browser br) {
-        if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
-            APPJSURL = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
-            CLIENTREVISION = getClientVersion(br);
-            CLIENTREVISION = CLIENTREVISION == null ? new Regex(APPJSURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-            FLASHURL = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
-            CLIENTREVISION = CLIENTREVISION == null ? new Regex(FLASHURL, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION;
-            FLASHURL = FLASHURL == null ? null : LISTEN + FLASHURL;
-            COUNTRY = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
+        if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
+            APPJSURL.string = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
+            CLIENTREVISION.string = getClientVersion(br);
+            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(APPJSURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
+            FLASHURL.string = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
+            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(FLASHURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
+            FLASHURL.string = FLASHURL.string == null ? null : LISTEN + FLASHURL;
+            COUNTRY.string = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
         }
-        if (APPJSURL == null || FLASHURL == null || CLIENTREVISION == null) {
-            CLIENTREVISION = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
-            if (CLIENTREVISION == null) {
-                CLIENTREVISION = br.getRegex("/themes/themes\\.js\\?(\\d+)\\.").getMatch(0);
-                if (CLIENTREVISION == null) {
-                    CLIENTREVISION = br.getRegex("uri\\.css\\?(\\d+)\\.").getMatch(0);
-                    if (CLIENTREVISION == null) { return false; }
-                    if (!CLIENTREVISION.matches("[\\d+]{8}\\.\\d\\d")) {
-                        CLIENTREVISION = CLIENTREVISION + ".01";
+        if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
+            CLIENTREVISION.string = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
+            if (CLIENTREVISION.string == null) {
+                CLIENTREVISION.string = br.getRegex("/themes/themes\\.js\\?(\\d+)\\.").getMatch(0);
+                if (CLIENTREVISION.string == null) {
+                    CLIENTREVISION.string = br.getRegex("uri\\.css\\?(\\d+)\\.").getMatch(0);
+                    if (CLIENTREVISION.string == null) { return false; }
+                    if (!CLIENTREVISION.string.matches("[\\d+]{8}\\.\\d\\d")) {
+                        CLIENTREVISION.string = CLIENTREVISION.string + ".01";
                     }
                 }
             }
-            APPJSURL = APPJSURL == null ? "http://static.a.gs-cdn.net/gs/app.js?" + CLIENTREVISION + ".03" : APPJSURL;
-            FLASHURL = FLASHURL == null ? LISTEN + "JSQueue.swf?" + CLIENTREVISION + ".01" : FLASHURL;
+            APPJSURL.string = APPJSURL.string == null ? "http://static.a.gs-cdn.net/gs/app.js?" + CLIENTREVISION.string + ".03" : APPJSURL.string;
+            FLASHURL.string = FLASHURL.string == null ? LISTEN + "JSQueue.swf?" + CLIENTREVISION.string + ".01" : FLASHURL.string;
         }
         if (COUNTRY == null) { return false; }
         return true;
@@ -225,14 +229,14 @@ public class GrooveShark extends PluginForHost {
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
 
-    private String        DLLINK         = null;
-    private String        STREAMKEY      = null;
-    private String        TOKEN          = "";
-    private String        SID            = null;
-    private static String LISTEN         = "http://grooveshark.com/";
-    private static String USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
-    public static String  INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
-    public static String  BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
+    private String              DLLINK         = null;
+    private String              STREAMKEY      = null;
+    private String              TOKEN          = "";
+    private String              SID            = null;
+    private static final String LISTEN         = "http://grooveshark.com/";
+    private static String       USERUID        = UUID.randomUUID().toString().toUpperCase(Locale.ENGLISH);
+    public static final String  INVALIDTOKEN   = "\\{\"code\":\\d+,\"message\":\"invalid token\"\\}";
+    public static final String  BLOCKEDGERMANY = "Der Zugriff auf \"grooveshark.com\" von Deutschland aus ist nicht mehr möglich!";
 
     public GrooveShark(PluginWrapper wrapper) {
         super(wrapper);
@@ -358,7 +362,7 @@ public class GrooveShark extends PluginForHost {
 
                     if (i == 0 && br.getRegex(INVALIDTOKEN).matches()) {
                         logger.warning("Existing keys are old, looking for new keys.");
-                        if (!fetchingKeys(br, APPJSURL, FLASHURL)) {
+                        if (!fetchingKeys(br, APPJSURL.string, FLASHURL.string)) {
                             break;
                         }
                         logger.info("Found new keys. Retrying...");
@@ -377,7 +381,7 @@ public class GrooveShark extends PluginForHost {
 
                 if (i == 0 && br.getRegex(INVALIDTOKEN).matches()) {
                     logger.warning("Existing keys are old, looking for new keys.");
-                    if (!fetchingKeys(br, APPJSURL, FLASHURL)) {
+                    if (!fetchingKeys(br, APPJSURL.string, FLASHURL.string)) {
                         break;
                     }
                     logger.info("Found new keys. Retrying...");
@@ -440,7 +444,7 @@ public class GrooveShark extends PluginForHost {
                 // valid secret key?
                 if (i == 0 && ajax.containsHTML(INVALIDTOKEN)) {
                     logger.warning("Existing keys are old, looking for new keys.");
-                    if (!fetchingKeys(ajax, APPJSURL, FLASHURL)) {
+                    if (!fetchingKeys(ajax, APPJSURL.string, FLASHURL.string)) {
                         break;
                     }
                     logger.info("Found new keys. Retrying...");

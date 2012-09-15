@@ -58,7 +58,7 @@ public class MediafireCom extends PluginForHost {
     // A alternative solution for providing random user agents.
     // last updated: 11-07-2012
     // raztoki
-    private static ArrayList<String> stringAgent = new ArrayList<String>();
+    private static final ArrayList<String> stringAgent = new ArrayList<String>();
     static {
         // Internet Explorer
         // release:
@@ -397,13 +397,10 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array.
-     * This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release
-     * dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
-     * @return eg.
-     *         "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
         final Random rand = new Random();
@@ -416,7 +413,7 @@ public class MediafireCom extends PluginForHost {
 
     /* Agents from portable devices */
 
-    private static ArrayList<String> portableAgent = new ArrayList<String>();
+    private static final ArrayList<String> portableAgent = new ArrayList<String>();
     static {
         portableAgent.add("Mozilla/5.0 (Android; Linux armv7l; rv:10.0.1) Gecko/20120208 Firefox/10.0.1 Fennec/10.0.1");
         portableAgent.add("Mozilla/5.0 (Android; Tablet; rv:10.0.4) Gecko/10.0.4 Firefox/10.0.4 Fennec/10.0.4");
@@ -468,13 +465,10 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified
-     * array. This array contains current user agents gathered from httpd access
-     * logs. Benefits over RandomUserAgent.* are: versions and respective
-     * release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
-     * @return eg.
-     *         "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
+     * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
         final Random rand = new Random();
@@ -485,14 +479,14 @@ public class MediafireCom extends PluginForHost {
 
     /** end of random agents **/
 
-    private static final String                                    PRIVATEFILE             = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
-    private static AtomicInteger                                   maxPrem                 = new AtomicInteger(1);
-    private static final String                                    TEMPUNAVAILABLE         = ">Temporarily Unavailable<";
-    private static final String                                    TEMPUNAVAILABLEUSERTEXT = JDL.L("plugins.hoster.mediafirecom.temporarilyunavailble", "This file is temporarily unavailable");
+    private static final String                              PRIVATEFILE             = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+    private static AtomicInteger                             maxPrem                 = new AtomicInteger(1);
+    private static final String                              TEMPUNAVAILABLE         = ">Temporarily Unavailable<";
+    private static final String                              TEMPUNAVAILABLEUSERTEXT = JDL.L("plugins.hoster.mediafirecom.temporarilyunavailble", "This file is temporarily unavailable");
     /**
      * Map to cache the configuration keys
      */
-    private static final HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS      = new HashMap<Account, HashMap<String, String>>();
+    private static HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS      = new HashMap<Account, HashMap<String, String>>();
 
     public static abstract class PasswordSolver {
 
@@ -547,17 +541,16 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private static final String agent             = stringUserAgent();
+    private static String       agent             = stringUserAgent();
 
     static private final String offlinelink       = "tos_aup_violation";
 
     /** The name of the error page used by MediaFire */
     private static final String ERROR_PAGE        = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is
-     * available
+     * The number of retries to be performed in order to determine if a file is available
      */
-    private static final int    NUMBER_OF_RETRIES = 3;
+    private int                 NUMBER_OF_RETRIES = 3;
 
     private String              fileID;
 
@@ -648,7 +641,7 @@ public class MediafireCom extends PluginForHost {
         this.br.setDebug(true);
         boolean captchaCorrect = false;
         if (account == null) this.br.getHeaders().put("User-Agent", MediafireCom.agent);
-        for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
+        for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
             if (url != null) {
                 break;
             }
@@ -996,8 +989,7 @@ public class MediafireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         /**
-         * Don't delete cookies as the user might uses a free account to
-         * download
+         * Don't delete cookies as the user might uses a free account to download
          */
         // this.setBrowserExclusive();
         this.br.setFollowRedirects(false);
@@ -1005,7 +997,7 @@ public class MediafireCom extends PluginForHost {
         downloadLink.setProperty("type", "");
         final String url = downloadLink.getDownloadURL();
         dlURL = null;
-        for (int i = 0; i < MediafireCom.NUMBER_OF_RETRIES; i++) {
+        for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
             try {
                 this.br.getPage(url);
                 String redirectURL = this.br.getRedirectLocation();

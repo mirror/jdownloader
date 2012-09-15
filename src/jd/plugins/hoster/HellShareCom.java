@@ -43,8 +43,8 @@ public class HellShareCom extends PluginForHost {
 
     // edt: added 2 constants for testing, in normal work - waittime when server
     // is 100% load should be 2-5 minutes
-    private static final long   WAITTIME100PERCENT = 60 * 1000l;
-    private static final long   WAITTIMEDAILYLIMIT = 4 * 3600 * 1000l;
+    private final long          WAITTIME100PERCENT = 60 * 1000l;
+    private final long          WAITTIMEDAILYLIMIT = 4 * 3600 * 1000l;
 
     public HellShareCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -330,18 +330,15 @@ public class HellShareCom extends PluginForHost {
          * set max chunks to 1 because each range request counts as download, reduces traffic very fast ;)
          */
         /*
-         * int retry = 2; while (retry > 0) { dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink,
-         * true, 1); if (!dl.getConnection().isContentDisposition()) { br.followConnection(); if
-         * (br.containsHTML("<h1>File not found</h1>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-         * if (br.containsHTML("The server is under the maximum load")) { throw new
-         * PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 *
-         * 1000l); } if (br.containsHTML("Incorrectly copied code from the image")) { throw new
-         * PluginException(LinkStatus.ERROR_CAPTCHA); } if
-         * (br.containsHTML("You are exceeding the limitations on this download" )) { throw new
-         * PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l); } if (br.containsHTML(
-         * "This file you downloaded already and re-download is for free")) { dllink = br.getRegex(
-         * "\"(http://data\\d+\\.helldata\\.com/[a-z0-9]+/\\d+/.*?)(\\&|\"|\\')" ).getMatch(0); retry--; continue; }
-         * throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } dl.startDownload(); return; } throw new
+         * int retry = 2; while (retry > 0) { dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1); if
+         * (!dl.getConnection().isContentDisposition()) { br.followConnection(); if (br.containsHTML("<h1>File not found</h1>")) { throw new
+         * PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); } if (br.containsHTML("The server is under the maximum load")) { throw new
+         * PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server is under maximum load", 10 * 60 * 1000l); } if
+         * (br.containsHTML("Incorrectly copied code from the image")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); } if
+         * (br.containsHTML("You are exceeding the limitations on this download" )) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,
+         * 10 * 60 * 1000l); } if (br.containsHTML( "This file you downloaded already and re-download is for free")) { dllink = br.getRegex(
+         * "\"(http://data\\d+\\.helldata\\.com/[a-z0-9]+/\\d+/.*?)(\\&|\"|\\')" ).getMatch(0); retry--; continue; } throw new
+         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); } dl.startDownload(); return; } throw new
          * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
          */
     }

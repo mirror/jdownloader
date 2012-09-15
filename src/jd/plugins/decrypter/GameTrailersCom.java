@@ -32,7 +32,7 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gametrailers.com" }, urls = { "http://(www\\.)?gametrailers\\.com/((video|user\\-movie)/[\\w\\-]+/\\d+|(full\\-episodes|videos|reviews)/\\w+/[\\w\\-]+)" }, flags = { 0 })
 public class GameTrailersCom extends PluginForDecrypt {
 
-    private static final String ua = RandomUserAgent.generate();
+    private static String ua = RandomUserAgent.generate();
 
     public GameTrailersCom(final PluginWrapper wrapper) {
         super(wrapper);

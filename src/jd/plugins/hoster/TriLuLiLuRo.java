@@ -49,7 +49,7 @@ import jd.utils.locale.JDL;
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
-    private static final Object LOCK                       = new Object();
+    private static Object       LOCK                       = new Object();
     private static final String VIDEOPLAYER                = "<meta property=\"og:video\"";
     private static final String LIMITREACHED               = ">Ai atins limita de 5 ascultări de piese audio pe zi. Te rugăm să intri in cont ca să poţi";
     private static final String COUNTRYBLOCK               = "\t+Fişierul nu este disponibil pentru vizionare în ţara dumneavoastră";
@@ -306,8 +306,7 @@ public class TriLuLiLuRo extends PluginForHost {
                         value = value + r;
                     }
                     /*
-                     * Encoded as 64-bit double precision floating point number
-                     * IEEE 754 standard
+                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
                      */
                     value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
                 } else {

@@ -34,7 +34,7 @@ public class CnnT extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final Object LOCK = new Object();
+    public static Object LOCK = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

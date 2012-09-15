@@ -42,10 +42,10 @@ public class JBbergCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String  COOKIE_HOST  = "http://jheberg.net/";
+    private final String  COOKIE_HOST  = "http://jheberg.net/";
     /* must be static so all plugins share same lock */
-    private static final Object  LOCK         = new Object();
-    private static final Integer MAXCOOKIEUSE = 50;
+    private static Object LOCK         = new Object();
+    private final Integer MAXCOOKIEUSE = 50;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

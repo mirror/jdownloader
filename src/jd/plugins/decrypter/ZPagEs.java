@@ -39,7 +39,7 @@ public class ZPagEs extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK         = new Object();
+    private static Object       LOCK         = new Object();
     private static final String LINKREGEX    = "window\\.location = \"(http://.*?)\"";
     private static final String CAPTCHATEXT  = "google\\.com/recaptcha/api";
     private static final String CAPTCHATEXT2 = "zpag.es/cap";

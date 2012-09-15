@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import jd.PluginWrapper;
@@ -129,30 +131,28 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    private static final String  WAIT_HOSTERFULL   = "WAIT_HOSTERFULL";
+    private String               WAIT_HOSTERFULL   = "WAIT_HOSTERFULL";
 
-    private static final String  SSL_CONNECTION    = "SSL_CONNECTION2";
+    private String               SSL_CONNECTION    = "SSL_CONNECTION2";
 
-    private static final String  HTTPS_WORKAROUND  = "HTTPS_WORKAROUND";
+    private String               HTTPS_WORKAROUND  = "HTTPS_WORKAROUND";
 
-    private static final Object  LOCK              = new Object();
+    private static Object        LOCK              = new Object();
 
-    private static final Boolean HTMLWORKAROUND    = new Boolean(false);
+    private static AtomicLong    RS_API_WAIT       = new AtomicLong(0);
 
-    private static long          RS_API_WAIT       = 0;
+    private String               COOKIEPROP        = "cookiesv2";
+    private String               COOKIEPROPENC     = "cookiesv2enc";
 
-    private static final String  COOKIEPROP        = "cookiesv2";
-    private static final String  COOKIEPROPENC     = "cookiesv2enc";
+    private static Account       dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
 
-    private static final Account dummyAccount      = new Account("TRAFSHARE", "TRAFSHARE");
+    private String               PRE_RESOLVE       = "PRE_RESOLVE2";
 
-    private static final String  PRE_RESOLVE       = "PRE_RESOLVE2";
+    private static String        UA                = RandomUserAgent.generate();
 
-    private static final String  UA                = RandomUserAgent.generate();
+    private char[]               FILENAMEREPLACES  = new char[] { '_', ' ' };
 
-    private static char[]        FILENAMEREPLACES  = new char[] { '_', ' ' };
-
-    private static boolean       ReadTimeoutHotFix = false;
+    private static AtomicBoolean ReadTimeoutHotFix = new AtomicBoolean(false);
 
     /* returns file id of link */
     private static String getID(final String link) {
@@ -180,7 +180,7 @@ public class Rapidshare extends PluginForHost {
 
         if (urls == null || urls.length == 0) { return false; }
         try {
-            if (Rapidshare.RS_API_WAIT > System.currentTimeMillis()) {
+            if (Rapidshare.RS_API_WAIT.get() > System.currentTimeMillis()) {
                 for (final DownloadLink u : urls) {
                     u.setAvailable(true);
                     u.getLinkStatus().setStatusText(JDL.L("plugin.host.rapidshare.status.apiflood", "unchecked (API Flood)"));
@@ -257,7 +257,7 @@ public class Rapidshare extends PluginForHost {
 
                 if (this.br.containsHTML("access flood")) {
                     logger.warning("RS API flooded! Will not check again the next 5 minutes!");
-                    Rapidshare.RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
+                    Rapidshare.RS_API_WAIT.set(System.currentTimeMillis() + 5 * 60 * 1000l);
                     return false;
                 }
 
@@ -333,7 +333,7 @@ public class Rapidshare extends PluginForHost {
         } catch (final Exception e) {
             if (this.br.containsHTML("access flood")) {
                 logger.warning("RS API flooded! Will not check again the next 5 minutes!");
-                Rapidshare.RS_API_WAIT = System.currentTimeMillis() + 5 * 60 * 1000l;
+                Rapidshare.RS_API_WAIT.set(System.currentTimeMillis() + 5 * 60 * 1000l);
             }
             return false;
         }
@@ -719,7 +719,7 @@ public class Rapidshare extends PluginForHost {
                 // this might bypass some isps limit restrictions on rapidshare
                 // host
                 // names
-                if (this.getPluginConfig().getBooleanProperty(Rapidshare.PRE_RESOLVE, false)) {
+                if (this.getPluginConfig().getBooleanProperty(PRE_RESOLVE, false)) {
                     try {
                         logger.fine("Try to resolve adress " + host);
                         final InetAddress inetAddress = InetAddress.getByName(host);
@@ -741,8 +741,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
-                 * BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
+                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
@@ -802,8 +802,8 @@ public class Rapidshare extends PluginForHost {
             /*
              * we can use cookie login if user does not want to get asked before package upgrade. we dont need live traffic stats here
              */
-            Object cookiesRet = account.getProperty(Rapidshare.COOKIEPROP);
-            Object cookieEnc = account.getProperty(Rapidshare.COOKIEPROPENC);
+            Object cookiesRet = account.getProperty(COOKIEPROP);
+            Object cookieEnc = account.getProperty(COOKIEPROPENC);
             Map<String, String> cookies = null;
             if (cookiesRet != null && cookiesRet instanceof Map) {
                 cookies = (Map<String, String>) cookiesRet;
@@ -823,8 +823,8 @@ public class Rapidshare extends PluginForHost {
                 }
                 return br;
             } else {
-                account.setProperty(Rapidshare.COOKIEPROP, null);
-                account.setProperty(Rapidshare.COOKIEPROPENC, null);
+                account.setProperty(COOKIEPROP, null);
+                account.setProperty(COOKIEPROPENC, null);
             }
             try {
                 final String req = prtotcol + "://api.rapidshare.com/cgi-bin/rsapi.cgi?sub=getaccountdetails&withcookie=1&type=prem&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
@@ -853,8 +853,8 @@ public class Rapidshare extends PluginForHost {
                 } else {
                     cookies = new HashMap<String, String>();
                     cookies.put("enc", cookie);
-                    account.setProperty(Rapidshare.COOKIEPROP, cookies);
-                    account.setProperty(Rapidshare.COOKIEPROPENC, cookie);
+                    account.setProperty(COOKIEPROP, cookies);
+                    account.setProperty(COOKIEPROPENC, cookie);
                 }
                 // put all accountproperties
                 for (final String[] m : br.getRegex("(\\w+)=([^\r^\n]+)").getMatches()) {
@@ -863,8 +863,8 @@ public class Rapidshare extends PluginForHost {
                 this.updateAccountInfo(account, br);
                 return br;
             } catch (PluginException e) {
-                account.setProperty(Rapidshare.COOKIEPROP, null);
-                account.setProperty(Rapidshare.COOKIEPROPENC, null);
+                account.setProperty(COOKIEPROP, null);
+                account.setProperty(COOKIEPROPENC, null);
                 throw e;
             }
         }
@@ -917,10 +917,10 @@ public class Rapidshare extends PluginForHost {
     }
 
     private void readTimeoutHotFix() {
-        if (Rapidshare.ReadTimeoutHotFix) { return; }
+        if (ReadTimeoutHotFix.get() == true) { return; }
         synchronized (Rapidshare.LOCK) {
-            if (Rapidshare.ReadTimeoutHotFix) { return; }
-            Rapidshare.ReadTimeoutHotFix = true;
+            if (ReadTimeoutHotFix.get() == true) { return; }
+            Rapidshare.ReadTimeoutHotFix.set(true);
             try {
                 final Class<?> c = Class.forName("sun.net.NetworkClient");
                 Field field = null;
@@ -980,7 +980,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public void reset() {
-        Rapidshare.RS_API_WAIT = 0;
+        Rapidshare.RS_API_WAIT.set(0);
     }
 
     @Override
@@ -992,8 +992,8 @@ public class Rapidshare extends PluginForHost {
      */
     private void setConfigElements() {
 
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), SSL_CONNECTION, JDL.L("plugins.hoster.rapidshare.com.ssl2", "Use Secure Communication over SSL")).setDefaultValue(true));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), HTTPS_WORKAROUND, JDL.L("plugins.hoster.rapidshare.com.https", "Use HTTPS workaround for ISP Block")).setDefaultValue(false));
         /* caused issues lately because it seems some ip's are sharedhosting */
         // this.config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
         // this.getPluginConfig(), Rapidshare.PRE_RESOLVE,
@@ -1001,7 +1001,7 @@ public class Rapidshare extends PluginForHost {
         // "Use IP instead of hostname")).setDefaultValue(false));
 
         this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), Rapidshare.WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
+        this.getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, this.getPluginConfig(), WAIT_HOSTERFULL, JDL.L("plugins.hoster.rapidshare.com.waithosterfull", "Wait if all FreeUser Slots are full")).setDefaultValue(true));
 
     }
 
@@ -1010,7 +1010,7 @@ public class Rapidshare extends PluginForHost {
      */
     private boolean tryWorkaround(final DownloadLink link) {
         if (link.getProperty("htmlworkaround", null) == null) {
-            link.setProperty("htmlworkaround", Rapidshare.HTMLWORKAROUND);
+            link.setProperty("htmlworkaround", "done");
             return true;
         }
         return false;
@@ -1075,7 +1075,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     private boolean useSSL() {
-        return this.getPluginConfig().getBooleanProperty(Rapidshare.SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(Rapidshare.HTTPS_WORKAROUND, false);
+        return this.getPluginConfig().getBooleanProperty(SSL_CONNECTION, true) || this.getPluginConfig().getBooleanProperty(HTTPS_WORKAROUND, false);
     }
 
     private void workAroundTimeOut(final Browser br) {

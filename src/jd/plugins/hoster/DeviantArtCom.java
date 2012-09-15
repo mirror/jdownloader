@@ -45,7 +45,7 @@ public class DeviantArtCom extends PluginForHost {
      */
 
     private static final String COOKIE_HOST = "http://www.deviantart.com";
-    private static final Object LOCK        = new Object();
+    private static Object LOCK        = new Object();
 
     public DeviantArtCom(PluginWrapper wrapper) {
         super(wrapper);

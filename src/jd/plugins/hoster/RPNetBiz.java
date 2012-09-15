@@ -50,7 +50,7 @@ public class RPNetBiz extends PluginForHost {
     private static final String mName    = "rpnet.biz";
     private static final String mProt    = "http://";
     private static final String mPremium = "https://premium.rpnet.biz/";
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     public RPNetBiz(PluginWrapper wrapper) {
         super(wrapper);
@@ -234,8 +234,7 @@ public class RPNetBiz extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
         }

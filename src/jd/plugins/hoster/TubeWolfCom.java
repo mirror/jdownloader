@@ -36,8 +36,8 @@ import org.appwork.utils.Hash;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tubewolf.com" }, urls = { "http://(www\\.)?tubewolf\\.com/movies/[\\w\\-]+" }, flags = { 0 })
 public class TubeWolfCom extends PluginForHost {
 
-    private String        DLLINK = null;
-    private static String AHV    = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
+    private String DLLINK = null;
+    private String AHV    = "MTEyYjA4ZTBiOGU0MWIxNmU2ZjFiZjMxYzZjZTEyNWQ=";
 
     public TubeWolfCom(final PluginWrapper wrapper) {
         super(wrapper);

@@ -28,7 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class RLCsh extends PluginForDecrypt {
-    private static final String[] ANNOTATION_NAMES = new String[] { "urlcash.net", "bat5.com", "urlcash.org", "clb1.com", "celebclk.com", "smilinglinks.com", "peekatmygirlfriend.com", "looble.net" };
 
     /**
      * Returns the annotations names array
@@ -36,7 +35,8 @@ public class RLCsh extends PluginForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return ANNOTATION_NAMES;
+        return new String[] { "urlcash.net", "bat5.com", "urlcash.org", "clb1.com", "celebclk.com", "smilinglinks.com", "peekatmygirlfriend.com", "looble.net" };
+
     }
 
     /**

@@ -45,7 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileFilesNet extends PluginForHost {
 
     private static final String HOST = "http://flyfiles.net";
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     // TODO: rename plugin when jd2 goes stable, FlyFilesNet
 

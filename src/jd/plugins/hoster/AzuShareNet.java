@@ -43,7 +43,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class AzuShareNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://azushare.net";
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     public AzuShareNet(PluginWrapper wrapper) {
         super(wrapper);

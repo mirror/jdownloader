@@ -32,9 +32,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|embed\\.novamov\\.com/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=[a-z0-9]+)" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
 
-    private static final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
-    private static final String TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
-    private static String       DLLINK                       = "";
+    private final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
+    private final String TEMPORARYUNAVAILABLEUSERTEXT = "Temporary unavailable";
+    private String       DLLINK                       = "";
 
     public NovaUpMovcom(final PluginWrapper wrapper) {
         super(wrapper);

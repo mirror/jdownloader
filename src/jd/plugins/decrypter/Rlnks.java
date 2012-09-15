@@ -41,10 +41,10 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "relink.us" }, urls = { "http://(www\\.)?relink\\.us/(f/|(go|view|container_captcha)\\.php\\?id=)[0-9a-f]+" }, flags = { 0 })
 public class Rlnks extends PluginForDecrypt {
 
-    ProgressController          PROGRESS;
-    private Form                ALLFORM = null;
-    private static final String UA      = RandomUserAgent.generate();
-    public static final Object  LOCK    = new Object();
+    ProgressController   PROGRESS;
+    private Form         ALLFORM = null;
+    private String       UA      = RandomUserAgent.generate();
+    public static Object LOCK    = new Object();
 
     public Rlnks(final PluginWrapper wrapper) {
         super(wrapper);

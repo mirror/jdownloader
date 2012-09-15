@@ -28,7 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class NnmT extends PluginForDecrypt {
-    private static final String[] ANNOTATION_NAMES = new String[] { "anonym.to", "dereferer.info" };
 
     /**
      * Returns the annotations names array
@@ -36,7 +35,7 @@ public class NnmT extends PluginForDecrypt {
      * @return
      */
     public static String[] getAnnotationNames() {
-        return ANNOTATION_NAMES;
+        return new String[] { "anonym.to", "dereferer.info" };
     }
 
     /**
@@ -47,7 +46,7 @@ public class NnmT extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         String[] names = getAnnotationNames();
         String[] ret = new String[names.length];
-// "http://[\\w\\.]*?anonym\\.to/\\?.+" 
+        // "http://[\\w\\.]*?anonym\\.to/\\?.+"
         for (int i = 0; i < ret.length; i++) {
             ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "\\?/.+)|(http://[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
 
@@ -81,7 +80,7 @@ public class NnmT extends PluginForDecrypt {
         this.setBrowserExclusive();
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         String host = new URI(parameter.getCryptedUrl()).getHost();
-        links.add(this.createDownloadlink(parameter.getCryptedUrl().replaceFirst("http://.*?"+host+"/\\?", "")));
+        links.add(this.createDownloadlink(parameter.getCryptedUrl().replaceFirst("http://.*?" + host + "/\\?", "")));
         return links;
     }
 

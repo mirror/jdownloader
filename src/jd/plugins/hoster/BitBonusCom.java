@@ -40,8 +40,7 @@ public class BitBonusCom extends PluginForHost {
 
     private static final String PREMIUMONLYUSERTEXT = "Only downloadable via premium";
     private static final String CAPTCHAFAILED       = "(Captcha number error or expired|api\\.recaptcha\\.net)";
-    private static final Object LOCK                = new Object();
-    private static boolean      loaded              = false;
+    private static Object       LOCK                = new Object();
 
     public BitBonusCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,18 +71,13 @@ public class BitBonusCom extends PluginForHost {
             br.followConnection();
             if (br.containsHTML("(>Internal Server Error|Please notify the webmaster if you believe there is a problem|<title>BitBonus\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (loaded == false) {
-                synchronized (LOCK) {
-                    if (loaded == false) {
-                        /*
-                         * we only have to load this once, to make sure its
-                         * loaded
-                         */
-                        JDUtilities.getPluginForDecrypt("bitbonus.com");
-                    }
-                    loaded = true;
-                }
+
+            synchronized (LOCK) {
+
+                JDUtilities.getPluginForDecrypt("bitbonus.com");
+
             }
+
             String filename = br.getRegex(jd.plugins.decrypter.BitBonusComDecrypt.FILENAMEREGEX).getMatch(0);
             String filesize = jd.plugins.decrypter.BitBonusComDecrypt.getSize(br);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

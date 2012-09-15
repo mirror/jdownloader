@@ -47,9 +47,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
-    public static final String  FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
+    public static final String FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
 
-    private static final Object LOCK          = new Object();
+    private static Object      LOCK          = new Object();
 
     public Vipfilecom(PluginWrapper wrapper) {
         super(wrapper);

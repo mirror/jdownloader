@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class VideoFCTwoCom extends PluginForHost {
 
     private String        finalURL = null;
-    private static String MAINPAGE = "http://video.fc2.com/";
+    private String        MAINPAGE = "http://video.fc2.com/";
     private static Object LOCK     = new Object();
 
     public VideoFCTwoCom(PluginWrapper wrapper) {

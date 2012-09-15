@@ -31,8 +31,7 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?dropbox\\.com/gallery/\\d+/\\d+/[^?]+\\?h=[0-9a-f]+" }, flags = { 0 })
 public class DropboxFolder extends PluginForDecrypt {
-    private static final String[] urlAttrs     = { "video_url", "original", "extralarge", "large", "thumbnail" };
-    private static boolean        pluginloaded = false;
+    private final String[] urlAttrs = { "video_url", "original", "extralarge", "large", "thumbnail" };
 
     public DropboxFolder(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,11 +71,10 @@ public class DropboxFolder extends PluginForDecrypt {
 
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
-            pluginloaded = true;
-        }
+
+        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 

@@ -40,7 +40,7 @@ public class VdiskCn extends PluginForHost {
     // other: they keep changing final download links url structure, best to use
     // regex only on finallink static info and not html
 
-    private static final String UA = RandomUserAgent.generate();
+    private static String UA = RandomUserAgent.generate();
 
     public VdiskCn(PluginWrapper wrapper) {
         super(wrapper);

@@ -61,9 +61,9 @@ public class UpTheNet extends PluginForHost {
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object  LOCK                = new Object();
+    private static Object        LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
-    private static final String  UA                  = RandomUserAgent.generate();
+    private static String        UA                  = RandomUserAgent.generate();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.0-raz
@@ -163,8 +163,7 @@ public class UpTheNet extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);

@@ -46,7 +46,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static final Object                              lock         = new Object();
+    private static Object                                    lock         = new Object();
     private boolean                                          prem         = false;
     private static final String                              IDASFILENAME = "ISASFILENAME";
     private static final String                              ALLOW_MP3    = "ALLOW_MP3";

@@ -69,12 +69,12 @@ public class CrhyRllCom extends PluginForDecrypt {
     static private final Pattern RTMP_SWF       = Pattern.compile("<default:chromelessPlayerUrl>(ChromelessPlayerApp\\.swf.*)</default:chromelessPlayerUrl>", Pattern.CASE_INSENSITIVE);
     static private final Pattern SWF_URL        = Pattern.compile("((http://static\\.ak\\.crunchyroll\\.com/flash/[a-f0-9\\.]+/)StandardVideoPlayer\\.swf)", Pattern.CASE_INSENSITIVE);
     static private final String  SWF_DIR        = "http://static.ak.crunchyroll.com/flash/20120424185935.0acb0eac20ff1d5f75c78ac39a889d03/";
-    static private final int     EPISODE_PAD    = 3;
-    static private final char    SEPARATOR      = '-';
-    static private final String  SUFFIX_RAW     = ".raw";
-    static private final String  SUFFIX_ANDROID = ".android.english";
-    static private final String  EXT_UNKNOWN    = ".unk";
-    static private final String  EXT_SUBS       = ".ass";
+    private final int            EPISODE_PAD    = 3;
+    private final char           SEPARATOR      = '-';
+    private final String         SUFFIX_RAW     = ".raw";
+    private final String         SUFFIX_ANDROID = ".android.english";
+    private final String         EXT_UNKNOWN    = ".unk";
+    private final String         EXT_SUBS       = ".ass";
 
     @SuppressWarnings("deprecation")
     public CrhyRllCom(final PluginWrapper wrapper) {
@@ -155,12 +155,12 @@ public class CrhyRllCom extends PluginForDecrypt {
                 }
 
                 final String xmlUrl = configUrl.getMatch(0) + qualityValue.getFirstValue() + configUrl.getMatch(3);
-                final String filename = title + "." + quality + CrhyRllCom.SUFFIX_RAW;
+                final String filename = title + "." + quality + SUFFIX_RAW;
 
                 final DownloadLink thisLink = this.createDownloadlink(xmlUrl);
 
                 thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-                thisLink.setFinalFileName(filename + CrhyRllCom.EXT_UNKNOWN);
+                thisLink.setFinalFileName(filename + EXT_UNKNOWN);
                 thisLink.setProperty("quality", qualityValue.getFirstValue());
                 thisLink.setProperty("filename", filename);
                 thisLink.setProperty("swfdir", swfUrl.getMatch(1));
@@ -180,14 +180,14 @@ public class CrhyRllCom extends PluginForDecrypt {
                 final String subTitle = subtitle[2];
                 String subName = new Regex(subTitle, "\\[[0-9\\s]+\\]\\s*(.+)").getMatch(0);
 
-                subName = subName.replace(' ', CrhyRllCom.SEPARATOR).toLowerCase();
+                subName = subName.replace(' ', SEPARATOR).toLowerCase();
                 subName = subName.replaceAll("[^\\w\\_\\-.]+", "");
 
                 final String subFile = title + "." + subName;
                 final DownloadLink thisLink = this.createDownloadlink(subUrl);
 
                 thisLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-                thisLink.setFinalFileName(subFile + CrhyRllCom.EXT_SUBS);
+                thisLink.setFinalFileName(subFile + EXT_SUBS);
                 thisLink.setProperty("filename", subFile);
                 thisLink.setProperty("valid", true);
 
@@ -197,12 +197,12 @@ public class CrhyRllCom extends PluginForDecrypt {
 
             // Add the Android video file (low-res, embedded subtitles)
             final String mediaId = configUrl.getMatch(1);
-            final String androidFile = title + CrhyRllCom.SUFFIX_ANDROID;
+            final String androidFile = title + SUFFIX_ANDROID;
 
             final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
 
             androidLink.setBrowserUrl(cryptedLink.getCryptedUrl());
-            androidLink.setFinalFileName(androidFile + CrhyRllCom.EXT_UNKNOWN);
+            androidLink.setFinalFileName(androidFile + EXT_UNKNOWN);
             androidLink.setProperty("filename", androidFile);
 
             filePackage.add(androidLink);
@@ -255,11 +255,11 @@ public class CrhyRllCom extends PluginForDecrypt {
         final String title = urlReg.getMatch(2);
 
         // Pad out the episode number
-        while (episode.length() < CrhyRllCom.EPISODE_PAD) {
+        while (episode.length() < EPISODE_PAD) {
             episode = "0" + episode;
         }
 
-        return series + CrhyRllCom.SEPARATOR + episode + title;
+        return series + SEPARATOR + episode + title;
     }
 
     /**
@@ -281,9 +281,9 @@ public class CrhyRllCom extends PluginForDecrypt {
         if (mediaId == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid URL (could not find media id)"); }
 
         // If the download does not yet have a filename, set a temporary filename
-        String filename = "CrunchyRoll." + mediaId + CrhyRllCom.SUFFIX_ANDROID;
+        String filename = "CrunchyRoll." + mediaId + SUFFIX_ANDROID;
         if (downloadLink.getFinalFileName() == null) {
-            downloadLink.setFinalFileName(filename + CrhyRllCom.EXT_UNKNOWN);
+            downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
         }
 
         // Load the xml using the spoofed Android headers
@@ -306,7 +306,7 @@ public class CrhyRllCom extends PluginForDecrypt {
         // Get the filetype from the JSON
         String filetype = androidBr.getRegex("video(\\.\\w+)").getMatch(0);
         if (filetype == null) {
-            filetype = CrhyRllCom.EXT_UNKNOWN;
+            filetype = EXT_UNKNOWN;
         }
 
         // Get the filename, and generate a new one if it doesn't exist
@@ -315,7 +315,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             oldFilename = this.nameFromVideoId(mediaId, br);
 
             if (oldFilename != null) {
-                filename = oldFilename + CrhyRllCom.SUFFIX_ANDROID;
+                filename = oldFilename + SUFFIX_ANDROID;
                 downloadLink.setProperty("filename", filename);
             }
         } else {
@@ -397,14 +397,14 @@ public class CrhyRllCom extends PluginForDecrypt {
             filename = this.nameFromVideoId(mediaId, br);
 
             if (filename != null) {
-                filename += "." + qualityObj.getText() + CrhyRllCom.SUFFIX_RAW;
+                filename += "." + qualityObj.getText() + SUFFIX_RAW;
                 downloadLink.setProperty("filename", filename);
             } else {
                 // Failed to get an appealing one
-                filename = "CrunchyRoll-" + mediaId + qualityObj.getText() + CrhyRllCom.SUFFIX_RAW;
+                filename = "CrunchyRoll-" + mediaId + qualityObj.getText() + SUFFIX_RAW;
             }
         }
-        downloadLink.setFinalFileName(filename + CrhyRllCom.EXT_UNKNOWN);
+        downloadLink.setFinalFileName(filename + EXT_UNKNOWN);
 
         // Loop through all of the quality codes for the given quality
         for (final String quality : qualityObj.getValues()) {
@@ -432,7 +432,7 @@ public class CrhyRllCom extends PluginForDecrypt {
 
             String filetype = new Regex(file, "^(.+):.*").getMatch(0);
             if (filetype == null) {
-                filetype = CrhyRllCom.EXT_UNKNOWN;
+                filetype = EXT_UNKNOWN;
             } else {
                 filetype = "." + filetype;
             }

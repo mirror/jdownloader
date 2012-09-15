@@ -61,7 +61,7 @@ public class FilePlanetaCom extends PluginForHost {
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
-    private static final Object  LOCK                = new Object();
+    private static Object        LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.2.2, added special download handling
     // (ajax) & special FNF handling
@@ -156,8 +156,7 @@ public class FilePlanetaCom extends PluginForHost {
         }
 
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);

@@ -44,7 +44,7 @@ public class MegaUnloadNet extends PluginForHost {
         this.enablePremium();
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private static final String MAINPAGE = "http://megaunload.net/";
 
     @Override

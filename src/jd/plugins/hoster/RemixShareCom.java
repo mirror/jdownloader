@@ -44,7 +44,7 @@ public class RemixShareCom extends PluginForHost {
 
     public static final String BLOCKED = "(class=\"blocked\"|>Von Deiner IP Adresse kamen zu viele Anfragen innerhalb kurzer Zeit\\.)";
 
-    public static final Object LOCK    = new Object();
+    public static Object       LOCK    = new Object();
 
     public RemixShareCom(PluginWrapper wrapper) {
         super(wrapper);

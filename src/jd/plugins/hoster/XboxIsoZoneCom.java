@@ -49,8 +49,8 @@ public class XboxIsoZoneCom extends PluginForHost {
         this.enablePremium("http://www.theisozone.com/subscribe/");
     }
 
-    private static final Object LOCK     = new Object();
-    private final String        MAINPAGE = "http://theisozone.com/";
+    private static Object LOCK     = new Object();
+    private final String  MAINPAGE = "http://theisozone.com/";
 
     public void correctDownloadLink(DownloadLink link) {
         if (!link.getDownloadURL().contains("www.")) link.setUrlDownload(link.getDownloadURL().replace("http://", "http://www."));

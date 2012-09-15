@@ -38,7 +38,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "http://[\\w\\.]*?data.hu/get/\\d+/.+" }, flags = { 2 })
 public class DataHu extends PluginForHost {
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);

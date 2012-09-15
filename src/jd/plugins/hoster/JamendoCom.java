@@ -34,7 +34,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(track/|download/album/|download/a|download/track/)\\d+" }, flags = { 0 })
 public class JamendoCom extends PluginForHost {
 
-    private static String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
+    private String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
 
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);

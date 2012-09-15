@@ -62,7 +62,7 @@ public class SflnkgNt extends PluginForDecrypt {
         notDetected;
     }
 
-    private static String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
+    private String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
 
     public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
@@ -87,7 +87,7 @@ public class SflnkgNt extends PluginForDecrypt {
         }
     }
 
-    private static String AGENT = null;
+    private String AGENT = null;
 
     public SflnkgNt(PluginWrapper wrapper) {
         super(wrapper);

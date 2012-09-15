@@ -36,7 +36,7 @@ import jd.plugins.PluginForDecrypt;
 public class NmeStashInfo extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public NmeStashInfo(PluginWrapper wrapper) {
         super(wrapper);

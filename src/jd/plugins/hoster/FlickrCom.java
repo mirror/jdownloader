@@ -52,7 +52,7 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private static final String MAINPAGE = "http://flickr.com";
 
     public void correctDownloadLink(DownloadLink link) {

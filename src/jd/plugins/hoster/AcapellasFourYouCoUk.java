@@ -41,7 +41,7 @@ public class AcapellasFourYouCoUk extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.acapellas4u.co.uk/";
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     private static final String USERTEXT = "Only downloadable for registered users!";
 

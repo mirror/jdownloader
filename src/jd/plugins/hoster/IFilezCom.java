@@ -43,7 +43,7 @@ public class IFilezCom extends PluginForHost {
 
     private static final String CAPTCHATEXT          = "includes/vvc\\.php\\?vvcid=";
     private static final String MAINPAGE             = "http://depfile.com/";
-    private static final Object LOCK                 = new Object();
+    private static Object       LOCK                 = new Object();
     private static final String ONLY4PREMIUM         = ">Owner of the file is restricted to download this file only Premium users|>File is available only for Premium users.<";
     private static final String ONLY4PREMIUMUSERTEXT = "Only downloadable for premium users";
 

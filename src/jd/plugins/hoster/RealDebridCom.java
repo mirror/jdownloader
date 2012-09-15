@@ -51,7 +51,7 @@ public class RealDebridCom extends PluginForHost {
 
     private static final String mName    = "real-debrid.com";
     private static final String mProt    = "http://";
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private static final String DIRECTRD = "directRD";
 
     public RealDebridCom(PluginWrapper wrapper) {

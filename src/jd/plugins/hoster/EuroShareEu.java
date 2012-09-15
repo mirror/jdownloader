@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class EuroShareEu extends PluginForHost {
 
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
-    private static final Object  LOCK                     = new Object();
+    private static Object LOCK                     = new Object();
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
 
     public EuroShareEu(PluginWrapper wrapper) {

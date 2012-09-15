@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -38,9 +39,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gigapeta.com" }, urls = { "http://[\\w\\.]*?gigapeta\\.com/dl/\\w+" }, flags = { 2 })
 public class GigaPetaCom extends PluginForHost {
 
-    private static int simultanpremium = 1;
+    private static AtomicInteger simultanpremium = new AtomicInteger(1);
 
-    public boolean     nopremium       = false;
+    public boolean               nopremium       = false;
 
     // Gehört zu tenfiles.com/tenfiles.info
     public GigaPetaCom(PluginWrapper wrapper) {
@@ -119,7 +120,7 @@ public class GigaPetaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return simultanpremium;
+        return simultanpremium.get();
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
@@ -169,7 +170,11 @@ public class GigaPetaCom extends PluginForHost {
         if (accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (accType.equals("basic")) nopremium = true;
         if (br.getCookie("http://gigapeta.com/", "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!nopremium) simultanpremium = -1;
+        if (!nopremium) {
+            simultanpremium.set(-1);
+        } else {
+            simultanpremium.set(1);
+        }
     }
 
     public void reset() {

@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -55,20 +56,20 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
-    private static final String FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
-    private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    private static final String MAINPAGE                 = "http://depositfiles.com";
+    private static final String  UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
+    private static final String  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
+    private static final String  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
+    private static final String  MAINPAGE                 = "http://depositfiles.com";
 
-    public String               DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
-    private final Pattern       FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
-    private final Pattern       FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
+    public String                DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
+    private final Pattern        FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
+    private final Pattern        FILE_INFO_SIZE           = Pattern.compile(">Datei Gr.*?sse: <b>([^<>\"]*?)</b>");
 
-    private static final Object PREMLOCK                 = new Object();
-    private static final Object LOCK                     = new Object();
-    private boolean             showCaptcha              = false;
+    private static Object        PREMLOCK                 = new Object();
+    private static Object        LOCK                     = new Object();
+    private boolean              showCaptcha              = false;
 
-    private static int          simultanpremium          = 1;
+    private static AtomicInteger simultanpremium          = new AtomicInteger(1);
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
@@ -220,7 +221,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         synchronized (PREMLOCK) {
-            return simultanpremium;
+            return simultanpremium.get();
         }
     }
 
@@ -298,8 +299,7 @@ public class DepositFiles extends PluginForHost {
             dllink = getDllink();
             long timeBefore = System.currentTimeMillis();
             /*
-             * seems somethings wrong with waittime parsing so we do wait each
-             * time to be sure
+             * seems somethings wrong with waittime parsing so we do wait each time to be sure
              */
             if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Form dlForm = new Form();
@@ -378,13 +378,13 @@ public class DepositFiles extends PluginForHost {
             showCaptcha = false;
             login(account, false);
             if (isFreeAccount(account, false)) {
-                simultanpremium = 1;
+                simultanpremium.set(1);
                 free = true;
             } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
+                if (simultanpremium.get() + 1 > 20) {
+                    simultanpremium.set(20);
                 } else {
-                    simultanpremium++;
+                    simultanpremium.incrementAndGet();
                 }
             }
         }

@@ -64,7 +64,7 @@ public class HulkShareCom extends PluginForHost {
 
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
 
     public HulkShareCom(PluginWrapper wrapper) {
         super(wrapper);

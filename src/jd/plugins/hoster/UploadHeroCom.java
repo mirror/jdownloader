@@ -39,8 +39,8 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 
 /**
- * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of the links:
- * http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
+ * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of
+ * the links: http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com/(dl|v)/[A-Za-z0-9]+" }, flags = { 2 })
 public class UploadHeroCom extends PluginForHost {
@@ -60,7 +60,7 @@ public class UploadHeroCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://uploadhero.com";
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

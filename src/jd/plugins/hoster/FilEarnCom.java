@@ -55,7 +55,7 @@ public class FilEarnCom extends PluginForHost {
 
     private static final String MAINPAGE                 = "http://filearn.com/";
 
-    private static final Object LOCK                     = new Object();
+    private static Object LOCK                     = new Object();
 
     public FilEarnCom(PluginWrapper wrapper) {
         super(wrapper);

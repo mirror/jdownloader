@@ -50,8 +50,8 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-links.biz" }, urls = { "http://[\\w\\.]*?(share-links\\.biz/_[0-9a-z]+|s2l\\.biz/[a-z0-9]+)" }, flags = { 0 })
 public class ShrLnksBz extends PluginForDecrypt {
 
-    private static String MAINPAGE = "http://share-links.biz/";
-    private static String ua       = RandomUserAgent.generate();
+    private String MAINPAGE = "http://share-links.biz/";
+    private String ua       = RandomUserAgent.generate();
 
     public ShrLnksBz(final PluginWrapper wrapper) {
         super(wrapper);

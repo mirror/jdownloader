@@ -36,8 +36,8 @@ import org.appwork.utils.Hash;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "alphaporno.com" }, urls = { "http://(www\\.)?alphaporno\\.com/videos/[\\w\\-]+" }, flags = { 0 })
 public class AlphaPornoCom extends PluginForHost {
 
-    private String        DLLINK = null;
-    private static String AHV    = "YzMwZWI0YTA5MWEwNjQwNjNlYmY1MTgyMDA5YzQ1Mjc=";
+    private String DLLINK = null;
+    private String AHV    = "YzMwZWI0YTA5MWEwNjQwNjNlYmY1MTgyMDA5YzQ1Mjc=";
 
     public AlphaPornoCom(final PluginWrapper wrapper) {
         super(wrapper);

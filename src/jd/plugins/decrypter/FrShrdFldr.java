@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "http://(www\\.)?4shared(\\-china)?\\.com/(dir/.+|folder/.+)" }, flags = { 0 })
 public class FrShrdFldr extends PluginForDecrypt {
 
-    private final static double RANDOM = Math.random();
+    private Double RANDOM = Math.random();
 
     public FrShrdFldr(final PluginWrapper wrapper) {
         super(wrapper);

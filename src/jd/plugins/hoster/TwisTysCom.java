@@ -34,9 +34,9 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "twistys.com" }, urls = { "http://(www\\.)?(cdn\\d+\\.)?mdl\\.twistys\\.com/(content|visual)/[a-z0-9]+/.*?\\..{3}(\\?nvb=\\d+\\&nva=\\d+\\&hash=[a-z0-9]+)?" }, flags = { 2 })
 public class TwisTysCom extends PluginForHost {
 
-    private static final String                   MAINPAGE = "http://www.twistys.com";
+    private static final String             MAINPAGE = "http://www.twistys.com";
 
-    private static final HashMap<Account, String> MAP      = new HashMap<Account, String>();
+    private static HashMap<Account, String> MAP      = new HashMap<Account, String>();
 
     public TwisTysCom(PluginWrapper wrapper) {
         super(wrapper);

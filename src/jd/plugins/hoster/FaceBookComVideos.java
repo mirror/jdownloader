@@ -44,11 +44,11 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=)\\d+" }, flags = { 2 })
 public class FaceBookComVideos extends PluginForHost {
 
-    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
-    private static String       PREFERHD         = "http://www.facebook.com";
-    private static final String DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
-    private static final Object LOCK             = new Object();
-    public static final String  Agent            = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
+    private String        FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private String        PREFERHD         = "http://www.facebook.com";
+    private final String  DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
+    private static Object LOCK             = new Object();
+    public static String  Agent            = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
@@ -183,8 +183,7 @@ public class FaceBookComVideos extends PluginForHost {
             loginForm.put("pass", Encoding.urlEncode(account.getPass()));
             br.submitForm(loginForm);
             /**
-             * Facebook thinks we're an unknown device, now we prove we're not
-             * ;)
+             * Facebook thinks we're an unknown device, now we prove we're not ;)
              */
             if (br.containsHTML("/checkpoint/")) {
                 br.getPage("https://www.facebook.com/checkpoint/");
@@ -243,7 +242,7 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FaceBookComVideos.PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Prefer HD quality")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Prefer HD quality")).setDefaultValue(true));
     }
 
     @Override

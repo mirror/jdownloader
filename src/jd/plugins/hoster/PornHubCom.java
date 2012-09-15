@@ -15,8 +15,8 @@ import org.appwork.utils.Regex;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "http://(www\\.)?((de|fr|it|es|pt)\\.)?pornhub\\.com/view_video\\.php\\?viewkey=[a-z0-9]+" }, flags = { 0 })
 public class PornHubCom extends PluginForHost {
 
-    private static String post_element = "add299463d4410c6d1b1c418868225f7";
-    private String        dlUrl        = null;
+    private String post_element = "add299463d4410c6d1b1c418868225f7";
+    private String dlUrl        = null;
 
     public PornHubCom(final PluginWrapper wrapper) {
         super(wrapper);

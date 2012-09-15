@@ -22,7 +22,6 @@ import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -35,9 +34,6 @@ import jd.plugins.PluginForDecrypt;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xunlei.com" }, urls = { "http://(www\\.)?kuai\\.xunlei\\.com/(d/[A-Z]{12}|download\\?[^\"\\'<>]+|s/[\\w\\-]+)" }, flags = { 0 })
 public class XunleiComDecrypter extends PluginForDecrypt {
 
-    // not really needed, captcha thresholds are based on ip address.
-    private static final String UA = RandomUserAgent.generate();
-
     public XunleiComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,7 +43,6 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         String parameter = param.toString();
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
-        br.getHeaders().put("User-Agent", UA);
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);

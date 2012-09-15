@@ -133,7 +133,7 @@ public class ExtMatrixCom extends PluginForHost {
 
     private static final String PREMIUMLIMIT = "out of 1024\\.00 TB</td>";
     private static final String PREMIUMTEXT  = "Account type:</td>[\n ]+<td><b>Premium</b>";
-    private static final Object LOCK         = new Object();
+    private static Object LOCK         = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {

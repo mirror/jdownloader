@@ -55,7 +55,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filemaze.ws" }, urls = { "http://(www\\.)?filemaze\\.ws/[a-z0-9]{12}" }, flags = { 2 })
 public class FileMazeWs extends PluginForHost {
 
-    private static String        agent                        = null;
+    private String               agent                        = null;
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
     private static final String  COOKIE_HOST                  = "http://filemaze.ws";
@@ -69,14 +69,14 @@ public class FileMazeWs extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static final Object  LOCK                         = new Object();
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
     // non account: 1 (no resume) * 1 (untested as I couldn't dl -raz)
     // free account: same as above (login works, dl untested as I couldn't dl -raz)
-    // premium account: 20 * 20 (untested, previous plugin settings) 
+    // premium account: 20 * 20 (untested, previous plugin settings)
     // protocol: no https
     // captchatype: null 4dignum recaptcha (?? not sure as I cant dl!!)
     // other: no redirects

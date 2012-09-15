@@ -59,7 +59,7 @@ public class GlumboUploadsCom extends PluginForHost {
     public boolean              NOPREMIUM           = false;
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
 
     public GlumboUploadsCom(PluginWrapper wrapper) {
         super(wrapper);

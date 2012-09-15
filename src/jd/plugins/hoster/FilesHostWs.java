@@ -56,7 +56,7 @@ public class FilesHostWs extends PluginForHost {
 
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
 
     public FilesHostWs(PluginWrapper wrapper) {
         super(wrapper);

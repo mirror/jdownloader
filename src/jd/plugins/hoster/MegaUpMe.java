@@ -55,7 +55,7 @@ public class MegaUpMe extends PluginForHost {
         return COOKIE_HOST + "/rules.php";
     }
 
-    private static final int    DEFAULTWAITTIME = 45;
+    private final int           DEFAULTWAITTIME = 45;
     private static final String COOKIE_HOST     = "http://megaup.me";
 
     // FREE limits: Chunk * Maxdl
@@ -148,7 +148,7 @@ public class MegaUpMe extends PluginForHost {
         return br.getRegex("<strong>" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50-(acount|member)\">([^<>\"]*?)</li>").getMatch(1);
     }
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     public void login(Account account, boolean force) throws Exception {

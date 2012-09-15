@@ -49,11 +49,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4shared.com" }, urls = { "https?://(www\\.)?4shared(\\-china)?\\.com/(account/)?(download|get|file|document|photo|video|audio|mp3|office|rar|zip|archive|music)/.+?/.*" }, flags = { 2 })
 public class FourSharedCom extends PluginForHost {
 
-    public static final String  PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
-    private static String       agent                                     = null;
-    private static final String PASSWORDTEXT                              = "enter a password to access";
-    private static final Object LOCK                                      = new Object();
-    private static final String COOKIE_HOST                               = "http://4shared.com";
+    public final String   PLUGINS_HOSTER_FOURSHAREDCOM_ONLY4PREMIUM = "plugins.hoster.foursharedcom.only4premium";
+    private String        agent                                     = null;
+    private final String  PASSWORDTEXT                              = "enter a password to access";
+    private static Object LOCK                                      = new Object();
+    private final String  COOKIE_HOST                               = "http://4shared.com";
 
     public FourSharedCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -73,8 +73,7 @@ public class FourSharedCom extends PluginForHost {
                 final Browser br = new Browser();
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference
-                     * it
+                     * we first have to load the plugin, before we can reference it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
@@ -209,9 +208,8 @@ public class FourSharedCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         /**
-         * Maybe download failed because we got a wrong directlink, disable
-         * getting directlinks first, if it then fails again the correct error
-         * message is shown
+         * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct
+         * error message is shown
          */
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
@@ -300,8 +298,7 @@ public class FourSharedCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference
-                     * it
+                     * we first have to load the plugin, before we can reference it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();

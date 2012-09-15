@@ -39,7 +39,7 @@ public class MngPrkCm extends PluginForDecrypt {
     // other: links are not nessairly transferable
     // other: regex is tight as possible, be very careful playing!
 
-    private static String HOST = "";
+    private String HOST = "";
 
     public MngPrkCm(PluginWrapper wrapper) {
         super(wrapper);

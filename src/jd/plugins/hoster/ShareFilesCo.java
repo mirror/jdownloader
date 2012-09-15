@@ -59,7 +59,7 @@ public class ShareFilesCo extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.3.5, using forced HTTPs workaround
     @Override
@@ -148,8 +148,7 @@ public class ShareFilesCo extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -545,7 +544,11 @@ public class ShareFilesCo extends PluginForHost {
                 br.getPage(COOKIE_HOST + "/?op=my_account");
                 doSomething();
                 if (!new Regex(correctedBR, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {account.setProperty("nopremium", true);                } else {                    account.setProperty("nopremium", false);               }
+                if (!new Regex(correctedBR, "(Premium\\-Account expire|>Renew premium<)").matches()) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    account.setProperty("nopremium", false);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);

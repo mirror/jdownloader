@@ -56,7 +56,7 @@ public class OdiMusicNet extends PluginForHost {
     }
 
     private static final String COOKIE_HOST     = "http://odimusic.net";
-    private static final int    DEFAULTWAITTIME = 30;
+    private final int           DEFAULTWAITTIME = 30;
 
     // MhfScriptBasic 1.7
     // FREE limits: 20 * 20
@@ -144,7 +144,7 @@ public class OdiMusicNet extends PluginForHost {
         return br.getRegex(">" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
     }
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     public void login(Account account, boolean force) throws Exception {

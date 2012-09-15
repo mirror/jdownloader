@@ -38,8 +38,8 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploader.pl" }, urls = { "http://[\\w\\.]*?uploader.pl/([a-z]{2}/)?file/\\d+/" }, flags = { 2 })
 public class UploaderPl extends PluginForHost {
 
-    private int                 simultanpremium = 1;
-    private static final Object PREMLOCK        = new Object();
+    private int           simultanpremium = 1;
+    private static Object PREMLOCK        = new Object();
 
     public UploaderPl(PluginWrapper wrapper) {
         super(wrapper);

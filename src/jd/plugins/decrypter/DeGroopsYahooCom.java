@@ -43,7 +43,7 @@ import jd.utils.JDUtilities;
 public class DeGroopsYahooCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public DeGroopsYahooCom(PluginWrapper wrapper) {
         super(wrapper);

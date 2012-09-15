@@ -37,15 +37,10 @@ import jd.utils.JDUtilities;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "lix.in" }, urls = { "http://[\\w\\.]*?lix\\.in/[-]{0,1}[\\w]{6,10}" }, flags = { 0 })
 public class Lxn extends PluginForDecrypt {
 
-    final static private Object LOCK = new Object(); /*
-                                                      * lixin checkt anhand der
-                                                      * ip und der globalen
-                                                      * phpsessionid, daher
-                                                      * müssen parallel zugriffe
-                                                      * vermieden werden, sonst
-                                                      * ist das captcha imme
-                                                      * falsch
-                                                      */
+    static private Object LOCK = new Object(); /*
+                                                * lixin checkt anhand der ip und der globalen phpsessionid, daher müssen parallel zugriffe
+                                                * vermieden werden, sonst ist das captcha imme falsch
+                                                */
 
     public Lxn(PluginWrapper wrapper) {
         super(wrapper);

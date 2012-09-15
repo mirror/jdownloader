@@ -40,7 +40,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class Zevera extends PluginForHost {
     // TODO REMOVE WITH JD2 == stable
 
-    static public final Object LOGINLOCK = new Object();
+    static public Object LOGINLOCK = new Object();
 
     private static String getID(String link) {
         String id = new Regex(link, ".*fid=(.+)&.*").getMatch(0);

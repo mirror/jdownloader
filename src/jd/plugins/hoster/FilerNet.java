@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -40,9 +41,9 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
 
-    private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
+    private final Pattern     PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
-    private static long          LAST_FREE_DOWNLOAD    = 0l;
+    private static AtomicLong LAST_FREE_DOWNLOAD    = new AtomicLong(0l);
 
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,9 +96,9 @@ public class FilerNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies("filer.net");
         br.getPage(downloadLink.getDownloadURL());
-        final long waited = System.currentTimeMillis() - FilerNet.LAST_FREE_DOWNLOAD;
-        if (FilerNet.LAST_FREE_DOWNLOAD > 0 && waited < 3601000) {
-            FilerNet.LAST_FREE_DOWNLOAD = 0;
+        final long waited = System.currentTimeMillis() - FilerNet.LAST_FREE_DOWNLOAD.get();
+        if (FilerNet.LAST_FREE_DOWNLOAD.get() > 0 && waited < 3601000) {
+            FilerNet.LAST_FREE_DOWNLOAD.set(0);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3601000 - waited);
         }
         int tries = 0;
@@ -146,7 +147,7 @@ public class FilerNet extends PluginForHost {
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
-        FilerNet.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
+        FilerNet.LAST_FREE_DOWNLOAD.set(System.currentTimeMillis());
     }
 
     @Override

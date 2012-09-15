@@ -44,7 +44,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "luckyshare.net" }, urls = { "http://(www\\.)?luckyshare\\.net/\\d+" }, flags = { 2 })
 public class LuckyShareNet extends PluginForHost {
 
-    private static String AGENT = null;
+    private String AGENT = null;
 
     public LuckyShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -57,7 +57,7 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://luckyshare.net/";
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

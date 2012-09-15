@@ -34,9 +34,9 @@ import jd.plugins.decrypter.TbCm.DestinationFormat;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "spiegel.de" }, urls = { "http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)" }, flags = { 0 })
 public class SpiegelDe extends PluginForHost {
 
-    private static final String  AGB_LINK                      = "http://www.spiegel.de/agb";
-    private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
-    private static final Pattern PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+    private static final String AGB_LINK                      = "http://www.spiegel.de/agb";
+    private final Pattern       PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
+    private final Pattern       PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
 
     public SpiegelDe(final PluginWrapper wrapper) {
         super(wrapper);
@@ -54,9 +54,9 @@ public class SpiegelDe extends PluginForHost {
         this.requestFileInformation(downloadLink);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadLink.getDownloadURL(), false, 1);
 
-        if (new Regex(downloadLink.getDownloadURL(), SpiegelDe.PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
+        if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             this.dl.startDownload();
-        } else if (new Regex(downloadLink.getDownloadURL(), SpiegelDe.PATTERN_SUPPORTED_VIDEO).matches()) {
+        } else if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_VIDEO).matches()) {
             if (this.dl.startDownload()) {
                 if (downloadLink.getProperty("convertto") != null) {
                     final DestinationFormat convertTo = DestinationFormat.valueOf(downloadLink.getProperty("convertto").toString());

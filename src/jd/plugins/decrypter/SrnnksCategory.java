@@ -170,7 +170,7 @@ public class SrnnksCategory extends PluginForDecrypt {
         return idNames;
     }
 
-    private static final Pattern MIRROR_PATTERN = Pattern.compile(".*href=\"([^\"]*)\".*\">(part.*?|hier)</a> \\| ([^< ]+).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private final Pattern MIRROR_PATTERN = Pattern.compile(".*href=\"([^\"]*)\".*\">(part.*?|hier)</a> \\| ([^< ]+).*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
     // FIXME is the old format still used anywhere?
     // /* old format */

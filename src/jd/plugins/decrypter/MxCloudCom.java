@@ -48,7 +48,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "http://(www\\.)?mixcloud\\.com/(?:(?!(?>\\btrack\\b|\\btag\\b|\\bartist\\b))[\\w\\-])+/[\\w\\-]+/" }, flags = { 0 })
 public class MxCloudCom extends PluginForDecrypt {
 
-    private static String MAINPAGE = "http://www.mixcloud.com";
+    private String MAINPAGE = "http://www.mixcloud.com";
 
     public MxCloudCom(final PluginWrapper wrapper) {
         super(wrapper);

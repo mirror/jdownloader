@@ -46,8 +46,7 @@ public class FilesMonsterCom extends PluginForHost {
     private static final String TEMPORARYUNAVAILABLE = "Download not available at the moment";
     private static final String REDIRECTFNF          = "DL_FileNotFound";
     private static final String PREMIUMONLYUSERTEXT  = "Only downloadable via premium";
-    private static final Object LOCK                 = new Object();
-    private static boolean      loaded               = false;
+    private static Object       LOCK                 = new Object();
 
     public FilesMonsterCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -95,17 +94,14 @@ public class FilesMonsterCom extends PluginForHost {
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (loaded == false) {
-                synchronized (LOCK) {
-                    if (loaded == false) {
-                        /*
-                         * we only have to load this once, to make sure its
-                         * loaded
-                         */
-                        JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
-                    }
-                    loaded = true;
-                }
+
+            synchronized (LOCK) {
+
+                /*
+                 * we only have to load this once, to make sure its loaded
+                 */
+                JDUtilities.getPluginForDecrypt("filesmonster.comDecrypt");
+
             }
             String filename = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILENAMEREGEX).getMatch(0);
             String filesize = br.getRegex(jd.plugins.decrypter.FilesMonsterDecrypter.FILESIZEREGEX).getMatch(0);

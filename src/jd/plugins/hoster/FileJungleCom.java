@@ -48,7 +48,7 @@ public class FileJungleCom extends PluginForHost {
 
     private static final String CAPTCHAFAILED       = "\"error\":\"incorrect\\-captcha\\-sol\"";
     private static final String MAINPAGE            = "http://filejungle.com/";
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
     private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
     private static final String DLYOURFILESTEXT     = "(>You can only retrieve files from FileJungle after logging in to your file manager|>Only files you have uploaded personally can be retrieved)";
 

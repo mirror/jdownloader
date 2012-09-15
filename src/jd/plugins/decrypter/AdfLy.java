@@ -35,8 +35,8 @@ public class AdfLy extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final Object LOCK = new Object();
-    private static String       ua   = RandomUserAgent.generate();
+    private static Object LOCK = new Object();
+    private static String ua   = RandomUserAgent.generate();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

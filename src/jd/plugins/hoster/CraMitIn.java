@@ -54,7 +54,7 @@ public class CraMitIn extends PluginForHost {
     public String               brbefore     = "";
     private static final String COOKIE_HOST  = "http://cramit.in";
     public boolean              nopremium    = false;
-    private static final Object LOCK         = new Object();
+    private static Object LOCK         = new Object();
     private static final String UA           = RandomUserAgent.generate();
 
     public CraMitIn(PluginWrapper wrapper) {

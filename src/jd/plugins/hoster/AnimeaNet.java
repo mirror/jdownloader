@@ -47,7 +47,7 @@ public class AnimeaNet extends PluginForHost {
     // other: required because jd urldecodes %23 into #. Which results in 404. Impractical to use directhttp
     // other: also a place holder for vip.animea.net
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public AnimeaNet(PluginWrapper wrapper) {
         super(wrapper);

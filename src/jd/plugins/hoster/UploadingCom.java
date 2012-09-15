@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -47,15 +48,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
 
-    private static int          simultanpremium = 1;
-    private static final Object PREMLOCK        = new Object();
-    private static String       agent           = null;
-    private boolean             free            = false;
-    private static final String CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
-    private static final Object LOCK            = new Object();
-    private static final String MAINPAGE        = "http://uploading.com/";
-    private static final String PASSWORDTEXT    = "Please Enter Password:<";
-    private boolean             loginFail       = false;
+    private static AtomicInteger simultanpremium = new AtomicInteger(1);
+    private static Object        PREMLOCK        = new Object();
+    private String               agent           = null;
+    private boolean              free            = false;
+    private static final String  CODEREGEX       = "uploading\\.com/files/get/(\\w+)";
+    private static Object        LOCK            = new Object();
+    private static final String  MAINPAGE        = "http://uploading.com/";
+    private static final String  PASSWORDTEXT    = "Please Enter Password:<";
+    private boolean              loginFail       = false;
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -116,8 +117,7 @@ public class UploadingCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename , because api will not report
-                     * anything else
+                     * append fake filename , because api will not report anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -279,7 +279,7 @@ public class UploadingCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         synchronized (PREMLOCK) {
-            return simultanpremium;
+            return simultanpremium.get();
         }
     }
 
@@ -391,13 +391,13 @@ public class UploadingCom extends PluginForHost {
             synchronized (LOCK) {
                 login(account, false);
                 if (!isPremium(account, false)) {
-                    simultanpremium = 1;
+                    simultanpremium.set(1);
                     free = true;
                 } else {
-                    if (simultanpremium + 1 > 20) {
-                        simultanpremium = 20;
+                    if (simultanpremium.get() + 1 > 20) {
+                        simultanpremium.set(20);
                     } else {
-                        simultanpremium++;
+                        simultanpremium.incrementAndGet();
                     }
                 }
             }
@@ -461,8 +461,7 @@ public class UploadingCom extends PluginForHost {
     }
 
     /**
-     * TODO: remove with next major update, DownloadWatchDog/AccountController
-     * handle blocked accounts now
+     * TODO: remove with next major update, DownloadWatchDog/AccountController handle blocked accounts now
      */
     @SuppressWarnings("deprecation")
     @Override

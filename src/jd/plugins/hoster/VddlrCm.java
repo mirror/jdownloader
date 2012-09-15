@@ -37,7 +37,7 @@ import org.appwork.utils.encoding.Base64;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "viddler.com" }, urls = { "http://(www\\.)?viddler\\.com/(explore/\\w+/videos/\\d+|(player|simple)/\\w+(/)?(.+)?)" }, flags = { 0 })
 public class VddlrCm extends PluginForHost {
 
-    private static String       DLURL = null;
+    private String              DLURL = null;
     private final static String KEY1  = "a2x1Y3p5aw==";
     private final static String KEY2  = "NDYzNzc5MDRjNmM4";
     private final static String IV    = "AAAAAAAAAAA=";

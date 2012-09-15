@@ -69,7 +69,7 @@ public class FileFactory extends PluginForHost {
     private static final String  LOGIN_ERROR      = "The email or password you have entered is incorrect";
     private static final String  SERVER_DOWN      = "server hosting the file you are requesting is currently down";
     private static final String  CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
-    private static final Object  LOCK             = new Object();
+    private static Object LOCK             = new Object();
     private static final String  COOKIE_HOST      = "http://www.filefactory.com";
     private String               dlUrl            = null;
     private static final String  TRAFFICSHARELINK = "filefactory.com/trafficshare/";

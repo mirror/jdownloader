@@ -51,7 +51,7 @@ public class MakinaManiaCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://makinamania.com";
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override

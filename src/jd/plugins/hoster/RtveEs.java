@@ -39,8 +39,8 @@ import org.appwork.utils.encoding.Base64;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtve.es" }, urls = { "http://(www\\.)?rtve\\.es/alacarta/(audios|videos)/[\\w\\-]+/[\\w\\-]+/\\d+/?(\\?modl=COMTS)?" }, flags = { 0 })
 public class RtveEs extends PluginForHost {
 
-    private static String DLURL       = null;
-    private static String BLOWFISHKEY = "aHVsI0xvc3Q=";
+    private String DLURL       = null;
+    private String BLOWFISHKEY = "aHVsI0xvc3Q=";
 
     public RtveEs(PluginWrapper wrapper) {
         super(wrapper);

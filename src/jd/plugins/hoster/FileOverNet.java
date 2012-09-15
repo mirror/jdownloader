@@ -47,7 +47,7 @@ public class FileOverNet extends PluginForHost {
 
     private static final String MAINPAGE = "http://fileover.net/";
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
 
     public FileOverNet(PluginWrapper wrapper) {
         super(wrapper);

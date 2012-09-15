@@ -66,7 +66,7 @@ public class SendMyWayCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     @Override
     public String getAGBLink() {
@@ -171,8 +171,7 @@ public class SendMyWayCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -445,8 +444,7 @@ public class SendMyWayCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just
-             * remove it
+             * Who needs half points ? If we have a dot in the points, just remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);

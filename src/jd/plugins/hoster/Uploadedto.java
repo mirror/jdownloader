@@ -22,7 +22,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -60,15 +62,19 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://[\\w\\.-]*?uploaded\\.(to|net)/.*?(file/|\\?id=|&id=)[\\w]+/?)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://[\\w\\.]*?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/?)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static char[]        FILENAMEREPLACES             = new char[] { '_' };
-    private static final String  ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
-    private static final String  EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    static private final Pattern IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static boolean       hasDled                      = false;
-    private static long          timeBefore                   = 0;
-    private final static String  LASTIP                       = "LASTIP";
-    private static String        lastIP                       = null;
+    public static class StringContainer {
+        private String string = null;
+    }
+
+    private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
+    private char[]                 FILENAMEREPLACES             = new char[] { '_' };
+    private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
+    private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
+    private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean   hasDled                      = new AtomicBoolean(false);
+    private static AtomicLong      timeBefore                   = new AtomicLong(0);
+    private String                 LASTIP                       = "LASTIP";
+    private static StringContainer lastIP                       = new StringContainer();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
@@ -434,8 +440,8 @@ public class Uploadedto extends PluginForHost {
                  * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
                  */
                 logger.info("New Download: currentIP = " + currentIP);
-                if (hasDled && ipChanged(currentIP, downloadLink) == false) {
-                    long result = System.currentTimeMillis() - timeBefore;
+                if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
+                    long result = System.currentTimeMillis() - timeBefore.get();
                     if (result < 3600000 && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3600000 - result);
                 }
             }
@@ -529,12 +535,12 @@ public class Uploadedto extends PluginForHost {
             }
             if (account != null) account.setProperty("LASTDOWNLOAD", System.currentTimeMillis());
             dl.startDownload();
-            hasDled = true;
+            hasDled.set(true);
         } catch (Exception e) {
-            hasDled = false;
+            hasDled.set(false);
             throw e;
         } finally {
-            timeBefore = System.currentTimeMillis();
+            timeBefore.set(System.currentTimeMillis());
             setIP(currentIP, downloadLink, account);
         }
     }
@@ -708,7 +714,7 @@ public class Uploadedto extends PluginForHost {
             } else {
                 String lastIP = IP;
                 link.setProperty(LASTIP, lastIP);
-                Uploadedto.lastIP = lastIP;
+                Uploadedto.lastIP.string = lastIP;
                 logger.info("LastIP = " + lastIP);
                 return true;
             }
@@ -724,13 +730,13 @@ public class Uploadedto extends PluginForHost {
         }
         if (currentIP == null) return false;
         String lastIP = link.getStringProperty(LASTIP, null);
-        if (lastIP == null) lastIP = Uploadedto.lastIP;
+        if (lastIP == null) lastIP = Uploadedto.lastIP.string;
         return !currentIP.equals(lastIP);
     }
 
     public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Uploadedto.ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Swith between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Uploadedto.EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Swith between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.uploadedto.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(false));
     }
 
     @Override

@@ -50,7 +50,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hitfile.net" }, urls = { "http://(www\\.)?hitfile\\.net/(?!download/)[A-Za-z0-9]+" }, flags = { 2 })
 public class HitFileNet extends PluginForHost {
 
-    private final static String UA            = RandomUserAgent.generate();
+    private final String        UA            = RandomUserAgent.generate();
 
     private static final String RECAPTCHATEXT = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
 
@@ -58,7 +58,7 @@ public class HitFileNet extends PluginForHost {
 
     private static final String MAINPAGE      = "http://hitfile.net";
 
-    public static final Object  LOCK          = new Object();
+    public static Object        LOCK          = new Object();
 
     private static final String BLOCKED       = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
 

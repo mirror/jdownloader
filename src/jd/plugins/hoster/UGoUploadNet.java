@@ -50,8 +50,8 @@ public class UGoUploadNet extends PluginForHost {
         return "http://www.ugoupload.net/terms.html";
     }
 
-    private static final Object LOCK     = new Object();
-    private final String        MAINPAGE = "http://ugoupload.net";
+    private static Object LOCK     = new Object();
+    private final String  MAINPAGE = "http://ugoupload.net";
 
     /** Uses same script as filegig.com */
     @Override

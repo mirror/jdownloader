@@ -48,10 +48,10 @@ public class CokluindirCom extends PluginForHost {
     // DEV NOTES
     // supports last09 based on pre-generated links and jd2
 
-    private static final String                                  mName              = "cokluindir.com";
-    private static final String                                  mProt              = "http://";
-    private static final Object                                  LOCK               = new Object();
-    private static final HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            mName              = "cokluindir.com";
+    private static final String                            mProt              = "http://";
+    private static Object                                  LOCK               = new Object();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public CokluindirCom(PluginWrapper wrapper) {
         super(wrapper);

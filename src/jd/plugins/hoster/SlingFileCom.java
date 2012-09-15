@@ -54,9 +54,9 @@ public class SlingFileCom extends PluginForHost {
     /**
      * Important: Do NOT implement their linkchecker as it's buggy and shows wrong information: http://www.slingfile.com/check-files
      * */
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://slingfile.com";
-    private static final String UA       = RandomUserAgent.generate();
+    private static String       UA       = RandomUserAgent.generate();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://").replaceAll("/(audio|video|dl)/", "file"));

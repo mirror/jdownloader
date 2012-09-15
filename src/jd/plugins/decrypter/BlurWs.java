@@ -44,7 +44,7 @@ public class BlurWs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final Object  LOCK          = new Object();
+    public static Object        LOCK          = new Object();
     private static final String RECAPTCHATEXT = "google\\.com/recaptcha";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import javax.script.Invocable;
@@ -42,7 +43,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "upnito.sk" }, urls = { "http://[\\w\\.]*?upnito\\.sk/(download\\.php\\?(dwToken=[a-z0-9]+|file=.+)|subor/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class UpNitoSk extends PluginForHost {
 
-    private final static Boolean wthack = true;
+    private static AtomicBoolean wthack = new AtomicBoolean(true);
 
     public UpNitoSk(final PluginWrapper wrapper) {
         super(wrapper);
@@ -141,7 +142,7 @@ public class UpNitoSk extends PluginForHost {
         br2.getPage(DLPAGE + "/getwait.php?dwToken=" + thisDamnToken);
         String gwt_validate = br2.toString().trim();
         if (gwt_validate == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        if (!UpNitoSk.wthack) {
+        if (UpNitoSk.wthack.get() == false) {
             int sleepTime = 600;
             final String ttt = br2.getRegex("(\\d+);").getMatch(0);
             if (ttt != null) {

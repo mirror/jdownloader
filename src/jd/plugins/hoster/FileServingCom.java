@@ -47,12 +47,12 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserving.com" }, urls = { "http://(www\\.)?fileserving\\.com/files/[a-zA-Z0-9_\\-]+" }, flags = { 2 })
 public class FileServingCom extends PluginForHost {
 
-    public String                FILEIDREGEX   = "fileserving\\.com/files/([a-zA-Z0-9_\\-]+)(http:.*)?";
-    private static final String  FILEOFFLINE   = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
-    private boolean              isRegistered  = false;
-    private static boolean       accDebugShown = false;
-    private static AtomicInteger maxDls        = new AtomicInteger(-1);
-    private static final Object  LOCK          = new Object();
+    public String                FILEIDREGEX  = "fileserving\\.com/files/([a-zA-Z0-9_\\-]+)(http:.*)?";
+    private final String         FILEOFFLINE  = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
+    private boolean              isRegistered = false;
+
+    private static AtomicInteger maxDls       = new AtomicInteger(-1);
+    private static Object        LOCK         = new Object();
 
     // DEV NOTES
     // other: unsure about the expire time, if it only shows days or what...
@@ -180,8 +180,7 @@ public class FileServingCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
+                     * we test 100 links at once - its tested with 500 links, probably we could test even more at the same time...
                      */
                     if (index == urls.length || links.size() > 100) {
                         break;
@@ -192,8 +191,7 @@ public class FileServingCom extends PluginForHost {
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) {
                         sb.append("%0D%0A");
@@ -346,9 +344,9 @@ public class FileServingCom extends PluginForHost {
                     if (br.containsHTML("Please login first")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 if (!br.containsHTML("Expire in <b>\\d+") || !br.containsHTML("(?i)Account Type: <span>Premium</span>")) {
-                    if (account.getBooleanProperty("premium", false) == true && accDebugShown) {
+                    if (account.getBooleanProperty("premium", false) == true) {
                         logger.info("DEBUG: " + br.toString());
-                        accDebugShown = true;
+
                     }
                     // ai.setExpired(true);
                     isRegistered = true;

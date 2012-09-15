@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class ShareFlareNet extends PluginForHost {
 
     private static final String  FREEDOWNLOADPOSSIBLE              = "download4";
-    private static final Object  LOCK                              = new Object();
+    private static Object        LOCK                              = new Object();
     private static final String  FREELIMIT                         = ">Your limit for free downloads is over for today<";
     private static final String  COOKIE_HOST                       = "http://shareflare.net";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
@@ -151,8 +151,7 @@ public class ShareFlareNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because shareflare maybe only
-                 * allows 100 logins per 24hours
+                 * we must save the cookies, because shareflare maybe only allows 100 logins per 24hours
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -298,8 +297,7 @@ public class ShareFlareNet extends PluginForHost {
         }
         sleep((wait + 1) * 1001l, downloadLink);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         ajaxBR.getHeaders().put("Content-Length", "0");
         ajaxBR.postPage("http://shareflare.net/ajax/download3.php", "");

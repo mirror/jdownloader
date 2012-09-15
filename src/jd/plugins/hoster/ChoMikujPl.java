@@ -51,7 +51,7 @@ public class ChoMikujPl extends PluginForHost {
     private static final String MAINPAGE            = "http://chomikuj.pl/";
     // private static final String FILEIDREGEX = "\\&id=(.*?)\\&";
     private boolean             videolink           = false;
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
     public static final String  DECRYPTFOLDERS      = "DECRYPTFOLDERS";
 
     public ChoMikujPl(PluginWrapper wrapper) {

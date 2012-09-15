@@ -36,7 +36,7 @@ public class MtlAreRg extends PluginForDecrypt {
 
     private static final String HOST = "http://metalarea.org";
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object       LOCK = new Object();
 
     public MtlAreRg(PluginWrapper wrapper) {
         super(wrapper);

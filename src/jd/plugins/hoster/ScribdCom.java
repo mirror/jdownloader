@@ -37,15 +37,12 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
-    private static final String   formats    = "formats";
+    private final String   formats    = "formats";
 
     /** The list of server values displayed to the user */
-    private static final String[] allFormats;
+    private final String[] allFormats = new String[] { "PDF", "TXT" };
 
-    private static final String   NODOWNLOAD = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
-    static {
-        allFormats = new String[] { "PDF", "TXT" };
-    }
+    private final String   NODOWNLOAD = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);

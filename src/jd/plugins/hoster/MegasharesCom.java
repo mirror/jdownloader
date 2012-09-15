@@ -43,15 +43,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 /**
- * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw)
- * einbauen
+ * TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "megashares.com" }, urls = { "http://[\\w\\.]*?(d[0-9]{2}\\.)?megashares\\.com/(.*\\?d[0-9]{2}=[0-9a-zA-Z]{7}|dl/[0-9a-zA-Z]{7}/)" }, flags = { 2 })
 public class MegasharesCom extends PluginForHost {
 
     private final String                   UserAgent   = "JD_" + "$Revision$";
     private static HashMap<String, String> premCookies = null;
-    private static final Object            LOCK        = new Object();
+    private static Object                  LOCK        = new Object();
     private static final String            NOCHUNKS    = "NOCHUNKS";
 
     public MegasharesCom(PluginWrapper wrapper) {
@@ -258,8 +257,7 @@ public class MegasharesCom extends PluginForHost {
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
             /*
-             * seems like megashares sends empty page when last download was
-             * some secs ago
+             * seems like megashares sends empty page when last download was some secs ago
              */
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
@@ -302,8 +300,7 @@ public class MegasharesCom extends PluginForHost {
             br.followConnection();
             if (br.getHttpConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             /*
-             * seems like megashares sends empty page when last download was
-             * some secs ago
+             * seems like megashares sends empty page when last download was some secs ago
              */
             if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
             /* maybe we have to fix link */

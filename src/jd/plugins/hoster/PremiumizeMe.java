@@ -39,7 +39,7 @@ import org.appwork.storage.JSonStorage;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumizeMe extends PluginForHost {
 
-    private static final HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);

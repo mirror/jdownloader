@@ -49,7 +49,7 @@ public class FileSwapCom extends PluginForHost {
     // captchatype: null
     // other: no published info on expire time.
 
-    private static final Object  LOCK    = new Object();
+    private static Object LOCK    = new Object();
     private static AtomicInteger maxPrem = new AtomicInteger(1);
     private static final String  HOST    = "http://www.fileswap.com";
 

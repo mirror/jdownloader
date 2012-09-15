@@ -61,11 +61,11 @@ import org.appwork.utils.os.CrossSystem;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net)/(.*?\\.html|download/free/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
-    private final static String UA            = RandomUserAgent.generate();
+    private static String       UA            = RandomUserAgent.generate();
     private static final String RECAPTCHATEXT = "api\\.recaptcha\\.net";
     private static final String CAPTCHAREGEX  = "\"(http://turbobit\\.net/captcha/.*?)\"";
-    private static String       MAINPAGE      = "http://turbobit.net";
-    private static final Object LOCK          = new Object();
+    private static final String MAINPAGE      = "http://turbobit.net";
+    private static Object       LOCK          = new Object();
     private static final String BLOCKED       = "Turbobit.net is blocking JDownloader: Please contact the turbobit.net support and complain!";
 
     public TurboBitNet(final PluginWrapper wrapper) {

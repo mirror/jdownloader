@@ -43,7 +43,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static final String UA               = RandomUserAgent.generate();
+    private static String       UA               = RandomUserAgent.generate();
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);

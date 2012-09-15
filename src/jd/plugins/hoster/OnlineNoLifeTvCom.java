@@ -48,7 +48,7 @@ public class OnlineNoLifeTvCom extends PluginForHost {
     private String              DLLINK              = null;
     private static final String ONLYPREMIUMUSERTEXT = "Only downloadable for premium members";
     private boolean             notDownloadable     = false;
-    private static final Object LOCK                = new Object();
+    private static Object LOCK                = new Object();
     private static final String MAINPAGE            = "http://online.nolife-tv.com/";
     private static final String SALT                = "YTUzYmUxODUzNzcwZjBlYmUwMzExZDY5OTNjN2JjYmU=";
 

@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -52,15 +53,14 @@ import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
-    private static boolean PLUGIN_DISABLED;
+    private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
 
     static {
         String installerSource = null;
         try {
 
             installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
-            PLUGIN_DISABLED = installerSource.contains("\"PS\"");
-
+            PLUGIN_DISABLED.set(installerSource.contains("\"PS\""));
         } catch (Throwable e) {
             e.printStackTrace();
         }
@@ -193,14 +193,14 @@ public class TbCm extends PluginForDecrypt {
     }
 
     public boolean canHandle(final String data) {
-        if (PLUGIN_DISABLED) return false;
+        if (PLUGIN_DISABLED.get() == true) return false;
         return super.canHandle(data);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (PLUGIN_DISABLED) return decryptedLinks;
+        if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
         String parameter = param.toString().replace("watch#!v", "watch?v");
         parameter = parameter.replaceFirst("(verify_age\\?next_url=\\/?)", "");
         parameter = parameter.replaceFirst("(%3Fv%3D)", "?v=");

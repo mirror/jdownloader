@@ -60,7 +60,7 @@ public class HipFileCom extends PluginForHost {
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static final Object  LOCK                = new Object();
+    private static Object LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES

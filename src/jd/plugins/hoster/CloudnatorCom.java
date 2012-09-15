@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shragle.com", "cloudnator.com" }, urls = { "BLABLANEVERUSEMEBLABLA", "http://[\\w\\.]*?(shragle|cloudnator)\\.(com|de)/files/[\\w]+/.*" }, flags = { 2, 2 })
 public class CloudnatorCom extends PluginForHost {
 
-    static String         apikey = "078e5ca290d728fd874121030efb4a0d";
+    String                apikey = "078e5ca290d728fd874121030efb4a0d";
 
     private static String AGENT  = RandomUserAgent.generate();
 
@@ -46,7 +46,7 @@ public class CloudnatorCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        this.br.getPage("http://www.cloudnator.com/api.php?key=" + CloudnatorCom.apikey + "&action=checkUser&useMD5=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+        this.br.getPage("http://www.cloudnator.com/api.php?key=" + apikey + "&action=checkUser&useMD5=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         final String accountinfos[] = this.br.getRegex("(.*?)\\|(.*?)\\|(.+)").getRow(0);
         if (accountinfos == null) {
             account.setValid(false);
@@ -206,7 +206,7 @@ public class CloudnatorCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", AGENT);
         final String id = new Regex(downloadLink.getDownloadURL(), "cloudnator.com/files/(.*?)/").getMatch(0);
-        final String[] data = Regex.getLines(this.br.getPage("http://www.cloudnator.com/api.php?key=" + CloudnatorCom.apikey + "&action=getStatus&fileID=" + id));
+        final String[] data = Regex.getLines(this.br.getPage("http://www.cloudnator.com/api.php?key=" + apikey + "&action=getStatus&fileID=" + id));
         if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String name = data[0];
         this.url = "http://www.cloudnator.com/files/" + id + "/" + Encoding.urlEncode(name);

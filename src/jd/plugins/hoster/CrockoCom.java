@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -41,13 +42,13 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "easy-share.com", "crocko.com" }, urls = { "sgru3465979hg354uigUNUSED_REGEX879t24uj", "http://(www\\.)?(easy\\-share|crocko)\\.com/(?!us|pt|accounts|billing|f/)([A-Z0-9]+/?|\\d+)" }, flags = { 0, 2 })
 public class CrockoCom extends PluginForHost {
 
-    private static Boolean      longwait     = null;
+    private static AtomicBoolean longwait     = new AtomicBoolean(false);
 
-    private static final String MAINPAGE     = "http://www.crocko.com/";
+    private static final String  MAINPAGE     = "http://www.crocko.com/";
 
-    private static final String FILENOTFOUND = "Requested file is deleted";
+    private static final String  FILENOTFOUND = "Requested file is deleted";
 
-    private static final String ONLY4PREMIUM = ">You need Premium membership to download this file";
+    private static final String  ONLY4PREMIUM = ">You need Premium membership to download this file";
 
     public CrockoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -123,16 +124,15 @@ public class CrockoCom extends PluginForHost {
         String wait = br.getRegex("w=\\'(\\d+)\\'").getMatch(0);
         int waittime = 0;
         if (wait != null) waittime = Integer.parseInt(wait.trim());
-        if (waittime > 90 && (longwait == null || longwait == true)) {
+        if (waittime > 90 && longwait.get()) {
             /* first time >90 secs, it can be we are country with long waittime */
-            longwait = true;
+            longwait.set(true);
             sleep(waittime * 1000l, downloadLink);
         } else {
-            if (longwait == null) longwait = false;
-            if (waittime > 90 && longwait == false) {
+            if (longwait == null) longwait.set(false);
+            if (waittime > 90 && longwait.get() == false) {
                 /*
-                 * only request reconnect if we dont have to wait long on every
-                 * download
+                 * only request reconnect if we dont have to wait long on every download
                  */
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
             } else {
@@ -177,8 +177,7 @@ public class CrockoCom extends PluginForHost {
             }
             if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             /*
-             * another as default cause current stable has easy-captcha method
-             * that does not work
+             * another as default cause current stable has easy-captcha method that does not work
              */
             String code = getCaptchaCode("recaptcha", cf, downloadLink);
             form.put("recaptcha_challenge_field", challenge);
@@ -245,8 +244,7 @@ public class CrockoCom extends PluginForHost {
         if (acc == null && prem == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (acc != null && prem == null) {
             /*
-             * buggy easyshare server, login does not work always, it needs
-             * PREMIUM cookie
+             * buggy easyshare server, login does not work always, it needs PREMIUM cookie
              */
             br.setCookie(MAINPAGE, "PREMIUM", acc);
         }

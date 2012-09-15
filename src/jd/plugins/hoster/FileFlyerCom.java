@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileflyer.com" }, urls = { "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+" }, flags = { 2 })
 public class FileFlyerCom extends PluginForHost {
 
-    private static final Object LOCK         = new Object();
+    private static Object LOCK         = new Object();
 
     private static final String ONLY4PREMIUM = "(Access to old files is available to premium users only|>This is an Always Premium Download<|The requested file is over 1 GB and thus is available for download to premium users only|have no free download availability, unlike most other downloads on Fileflyer)";
 

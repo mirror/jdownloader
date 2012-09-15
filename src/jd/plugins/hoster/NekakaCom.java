@@ -55,7 +55,7 @@ public class NekakaCom extends PluginForHost {
         return "http://www.nekaka.com";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private static final String MAINPAGE = "http://nekaka.com/";
 
     @Override

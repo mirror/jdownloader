@@ -45,8 +45,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK             = new Object();
-    private static String       FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private static Object       LOCK             = new Object();
+    private static final String FACEBOOKMAINPAGE = "http://www.facebook.com";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {

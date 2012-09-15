@@ -33,7 +33,7 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" }, flags = { 0 })
 public class MndCm extends PluginForDecrypt {
 
-    private static String PREFER_WHOLEALBUM = "PREFER_WHOLEALBUM";
+    private String PREFER_WHOLEALBUM = "PREFER_WHOLEALBUM";
 
     public MndCm(PluginWrapper wrapper) {
         super(wrapper);

@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "https?://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
     private static final String ua              = RandomUserAgent.generate();
-    private static final Object LOCK            = new Object();
+    private static Object LOCK            = new Object();
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
 

@@ -113,7 +113,7 @@ public class GuploadBiz extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {

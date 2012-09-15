@@ -42,7 +42,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.parellisavvyclub.com";
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
 
     public ParelliSavvyClubCom(final PluginWrapper wrapper) {
         super(wrapper);

@@ -40,11 +40,11 @@ public class FlsMailRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-    private static final String UNAVAILABLE1 = ">В обработке<";
-    private static final String UNAVAILABLE2 = ">In process<";
-    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    private static String       LINKREPLACE  = "wge4zu4rjfsdehehztiuxw";
+    private final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
+    private final String UNAVAILABLE1 = ">В обработке<";
+    private final String UNAVAILABLE2 = ">In process<";
+    private final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    private String       LINKREPLACE  = "wge4zu4rjfsdehehztiuxw";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

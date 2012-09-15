@@ -54,7 +54,7 @@ public class KiwiLoadCom extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://kiwiload.com";
     private static final String IPBLOCKED   = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP)";
-    private static final Object LOCK        = new Object();
+    private static Object LOCK        = new Object();
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));

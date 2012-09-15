@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
@@ -62,28 +63,28 @@ public class MegaPornCom extends PluginForHost {
         BLOCKED
     }
 
-    private static final String   MU_PARAM_PORT      = "MU_PARAM_PORT_NEW1";
+    private final String         MU_PARAM_PORT      = "MU_PARAM_PORT_NEW1";
 
-    private final static String[] ports              = new String[] { "80", "800", "1723" };
-    private static String         wwwWorkaround      = null;
-    private static final Object   LOCK               = new Object();
-    private static final Object   LOGINLOCK          = new Object();
+    private final String[]       ports              = new String[] { "80", "800", "1723" };
+    private static String        wwwWorkaround      = null;
+    private static Object        LOCK               = new Object();
+    private static Object        LOGINLOCK          = new Object();
 
-    private static int            simultanpremium    = 1;
-    private boolean               onlyapi            = false;
+    private static AtomicInteger simultanpremium    = new AtomicInteger(1);
+    private boolean              onlyapi            = false;
 
-    private String                wait               = null;
+    private String               wait               = null;
 
-    private static String         agent              = RandomUserAgent.generate();
+    private static String        agent              = RandomUserAgent.generate();
 
     /*
      * every jd session starts with 1=default, because no waittime does not work at moment
      * 
      * try to workaround the waittime, 0=no waittime, 1 = default, other = 60 secs
      */
-    private static int            WaittimeWorkaround = 1;
+    private static AtomicInteger WaittimeWorkaround = new AtomicInteger(1);
 
-    private static final Object   PREMLOCK           = new Object();
+    private static Object        PREMLOCK           = new Object();
 
     public MegaPornCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -223,10 +224,10 @@ public class MegaPornCom extends PluginForHost {
         }
         long waittime = 0;
         try {
-            if (WaittimeWorkaround == 0) {
+            if (WaittimeWorkaround.get() == 0) {
                 /* try not to wait */
                 waittime = 0;
-            } else if (WaittimeWorkaround == 1) {
+            } else if (WaittimeWorkaround.get() == 1) {
                 /* try normal waittime */
                 if (waitb != null) {
                     waittime = Long.parseLong(waitb);
@@ -395,7 +396,7 @@ public class MegaPornCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         synchronized (PREMLOCK) {
-            return simultanpremium;
+            return simultanpremium.get();
         }
     }
 
@@ -548,13 +549,13 @@ public class MegaPornCom extends PluginForHost {
             }
             final boolean check = filestatus == STATUS.BLOCKED && !(filestatus == STATUS.API || filestatus == STATUS.OFFLINE);
             if (!this.isPremium(account, this.br.cloneBrowser(), check, true)) {
-                simultanpremium = 1;
+                simultanpremium.set(1);
                 free = true;
             } else {
-                if (simultanpremium + 1 > 20) {
-                    simultanpremium = 20;
+                if (simultanpremium.get() + 1 > 20) {
+                    simultanpremium.set(20);
                 } else {
-                    simultanpremium++;
+                    simultanpremium.incrementAndGet();
                 }
             }
         }
@@ -683,39 +684,39 @@ public class MegaPornCom extends PluginForHost {
     private synchronized void handleWaittimeWorkaround(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("gencap\\.php\\?")) {
             /* page contains captcha */
-            if (WaittimeWorkaround == 0) {
+            if (WaittimeWorkaround.get() == 0) {
                 /*
                  * we tried to workaround the waittime, so lets try again with normal waittime
                  */
-                WaittimeWorkaround = 1;
+                WaittimeWorkaround.set(1);
                 logger.info("WaittimeWorkaround failed (1)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround == 1) {
+            } else if (WaittimeWorkaround.get() == 1) {
                 logger.info("strange servererror: we did wait(normal) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with longer waittime */
-                WaittimeWorkaround = 2;
+                WaittimeWorkaround.set(2);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround == 2) {
+            } else if (WaittimeWorkaround.get() == 2) {
                 logger.info("strange servererror: we did wait(longer) but again a captcha?");
                 /* no reset here for retry count */
                 /* retry with normal waittime again */
-                WaittimeWorkaround = 1;
+                WaittimeWorkaround.set(1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         } else {
             /* something else? */
-            if (WaittimeWorkaround == 0) {
+            if (WaittimeWorkaround.get() == 0) {
                 /* lets try again with normal waittime */
-                WaittimeWorkaround = 1;
+                WaittimeWorkaround.set(1);
                 logger.info("WaittimeWorkaround failed (2)");
                 link.getLinkStatus().setRetryCount(link.getLinkStatus().getRetryCount() + 1);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (WaittimeWorkaround > 1) {
+            } else if (WaittimeWorkaround.get() > 1) {
                 logger.info("WaittimeWorkaround failed (3)");
-                if (++WaittimeWorkaround > 1) {
-                    WaittimeWorkaround = 1;
+                if (WaittimeWorkaround.incrementAndGet() > 1) {
+                    WaittimeWorkaround.set(1);
                 }
             }
         }

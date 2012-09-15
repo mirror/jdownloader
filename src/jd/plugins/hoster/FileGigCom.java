@@ -53,7 +53,7 @@ public class FileGigCom extends PluginForHost {
         return "http://www.filegig.com/terms.html";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
     private final String        MAINPAGE = "http://filegig.com";
 
     /** Uses same script as ugoupload.net */

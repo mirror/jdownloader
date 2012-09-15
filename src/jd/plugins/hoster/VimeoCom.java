@@ -53,7 +53,7 @@ public class VimeoCom extends PluginForHost {
     static private final String AGB        = "http://www.vimeo.com/terms";
     private String              clipData;
     private String              finalURL;
-    private static final Object LOCK       = new Object();
+    private static Object       LOCK       = new Object();
     private static final String Q_MOBILE   = "Q_MOBILE";
     private static final String Q_ORIGINAL = "Q_Q_ORIGINAL";
     private static final String Q_HD       = "Q_HD";

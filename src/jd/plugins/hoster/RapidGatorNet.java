@@ -24,6 +24,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -69,17 +71,21 @@ public class RapidGatorNet extends PluginForHost {
         setConfigElements();
     }
 
-    private static final String  MAINPAGE             = "http://rapidgator.net/";
-    private static final Object  LOCK                 = new Object();
-    private static String        agent                = null;
-    private static boolean       hasDled              = false;
-    private static long          timeBefore           = 0;
-    private final static String  LASTIP               = "LASTIP";
-    private static String        lastIP               = null;
-    static private final Pattern IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static final String  EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+    public static class StringContainer {
+        private String string = null;
+    }
 
-    private static String[]      IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
+    private static final String    MAINPAGE             = "http://rapidgator.net/";
+    private static Object          LOCK                 = new Object();
+    private static StringContainer agent                = new StringContainer();
+    private static AtomicBoolean   hasDled              = new AtomicBoolean(false);
+    private static AtomicLong      timeBefore           = new AtomicLong(0);
+    private final String           LASTIP               = "LASTIP";
+    private static StringContainer lastIP               = new StringContainer();
+    private final Pattern          IPREGEX              = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private final String           EXPERIMENTALHANDLING = "EXPERIMENTALHANDLING";
+
+    private String[]               IPCHECK              = new String[] { "http://ipcheck0.jdownloader.org", "http://ipcheck1.jdownloader.org", "http://ipcheck2.jdownloader.org", "http://ipcheck3.jdownloader.org" };
 
     @Override
     public String getAGBLink() {
@@ -88,13 +94,13 @@ public class RapidGatorNet extends PluginForHost {
 
     public static Browser prepareBrowser(Browser prepBr) {
         if (prepBr == null) return prepBr;
-        if (agent == null) {
+        if (agent.string == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
-            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+            agent.string = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         prepBr.setRequestIntervalLimit("http://rapidgator.net/", 319 * (int) Math.round(Math.random() * 3 + Math.random() * 3));
-        prepBr.getHeaders().put("User-Agent", agent);
+        prepBr.getHeaders().put("User-Agent", agent.string);
         prepBr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
         prepBr.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
         prepBr.getHeaders().put("Cache-Control", null);
@@ -259,8 +265,8 @@ public class RapidGatorNet extends PluginForHost {
         String currentIP = getIP();
         if (useExperimentalHandling) {
             logger.info("New Download: currentIP = " + currentIP);
-            if (hasDled && ipChanged(currentIP, downloadLink) == false) {
-                long result = System.currentTimeMillis() - timeBefore;
+            if (hasDled.get() == true && ipChanged(currentIP, downloadLink) == false) {
+                long result = System.currentTimeMillis() - timeBefore.get();
                 // 35 minute wait less time since last download.
                 logger.info("Wait time between downloads to prevent your IP from been blocked for 1 Day!");
                 if (result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", 2100000 - result);
@@ -409,12 +415,12 @@ public class RapidGatorNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.startDownload();
-            hasDled = true;
+            hasDled.set(true);
         } catch (Exception e) {
-            hasDled = false;
+            hasDled.set(false);
             throw e;
         } finally {
-            timeBefore = System.currentTimeMillis();
+            timeBefore.set(System.currentTimeMillis());
             setIP(currentIP, downloadLink);
         }
     }
@@ -578,7 +584,7 @@ public class RapidGatorNet extends PluginForHost {
         }
         if (currentIP == null) return false;
         String lastIP = link.getStringProperty(LASTIP, null);
-        if (lastIP == null) lastIP = RapidGatorNet.lastIP;
+        if (lastIP == null) lastIP = RapidGatorNet.lastIP.string;
         return !currentIP.equals(lastIP);
     }
 
@@ -592,7 +598,7 @@ public class RapidGatorNet extends PluginForHost {
             } else {
                 String lastIP = IP;
                 link.setProperty(LASTIP, lastIP);
-                RapidGatorNet.lastIP = lastIP;
+                RapidGatorNet.lastIP.string = lastIP;
                 logger.info("LastIP = " + lastIP);
                 return true;
             }

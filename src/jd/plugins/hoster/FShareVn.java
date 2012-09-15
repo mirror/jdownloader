@@ -48,7 +48,7 @@ public class FShareVn extends PluginForHost {
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
     private static final String  IPBLOCKED   = ">Vui lòng chờ lượt download kế tiếp";
-    private static final Object  LOCK        = new Object();
+    private static Object        LOCK        = new Object();
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
     public FShareVn(PluginWrapper wrapper) {

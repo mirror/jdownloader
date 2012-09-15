@@ -41,7 +41,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
     }
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

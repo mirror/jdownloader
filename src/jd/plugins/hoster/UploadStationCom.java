@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -44,11 +45,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class UploadStationCom extends PluginForHost {
 
     private static AtomicInteger maxDls             = new AtomicInteger(-1);
-    private static final String  FILEOFFLINE        = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
+    private final String         FILEOFFLINE        = "(<h1>File not available</h1>|<b>The file could not be found\\. Please check the download link)";
     public static String         agent              = RandomUserAgent.generate();
     private boolean              isRegistered       = false;
-    private static long          LAST_FREE_DOWNLOAD = 0l;
-    private static boolean       accDebugShown      = false;
+    private static AtomicLong    LAST_FREE_DOWNLOAD = new AtomicLong(0l);
 
     public UploadStationCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -73,8 +73,7 @@ public class UploadStationCom extends PluginForHost {
                 links.clear();
                 while (true) {
                     /*
-                     * we test 100 links at once - its tested with 500 links,
-                     * probably we could test even more at the same time...
+                     * we test 100 links at once - its tested with 500 links, probably we could test even more at the same time...
                      */
                     if (index == urls.length || links.size() > 100) {
                         break;
@@ -85,8 +84,7 @@ public class UploadStationCom extends PluginForHost {
                 int c = 0;
                 for (final DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report
-                     * anything else
+                     * append fake filename, because api will not report anything else
                      */
                     if (c > 0) {
                         sb.append("%0D%0A");
@@ -231,7 +229,7 @@ public class UploadStationCom extends PluginForHost {
             waittime = "300";
         }
         if (waittime != null) {
-            final long wait = UploadStationCom.LAST_FREE_DOWNLOAD == 0 ? Integer.parseInt(waittime) * 1001l : Integer.parseInt(waittime) * 1000l + 5000 - (System.currentTimeMillis() - UploadStationCom.LAST_FREE_DOWNLOAD);
+            final long wait = UploadStationCom.LAST_FREE_DOWNLOAD.get() == 0 ? Integer.parseInt(waittime) * 1001l : Integer.parseInt(waittime) * 1000l + 5000 - (System.currentTimeMillis() - UploadStationCom.LAST_FREE_DOWNLOAD.get());
 
             if (isRegistered) {
                 this.sleep(wait, link);
@@ -365,7 +363,7 @@ public class UploadStationCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setFilenameFix(true);
-        UploadStationCom.LAST_FREE_DOWNLOAD = System.currentTimeMillis();
+        UploadStationCom.LAST_FREE_DOWNLOAD.set(System.currentTimeMillis());
         dl.startDownload();
     }
 
@@ -419,9 +417,8 @@ public class UploadStationCom extends PluginForHost {
         br.getPage("http://uploadstation.com/dashboard.php");
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (!br.containsHTML("Expiry date: ")) {
-            if (account.getBooleanProperty("premium", false) == true && accDebugShown) {
+            if (account.getBooleanProperty("premium", false) == true) {
                 logger.info("DEBUG: " + br.toString());
-                accDebugShown = true;
             }
             // ai.setExpired(true);
             isRegistered = true;

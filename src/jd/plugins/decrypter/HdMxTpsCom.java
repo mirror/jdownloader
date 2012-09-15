@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 public class HdMxTpsCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public HdMxTpsCom(PluginWrapper wrapper) {
         super(wrapper);

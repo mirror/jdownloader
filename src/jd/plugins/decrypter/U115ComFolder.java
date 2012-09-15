@@ -41,8 +41,6 @@ public class U115ComFolder extends PluginForDecrypt {
     // other: haven't tested for over 1000 links / folder as I haven't been able
     // to find one to play with!
 
-    private static boolean pluginloaded = false;
-
     public U115ComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -128,11 +126,10 @@ public class U115ComFolder extends PluginForDecrypt {
 
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
-            pluginloaded = true;
-        }
+
+        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 }

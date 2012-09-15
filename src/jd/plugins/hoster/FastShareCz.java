@@ -50,7 +50,7 @@ public class FastShareCz extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://www.fastshare.cz";
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

@@ -12,14 +12,17 @@ import org.appwork.utils.IO;
 import org.appwork.utils.logging.Log;
 
 public class PluginClassLoader extends URLClassLoader {
+    private static HashMap<String, Class<?>> helperClasses = new HashMap<String, Class<?>>();
 
     public static class PluginClassLoaderChild extends URLClassLoader {
 
-        private boolean createDummyLibs = true;
-        private boolean jared           = Application.isJared(PluginClassLoader.class);
+        private boolean                 createDummyLibs = true;
+        private boolean                 jared           = Application.isJared(PluginClassLoader.class);
+        private final PluginClassLoader parent;
 
-        public PluginClassLoaderChild(ClassLoader parent) {
+        public PluginClassLoaderChild(PluginClassLoader parent) {
             super(new URL[] { Application.getRootUrlByClass(jd.Launcher.class, null) }, parent);
+            this.parent = parent;
         }
 
         public boolean isUpdateRequired(String name) {
@@ -75,7 +78,10 @@ public class PluginClassLoader extends URLClassLoader {
                                     /* dummy library, we have to wait for update */
                                     throw new UpdateRequiredClassNotFoundException(libFile);
                                 } else if (!lib.exists()) {
-                                    /* library file not existing, create a new one if wished, so the update system replaces it with correct one */
+                                    /*
+                                     * library file not existing, create a new one if wished, so the update system replaces it with correct
+                                     * one
+                                     */
                                     if (createDummyLibs) lib.createNewFile();
                                     throw new UpdateRequiredClassNotFoundException(libFile);
                                 }
@@ -86,7 +92,14 @@ public class PluginClassLoader extends URLClassLoader {
                 }
                 if (!name.startsWith("jd.plugins.hoster") && !name.startsWith("jd.plugins.decrypter")) { return super.loadClass(name); }
                 if (name.startsWith("jd.plugins.hoster.RTMPDownload")) { return super.loadClass(name); }
-                Class<?> c = findLoadedClass(name);
+                Class<?> c = null;
+                if (name.endsWith("StringContainer")) {
+                    synchronized (helperClasses) {
+                        c = helperClasses.get(name);
+                    }
+                } else {
+                    c = findLoadedClass(name);
+                }
                 if (c != null) {
                     // System.out.println("Class has already been loaded by this PluginClassLoaderChild");
                     return c;
@@ -95,13 +108,31 @@ public class PluginClassLoader extends URLClassLoader {
                     /*
                      * we have to synchronize this because concurrent defineClass for same class throws exception
                      */
-                    c = findLoadedClass(name);
-                    if (c != null) { return c; }
+                    if (name.endsWith("StringContainer")) {
+                        synchronized (helperClasses) {
+                            c = helperClasses.get(name);
+                        }
+                    } else {
+                        c = findLoadedClass(name);
+                    }
+                    if (c != null) return c;
                     URL myUrl = Application.getRessourceURL(name.replace(".", "/") + ".class");
                     if (myUrl == null) throw new ClassNotFoundException("Class does not exist(anymore): " + name);
                     byte[] data;
-                    data = IO.readURL(myUrl);
-                    return defineClass(name, data, 0, data.length);
+                    if (name.endsWith("StringContainer")) {
+                        synchronized (helperClasses) {
+                            c = helperClasses.get(name);
+                            if (c == null) {
+                                data = IO.readURL(myUrl);
+                                c = parent.defineClass(name, data, 0, data.length);
+                                helperClasses.put(name, c);
+                            }
+                        }
+                    } else {
+                        data = IO.readURL(myUrl);
+                        c = defineClass(name, data, 0, data.length);
+                    }
+                    return c;
                 }
             } catch (Exception e) {
                 if (e instanceof UpdateRequiredClassNotFoundException) throw (UpdateRequiredClassNotFoundException) e;

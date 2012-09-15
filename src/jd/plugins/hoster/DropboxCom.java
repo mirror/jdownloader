@@ -31,7 +31,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropbox.com" }, urls = { "https?://(www\\.)?(dl\\-web\\.dropbox\\.com/get/.*?w=[0-9a-f]+|([\\w]+:[\\w]+@)?api\\-content\\.dropbox\\.com/\\d+/files/.+|dropboxdecrypted\\.com/.+)" }, flags = { 2 })
 public class DropboxCom extends PluginForHost {
-    private static final Object             LOCK       = new Object();
+    private static Object                   LOCK       = new Object();
     private static HashMap<String, Cookies> accountMap = new HashMap<String, Cookies>();
 
     public DropboxCom(PluginWrapper wrapper) {

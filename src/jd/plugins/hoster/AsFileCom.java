@@ -53,7 +53,7 @@ public class AsFileCom extends PluginForHost {
         return "http://asfile.com/en/page/offer";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://asfile.com";
 
     @Override

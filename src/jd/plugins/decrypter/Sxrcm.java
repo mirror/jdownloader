@@ -38,7 +38,7 @@ public class Sxrcm extends PluginForDecrypt {
     private static final Pattern PATTERN_PASSWORD           = Pattern.compile("<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final Pattern PATTERN_DL_LINK_PAGE       = Pattern.compile("href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_REDIRECT_LINKS     = Pattern.compile("value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
-    private static final Object  LOCK                       = new Object();
+    private static Object        LOCK                       = new Object();
 
     public Sxrcm(PluginWrapper wrapper) {
         super(wrapper);

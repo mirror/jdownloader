@@ -62,7 +62,7 @@ public class SharpFileCom extends PluginForHost {
     private static final String  TEMPORARYUNAVAILABLE = ">The file you requested is temporarily unavailable";
     private static final String  MAINTENANCEUSERTEXT  = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT        = "Waiting till new downloads can be started";
-    private static final Object  LOCK                 = new Object();
+    private static Object        LOCK                 = new Object();
     private static AtomicInteger maxPrem              = new AtomicInteger(1);
 
     // DEV NOTES
@@ -155,8 +155,7 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         checkErrors(downloadLink, false, passCode);
         if (dllink == null) {

@@ -52,7 +52,7 @@ public class SuperUploadCom extends PluginForHost {
         return "http://www.superupload.com/#p=terms";
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://superupload.com";
 
     @Override

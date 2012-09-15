@@ -44,7 +44,7 @@ import jd.plugins.PluginForHost;
 public class VKontakteRuHoster extends PluginForHost {
 
     private static final String DOMAIN    = "http://vk.com";
-    private static final Object LOCK      = new Object();
+    private static Object       LOCK      = new Object();
     private String              FINALLINK = null;
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
@@ -91,8 +91,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
+         * Chunks disabled because (till now) this plugin only exists to download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -134,8 +133,8 @@ public class VKontakteRuHoster extends PluginForHost {
         br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
         final String correctedBR = br.toString().replace("\\", "");
         /**
-         * Try to get best quality and test links till a working link is found
-         * as it can happen that the found link is offline but others are online
+         * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others
+         * are online
          */
         String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (String q : qs) {

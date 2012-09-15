@@ -53,14 +53,14 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileserve.com" }, urls = { "http://(www\\.)?fileserve\\.com/file/[a-zA-Z0-9]+" }, flags = { 2 })
 public class FileServeCom extends PluginForHost {
 
-    public String               FILEIDREGEX         = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
-    public static String        agent               = RandomUserAgent.generate();
+    public String         FILEIDREGEX         = "fileserve\\.com/file/([a-zA-Z0-9]+)(http:.*)?";
+    public static String  agent               = RandomUserAgent.generate();
     // public static String agent =
     // "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:8.0) Gecko/20100101 Firefox/8.0";
-    private static final Object LOCK                = new Object();
-    private static final String COOKIE_HOST         = "http://fileserve.com/";
-    private static final String DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
-    private static final String DLYOURFILESTEXT     = "(>FileServe can only be used to download and retrieve files that you have uploaded personally|>If this file belongs to you, please login to download it directly from your file manager)";
+    private static Object LOCK                = new Object();
+    private final String  COOKIE_HOST         = "http://fileserve.com/";
+    private final String  DLYOURFILESUSERTEXT = "You can only download files which YOU uploaded!";
+    private final String  DLYOURFILESTEXT     = "(>FileServe can only be used to download and retrieve files that you have uploaded personally|>If this file belongs to you, please login to download it directly from your file manager)";
 
     public FileServeCom(final PluginWrapper wrapper) {
         super(wrapper);

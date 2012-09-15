@@ -46,7 +46,7 @@ public class CtDiskCom extends PluginForHost {
 
     private static final String MAINPAGE     = "http://www.ctdisk.com/";
 
-    private static final Object LOCK         = new Object();
+    private static Object LOCK         = new Object();
 
     public CtDiskCom(PluginWrapper wrapper) {
         super(wrapper);

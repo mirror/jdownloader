@@ -40,7 +40,6 @@ import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {}, flags = {})
 public class CMS extends PluginForDecrypt {
-    public static final String[] ANNOTATION_NAMES = new String[] { "top-hitz.com", "pdfs.us", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to", "pirate-loads.to", "filefarm.biz" };
 
     /**
      * Returns the annotations flags array
@@ -59,7 +58,7 @@ public class CMS extends PluginForDecrypt {
      * Returns the annotations names array
      */
     public static String[] getAnnotationNames() {
-        return ANNOTATION_NAMES;
+        return new String[] { "top-hitz.com", "pdfs.us", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "hardcoremetal.bz", "saugking.net", "porn-traffic.net", "sceneload.to", "serienfreaks.to", "warez-load.com", "ddl-scene.com", "ddl.byte.to", "dream-team.bz/cms", "ebook-hell.to", "pirate-loads.to", "filefarm.biz" };
     }
 
     /**
@@ -161,8 +160,7 @@ public class CMS extends PluginForDecrypt {
                         }
                     }
                     /*
-                     * Bei hardcoremetal.biz wird mittlerweile der Download als
-                     * DLC-Container angeboten! Workaround für diese Seite
+                     * Bei hardcoremetal.biz wird mittlerweile der Download als DLC-Container angeboten! Workaround für diese Seite
                      */
                     if (br.containsHTML("ACTION=\"/download\\.php\"")) {
                         final Form forms2[] = br.getForms();

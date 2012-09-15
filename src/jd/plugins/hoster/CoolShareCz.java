@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "coolshare.cz" }, urls = { "http://(www\\.)?coolshare\\.cz/stahnout/\\d+" }, flags = { 2 })
 public class CoolShareCz extends PluginForHost {
 
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
 
     private static final String MAINPAGE = "http://coolshare.cz";
 

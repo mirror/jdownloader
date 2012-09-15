@@ -36,8 +36,8 @@ import org.appwork.utils.Hash;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bravotube.net" }, urls = { "http://(www\\.)?bravotube\\.net/videos/[\\w\\-]+" }, flags = { 0 })
 public class BravoTubeNet extends PluginForHost {
 
-    private String        DLLINK = null;
-    private static String AHV    = "OTkwOGI4ZGMyYTgwMGY5NmY4NTQ1ZjczZGZmNWExYzM=";
+    private String DLLINK = null;
+    private String AHV    = "OTkwOGI4ZGMyYTgwMGY5NmY4NTQ1ZjczZGZmNWExYzM=";
 
     public BravoTubeNet(final PluginWrapper wrapper) {
         super(wrapper);

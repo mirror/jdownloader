@@ -56,8 +56,8 @@ public class UpstoRe extends PluginForHost {
         return "http://upsto.re/terms/";
     }
 
-    private static final Object LOCK     = new Object();
-    private final String        MAINPAGE = "http://upsto.re";
+    private static Object LOCK     = new Object();
+    private final String  MAINPAGE = "http://upsto.re";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

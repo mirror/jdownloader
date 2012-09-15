@@ -53,10 +53,10 @@ public class BitShareCom extends PluginForHost {
     private static final String  DLLINKREGEX      = "SUCCESS#(http://.+)";
     private static final String  MAINPAGE         = "http://bitshare.com/";
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private static final Object  LOCK             = new Object();
-    private static char[]        FILENAMEREPLACES = new char[] { '-' };
+    private static Object        LOCK             = new Object();
+    private final char[]         FILENAMEREPLACES = new char[] { '-' };
 
-    private static String        agent            = null;
+    private String               agent            = null;
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -302,8 +302,7 @@ public class BitShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference
-                     * it
+                     * we first have to load the plugin, before we can reference it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();

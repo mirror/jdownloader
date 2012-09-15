@@ -46,7 +46,7 @@ public class BayFilesCom extends PluginForHost {
 
     private static final String CAPTCHAFAILED = "\"Invalid captcha\"";
     private static final String MAINPAGE      = "http://bayfiles.com";
-    private static final Object LOCK          = new Object();
+    private static Object       LOCK          = new Object();
 
     public BayFilesCom(PluginWrapper wrapper) {
         super(wrapper);

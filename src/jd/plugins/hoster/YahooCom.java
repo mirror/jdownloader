@@ -39,7 +39,7 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yahoo.com" }, urls = { "http://(www\\.)?de\\.groups\\.decryptedhahoo\\.com/group/[a-z0-9]+/photos/album/\\d+/pic/\\d+/view\\?.*?yahoolink" }, flags = { 2 })
 public class YahooCom extends PluginForHost {
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     private static final String MAINPAGE = "www.yahoo.com";
 

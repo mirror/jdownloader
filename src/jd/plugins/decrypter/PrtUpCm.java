@@ -38,7 +38,7 @@ public class PrtUpCm extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final static String ua = RandomUserAgent.generate();
+    private String ua = RandomUserAgent.generate();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

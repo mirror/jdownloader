@@ -35,7 +35,7 @@ import jd.plugins.PluginForDecrypt;
 public class OdMscNt extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
-    private static final Object LOCK = new Object();
+    private static Object LOCK = new Object();
 
     public OdMscNt(PluginWrapper wrapper) {
         super(wrapper);

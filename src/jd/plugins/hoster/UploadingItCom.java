@@ -32,7 +32,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadingit.com" }, urls = { "http://(www\\.)?uploadingit\\.com/((d/|get/)[A-Z0-9]{16}|file/[a-zA-Z0-9]{16}/.{1})" }, flags = { 0 })
 public class UploadingItCom extends PluginForHost {
 
-    private final static String ua = RandomUserAgent.generate();
+    private static String ua = RandomUserAgent.generate();
 
     public UploadingItCom(PluginWrapper wrapper) {
         super(wrapper);

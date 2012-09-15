@@ -50,7 +50,7 @@ public class DBankCom extends PluginForHost {
         return MAINPAGE;
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://vmall.com/";
 
     @Override

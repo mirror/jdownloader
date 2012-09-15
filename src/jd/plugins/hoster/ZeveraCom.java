@@ -50,7 +50,7 @@ public class ZeveraCom extends PluginForHost {
     private static final String mName = "zevera.com";
     private static final String mProt = "http://";
     private static final String mServ = mProt + "api." + mName;
-    private static final Object LOCK  = new Object();
+    private static Object LOCK  = new Object();
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -44,10 +45,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czshare.com" }, urls = { "http://(www\\.)?(czshare\\.com/((files/)?\\d+/[A-Za-z0-9_\\.\\-]+(/.{1})?|download_file\\.php\\?id=\\d+\\&code=[A-Za-z0-9\\-]+)|www\\d+\\.czshare\\.com/profi\\.php\\?id=\\d+\\&kod=[A-Za-z0-9\\-]+)" }, flags = { 2 })
 public class CZShareCom extends PluginForHost {
 
-    private final static int    SIMULTANEOUS_PREMIUM = -1;
-    private static final Object LOCK                 = new Object();
-    private static final String MAINPAGE             = "http://czshare.com/";
-    private static final String CAPTCHATEXT          = "captcha\\.php";
+    private static AtomicInteger SIMULTANEOUS_PREMIUM = new AtomicInteger(-1);
+    private static Object        LOCK                 = new Object();
+    private static final String  MAINPAGE             = "http://czshare.com/";
+    private static final String  CAPTCHATEXT          = "captcha\\.php";
 
     public CZShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -96,7 +97,7 @@ public class CZShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return SIMULTANEOUS_PREMIUM;
+        return SIMULTANEOUS_PREMIUM.get();
     }
 
     private void handleErrors() throws PluginException {

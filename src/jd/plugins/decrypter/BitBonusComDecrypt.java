@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -40,8 +41,8 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static boolean     LIMITREACHED  = false;
-    public static final String FILENAMEREGEX = "Name:[\t\n\r ]+<strong>([^<>\"]+)</strong><br";
+    private static AtomicBoolean LIMITREACHED  = new AtomicBoolean(false);
+    public static final String   FILENAMEREGEX = "Name:[\t\n\r ]+<strong>([^<>\"]+)</strong><br";
 
     /** Handling similar to FilesMonsterDecrypter */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -66,7 +67,7 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
         String fname = br.getRegex(FILENAMEREGEX).getMatch(0);
         String fsize = getSize(br);
         String[] decryptedStuff = getTempLinks(br);
-        if (!LIMITREACHED) {
+        if (LIMITREACHED.get() == false) {
             if (decryptedStuff == null || decryptedStuff.length == 0) {
                 logger.warning("BitBonusComDecrypt failed while decrypting link:" + parameter);
                 return null;
@@ -122,7 +123,7 @@ public class BitBonusComDecrypt extends PluginForDecrypt {
                 decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
             }
         } else {
-            LIMITREACHED = true;
+            LIMITREACHED.set(true);
         }
         return decryptedStuff;
     }

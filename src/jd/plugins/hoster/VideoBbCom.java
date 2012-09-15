@@ -46,8 +46,7 @@ public class VideoBbCom extends PluginForHost {
 
         getFinallinkValue(final int[] internalKey, final String token, final Browser br) {
             /*
-             * TODO: parsing content after 0.9xx through
-             * org.codehaus.jackson.JsonNode class
+             * TODO: parsing content after 0.9xx through org.codehaus.jackson.JsonNode class
              */
             String dllink = Encoding.Base64Decode(br.getRegex(token + "\":\"(.*?)\",").getMatch(0));
             dllink = dllink.substring(dllink.length() - 1).equals("&") ? dllink : dllink + "&";
@@ -197,11 +196,11 @@ public class VideoBbCom extends PluginForHost {
         }
     }
 
-    private final String        UA               = RandomUserAgent.generate();
-    private static final Object LOCK             = new Object();
+    private static String       UA               = RandomUserAgent.generate();
+    private static Object       LOCK             = new Object();
     private static final String MAINPAGE         = "http://www.videobb.com/";
     public static final String  ALGOCONTROLERROR = "Server: answer is not correct";
-    private static int[]        internalKeys     = { 226593, 441252, 301517, 596338, 852084 };
+    private final int[]         internalKeys     = { 226593, 441252, 301517, 596338, 852084 };
 
     public VideoBbCom(final PluginWrapper wrapper) {
         super(wrapper);

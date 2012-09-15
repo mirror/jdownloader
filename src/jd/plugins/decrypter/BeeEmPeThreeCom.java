@@ -35,7 +35,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final Object  LOCK         = new Object();
+    public static Object        LOCK         = new Object();
     private static final String CAPTCHAREGEX = "\"(code\\.php\\?par=\\d+)\"";
     private static final String DONE         = "Done#\\|#";
 
@@ -69,8 +69,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
         if (finallink == null) return null;
         /**
-         * Set filename if possible as filenames may be cut or broken if not set
-         * here
+         * Set filename if possible as filenames may be cut or broken if not set here
          */
         DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
         if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename));

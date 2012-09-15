@@ -41,8 +41,6 @@ import jd.utils.locale.JDL;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(?!select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/)(imageview|i/\\?|\\\\?sharekey=|view/\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php)).+" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
 
-    private static boolean pluginloaded = false;
-
     public MdfrFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -219,11 +217,10 @@ public class MdfrFldr extends PluginForDecrypt {
 
     private static synchronized String unescape(final String s) {
         /* we have to make sure the youtube plugin is loaded */
-        if (pluginloaded == false) {
-            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
-            pluginloaded = true;
-        }
+
+        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+
         return jd.plugins.hoster.Youtube.unescape(s);
     }
 }

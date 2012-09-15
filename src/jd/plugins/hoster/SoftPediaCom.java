@@ -35,18 +35,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?-download-\\d+\\.(s)?html)" }, flags = { 2 })
 public class SoftPediaCom extends PluginForHost {
 
-    private static final String   SOFTPEDIASERVERS = "allservers";
+    private static final String SOFTPEDIASERVERS = "allservers";
 
-    private static final String   SERVER0          = "SP Mirror (US)";
+    private static final String SERVER0          = "SP Mirror (US)";
 
-    private static final String   SERVER1          = "SP Mirror (RO)";
-    private static final String   SERVER2          = "Softpedia Mirror (US)";
-    private static final String   SERVER3          = "Softpedia Mirror (RO)";
+    private static final String SERVER1          = "SP Mirror (RO)";
+    private static final String SERVER2          = "Softpedia Mirror (US)";
+    private static final String SERVER3          = "Softpedia Mirror (RO)";
     /** The list of server values displayed to the user */
-    private static final String[] servers;
-    static {
-        servers = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
-    }
+    private final String[]      servers          = new String[] { SERVER0, SERVER1, SERVER2, SERVER3 };
 
     public SoftPediaCom(PluginWrapper wrapper) {
         super(wrapper);

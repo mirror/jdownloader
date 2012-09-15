@@ -53,7 +53,7 @@ public class StreamRatioCom extends PluginForHost {
     // other: no redirects
 
     private static final String  MAINPAGE = "http://www.streamratio.com";
-    private static final Object  LOCK     = new Object();
+    private static Object        LOCK     = new Object();
     private static AtomicInteger maxPrem  = new AtomicInteger(1);
 
     public StreamRatioCom(PluginWrapper wrapper) {

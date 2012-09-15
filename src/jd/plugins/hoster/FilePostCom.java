@@ -58,7 +58,7 @@ public class FilePostCom extends PluginForHost {
     private boolean             showAccountCaptcha = false;
     private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
     private static final String MAINPAGE           = "https://filepost.com/";
-    private static final Object LOCK               = new Object();
+    private static Object LOCK               = new Object();
     private static final String FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
 
     public FilePostCom(PluginWrapper wrapper) {

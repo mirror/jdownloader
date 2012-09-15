@@ -35,7 +35,7 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final Object  LOCK          = new Object();
+    public static Object        LOCK          = new Object();
     private static final String CAPTCHAREGEX  = "id=\"image_c\" src=\"(/.*?)\"";
     private static final String CAPTCHAREGEX2 = "\"(/code\\.php\\?par=\\d+)\"";
     private static final String DONE          = "Done#\\|#";

@@ -52,7 +52,7 @@ public class NowVideoEu extends PluginForHost {
         link.setUrlDownload("http://www.nowvideo.co/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
-    private static final Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://nowvideo.co";
 
     @Override
@@ -93,9 +93,8 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you haveno limits, as
-     * premium neither and you can't even download the original videos as
-     * premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you haveno limits, as premium neither and you can't even download the original
+     * videos as premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {

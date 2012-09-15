@@ -46,8 +46,8 @@ public class SockShareCom extends PluginForHost {
 
     private static final String MAINPAGE          = "http://sockshare.com";
     private static final String SERVERUNAVAILABLE = "(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)";
-    private static final Object LOCK              = new Object();
-    private static String       agent             = null;
+    private static Object       LOCK              = new Object();
+    private String              agent             = null;
 
     public SockShareCom(PluginWrapper wrapper) {
         super(wrapper);

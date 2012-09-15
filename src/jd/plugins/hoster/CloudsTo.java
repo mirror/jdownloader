@@ -65,14 +65,13 @@ public class CloudsTo extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
     /**
-     * More could be possible but server is too slow, limit is reached before
-     * more can be started
+     * More could be possible but server is too slow, limit is reached before more can be started
      */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(3);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static final Object  LOCK                         = new Object();
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -337,19 +336,14 @@ public class CloudsTo extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)

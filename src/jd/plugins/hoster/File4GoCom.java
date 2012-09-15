@@ -51,7 +51,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://file4go.com";
-    private static final Object LOCK     = new Object();
+    private static Object LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {

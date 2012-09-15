@@ -44,7 +44,7 @@ public class SpeedyShareCom extends PluginForHost {
     private static final String PREMIUMONLYTEXT = "Only downloadable for premium users";
     private static final String MAINPAGE        = "http://www.speedyshare.com";
     private static final String CAPTCHATEXT     = "/captcha\\.php\\?";
-    private static final Object LOCK            = new Object();
+    private static Object       LOCK            = new Object();
 
     public SpeedyShareCom(PluginWrapper wrapper) {
         super(wrapper);
