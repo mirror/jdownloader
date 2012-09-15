@@ -76,7 +76,6 @@ public class CrunchyRollCom extends PluginForHost {
     static private final String                              RCP_API_VIDEO_PLAYER = "RpcApiVideoPlayer_GetStandardConfig";
     static private final String                              RCP_API_SUBTITLE     = "RpcApiSubtitle_GetXml";
     static private final String                              RCP_API_ANDROID      = "RpcApiAndroid_GetVideoWithAcl";
-    static private final String                              RTMPDUMP_MIN_VER     = "2.4";
 
     @SuppressWarnings("deprecation")
     public CrunchyRollCom(final PluginWrapper wrapper) {
@@ -257,8 +256,8 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf", "swfdir". These are set
-     * by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
+     * Attempt to download the given file using RTMP (rtmpdump). Needs to use the properties "valid", "rtmphost", "rtmpfile", "rtmpswf",
+     * "swfdir". These are set by jd.plugins.decrypter.CrchyRollCom.setRMP() through requestFileInformation()
      * 
      * @param downloadLink
      *            The DownloadLink to try and download using RTMP
@@ -267,13 +266,6 @@ public class CrunchyRollCom extends PluginForHost {
         // Check if the link appears to be valid
         if ((Boolean) downloadLink.getProperty("valid", false) && downloadLink.getStringProperty("rtmphost").startsWith("rtmp")) {
             final String url = downloadLink.getStringProperty("rtmphost") + "/" + downloadLink.getStringProperty("rtmpfile");
-            final jd.network.rtmp.RtmpDump rtmpTest = new jd.network.rtmp.RtmpDump(this, downloadLink, url);
-
-            // Make sure we have a new enough version
-            final String rtmpVer = this.normaliseRtmpVersion(rtmpTest.getRtmpDumpVersion(), ".", 5);
-            final String minVer = this.normaliseRtmpVersion(CrunchyRollCom.RTMPDUMP_MIN_VER, ".", 5);
-
-            if (rtmpVer.compareTo(minVer) < 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "RTMPDump v" + CrunchyRollCom.RTMPDUMP_MIN_VER + " or newer required"); }
 
             // Create the download
             this.dl = new RTMPDownload(this, downloadLink, url);
@@ -451,14 +443,16 @@ public class CrunchyRollCom extends PluginForHost {
     }
 
     /**
-     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in "000900100002".
+     * Pad and format version numbers so that the String.compare() method can be used simply. ("9.10.2", ".", 4) would result in
+     * "000900100002".
      * 
      * @param version
      *            The version number string to format (e.g. '9.10.2')
      * @param sep
      *            The character(s) to split the numbers by (e.g. '.')
      * @param maxWidth
-     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this are not truncated.
+     *            The number of digits to pad the numbers to (e.g. 5 would make '12' become '00012'). Note that numbers which exceed this
+     *            are not truncated.
      * @return The formatted version number ready to be compared
      */
     private String normaliseRtmpVersion(final String version, final String sep, final int maxWidth) {

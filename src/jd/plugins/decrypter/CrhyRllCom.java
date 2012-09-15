@@ -130,8 +130,11 @@ public class CrhyRllCom extends PluginForDecrypt {
             if (!swfUrl.matches()) { throw new DecrypterException("Invalid SWF url"); }
 
             // Find the available qualities by looking for the buttons
-            final String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
-            if (qualities.length == 0) { throw new DecrypterException("No qualities found"); }
+            String[] qualities = this.br.getRegex("\\?p([0-9]+)=1").getColumn(0);
+            if (qualities == null || qualities.length == 0) {
+                qualities = br.getRegex("token=\"showmedia\\.(\\d+)p\"").getColumn(0);
+                if (qualities == null || qualities.length == 0) throw new DecrypterException("No qualities found");
+            }
 
             final FilePackage filePackage = FilePackage.getInstance();
             filePackage.setProperty("ALLOW_MERGE", true);
@@ -171,7 +174,9 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             // Get subtitles
-            this.br.getPage(configUrlDecode);
+            br.postPage(configUrlDecode, "current_page=" + cryptedLink.getCryptedUrl());
+            final String mediaId = br.getRegex("<media_id>(\\d+)</media_id>").getMatch(0);
+            br.postPage("http://www.crunchyroll.com/xml/", "req=RpcApiSubtitle%5FGetListing&media%5Fid=" + mediaId);
             final String[][] subtitles = this.br.getRegex(CrhyRllCom.CONFIG_SUBS).getMatches();
 
             // Loop through each subtitles xml found
@@ -196,7 +201,6 @@ public class CrhyRllCom extends PluginForDecrypt {
             }
 
             // Add the Android video file (low-res, embedded subtitles)
-            final String mediaId = configUrl.getMatch(1);
             final String androidFile = title + SUFFIX_ANDROID;
 
             final DownloadLink androidLink = this.createDownloadlink("http://www.crunchyroll.com/android_rpc/?req=RpcApiAndroid_GetVideoWithAcl&media_id=" + mediaId);
@@ -411,7 +415,7 @@ public class CrhyRllCom extends PluginForDecrypt {
             // Get the XML file for the given quality code
             final String url = configUrl.getMatch(0) + quality + configUrl.getMatch(3);
             br.setFollowRedirects(true);
-            br.getPage(url);
+            br.postPage(url, "current_page=" + downloadLink.getDownloadURL());
 
             // Does the file actually exist?
             if (br.containsHTML("<msg>Media not found</msg>")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "File does not exist"); }
