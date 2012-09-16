@@ -180,7 +180,7 @@ public class Zippysharecom extends PluginForHost {
             filename = br.getRegex("'\\+" + var + "\\+'/(.*?)';").getMatch(0);
         }
 
-        if (filename.contains("/fileName?key=")) {
+        if (filename == null || filename.contains("/fileName?key=")) {
             String url = br.getRegex("document\\.location = \\'(/d/[^<>\"]*?\\';)").getMatch(0);
             if (url != null) {
                 filename = new Regex(url, "d/\\d+/\\d+/([^<>\"]*?)\\';").getMatch(0);
