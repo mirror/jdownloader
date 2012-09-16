@@ -388,6 +388,7 @@ public class BillionUploadsCom extends PluginForHost {
                         // generic fail over for COOKIE_HOST on final link
                         // format.
                         if (dllink == null) {
+                            dllink = br.getRegex("id=\"wo\".*?<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File|Download)").getMatch(0);
                             // dllink = new Regex(correctedBR,
                             // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             // dllink = new Regex(correctedBR,
