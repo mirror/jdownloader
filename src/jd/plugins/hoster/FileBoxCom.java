@@ -54,7 +54,7 @@ public class FileBoxCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
     private String              LINKID              = null;
 
     // XfileSharingProBasic Version 2.5.2.0, modified filename handling
@@ -95,13 +95,19 @@ public class FileBoxCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-
         Form dlForm = br.getFormbyProperty("name", "F1");
         if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dlForm.remove(null);
+        dlForm.put("down_direct", "1");
+        int wait = 5;
+        sleep(wait * 1000l, link);
         br.submitForm(dlForm);
         doSomething();
-        link.setName(LINKID + ".mp4");
+        String filename = new Regex(correctedBR, "File Name : <span>(.*?)<").getMatch(0);
+        if (filename == null) {
+            filename = LINKID;
+        }
+        link.setName(filename.trim());
         return AvailableStatus.TRUE;
     }
 
@@ -123,8 +129,7 @@ public class FileBoxCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "freelink");
 
         /**
-         * Videolinks can already be found here, if a link is found here we can
-         * skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
          */
         dllink = getDllink();
         if (dllink == null) {
