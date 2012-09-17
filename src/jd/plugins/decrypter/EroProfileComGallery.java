@@ -55,7 +55,8 @@ public class EroProfileComGallery extends PluginForDecrypt {
         boolean loggedin = false;
         synchronized (LOCK) {
             /** Login process */
-            loggedin = getUserLogin(false);
+            // force login to see if that solves problems
+            loggedin = getUserLogin(true);
         }
         br.getPage(parameter);
         // Check if account needed but none account entered
