@@ -62,11 +62,11 @@ public class MirrorUploadNet extends PluginForDecrypt {
         for (final String singleLink : links) {
             br.getPage(singleLink);
             final String finallink = br.getRedirectLocation();
-            if (finallink == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            decryptedLinks.add(createDownloadlink(finallink));
+            if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+        }
+        if (decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();

@@ -52,7 +52,7 @@ public class EroProfileCom extends PluginForHost {
     }
 
     private static final String VIDEOLINK = "http://(www\\.)?eroprofile\\.com/m/videos/view/[A-Za-z0-9\\-]+";
-    private static Object LOCK      = new Object();
+    private static Object       LOCK      = new Object();
     private static final String MAINPAGE  = "http://eroprofile.com";
     public static final String  NOACCESS  = "(>You do not have the required privileges to view this page|>No access<)";
 
@@ -147,6 +147,8 @@ public class EroProfileCom extends PluginForHost {
                         return;
                     }
                 }
+                br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
+                br.setCookie("http://eroprofile.com/", "lang", "en");
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X_REQUESTED_WITH", "XMLHttpRequest");
                 br.postPage("http://www.eroprofile.com/process.php?0." + System.currentTimeMillis(), "a=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));

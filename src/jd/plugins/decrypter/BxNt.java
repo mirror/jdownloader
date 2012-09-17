@@ -55,8 +55,11 @@ public class BxNt extends PluginForDecrypt {
             // if it's not a rss feed, check if an rss feed exists
             String baseUrl = new Regex(cryptedlink, BASE_URL_PATTERN).getMatch(0);
             String feedUrl = baseUrl + "/rss.xml";
-            if (feedExists(feedUrl)) { return decryptFeed(feedUrl); }
-
+            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            if (feedExists(feedUrl)) {
+                decryptedLinks = decryptFeed(feedUrl);
+            }
+            if (decryptedLinks.size() != 0) return decryptedLinks;
             // there is no feed -> it's a single file download
             return decryptSingleDLPage(cryptedlink);
         }
@@ -73,6 +76,7 @@ public class BxNt extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> decryptSingleDLPage(String cryptedUrl) throws IOException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        br.setFollowRedirects(true);
         br.getPage(cryptedUrl);
         String decryptedLink = br.getRegex(SINGLE_DOWNLOAD_LINK_PATTERN).getMatch(0);
         if (decryptedLink == null) return null;

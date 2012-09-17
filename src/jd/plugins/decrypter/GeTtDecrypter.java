@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms)#?[A-Za-z0-9]+(/v/0)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?ge\\.tt/(?!developers|press|tools|notifications|blog|about|javascript|button|contact|terms|api)#?[A-Za-z0-9]+(/v/0)?" }, flags = { 0 })
 public class GeTtDecrypter extends PluginForDecrypt {
 
     public GeTtDecrypter(PluginWrapper wrapper) {
@@ -41,8 +41,14 @@ public class GeTtDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("#", "");
         if (new Regex(parameter, "http://(www\\.)?ge\\.tt/[A-Za-z0-9]+/v/0").matches()) {
             br.getPage(parameter);
-            String pictureLink = br.getRegex("<img class=\\'image\\-view loadable\\' src=\\'(http://[^<>\"]*?)\\'>").getMatch(0);
-            if (pictureLink == null) pictureLink = br.getRegex("\\'(http://w\\d+\\.open\\.ge\\.tt/\\d+/files/[^<>\"]*?)\\'").getMatch(0);
+            final String apilink = br.getRegex("\\'(/api/\\d+/files/[A-Za-z0-9]+/[^<>\"]*?)\\' ").getMatch(0);
+            if (apilink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.setFollowRedirects(false);
+            br.getPage("http://ge.tt" + apilink);
+            final String pictureLink = br.getRedirectLocation();
             if (pictureLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

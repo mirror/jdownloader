@@ -93,6 +93,7 @@ public class EmbedUploadCom extends PluginForDecrypt {
 
     private String getSingleLink() {
         String link = br.getRegex("link on a new browser window : ([^<>\"]*?)</b>").getMatch(0);
+        if (link == null) link = br.getRegex("You should click on the download link : <a href=\\'(http[^<>\"]*?)\\'").getMatch(0);
         return link;
     }
 }

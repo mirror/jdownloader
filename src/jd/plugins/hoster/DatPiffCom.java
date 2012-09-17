@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -47,9 +48,10 @@ public class DatPiffCom extends PluginForHost {
         if (link.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/mixtapes\\-detail\\.php\\?id=\\d+")) {
             link.setUrlDownload(link.getDownloadURL().replace("datpiff.com/mixtapes-detail.php?id=", "datpiff.com/pop-mixtape-download.php?id="));
         } else if (!link.getDownloadURL().contains("-download.php")) {
-            br.getPage(link.getDownloadURL());
-            String downID = br.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
-            if (downID == null) downID = br.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
+            final Browser br2 = new Browser();
+            br2.getPage(link.getDownloadURL());
+            String downID = br2.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
+            if (downID == null) downID = br2.getRegex("mixtapePlayer\\.swf\\?mid=(.*?)\"").getMatch(0);
             if (downID != null) link.setUrlDownload("http://www.datpiff.com/pop-mixtape-download.php?id=" + downID);
         }
     }

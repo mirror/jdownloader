@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/(?!live|alle\\-videos)[a-z0-9\\-]+/" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "giga.de" }, urls = { "http://(www\\.)?giga\\.de/tv/(?!live|alle\\-videos|downloads)[a-z0-9\\-]+/" }, flags = { 0 })
 public class GigaDe extends PluginForDecrypt {
 
     public GigaDe(PluginWrapper wrapper) {

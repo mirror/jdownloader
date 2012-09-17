@@ -46,6 +46,10 @@ public class FlStbCm extends PluginForDecrypt {
         br.setCookie("http://filestube.com/", "adultChecked", "1");
         br.getPage(parameter);
         if (parameter.contains("/go.html")) {
+            if (br.containsHTML("\\- File no longer available<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             String finallink = br.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
             if (finallink == null) {
@@ -103,7 +107,12 @@ public class FlStbCm extends PluginForDecrypt {
                 return decryptedLinks;
             }
             externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
-            if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+            if (externID == null) {
+                externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+                if (externID == null) {
+                    externID = br.getRegex("pornhub\\.com/embed_player\\.php\\?id=(\\d+)\"").getMatch(0);
+                }
+            }
             if (externID != null) {
                 DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
                 decryptedLinks.add(dl);
@@ -114,7 +123,7 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("filestube: Pornhub link is broken: " + parameter);
                 return decryptedLinks;
             }
-            externID = br.getRegex("tnaflix.com/embedding_player/player_[^<>\"]+\\.swf\" /><param name=\"FlashVars\" value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+            externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
             if (externID != null) {
                 br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
                 externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
@@ -166,7 +175,7 @@ public class FlStbCm extends PluginForDecrypt {
                     return decryptedLinks;
                 }
             }
-            if (br.containsHTML("api\\.kewego\\.com")) {
+            if (br.containsHTML("api\\.kewego\\.com") || br.containsHTML("kewego\\.es/p/")) {
                 logger.info("Cannot decrypt link (not a bug): " + parameter);
                 return decryptedLinks;
             }

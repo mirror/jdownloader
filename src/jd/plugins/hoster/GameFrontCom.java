@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -51,34 +52,21 @@ public class GameFrontCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        String fileID = new Regex(downloadLink.getDownloadURL(), "gamefront\\.com/files/(\\d+)").getMatch(0);
-        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        br.getPage("http://www.gamefront.com/files/service/thankyou?id=" + fileID);
-        br.setFollowRedirects(true);
-        String finallink = br.getRegex("begin in a moment\\. If it does not, <a href=\"(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("(\"|')(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)(\"|')").getMatch(1);
-        if (finallink == null) finallink = br.getRegex("downloadURL.*?(http://media\\d+\\.gamefront\\.com/.*?)'").getMatch(0);
-        if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("(<title>404 - Not Found</title>|<h1>404 - Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-
-    }
+    private boolean AVAILABLECHECKFAILED = true;
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        br.setReadTimeout(3 * 60 * 1000);
+        for (int i = 0; i <= 3; i++) {
+            final URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 502) continue;
+            br.followConnection();
+            AVAILABLECHECKFAILED = false;
+            break;
+        }
+        if (AVAILABLECHECKFAILED) return AvailableStatus.UNCHECKABLE;
         if (br.containsHTML("(>File not found, you will be redirected to|<title>Game Front</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -104,6 +92,30 @@ public class GameFrontCom extends PluginForHost {
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.") + "b"));
         if (br.containsHTML("he file you are looking for seems to be unavailable at the")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unavailable at the moment", 60 * 60 * 1000l);
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (AVAILABLECHECKFAILED) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        String fileID = new Regex(downloadLink.getDownloadURL(), "gamefront\\.com/files/(\\d+)").getMatch(0);
+        if (fileID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        br.getPage("http://www.gamefront.com/files/service/thankyou?id=" + fileID);
+        br.setFollowRedirects(true);
+        String finallink = br.getRegex("begin in a moment\\. If it does not, <a href=\"(http://.*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("http-equiv=\"refresh\" content=\"\\d+;url=(http://.*?)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("(\"|')(http://media\\d+\\.gamefront\\.com/personal/\\d+/\\d+/[a-z0-9]+/.*?)(\"|')").getMatch(1);
+        if (finallink == null) finallink = br.getRegex("downloadURL.*?(http://media\\d+\\.gamefront\\.com/.*?)'").getMatch(0);
+        if (finallink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("(<title>404 - Not Found</title>|<h1>404 - Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+
     }
 
     @Override

@@ -50,6 +50,7 @@ public class EroProfileComGallery extends PluginForDecrypt {
         String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookiesExclusive(false);
+        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
         br.setCookie("http://eroprofile.com/", "lang", "en");
         boolean loggedin = false;
         synchronized (LOCK) {
@@ -60,6 +61,10 @@ public class EroProfileComGallery extends PluginForDecrypt {
         // Check if account needed but none account entered
         if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS) && !loggedin) {
             logger.info("Account needed to decrypt link: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(jd.plugins.hoster.EroProfileCom.NOACCESS)) {
+            logger.info("No cookies, login maybe failed: " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("Browse photos from album \\&quot;([^<>\"]*?)\\&quot;<").getMatch(0);
