@@ -74,7 +74,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
                 br.getPage(url);
         } else if (parameter.contains("uploadmirrors.com")) {
             br.getPage(parameter);
-            String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/xwerp\\.php\\?uid=" + id + "&name=[^<>\"]*?)\"").getMatch(0);
+            String status = br.getRegex("ajaxRequest\\.open\\(\"GET\", \"(/[A-Za-z0-9]+\\.php\\?uid=" + id + "&name=[^<>\"/]*?)\"").getMatch(0);
             if (status == null) {
                 logger.warning("Couldn't find status : " + param.toString());
                 return null;

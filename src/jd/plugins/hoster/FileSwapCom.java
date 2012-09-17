@@ -49,7 +49,7 @@ public class FileSwapCom extends PluginForHost {
     // captchatype: null
     // other: no published info on expire time.
 
-    private static Object LOCK    = new Object();
+    private static Object        LOCK    = new Object();
     private static AtomicInteger maxPrem = new AtomicInteger(1);
     private static final String  HOST    = "http://www.fileswap.com";
 
@@ -83,8 +83,7 @@ public class FileSwapCom extends PluginForHost {
         if (br.containsHTML("(>The file you requested has not been found or may no longer be available|<title>FileSwap\\.com :  download free</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<legend>Share This File \\&#187; (.*?)</legend>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>FileSwap\\.com : (.*?) download free</title>").getMatch(0);
-        String filesize = br.getRegex("<b>Size:</b>[\r\n\t]+(\\&nbsp\\;)?[\r\n\t]+([\\d\\.]+ [A-Z]{2})[\r\n\t]+").getMatch(1);
-        if (filesize == null) filesize = br.getRegex("\\&nbsp;\\&nbsp;\\&nbsp; <b>Size:</b>\\&nbsp;[\t\n\r ]+</td>[\t\n\r ]+<td>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("Size:([^<>\"]*?)\\&nbsp;\\&nbsp;\\&nbsp;").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -95,8 +94,7 @@ public class FileSwapCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (br.containsHTML(">The storage node this file is currently on is currently undergoing")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 1000l);
-        String dllink = br.getRegex("<a class=\"downloadbutton\" id=\"bttnDownloadLink\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(https?://dl\\d+\\.fileswap\\.com/download/\\?id=[^<>\"/]*?)\"").getMatch(0);
+        String dllink = br.getRegex("<a id=\"share_index_dlslowbutton\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             int wait = 1;
             String waittime = br.getRegex("var time=(\\d+);").getMatch(0);
@@ -110,6 +108,7 @@ public class FileSwapCom extends PluginForHost {
             dllink = dllink.trim();
             if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapanda.com" }, urls = { "http://(www\\.)?mangapanda\\.com/\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangapanda.com" }, urls = { "http://(www\\.)?mangapanda\\.com/([a-z0-9\\-]+/\\d+|\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html)" }, flags = { 0 })
 public class MangaPandaCom extends PluginForDecrypt {
 
     public MangaPandaCom(PluginWrapper wrapper) {
@@ -47,11 +47,18 @@ public class MangaPandaCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final Regex splitLink = new Regex(parameter, "(http://(www\\.)?mangapanda\\.com/\\d+\\-\\d+\\-)1(/.+)");
+        final Regex splitLink = new Regex(parameter, "(http://(www\\.)?.*?/\\d+\\-\\d+\\-)1(/.+)");
+        final String part1 = splitLink.getMatch(0);
+        final String part2 = splitLink.getMatch(2);
         fpName = Encoding.htmlDecode(fpName.trim());
         final DecimalFormat df = new DecimalFormat("0000");
         for (int i = 1; i <= Integer.parseInt(maxPage); i++) {
-            if (i > 1) br.getPage(splitLink.getMatch(0) + i + splitLink.getMatch(2));
+            if (i > 1) {
+                if (parameter.matches("http://(www\\.)?.*?/\\d+\\-\\d+\\-1/[a-z0-9\\-]+/chapter\\-\\d+\\.html"))
+                    br.getPage(part1 + i + part2);
+                else
+                    br.getPage(parameter + "/" + i);
+            }
             final String finallink = br.getRegex("\"(http://i\\d+\\." + this.getHost() + "/[a-z0-9\\-]+/\\d+/[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

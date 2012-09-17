@@ -168,7 +168,7 @@ public class DataHu extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"download_filename\">(.*?)</div>").getMatch(0);
-        String filesize = br.getRegex(", fájlméret: ([0-9\\.]+ [A-Za-z]{1,5})").getMatch(0);
+        String filesize = br.getRegex("<div class=\"download_filename\">(\\d+(\\.\\d+)? [A-Za-z]{1,5})</div></div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         downloadLink.setName(filename.trim());

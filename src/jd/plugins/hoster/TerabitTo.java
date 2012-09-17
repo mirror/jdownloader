@@ -72,12 +72,12 @@ public class TerabitTo extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods:
+    // mods: getdllink
     // non account: 1 * 1
     // free account: untested, set free limits
     // premium account:
     // protocol: no https
-    // captchatype: null 4dignum recaptcha
+    // captchatype: null
     // other: no redirects, changed waittime regex, changed trafficAvailable
     // regex, added dllink regexes for premium
 
@@ -335,14 +335,19 @@ public class TerabitTo extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -383,7 +388,7 @@ public class TerabitTo extends PluginForHost {
                 if (dllink == null) {
                     dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
+                        dllink = new Regex(correctedBR, "\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/files/\\d+/[a-z0-9]+/[^<>\"/]*?)\\'").getMatch(0);
                         // generic fail over for COOKIE_HOST on final link
                         // format.
                         if (dllink == null) {
