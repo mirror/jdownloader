@@ -100,6 +100,10 @@ public class FileBoxCom extends PluginForHost {
         dlForm.remove(null);
         dlForm.put("down_direct", "1");
         int wait = 5;
+        String waitt = new Regex(correctedBR, "Wait <span id=\".+\">(\\d+)</span> seconds").getMatch(0);
+        if (waitt != null) {
+            wait = Integer.parseInt(waitt);
+        }
         sleep(wait * 1000l, link);
         br.submitForm(dlForm);
         doSomething();
