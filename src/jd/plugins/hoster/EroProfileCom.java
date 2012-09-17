@@ -187,8 +187,7 @@ public class EroProfileCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        // force login to see if that solves problems
-        login(br, account, true);
+        login(br, account, false);
         br.setFollowRedirects(false);
         requestFileInformation(link);
         doFree(link);
