@@ -287,6 +287,7 @@ public class SendspaceCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         String url = downloadLink.getDownloadURL();
         if (!url.contains("/pro/dl/")) {
@@ -318,6 +319,14 @@ public class SendspaceCom extends PluginForHost {
                         return AvailableStatus.TRUE;
                     }
                 }
+                if (br.containsHTML("No htmlCode read")) {
+                    // No html content??? maybe server problem
+                    // seems like a firewall block.
+                    // we should use the api to do a mass check http://www.sendspace.com/dev_howto.html
+                    Thread.sleep(90000);
+                    return requestFileInformation(downloadLink);
+                }
+                // System.out.println(1);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
