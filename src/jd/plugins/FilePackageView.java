@@ -3,6 +3,7 @@ package jd.plugins;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.ChildrenView;
@@ -18,30 +19,35 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     /**
 	 * 
 	 */
-    private static final long   serialVersionUID  = -7310026158976695034L;
+    private static final long   serialVersionUID    = -7310026158976695034L;
 
-    private FilePackage         fp                = null;
-    protected long              structureVersion  = 0;
-    protected long              lastIconVersion   = -1;
+    private FilePackage         fp                  = null;
 
-    protected long              statusVersion     = 0;
-    protected long              lastStatusVersion = -1;
-    protected boolean           isEnabled         = false;
-    protected boolean           lastRunningState  = false;
-    protected long              finishedDate      = -1;
-    protected long              estimatedETA      = -1;
+    protected long              lastIconVersion     = -1;
+    protected long              lastStatusVersion   = -1;
 
-    private int                 offline           = 0;
-    private int                 online            = 0;
+    protected long              lastUpdateTimestamp = -1;
 
-    protected long              lastStatsUpdate   = -1;
-    protected static final long GUIUPDATETIMEOUT  = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
+    protected AtomicLong        statusVersion       = new AtomicLong(0);
+    protected AtomicLong        structureVersion    = new AtomicLong(0);
+
+    protected boolean           isEnabled           = false;
+    protected boolean           lastRunningState    = false;
+    protected long              finishedDate        = -1;
+    protected long              estimatedETA        = -1;
+
+    private int                 offline             = 0;
+    private int                 online              = 0;
+
+    protected static final long GUIUPDATETIMEOUT    = JsonConfig.create(GraphicalUserInterfaceSettings.class).getDownloadViewRefresh();
 
     public boolean isEnabled() {
-        if (lastStatusVersion == statusVersion) return isEnabled;
-        synchronized (this) {
-            if (lastStatusVersion == statusVersion) return isEnabled;
-            updateStatus();
+        if (isStatusUpdateRequired()) {
+            synchronized (this) {
+                if (isStatusUpdateRequired()) {
+                    updateStatus();
+                }
+            }
         }
         return isEnabled;
     }
@@ -55,81 +61,90 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     private long         done  = 0;
 
     public DomainInfo[] getDomainInfos() {
-        if (lastIconVersion == structureVersion) return infos;
-        synchronized (this) {
-            if (lastIconVersion == structureVersion) return infos;
-            HashSet<DomainInfo> infos = new HashSet<DomainInfo>();
-            synchronized (fp) {
-                for (DownloadLink link : fp.getChildren()) {
-                    infos.add(link.getDomainInfo(true));
+        if (isStructureUpdateAvailable(lastIconVersion)) {
+            synchronized (this) {
+                if (isStructureUpdateAvailable(lastIconVersion)) {
+                    HashSet<DomainInfo> infos = new HashSet<DomainInfo>();
+                    synchronized (fp) {
+                        for (DownloadLink link : fp.getChildren()) {
+                            infos.add(link.getDomainInfo(true));
+                        }
+                    }
+                    this.infos = infos.toArray(new DomainInfo[infos.size()]);
+                    lastIconVersion = structureVersion.get();
                 }
             }
-            DomainInfo[] newinfos = new DomainInfo[infos.size()];
-            int index = 0;
-            for (DomainInfo info : infos) {
-                newinfos[index++] = info;
-            }
-            this.infos = newinfos;
-            lastIconVersion = structureVersion;
         }
         return infos;
     }
 
     public void changeStructure() {
-        synchronized (this) {
-            structureVersion++;
-            statusVersion++;
-        }
+        structureVersion.incrementAndGet();
+        changeVersion();
     }
 
     public void changeVersion() {
-        synchronized (this) {
-            statusVersion++;
-        }
+        statusVersion.incrementAndGet();
+    }
+
+    private boolean isStatusUpdateRequired() {
+        return !(statusVersion.get() == lastStatusVersion);
+    }
+
+    private boolean isStructureUpdateAvailable(long lastUpdate) {
+        return !(structureVersion.get() == lastUpdate);
     }
 
     public long getSize() {
-        if (lastStatusVersion == statusVersion) return Math.max(done, size);
-        synchronized (this) {
-            if (lastStatusVersion == statusVersion) return Math.max(done, size);
-            updateStatus();
+        if (isStatusUpdateRequired()) {
+            synchronized (this) {
+                if (isStatusUpdateRequired()) {
+                    updateStatus();
+                }
+            }
         }
         return Math.max(done, size);
     }
 
     public long getDone() {
         boolean guiUpdate = false;
-        if (fp.isEnabled() && System.currentTimeMillis() - lastStatsUpdate > GUIUPDATETIMEOUT) {
+        if (fp.isEnabled() && System.currentTimeMillis() - lastUpdateTimestamp > GUIUPDATETIMEOUT) {
             guiUpdate = DownloadWatchDog.getInstance().hasRunningDownloads(fp);
         }
-        if (lastStatusVersion == statusVersion && !guiUpdate) return done;
-        synchronized (this) {
-            if (guiUpdate && System.currentTimeMillis() - lastStatsUpdate < GUIUPDATETIMEOUT) {
-                guiUpdate = false;
+        if (isStatusUpdateRequired() || guiUpdate) {
+            synchronized (this) {
+                if (guiUpdate && System.currentTimeMillis() - lastUpdateTimestamp < GUIUPDATETIMEOUT) {
+                    guiUpdate = false;
+                }
+                if (isStatusUpdateRequired() || guiUpdate) {
+                    updateStatus();
+                }
             }
-            if (lastStatusVersion == statusVersion && !guiUpdate) return done;
-            updateStatus();
         }
         return done;
     }
 
     public long getETA() {
         boolean guiUpdate = false;
-        if (fp.isEnabled() && System.currentTimeMillis() - lastStatsUpdate > GUIUPDATETIMEOUT) {
+        if (fp.isEnabled() && System.currentTimeMillis() - lastUpdateTimestamp > GUIUPDATETIMEOUT) {
             guiUpdate = DownloadWatchDog.getInstance().hasRunningDownloads(fp);
         }
-        if (lastStatusVersion == statusVersion && guiUpdate == lastRunningState && !guiUpdate) return estimatedETA;
-        synchronized (this) {
-            if (guiUpdate && System.currentTimeMillis() - lastStatsUpdate < GUIUPDATETIMEOUT) {
-                guiUpdate = false;
+        if (isStatusUpdateRequired() || guiUpdate) {
+            synchronized (this) {
+                if (guiUpdate && System.currentTimeMillis() - lastUpdateTimestamp < GUIUPDATETIMEOUT) {
+                    guiUpdate = false;
+                }
+                if (isStatusUpdateRequired() || guiUpdate) {
+                    updateStatus();
+                }
             }
-            if (lastStatusVersion == statusVersion && guiUpdate == lastRunningState && !guiUpdate) return estimatedETA;
-            updateStatus();
         }
         return estimatedETA;
     }
 
     private synchronized void updateStatus() {
+        lastUpdateTimestamp = System.currentTimeMillis();
+        lastStatusVersion = statusVersion.get();
         long newSize = 0;
         long newDone = 0;
         long newFinishedDate = -1;
@@ -142,8 +157,6 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
         long fpSPEED = 0;
         boolean sizeKnown = false;
         boolean fpRunning = false;
-        lastStatusVersion = statusVersion;
-        lastStatsUpdate = System.currentTimeMillis();
         HashSet<String> names = new HashSet<String>();
         boolean allFinished = true;
         synchronized (fp) {
@@ -243,19 +256,23 @@ public class FilePackageView extends ChildrenView<DownloadLink> {
     }
 
     public boolean isFinished() {
-        if (lastStatusVersion == statusVersion) return finishedDate > 0;
-        synchronized (this) {
-            if (lastStatusVersion == statusVersion) return finishedDate > 0;
-            updateStatus();
+        if (isStatusUpdateRequired()) {
+            synchronized (this) {
+                if (isStatusUpdateRequired()) {
+                    updateStatus();
+                }
+            }
         }
         return finishedDate > 0;
     }
 
     public long getFinishedDate() {
-        if (lastStatusVersion == statusVersion) return finishedDate;
-        synchronized (this) {
-            if (lastStatusVersion == statusVersion) return finishedDate;
-            updateStatus();
+        if (isStatusUpdateRequired()) {
+            synchronized (this) {
+                if (isStatusUpdateRequired()) {
+                    updateStatus();
+                }
+            }
         }
         return finishedDate;
     }

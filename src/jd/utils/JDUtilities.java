@@ -268,9 +268,8 @@ public class JDUtilities {
                 DB_CONNECT = new DatabaseConnector();
             } catch (Throwable e) {
                 /* we no longer use old DataBase, so no need to retry or create fresh one */
+                LogController.CL().severe("Rename old Database to avoid loading it again!: " + Application.getResource("/config/database.script").renameTo(Application.getResource("/config/database.scriptBAK")));
                 LogController.CL().log(e);
-                LogController.CL().severe("Rename old Database to avoid loading it again!");
-                Application.getResource("/config/database.script").renameTo(Application.getResource("/config/database.scriptBAK"));
                 oldDBExists = false;
                 throw new NoOldJDDataBaseFoundException();
             }

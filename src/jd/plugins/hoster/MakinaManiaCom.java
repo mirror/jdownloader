@@ -51,7 +51,7 @@ public class MakinaManiaCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://makinamania.com";
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
@@ -162,7 +162,7 @@ public class MakinaManiaCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
+        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;

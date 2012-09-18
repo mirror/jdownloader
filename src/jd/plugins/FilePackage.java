@@ -461,7 +461,14 @@ public class FilePackage extends Property implements Serializable, AbstractPacka
     public void nodeUpdated(DownloadLink source, jd.controlling.packagecontroller.AbstractNodeNotifier.NOTIFY notify) {
         PackageController<FilePackage, DownloadLink> n = getControlledBy();
         if (fpInfo != null) {
-            fpInfo.changeVersion();
+            switch (notify) {
+            case STRUCTURE_CHANCE:
+                fpInfo.changeStructure();
+                break;
+            default:
+                fpInfo.changeVersion();
+                break;
+            }
         }
         if (n != null) {
             n.nodeUpdated(this, notify);
