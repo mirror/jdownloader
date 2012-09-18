@@ -38,7 +38,7 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        if ("http://www.homemade-voyeur.com/".equals(br.getRedirectLocation())) {
+        if ("http://www.homemade-voyeur.com/".equals(br.getRedirectLocation()) || br.containsHTML(">404 Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

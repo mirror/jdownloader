@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeer.info" }, urls = { "http://(www\\.)?filebeer\\.info/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeer.info" }, urls = { "http://(www\\.)?filebeer\\.info/(?!(faq|register|login|terms|report_file)\\.html)[a-z0-9]+" }, flags = { 0 })
 public class FileBeerInfo extends PluginForHost {
 
     public FileBeerInfo(PluginWrapper wrapper) {

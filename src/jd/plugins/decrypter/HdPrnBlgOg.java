@@ -54,7 +54,7 @@ public class HdPrnBlgOg extends PluginForDecrypt {
             return decryptedLinks;
         }
         for (final String link : links) {
-            if (link.matches("http://hd\\-pornblog\\.org/\\?p=\\d+")) decryptedLinks.add(createDownloadlink(link));
+            if (!link.matches("http://hd\\-pornblog\\.org/\\?p=\\d+")) decryptedLinks.add(createDownloadlink(link));
         }
         // assuming that this img hoster is used exclusively.
         String[] imgs = br.getRegex("(http://([\\w\\.]+)?fastpic\\.ru/thumb/[^\"]+)").getColumn(0);

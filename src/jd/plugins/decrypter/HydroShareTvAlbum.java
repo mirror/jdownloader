@@ -51,6 +51,10 @@ public class HydroShareTvAlbum extends PluginForDecrypt {
         }
         br.getPage("http://www.hydroshare.tv/modules/mod_nmap/audio/nmapl.php?s=" + uid);
         final String[] links = br.getRegex("<song file=\"(http://[^<>\"]*?)\"").getColumn(0);
+        if (br.containsHTML("title=\\'No audio files found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

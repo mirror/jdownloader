@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -67,10 +68,17 @@ public class MuslimAssCom extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        // For hosterlinks like hotfile.com (tested)
-        externID = br.getRegex("<p style=\"text\\-align: left;\"><a href=\"(http[^<>\"]*?)\"").getMatch(0);
+        externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
+            decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
+            return decryptedLinks;
+        }
+        // For direct hosterlinks
+        final String[] allLinks = HTMLParser.getHttpLinks(br.toString(), "");
+        if (allLinks != null && allLinks.length != 0) {
+            for (final String aLink : allLinks) {
+                if (!aLink.matches("http://(www\\.)?muslimass\\.com/(?!category|feed|wp\\-content|about)[a-z0-9\\-]+")) decryptedLinks.add(createDownloadlink(aLink));
+            }
             return decryptedLinks;
         }
         logger.warning("muslimass decrypter broken for link: " + parameter);

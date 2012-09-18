@@ -99,6 +99,10 @@ public class ReverBnationCom extends PluginForDecrypt {
                     logger.info("Link offline/invalid: " + parameter);
                     return decryptedLinks;
                 }
+                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to")) {
+                    logger.info("No content to decrypt: " + parameter);
+                    return decryptedLinks;
+                }
                 fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
                 allInfo = br.getRegex("reverbnation\\.com/artist/artist_songs/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\"standard_play_button black_34 song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
             }

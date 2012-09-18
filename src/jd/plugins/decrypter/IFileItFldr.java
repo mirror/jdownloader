@@ -38,6 +38,8 @@ public class IFileItFldr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("ifile.it/", "filecloud.io/");
+        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.setCookie("http://filecloud.io/", "lang", "en");
         br.getPage(parameter);
         String fpName = br.getRegex("<title>([^<>\"]*?) \\- filecloud\\.io</title>").getMatch(0);
         String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
@@ -47,7 +49,7 @@ public class IFileItFldr extends PluginForDecrypt {
             linkinformation = br.getRegex("ukey\":\"([^<>\"]*?)\"").getMatches();
         }
         if (linkinformation == null || linkinformation.length == 0) {
-            if (br.containsHTML("\">this tag belongs to another user<")) {
+            if (br.containsHTML(">this tag belongs to another user<")) {
                 logger.info("No links to decrypt: " + parameter);
                 return decryptedLinks;
             }

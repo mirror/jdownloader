@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)?zophar\\.net/(?!download_file|frontends)[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "roms.zophar.net" }, urls = { "http://(www\\.)?zophar\\.net/(?!download_file|frontends|news\\-archive|consoles)[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?\\.html" }, flags = { 0 })
 public class RmsZphrNt extends PluginForDecrypt {
 
     static private final Pattern patternDownload = Pattern.compile("\"(http://(www\\.)?zophar\\.net/download_file/\\d+)\"", Pattern.CASE_INSENSITIVE);

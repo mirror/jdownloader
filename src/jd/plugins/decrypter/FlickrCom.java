@@ -133,7 +133,7 @@ public class FlickrCom extends PluginForDecrypt {
             }
             logger.info("Found " + addedLinksCounter + " links on page " + i + " of approximately " + lastPage + " pages.");
             logger.info("Found already " + addLinks.size() + " of " + totalEntries + " entries, so we still have to decrypt " + (totalEntries - addLinks.size()) + " entries!");
-            if (addedLinksCounter == 0 || (!(addedLinksCounter == maxEntriesPerPage) && i >= lastPageCalculated) || addLinks.size() == totalEntries) {
+            if (addedLinksCounter == 0 || addLinks.size() == totalEntries) {
                 logger.info("Stopping at page " + i + " because it seems like we got everything decrypted.");
                 break;
             }

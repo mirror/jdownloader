@@ -43,14 +43,14 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("dev.min", "min").replace("min.us/", "minus.com/");
         br.getPage(parameter);
-        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)")) {
+        if (br.containsHTML("(<h2>Not found\\.</h2>|<p>Our records indicate that the gallery/image you are referencing has been deleted or does not exist|The page you requested does not exist)") || br.containsHTML("\"items\": \\[\\]")) {
             DownloadLink dl = createDownloadlink(parameter.replace("minus.com/", "minusdecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // Get album name for package name
-        String fpName = br.getRegex("<title>(.*?) - Minus</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?) \\- Minus</title>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("var gallerydata = \\{.+ \"name\": \"([^\"]+)").getMatch(0);
         if (fpName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -64,7 +64,7 @@ public class MinUsComDecrypter extends PluginForDecrypt {
         if (items == null || items.length == 0) items = br.getRegex("var gallerydata = \\{(.*?)\\};").getColumn(0);
         if (items != null && items.length != 0) {
             for (String singleitems : items) {
-                String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]+\\.[A-Za-z0-9]{1,5})\"").getMatch(0);
+                String filename = new Regex(singleitems, "\"name\": ?\"([^<>\"/]*?)\"").getMatch(0);
                 final String filesize = new Regex(singleitems, "\"filesize_bytes\": ?(\\d+)").getMatch(0);
                 final String secureprefix = new Regex(singleitems, "\"secure_prefix\": ?\"(/\\d+/[A-Za-z0-9\\-_]+)\"").getMatch(0);
                 final String linkid = new Regex(singleitems, "\"id\": ?\"([A-Za-z0-9\\-_]+)\"").getMatch(0);
