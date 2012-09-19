@@ -448,7 +448,11 @@ public class MediaServer implements Runnable {
     }
 
     public void shutdown() {
-        upnpService.shutdown();
+        try {
+            upnpService.shutdown();
+        } catch (Exception e) {
+
+        }
     }
 
     public Router getRouter() {
