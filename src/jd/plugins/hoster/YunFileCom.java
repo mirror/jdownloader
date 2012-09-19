@@ -37,7 +37,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yunfile.com" }, urls = { "http://(www|(page\\d)\\.)?(yunfile|filemarkets|yfdisk)\\.com/file/[a-z0-9]+/[a-z0-9]+" }, flags = { 2 })
 public class YunFileCom extends PluginForHost {
     private static final String MAINPAGE = "http://yunfile.com/";
 
@@ -133,7 +133,7 @@ public class YunFileCom extends PluginForHost {
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
         String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
         String vid2 = br.getRegex("setCookie\\(\"vid2\", \"(.*?)\"").getMatch(0);
-        String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\" method=\"post\"").getMatch(1);
+        String action = br.getRegex("id=\"down_from\"([\t\n\r ]+)?action=\"(http://.*?)\"([\t\n\r ]+)?method=\"post\"").getMatch(1);
         if (action == null) action = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/file/downfile/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
         if (vid == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Those cookies are important, no downloadstart without one of them!
