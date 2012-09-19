@@ -64,7 +64,7 @@ public class YouJizzCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // if (!br.containsHTML("flvPlayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h2>(.*?)</h2>").getMatch(0);
         if (filename == null || filename.trim().length() == 0) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null || filename.trim().length() == 0) filename = br.getRegex("title1\">(.*?)</").getMatch(0);
