@@ -40,11 +40,8 @@ public class FlsMailRu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-    private final String UNAVAILABLE1 = ">В обработке<";
-    private final String UNAVAILABLE2 = ">In process<";
-    private final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    private String       LINKREPLACE  = "wge4zu4rjfsdehehztiuxw";
+    private final String INFOREGEX   = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    private String       LINKREPLACE = "filesmailrudecrypted://";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -60,17 +57,18 @@ public class FlsMailRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        // New kind of links
+        // New kind of links, seems broken
         if (br.containsHTML(jd.plugins.hoster.FilesMailRu.DLMANAGERPAGE)) {
-            String filelink = br.getRegex(DLLINKREGEX).getMatch(0);
+            String filelink = br.getRegex(jd.plugins.hoster.FilesMailRu.DLLINKREGEX).getMatch(0);
             String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
             final String filename = br.getRegex("<title>([^<>\"]*?)  скачать [^<>\"]*?@Mail\\.Ru</title>").getMatch(0);
             if (filename == null || filesize == null || filelink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
             filesize = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixFilesize(filesize, br);
             filelink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(filelink, br);
-            final DownloadLink finallink = createDownloadlink(filelink.replace("files.mail.ru", LINKREPLACE));
+            final DownloadLink finallink = createDownloadlink(filelink.replace("http://", LINKREPLACE));
             finallink.setFinalFileName(filename);
             finallink.setAvailable(true);
             finallink.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -80,11 +78,14 @@ public class FlsMailRu extends PluginForDecrypt {
             decryptedLinks.add(finallink);
         } else {
             String[] linkinformation = br.getRegex(INFOREGEX).getColumn(0);
-            if (linkinformation == null || linkinformation.length == 0) return null;
+            if (linkinformation == null || linkinformation.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String info : linkinformation) {
                 String statusText = null;
-                String directlink = new Regex(info, "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"").getMatch(0);
-                if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
+                String directlink = new Regex(info, jd.plugins.hoster.FilesMailRu.DLLINKREGEX).getMatch(0);
+                if ((info.contains(jd.plugins.hoster.FilesMailRu.UNAVAILABLE1) || info.contains(jd.plugins.hoster.FilesMailRu.UNAVAILABLE2)) && directlink == null) {
                     directlink = parameter;
                     statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
                 }
@@ -96,7 +97,7 @@ public class FlsMailRu extends PluginForDecrypt {
                 }
                 String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
                 directlink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(directlink, br);
-                DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", LINKREPLACE));
+                final DownloadLink finallink = createDownloadlink(directlink.replace("http://", LINKREPLACE));
                 if (statusText != null) finallink.getLinkStatus().setStatusText(statusText);
                 // Maybe that helps id jd gets the english version of the site!
                 if (filesize != null) {

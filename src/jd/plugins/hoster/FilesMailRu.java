@@ -34,14 +34,14 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "filesmailrudecrypted://.+" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
     private static final String UA            = RandomUserAgent.generate();
     private boolean             keepCookies   = false;
 
-    public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\" style=\"display: none;\" class=\"strHidde\">[\t\n\r ]+<div class=\"line\">[\t\n\r ]+<div class=\"str\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"";
-    private static final String UNAVAILABLE1  = ">В обработке<";
-    private static final String UNAVAILABLE2  = ">In process<";
+    public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"";
+    public static final String  UNAVAILABLE1  = ">В обработке<";
+    public static final String  UNAVAILABLE2  = ">In process<";
     private static final String INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
     public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
     public static final String  DLMANAGERPAGE = "class=\"download_type_choose_l\"";
@@ -53,7 +53,7 @@ public class FilesMailRu extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         // Rename the decrypted links to make them work
-        link.setUrlDownload(link.getDownloadURL().replaceAll("wge4zu4rjfsdehehztiuxw", "files.mail.ru"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("filesmailrudecrypted://", ""));
     }
 
     private void doFree(DownloadLink downloadLink, boolean premium) throws Exception, PluginException {
