@@ -21,12 +21,15 @@ import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://(www\\.)?sdx\\.cc/downloads_detail\\.php\\?download_id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sdx.cc" }, urls = { "http://(www\\.)?sdx\\.cc/\\d+/.{1}" }, flags = { 0 })
 public class SdxCc extends PluginForDecrypt {
 
     public SdxCc(PluginWrapper wrapper) {
@@ -38,21 +41,46 @@ public class SdxCc extends PluginForDecrypt {
         final String parameter = cryptedLink.toString();
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getURL().equals("http://www.sdx.cc/news.php")) {
+        if (!br.containsHTML("class=\"r10\\-unit rater\"")) {
             logger.info("Link broken/offline: " + parameter);
             return decryptedLinks;
         }
-        String pw = br.getRegex("<tr>[\t\n\r ]+<td align=\"center\" valign=\"top\" width=\"20%\">([^<>\"]*?)</td>").getMatch(0);
+        final String fpName = br.getRegex("<title>([^<>\"]*?) \\- SDX\\.CC \\| Feel the Speed</title>").getMatch(0);
+        String pw = br.getRegex("<b>Passwort</b></td><td><i>([^<>\"]*?)</i>").getMatch(0);
         pw = pw != null ? pw.trim() : "sdx.cc";
-        String[] links = br.getRegex("\\'(http://(www\\.)?relink\\.us/(f/|view\\.php\\?id=)[a-z0-9]+)\\'").getColumn(0);
-        for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+        ArrayList<String> pwList = new ArrayList<String>(Arrays.asList(new String[] { pw, "sdx.cc" }));
+        final String[] links = br.getRegex("\"(mirror/\\d+/\\d+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return decryptedLinks;
         }
-        ArrayList<String> pwList = new ArrayList<String>(Arrays.asList(new String[] { pw }));
-        for (DownloadLink dlLink : decryptedLinks) {
-            dlLink.setSourcePluginPasswordList(pwList);
+        final Browser ajaxBR = br.cloneBrowser();
+        ajaxBR.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (final String link : links) {
+            br.getPage("http://www.sdx.cc/" + link);
+            final String theKey = br.getRegex("<form id=\"links_form\" class=\"([^<>\"]*?)\"").getMatch(0);
+            if (theKey == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return decryptedLinks;
+            }
+            ajaxBR.postPage("http://www.sdx.cc/ajax.php", "linklist=" + Encoding.urlEncode(theKey));
+            final String[] plainlinks = ajaxBR.getRegex("<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+            if (plainlinks == null || plainlinks.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return decryptedLinks;
+            }
+            for (final String decryptedLink : plainlinks) {
+                final DownloadLink dl = createDownloadlink(decryptedLink);
+                dl.setSourcePluginPasswordList(pwList);
+                decryptedLinks.add(dl);
+            }
         }
-        return decryptedLinks.size() > 0 ? decryptedLinks : null;
+        if (fpName != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.addLinks(decryptedLinks);
+        }
+        return decryptedLinks;
     }
 
 }

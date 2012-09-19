@@ -23,13 +23,11 @@ import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?!trends|signup|login|pro|tools|archive|login\\.php|faq)(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?!trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon)(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
@@ -42,7 +40,10 @@ public class PasteBinCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         /* Error handling for invalid links */
-        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.nolinks", "Perhaps wrong URL or there are no links to add."));
+        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
         if (plaintxt == null && parameter.contains("raw.php")) {
             plaintxt = br.toString();

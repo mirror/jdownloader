@@ -37,7 +37,7 @@ public class SexCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(\"/images/404\\.png\"|\"404 Page Not Found\"|>The page you\\'re looking for could not be found)")) {
+        if (br.containsHTML(">Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -47,18 +47,18 @@ public class SexCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<a target=\"_blank\" rel=\"nofollow\" href=\"http://[^<>\"]*?\" onclick=\"_gaq[^<>\"]*?\">[\t\n\r ]+<img alt=\"[^<>\"]*?\" title=\"[^<>\"]*?\" src=\"(http://images\\.sex\\.com/images/[^<>\"]*?)\"").getMatch(0);
+        String externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("<link rel=\"image_src\" href=\"(http[^<>\"]*?)\"").getMatch(0);
         // For .gif images
         if (externID == null) externID = br.getRegex("<div class=\"image_frame\">[\t\n\r ]+<img alt=\"\" title=\"\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + externID.substring(externID.lastIndexOf(".")));
             decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (externID != null) {
-            decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
         if (externID == null) {

@@ -83,14 +83,17 @@ public class FlsMailRu extends PluginForDecrypt {
             if (linkinformation == null || linkinformation.length == 0) return null;
             for (String info : linkinformation) {
                 String statusText = null;
-                String directlink = new Regex(info, DLLINKREGEX).getMatch(0);
+                String directlink = new Regex(info, "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"").getMatch(0);
                 if ((info.contains(UNAVAILABLE1) || info.contains(UNAVAILABLE2)) && directlink == null) {
                     directlink = parameter;
                     statusText = JDL.L("plugins.hoster.FilesMailRu.InProcess", "Datei steht noch im Upload");
                 }
                 String filename = new Regex(info, "href=\".*?onclick=\"return.*?\">(.*?)<").getMatch(0);
                 if (filename == null) filename = new Regex(info, "class=\"str\">(.*?)</div>").getMatch(0);
-                if (directlink == null || filename == null) return null;
+                if (directlink == null || filename == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 String filesize = new Regex(info, "<td>(.*?{1,15})</td>").getMatch(0);
                 directlink = ((jd.plugins.hoster.FilesMailRu) filesMailRuPlugin).fixLink(directlink, br);
                 DownloadLink finallink = createDownloadlink(directlink.replace("files.mail.ru", LINKREPLACE));

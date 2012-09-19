@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://[\\w\\.]*(tini\\.us|justlink\\.us|poourl\\.com|szort\\.pl)/.{3,}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "Szort.pl" }, urls = { "http://(www\\.)?szort\\.pl/.{3,}" }, flags = { 0 })
 public class SzrtPl extends PluginForDecrypt {
 
     public SzrtPl(PluginWrapper wrapper) {
@@ -44,7 +44,12 @@ public class SzrtPl extends PluginForDecrypt {
         while (true) {
 
             br.getPage(parameter);
+            if (br.containsHTML(">BŁĄD 404 \\- brak strony")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             link = br.getRegex(Pattern.compile("<frame name=\"strona\" src=\"(.*?)\">")).getMatch(0);
+            if (link == null) link = br.getRegex("window\\.location\\.href=\"(http[^<>\"]*?)\"").getMatch(0);
             if (link == null) {
                 parameter = br.getRedirectLocation();
                 if (parameter == null)

@@ -62,7 +62,7 @@ public class MixSharedCom extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object LOCK                         = new Object();
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.4-raz
@@ -138,16 +138,16 @@ public class MixSharedCom extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("op=checkfiles&process=Check+URLs&list=");
                 for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
+                    sb.append(getCutLink(dl));
                     sb.append("%0A");
                 }
                 br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    if (br.containsHTML(">" + dllink.getDownloadURL() + "</td><td style=\"color:red;\">Not found\\!</td>")) {
+                    if (br.containsHTML(">" + getCutLink(dllink) + "</td><td style=\"color:red;\">Not found\\!</td>")) {
                         dllink.setAvailable(false);
                     } else {
-                        final String[][] linkInformation = br.getRegex(">" + dllink.getDownloadURL() + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
-                        if (linkInformation == null) {
+                        final String[][] linkInformation = br.getRegex(">" + getCutLink(dllink) + "</td><td style=\"color:green;\">Found</td><td>([^<>\"]*?)</td>").getMatches();
+                        if (linkInformation == null || linkInformation.length == 0) {
                             logger.warning("Linkchecker broken for " + this.getHost());
                             return false;
                         }
@@ -166,6 +166,10 @@ public class MixSharedCom extends PluginForHost {
             return false;
         }
         return true;
+    }
+
+    final String getCutLink(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "(https?://(www\\.)?mixshared\\.com/[a-z0-9]{12}).*?").getMatch(0);
     }
 
     @Override

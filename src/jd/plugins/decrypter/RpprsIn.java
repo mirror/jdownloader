@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/(.*?\\-beat\\-\\d+\\.html|[A-Za-z0-9_\\-]+\\-tracks\\.html|(?!news\\-|videos|topvideos|randomvideos|swfobject)[A-Za-z0-9_\\-]{3,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/(.*?\\-beat\\-\\d+\\.html|[A-Za-z0-9_\\-]+\\-tracks\\.html|(?!news\\-|videos|topvideos|randomvideos|swfobject|register|login|gsearch)[A-Za-z0-9_\\-]{3,})" }, flags = { 0 })
 public class RpprsIn extends PluginForDecrypt {
 
     public RpprsIn(PluginWrapper wrapper) {
@@ -60,6 +60,10 @@ public class RpprsIn extends PluginForDecrypt {
                 String onlyDifference = "main";
                 if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
                 br.getPage(parameter);
+                if (!br.containsHTML("rappers\\.in/menue/playbutton\\.gif\"")) {
+                    logger.info("Link invalid/offline: " + parameter);
+                    return decryptedLinks;
+                }
                 final String artistID = br.getRegex("makeRIP\\(\"artistplaylist_" + onlyDifference + "\\-(\\d+)\"\\)").getMatch(0);
                 if (artistID == null) {
                     logger.warning("Decrypter broken for link: " + parameter);

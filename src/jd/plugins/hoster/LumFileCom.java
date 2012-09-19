@@ -71,7 +71,7 @@ public class LumFileCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.3-raz
-    // mods:
+    // mods: special login errorhandling
     // non account: 1 * 1
     // free account: same as free (not tested)
     // premium account: 10 * 1 (they have multiple servers and can have 10
@@ -300,14 +300,19 @@ public class LumFileCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -582,6 +587,10 @@ public class LumFileCom extends PluginForHost {
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
+                if (br.containsHTML(">Your account was banned by administrator")) {
+                    logger.info("This account was banned by administrator!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 getPage(COOKIE_HOST + "/?op=my_account");
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

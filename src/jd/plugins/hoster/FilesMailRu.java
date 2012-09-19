@@ -36,15 +36,15 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "http://[\\w\\.]*?wge4zu4rjfsdehehztiuxw/[A-Z0-9]{6}(/[a-z0-9]+)?" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
-    private static final String UA           = RandomUserAgent.generate();
-    private boolean             keepCookies  = false;
+    private static final String UA            = RandomUserAgent.generate();
+    private boolean             keepCookies   = false;
 
-    private static final String DLLINKREGEX  = "\"(http://[a-z0-9-]+\\.files\\.mail\\.ru/.*?/.*?)\"";
-    private static final String UNAVAILABLE1 = ">В обработке<";
-    private static final String UNAVAILABLE2 = ">In process<";
-    private static final String INFOREGEX    = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
-    public static final String  LINKOFFLINE  = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
-    public static final String  DLMANAGERPAGE      = "class=\"download_type_choose_l\"";
+    public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\" style=\"display: none;\" class=\"strHidde\">[\t\n\r ]+<div class=\"line\">[\t\n\r ]+<div class=\"str\">[\t\n\r ]+<a href=\"(http[^<>\"]*?)\"";
+    private static final String UNAVAILABLE1  = ">В обработке<";
+    private static final String UNAVAILABLE2  = ">In process<";
+    private static final String INFOREGEX     = "<td class=\"name\">(.*?<td class=\"do\">.*?)</td>";
+    public static final String  LINKOFFLINE   = "(was not found|were deleted by sender|Не найдено файлов, отправленных с кодом|<b>Ошибка</b>)";
+    public static final String  DLMANAGERPAGE = "class=\"download_type_choose_l\"";
 
     public FilesMailRu(PluginWrapper wrapper) {
         super(wrapper);

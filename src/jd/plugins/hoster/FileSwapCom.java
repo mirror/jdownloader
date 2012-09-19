@@ -108,7 +108,7 @@ public class FileSwapCom extends PluginForHost {
             dllink = dllink.trim();
             if (!dllink.startsWith("http") || dllink.length() > 500) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = Encoding.htmlDecode(dllink).replace("+", "%2B");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -4);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
