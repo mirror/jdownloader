@@ -69,11 +69,13 @@ public class YouJizzCom extends PluginForHost {
         if (filename == null || filename.trim().length() == 0) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null || filename.trim().length() == 0) filename = br.getRegex("title1\">(.*?)</").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+        String Embed = br.getRegex("src='(http://www.youjizz.com/videos/embed/[0-9]+)'").getMatch(0);
+        br.getPage(Embed);
         DLLINK = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.youjizz\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
