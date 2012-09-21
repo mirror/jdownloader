@@ -1,3 +1,4 @@
+AutoDetectAction_run_failed=Byly nalezeny UPnP zařízení, ale nešlo provést Reconnect.\nZkuste místo toho Live Header Reconnect!
 UPNPRouterPlugin_run_error=Nelze najít žádné UPnP zařízení. Zkuste místo toho Live Header Reconnect!
 UPNPRouterPlugin_run_mesg=Skenuji všechny síťové adaptéry
 UPNPRouterPlugin_run_wizard_title=UPnP průvodce routeru
@@ -11,3 +12,4 @@ literally_router=UPnP router
 literally_service_type=Typ služby
 malformedservicetype=Typ služby nepatný, zkuste automatické nastavení UPnP.
 malformedurl=Kontrolní URL je neplatná. Zkuste UPnP autonastavení.
+servicetype_help=Zadejte typ služby (např. urn:schemas-upnp-org:service:ConnectionManager:1)

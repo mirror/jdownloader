@@ -1,3 +1,4 @@
 interaction_batchreconnect_batch=Dávkový script
 interaction_batchreconnect_executein=Spustit v (složka aplikace)
 interaction_batchreconnect_terminal=Interpretr
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Externí Reconnect dávkou

@@ -1,6 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Minimalizovat na lištu
 JDGui_windowClosing_try_answer_tray=Schovat na lištu
 JDGui_windowClosing_try_asnwer_close=Ukončit JDownloader
+JDGui_windowClosing_try_msg_2=Prosím, vyberte mezi\n   - Ukončením JDownloaderu (Zruší všechny běžící procesy)\n   - Minimalizováním na lištu (Stahování poběží dál)\n   - Skrytím na lištu (Stahování poběží dál na pozadí)
 JDGui_windowClosing_try_title_=Zavřít na lištu
 OnCloseAction_exit=Ukončit aplikaci
 OnCloseAction_totaskbar=Minimalizovat na lištu
@@ -32,5 +33,6 @@ popup_downloadfolder=Otevřít složku pro stahování
 popup_exit=Ukončit JDownloader
 popup_pause=Pozastavit stahování
 popup_premiumtoggle=Premium zapnuto
+popup_reconnect=Provést Reconnect teď
 popup_reconnecttoggle=Automatický Reconnect zapnut
 popup_update=Zkontrolovat aktualizace
