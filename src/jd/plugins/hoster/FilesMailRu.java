@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "files.mail.ru" }, urls = { "filesmailrudecrypted://.+" }, flags = { 2 })
 public class FilesMailRu extends PluginForHost {
-    private static final String UA            = RandomUserAgent.generate();
+    private static String       UA            = RandomUserAgent.generate();
     private boolean             keepCookies   = false;
 
     public static final String  DLLINKREGEX   = "<div id=\"dlinklinkOff\\d+\".*?<a href=\"(http[^<>\"]*?)\"";

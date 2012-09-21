@@ -511,10 +511,12 @@ public class TbCm extends PluginForDecrypt {
             html5_fmt_map = br.getRegex("\"url_encoded_fmt_stream_map\": \"(.*?)\"").getMatch(0);
             if (html5_fmt_map == null) {
                 html5_fmt_map = br.getRegex("url_encoded_fmt_stream_map=(.*?)(&|$)").getMatch(0);
-                html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
-                if (!html5_fmt_map.contains("url=")) {
-                    html5_fmt_map = html5_fmt_map.replaceAll("%3D", "=");
-                    html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
+                if (html5_fmt_map != null) {
+                    html5_fmt_map = html5_fmt_map.replaceAll("%2C", ",");
+                    if (!html5_fmt_map.contains("url=")) {
+                        html5_fmt_map = html5_fmt_map.replaceAll("%3D", "=");
+                        html5_fmt_map = html5_fmt_map.replaceAll("%26", "&");
+                    }
                 }
             }
             if (html5_fmt_map != null && !html5_fmt_map.contains("signature") && !html5_fmt_map.contains("sig")) {
