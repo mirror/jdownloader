@@ -298,18 +298,28 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
             StringBuilder sb = new StringBuilder();
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
-            String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
+            final String urls[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "urls"));
             if (urls != null && urls.length > 0) {
                 final String desc[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "descriptions"));
                 final String fnames[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "fnames"));
                 final String cookies = HttpRequest.getParameterbyKey(request, "cookies");
                 final String post = HttpRequest.getParameterbyKey(request, "postData");
                 final String referer = HttpRequest.getParameterbyKey(request, "referer");
+                final String downloadPasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "dpass"));
+                String archivePasswords[] = Regex.getLines(HttpRequest.getParameterbyKey(request, "apass"));
                 /*
                  * create LinkCollectingJob to forward general Information like directory, autostart...
                  */
                 LinkCollectingJob job = new LinkCollectingJob(null);
                 job.setPackageName(HttpRequest.getParameterbyKey(request, "package"));
+                if (archivePasswords != null) {
+                    HashSet<String> passwords = new HashSet<String>();
+                    for (String p : archivePasswords) {
+                        passwords.add(p);
+                    }
+                    job.setExtractPasswords(passwords);
+                }
+
                 String dir = HttpRequest.getParameterbyKey(request, "dir");
                 if (!StringUtils.isEmpty(dir)) {
                     job.setOutputFolder(new File(dir));
@@ -322,11 +332,24 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                 java.util.List<CrawledLink> links = new ArrayList<CrawledLink>();
                 for (int index = 0; index <= urls.length - 1; index++) {
                     CrawledLink link = new CrawledLink(urls[index]);
+                    String tmpDownloadPassword = null;
+                    if (downloadPasswords != null && downloadPasswords.length > 0) {
+                        if (downloadPasswords.length == urls.length) {
+                            tmpDownloadPassword = downloadPasswords[index];
+                        } else {
+                            tmpDownloadPassword = downloadPasswords[0];
+                        }
+                    }
+                    final String downloadPassword = tmpDownloadPassword;
+
                     final int index2 = index;
                     link.setCustomCrawledLinkModifier(new CrawledLinkModifier() {
 
                         public void modifyCrawledLink(CrawledLink link) {
                             DownloadLink dl = link.getDownloadLink();
+                            if (downloadPassword != null) {
+                                dl.setDownloadPassword(downloadPassword);
+                            }
                             if (!dl.gotBrowserUrl()) dl.setBrowserUrl(referer);
                             if (index2 < desc.length) dl.setComment(desc[index2]);
                         }
@@ -345,6 +368,9 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
                                 Log.exception(e);
                             }
                             DownloadLink direct = new DownloadLink(defaultplg, name, "DirectHTTP", url, true);
+                            if (downloadPassword != null) {
+                                direct.setDownloadPassword(downloadPassword);
+                            }
                             if (index2 < desc.length) direct.setComment(desc[index2]);
                             direct.setProperty("cookies", cookies);
                             direct.setProperty("post", post);
