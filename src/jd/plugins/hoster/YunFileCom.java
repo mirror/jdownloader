@@ -113,6 +113,7 @@ public class YunFileCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         checkErrors();
+        String domain = new Regex(downloadLink.getDownloadURL(), "(http://.*?\\.?yunfile\\.com)").getMatch(0);
         String userid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/(.*?)/").getMatch(0);
         String fileid = new Regex(downloadLink.getDownloadURL(), "yunfile\\.com/file/.*?/(.+)").getMatch(0);
         if (userid == null || fileid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -128,7 +129,8 @@ public class YunFileCom extends PluginForHost {
             br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
             if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
+            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
+            br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
         }
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);
         String vid1 = br.getRegex("setCookie\\(\"vid1\", \"(.*?)\"").getMatch(0);
