@@ -1,7 +1,8 @@
+UPNPRouterPlugin_run_error=Nelze najít žádné UPnP zařízení. Zkuste místo toho Live Header Reconnect!
 UPNPRouterPlugin_run_mesg=Skenuji všechny síťové adaptéry
 UPNPRouterPlugin_run_wizard_title=UPnP průvodce routeru
 auto=UPnP automatické nastavení
-controlURLTxt_help=Vložit kontrolní URL
+controlURLTxt_help=Zadejte kontrolní URL...
 interaction_UpnpReconnect_wanservice_ip=Internetový protokol
 interaction_UpnpReconnect_wanservice_ppp=Point-to-Point protokol
 literally_choose_router=Vybrat zařízení
