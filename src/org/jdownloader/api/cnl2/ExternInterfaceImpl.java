@@ -295,6 +295,7 @@ public class ExternInterfaceImpl implements Cnl2APIBasics, Cnl2APIFlash {
 
     public void flashgot(RemoteAPIResponse response, RemoteAPIRequest request) {
         try {
+            askPermission(request);
             StringBuilder sb = new StringBuilder();
             sb.append(jdpath + "\r\n");
             sb.append("java -Xmx512m -jar " + jdpath + "\r\n");
