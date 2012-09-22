@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|theisozone)\\.com/downloads/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+/|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xboxisozone.com" }, urls = { "http://(www\\.)?((xboxisozone|dcisozone|gcisozone|theisozone)\\.com/downloads/[^<>\"/]+/[^<>\"/]+/[^<>\"/]{4,}/|psisozone\\.com/downloads/\\d+/.*?/|romgamer\\.com/roms/.*?/\\d+/)" }, flags = { 0 })
 public class XboxSoZoneCom extends PluginForDecrypt {
 
     public XboxSoZoneCom(PluginWrapper wrapper) {

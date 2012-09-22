@@ -47,7 +47,16 @@ public class UnixMangaCom extends PluginForDecrypt {
         ArrayList<String> tempList = new ArrayList<String>();
         br.setFollowRedirects(true);
         String url = parameter.toString();
-        br.getPage(url);
+        try {
+            br.getPage(url);
+        } catch (final Exception e) {
+            logger.info("Server error -> Decrypt failed for link: " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.containsHTML(">Select A Link To Start Reading<")) {
+            logger.info("Unsupported link: " + parameter);
+            return decryptedLinks;
+        }
 
         // We get the title
         String title = br.getRegex("<TITLE>READ\\-\\->\\.\\.([^<>\"]*?)\\.\\.<\\-\\-ONLINE ACCESS</TITLE>").getMatch(0);

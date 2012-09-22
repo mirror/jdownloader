@@ -54,22 +54,15 @@ public class TgfServicesComFolder extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://tgf-services.com" + dl));
         } else {
             // Decrypt sub-links of normal downloadlinks
-            String allIDs = br.getRegex("id=\"inner_ids\" value=\"([0-9,]+)\"").getMatch(0);
-            if (allIDs != null) {
+            String[][] allinfo = br.getRegex("id=\"button_download_(\\d+)\" onclick=\"\" value=\"\" class=\"btn btn\\-download\\-small2\">.*?<td width=\"5%\" align=\"right\">(\\d+)\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]*?)</td>").getMatches();
+            if (allinfo != null) {
                 fpName = br.getRegex("<td width=\"93%\"><h1>(.*?)</h1></td>").getMatch(0);
-                String[] subFileIDs = allIDs.split(",");
-                int counter = 1;
-                for (String subFileID : subFileIDs) {
-                    DownloadLink dl = createDownloadlink(br.getURL().replace("/UserDownloads/", "/UserDownloadsdecrypted" + subFileID + "/"));
-                    dl.setProperty("startNumber", counter);
-                    // Do available check directly, works very fast
-                    String filename = br.getRegex("<td width=\"5%\" align=\"right\">" + counter + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]+)</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"free\\-download\" id=\"free\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"premium\\-download\" id=\"premium\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<\\!\\-\\-DOWNLOAD TR\\-\\->[\t\n\r ]+<td colspan=\"4\">[\t\n\r ]+<\\!\\-\\-PREMIUM\\-\\->[\t\n\r ]+<div align=\"center\" style=\"display: none;\" class=\"download\\-premium\\-window\" id=\"download\\-premium\\-window\\-" + subFileID + "\">").getMatch(0);
-                    if (filename != null) {
-                        dl.setFinalFileName(counter + "." + Encoding.htmlDecode(filename.trim() + ".mp3"));
-                        dl.setAvailable(true);
-                    }
+                for (final String[] linkInfo : allinfo) {
+                    final DownloadLink dl = createDownloadlink(br.getURL().replace("/UserDownloads/", "/UserDownloadsdecrypted" + linkInfo[0] + "/"));
+                    dl.setProperty("startNumber", linkInfo[1]);
+                    dl.setFinalFileName(linkInfo[1] + "." + Encoding.htmlDecode(linkInfo[2].trim()) + ".mp3");
+                    dl.setAvailable(true);
                     decryptedLinks.add(dl);
-                    counter++;
                 }
             } else {
                 decryptedLinks.add(createDownloadlink(parameter.replace("/UserDownloads/", "/UserDownloadsdecrypted/")));

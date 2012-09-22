@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -23,10 +24,14 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "urlguard.org" }, urls = { "http://(www\\.)?urlguard\\.org/[a-z0-9]+" }, flags = { 0 })
 public class UrlGuardOrg extends PluginForDecrypt {
@@ -40,6 +45,32 @@ public class UrlGuardOrg extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if ("http://urlguard.org/".equals(br.getRedirectLocation())) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            rc.setId(id);
+            if (id == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            rc.load();
+            for (int i = 0; i <= 3; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
+                br.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        }
         final String singleLinkframe = br.getRegex("\"(/frame\\.php\\?\\d+)\"").getMatch(0);
         if (singleLinkframe != null) {
             br.getPage("http://urlguard.org" + singleLinkframe);

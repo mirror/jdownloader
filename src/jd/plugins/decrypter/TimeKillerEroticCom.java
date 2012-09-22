@@ -98,7 +98,8 @@ public class TimeKillerEroticCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9]+\\|(\\d+)").getMatch(0);
+        // pornyeah 2
+        tempID = br.getRegex("pornyeah\\.com/playerConfig\\.php\\?[a-z0-9]+\\.[a-z0-9\\.]+\\|(\\d+)").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("http://www.pornyeah.com/videos/" + Integer.toString(new Random().nextInt(1000000)) + "-" + tempID + ".html");
             decryptedLinks.add(dl);

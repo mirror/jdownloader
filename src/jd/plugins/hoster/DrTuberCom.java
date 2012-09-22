@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -99,10 +100,10 @@ public class DrTuberCom extends PluginForHost {
         }
 
         /* normal links */
-        if (downloadLink.getDownloadURL().matches("http://(www\\.)?drtuber\\.com/video/\\d+")) {
+        if (new Regex(downloadLink.getDownloadURL(), Pattern.compile("http://(www\\.)?drtuber\\.com/video/\\d+", Pattern.CASE_INSENSITIVE)).matches()) {
             br.getPage(downloadLink.getDownloadURL());
-            if (br.containsHTML("(This video cannot be found\\.|Are you sure you typed in the correct url\\?<)") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            filename = br.getRegex("<title>(.*?) - Free Porn.*?DrTuber\\.com</title>").getMatch(0);
+            if (br.containsHTML("This video was deleted") || br.getURL().contains("missing=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            filename = br.getRegex("<title>(.*?) \\- Free Porn.*?DrTuber\\.com</title>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<h1 class=\"name\">(.*?)</h1>").getMatch(0);
             }

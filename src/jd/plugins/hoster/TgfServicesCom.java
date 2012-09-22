@@ -144,11 +144,10 @@ public class TgfServicesCom extends PluginForHost {
             if (br.getRedirectLocation().contains("/Warning/?err_num=15")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String startNumber = link.getStringProperty("startNumber");
+        final String startNumber = link.getStringProperty("startNumber");
         if (startNumber != null && SUBFILEID != null) {
-            String filename = br.getRegex("<td width=\"5%\" align=\"right\">" + startNumber + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]+)</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"free\\-download\" id=\"free\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+<td width=\"20%\" align=\"center\">[\t\n\r ]+<a class=\"premium\\-download\" id=\"premium\\-download\" href=\"javascript:void\\(0\\);\"></a>[\t\n\r ]+</td>[\t\n\r ]+</tr>[\t\n\r ]+<tr>[\t\n\r ]+<\\!\\-\\-DOWNLOAD TR\\-\\->[\t\n\r ]+<td colspan=\"4\">[\t\n\r ]+<\\!\\-\\-PREMIUM\\-\\->[\t\n\r ]+<div align=\"center\" style=\"display: none;\" class=\"download\\-premium\\-window\" id=\"download\\-premium\\-window\\-" + SUBFILEID + "\">").getMatch(0);
+            final String filename = br.getRegex("class=\"btn btn\\-download\\-small2\">.*?<td width=\"5%\" align=\"right\">" + startNumber + "\\.</td>[\t\n\r ]+<td width=\"55%\" class=\"left\">([^<>\"]*?)</td>").getMatch(0);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            link.setFinalFileName(startNumber + "." + Encoding.htmlDecode(filename.trim() + ".mp3"));
         } else {
             String filename = br.getRegex("<h2>Part Name:</h2></td>[\n\t\r ]+<td><h2>(.*?)</h2>").getMatch(0);
             if (filename == null) filename = br.getRegex("id=\"aname\">(.*?)</h1>").getMatch(0);

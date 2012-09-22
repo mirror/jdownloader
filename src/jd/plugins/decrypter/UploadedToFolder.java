@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -49,10 +50,21 @@ public class UploadedToFolder extends PluginForDecrypt {
         if (br.getURL().contains("uploaded.net/404") || br.containsHTML("(<h1>Seite nicht gefunden<br|>Error: 404<|<title>uploaded.*?\\- where your files have to be uploaded to</title>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         String fpName = br.getRegex("<h1><a href=\"folder/[a-z0-9]+\">(.*?)</a></h1>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        String[] links = br.getRegex("\"(file/[a-z0-9]+)/from/").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink("http://uploaded.net/" + dl));
+        final String[] links = br.getRegex("\"(file/[a-z0-9]+)/from/").getColumn(0);
+        final String[] folders = br.getRegex("\"(/folder/[a-z0-9]+)\"").getColumn(0);
+        if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        if (links != null && links.length != 0) {
+            for (final String dl : links)
+                decryptedLinks.add(createDownloadlink("http://uploaded.net/" + dl));
+        }
+        if (folders != null && folders.length != 0) {
+            final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+            for (final String dl : folders)
+                if (!dl.contains(fid)) decryptedLinks.add(createDownloadlink("http://uploaded.net" + dl));
+        }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());

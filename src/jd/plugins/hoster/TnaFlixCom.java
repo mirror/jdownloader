@@ -67,6 +67,8 @@ public class TnaFlixCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.setCookie("http://tnaflix.com/", "content_filter2", "type%3Dstraight%26filter%3Dcams");
+        br.setCookie("http://tnaflix.com/", "content_filter3", "type%3Dstraight%2Cgay%26filter%3Dcams");
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errormsg=true")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

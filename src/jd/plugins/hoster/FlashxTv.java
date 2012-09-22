@@ -65,8 +65,13 @@ public class FlashxTv extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage("http://play.flashx.tv/player/fxtv.php?hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)/$").getMatch(0) + "&width=661&height=400&autoplay=yes");
-        String dllink = br.getRegex("\"(http://fxstream\\d+.flashx\\.tv/dl/[^<>\"]*?)\"").getMatch(0);
+        final String firstlink = br.getRegex("\"(http://flashx\\.tv/player/embed_player\\.php\\?[^<>\"]*?)\"").getMatch(0);
+        if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(firstlink);
+        final String seclink = br.getRegex("\"(http://play\\.flashx\\.tv/player/[^<>\"]*?)\"").getMatch(0);
+        if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(seclink);
+        String dllink = br.getRegex("\"(http://fx\\d+.flashx\\.tv/dl/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("url: \"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);

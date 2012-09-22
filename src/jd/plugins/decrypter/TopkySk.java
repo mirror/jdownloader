@@ -71,8 +71,7 @@ public class TopkySk extends PluginForDecrypt {
         final String finallink = br.getRegex("name=\"FlashVars\" value=\"file=(http://[^<>\"]*?)\\&").getMatch(0);
         if (finallink != null) decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
-            logger.warning("Decrypter broken or invalid link: " + parameter);
-            return null;
+            logger.info("Found no downloadable content for link: " + parameter);
         }
         return decryptedLinks;
     }

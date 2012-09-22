@@ -914,3 +914,5 @@ jd/plugins/hoster/FileSonicCom.class
 jd/plugins/hoster/File4SharingCom.class
 jd/plugins/decrypter/WUploadComFolder.class
 jd/plugins/hoster/WUploadCom.class
+org/jdownloader/extensions/jdpremclient/FastDebridcom.class
+jd/plugins/hoster/RefileNet.class

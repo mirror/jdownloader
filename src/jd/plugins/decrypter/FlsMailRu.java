@@ -57,7 +57,7 @@ public class FlsMailRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        // New kind of links, seems broken
+        // New kind of links
         if (br.containsHTML(jd.plugins.hoster.FilesMailRu.DLMANAGERPAGE)) {
             String filelink = br.getRegex(jd.plugins.hoster.FilesMailRu.DLLINKREGEX).getMatch(0);
             String filesize = br.getRegex("</div>[\t\n\r ]+</div>[\t\n\r ]+</td>[\t\n\r ]+<td title=\"(\\d+(\\.\\d+)? [^<>\"]*?)\">").getMatch(0);
