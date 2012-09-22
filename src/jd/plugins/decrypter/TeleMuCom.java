@@ -46,6 +46,8 @@ public class TeleMuCom extends PluginForDecrypt {
         // cookie does not work, then I add it here)
         br.setCookie(parameter, "dle_user_id", "9756");
         br.setCookie(parameter, "dle_password", "23d45b337ff85d0a326a79082f7c6f50");
+        br.setCookie(parameter, "dle_hash", "95f83a05e35908232e0483673a77179d");
+
         br.getPage(parameter);
         String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
@@ -75,12 +77,9 @@ public class TeleMuCom extends PluginForDecrypt {
 
         String[] linksCrypted = br.getRegex("\"(http://telechargementmu\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
-        // Number of picture
-        int iImage = TabImage == null ? 0 : TabImage.length;
-
         // Added links
-        for (final String directlink : links) {
-            if (!directlink.matches("http://(www\\.)?telechargementmu\\.com/.*\\.html.*|http://feedproxy\\.google\\.com/~r/telechargementmu/.*\\.html.*")) decryptedLinks.add(createDownloadlink(directlink));
+        for (String directlink : links) {
+            decryptedLinks.add(createDownloadlink(directlink));
         }
 
         // Added crypted links
@@ -94,7 +93,13 @@ public class TeleMuCom extends PluginForDecrypt {
 
         if (TabImage != null) {
             for (String strImageLink : TabImage) {
-                decryptedLinks.add(createDownloadlink(strImageLink));
+                decryptedLinks.add(createDownloadlink(strImageLink, false));
+            }
+        }
+
+        for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
+            if (decryptedLinks.get(i) == null) {
+                decryptedLinks.remove(i);
             }
         }
 
@@ -102,9 +107,20 @@ public class TeleMuCom extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
-
         }
         return decryptedLinks;
+    }
+
+    @Override
+    protected DownloadLink createDownloadlink(String link) {
+        return createDownloadlink(link, true);
+    }
+
+    protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
+        if (!link.startsWith("http")) return null;
+        if (bVerify && link.contains("http://telechargementmu")) return null;
+
+        return super.createDownloadlink(link);
     }
 
     /**
@@ -127,6 +143,15 @@ public class TeleMuCom extends PluginForDecrypt {
 
         strName = strName.replace("VA - ", "");
         strName = strName.replace("FLAC", "");
+        strName = strName.replace("flac", "");
+
+        strName = strName.replace("APE", "");
+        strName = strName.replace("ape", "");
+
+        strName = strName.replace("[Multi]", "");
+        strName = strName.replace("[MULTI]", "");
+
+        strName = strName.replace("MP3", "");
         return strName;
     }
 }
