@@ -27,14 +27,13 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "falinks.com" }, urls = { "http://[\\w\\.]*?falinks\\.com/(\\?fa=link&id=\\d+|link/\\d+/?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "falinks.com" }, urls = { "http://(www\\.)?falinks\\.com/((index\\.php)?\\?fa=link\\&id=\\d+|link/\\d+/?)" }, flags = { 0 })
 public class FlnksCm extends PluginForDecrypt {
 
     public FlnksCm(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
@@ -47,12 +46,10 @@ public class FlnksCm extends PluginForDecrypt {
                 pwList = new ArrayList<String>(Arrays.asList(new String[] { pw.trim() }));
             }
             String[] links = br.getRegex("\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
-            progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);
                 if (pwList != null) dlLink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlLink);
-                progress.increase(1);
             }
         } catch (IOException e) {
             logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
@@ -60,7 +57,5 @@ public class FlnksCm extends PluginForDecrypt {
         }
         return decryptedLinks;
     }
-
-    // @Override
 
 }

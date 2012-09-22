@@ -21,46 +21,36 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/public/[A-Za-z0-9]+" }, flags = { 0 })
-public class PutLockerComFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "http://(www\\.)?sharpfile\\.com/folder/[a-z0-9]+" }, flags = { 0 })
+public class SharpFileComFolder extends PluginForDecrypt {
 
-    public PutLockerComFolder(PluginWrapper wrapper) {
+    public SharpFileComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> pages = new ArrayList<String>();
-        pages.add("1");
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No files to display<")) {
+        if (br.getURL().equals("http://www.sharpfile.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<title>([^<>\"]*?) on PutLocker</title>").getMatch(0);
-        final String[] addPages = br.getRegex("\\&page=\\d+\">(\\d+)</a>").getColumn(0);
-        if (addPages != null && addPages.length != 0) {
-            for (final String aPage : addPages)
-                pages.add(aPage);
+        final String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+        final String[] links = br.getRegex("<td align=\"left\"><a href=\"([a-z0-9]+)/").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        for (final String currentPage : pages) {
-            if (!currentPage.equals("1")) br.getPage(parameter + "?folder_pub=" + new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0) + "&page=" + currentPage);
-            final String[] links = br.getRegex("\"(http://(www\\.)?putlocker\\.com/file/[A-Za-z0-9]+)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink(singleLink));
-        }
+        for (String singleLink : links)
+            decryptedLinks.add(createDownloadlink("http://www.sharpfile.com/" + singleLink));
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));

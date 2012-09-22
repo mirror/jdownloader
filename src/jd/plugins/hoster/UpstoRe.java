@@ -178,19 +178,22 @@ public class UpstoRe extends PluginForHost {
         // Make sure that the language is correct
         br.getPage("http://upsto.re/?lang=en");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
-        if (expire == null) {
-            if (br.containsHTML("unlimited premium")) {
-                ai.setValidUntil(-1);
-                ai.setStatus("Unlimited Premium User");
+        // Check for never-ending premium accounts
+        if (!br.containsHTML("eternal premium")) {
+            final String expire = br.getRegex("premium till (\\d{2}/\\d{2}/\\d{2})").getMatch(0);
+            if (expire == null) {
+                if (br.containsHTML("unlimited premium")) {
+                    ai.setValidUntil(-1);
+                    ai.setStatus("Unlimited Premium User");
+                } else {
+                    account.setValid(false);
+                    return ai;
+                }
             } else {
-                account.setValid(false);
-                return ai;
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
             }
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yy", null));
-            ai.setStatus("Premium User");
         }
+        ai.setStatus("Premium User");
         account.setValid(true);
 
         return ai;

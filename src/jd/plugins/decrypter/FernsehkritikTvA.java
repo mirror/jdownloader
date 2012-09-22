@@ -68,12 +68,13 @@ public class FernsehkritikTvA extends PluginForDecrypt {
         } else {
             br.getPage(parameter + "/Start/");
             final String fpName = br.getRegex("var flattr_tle = \\'(.*?)\\'").getMatch(0);
-            final String[] jumps = br.getRegex("onclick=\"partJump\\((\\d+), \\d+\\)\"").getColumn(0);
+            final String[] jumps = br.getRegex("url: base \\+ \\'100\\-(\\d+)\\.flv\\'").getColumn(0);
             if (jumps == null || jumps.length == 0) {
                 logger.warning("FATAL error, no parts found for link: " + parameter);
                 return null;
             }
             ArrayList<String> parts = new ArrayList<String>();
+            parts.add("1");
             for (String jump : jumps)
                 if (!parts.contains(jump)) parts.add(jump);
             fp = FilePackage.getInstance();

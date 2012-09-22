@@ -42,13 +42,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 public class MuchShareNet extends PluginForHost {
 
     private String              BRBEFORE      = "";
-
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
-
     private static final String COOKIE_HOST   = "http://muchshare.net";
-
     public boolean              NOPREMIUM     = false;
 
     public MuchShareNet(PluginWrapper wrapper) {
@@ -189,37 +185,6 @@ public class MuchShareNet extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("embed-", ""));
-    }
-
-    private String decodeDownloadLink(String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "'(.*?[^\\\\])',(\\d+),(\\d+),'(.*?)'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-        }
-
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) finallink = new Regex(decoded, "s1\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-            }
-        }
-        return finallink;
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean loggedIn) throws Exception, PluginException {
@@ -379,20 +344,7 @@ public class MuchShareNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(BRBEFORE, "product_download_url=(http.*?)\">").getMatch(0);
-                if (dllink == null) {
-                    dllink = new Regex(BRBEFORE, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                    if (dllink == null) {
-                        dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
-                        if (dllink == null) {
-                            String crypted = br.getRegex("p}\\((.*?)\\.split\\('\\|'\\)").getMatch(0);
-                            if (crypted != null) dllink = decodeDownloadLink(crypted);
-                        }
-                    }
-                }
-            }
+            dllink = new Regex(BRBEFORE, "\"(http://[a-z0-9]+\\.muchshare\\.net:\\d+/d/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
         }
         return dllink;
     }

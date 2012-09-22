@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/[a-z0-9]{6,12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/(?!folder/)[a-z0-9]{6,12}" }, flags = { 2 })
 public class SharpFileCom extends PluginForHost {
 
     private String               correctedBR          = "";
@@ -155,7 +155,8 @@ public class SharpFileCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         checkErrors(downloadLink, false, passCode);
         if (dllink == null) {
