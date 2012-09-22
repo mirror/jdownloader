@@ -19,6 +19,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,6 +30,8 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jizzhut.com" }, urls = { "http://[\\w\\.]*?jizzhut\\.com/videos/.*?\\.html" }, flags = { 0 })
 public class JizzHutCom extends PluginForHost {
+
+    private String dllink = null;
 
     public JizzHutCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,15 +50,7 @@ public class JizzHutCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("content_video\",\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("\"(http://(media[0-9]+|cdnb.videos)\\.jizzhut\\.com/.*?/.*?\\.flv(\\?.*?))?\"").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
-        }
-        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         dl.startDownload();
     }
 
@@ -72,7 +68,28 @@ public class JizzHutCom extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename + ".flv");
-        return AvailableStatus.TRUE;
+        String Embed = br.getRegex("src='(http://www.jizzhut.com/videos/embed/[0-9]+)'").getMatch(0);
+        br.getPage(Embed);
+        dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        Browser br2 = br.cloneBrowser();
+        // In case the link redirects to the finallink
+        br2.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br2.openGetConnection(dllink);
+            if (!con.getContentType().contains("html"))
+                downloadLink.setDownloadSize(con.getLongContentLength());
+            else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return AvailableStatus.TRUE;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
     }
 
     @Override
