@@ -99,16 +99,18 @@ public class SrBoxCom extends PluginForDecrypt {
             for (String strImageLink : TabImage) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
-                    decryptedLinks.add(createDownloadlink(strImageLink));
+                    decryptedLinks.add(createDownloadlink(strImageLink, false));
                 }
                 progress.increase(1);
             }
         }
+
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
             if (decryptedLinks.get(i) == null) {
                 decryptedLinks.remove(i);
             }
         }
+
         // Add all link in a package
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
@@ -120,8 +122,13 @@ public class SrBoxCom extends PluginForDecrypt {
 
     @Override
     protected DownloadLink createDownloadlink(String link) {
+        return createDownloadlink(link, true);
+    }
+
+    protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
         if (!link.startsWith("http")) return null;
-        if (link.contains("israbox")) return null;
+        if (bVerify && link.contains("israbox")) return null;
+
         return super.createDownloadlink(link);
     }
 
