@@ -122,12 +122,12 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (this.noscript) {
                 this.verify = smBr.getForm(0);
                 this.captchaAddress = this.smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
-                if (this.verify == null) { throw new Exception("SolveMedia Module fails"); }
+                if (this.verify == null) throw new Exception("SolveMedia Module fails");
             } else {
                 this.chId = this.smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
                 this.captchaAddress = this.chId != null ? this.server + "/papi/media?c=" + this.chId : null;
             }
-            if (this.captchaAddress == null) { throw new Exception("SolveMedia Module fails"); }
+            if (this.captchaAddress == null) throw new Exception("SolveMedia Module fails");
         }
 
         private void getChallenge() {
@@ -141,7 +141,12 @@ public class LnkCrptWs extends PluginForDecrypt {
             this.smBr.submitForm(verify);
             String verifyUrl = this.smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
             if (verifyUrl == null) return null;
-            this.smBr.getPage(verifyUrl);
+            if (secure) verifyUrl = verifyUrl.replaceAll("http://", "https://");
+            try {
+                this.smBr.getPage(verifyUrl);
+            } catch (Throwable e) {
+                throw new Exception("SolveMedia Module fails");
+            }
             return this.smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
         }
 
@@ -161,16 +166,14 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!noscript) this.noscript = false;
         }
 
-        private String setServer(boolean handle) {
+        private void setServer(boolean handle) {
             this.server = "http://api.solvemedia.com";
             if (secure) this.server = "https://api-secure.solvemedia.com";
-            return this.server;
         }
 
-        private String setPath(boolean b) {
+        private void setPath(boolean b) {
             this.path = "/papi/challenge.noscript?k=";
             if (!noscript) this.path = "/papi/_challenge.js?k=";
-            return this.path;
         }
 
         public String getChallengeUrl() {
@@ -273,7 +276,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 stImgs = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(0);
                 sscStc = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(1);
                 SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter());
-                if (stImgs == null || sscStc == null || SERVERSTRING == null) { throw new Exception("KeyCaptcha Module fails"); }
+                if (stImgs == null || sscStc == null || SERVERSTRING == null) throw new Exception("KeyCaptcha Module fails");
             } else {
                 throw new Exception("KeyCaptcha Module fails");
             }
@@ -316,8 +319,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                 parse();
                 load();
             } catch (final Throwable e) {
-                System.out.println(e.getMessage() + rcBr.getHttpConnection());
-                return null;
+                System.out.println(rcBr.getHttpConnection() + "\n" + e.getMessage());
+                throw new Exception(e.getMessage());
             } finally {
                 try {
                     rcBr.getHttpConnection().disconnect();
@@ -1057,11 +1060,12 @@ public class LnkCrptWs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
         setBrowserExclusive();
         prepareBrowser(RandomUserAgent.generate());
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
-        br.getPage("http://linkcrypt.ws/dir/" + containerId);
+        parameter = "http://linkcrypt.ws/dir/" + containerId;
+        br.getPage(parameter);
         if (br.containsHTML("<title>Linkcrypt\\.ws // Error 404</title>")) {
             logger.info("This link might be offline: " + parameter);
             final String additional = br.getRegex("<h2>\r?\n?(.*?)<").getMatch(0);
@@ -1094,6 +1098,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 final Form kcform = br.getForm(0);
                 kcform.put("capcode", result);
                 br.submitForm(kcform);
+                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result) + "&=Enter+Folder");
                 if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                     break;
                 }

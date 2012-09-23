@@ -82,7 +82,22 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         setBrowserExclusive();
+        br.setFollowRedirects(false);
         br.getPage(parameter);
+
+        if (br.getRedirectLocation() != null) {
+            if ("http://shahid.mbc.net/media/episodes".equals(br.getRedirectLocation())) {
+                logger.info("Content not found! Link: " + parameter);
+                return decryptedLinks;
+            }
+            br.setFollowRedirects(true);
+            br.getPage(br.getRedirectLocation());
+        }
+        if (br.getHttpConnection().getResponseCode() == 503) {
+            String available = br.getHeaders().get("Retry-After");
+            logger.warning("503 Service Unavailable! " + (available != null ? "Server is available in " + available : ""));
+            return decryptedLinks;
+        }
 
         String[] setCookie = br.getRegex("setCookie\\(\'(\\w+)\',\\s?\'([0-9\\.]+)\',\\s?\\d+\\)").getRow(0);
         if (!(setCookie == null || setCookie.length != 2)) {

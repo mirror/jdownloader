@@ -526,7 +526,7 @@ public class GrooveShark extends PluginForHost {
             if (filenm == null || filenm.length != 3) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             String filename = filenm[1].trim() + " - " + filenm[2].trim() + " - " + filenm[0].trim() + ".mp3";
             if (filename != null) {
-                downloadLink.setName(filename.trim());
+                downloadLink.setName(Encoding.htmlDecode(filename.trim()));
             }
         }
         return AvailableStatus.TRUE;
