@@ -1,5 +1,7 @@
+AutoDetectAction_run_failed=UPNP Geräte gefunden, es konnte jedoch kein Reconnect durchgeführt werden.\nVersuche einen Reconnect über die Live Headder Methode.
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Versuche alle UPNP Reconnect Geräte in deinem Netzwerk zu finden. Die meisen FritzBox!en können mit dieser Methode einen Reconnect durchführen
 UPNPReconnectInvoker_getName_=UPNP Router Reconnect
+UPNPRouterPlugin_run_error=Es konnten keine UPNP Geräte gefunden werden. Versuche die Live Headder Methode !
 UPNPRouterPlugin_run_mesg=Üb
 UPNPRouterPlugin_run_wizard_title=UPNP Router Assistent
 UPNPScannerAction_UPNPScannerAction_tt=Versucht alle UPNP Reconnect Geräte in deinem Netzwerk zu finden und gibt dir die Möglichkeit auszuwählen, welches du für den Reconnect verwenden möchtest

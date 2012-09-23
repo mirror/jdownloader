@@ -32,6 +32,7 @@ LiveHeaderDetectionWizard_runOnlineScan_warning_badip=Es scheint als gäbe es ke
 LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Reconnect fehlgeschlagen. Du kannst nur funktionierende Recconect Einstellungen teilen
 LiveHeaderDetectionWizard_uploadData_sent_failed=Wir haben festgestellt, dass Ihr Script bereits in unserer Datenbank bereits vorhanden ist. Trotzdem vielen Dank !
 LiveHeaderDetectionWizard_uploadData_sent_ok=Vielen Dank ! Wir haben Ihr Script in unsere Routerdatenbank aufgenommen
+LiveHeaderInvoker_getName_=LiveHeader: %s1
 LiveHeaderReconnect_getGUI_help_ip=Geben Sie die Router-IP-Adresse ein oder clicken Sie auf [Beziehe Router IP-Adresse]
 LiveHeaderReconnect_getGUI_help_password=Gib das Passwort für das Webinterface ein...
 LiveHeaderReconnect_getGUI_help_user=Gib den Benutzernamen für das Webinterface ein..
