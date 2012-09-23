@@ -556,7 +556,7 @@ public class DirectHTTP extends PluginForHost {
                 }
                 urlConnection = this.prepareConnection(this.br, downloadLink);
                 String urlParams = null;
-                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 404) && (urlParams = downloadLink.getStringProperty(POSSIBLE_URLPARAM, null)) != null) {
+                if ((urlConnection.getResponseCode() == 401 || urlConnection.getResponseCode() == 404 || urlConnection.getResponseCode() == 403) && (urlParams = downloadLink.getStringProperty(POSSIBLE_URLPARAM, null)) != null) {
                     /* check if we need the URLPARAMS to download the file */
                     urlConnection.disconnect();
                     String newURL = downloadLink.getDownloadURL() + urlParams;
