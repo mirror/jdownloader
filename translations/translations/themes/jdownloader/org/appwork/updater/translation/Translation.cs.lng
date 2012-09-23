@@ -7,6 +7,7 @@ exit=Zavřít
 guiless_noupdates=Vyhnout se aktualizacím. Příznak '-noupdates' nastaven
 install_updates_later=Zeptat se později
 install_updates_now=Instalovat teď!
+literally_exit=Kontrola aktualizací dokončena - zavřít
 progress=%s1/%s2
 start=Spuštěn aktualizátor
 udpates_found=Aktualizace nalezena!
