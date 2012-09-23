@@ -62,6 +62,11 @@ public class EightTracksCom extends PluginForDecrypt {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (webOS/2.1.0; U; en-US) AppleWebKit/532.2 (KHTML, like Gecko) Version/1.0 Safari/532.2 Pre/1.2");
         br.getPage(parameter);
 
+        if (br.containsHTML(">Sorry, that page doesn\\'t exist")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
         String mixId = br.getRegex("mix_id=(\\d+)\"").getMatch(0);
         if (mixId == null) {
             mixId = br.getRegex("/mixes/(\\d+)/").getMatch(0);
@@ -85,7 +90,10 @@ public class EightTracksCom extends PluginForDecrypt {
         clipData = br.getPage(MAINPAGE + "sets/new?format=jsonh");
 
         final String playToken = getClipData("play_token");
-        if (playToken == null || mixId == null) { return null; }
+        if (playToken == null || mixId == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         long count = 8;
         progress.setRange(count);

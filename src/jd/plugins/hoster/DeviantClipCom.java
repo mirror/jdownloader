@@ -59,7 +59,7 @@ public class DeviantClipCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         String thelink = downloadLink.getDownloadURL();
         br.getPage(thelink);
         if (downloadLink.getDownloadURL().matches(PICTURELINK)) {

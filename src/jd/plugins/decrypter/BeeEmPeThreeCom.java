@@ -43,7 +43,7 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML(">Error: This file has been removed")) {
+        if (br.containsHTML(">Error: This file has been removed|>Page Not Found<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -67,9 +67,13 @@ public class BeeEmPeThreeCom extends PluginForDecrypt {
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
-        if (finallink == null) return null;
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         /**
-         * Set filename if possible as filenames may be cut or broken if not set here
+         * Set filename if possible as filenames may be cut or broken if not set
+         * here
          */
         DownloadLink dl = createDownloadlink("directhttp://" + finallink.trim());
         if (finalFilename != null) dl.setFinalFileName(Encoding.htmlDecode(finalFilename));

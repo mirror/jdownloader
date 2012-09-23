@@ -38,20 +38,51 @@ public class HqTubeXxxCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final Exception e) {
+            logger.info("Received server error for link: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<h1 class=\"name\">([^<>\"\\']+)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"\\']+) \\-    </title>").getMatch(0);
-        if (filename == null) {
-            logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);
-            return null;
-        }
-        filename = filename.trim();
         String externID = br.getRegex("(http://drtuber\\.com/player/config_embed3\\.php\\?vkey=[a-z0-9]+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }
-        logger.warning("hqmaturetube decrypter broken for link: " + parameter);
+        externID = br.getRegex("\"(http://(www\\.)?deviantclip\\.com/watch/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("hardsextube\\.com/embed/(\\d+)/").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.hardsextube.com/video/" + externID + "/"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("player\\.tnaflix\\.com/video/(\\d+)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+            return decryptedLinks;
+        }
+        // filename needed for all IDs below here
+        if (filename == null) {
+            logger.warning("hqmaturetube decrypter broken(filename regex) for link: " + parameter);
+            return null;
+        }
+        filename = filename.trim();
+        // 2nd handling for tnaflix
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf.*?config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                return decryptedLinks;
+            }
+        }
+        logger.warning("hqmaturetube.com decrypter broken for link: " + parameter);
         return null;
     }
 }

@@ -24,6 +24,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -49,40 +50,13 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String left = br.getRegex("You have downloaded (.*?) today").getMatch(0);
-        if (left == null) left = br.getRegex("<li>You have (.*?) available bandwidth</li>").getMatch(0);
-        if (left != null) {
-            if (left.contains("TB")) {
-                left = left.replaceAll("(TB|\\.)", "") + "0 GB";
-                ai.setTrafficLeft(SizeFormatter.getSize(left));
-            } else
-                ai.setTrafficLeft(8l * 1024l * 1024l * 1024l - SizeFormatter.getSize(left));
-        }
-        String days = br.getRegex("Your membership is valid for[ ]+(\\d+)[ ]+days").getMatch(0);
-        if (days == null) days = br.getRegex("Your account needs to be renewed in  (\\d+) days").getMatch(0);
-        if (days != null && !days.equals("0")) {
-            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
-        } else {
-            ai.setExpired(true);
-            account.setValid(false);
-            return ai;
-        }
-        account.setValid(true);
-        return ai;
-    }
+    private static final String JDOWNLOADERAPIKEY = "OU985MOQCM";
+    private static String       CURRENTERRORCODE;
+    private static String       SESSIONKEY;
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
+    /** For premium we use their API: http://www.sendspace.com/dev_method.html */
     @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
@@ -96,6 +70,72 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        String url = downloadLink.getDownloadURL();
+        if (!url.contains("/pro/dl/")) {
+            br.getPage(url);
+            if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
+                url = url.replaceAll("X", "x");
+                downloadLink.setUrlDownload(url);
+                return requestFileInformation(downloadLink);
+            }
+            if (!br.containsHTML("the file you requested is not available")) {
+                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
+                if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
+                if (infos == null) infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
+                if (infos != null) {
+                    /* old format */
+                    downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
+                    downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
+                    return AvailableStatus.TRUE;
+                } else {
+                    String filename = br.getRegex("<title>Download ([^<>/\"]*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
+                        if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
+                    }
+                    String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
+                    if (filename != null) {
+                        downloadLink.setName(Encoding.htmlDecode(filename).trim());
+                        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
+                        return AvailableStatus.TRUE;
+                    }
+                }
+                if (br.containsHTML("No htmlCode read")) {
+                    // No html content??? maybe server problem
+                    // seems like a firewall block.
+                    Thread.sleep(90000);
+                    return requestFileInformation(downloadLink);
+                }
+                // System.out.println(1);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(url);
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                downloadLink.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
     }
 
     private void handleErrors(boolean plugindefect) throws PluginException {
@@ -249,13 +289,53 @@ public class SendspaceCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.getPage(link.getDownloadURL());
-        String linkurl = br.getRegex("<a id=\"downlink\" class=\"mango\" href=\"(.*?)\"").getMatch(0);
-        if (linkurl == null) linkurl = br.getRegex("<a id=\"download_button\" href=\"(http://.*?)\"").getMatch(0);
-        if (linkurl == null) linkurl = br.getRegex("\"(http://fs\\d+n\\d+\\.sendspace\\.com/dl/[a-z0-9]+/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
-        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage("http://api.sendspace.com/rest/?method=download.getinfo&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+
+        CURRENTERRORCODE = getErrorcode();
+        if (CURRENTERRORCODE != null) {
+            if (CURRENTERRORCODE.equals("6")) {
+                logger.warning("API_ERROR_SESSION_BAD");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (CURRENTERRORCODE.equals("9")) {
+                logger.info("API_ERROR_FILE_NOT_FOUND");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (CURRENTERRORCODE.equals("11")) {
+                logger.warning("API_ERROR_PERMISSION_DENIED");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (CURRENTERRORCODE.equals("12")) {
+                logger.warning("API_ERROR_DOWNLOAD_TEMP_ERROR");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            } else if (CURRENTERRORCODE.equals("19")) {
+                logger.warning("API_ERROR_PRO_EXPIRED");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (CURRENTERRORCODE.equals("22")) {
+                logger.info("API_ERROR_BAD_PASSWORD");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Link is password protected");
+            } else if (CURRENTERRORCODE.equals("23")) {
+                logger.info("API_ERROR_BANDWIDTH_LIMIT");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (CURRENTERRORCODE.equals("26")) {
+                logger.warning("API_ERROR_INVALID_FILE_URL");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
+                logger.warning("Disabling premium account...");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+        }
+
+        String linkurl = br.getRegex("url=\"(http[^<>\"]*?)\"").getMatch(0);
+        if (linkurl == null) {
+            apiFailure("url");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Received html code, stopping...");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
@@ -269,86 +349,104 @@ public class SendspaceCom extends PluginForHost {
         br.setRequestIntervalLimit(getHost(), 750);
     }
 
-    public boolean isPremium() throws IOException {
-        br.getPage("http://www.sendspace.com/mysendspace/myindex.html?l=1");
-        if (br.containsHTML("Your membership is valid for") || br.containsHTML("account needs to be renewed")) return true;
-        return false;
-    }
-
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://www.sendspace.com/login.html");
-        br.postPage("http://www.sendspace.com/login.html", "action=login&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=1&submit=login&openid_url=&action_type=login");
-        if (br.getCookie("http://www.sendspace.com", "ssal") == null || br.getCookie("http://www.sendspace.com", "ssal").equalsIgnoreCase("deleted")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!isPremium()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.getPage("http://api.sendspace.com/rest/?method=auth.createtoken&api_key=" + JDOWNLOADERAPIKEY + "&api_version=1.0&response_format=xml&app_version=0.1");
+        CURRENTERRORCODE = getErrorcode();
+        if (CURRENTERRORCODE != null) {
+            if (CURRENTERRORCODE.equals("5")) {
+                logger.warning("API_ERROR_BAD_API_VERSION");
+            } else if (CURRENTERRORCODE.equals("18")) {
+                logger.warning("Unknown API key");
+            } else if (CURRENTERRORCODE.equals("25")) {
+                logger.warning("API_ERROR_OUTDATED_VERSION");
+            } else {
+                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
+            }
+            logger.warning("Disabling premium account...");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+
+        final String token = get("token");
+        if (token == null) {
+            apiFailure("token");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+
+        br.getPage("http://api.sendspace.com/rest/?method=auth.login&token=" + token + "&user_name=" + Encoding.urlEncode(account.getUser()) + "&tokened_password=" + JDHash.getMD5(token + JDHash.getMD5(account.getPass())));
+        CURRENTERRORCODE = getErrorcode();
+        if (CURRENTERRORCODE != null) {
+            if (CURRENTERRORCODE.equals("6")) {
+                logger.warning("API_ERROR_SESSION_BAD");
+            } else if (CURRENTERRORCODE.equals("8")) {
+                logger.warning("API_ERROR_AUTHENTICATION_FAILURE");
+            } else if (CURRENTERRORCODE.equals("11")) {
+                logger.warning("API_ERROR_PERMISSION_DENIED");
+            } else {
+                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
+            }
+            logger.warning("Disabling premium account...");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        SESSIONKEY = get("session_key");
+        if (SESSIONKEY == null) {
+            apiFailure("session_key");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if ("Lite".equals(get("membership_type"))) {
+            logger.info("This is a free account, JDownloader doesn't support sendspace.com free accounts!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        String url = downloadLink.getDownloadURL();
-        if (!url.contains("/pro/dl/")) {
-            br.getPage(url);
-            if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
-                url = url.replaceAll("X", "x");
-                downloadLink.setUrlDownload(url);
-                return requestFileInformation(downloadLink);
-            }
-            if (!br.containsHTML("the file you requested is not available")) {
-                String[] infos = br.getRegex("<b>Name:</b>(.*?)<br><b>Size:</b>(.*?)<br>").getRow(0);/* old */
-                if (infos == null) infos = br.getRegex("Download: <strong>(.*?)<.*?strong> \\((.*?)\\)<").getRow(0);/* new1 */
-                if (infos == null) infos = br.getRegex("Download <b>(.*?)<.*?File Size: (.*?)<").getRow(0);/* new2 */
-                if (infos != null) {
-                    /* old format */
-                    downloadLink.setName(Encoding.htmlDecode(infos[0]).trim());
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(infos[1].trim().replaceAll(",", "\\.")));
-                    return AvailableStatus.TRUE;
-                } else {
-                    String filename = br.getRegex("<title>Download ([^<>/\"]*?) from Sendspace\\.com \\- send big files the easy way</title>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("<h2 class=\"bgray\"><b>(.*?)</b></h2>").getMatch(0);
-                        if (filename == null) filename = br.getRegex("title=\"download (.*?)\">Click here to start").getMatch(0);
-                    }
-                    String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
-                    if (filename != null) {
-                        downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
-                        return AvailableStatus.TRUE;
-                    }
-                }
-                if (br.containsHTML("No htmlCode read")) {
-                    // No html content??? maybe server problem
-                    // seems like a firewall block.
-                    // we should use the api to do a mass check http://www.sendspace.com/dev_howto.html
-                    Thread.sleep(90000);
-                    return requestFileInformation(downloadLink);
-                }
-                // System.out.println(1);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(url);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                downloadLink.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
+        try {
+            login(account);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
         }
+        final String left = get("bandwidth_left");
+        if (left != null) {
+            ai.setTrafficLeft(Long.parseLong(left));
+        } else {
+            apiFailure("bandwidth_left");
+            account.setValid(false);
+            return ai;
+        }
+        final String expires = get("membership_ends");
+        if (expires != null) {
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expires));
+        } else {
+            apiFailure("membership_ends");
+            account.setValid(false);
+            return ai;
+        }
+        String spaceUsed = get("diskspace_used");
+        if (spaceUsed != null) {
+            if (spaceUsed.equals("")) spaceUsed = "0";
+            ai.setUsedSpace(Long.parseLong(spaceUsed));
+        }
+        ai.setStatus("Account type: " + get("membership_type"));
+        account.setValid(true);
+        return ai;
+    }
+
+    private String get(final String parameter) {
+        return br.getRegex("<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
+    }
+
+    private String getErrorcode() {
+        final String currenterrcode = br.getRegex("<error code=\"(\\d+)\"").getMatch(0);
+        CURRENTERRORCODE = currenterrcode;
+        return currenterrcode;
+    }
+
+    private void apiFailure(final String parameter) {
+        logger.warning("API failure: " + parameter + " is null");
     }
 
     @Override

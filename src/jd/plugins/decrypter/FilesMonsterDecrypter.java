@@ -18,7 +18,6 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,6 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -40,9 +40,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public static final String   FILENAMEREGEX = "\">File name:</td>[\t\n\r ]+<td>(.*?)</td>";
-    public static final String   FILESIZEREGEX = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
-    private static AtomicBoolean LIMITREACHED  = new AtomicBoolean(false);
+    public static final String FILENAMEREGEX = "\">File name:</td>[\t\n\r ]+<td>(.*?)</td>";
+    public static final String FILESIZEREGEX = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
+    private static boolean     LIMITREACHED  = false;
 
     /** Handling similar to BitBonusComDecrypt */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -63,7 +63,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         String fname = br.getRegex(FILENAMEREGEX).getMatch(0);
         String fsize = br.getRegex(FILESIZEREGEX).getMatch(0);
-        if (LIMITREACHED.get() == false) {
+        if (!LIMITREACHED) {
             String[] decryptedStuff = getTempLinks(br);
             if (decryptedStuff == null || decryptedStuff.length == 0) return null;
             String theImportantPartOfTheMainLink = new Regex(parameter, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
@@ -76,7 +76,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 String dllink = "http://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
-                DownloadLink finalOne = createDownloadlink(dllink);
+                final DownloadLink finalOne = createDownloadlink(dllink);
                 finalOne.setFinalFileName(Encoding.htmlDecode(filename));
                 finalOne.setDownloadSize(Integer.parseInt(filesize));
                 finalOne.setAvailable(true);
@@ -94,6 +94,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             thebigone.setDownloadSize(SizeFormatter.getSize(fsize));
             thebigone.setAvailable(true);
         }
+        thebigone.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", "Only downloadable via premium"));
         thebigone.setProperty("PREMIUMONLY", "true");
         decryptedLinks.add(thebigone);
         /** All those links belong to the same file so lets make a package */
@@ -107,16 +108,16 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public static String[] getTempLinks(final Browser br) throws IOException {
         String[] decryptedStuff = null;
-        final String postThat = br.getRegex("\"(http://filesmonster\\.com/dl/.*?/free/.*?)\"").getMatch(0);
+        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
         if (postThat != null) {
-            br.postPage(postThat, "");
+            br.postPage("http://filesmonster.com" + postThat, "");
             final String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
             if (findOtherLinks != null) {
                 br.getPage("http://filesmonster.com" + findOtherLinks);
                 decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
             }
         } else {
-            LIMITREACHED.set(true);
+            LIMITREACHED = true;
         }
         return decryptedStuff;
     }

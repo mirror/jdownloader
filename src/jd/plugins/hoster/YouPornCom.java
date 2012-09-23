@@ -63,8 +63,8 @@ public class YouPornCom extends PluginForHost {
         br.setCookie("http://youporn.com/", "is_pc", "1");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        if (br.containsHTML("invalid video_id")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) - Free Porn Videos - YouPorn</title>").getMatch(0);
+        if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos - YouPorn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);
         DLLINK = br.getRegex("\"(http://[^<>\"\\']+)\">MP4").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://videos\\-\\d+\\.youporn\\.com/[^<>\"\\'/]+/save/scene_h264[^<>\"\\']+)\"").getMatch(0);

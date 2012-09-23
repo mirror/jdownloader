@@ -92,6 +92,7 @@ public class YunFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         URLConnectionAdapter con = br.openGetConnection(link.getDownloadURL());
         if (con.getResponseCode() == 503) {
@@ -129,7 +130,8 @@ public class YunFileCom extends PluginForHost {
             br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + "/" + code + ".html");
             if (br.containsHTML("Not HTML Code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else {
-            // br.getPage("http://yunfile.com/file/down/" + userid + "/" + fileid + ".html");
+            // br.getPage("http://yunfile.com/file/down/" + userid + "/" +
+            // fileid + ".html");
             br.getPage(domain + "/file/down/" + userid + "/" + fileid + ".html");
         }
         String vid = br.getRegex("name=\"vid\" value=\"(.*?)\"").getMatch(0);

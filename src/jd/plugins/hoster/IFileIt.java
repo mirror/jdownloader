@@ -54,6 +54,7 @@ public class IFileIt extends PluginForHost {
     private static final String  NORESUME                = "NORESUME";
     private static final String  MAINPAGE                = "http://filecloud.io/";
     private static AtomicInteger maxPrem                 = new AtomicInteger(1);
+    private static final String  JDOWNLOADERAPIKEY       = "8XWkz6k0hPf5wVo/5jGEoA==";
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -67,13 +68,23 @@ public class IFileIt extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
-        setBrowserExclusive();
-        updateBrowser(br);
-        br.setRequestIntervalLimit(getHost(), 250);
-        simulateBrowser();
-        br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("var __ab1 = 0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        this.setBrowserExclusive();
+        br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + JDOWNLOADERAPIKEY + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        // br.postPage("http://api.filecloud.io/api-fetch_download_url.api",
+        // "akey=8XWkz6k0hPf5wVo/5jGEoA==&ukey=" + new
+        // Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+
+        final String status = get("status");
+        if (status == null) {
+            apifailure("status");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!"ok".equals(get("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = get("name");
+        final String filesize = get("size");
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        downloadLink.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -164,6 +175,11 @@ public class IFileIt extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
+        updateBrowser(br);
+        br.setRequestIntervalLimit(getHost(), 250);
+        simulateBrowser();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
         doFree(downloadLink, true, false);
     }
 
@@ -296,6 +312,9 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        // TODO: Next time we have a free account we can implement their API
+        // (works only for premium accounts):
+        // http://code.google.com/p/filecloud/wiki/FetchDownloadUrl
         login(account, false);
         if ("premium".equals(account.getStringProperty("typ", null))) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
@@ -322,6 +341,14 @@ public class IFileIt extends PluginForHost {
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.setCookie("http://filecloud.io/", "lang", "en");
+    }
+
+    private String get(final String parameter) {
+        return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    }
+
+    private void apifailure(final String parameter) {
+        logger.warning("API failure: " + parameter + " is null");
     }
 
     @Override
