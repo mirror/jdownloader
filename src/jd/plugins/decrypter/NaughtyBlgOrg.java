@@ -39,7 +39,10 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         }
 
         String contentReleaseName = br.getRegex("<h2 class=\"post\\-title\">(.*?)</h2>").getMatch(0);
-        if (contentReleaseName == null) return null;
+        if (contentReleaseName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         // check if DL is from the 'clips' section
         Regex categoryCheck = null;

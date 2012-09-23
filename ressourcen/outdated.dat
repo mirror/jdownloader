@@ -916,3 +916,4 @@ jd/plugins/decrypter/WUploadComFolder.class
 jd/plugins/hoster/WUploadCom.class
 org/jdownloader/extensions/jdpremclient/FastDebridcom.class
 jd/plugins/hoster/RefileNet.class
+jd/plugins/hoster/DivLoadOrg.class

@@ -70,9 +70,6 @@ public class IFileIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + JDOWNLOADERAPIKEY + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        // br.postPage("http://api.filecloud.io/api-fetch_download_url.api",
-        // "akey=8XWkz6k0hPf5wVo/5jGEoA==&ukey=" + new
-        // Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
 
         final String status = get("status");
         if (status == null) {
