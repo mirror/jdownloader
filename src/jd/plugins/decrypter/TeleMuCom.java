@@ -118,7 +118,7 @@ public class TeleMuCom extends PluginForDecrypt {
 
     protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
         if (!link.startsWith("http")) return null;
-        if (bVerify && link.contains("http://telechargementmu")) return null;
+        if (bVerify && link.startsWith("http://telechargementmu")) return null;
 
         return super.createDownloadlink(link);
     }
