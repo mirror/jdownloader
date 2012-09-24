@@ -62,7 +62,6 @@ public class OlgetCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        HashMap<String, String> accDetails = new HashMap<String, String>();
         AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
