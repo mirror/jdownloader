@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.com/(?!(faq|register|login|terms|report_file)\\.html)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.com/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 2 })
 public class CloudyLoadCom extends PluginForHost {
 
     public CloudyLoadCom(PluginWrapper wrapper) {

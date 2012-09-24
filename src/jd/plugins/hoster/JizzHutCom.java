@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jizzhut.com" }, urls = { "http://[\\w\\.]*?jizzhut\\.com/videos/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jizzhut.com" }, urls = { "http://(www\\.)?jizzhut\\.com/videos/.*?\\.html" }, flags = { 0 })
 public class JizzHutCom extends PluginForHost {
 
     private String dllink = null;
@@ -63,12 +63,12 @@ public class JizzHutCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("DESCRIPTION\" content=\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<h2 style='clear: both;' align='left'>(.*?)</h2>").getMatch(0);
+                filename = br.getRegex("<h2 style=\\'clear: both;\\' align=\\'left\\'>(.*?)</h2>").getMatch(0);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(filename + ".flv");
-        String Embed = br.getRegex("src='(http://www.jizzhut.com/videos/embed/[0-9]+)'").getMatch(0);
+        String Embed = br.getRegex("src=\\'(http://(www\\.)?jizzhut\\.com/videos/embed/[0-9]+)\\'").getMatch(0);
         br.getPage(Embed);
         dllink = br.getRegex("addVariable\\(\"file\",.*?\"(http://.*?\\.flv(\\?.*?)?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://(mediax|cdn[a-z]\\.videos)\\.jizzhut\\.com/[A-Z0-9]+\\.flv(\\?.*?)?)\"").getMatch(0);

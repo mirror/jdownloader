@@ -77,9 +77,10 @@ public class VimeoCom extends PluginForHost {
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
+                 * we make sure only one result is in ret, thats the case for
+                 * svn/next major version
                  */
-                DownloadLink sourceLink = ret.get(0);
+                final DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
                 if (ID != null) {
                     Browser br = new Browser();
@@ -87,12 +88,18 @@ public class VimeoCom extends PluginForHost {
                     br.setFollowRedirects(true);
                     br.setCookie("http://vimeo.com", "v6f", "1");
                     br.getPage("http://vimeo.com/" + ID);
+                    if (br.containsHTML("Page not found")) {
+                        sourceLink.setAvailable(false);
+                        ret.set(0, sourceLink);
+                        return ret;
+                    }
                     handlePW(sourceLink, br, "http://vimeo.com/" + ID + "/password");
                     String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
                     if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
                     if (br.containsHTML("iconify_down_b")) {
                         /*
-                         * little pause needed so the next call does not return trash
+                         * little pause needed so the next call does not return
+                         * trash
                          */
                         Thread.sleep(1000);
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -163,7 +170,8 @@ public class VimeoCom extends PluginForHost {
                                 }
                             }
                             /*
-                             * only replace original found links by new ones, when we have some
+                             * only replace original found links by new ones,
+                             * when we have some
                              */
                             if (fp != null) {
                                 fp.addLinks(newRet);
@@ -492,7 +500,7 @@ public class VimeoCom extends PluginForHost {
         final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         handlePW(downloadLink, br, "http://vimeo.com/" + clipID + "/password");
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        if (br.containsHTML(">Page not found on Vimeo<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Page not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(">Private Video<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. You have no permission to watch this video!"); }
         final String signature = br.getRegex("\"signature\":\"([a-z0-9]+)\"").getMatch(0);
         final String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);

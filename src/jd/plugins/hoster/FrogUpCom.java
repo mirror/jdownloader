@@ -62,7 +62,7 @@ public class FrogUpCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().replace("/pokaz/", "/pobierzUrl/"), true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL().replace("/pokaz/", "/pobierzUrl/"), true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Finallink doesn't lead to a file...");
             br.followConnection();
@@ -73,7 +73,7 @@ public class FrogUpCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override

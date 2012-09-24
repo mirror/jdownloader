@@ -67,30 +67,9 @@ public class BanaShareCom extends PluginForHost {
             logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(brbefore, "You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(brbefore, "fname\" value=\"(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(brbefore, "<h2>Download File(.*?)</h2>").getMatch(0);
-                if (filename == null) {
-                    filename = new Regex(brbefore, "Filename.*?nowrap.*?>(.*?)</td").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(brbefore, "File Name.*?nowrap>(.*?)</td").getMatch(0);
-                        if (filename == null) {
-                            filename = new Regex(brbefore, "<div id=\"file_name\">(.*?)</div>").getMatch(0);
-                        }
-                    }
-                }
-            }
-        }
+        String filename = new Regex(brbefore, "<div id=\"file_name\">(.*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String filesize = new Regex(brbefore, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(brbefore, "</font>.*?\\((.*?)\\).*?</font>").getMatch(0);
-            if (filesize == null) {
-                filesize = new Regex(brbefore, "href=\"http://banashare\\.com/[a-z0-9]{12}/" + filename + "\\.html\">" + filename + " - (.*?)</a>").getMatch(0);
-            }
-        }
+        String filesize = new Regex(brbefore, "<span>([^<>\"]*?) \\| [\t\n\r ]+Uploaded by <a").getMatch(0);
         filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
         link.setName(filename.trim());
         if (filesize != null) {
@@ -433,6 +412,7 @@ public class BanaShareCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 

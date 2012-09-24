@@ -21,14 +21,12 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "(http://[\\w\\.]*mixotic\\.net/dj-sets/.*)|(http://feedproxy\\.google\\.com/~r/mixotic/.*)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision: 18544 $", interfaceVersion = 2, names = { "mixotic.net" }, urls = { "(http://(www\\.)?mixotic\\.net/dj\\-sets/.*)|(http://feedproxy\\.google\\.com/~r/mixotic/.*)" }, flags = { 0 })
 public class MixoticNet extends PluginForDecrypt {
 
     public MixoticNet(PluginWrapper wrapper) {
@@ -48,7 +46,10 @@ public class MixoticNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(strParameter);
 
-        if (br.containsHTML("(An error has occurred|The article cannot be found)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(An error has occurred|The article cannot be found)")) {
+            logger.info("Link offline: " + strParameter);
+            return decryptedLinks;
+        }
 
         int iIndex = strParameter.lastIndexOf("/");
         String strMixNumber = strParameter.substring(iIndex + 1);
@@ -63,7 +64,10 @@ public class MixoticNet extends PluginForDecrypt {
         br.getPage(strRedirect);
 
         String[] links = br.getRegex("<a href=\"/?files/(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + strParameter);
+            return null;
+        }
 
         // Added links
         for (String redirectlink : links) {

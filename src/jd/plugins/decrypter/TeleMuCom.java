@@ -73,7 +73,10 @@ public class TeleMuCom extends PluginForDecrypt {
 
         // Creation of the array of link that is supported by all plug-in
         final String[] links = br.getRegex("href=\"(.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
 
         String[] linksCrypted = br.getRegex("\"(http://telechargementmu\\.com/engine/go\\.php\\?url=.*?)\"").getColumn(0);
 
@@ -118,6 +121,7 @@ public class TeleMuCom extends PluginForDecrypt {
 
     protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
         if (!link.startsWith("http")) return null;
+        link = link.replace("http://www.", "http://");
         if (bVerify && link.startsWith("http://telechargementmu")) return null;
 
         return super.createDownloadlink(link);

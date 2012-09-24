@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
@@ -83,11 +84,14 @@ public class AxiFileCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null || br.containsHTML("<title>AxiFile: Upload and download big files</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"data\" dir=\"ltr\"><h1 style=\"font\\-size: 14px;font\\-weight:normal;\"><span title=\"[^\"\\']+\">(.*?)</span></h1>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String filesize = br.getRegex("class=\"names\"><b>File size:</b></td>[\t\n\r ]+<td class=\"data\">(.*?)</td>").getMatch(0);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         // Hoster tags filenames, set correct name here
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        if (filename != null)
+            downloadLink.setName(Encoding.htmlDecode(filename.trim()));
+        else
+            downloadLink.setName(new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         return AvailableStatus.TRUE;
     }
 
@@ -178,6 +182,7 @@ public class AxiFileCom extends PluginForHost {
             if (br.containsHTML("(<title>404 Not Found</title>|<h1>Not Found</h1>)")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL Server error or too many simultan downloads");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).replace("axifile.com-", ""));
         dl.startDownload();
     }
 

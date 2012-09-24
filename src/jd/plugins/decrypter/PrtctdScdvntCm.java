@@ -39,8 +39,9 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
     }
 
     /*
-     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com links as "protected.socadvnet.com" only allows crypting links
-     * of this host!
+     * At the moment this decrypter only decrypts: turbobit.net, hotfile.com
+     * links as "protected.socadvnet.com" only allows crypting links of this
+     * host!
      */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
@@ -57,7 +58,7 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             br.getPage(br.getRedirectLocation());
         }
         final String cpPage = br.getRegex("\"(plugin/.*?)\"").getMatch(0);
-        final String sendCaptcha = "kvr.php";
+        final String sendCaptcha = "ksl.php";
         final String getList = "llinks.php";
         br.postPage(MAINPAGE + getList, "LinkName=" + postvar);
         final String[] linksCount = br.getRegex("(moc\\.tenvdacos\\.detcetorp//:ptth)").getColumn(0);
@@ -79,7 +80,6 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
             if (!br.toString().trim().equals("1")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
         logger.info("Found " + linkCounter + " links, decrypting now...");
-        progress.setRange(linkCounter);
         for (int i = 0; i <= linkCounter - 1; i++) {
             br.getHeaders().put("Referer", parameter);
             final String actualPage = MAINPAGE + getList + "?out_name=" + postvar + "&&link_id=" + i;
@@ -127,7 +127,6 @@ public class PrtctdScdvntCm extends PluginForDecrypt {
                 logger.warning("Finallink for the following link is null: " + parameter);
             }
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
         }
         return decryptedLinks;
     }

@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="rom-freaks.net" author="DwD"  services="rom-freaks.net;frozen-roms.in" ></method> 
+<method name="rom-freaks.net" author="DwD"  services="rom-freaks.net" ></method> 
 <format type="png" letterNum="4" />
 </jDownloader>

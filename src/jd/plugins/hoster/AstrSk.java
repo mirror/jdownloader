@@ -29,16 +29,11 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojedata.sk", "astr.sk" }, urls = { "http://(www\\.)?(mojedata|astr)\\.sk/[A-Za-z0-9_]+", "fhidveirhjndDELETEMErrh375ohfvn3fduibvknr" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mojedata.sk", "astr.sk" }, urls = { "http://(www\\.)?mojedata\\.sk/[A-Za-z0-9_]+", "fhidveirhjndDELETEMErrh375ohfvn3fduibvknr" }, flags = { 0, 0 })
 public class AstrSk extends PluginForHost {
 
     public AstrSk(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        // english version (astr) is offline, revert too mojedata
-        link.setUrlDownload(link.getDownloadURL().replace("astr.sk/", "mojedata.sk/"));
     }
 
     @Override
@@ -58,11 +53,11 @@ public class AstrSk extends PluginForHost {
         br.getPage(link.getDownloadURL());
         // "the file fell into a black hole and is now in parallel universe" <-
         // I like those guys :D
-        if (br.containsHTML("(>file is gone|<p>The requested file was not found|owner deleted the file<|you entered the address incorrectly<br|the file fell into a black hole and is now in parallel universe)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("súbor je fuč|>Možné dôvody:<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- mojedata\\.sk\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<title>Stiahni si (.*?) - mojedata\\.sk").getMatch(0);
+            if (filename == null) filename = br.getRegex("<title>Stiahni si (.*?) \\- mojedata\\.sk").getMatch(0);
         }
         String filesize = br.getRegex("<strong>Veľkosť:</strong> (.*?) /[\r\n ]+<strong>Zobrazení").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

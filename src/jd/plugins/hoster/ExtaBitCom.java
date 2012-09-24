@@ -65,7 +65,7 @@ public class ExtaBitCom extends PluginForHost {
 
             }
             finallink = br.getRedirectLocation();
-            if (finallink == null) finallink = "http://extabit.com/file/fileofflineblablabla";
+            if (finallink == null) finallink = "http://extabit.com/file/" + System.currentTimeMillis();
             link.setUrlDownload(finallink);
         }
     }
@@ -73,6 +73,11 @@ public class ExtaBitCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
+        /*
+         * They got a Mass-Linkchecker, but it's only available for registered
+         * users and doesn't show the filesize:
+         * http://extabit.com/linkchecker.jsp
+         */
         // To get the english version of the page
         br.setCookie("http://extabit.com", "language", "en");
         br.setFollowRedirects(true);
