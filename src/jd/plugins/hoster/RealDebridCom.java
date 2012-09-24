@@ -51,7 +51,7 @@ public class RealDebridCom extends PluginForHost {
 
     private static final String mName    = "real-debrid.com";
     private static final String mProt    = "http://";
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String DIRECTRD = "directRD";
 
     public RealDebridCom(PluginWrapper wrapper) {
@@ -245,6 +245,11 @@ public class RealDebridCom extends PluginForHost {
             /*
              * set ArrayList<String> with all supported multiHosts of this service
              */
+            // workaround for uploaded.to
+            if (supportedHosts.contains("uploaded.net")) {
+                supportedHosts.add("ul.to");
+                supportedHosts.add("uploaded.to");
+            }
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);
