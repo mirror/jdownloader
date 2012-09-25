@@ -209,7 +209,7 @@ public class TwojLimitPl extends PluginForHost {
         }
         br.setFollowRedirects(true);
         // wait, workaround
-        sleep(20 * 1000l, link);
+        sleep(1 * 1000l, link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 1);
         /*
          * I realy wanted to use Content Disposition below, but it just don't work for resume at hotfile
