@@ -54,7 +54,7 @@ public class FileBeerInfo extends PluginForHost {
 
     private final String  MAINPAGE  = "http://filebeer.info";
     private final boolean RESUME    = true;
-    private final int     MAXCHUNKS = -2;
+    private final int     MAXCHUNKS = 1;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

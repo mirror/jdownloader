@@ -62,7 +62,7 @@ public class FileUploadDotnet extends PluginForHost {
                 String downloadurl = downloadLink.getDownloadURL();
 
                 br.getPage(downloadurl);
-                if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
+                if (!br.containsHTML(">Datei existiert nicht")) {
                     String filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
                     String filesize = br.getRegex("<label>Dateigröße:</label><span>([^<>\"]*?)</span>").getMatch(0);
                     if (filesize != null) {

@@ -20,16 +20,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/(main/passchk\\.php\\?ad=\\d+|main/preword\\.php\\?ad=\\d+|[^<>\"\\'/]+/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
 
     private static final String MAINPAGE = "http://imgsrc.ru";
@@ -38,30 +41,59 @@ public class ImgSrcRu extends PluginForDecrypt {
         super(wrapper);
     }
 
+    private String PASSWORD = null;
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "lang", "en");
-        br.getPage(parameter + "?per_page=48");
-        if (br.containsHTML(">Album foreword:")) {
-            final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html\\?pwd=)\\'").getMatch(0);
-            if (newLink == null) return null;
-            parameter = newLink;
-            br.getPage(parameter);
+        br.setCookie(MAINPAGE + "/", "lang", "en");
+        br.setCookie(MAINPAGE + "/", "iamlegal", "yeah");
+        br.setCookie(MAINPAGE + "/", "per_page", "48");
+
+        boolean passwordprotected = false;
+        if (parameter.matches("http://(www\\.)?imgsrc\\.ru/main/passchk\\.php\\?ad=\\d+")) passwordprotected = true;
+        if (!passwordprotected) {
+            br.getPage(parameter + "?per_page=48");
+            if (br.containsHTML(">Album foreword:")) {
+                final String newLink = br.getRegex(">shortcut\\.add\\(\"Right\",function\\(\\) \\{window\\.location=\\'(http://imgsrc\\.ru/[^<>\"\\'/]+/[a-z0-9]+\\.html\\?pwd=)\\'").getMatch(0);
+                if (newLink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                parameter = newLink;
+                br.getPage(parameter + "?per_page=48");
+            }
+            if (br.containsHTML("No htmlCode read")) {
+                logger.info("Server error, cannot continue: " + parameter);
+                return decryptedLinks;
+            }
+            passwordprotected = isPasswordProtected();
         }
-        if (br.containsHTML("(>Search for better photos|No htmlCode read)") || br.getURL().contains("imgsrc.ru/main/user.php")) return decryptedLinks;
+        if (passwordprotected) {
+            parameter = handlePassword(parameter, param);
+        }
+
+        if (br.containsHTML("(>Search for better photos|No htmlCode read)") || br.getURL().contains("imgsrc.ru/main/user.php")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("from \\'<strong>([^<>\"']+)</strong>").getMatch(0);
         final String username = new Regex(parameter, "imgsrc\\.ru/([^<>\"\\'/]+)/").getMatch(0);
-        String[] pages = br.getRegex("href=(/" + username + "/\\d+\\.html)>\\d+</a>").getColumn(0);
+        final String[] pages = br.getRegex("href=(/" + username + "/\\d+\\.html)>\\d+</a>").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (String page : pages)
                 allPages.add(page);
         }
         allPages.add(parameter.replaceAll("http://(www\\.)?imgsrc.ru", ""));
         for (String page : allPages) {
-            br.getPage(MAINPAGE + page);
+            final String currentPage = MAINPAGE + page;
+            br.getPage(currentPage);
+            // Check password again, because they don't set any cookies for
+            // correctly entered passwords we have to enter them again for each
+            // page
+            if (isPasswordProtected()) handlePassword(parameter, param);
             // Get the picture we're currently viewing
             String singlePic = br.getRegex("abuse\\.php\\?id=(\\d+)\\&").getMatch(0);
             if (singlePic == null) singlePic = br.getRegex("onclick=\"t\\(\\'down_(\\d+)\\'\\)").getMatch(0);
@@ -69,7 +101,8 @@ public class ImgSrcRu extends PluginForDecrypt {
                 DownloadLink dlink = getDownloadLink();
                 if (dlink != null) decryptedLinks.add(dlink);
             }
-            final String[] allPics = br.getRegex("<a href=\\'(/" + username + "/\\d+\\.html)").getColumn(0);
+            // Password protected links contain the "?pwd?" string
+            final String[] allPics = br.getRegex("<a href=\\'(/" + username + "/\\d+\\.html(\\?pwd=[a-z0-9]{32})?)").getColumn(0);
             if (allPics == null || allPics.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -83,7 +116,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                     return null;
                 }
                 br.getPage(MAINPAGE + pic);
-                DownloadLink dlink = getDownloadLink();
+                final DownloadLink dlink = getDownloadLink();
                 if (dlink != null) decryptedLinks.add(dlink);
                 counter++;
             }
@@ -110,6 +143,39 @@ public class ImgSrcRu extends PluginForDecrypt {
     private DownloadLink getDownloadLink() {
         final String finallink = br.getRegex("style=\\'\\{width:610;\\}\\' value=\\'\\&lt;a href=http://imgsrc\\.ru>\\&lt;img src=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (finallink == null) return null;
-        return createDownloadlink("directhttp://" + finallink);
+        final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+        dl.setAvailable(true);
+        return dl;
+    }
+
+    private String handlePassword(String parameter, CryptedLink param) throws Exception {
+        Form pwForm = br.getFormbyProperty("name", "passchk");
+        if (pwForm == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        for (int i = 0; i <= 3; i++) {
+            if (PASSWORD == null) PASSWORD = this.getPluginConfig().getStringProperty("lastusedpassword");
+            if (PASSWORD == null) PASSWORD = getUserInput(null, param);
+            pwForm.put("pwd", PASSWORD);
+            br.submitForm(pwForm);
+            pwForm = br.getFormbyProperty("name", "passchk");
+            if (pwForm != null) {
+                this.getPluginConfig().setProperty("lastusedpassword", Property.NULL);
+                PASSWORD = null;
+                continue;
+            }
+            this.getPluginConfig().setProperty("lastusedpassword", PASSWORD);
+            break;
+        }
+        this.getPluginConfig().save();
+        if (pwForm != null) throw new DecrypterException(DecrypterException.PASSWORD);
+        // Now we got the correct url
+        parameter = br.getURL();
+        return parameter;
+    }
+
+    private boolean isPasswordProtected() {
+        return br.containsHTML(">Album owner has protected his work from unauthorized access");
     }
 }

@@ -53,7 +53,7 @@ public class FileToLinkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Sorry, this file does not exist\\.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Sorry, this file does not exist\\.<") || br.getURL().equals("http://www.filetolink.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>[a-z0-9_\\-]+/([^<>\"]*?) : File Sharing \\- Upload and Send big Files : FileToLink</title>").getMatch(0);
         if (filename == null) filename = br.getRegex(">Downloading <a href=\"[^<>\"]*?\" >([^<>\"]*?)</a>").getMatch(0);
         final String filesize = br.getRegex("Size:</td><td>([^<>\"]*?)</td></tr>").getMatch(0);

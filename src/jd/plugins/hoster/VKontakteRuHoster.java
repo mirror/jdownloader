@@ -91,7 +91,8 @@ public class VKontakteRuHoster extends PluginForHost {
 
     public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to download pictures
+         * Chunks disabled because (till now) this plugin only exists to
+         * download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -133,8 +134,8 @@ public class VKontakteRuHoster extends PluginForHost {
         br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
         final String correctedBR = br.toString().replace("\\", "");
         /**
-         * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others
-         * are online
+         * Try to get best quality and test links till a working link is found
+         * as it can happen that the found link is offline but others are online
          */
         String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (String q : qs) {
@@ -204,11 +205,8 @@ public class VKontakteRuHoster extends PluginForHost {
                 if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
                 if (damnIPH == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("https://login.vk.com/?act=login", "act=login&q=1&al_frame=1&expire=&captcha_sid=&captcha_key=&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                final String sid = br.getRegex("setCookieEx\\(\\'sid\\', \\'(.*?)\'").getMatch(0);
-                /** sid null = login probably wrong */
-                if (sid == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.setCookie(DOMAIN, "remixsid", sid);
+                br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=1&al_test=3&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
+                if (br.getCookie(DOMAIN, "remixsid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Finish login
                 Form lol = br.getFormbyProperty("name", "login");
                 if (lol != null) {
