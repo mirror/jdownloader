@@ -186,6 +186,20 @@ public class RealDebridCom extends PluginForHost {
                 logger.info("Host seems buggy, remove it from list");
                 removeHostFromMultiHost(link, acc);
             }
+            if (br.containsHTML("error\":13")) { // TODO
+                logger.info("Unknown error 13");
+                /*
+                 * after x retries we disable this host and retry with normal plugin
+                 */
+                if (link.getLinkStatus().getRetryCount() >= 3) {
+                    removeHostFromMultiHost(link, acc);
+                    /* reset retrycounter */
+                    link.getLinkStatus().setRetryCount(0);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 13: Retry in few secs" + msg, 20 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         showMessage(link, "Task 2: Download begins!");
@@ -246,9 +260,16 @@ public class RealDebridCom extends PluginForHost {
              * set ArrayList<String> with all supported multiHosts of this service
              */
             // workaround for uploaded.to
-            if (supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("ul.to");
-                supportedHosts.add("uploaded.to");
+            if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
+                if (!supportedHosts.contains("uploaded.net")) {
+                    supportedHosts.add("uploaded.net");
+                }
+                if (!supportedHosts.contains("ul.to")) {
+                    supportedHosts.add("ul.to");
+                }
+                if (!supportedHosts.contains("uploaded.to")) {
+                    supportedHosts.add("uploaded.to");
+                }
             }
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
