@@ -24,7 +24,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs_ext/debug-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/jcip-annotations-1.0.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/Filters.jar" sourcepath="ressourcen/code-ressourcen/Filter_src.zip"/>
-	<classpathentry kind="lib" path="ressourcen/libs_ext/JTattoo.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs_ext/looks.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/synthetica.jar">
 		<attributes>
