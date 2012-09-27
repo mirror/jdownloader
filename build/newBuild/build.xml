@@ -95,6 +95,9 @@
 		<copy todir="${dist}">
 			<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
 		</copy>
+		<copy todir="${dist}">
+				<fileset dir="${res}" includes="*.txt, *.exe, *.bat, *.properties" />
+			</copy>
 		<mkdir dir="${dist}/java" />
 		<mkdir dir="${dist}/tmp" />
 
@@ -112,7 +115,8 @@
 		<copy todir="${dist}">
 
 			<fileset dir="translations" includes="**/*.lng" />
-
+			<fileset dir="fileoptions" includes="**/*.clientOptions" />
+			<fileset dir="fileoptions" includes="**/*.serverOptions" />
 		</copy>
 		<loadfile property="svn.revision" srcFile=".svn/entries">
 			<filterchain>
