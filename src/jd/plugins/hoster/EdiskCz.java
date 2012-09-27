@@ -152,7 +152,10 @@ public class EdiskCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
+        // Offline link
         if (br.containsHTML("(Tento soubor již neexistuje z následujích důvodů:|<li>soubor byl smazán majitelem</li>|<li>vypršela doba, po kterou může být soubor nahrán</li>|<li>odkaz je uvedený v nesprávném tvaru</li>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">Stránka nenalezena \\(chyba 404\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<span class=\"fl\" title=\"(.*?)\">").getMatch(0));
         if (filename == null) filename = br.getRegex("<title> \\&nbsp;\\&quot;(.*?)\\&quot; \\(").getMatch(0);
         String filesize = br.getRegex("<p>Velikost souboru: <strong>(.*?)</strong></p>").getMatch(0);

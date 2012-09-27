@@ -49,7 +49,22 @@ public class CineonCom extends PluginForDecrypt {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName((fpName + "@" + s[0]).trim());
                 for (String[] ss : new Regex(s[1], "\\[(\\d),\\w+,.*?,(.*?),\\d+\\]").getMatches()) {
-                    DownloadLink dl = createDownloadlink(ss[1].trim());
+                    final DownloadLink dl = createDownloadlink(ss[1].trim());
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Throwable e) {
+                        /* does not exist in 09581 */
+                    }
+                    decryptedLinks.add(dl);
+                }
+            }
+            final String[] uploadedLinks = new Regex(allLinks, "\\[\\d+,redirect,ul.ico,(http://(www\\.)?(uploaded|ul)\\.(to|net)/file/[A-Za-z0-9]+)").getColumn(0);
+            if (uploadedLinks != null && uploadedLinks.length != 0) {
+                FilePackage fp = FilePackage.getInstance();
+                fp.setName((fpName + "@uploaded.net"));
+                for (final String ullink : uploadedLinks) {
+                    final DownloadLink dl = createDownloadlink(ullink);
                     fp.add(dl);
                     try {
                         distribute(dl);

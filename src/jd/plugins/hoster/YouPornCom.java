@@ -46,21 +46,12 @@ public class YouPornCom extends PluginForHost {
         return -1;
     }
 
-    public void handleFree(DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie("http://youporn.com/", "age_verified", "1");
         br.setCookie("http://youporn.com/", "is_pc", "1");
+        br.setCookie("http://youporn.com/", "language", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -90,9 +81,19 @@ public class YouPornCom extends PluginForHost {
         }
     }
 
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
     public void reset() {
     }
 
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 }

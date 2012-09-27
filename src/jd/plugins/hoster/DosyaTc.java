@@ -64,8 +64,8 @@ public class DosyaTc extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Dosya bulunamadı")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<td><b>Dosya Adı</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(0);
-        String filesize = br.getRegex("<td><b>Dosya Boyutu</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(0);
+        String filename = br.getRegex("<td><b>Dosya Adı(/File Name)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
+        String filesize = br.getRegex("<td><b>Dosya Boyutu(/File Size)?</b></td>[\t\n\r ]+<td><b>([^<>\"]*?)</b></td>").getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));

@@ -71,7 +71,6 @@ public class EPornerCom extends PluginForHost {
         String continueLink = new Regex(correctedBR, "\"(http://(www\\.)?eporner\\.com/player\\d+/\\d+/[a-z0-9]+)\"").getMatch(0);
         if (continueLink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(Encoding.htmlDecode(continueLink).replaceAll("/player", "/config"));
-        System.out.println(br.toString() + "\n");
         DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();

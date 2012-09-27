@@ -107,9 +107,13 @@ public class EazyUploadNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
+        // Link offline
         if (br.containsHTML("(Unknown link|>An error has occured while trying to serve your request<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // For invalid links
+        if (br.containsHTML(">404 Not Found<|>Index of")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>Filename</b></td><td>(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("<b>Size</b></td><td>(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

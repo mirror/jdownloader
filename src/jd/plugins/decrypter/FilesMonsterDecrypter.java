@@ -53,9 +53,15 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         String fid = new Regex(parameter, "filesmonster\\.com/dl/(.*?)/free/").getMatch(0);
         if (fid != null) parameter = "http://filesmonster.com/download.php?id=" + fid;
         br.getPage(parameter);
-        // Is the file offline ? If so, let's stop here and just add it to the
-        // downloadlist so the user can see the status
+        // Link offline
         if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) {
+            final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
+            finalOne.setAvailable(false);
+            decryptedLinks.add(finalOne);
+            return decryptedLinks;
+        }
+        // Advertising link
+        if (br.containsHTML(">the file can be accessed at the")) {
             final DownloadLink finalOne = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
             finalOne.setAvailable(false);
             decryptedLinks.add(finalOne);

@@ -20,10 +20,11 @@ import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -39,9 +40,13 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "favupload.com" }, urls = { "http://(www\\.)?favupload\\.com/(video|file|audio)/\\d+/" }, flags = { 0 })
 public class FavUploadCom extends PluginForHost {
 
-    private static final String PASSWORDPROTECTED = "(> The uploader of this file has requested to password protect this page|Enter the password in the text box below and submit|type=\"hidden\" name=\"file_auth\")";
-
+    private static final String PASSWORDPROTECTED = "The uploader of this file has requested to password protect this page<";
     private static final String FILEIDREGEX       = "/(\\d+)/$";
+    private static final String FILELINK          = "http://(www\\.)?favupload\\.com/file/\\d+/";
+    private static final String AUDIOLINK         = "http://(www\\.)?favupload\\.com/audio/\\d+/";
+
+    // private static final String VIDEOLINK =
+    // "http://(www\\.)?favupload\\.com/video/\\d+/";
 
     public FavUploadCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -59,39 +64,87 @@ public class FavUploadCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
+        if (br.getURL().contains("favupload.com/errors/file-not-found/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.getDownloadURL().matches(FILELINK)) {
+            String filename;
+            String filesize;
+            if (br.containsHTML(PASSWORDPROTECTED)) {
+                link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.favuploadcom.passwordprotected", "This link is password protected"));
+                final Regex info = br.getRegex("name=\"Description\" content=\"Download [^<>\"/]*?, Filename: ([^<>\"]*?) \\((\\d+\\.\\d+ [A-Za-z]{1,5})\\) \\| FAVUpload\\.com");
+                filename = info.getMatch(0);
+                filesize = info.getMatch(1);
+            } else {
+                filename = br.getRegex("<title>Download File: (.*?) \\| FAVUpload</title>").getMatch(0);
+                filesize = br.getRegex("<h1>[^<>\"/]*? \\((\\d+\\.\\d+ [A-Za-z]{1,5})\\)</h1>").getMatch(0);
+            }
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else if (link.getDownloadURL().matches(AUDIOLINK)) {
+            final String filename = br.getRegex("<title>Stream Audio: ([^<>\"]*?) \\| FAVUpload</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
+        } else {
+            final String filename = br.getRegex("<title>Stream Video: ([^<>\"]*?)  \\| FAVUpload</title>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String passCode = null;
-        if (br.containsHTML(PASSWORDPROTECTED)) {
-            passCode = downloadLink.getStringProperty("pass", null);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            br.postPage("http://www.favupload.com/auth/", "file_auth=&file_auth_id=" + new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0) + "&file_pass=" + Encoding.urlEncode(passCode) + "&button2=Submit");
-            if (br.containsHTML(PASSWORDPROTECTED) || br.containsHTML(">Sorry, The password you submitted is incorrect")) {
-                downloadLink.setProperty("pass", null);
-                logger.info("Password wrong!");
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+        String dllink = checkDirectLink(downloadLink, "directlink");
+        if (dllink == null) {
+            if (downloadLink.getDownloadURL().matches(FILELINK)) {
+                final String fid = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
+
+                if (br.containsHTML(PASSWORDPROTECTED)) {
+                    passCode = downloadLink.getStringProperty("pass", null);
+                    if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+                    br.postPage("http://www.favupload.com/submit/auth.php", "file_auth=&file_auth_id=" + fid + "&file_pass=" + Encoding.urlEncode(passCode) + "&button2=Access+Page");
+                    if (br.containsHTML("alert\\(\"Incorrect Password\"\\);")) {
+                        downloadLink.setProperty("pass", null);
+                        logger.info("Password wrong!");
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                    br.getPage(downloadLink.getDownloadURL());
+                }
+
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.setFollowRedirects(false);
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                rc.setId(id);
+                rc.load();
+                for (int i = 0; i <= 5; i++) {
+                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    String c = getCaptchaCode(cf, downloadLink);
+                    br.postPage("http://www.favupload.com/submit/dl.php", "download_file=&file_id=" + fid + "&file_ref=%2Ffile%2F" + fid + "%2F&recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                    if (br.containsHTML("\"Incorrect code")) {
+                        rc.reload();
+                        continue;
+                    }
+                    break;
+                }
+                if (br.containsHTML("\"Incorrect code")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                dllink = br.getRegex("status\":1,\"txt\":\"(http://[^<>\"]*?)\"").getMatch(0);
+            } else {
+                dllink = br.getRegex("flashvars=\\'file=(http://[^<>\"]*?)\\&").getMatch(0);
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(false);
-        Form capForm = new Form();
-        capForm.setMethod(MethodType.POST);
-        capForm.setAction(downloadLink.getDownloadURL());
-        capForm.put("download_file", "");
-        capForm.put("file_id", new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0));
-        capForm.put("file_ref", new Regex(downloadLink.getDownloadURL(), "favupload\\.com(/.+)").getMatch(0));
-        capForm.put("submit", "Download+File");
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        rc.setForm(capForm);
-        String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-        rc.setId(id);
-        rc.load();
-        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        String c = getCaptchaCode(cf, downloadLink);
-        Form rcform = rc.getForm();
-        rcform.put("recaptcha_challenge_field", rc.getChallenge());
-        rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, rc.getForm(), true, -5);
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        // Same chunklimit for all linktypes
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("(google\\.com/recaptcha/api/|>The Captcha code you submitted was incorrect|>Please enter the verification code below to start your download<)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
@@ -99,8 +152,27 @@ public class FavUploadCom extends PluginForHost {
             if (br.containsHTML("(<title>403 \\- Forbidden</title>|<h1>403 -\\ Forbidden</h1>)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
+        String dllink = downloadLink.getStringProperty(property);
+        if (dllink != null) {
+            try {
+                Browser br2 = br.cloneBrowser();
+                URLConnectionAdapter con = br2.openGetConnection(dllink);
+                if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                    downloadLink.setProperty(property, Property.NULL);
+                    dllink = null;
+                }
+                con.disconnect();
+            } catch (Exception e) {
+                downloadLink.setProperty(property, Property.NULL);
+                dllink = null;
+            }
+        }
+        return dllink;
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -111,22 +183,6 @@ public class FavUploadCom extends PluginForHost {
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("favupload.com/errors/file-not-found/") || br.containsHTML("(>The file you requested could not be found|> It may have been removed by the uploader or violated our)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<strong>File Name:</strong> (.*?) <br").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Download File: (.*?) \\| FAVUpload</title>").getMatch(0);
-        String filesize = br.getRegex("File Size:</strong> (.*?)</div>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        if (br.containsHTML(PASSWORDPROTECTED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.favuploadcom.passwordprotected", "This link is password protected"));
-        return AvailableStatus.TRUE;
     }
 
     @Override

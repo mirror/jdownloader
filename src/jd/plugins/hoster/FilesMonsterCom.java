@@ -89,8 +89,12 @@ public class FilesMonsterCom extends PluginForHost {
             downloadLink.setDownloadSize(downloadLink.getDownloadSize());
         } else {
             br.getPage(downloadLink.getDownloadURL());
+            // Link offline
             if (br.containsHTML("(>File was deleted by owner or it was deleted for violation of copyrights<|>File not found<|>The link could not be decoded<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Advertising link
+            if (br.containsHTML(">the file can be accessed at the")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.getRedirectLocation() != null) {
+                // Link offline 2
                 if (br.getRedirectLocation().contains(REDIRECTFNF)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

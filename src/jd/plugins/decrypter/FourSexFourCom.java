@@ -112,6 +112,9 @@ public class FourSexFourCom extends PluginForDecrypt {
         }
         externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
         if (externID != null) {
+            br.setCookie("http://youporn.com/", "age_verified", "1");
+            br.setCookie("http://youporn.com/", "is_pc", "1");
+            br.setCookie("http://youporn.com/", "language", "en");
             br.getPage(Encoding.htmlDecode(externID));
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 logger.warning("FourSexFourCom -> youporn link invalid, please check browser to confirm: " + parameter);
@@ -121,12 +124,18 @@ public class FourSexFourCom extends PluginForDecrypt {
                 logger.info("Link broken or offline: " + parameter);
                 return decryptedLinks;
             }
-            String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
+            externID = br.getRegex("\"(http://(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(externID);
+            final String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
             String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
             if (type == null) type = "flv";
             dl.setFinalFileName(filename + "." + type);

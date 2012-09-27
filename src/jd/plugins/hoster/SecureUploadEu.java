@@ -583,7 +583,7 @@ public class SecureUploadEu extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, "(\\d{2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);

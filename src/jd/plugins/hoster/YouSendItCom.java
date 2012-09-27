@@ -93,7 +93,12 @@ public class YouSendItCom extends PluginForHost {
         } else {
             br.setFollowRedirects(true);
             br.getPage(link.getDownloadURL());
-            if (br.containsHTML("Download link is invalid")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // File offline
+            if (br.containsHTML("Download link is invalid|File Not Available<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // File expired
+            if (br.containsHTML("Sorry, this file has expired and cannot be downloaded")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Link invalid
+            if (br.containsHTML(">The server returned a 404 response")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = br.getRegex("style=\"width:390px; display:block; overflow:hidden;\">(.*?)</a>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<span style=\\'color:#1F3CD6;\\'>(.*?)</span><").getMatch(0);

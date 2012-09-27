@@ -103,9 +103,10 @@ public class XvidStreamNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        prepBrowser();
+        prepBrowser();// /Fix old links
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

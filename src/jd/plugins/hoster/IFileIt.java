@@ -97,6 +97,7 @@ public class IFileIt extends PluginForHost {
         xmlrequest(br2, "http://filecloud.io/download-request.json", "ukey=" + ukey + "&__ab1=" + ab1);
         if (br.containsHTML("message\":\"invalid request\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (!viaAccount && br2.containsHTML(ONLY4REGISTERED)) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, ONLY4REGISTEREDUSERTEXT, 30 * 60 * 1000l); }
+        if (br2.containsHTML("\"message\":\"gopremium\"")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         if (br2.containsHTML("\"captcha\":1")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br2);

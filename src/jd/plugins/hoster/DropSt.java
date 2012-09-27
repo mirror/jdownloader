@@ -52,9 +52,9 @@ public class DropSt extends PluginForHost {
         String filename = fileInfo.getMatch(0);
         if (filename == null) filename = br.getRegex("<title>([^<>\"\\']+) / drop\\.st</title>").getMatch(0);
         String filesize = fileInfo.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -63,6 +63,11 @@ public class DropSt extends PluginForHost {
         requestFileInformation(downloadLink);
         String dllink = br.getRegex("class=\"center\"><form action=\"(http://[^<>\"\\']+)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.drop\\.st/download/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+)\"").getMatch(0);
+        // for image links
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://(www\\.)?s\\d+.drop\\.st/images/[A-Za-z0-9]+/large/[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) dllink = dllink.replace("/large/", "/original/");
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

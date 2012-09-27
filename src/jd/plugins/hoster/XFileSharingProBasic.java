@@ -75,7 +75,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.3
+    // XfileSharingProBasic Version 2.5.7.4
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -623,10 +623,10 @@ public class XFileSharingProBasic extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -643,7 +643,7 @@ public class XFileSharingProBasic extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            final String expire = new Regex(correctedBR, "(\\d{2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+            final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
