@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hardsextube.com" }, urls = { "http://[\\w\\.]*?hardsextube\\.com/video/[0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hardsextube.com" }, urls = { "http://(www\\.)?hardsextube\\.com/video/[0-9]+/" }, flags = { 0 })
 public class HardSexTubeCom extends PluginForHost {
 
     public String dllink = null;
@@ -50,20 +51,26 @@ public class HardSexTubeCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().contains("?removed=1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)\\- HardSexTube").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("<div style='margin-top:-10px; height:15px'> \\&raquo; <b>(.*?)</b>").getMatch(0);
+            filename = br.getRegex("<div style=\\'margin\\-top:\\-10px; height:15px\\'> \\&raquo; <b>(.*?)</b>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<div id='tabdetails' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
+                filename = br.getRegex("<div id=\\'tabdetails\\' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        dllink = br.getRegex("name=\"vserver\" value=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage("http://vidii.hardsextube.com/video/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "/confige.xml");
+        final String name = br.getRegex("Name=\"FLVServer\" Value=\"(http://[^<>\"]*?)\"").getMatch(0);
+        final String path = br.getRegex("Name=\"FLV\" Value=\"(/[^<>\"]*?)\"").getMatch(0);
+        if (filename == null || name == null || path == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        dllink = Encoding.htmlDecode(name + path);
         filename = filename.trim();
         String ext = new Regex(dllink, ".+(\\..*?)$").getMatch(0);
-        if (ext == null) ext = ".flv";
+        if (ext == null)
+            ext = ".flv";
+        else if (ext.contains(".mp4")) ext = ".mp4";
         downloadLink.setFinalFileName(filename + ext);
         URLConnectionAdapter con = null;
         try {

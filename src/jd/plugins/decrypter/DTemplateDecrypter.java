@@ -43,15 +43,26 @@ public class DTemplateDecrypter extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String host = new Regex(parameter, "http://(www\\.)?(.*?)/\\d+~f").getMatch(1);
-        final String[] links = br.getRegex("<a href=\"(http://(www\\.)?" + host + "/[a-z0-9]+)").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links)
-            decryptedLinks.add(createDownloadlink(singleLink));
 
+        ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("1");
+        final String[] tempPages = br.getRegex("\"\\?page=(\\d+)\"").getColumn(0);
+        if (tempPages != null && tempPages.length != 0) {
+            for (final String aPage : tempPages)
+                if (!allPages.contains(aPage)) allPages.add(aPage);
+        }
+
+        final String host = new Regex(parameter, "http://(www\\.)?(.*?)/\\d+~f").getMatch(1);
+        for (final String currentPage : allPages) {
+            if (!currentPage.equals("1")) br.getPage(parameter + "?page=" + currentPage);
+            final String[] links = br.getRegex("<a href=\"(http://(www\\.)?" + host + "/[a-z0-9]+)").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links)
+                decryptedLinks.add(createDownloadlink(singleLink));
+        }
         return decryptedLinks;
     }
 
