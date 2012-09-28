@@ -68,11 +68,12 @@ public class EPornerCom extends PluginForHost {
         if (br.containsHTML("\\'File has been removed due to copyright owner request")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- Free HD Porn Tube \\- EPORNER</title>").getMatch(0);
         final String correctedBR = br.toString().replace("\\", "");
-        String continueLink = new Regex(correctedBR, "\"(http://(www\\.)?eporner\\.com/player\\d+/\\d+/[a-z0-9]+)\"").getMatch(0);
+        String continueLink = new Regex(correctedBR, "\"(http://(www\\.)?eporner\\.com/player\\d+/\\d+/[0-9a-f]+(/)?)\"").getMatch(0);
         if (continueLink == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage(Encoding.htmlDecode(continueLink).replaceAll("/player", "/config"));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(Encoding.htmlDecode(continueLink).replaceAll("/player", "/config") + (continueLink.endsWith("/") ? "1920" : "/1920"));
+        DLLINK = br.getRegex("<hd\\.file>(http://.*?)</hd\\.file>").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
+        if (DLLINK == null || "http://download.eporner.com/na.flv".equalsIgnoreCase(DLLINK)) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();
