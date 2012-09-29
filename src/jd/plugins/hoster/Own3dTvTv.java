@@ -60,13 +60,13 @@ public class Own3dTvTv extends PluginForHost {
         String filename = br.getRegex("class=\"chanPlayerTitle fnt20\"><span class=\"fntB\">([^<>\"]*?)</span>").getMatch(0);
 
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String hdLink = br.getRegex("HDUrl: \\'(videos/.*?\\.mp4)\\'").getMatch(0);
-        String sdLink = br.getRegex("HQUrl: \\'(videos/.*?\\.mp4)\\'").getMatch(0);
+        String hdLink = br.getRegex("\\'(videos/HD/\\d+/[^<>\"]*?)\\'").getMatch(0);
+        String sdLink = br.getRegex("\\'(videos/SD/\\d+/[^<>\"]*?)\\'").getMatch(0);
         String temporaryID = br.getRegex("queryString: escape\\(\\'\\?(.*?)\\&").getMatch(0);
         if (temporaryID == null || sdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String firstPart = hdLink;
         if (firstPart == null || firstPart.contains("/',")) firstPart = sdLink;
-        dllink = "http://vodcdn.ec.own3d.tv/" + firstPart + "?" + temporaryID;
+        dllink = "http://owned.vo.llnwd.net/v1/" + firstPart + "?" + temporaryID;
         filename = filename.trim();
         downloadLink.setFinalFileName(filename + ".mp4");
         Browser br2 = br.cloneBrowser();

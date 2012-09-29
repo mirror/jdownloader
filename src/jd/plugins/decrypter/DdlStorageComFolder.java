@@ -36,7 +36,11 @@ public class DdlStorageComFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] links = br.getRegex("\"(http://(www\\.)?ddlstorage\\.com/[a-z0-9]{12})").getColumn(0);
+        final String[] links = br.getRegex("\"(http://(www\\.)?ddlstorage\\.com/[a-z0-9]{12})").getColumn(0);
+        if ((links == null || links.length == 0) && !br.containsHTML("ddlstorage\\.com/pictures/file\\.gif\"")) {
+            logger.info("Folder is empty: " + parameter);
+            return decryptedLinks;
+        }
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

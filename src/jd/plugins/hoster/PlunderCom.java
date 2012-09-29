@@ -66,6 +66,7 @@ public class PlunderCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+        this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         // Sometimes the links are outdated but they show the new links, the
         // problem is they they new and newer links could also be moved so this
@@ -82,9 +83,10 @@ public class PlunderCom extends PluginForHost {
                 if (objectMoved != null) continue;
                 downloadLink.setUrlDownload(br.getURL());
                 break;
+            } else {
+                break;
             }
         }
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>[\r\n\t]+(.*?) download \\- Plunder").getMatch(0);

@@ -92,7 +92,10 @@ public class Rdrctr extends PluginForDecrypt {
         if (declink == null) {
             declink = declink2;
         }
-        if (declink == null) return null;
+        if (declink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
     }
