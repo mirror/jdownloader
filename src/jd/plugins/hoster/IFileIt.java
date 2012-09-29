@@ -90,6 +90,7 @@ public class IFileIt extends PluginForHost {
         if (ab1 == null) ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
         if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(true);
+        if (br.containsHTML(">you need to have a premium account")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
         // Br2 is our xml browser now!
         final Browser br2 = br.cloneBrowser();
         br2.setReadTimeout(40 * 1000);
