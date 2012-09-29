@@ -93,6 +93,9 @@ public class TusFilesNet extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "<img src=\"/img/fileicon\\.png\" /></a>[\t\n\r ]+</li>[\t\n\r ]+<li>([^<>\"]*?)</li>").getMatch(0);
+        if (filename == null) {
+            filename = new Regex(correctedBR, "property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        }
         final String filesize = new Regex(correctedBR, "<b>Size:</b> <small>([^<>\"]*?)</small></li>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
@@ -150,8 +153,7 @@ public class TusFilesNet extends PluginForHost {
         }
 
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
