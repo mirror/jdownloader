@@ -46,12 +46,18 @@ public class RabitFilesCom extends PluginForHost {
         return "http://www.rabidfiles.com/terms.html";
     }
 
+    private static final String MAINTENANCE = ">We are doing upgrades";
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("rabidfiles.com/index.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(MAINTENANCE)) {
+            link.getLinkStatus().setStatusText("Hoster is unter maintenance...");
+            return AvailableStatus.UNCHECKABLE;
+        }
         final Regex infoRegex = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]+)\\)<br/");
         String filename = infoRegex.getMatch(0);
         String filesize = infoRegex.getMatch(1);
@@ -64,6 +70,7 @@ public class RabitFilesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_FATAL, "Hoster is unter maintenance...");
         final String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
         int wait = waittime == null ? 60 : Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);

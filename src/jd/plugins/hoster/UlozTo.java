@@ -258,7 +258,7 @@ public class UlozTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String trafficleft = br.getRegex("href=\"/kredit/\" title=\"([0-9\\.]+ GB)").getMatch(0);
+        final String trafficleft = br.getRegex("href=\"http://(www\\.)?uloz\\.to/kredit\" title=\"([0-9\\.]+ (GB|MB))").getMatch(1);
         if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         ai.setStatus("Premium User");
         account.setValid(true);

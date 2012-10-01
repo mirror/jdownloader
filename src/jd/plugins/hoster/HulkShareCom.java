@@ -54,7 +54,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/(dl/)?[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?((hulkshare\\.com|hu\\.lk)/dl/|hulksharedecrypted\\.com/)[a-z0-9]{12}" }, flags = { 2 })
 public class HulkShareCom extends PluginForHost {
 
     private String              BRBEFORE            = "";
@@ -64,7 +64,7 @@ public class HulkShareCom extends PluginForHost {
 
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     public HulkShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -73,9 +73,6 @@ public class HulkShareCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("hu.lk/", "hulkshare.com/"));
-        /* www is needed now! */
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("http://hulkshare.com/", "http://www.hulkshare.com/"));
         link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
     }
 

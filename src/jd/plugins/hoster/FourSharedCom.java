@@ -73,7 +73,8 @@ public class FourSharedCom extends PluginForHost {
                 final Browser br = new Browser();
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference it
+                     * we first have to load the plugin, before we can reference
+                     * it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
@@ -94,7 +95,7 @@ public class FourSharedCom extends PluginForHost {
             } catch (final Throwable e) {
             }
             if (fixLink) {
-                String id = new Regex(link.getDownloadURL(), ".com/download/(.*?)/").getMatch(0);
+                String id = new Regex(link.getDownloadURL(), "\\.com/download/(.*?)/").getMatch(0);
                 if (id != null) {
                     link.setUrlDownload("http://www.4shared.com/file/" + id);
                 }
@@ -208,8 +209,9 @@ public class FourSharedCom extends PluginForHost {
         br.setDebug(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         /**
-         * Maybe download failed because we got a wrong directlink, disable getting directlinks first, if it then fails again the correct
-         * error message is shown
+         * Maybe download failed because we got a wrong directlink, disable
+         * getting directlinks first, if it then fails again the correct error
+         * message is shown
          */
         if (br.getURL().contains("401waitm") && downloadLink.getStringProperty("streamDownloadDisabled") == null) {
             downloadLink.setProperty("streamDownloadDisabled", "true");
@@ -298,7 +300,8 @@ public class FourSharedCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference it
+                     * we first have to load the plugin, before we can reference
+                     * it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();

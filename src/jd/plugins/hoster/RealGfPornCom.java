@@ -53,7 +53,7 @@ public class RealGfPornCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().equals("http://www.realgfporn.com/") || br.containsHTML("<title>Free Amateur and Homemade Porn Videos  \\– Real Girlfriend Porn</title>") || br.containsHTML("Internet Explorer Custom 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         DLLINK = br.getRegex("\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);

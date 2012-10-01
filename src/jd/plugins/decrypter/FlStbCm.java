@@ -137,6 +137,11 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(externID));
                 return decryptedLinks;
             }
+            externID = br.getRegex("webdata\\.vidz\\.com/demo/swf/FlashPlayerV2\\.swf\".*?flashvars=\"id_scene=(\\d+)").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.vidz.com/video/" + System.currentTimeMillis() + "/vidz_porn_videos/?s=" + externID));
+                return decryptedLinks;
+            }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -179,6 +184,10 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("Cannot decrypt link (not a bug): " + parameter);
                 return decryptedLinks;
             }
+            if (br.containsHTML("name=\"src\" value=\"http://pornotube\\.com/")) {
+                logger.info("Link offline or invalid: " + parameter);
+                return decryptedLinks;
+            }
             if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -198,44 +207,51 @@ public class FlStbCm extends PluginForDecrypt {
                     fpName = br.getRegex("&quot;\\](.*?)\\[/url\\]\"").getMatch(0);
                 }
             }
+            final String pornLink = br.getRegex("class=\"gobut\" href=\"(http[^<>\"]*?)\"").getMatch(0);
             String pagePiece = br.getRegex(Pattern.compile("id=\"copy_paste_links\" style=\".*?\">(.*?)</pre>", Pattern.DOTALL)).getMatch(0);
             // Find IDs for alternative links
             String[][] alternativeLinks = br.getRegex("alternate_files\\.push\\(\\{key: \\'([a-z0-9]+)\\',token: \\'([a-z0-9]+)\\'\\}\\)").getMatches();
-            if (pagePiece == null) {
+            if (pagePiece == null && pornLink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            String temp[] = pagePiece.split("\r\n");
-            if (temp == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            if (temp == null || temp.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (String data : temp)
-                decryptedLinks.add(createDownloadlink(data));
-            // Disabled because server returns 503 error for alternative links,
-            // maybe this is completely broken/not available anymore
-            final boolean enableAlternatives = false;
-            if (enableAlternatives) {
-                if (alternativeLinks != null && alternativeLinks.length != 0) {
-                    Browser br2 = br.cloneBrowser();
-                    for (String alternativeLinkInfo[] : alternativeLinks) {
-                        br2.getPage("http://149.13.65.144:8889/get/" + alternativeLinkInfo[0] + "/" + alternativeLinkInfo[1] + "?callback=jsonp" + System.currentTimeMillis());
-                        String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
-                        if (alts != null && alts.length != 0) {
-                            Browser br3 = br.cloneBrowser();
-                            for (String link : alts) {
-                                br3.getPage("http://www.filestube.com/" + link + "/go.html");
-                                String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
-                                if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
-                                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+            if (pagePiece != null) {
+                String temp[] = pagePiece.split("\r\n");
+                if (temp == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                if (temp == null || temp.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (String data : temp)
+                    decryptedLinks.add(createDownloadlink(data));
+                // Disabled because server returns 503 error for alternative
+                // links,
+                // maybe this is completely broken/not available anymore
+                final boolean enableAlternatives = false;
+                if (enableAlternatives) {
+                    if (alternativeLinks != null && alternativeLinks.length != 0) {
+                        Browser br2 = br.cloneBrowser();
+                        for (String alternativeLinkInfo[] : alternativeLinks) {
+                            br2.getPage("http://149.13.65.144:8889/get/" + alternativeLinkInfo[0] + "/" + alternativeLinkInfo[1] + "?callback=jsonp" + System.currentTimeMillis());
+                            String alts[] = br2.getRegex("\\'t\\':\\'(.*?)\\'").getColumn(0);
+                            if (alts != null && alts.length != 0) {
+                                Browser br3 = br.cloneBrowser();
+                                for (String link : alts) {
+                                    br3.getPage("http://www.filestube.com/" + link + "/go.html");
+                                    String finallink = br3.getRegex("<noframes> <br /> <a href=\"(.*?)\"").getMatch(0);
+                                    if (finallink == null) finallink = br3.getRegex("<iframe style=\".*?\" src=\"(.*?)\"").getMatch(0);
+                                    if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                                }
                             }
                         }
                     }
                 }
+            }
+            if (pornLink != null) {
+                decryptedLinks.add(createDownloadlink(pornLink));
             }
             if (fpName != null) {
                 fp.setName(fpName.trim());

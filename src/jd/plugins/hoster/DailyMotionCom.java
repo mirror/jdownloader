@@ -64,8 +64,9 @@ public class DailyMotionCom extends PluginForHost {
         if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String subtitleStuff = br.getRegex("\"sequence\",  \"(.*?)\"").getMatch(0);
-        if (subtitleStuff != null) subtitles = new Regex(Encoding.urlDecode(subtitleStuff, false).replace("\\", ""), "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
+        String source = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
+        if (source != null) source = Encoding.htmlDecode(source).replace("\\", "");
+        if (source != null) subtitles = new Regex(source, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
         String filename = br.getRegex("name=\"title\" content=\"Dailymotion \\-(.*?)\\- ein Film").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("videos</a><span> > </span><b>(.*?)</b></div>").getMatch(0);
@@ -80,10 +81,9 @@ public class DailyMotionCom extends PluginForHost {
             logger.warning("filename is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
-        if (dllink != null) {
-            String allLinks = Encoding.htmlDecode(dllink).replace("\\", "");
-            logger.info("alllinkstext: " + allLinks);
+        if (source != null) {
+            String allLinks = Encoding.htmlDecode(source).replace("\\", "");
+            logger.info("sourcetext: " + allLinks);
             if (new Regex(allLinks, COUNTRYBLOCK).matches()) {
                 // Video not available for your country, let's get the
                 // downloadUrl from another place

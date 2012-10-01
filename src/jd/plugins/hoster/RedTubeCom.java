@@ -34,7 +34,15 @@ public class RedTubeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://www.redtube.com", "language", "en");
-        br.getPage(link.getDownloadURL());
+        try {
+            br.getPage(link.getDownloadURL().toLowerCase());
+        } catch (final Exception e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // Offline link
+        if (br.containsHTML("is no longer available") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">Error Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileName = br.getRegex("<h1 class=\"videoTitle\">(.*?)</h1>").getMatch(0);
         if (fileName == null) fileName = br.getRegex("<title>(.*?)- RedTube - Free Porn Videos</title>").getMatch(0);
         if (fileName != null) link.setName(fileName.trim() + ".flv");

@@ -200,6 +200,8 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
+                // Set english language
+                br.setCookie(DOMAIN, "remixlang", "3");
                 br.getPage("http://vk.com/login.php");
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);

@@ -32,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "datpiff.com" }, urls = { "http://(www\\.)?datpiff\\.com/(.*?\\-download(\\-track)?\\.php\\?id=[a-z0-9]+|mixtapes\\-detail\\.php\\?id=\\d+)" }, flags = { 2 })
 public class DatPiffCom extends PluginForHost {
 
     private static final String PREMIUMONLY            = ">you must be logged in to download mixtapes<";
@@ -47,7 +47,7 @@ public class DatPiffCom extends PluginForHost {
     public void correctDownloadLink(DownloadLink link) throws IOException {
         if (link.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/mixtapes\\-detail\\.php\\?id=\\d+")) {
             link.setUrlDownload(link.getDownloadURL().replace("datpiff.com/mixtapes-detail.php?id=", "datpiff.com/pop-mixtape-download.php?id="));
-        } else if (!link.getDownloadURL().contains("-download.php")) {
+        } else if (!link.getDownloadURL().contains(".php?id=")) {
             final Browser br2 = new Browser();
             br2.getPage(link.getDownloadURL());
             String downID = br2.getRegex("openMixtape\\( \\'(.*?)\\'").getMatch(0);
@@ -66,7 +66,7 @@ public class DatPiffCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         if (br.containsHTML("(>Download Unavailable<|>A zip file has not yet been generated<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (!link.getDownloadURL().contains("-download.php")) {
+        if (!link.getDownloadURL().contains(".php?id=")) {
             logger.warning("downID not found, link is broken!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -77,7 +77,7 @@ public class DatPiffCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         // Untested
         // final String timeToRelease =
         // br.getRegex("\\'dateTarget\\': (\\d+),").getMatch(0);
@@ -85,10 +85,17 @@ public class DatPiffCom extends PluginForHost {
         // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
         // "Not yet released", Long.parseLong(timeToRelease) -
         // System.currentTimeMillis());
-        final String fileID = new Regex(downloadLink.getDownloadURL(), "download\\.php\\?id=(.+)").getMatch(0);
-        if (fileID == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://www.datpiff.com/download-mixtape", "id=" + fileID + "&x=84&y=11");
-        String dllink = br.getRedirectLocation();
+        String dllink;
+        // single track
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?datpiff\\.com/.*?\\-download\\-track\\.php\\?id=[a-z0-9]+")) {
+            dllink = br.getRegex("\"(http://[a-z0-9\\-]+\\.datpiff\\.com/.*?)\"").getMatch(0);
+        } else {
+            // whole mixtape
+            final String fileID = new Regex(downloadLink.getDownloadURL(), "\\.php\\?id=(.+)").getMatch(0);
+            if (fileID == null || !br.containsHTML("download\\-mixtape")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://www.datpiff.com/download-mixtape", "id=" + fileID + "&x=84&y=11");
+            dllink = br.getRedirectLocation();
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {

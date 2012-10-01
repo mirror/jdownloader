@@ -48,6 +48,10 @@ public class Tube8Com extends PluginForHost {
         this.enablePremium("http://www.tube8.com/signin.html");
     }
 
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/embed", ""));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         if (setEx) this.setBrowserExclusive();

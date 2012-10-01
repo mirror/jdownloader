@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
@@ -29,14 +30,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?exoshare\\.com/download\\.php\\?uid=[A-Z0-9]{8}",
-        "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/(download|files)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}",
-        "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "exzip.net", "bikupload.com", "uploadseeds.com", "indirbindir.biz", "createmirror.com", "exoshare.com", "3ll3.in", "go4up.com", "uploadonall.com", "up4vn.com", "directmirror.com", "nextdown.net", "bitsor.com", "flameupload.com", "mirrorafile.com", "lougyl.com", "neo-share.com", "qooy.com", "share2many.com", "uploader.ro", "uploadmirrors.com", "indirdur.net", "megaupper.com", "shrta.com", "1filesharing.com", "7ups.net", "mirrorfusion.com", "digzip.com", "needmirror.com" }, urls = { "http://(www\\.)?exzip\\.net/download/[0-9A-Z]{8}", "http://(www\\.)?bikupload\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?uploadseeds\\.com/download\\.php\\?uid=[0-9A-Z]{8}", "http://(www\\.)?indirbindir\\.biz/files/[0-9A-Z]{8}", "http://(www\\.)?createmirror\\.com/files/[0-9A-Z]{8}",
+        "http://(www\\.)?exoshare\\.com/download\\.php\\?uid=[A-Z0-9]{8}", "http://(www\\.)?3ll3\\.in/(files|dl)/\\w{14,18}", "http://(www\\.)?go4up\\.com/(dl/|link\\.php\\?id=)\\w{15}", "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}", "https?://(www\\.)?up4vn\\.com/\\?go=[A-Z0-9]{8}", "http://(www\\.)?nextdown\\.net/files/[0-9A-Z]{8}", "http://(www\\.)?directmirror\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?bitsor\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?flameupload\\.(com|co)/(download|files)/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorafile\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?lougyl\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?neo\\-share\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?qooy\\.com/files/[0-9A-Z]{8,10}", "http://[\\w\\.]*?share2many\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?uploader\\.ro/files/[0-9A-Z]{8}",
+        "http://[\\w\\.]*?uploadmirrors\\.(com|org)/download/[0-9A-Z]{8}", "http://[\\w\\.]*?indirdur\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?megaupper\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?shrta\\.com/files/[0-9A-Z]{8}", "http://[\\w\\.]*?1filesharing\\.com/(mirror|download)/[0-9A-Z]{8}", "http://[\\w\\.]*?7ups\\.net/files/[0-9A-Z]{8}", "http://[\\w\\.]*?mirrorfusion\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?digzip\\.com/files/[0-9A-Z]{8}", "http://(www\\.)?needmirror\\.com/files/[0-9A-Z]{8}" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
 
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private static final String DEFAULTREGEX = "<frame name=\"main\" src=\"(.*?)\">";
 
     // This decrypter should handle nearly all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -128,7 +131,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private String decryptLink(Browser brc, final String parameter) {
+    private String decryptLink(Browser brc, final String parameter) throws IOException {
         String dllink = null;
         if (parameter.contains("flameupload.com/")) {
             dllink = brc.getRegex(">Download Link:<br><a href=\"([^\"]+)").getMatch(0);
@@ -140,10 +143,16 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
             dllink = brc.getRegex("<meta http\\-equiv=\"REFRESH\" content=\"\\d+;url=([^\"]+)").getMatch(0);
         } else if (parameter.contains("qooy.com/")) {
             dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        } else if (parameter.contains("exzip.net/")) {
+            dllink = brc.getRegex("\"(/down/[A-Z0-9]{8}/\\d+)\"").getMatch(0);
+            if (dllink != null) {
+                brc.getPage("http://www.exzip.net" + dllink);
+                dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
+            }
         } else {
             dllink = brc.getRedirectLocation();
             if (dllink == null) {
-                dllink = brc.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
+                dllink = brc.getRegex(DEFAULTREGEX).getMatch(0);
             }
         }
         return dllink;

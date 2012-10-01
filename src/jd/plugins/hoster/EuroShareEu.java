@@ -39,7 +39,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class EuroShareEu extends PluginForHost {
 
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
-    private static Object LOCK                     = new Object();
+    private static Object        LOCK                     = new Object();
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
 
     public EuroShareEu(PluginWrapper wrapper) {
@@ -56,7 +56,7 @@ public class EuroShareEu extends PluginForHost {
             StringBuilder sb = new StringBuilder();
             while (true) {
                 sb.delete(0, sb.capacity());
-                sb.append("links=");
+                sb.append("data=");
                 links.clear();
                 while (true) {
                     /* we test 100 links at once */
@@ -67,37 +67,28 @@ public class EuroShareEu extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report anything else
+                     * append fake filename, because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
                     c++;
                 }
-                br.postPage("http://euroshare.eu/link-checker", sb.toString());
-                for (DownloadLink dl : links) {
+                br.postPage("http://euroshare.eu/checker/", sb.toString());
+                for (final DownloadLink dl : links) {
                     String linkWithoutHttp = new Regex(dl.getDownloadURL(), "euroshare\\.eu(/file/\\d+/.+)").getMatch(0);
                     if (linkWithoutHttp == null) {
                         logger.warning("Euroshare.eu availablecheck is broken!");
                         return false;
                     }
-                    Regex regexForThisLink = br.getRegex("\"(http://(www\\.)?euroshare\\.eu" + linkWithoutHttp + "\">http://(www\\.)?euroshare\\.sk" + linkWithoutHttp + "</a></td>[\t\n\r ]+<td class=\"velikost\"><img src=\"images/ok\\.png\")");
-                    String theData = regexForThisLink.getMatch(0);
-                    if (theData == null) theData = br.getRegex("(\">http://(www\\.)?euroshare\\.eu" + linkWithoutHttp + "</td>[\t\n\r ]+<td class=\"velikost\"><img src=\"images/zrusit-nahravani\\.jpg\")").getMatch(0);
-                    if (theData == null) {
-                        logger.warning("Euroshare.eu availablecheck is broken!");
-                        return false;
-                    }
-                    String filename = new Regex(theData, "/file/\\d+/(.*?)\"").getMatch(0);
-                    if (!theData.contains("images/ok.png") || theData.contains("zrusit-nahravani.jpg")) {
-                        dl.setAvailable(false);
-                        continue;
-                    } else if (filename == null) {
-                        logger.warning("Euroshare.eu availablecheck is broken!");
+                    boolean online = br.containsHTML(linkWithoutHttp + "</a>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"state\">[\t\n\r ]+<img src=\"/public/images/web/icons/ok\\.png\"");
+                    if (!online) {
                         dl.setAvailable(false);
                         continue;
                     } else {
                         dl.setAvailable(true);
                     }
+                    final String filename = new Regex(dl.getDownloadURL(), "file/\\d+/(.+)").getMatch(0);
                     dl.setName(filename);
                 }
                 if (index == urls.length) break;

@@ -38,8 +38,8 @@ public class RealTgfPornComDecrypt extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
-        if (tempID != null && tempID.equals("http://www.realgfporn.com/")) {
-            final DownloadLink dl = createDownloadlink(parameter.replace("realtgfporn.com/", "realtgfporndecrypted.com/"));
+        if (tempID != null && tempID.equals("http://www.realgfporn.com/") || br.containsHTML("Internet Explorer Custom 404")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("realgfporn.com/", "realgfporndecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;
@@ -51,7 +51,10 @@ public class RealTgfPornComDecrypt extends PluginForDecrypt {
         // Same regexes as used in hosterplugin
         String filename = br.getRegex("<h3 class=\"video_title\">(.*?)</h3>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (filename == null) return null;
+        if (filename == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         filename = filename.trim() + ".flv";
         tempID = br.getRegex("bufferLength: \\d+,[\t\n\r ]+url: \\'(http://.*?)\\'").getMatch(0);
         if (tempID != null) {

@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
@@ -70,6 +70,7 @@ public class TriLuLiLuRo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        if (br.getURL().equals("http://www.trilulilu.ro/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(COUNTRYBLOCK)) {
             try {
                 localProxy(true);
@@ -306,7 +307,8 @@ public class TriLuLiLuRo extends PluginForHost {
                         value = value + r;
                     }
                     /*
-                     * Encoded as 64-bit double precision floating point number IEEE 754 standard
+                     * Encoded as 64-bit double precision floating point number
+                     * IEEE 754 standard
                      */
                     value = value != null ? String.valueOf((int) Double.longBitsToDouble(new BigInteger(value, 16).longValue())) : value;
                 } else {

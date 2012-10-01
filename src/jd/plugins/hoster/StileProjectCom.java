@@ -54,6 +54,7 @@ public class StileProjectCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", "http://www.stileproject.com/");
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">404 Error Page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>([^<>\"]*?) \\- StileProject\\.com</title>").getMatch(0);

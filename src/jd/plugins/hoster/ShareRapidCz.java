@@ -73,16 +73,19 @@ public class ShareRapidCz extends PluginForHost {
         }
         long realTraffic = 0l;
         /**
-         * Trafficleft actually only caused problems because in the night you got no limit when downloading from this host so i guess it's the best not to show
-         * any traffic-information
+         * Trafficleft actually only caused problems because in the night you
+         * got no limit when downloading from this host so i guess it's the best
+         * not to show any traffic-information
          */
         String trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
         if (trafficleft != null) {
             logger.info("Free traffic equals: " + trafficleft);
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
             realTraffic = SizeFormatter.getSize(trafficleft);
             trafficleft = ", " + trafficleft.trim() + " traffic left";
         } else {
             trafficleft = "";
+            ai.setUnlimitedTraffic();
         }
         final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
         if (expires != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
@@ -124,7 +127,6 @@ public class ShareRapidCz extends PluginForHost {
                 /* not available in 0.9xxx */
             }
         }
-        ai.setUnlimitedTraffic();
         account.setValid(true);
         return ai;
     }

@@ -50,9 +50,10 @@ public class TuDouCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("\"notfound\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(",kw = \"(.*?)\"").getMatch(0);
@@ -68,23 +69,27 @@ public class TuDouCom extends PluginForHost {
                 }
             }
         }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        filename = Encoding.htmlDecode(filename.trim());
+        downloadLink.setFinalFileName(filename + ".flv");
         String videoID = new Regex(downloadLink.getDownloadURL(), "tudou\\.com/programs/view/(.+)").getMatch(0);
         String iid = br.getRegex("var iid = (\\d+)").getMatch(0);
         if (iid == null) iid = br.getRegex("supermail\\.tudou\\.com/supermail/index\\.action\\?iid=(\\d+)\"").getMatch(0);
         if (iid == null) iid = br.getRegex("var pageID.*?,iid = (\\d+)").getMatch(0);
         if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String xmllink = "http://v2.tudou.com/v?vn=02&refurl=http://www.tudou.com/programs/view/" + videoID + "/&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
+        final String xmllink = "http://v2.tudou.com/v?vn=02&refurl=http://www.tudou.com/programs/view/" + videoID + "/&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
         br.getPage(xmllink);
-        System.out.print(br.toString());
+        if (br.containsHTML("error=\\'ip is forbidden\\'")) {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable in your country");
+            return AvailableStatus.TRUE;
+        }
         dllink = br.getRegex("</f><f st=\"2\" s1=\"[a-z0-9]+\" bc=\"10\" brt=\"2\">(http://.*?)</f></v><\\!--pageview_candidate-->").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
             if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
         }
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(filename + ".flv");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -107,6 +112,7 @@ public class TuDouCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("error=\\'ip is forbidden\\'")) throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable in your country");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

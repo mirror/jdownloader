@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornup\\.me/video/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornup.me" }, urls = { "http://(www\\.)?pornupdecrypted\\.me/video/\\d+" }, flags = { 0 })
 public class PornUpMe extends PluginForHost {
 
     private String DLLINK = null;
@@ -48,15 +48,8 @@ public class PornUpMe extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("pornupdecrypted.me/", "pornup.me/"));
     }
 
     @Override
@@ -68,7 +61,10 @@ public class PornUpMe extends PluginForHost {
         String filename = br.getRegex("<h1>(.*?)(<a href=\"|</h1>)").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
         DLLINK = br.getRegex("\\'file\\': \\'(http://.*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://cdn\\.vidreactor\\.com/vid2c/d\\d+/[a-z0-9]+\\.flv\\?key=[a-z0-9]+\\&viddir=d\\d+&vkey=[a-z0-9]+)\\'").getMatch(0);
+        if (DLLINK == null) {
+            DLLINK = br.getRegex("\\'(http://cdn\\.vidreactor\\.com/vid2c/d\\d+/[a-z0-9]+\\.flv\\?key=[a-z0-9]+\\&viddir=d\\d+&vkey=[a-z0-9]+)\\'").getMatch(0);
+            if (DLLINK == null) DLLINK = br.getRegex("file=(http[^<>\"]*?)\\'").getMatch(0);
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
@@ -92,6 +88,17 @@ public class PornUpMe extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

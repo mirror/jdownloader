@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,43 +28,41 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bonpoo.com" }, urls = { "http://(www\\.)?app04\\.bonpoo\\.com/cgi\\-bin/download\\?fid=[A-Z0-9]+" }, flags = { 0 })
+public class BonPooCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solidfiles.com" }, urls = { "http://(www\\.)?solidfiles\\.com/d/[a-z0-9]+/" }, flags = { 0 })
-public class SolidFilesCom extends PluginForHost {
-
-    public SolidFilesCom(PluginWrapper wrapper) {
+    public BonPooCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.solidfiles.com/terms/";
+        return "http://www.bonpoo.com/terms.htm";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>Not found<|>We couldn\\'t find the file you requested|Access to this file was disabled)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) \\- Solidfiles</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<div id=\"download\\-title\">[\t\n\r ]+<h2>([^<>\"]*?)</h2>").getMatch(0);
-        final String filesize = br.getRegex("class=\"filesize\">\\(([^<>\"]*?)\\)</span>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(">There is no such file on this server")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setName(new Regex(link.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "download/", true, 1);
+        final String sessID = br.getRegex("bonpoo_sessid=([^<>\"]*?);").getMatch(0);
+        if (sessID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setCookie("http://bonpoo.com/", "bonpoo_sessid", sessID);
+        final String dllink = "http://app04.bonpoo.com/cgi-bin/dnsave?fid=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
