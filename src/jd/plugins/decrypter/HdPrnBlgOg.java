@@ -48,26 +48,58 @@ public class HdPrnBlgOg extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String contentReleaseName = br.getRegex("<h1 class=\"entry\\-title\">(.*?)</h1>").getMatch(0);
-        String[] links = new Regex(br.toString(), "<a href=\"(http[^\"]+)", Pattern.CASE_INSENSITIVE).getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        if (contentReleaseName == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        for (final String link : links) {
-            if (!link.matches("http://hd\\-pornblog\\.org/\\?p=\\d+")) decryptedLinks.add(createDownloadlink(link));
-        }
-        // assuming that this img hoster is used exclusively.
-        String[] imgs = br.getRegex("(http://([\\w\\.]+)?fastpic\\.ru/thumb/[^\"]+)").getColumn(0);
-        if (links != null && links.length != 0) {
-            for (String img : imgs) {
-                decryptedLinks.add(createDownloadlink("directhttp://" + img));
+        contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
+
+        // Try to get different qualities and set another packagename for each
+        // one
+        final String[][] niceWay = { { "<img src=\"http://hd\\-pornblog\\.org/images/Download\\.png\" border=\"0\"/></p>(.*?)\"http://hd\\-pornblog\\.org/", " (Low res)" }, { "img src=\"http://hd\\-pornblog\\.org/images/HD720p\\.png\" border=\"0\"/></p>(.*?)\"http://hd\\-pornblog\\.org/", " (Mid res)" }, { "<p><img src=\"http://hd\\-pornblog\\.org/images/HD1080p\\.png\" border=\"0\"/></p>(.*?)\"http://hd\\-pornblog\\.org/", " (High res)" } };
+        for (final String[] nice : niceWay) {
+            String linktext = br.getRegex(nice[0]).getMatch(0);
+            if (linktext != null) {
+                final String tempLinks[] = new Regex(linktext, "<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+                if (tempLinks != null && tempLinks.length != 0) {
+                    final FilePackage fp = FilePackage.getInstance();
+                    fp.setName(contentReleaseName + nice[1]);
+                    for (final String aLink : tempLinks) {
+                        if (!aLink.matches("http://hd\\-pornblog\\.org/\\?p=\\d+")) {
+                            final DownloadLink dl = createDownloadlink(aLink);
+                            fp.add(dl);
+                            try {
+                                distribute(dl);
+                            } catch (final Throwable e) {
+                                /* does not exist in 09581 */
+                            }
+                            decryptedLinks.add(dl);
+                        }
+                    }
+                }
             }
         }
 
-        if (contentReleaseName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(contentReleaseName).trim());
+        // If "nice" handling fails, just grab all links
+        if (decryptedLinks.size() == 0) {
+            final String[] links = new Regex(br.toString(), "<a href=\"(http[^\"]+)", Pattern.CASE_INSENSITIVE).getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            for (final String link : links) {
+                if (!link.matches("http://hd\\-pornblog\\.org/\\?p=\\d+")) decryptedLinks.add(createDownloadlink(link));
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(contentReleaseName);
             fp.addLinks(decryptedLinks);
+        }
+        // assuming that this img hoster is used exclusively.
+        final String[] imgs = br.getRegex("(http://([\\w\\.]+)?fastpic\\.ru/thumb/[^\"]+)").getColumn(0);
+        if (imgs != null && imgs.length != 0) {
+            for (String img : imgs) {
+                decryptedLinks.add(createDownloadlink("directhttp://" + img));
+            }
         }
         return decryptedLinks;
     }
