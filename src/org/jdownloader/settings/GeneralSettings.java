@@ -131,7 +131,7 @@ public interface GeneralSettings extends ConfigInterface {
 
     @AboutConfig
     @DescriptionForConfigEntry("max buffer size for write operations in kb")
-    @SpinnerValidator(min = 100, max = 10240)
+    @SpinnerValidator(min = 100, max = 50240)
     @DefaultIntValue(500)
     int getMaxBufferSize();
 

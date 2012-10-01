@@ -35,6 +35,7 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 /**
@@ -164,6 +165,7 @@ public abstract class PluginForDecrypt extends Plugin {
         cryptLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
         boolean showException = true;
+        Throwable exception = null;
         try {
             this.currentLink = source;
             /*
@@ -203,6 +205,7 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * damn, something must have gone really really bad, lets keep the log
              */
+            exception = e;
             LogSource.exception(logger, e);
         } finally {
             this.currentLink = null;
@@ -211,6 +214,7 @@ public abstract class PluginForDecrypt extends Plugin {
             /*
              * null as return value? something must have happened, do not clear log
              */
+            errLog(exception, br, source);
             logger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
             logger.severe("URL was: " + source.getURL());
 
@@ -225,6 +229,17 @@ public abstract class PluginForDecrypt extends Plugin {
             ((LogSource) logger).clear();
         }
         return tmpLinks;
+    }
+
+    public void errLog(Throwable e, Browser br, CrawledLink link) {
+        LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
+        try {
+            errlogger.severe("CrawlerPlugin out of date: " + this + " :" + getVersion());
+            errlogger.severe("URL was: " + link.getURL());
+            if (e != null) errlogger.log(e);
+        } finally {
+            errlogger.close();
+        }
     }
 
     public CrawledLink getCurrentLink() {

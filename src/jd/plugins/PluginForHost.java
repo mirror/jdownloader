@@ -81,6 +81,17 @@ public abstract class PluginForHost extends Plugin {
         this.lazyP = lazyP;
     }
 
+    public void errLog(Throwable e, Browser br, DownloadLink link) {
+        LogSource errlogger = LogController.getInstance().getLogger("PluginErrors");
+        try {
+            errlogger.severe("HosterPlugin out of date: " + this + " :" + getVersion());
+            errlogger.severe("URL was: " + link.getDownloadURL());
+            if (e != null) errlogger.log(e);
+        } finally {
+            errlogger.close();
+        }
+    }
+
     @Deprecated
     public PluginForHost(final PluginWrapper wrapper) {
         super(wrapper);

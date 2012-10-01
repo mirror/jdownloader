@@ -402,7 +402,11 @@ public class LinkChecker<E extends CheckableLink> {
             } else {
                 availableStatus = AvailableStatus.FALSE;
             }
+            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_PLUGIN_DEFECT)) {
+                plgToUse.errLog(e, plgToUse.getBrowser(), link);
+            }
         } catch (Throwable e) {
+            plgToUse.errLog(e, plgToUse.getBrowser(), link);
             logger.log(e);
             logger.flush();
             availableStatus = AvailableStatus.UNCHECKABLE;

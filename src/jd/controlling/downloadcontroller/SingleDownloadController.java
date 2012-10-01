@@ -367,12 +367,13 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorPluginDefect() {
+        livePlugin.errLog(exception, livePlugin.getBrowser(), downloadLink);
+        long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
+        downloadLogger.warning("The Plugin for " + livePlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (exception != null) {
             /* show stacktrace where the exception happened */
             downloadLogger.log(exception);
         }
-        long rev = downloadLink.getLivePlugin() == null ? -1 : downloadLink.getLivePlugin().getVersion();
-        downloadLogger.warning("The Plugin for " + livePlugin.getHost() + " seems to be out of date(rev" + rev + "). Please inform the Support-team http://jdownloader.org/support.");
         if (downloadLink.getLinkStatus().getErrorMessage() != null) {
             downloadLogger.warning(downloadLink.getLinkStatus().getErrorMessage());
         }
