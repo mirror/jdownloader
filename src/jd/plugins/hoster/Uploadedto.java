@@ -36,13 +36,14 @@ import javax.swing.SwingUtilities;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.BrowserAdapter;
@@ -75,6 +76,7 @@ public class Uploadedto extends PluginForHost {
     private static AtomicLong      timeBefore                   = new AtomicLong(0);
     private String                 LASTIP                       = "LASTIP";
     private static StringContainer lastIP                       = new StringContainer();
+    private static Object          LOCK                         = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
@@ -305,51 +307,48 @@ public class Uploadedto extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
-        br.postPage("http://uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
-        if (br.containsHTML("blocked")) {
-            ai.setStatus("Too many failed logins! Wait 15 mins");
-            account.setTempDisabled(true);
-            return ai;
-        }
-        if (br.containsHTML("wrong password")) {
-            ai.setStatus("Wrong password");
-            account.setValid(false);
-            return ai;
-        }
-        if (br.containsHTML("wrong user")) {
-            ai.setStatus("Wrong username");
-            account.setValid(false);
-            return ai;
-        }
-        String isPremium = br.getMatch("status: (premium)");
-        if (isPremium == null) {
-            ai.setStatus("Registered (free) User");
-            ai.setUnlimitedTraffic();
-            try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(1);
-                account.setConcurrentUsePossible(false);
-            } catch (final Throwable e) {
+        try {
+            synchronized (account) {
+                String token = api_getAccessToken(account, false);
+                String tokenType = null;
+                try {
+                    tokenType = api_getTokenType(account, token, true);
+                } catch (final PluginException e) {
+                    token = api_getAccessToken(account, false);
+                    tokenType = api_getTokenType(account, token, true);
+                }
+                if ("free".equals(tokenType)) {
+                    /* free user */
+                    ai.setUnlimitedTraffic();
+                    ai.setValidUntil(-1);
+                    ai.setStatus("Free account");
+                } else if ("premium".equals(tokenType)) {
+                    String traffic = br.getRegex("traffic_left\":\\s*?\"?(\\d+)").getMatch(0);
+                    long max = 100 * 1024 * 1024 * 1024l;
+                    long current = Long.parseLong(traffic);
+                    ai.setTrafficMax(Math.max(max, current));
+                    ai.setTrafficLeft(current);
+                    String expireDate = br.getRegex("account_premium\":\\s*?\"?(\\d+)").getMatch(0);
+                    ai.setValidUntil(Long.parseLong(expireDate) * 1000);
+                    if (current <= 0 || br.containsHTML("download_available\":false")) {
+                        String refreshIn = br.getRegex("traffic_reset\":\\s*?(\\d+)").getMatch(0);
+                        if (refreshIn != null) {
+                            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Long.parseLong(refreshIn));
+                        } else {
+                            account.setProperty("PROPERTY_TEMP_DISABLED_TIMEOUT", Property.NULL);
+                        }
+                        logger.info("Download_available: " + br.containsHTML("download_available\":true"));
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    ai.setStatus("Premium account");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                account.setValid(true);
             }
-            account.setProperty("free", true);
-        } else {
-            String traffic = br.getMatch("traffic: (\\d+)");
-            String expire = br.getMatch("expire: (\\d+)");
-            if (expire != null) ai.setValidUntil(Long.parseLong(expire) * 1000);
-            ai.setStatus("Premium account");
-            account.setValid(true);
-            long max = 100 * 1024 * 1024 * 1024l;
-            long current = Long.parseLong(traffic);
-            ai.setTrafficMax(Math.max(max, current));
-            ai.setTrafficLeft(current);
-            try {
-                maxPrem.set(-1);
-                account.setMaxSimultanDownloads(-1);
-                account.setConcurrentUsePossible(true);
-            } catch (final Throwable e) {
-            }
-            account.setProperty("free", false);
+        } catch (final PluginException e) {
+            account.setProperty("token", null);
+            account.setProperty("tokenType", null);
         }
         return ai;
     }
@@ -559,89 +558,133 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    private void handleErrorCode(Browser br, boolean throwPluginDefect) throws Exception {
+        String errCode = br.getRegex("code\":\\s*?(\\d+)").getMatch(0);
+        if (errCode != null) {
+            int code = Integer.parseInt(errCode);
+            switch (code) {
+            case 1:
+            case 2:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 3:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Wrong username and/or password", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 16:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 20:
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 404:
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        if (throwPluginDefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private String api_getAccessToken(Account account, boolean liveToken) throws Exception {
+        synchronized (account) {
+            try {
+                String token = account.getStringProperty("token", null);
+                if (token != null && liveToken == false) return token;
+                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass()) + "&ishash=1&app=JDownloader");
+                token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
+                if (token == null) handleErrorCode(br, true);
+                account.setProperty("token", token);
+                return token;
+            } catch (final PluginException e) {
+                account.setProperty("token", null);
+                account.setProperty("tokenType", null);
+                throw e;
+            }
+        }
+    }
+
+    private String api_getTokenType(Account account, String token, boolean liveToken) throws Exception {
+        synchronized (account) {
+            try {
+                String tokenType = account.getStringProperty("tokenType", null);
+                if (tokenType != null && liveToken == false) return tokenType;
+                br.getPage("http://api.uploaded.net/api/user/jdownloader?access_token=" + token);
+                tokenType = br.getRegex("account_type\":\\s*?\"(premium|free)").getMatch(0);
+                if (tokenType == null) handleErrorCode(br, true);
+                account.setProperty("tokenType", tokenType);
+                if ("premium".equals(tokenType)) {
+                    try {
+                        maxPrem.set(-1);
+                        account.setMaxSimultanDownloads(-1);
+                        account.setConcurrentUsePossible(true);
+                    } catch (final Throwable e) {
+                    }
+                } else {
+                    try {
+                        maxPrem.set(1);
+                        account.setMaxSimultanDownloads(1);
+                        account.setConcurrentUsePossible(false);
+                    } catch (final Throwable e) {
+                    }
+                }
+                return tokenType;
+            } catch (final PluginException e) {
+                maxPrem.set(-1);
+                account.setProperty("token", null);
+                account.setProperty("tokenType", null);
+                throw e;
+            }
+        }
+    }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         requestFileInformation(downloadLink);
-        login(account);
-        if (account.getBooleanProperty("free")) {
+        String token = api_getAccessToken(account, false);
+        String tokenType = api_getTokenType(account, token, false);
+        if (!"premium".equals(tokenType)) {
+            logger.info("Free mode");
+            login(account);
             doFree(downloadLink, account);
-        } else {
-            logger.info("Premium mode");
-            br.setFollowRedirects(false);
-            String id = getID(downloadLink);
-            br.getPage("http://uploaded.net/file/" + id + "/ddl");
-            if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
-            String error = new Regex(br.getRedirectLocation(), "http://uploaded.net/\\?view=(.*)").getMatch(0);
-            if (error == null) {
-                error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
+            return;
+        }
+        logger.info("Premium mode");
+        String id = getID(downloadLink);
+        br.postPage("http://api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
+        String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);
+        if (url == null) handleErrorCode(br, true);
+        url = url.replaceAll("\\\\/", "/");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
+        try {
+            /* remove next major update */
+            /* workaround for broken timeout in 0.9xx public */
+            ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
+            ((RAFDownload) dl).getRequest().setReadTimeout(60000);
+        } catch (final Throwable ee) {
+        }
+        if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
+            try {
+                br.followConnection();
+            } catch (final Throwable e) {
+                logger.severe(e.getMessage());
             }
-            if (error != null) {
-                if (error.contains("error_traffic")) throw new PluginException(LinkStatus.ERROR_PREMIUM, JDL.L("plugins.hoster.uploadedto.errorso.premiumtrafficreached", "Traffic limit reached"), PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (br.containsHTML(">Download Blocked \\(ip\\)<") || br.containsHTML("Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k\\&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt")) {
-                logger.info("Download blocked (IP), disabling account...");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            if (br.getRedirectLocation() == null) {
-                /* ul does not take care of set language.... */
-                if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
-                    logger.info("Traffic exhausted, temp disabled account");
-                    /* temp debug info */
-                    logger.info(br.toString());
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-                logger.info("InDirect Downloads active");
-                Form form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                if (form.getAction() != null && form.getAction().contains("register")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
-                if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                logger.info("Download from:" + form.getAction());
-                form.setMethod(MethodType.GET);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
-            } else {
-                logger.info("Direct Downloads active");
-                logger.info("Download from:" + br.getRedirectLocation());
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
+            if (br.containsHTML("try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            if ((br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) || br.containsHTML("download this file due to technical issues at the moment")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
+            try {
+                logger.info(br.toString());
+            } catch (final Throwable e) {
             }
             try {
-                /* remove next major update */
-                /* workaround for broken timeout in 0.9xx public */
-                ((RAFDownload) dl).getRequest().setConnectTimeout(30000);
-                ((RAFDownload) dl).getRequest().setReadTimeout(60000);
-            } catch (final Throwable ee) {
+                logger.info(dl.getConnection().toString());
+            } catch (final Throwable e) {
             }
-
-            if (dl.getConnection().getLongContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
-                try {
-                    br.followConnection();
-                } catch (final Throwable e) {
-                    logger.severe(e.getMessage());
-                }
-                if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-                if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
-                if (br.containsHTML("try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                if (br.containsHTML("File not found!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                if (br.containsHTML("No connection to database")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-                if ((br.containsHTML("Aus technischen Gr") && br.containsHTML("ist ein Download momentan nicht m")) || br.containsHTML("download this file due to technical issues at the moment")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                if (br.getURL().contains("view=error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 10 * 60 * 1000l);
-                try {
-                    logger.info(br.toString());
-                } catch (final Throwable e) {
-                }
-                try {
-                    logger.info(dl.getConnection().toString());
-                } catch (final Throwable e) {
-                }
-                if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dl.getConnection().getResponseCode() == 404) {
-                br.followConnection();
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            dl.startDownload();
+            if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (dl.getConnection().getResponseCode() == 404) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
     }
 
     /* NO OVERRIDE!! */
@@ -650,11 +693,7 @@ public class Uploadedto extends PluginForHost {
             /* no account, yes we can expect captcha */
             return true;
         }
-        if ("true".equalsIgnoreCase(acc.getStringProperty("free", "true"))) {
-            /* free accounts also have captchas */
-            /* currently they dont have captchas */
-            return false;
-        }
+        if (!"premium".equalsIgnoreCase(acc.getStringProperty("tokenType", null))) return true;
         return false;
     }
 
@@ -668,6 +707,7 @@ public class Uploadedto extends PluginForHost {
         br.getPage("http://uploaded.net");
         br.getPage("http://uploaded.net/language/en");
         br.postPage("http://uploaded.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
         if (br.containsHTML("User and password do not match")) {
             AccountInfo ai = account.getAccountInfo();
             if (ai != null) ai.setStatus("User and password do not match");
