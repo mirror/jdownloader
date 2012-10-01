@@ -46,29 +46,6 @@ public class PartageFacileCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        br.postPage(downloadLink.getDownloadURL(), "freedl=T%C3%A9l%C3%A9chargement+gratuit+%28Vitesse+NORMAL%29");
-        Form dlform = br.getForm(0);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlform.remove("u");
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public void init() {
-        br.setFollowRedirects(true);
-        br.setRequestIntervalLimit(getHost(), 500);
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -97,6 +74,29 @@ public class PartageFacileCom extends PluginForHost {
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        br.postPage(downloadLink.getDownloadURL(), "freedl=T%C3%A9l%C3%A9chargement+gratuit+%28Vitesse+NORMAL%29");
+        Form dlform = br.getForm(0);
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dlform.remove("u");
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, false, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            if (br.containsHTML("Taille maximum du fichier")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public void init() {
+        br.setFollowRedirects(true);
+        br.setRequestIntervalLimit(getHost(), 500);
     }
 
     @Override

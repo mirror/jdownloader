@@ -18,11 +18,18 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,11 +40,12 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzbload.com" }, urls = { "http://(www\\.)?nzbloaddecrypted\\.com/en/download/[a-z0-9]+/\\d+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nzbload.com" }, urls = { "http://(www\\.)?nzbloaddecrypted\\.com/en/download/[a-z0-9]+/\\d+" }, flags = { 2 })
 public class NzbLoadCom extends PluginForHost {
 
     public NzbLoadCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.nzbload.com/en/premium");
     }
 
     @Override
@@ -49,9 +57,11 @@ public class NzbLoadCom extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("nzbloaddecrypted.com/", "nzbload.com/"));
     }
 
+    private static final String MAINPAGE = "http://nzbload.com";
+    private static final Object LOCK     = new Object();
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept", "text/plain, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -107,6 +117,89 @@ public class NzbLoadCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                // Load cookies
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(MAINPAGE, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(false);
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.postPage("http://www.nzbload.com/action/login.json?t=" + System.currentTimeMillis() + "&act=submit", "remember-me=1&lastloc=%2Fen%2Flogout&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(MAINPAGE, "loggedin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                // Save cookies
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(MAINPAGE);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setUnlimitedTraffic();
+        final String expire = get("expiry");
+        if (expire == null) {
+            account.setValid(false);
+            return ai;
+        } else {
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
+        }
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        login(account, false);
+        requestFileInformation(link);
+        String dllink = get("url");
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -4);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 3;
     }
 
     private String get(final String parameter) {

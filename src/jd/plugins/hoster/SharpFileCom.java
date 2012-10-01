@@ -363,6 +363,7 @@ public class SharpFileCom extends PluginForHost {
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
+        if (correctedBR.contains("The page you are looking for is temporarily unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

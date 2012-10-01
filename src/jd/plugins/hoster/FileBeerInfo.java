@@ -51,7 +51,7 @@ public class FileBeerInfo extends PluginForHost {
     // DTemplate Version 0.1.7-psp
     // mods:
     // non account: 2 * 4
-    // premium account: chunk * maxdl
+    // premium account: 20 * 20
     // protocol: no https
     // captchatype: recaptcha
 
@@ -186,7 +186,7 @@ public class FileBeerInfo extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

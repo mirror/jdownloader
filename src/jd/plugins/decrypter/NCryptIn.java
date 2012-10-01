@@ -189,21 +189,15 @@ public class NCryptIn extends PluginForDecrypt {
             if (fpName == null) fpName = br.getRegex("name=\"cnl2_output\"></iframe>[\t\n\r ]+<h2><span class=\"arrow\">(.*?)<img src=\"").getMatch(0);
 
             // Container handling
-            final String[] containerIDs = br.getRegex("/container/(rsdf|dlc|ccf)/([a-z0-9]+)\\.").getColumn(1);
+            final String[] containerIDs = br.getRegex("(/container/(dlc|rsdf|ccf)/([a-z0-9]+)\\.(dlc|rsdf|ccf))").getColumn(0);
             if (containerIDs != null && containerIDs.length != 0) {
-                for (final String containerID : containerIDs) {
+                for (final String containerLink : containerIDs) {
                     ArrayList<DownloadLink> containerLinks = new ArrayList<DownloadLink>();
-                    if (br.containsHTML("\\.dlc")) {
-                        containerLinks = loadcontainer("dlc/" + containerID + ".dlc");
-                    } else if (br.containsHTML("\\.rsdf")) {
-                        containerLinks = loadcontainer("rsdf/" + containerID + ".rsdf");
-                    } else if (br.containsHTML("\\.ccf")) {
-                        containerLinks = loadcontainer("ccf/" + containerID + ".ccf");
-                    }
+                    containerLinks = loadcontainer(containerLink);
                     if (containerLinks != null) {
-                        for (final DownloadLink containerLink : containerLinks) {
-                            containerLink.setBrowserUrl(parameter);
-                            decryptedLinks.add(containerLink);
+                        for (final DownloadLink cryptedLink : containerLinks) {
+                            cryptedLink.setBrowserUrl(parameter);
+                            decryptedLinks.add(cryptedLink);
                         }
                     }
                 }
@@ -281,7 +275,7 @@ public class NCryptIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = null;
         final Browser brc = br.cloneBrowser();
         final String theID = theLink;
-        theLink = "http://ncrypt.in/container/" + theLink;
+        theLink = "http://ncrypt.in" + theLink;
         File file = null;
         URLConnectionAdapter con = null;
         try {

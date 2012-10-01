@@ -41,7 +41,7 @@ public class TwitVidComDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("twitvid.com/", "telly.com/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML(">No videos yet")) {
+        if (br.containsHTML(">No videos yet") || br.getURL().contains("telly.com/?s=trending&err=1")) {
             final DownloadLink offline = createDownloadlink(parameter.replace("telly.com/", "tellydecrypted.com/"));
             offline.setAvailable(false);
             decryptedLinks.add(offline);

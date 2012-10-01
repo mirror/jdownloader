@@ -75,7 +75,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.4
+    // XfileSharingProBasic Version 2.5.7.5
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -122,7 +122,7 @@ public class XFileSharingProBasic extends PluginForHost {
         getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -598,7 +598,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
