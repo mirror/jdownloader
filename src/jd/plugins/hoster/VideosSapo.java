@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.nutils.JDHash;
@@ -45,15 +46,17 @@ public class VideosSapo extends PluginForHost {
     }
 
     private void getDownloadlink(final String dlurl) throws IOException {
-        String playLink = br.getRegex("\\'(http://rd\\d+\\.videos\\.sapo\\.(pt|cv|ao|mz|tl)/[A-Za-z0-9]+/mov/\\d+)\\'").getMatch(0);
+        String playLink = br.getRegex("(\'|\")(http://rd\\d+\\.videos\\.sapo\\.(pt|cv|ao|mz|tl)/[0-9a-zA-Z]+/mov/\\d+)(\'|\")").getMatch(1);
         if (playLink == null) {
             playLink = br.getRegex("videoVerifyMrec\\(\"(http://[^<>\"]+)").getMatch(0);
         }
         br.getPage(dlurl + "/rss2?hide_comments=true");
         String time = br.getRegex("<lastBuildDate>(.*?)</lastBuildDate>").getMatch(0);
+        if (playLink == null) playLink = br.getRegex("<media:content url=\"(http://rd\\d+\\.videos\\.sapo\\.(pt|cv|ao|mz|tl)/[0-9a-zA-Z]+/)pic").getMatch(0);
         if (playLink == null || time == null) { return; }
+        if (!playLink.contains("/mov/")) playLink += "mov/1";
 
-        final SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss Z");
+        final SimpleDateFormat df = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss Z", Locale.ENGLISH);
         int serverTimeDif;
         try {
             final Date date = df.parse(time);
@@ -90,7 +93,9 @@ public class VideosSapo extends PluginForHost {
         String filename = br.getRegex("<div class=\"tit\">([^<>\"]*?)</div>").getMatch(0);
         if (filename == null) filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?) \\- SAPO V\\&iacute;deos\"").getMatch(0);
         getDownloadlink(dlurl);
-        if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         downloadLink.setFinalFileName(filename.trim() + ".mp4");
         try {
             if (!br.openGetConnection(DLLINK).getContentType().contains("html")) {
