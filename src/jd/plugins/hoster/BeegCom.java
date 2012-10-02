@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "http://(www\\.)?beeg\\.com/([a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "beeg.com" }, urls = { "http://(www\\.)?beeg\\.com/((?!section)[a-z0-9\\-]+/[a-z0-9\\-]+|\\d+)" }, flags = { 0 })
 public class BeegCom extends PluginForHost {
 
     private String DLLINK = null;
@@ -63,8 +63,11 @@ public class BeegCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(downloadLink.getDownloadURL().toLowerCase());
+        // Link offline
         if (br.containsHTML("(<h1>404 error \\- Page Not found</h1>|<title>beeg\\. \\— Page Not Found\\. \\(Error 404\\)</title>|<p>In about 5 seconds, you will be automatically redirected to the main page| the page you’re looking for can\\'t be found\\. May be invalid or outdated\\.</h2>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML("404 2") || br.getURL().equals("http://beeg.com/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\(Bang Bros[^<>]+</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<meta name=\"description\" content=\"([^\"<>]+)\"").getMatch(0);
         DLLINK = br.getRegex("\\'file\\': \\'(https?://[^\\'\"\\,]+)\\'").getMatch(0);

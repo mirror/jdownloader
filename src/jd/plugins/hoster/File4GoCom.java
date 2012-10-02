@@ -70,12 +70,11 @@ public class File4GoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        // String dllUrl = br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
-        // if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String dllink = br.getRegex("'(http://[a-z0-9]*\\.file4go.com/dll\\.php\\?id=.*?)'").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("'(http://[a-z0-9]*\\.file4go\\.com:[0-9]*/dll\\.php\\?id=.*?)'").getMatch(0);
-        }
+        // String dllUrl =
+        // br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
+        // if (dllink == null) throw new
+        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = getDllink();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped
         // int wait = 60;
@@ -84,10 +83,14 @@ public class File4GoCom extends PluginForHost {
         // if (waittime != null) wait = Integer.parseInt(waittime);
         // sleep(wait * 1001l, downloadLink);
         /*
-         * Skip these: br.getHeaders().put("X-Requested-With", "XMLHttpRequest"); br.postPage("http://www.file4go.com/recebe_id.php",
-         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0)); String dllink =
-         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink == null) throw new
-         * PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); dllink = dllUrl + dllink;
+         * Skip these: br.getHeaders().put("X-Requested-With",
+         * "XMLHttpRequest");
+         * br.postPage("http://www.file4go.com/recebe_id.php",
+         * "acao=cadastrar&id=" + new Regex(downloadLink.getDownloadURL(),
+         * "([a-z0-9]+)$").getMatch(0)); String dllink =
+         * br.getRegex("\"link\":\"([A-Za-z0-9]+)\"").getMatch(0); if (dllink ==
+         * null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+         * dllink = dllUrl + dllink;
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
         /* resume no longer supported */
@@ -168,7 +171,7 @@ public class File4GoCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("('|\")(http://([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)('|\")").getMatch(1);
+        final String dllink = getDllink();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -180,6 +183,12 @@ public class File4GoCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex("('|\")(http://([a-z0-9]+\\.)?file4go\\.com//?dll\\.php\\?id=[A-Za-z0-9]+)('|\")").getMatch(1);
+        if (dllink == null) dllink = br.getRegex("\\'(http://[a-z0-9]*\\.file4go\\.com:[0-9]*/dll\\.php\\?id=.*?)\\'").getMatch(0);
+        return dllink;
     }
 
     @Override

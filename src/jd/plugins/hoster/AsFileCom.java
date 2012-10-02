@@ -140,6 +140,7 @@ public class AsFileCom extends PluginForHost {
         final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>").getMatch(0);
         int wait = 60;
         if (waittime != null) wait = Integer.parseInt(waittime);
+        if (wait > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
         sleep(wait * 1001l, downloadLink);
         Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -150,7 +151,8 @@ public class AsFileCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
         /*
-         * resume no longer possible? at least with a given password it does not work
+         * resume no longer possible? at least with a given password it does not
+         * work
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

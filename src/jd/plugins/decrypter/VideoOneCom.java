@@ -56,8 +56,20 @@ public class VideoOneCom extends PluginForDecrypt {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+
         br.getPage("http://video-one.com/iframe/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
-        String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
+
+        String fuu = jsString();
+        if (fuu == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        String externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));
             return decryptedLinks;
@@ -192,4 +204,25 @@ public class VideoOneCom extends PluginForDecrypt {
         return null;
     }
 
+    private String jsString() {
+        try {
+            String var1 = br.getRegex("\"JavaScript\"> var [A-Za-z0-9]+ = \\'([^<>\"]*?)\\';").getMatch(0);
+            String var2 = "";
+            String var4 = br.getRegex("[A-Za-z0-9]+ = \"\"; function [A-Za-z0-9]+\\(\\) \\{[A-Za-z0-9]+ = \\'(.*?)\\';[A-Za-z0-9]+\\(\\);").getMatch(0);
+
+            for (int i = 0; i < var4.length(); i++) {
+                char indexofVar4 = var4.charAt(i);
+                int indexofvar1 = var1.indexOf(indexofVar4);
+                if (var1.indexOf(var4.charAt(i)) != -1) {
+                    char charAtVar1 = var1.charAt(indexofvar1 - 1);
+                    var2 += charAtVar1;
+                } else {
+                    var2 = var2 + var4.charAt(i);
+                }
+            }
+            return var2;
+        } catch (final Exception e) {
+            return null;
+        }
+    }
 }

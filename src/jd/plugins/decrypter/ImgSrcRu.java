@@ -156,7 +156,7 @@ public class ImgSrcRu extends PluginForDecrypt {
         }
         for (int i = 0; i <= 3; i++) {
             if (PASSWORD == null) PASSWORD = this.getPluginConfig().getStringProperty("lastusedpassword");
-            if (PASSWORD == null) PASSWORD = getUserInput(null, param);
+            if (PASSWORD == null) PASSWORD = getUserInput("Enter password for link: " + param.getCryptedUrl(), param);
             pwForm.put("pwd", PASSWORD);
             br.submitForm(pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");

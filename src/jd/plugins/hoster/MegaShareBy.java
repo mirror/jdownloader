@@ -143,7 +143,7 @@ public class MegaShareBy extends PluginForHost {
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Your requested file is not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Your requested file is not found|Запрашиваемый вами файл не найден") || br.getURL().contains("&code=DL_FileNotFound")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<b>File name:</b></td>.*?<td align=.*?width=.*?>(.*?)</td>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);

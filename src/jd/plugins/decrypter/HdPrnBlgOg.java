@@ -95,10 +95,10 @@ public class HdPrnBlgOg extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         // assuming that this img hoster is used exclusively.
-        final String[] imgs = br.getRegex("(http://([\\w\\.]+)?fastpic\\.ru/thumb/[^\"]+)").getColumn(0);
+        final String[] imgs = br.getRegex("\"(http://i\\d+\\.fastpic\\.ru/thumb/\\d{4}/\\d+/\\d+/[a-z0-9]+\\.jpeg)\"").getColumn(0);
         if (imgs != null && imgs.length != 0) {
             for (String img : imgs) {
-                decryptedLinks.add(createDownloadlink("directhttp://" + img));
+                decryptedLinks.add(createDownloadlink("directhttp://" + img.replace("/thumb/", "/big/").replace(".jpeg", ".jpg")));
             }
         }
         return decryptedLinks;

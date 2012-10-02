@@ -40,7 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.VKontakteRuHoster;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "https?://(www\\.)?(vkontakte\\.ru|vk\\.com)/(audio(\\.php)?(\\?album_id=\\d+\\&id=|\\?id=)(\\-)?\\d+|(video(\\-)?\\d+_\\d+|videos\\d+|(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged)|video_ext\\.php\\?oid=\\d+\\&id=\\d+)|(photos|tag)\\d+|albums\\-?\\d+|([A-Za-z0-9_\\-]+#/)?album(\\-)?\\d+_\\d+|photo(\\-)?\\d+_\\d+|id\\d+(\\?z=albums\\d+)?)" }, flags = { 0 })
 public class VKontakteRu extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -58,7 +58,7 @@ public class VKontakteRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setReadTimeout(3 * 60 * 1000);
-        String parameter = param.toString().replace("vkontakte.ru/", "vk.com/");
+        String parameter = param.toString().replace("vkontakte.ru/", "vk.com/").replace("https://", "http://");
         br.setCookiesExclusive(false);
         synchronized (LOCK) {
             try {
@@ -70,7 +70,8 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
-                 * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
+                 * Retry if login failed Those are 2 different errormessages but
+                 * refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
                 if (br.containsHTML(">Security Check<") || cookie == null || "deleted".equals(cookie)) {
@@ -110,22 +111,28 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?(tag|album(\\-)?\\d+_|photos|id)\\d+")) {
                     /**
-                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
+                     * Photo album Examples: http://vk.com/photos575934598
+                     * http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
                 } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
                     /**
-                     * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
+                     * Single photo links, those are just passed to the
+                     * hosterplugin!
+                     * Example:http://vk.com/photo125005168_269986868
                      */
                     decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)")) {
                     /**
-                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
+                     * Photo albums lists/overviews Example:
+                     * http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
                 } else {
                     /**
-                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
+                     * Video-Albums Example: http://vk.com/videos575934598
+                     * Example2:
+                     * http://vk.com/video?section=tagged&id=46468795637
                      */
                     if (!parameter.matches("http://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos\\d+)")) {
                         logger.info("Link to add regex for is: " + parameter);
@@ -385,8 +392,9 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we
-         * don't do that we get wrong links
+         * Find the highest possible quality, also every video is only available
+         * in 1-2 formats so we HAVE to use the highest one, if we don't do that
+         * we get wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {

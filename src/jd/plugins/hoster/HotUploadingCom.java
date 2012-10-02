@@ -28,47 +28,45 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotuploading.com" }, urls = { "http://(www\\.)?hotuploading\\.com/index\\.php\\?page=main\\&id=[a-z0-9]+(\\&name=[^<>\"\\&/]+)?" }, flags = { 0 })
+public class HotUploadingCom extends PluginForHost {
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anonstream.com" }, urls = { "http://(www\\.)?anonstream\\.com/get_[A-Za-z0-9]+" }, flags = { 0 })
-public class AnonStreamCom extends PluginForHost {
-
-    public AnonStreamCom(PluginWrapper wrapper) {
+    public HotUploadingCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://anonstream.com/contact";
+        return "http://hotuploading.com/index.php?page=tos";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Fehler, keine Datei gefunden|Fehler\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex inforegex = br.getRegex("Downloading:<font style=\\'color:black;font\\-size:25px;\\'>([^<>\"]*?)</font> <font  style=\\'color:black;font\\-size:20px;\\'>\\- ([^<>\"]*?)</font>");
-        String filename = inforegex.getMatch(0);
-        String filesize = inforegex.getMatch(1);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML(">Invalid file:")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<p><font color=\"#0000FF\">([^<>\"]*?)</font></p>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename.equals("")) filename = new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://anonstream.com/ajax/streams.php", "streamcode=" + new Regex(downloadLink.getDownloadURL(), "anonstream\\.com/get_(.+)").getMatch(0));
-        String dllink = br.getRegex("type=\"video/divx\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/upl/\\d+/[^<>\"]*?)\"").getMatch(0);
+        final String dllink = br.getRegex("\\'(http://(www\\.)?hotuploading\\.com/download\\.php\\?session=[a-z0-9]+)\\\\\\\'").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        } catch (final Exception e) {
+            // Such file are still downloadable via browser but those are
+            // corrupt!
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(">416 Requested Range Not Satisfiable")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -80,7 +78,7 @@ public class AnonStreamCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     @Override
