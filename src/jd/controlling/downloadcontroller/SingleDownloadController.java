@@ -561,7 +561,9 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     }
 
     protected void onErrorDownloadTemporarilyUnavailable() {
-        if (linkStatus.getErrorMessage() == null) linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
+        if (linkStatus.getErrorMessage() == null) {
+            linkStatus.setErrorMessage(_JDT._.controller_status_tempunavailable());
+        }
         /*
          * Value<0 bedeutet das der link dauerhauft deaktiviert bleiben soll. value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms. value==0
          * macht default 30 mins Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
@@ -577,6 +579,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
             linkStatus.resetWaitTime();
             downloadLink.setEnabled(false);
         }
+        downloadLogger.warning("Error occurred: Temporarily unavailable: " + linkStatus.getErrorMessage());
         if (linkStatus.getValue() >= 0) {
             /* plugin can evaluate retrycount and act differently then */
             downloadLink.getLinkStatus().setRetryCount(downloadLink.getLinkStatus().getRetryCount() + 1);
