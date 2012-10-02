@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -674,7 +675,7 @@ public class Uploadedto extends PluginForHost {
             try {
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
-                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass()) + "&ishash=1&app=JDownloader");
+                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(account.getPass().toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
