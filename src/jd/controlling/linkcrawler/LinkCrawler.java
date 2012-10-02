@@ -386,6 +386,7 @@ public class LinkCrawler implements IOPermission {
                      * downloadable content, we use directhttp and distribute the url
                      */
                     possibleCryptedLinks = _crawl("directhttp://" + url, null, false);
+                    if (possibleCryptedLinks != null) crawl(possibleCryptedLinks);
                 } else {
                     /* try to load the webpage and find links on it */
                     br.followConnection();
