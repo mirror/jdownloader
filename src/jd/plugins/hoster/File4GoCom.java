@@ -51,7 +51,7 @@ public class File4GoCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://file4go.com";
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -73,6 +73,9 @@ public class File4GoCom extends PluginForHost {
         // String dllUrl = br.getRegex("'(http://[a-z0-9\\.]*file4go.com/dll\\.php\\?id=)'").getMatch(0);
         // if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String dllink = br.getRegex("'(http://[a-z0-9]*\\.file4go.com/dll\\.php\\?id=.*?)'").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("'(http://[a-z0-9]*\\.file4go\\.com:[0-9]*/dll\\.php\\?id=.*?)'").getMatch(0);
+        }
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Waittime can be skipped
         // int wait = 60;
