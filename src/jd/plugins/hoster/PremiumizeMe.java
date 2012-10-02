@@ -16,12 +16,16 @@
 
 package jd.plugins.hoster;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.GZIPOutputStream;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -35,15 +39,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.Base64OutputStream;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "premiumize.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsfs2133" }, flags = { 2 })
 public class PremiumizeMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
+    private static final String                            SENDDEBUGLOG       = "SENDDEBUGLOG";
 
     public PremiumizeMe(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("https://premiumize.me");
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SENDDEBUGLOG, "Send debug logs to PremiumizeMe automatically?").setDefaultValue(true));
     }
 
     @Override
@@ -154,6 +166,7 @@ public class PremiumizeMe extends PluginForHost {
         } else {
             /* download is not contentdisposition, so remove this host from premiumHosts list */
             br.followConnection();
+            sendErrorLog(link, account);
             handleAPIErrors(br, account, link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -167,7 +180,11 @@ public class PremiumizeMe extends PluginForHost {
         br.getPage("https://api.premiumize.me/pm-api/v1.php?method=directdownloadlink&params[login]=" + Encoding.urlEncode(account.getUser()) + "&params[pass]=" + Encoding.urlEncode(account.getPass()) + "&params[link]=" + Encoding.urlEncode(link.getDownloadURL()));
         handleAPIErrors(br, account, link);
         String dllink = br.getRegex("location\":\"(http[^\"]+)").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            logger.severe("no download location");
+            sendErrorLog(link, account);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
         handleDL(account, link, dllink);
@@ -295,6 +312,21 @@ public class PremiumizeMe extends PluginForHost {
         } catch (final PluginException e) {
             logger.info("PremiumizeMe Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
             throw e;
+        }
+    }
+
+    private void sendErrorLog(DownloadLink link, Account acc) {
+        try {
+            if (getPluginConfig().getBooleanProperty(SENDDEBUGLOG, true) == false) return;
+            String postString = "uid=" + Encoding.urlEncode(acc.getUser()) + "&link=" + Encoding.urlEncode(link.getDownloadURL());
+            ByteArrayOutputStream bos;
+            GZIPOutputStream logBytes = new GZIPOutputStream(new Base64OutputStream(bos = new ByteArrayOutputStream()));
+            logBytes.write(((LogSource) logger).toString().getBytes("UTF-8"));
+            logBytes.close();
+            postString = postString + "&error=" + Encoding.urlEncode(bos.toString("UTF-8"));
+            br.postPage("https://api.premiumize.me/pm-api/jderror.php?method=log", postString);
+        } catch (final Throwable e) {
+            LogSource.exception(logger, e);
         }
     }
 
