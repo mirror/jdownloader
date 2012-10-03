@@ -68,7 +68,7 @@ public class UpMoreFilesCom extends PluginForHost {
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods: changed filename/size/dllink regexes
+    // mods: changed filename/size/dllink regexes, changed fnf stuff
     // non account: 8 * 1
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
@@ -113,7 +113,7 @@ public class UpMoreFilesCom extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "/No\\-File\\.png\"|>The file expired|>The file was deleted").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;

@@ -20,40 +20,39 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudnator.com" }, urls = { "http://(www\\.)?(shragle|cloudnator)\\.com/folder/[a-z0-9]+" }, flags = { 0 })
-public class ShragleComFolder extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multi-up.com" }, urls = { "http://(www\\.)?multi\\-up\\.com/\\d+" }, flags = { 0 })
+public class MultiUpCom extends PluginForDecrypt {
 
-    public ShragleComFolder(PluginWrapper wrapper) {
+    public MultiUpCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("shragle.com/", "cloudnator.com/");
-        br.setCookie("http://www.cloudnator.com/", "lang", "en_GB");
+        final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(><b>An unknown error occured </b|>The selected folder was not found\\.<)")) {
+        final String fpName = br.getRegex("Название: ([^<>\"]*?)<br />").getMatch(0);
+        if (br.containsHTML("Название:  [\t\n\r ]+<br />")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (br.containsHTML(">In the folder no files are present")) {
-            logger.info("Folder empty: " + parameter);
-            return decryptedLinks;
+        final String[] links = br.getRegex("<li><a href=\"(http[^<>\"]*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
-        final String fpName = br.getRegex("<h2 class=\"box\\-title bold\">([^<>\"]*?)<span style=").getMatch(0);
-        final String[] links = br.getRegex("\"(http://(www\\.)?cloudnator\\.com/files/[a-z0-9]+/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(dl));
+        for (String singleLink : links)
+            if (!singleLink.matches("http://(www\\.)?multi\\-up\\.com/\\d+.*?")) decryptedLinks.add(createDownloadlink(singleLink));
         if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;

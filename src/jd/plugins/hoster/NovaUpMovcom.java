@@ -16,6 +16,8 @@
 
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -66,25 +68,19 @@ public class NovaUpMovcom extends PluginForHost {
         if (br.containsHTML("This file no longer exists on our servers") || br.getURL().contains("novamov.com/index.php")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         // onlinecheck für Videolinks
         if (parameter.getDownloadURL().contains("video")) {
-            final String fileId = br.getRegex("flashvars\\.file=\"(.*?)\"").getMatch(0);
-            final String fileKey = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
-            final String fileCid = br.getRegex("flashvars\\.cid=\"(.*?)\"").getMatch(0);
-            if (fileId == null || fileKey == null || fileCid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-
             String filename = br.getRegex("name=\"title\" content=\"Watch(.*?)online\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>Watch(.*?)online \\| NovaMov - Free and reliable flash video hosting</title>").getMatch(0);
             }
-            if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             filename = filename.trim() + ".flv";
             parameter.setFinalFileName(filename);
             if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
                 parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT));
                 return AvailableStatus.TRUE;
             }
-            br.getPage("http://www.novamov.com/api/player.api.php?user=undefined&codes=" + fileCid + "&file=" + fileId + "&pass=undefined&key=" + fileKey);
-            DLLINK = br.getRegex("url=(.*?)\\&").getMatch(0);
-            if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            getVideoLink();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final URLConnectionAdapter con = br.openGetConnection(DLLINK);
             try {
                 parameter.setDownloadSize(con.getLongContentLength());
@@ -109,12 +105,16 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("video")) {
+        final String addedlink = link.getDownloadURL();
+        if (link.getDownloadURL().contains("video")) {
+            requestFileInformation(link);
+            // This should never happen
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
             // handling für "nicht"-video Links
             if (br.containsHTML(TEMPORARYUNAVAILABLE)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.novaupmovcom.temporaryunavailable", TEMPORARYUNAVAILABLEUSERTEXT), 30 * 60 * 1000l); }
             br.setFollowRedirects(false);
-            final String infolink = link.getDownloadURL();
-            br.getPage(infolink);
+            br.getPage(addedlink);
             DLLINK = br.getRegex("class= \"click_download\"><a href=\"(http://.*?)\"").getMatch(0);
             if (DLLINK == null) {
                 DLLINK = br.getRegex("\"(http://e\\d+\\.novaup\\.com/dl/[a-z0-9]+/[a-z0-9]+/.*?)\"").getMatch(0);
@@ -130,6 +130,15 @@ public class NovaUpMovcom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void getVideoLink() throws PluginException, IOException {
+        final String fileId = br.getRegex("flashvars\\.file=\"(.*?)\"").getMatch(0);
+        final String fileKey = br.getRegex("flashvars\\.filekey=\"(.*?)\"").getMatch(0);
+        final String fileCid = br.getRegex("flashvars\\.cid=\"(.*?)\"").getMatch(0);
+        if (fileId == null || fileKey == null || fileCid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.getPage("http://www.novamov.com/api/player.api.php?user=undefined&codes=" + fileCid + "&file=" + fileId + "&pass=undefined&key=" + fileKey);
+        DLLINK = br.getRegex("url=(.*?)\\&").getMatch(0);
     }
 
     @Override

@@ -939,3 +939,6 @@ jd/plugins/decrypter/LnkcrptCm.class
 jd/captcha/methods/yrflhstcm
 jd/captcha/methods/lnkcrpt
 jd/plugins/hoster/FileSavrCom.class
+jd/plugins/hoster/ShragleCom.class
+jd/plugins/hoster/CloudnatorCom.class
+jd/plugins/decrypter/ShragleComFolder.class

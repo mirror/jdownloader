@@ -44,7 +44,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
 //Similar to SafeUrlMe (safeurl.me)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?(safelinking\\.net/(p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
 
     private enum CaptchaTyp {
@@ -97,7 +97,6 @@ public class SflnkgNt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> cryptedLinks = new ArrayList<String>();
-        String parameter = param.toString().replaceAll("http://", "https://");
         try {
             /* not available in old stable */
             br.setAllowedResponseCodes(new int[] { 500 });
@@ -110,6 +109,22 @@ public class SflnkgNt extends PluginForDecrypt {
         }
         br.getHeaders().put("User-Agent", AGENT);
         br.setFollowRedirects(false);
+
+        String parameter = param.toString();
+        if (parameter.matches("https?://(www\\.)?sflk\\.in/[A-Za-z0-9]+")) {
+            get(parameter);
+            final String newparameter = br.getRedirectLocation();
+            if (newparameter == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (!newparameter.matches("https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+")) {
+                logger.warning("Decrypter broken for link (received invalid redirect link): " + parameter);
+                return null;
+            }
+            parameter = newparameter;
+        }
+        parameter = parameter.replaceAll("http://", "https://");
         get(parameter);
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|>404 Page/File not found<)")) {
             logger.info("Link offline: " + parameter);

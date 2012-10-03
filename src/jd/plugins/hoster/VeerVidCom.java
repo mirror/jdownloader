@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -28,7 +27,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veervid.com" }, urls = { "http://(www\\.)?veervid\\.com/(play|video)/\\d+/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veervid.com" }, urls = { "http://(www\\.)?veervid\\.com/file/\\d+/\\d+" }, flags = { 0 })
 public class VeerVidCom extends PluginForHost {
 
     public VeerVidCom(PluginWrapper wrapper) {
@@ -40,26 +39,25 @@ public class VeerVidCom extends PluginForHost {
         return "http://www.veervid.com/";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/play/", "/video/"));
-    }
-
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getPage(link.getDownloadURL());
         br.getPage("http://www.veervid.com/flv_player/data/playerConfig/" + new Regex(link.getDownloadURL(), "veervid\\.com/video/(\\d+)/").getMatch(0) + ".xml");
-        if (br.containsHTML("(<title></title>|>We\\'re sorry, the page you requested cannot be found\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        if (br.getURL().equals("http://www.veervid.com/") || br.containsHTML(">Requested video does not exist or Removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setFinalFileName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".flv");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.veervid.com/files/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv", true, 0);
+        br.getPage(downloadLink.getDownloadURL().replace("/file/", "/file1/"));
+        String finallink = br.getRegex("\"(http://(www\\.)?veervid\\.com/flvideo/[a-z0-9]+/\\d+\\.flv)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("src: \"(http[^<>\"]*?)\"").getMatch(0);
+        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
