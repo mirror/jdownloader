@@ -42,25 +42,25 @@
 
 		<!-- Build dependencies -->
 
-		<javac memoryinitialsize="256m" memorymaximumsize="1024m" srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac fork="true" memoryinitialsize="256m" memorymaximumsize="1024m" srcdir="${dep.awu}/src" excludes="**/test/**" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
-			<classpath refid="classpath" />
-
-		</javac>
-
-
-
-		<javac memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac fork="true" memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="${dep.browser}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 
-		<javac memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+
+		<javac fork="true" memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="${dep.updateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+			<classpath refid="classpath" />
+
+		</javac>
+
+
+		<javac fork="true" memoryinitialsize="256m" memorymaximumsize="1024m"  srcdir="src" debug="${debug}" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/neembuu/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
