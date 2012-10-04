@@ -586,9 +586,11 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
         Response status = ShutdownExtension.execute(new String[] { "powercfg", "-a" });
         LogController.CL().info(status.toString());
         // we should add the return for other languages
-        if (status.getStd() != null && !status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return false;
-        if (status.getStd() != null && !status.getStd().contains("Hibernation has not been enabled")) return false;
-        if (status.getStd() != null && !status.getStd().contains("Hibernation")) return false;
+        if (status.getStd() != null) {
+            if (status.getStd().contains("Ruhezustand wurde nicht aktiviert")) return false;
+            if (status.getStd().contains("Hibernation has not been enabled")) return false;
+            if (status.getStd().contains("Hibernation")) return false;
+        }
 
         return true;
     }
