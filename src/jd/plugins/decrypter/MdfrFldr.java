@@ -162,8 +162,7 @@ public class MdfrFldr extends PluginForDecrypt {
                 } else {
                     br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&version=2.6&folder_key=" + ID + "&response_format=json");
                 }
-                String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
-                progress.setRange(links.length);
+                final String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
                 boolean freshAdded = false;
                 for (String[] element : links) {
                     if (!element[2].equalsIgnoreCase("0") && avoidDuplicates.add(element[0]) == true) {
@@ -176,7 +175,6 @@ public class MdfrFldr extends PluginForDecrypt {
                         freshAdded = true;
 
                     }
-                    progress.increase(1);
                 }
                 if (freshAdded == false) {
                     break;
@@ -197,12 +195,20 @@ public class MdfrFldr extends PluginForDecrypt {
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
         Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa == null) {
-            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
+            final String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
             if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nousername", "Username not entered!"));
-            String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
+            final String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
             if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nopassword", "Password not entered!"));
             aa = new Account(username, password);
         }
+        // Get a token which we can then use to get links out of (private)
+        // folders
+        // http://developers.mediafire.com/index.php/REST_API
+        // br.getPage("https://www.mediafire.com/api/user/get_session_token.php?email="
+        // + Encoding.urlEncode(aa.getUser()) + "&password=" +
+        // Encoding.urlEncode(aa.getPass()) + "&application_id=1&signature=" +
+        // JDHash.getSHA1(aa.getUser() + aa.getPass() + "application ID" +
+        // "apikey") + "&version=1");
         try {
             ((MediafireCom) hosterPlugin).login(br, aa, true);
         } catch (final PluginException e) {

@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -61,6 +61,7 @@ public class MgfpCm extends PluginForDecrypt {
                 br.getPage(br.getRedirectLocation());
             }
         }
+
         // First find all the information we need (name of the gallery, name of
         // the galleries author)
         String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
@@ -75,8 +76,9 @@ public class MgfpCm extends PluginForDecrypt {
             return null;
         }
         if (authorsName == null) authorsName = "Anonymous";
-        galleryName = Encoding.htmlDecode(galleryName);
-        authorsName = Encoding.htmlDecode(authorsName);
+        galleryName = Encoding.htmlDecode(galleryName.trim());
+        authorsName = Encoding.htmlDecode(authorsName.trim());
+
         /**
          * Max number of images per page = 1000, if we got more we always have
          * at least 2 pages
@@ -88,15 +90,19 @@ public class MgfpCm extends PluginForDecrypt {
         DecimalFormat df = new DecimalFormat("0000");
         for (final String page : allPages) {
             if (!page.equals("0")) br.getPage(parameter + "&page=" + page);
-            String links[] = br.getRegex("<a name=\"\\d+\" href=\"/image\\.php\\?id=(\\d+)\\&").getColumn(0);
-            if (links == null || links.length == 0) return null;
-            for (String element : links) {
+            final String info[][] = br.getRegex("\"/image\\.php\\?id=(\\d+)[^<>\"/]+\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
+            if (info == null || info.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (final String elements[] : info) {
                 final String orderID = df.format(counter);
-                final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+                final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + elements[0]);
                 link.setProperty("orderid", orderID);
                 link.setProperty("galleryname", galleryName);
                 link.setProperty("authorsname", authorsName);
-                link.setName(orderID);
+                link.setName(authorsName + " - " + galleryName + " - " + df.format(counter) + Encoding.htmlDecode(elements[1].trim()));
+                link.setAvailable(true);
                 decryptedLinks.add(link);
                 counter++;
             }
@@ -104,7 +110,7 @@ public class MgfpCm extends PluginForDecrypt {
         // Finally set the packagename even if its set again in the linkgrabber
         // available check of the imagefap hosterplugin
         FilePackage fp = FilePackage.getInstance();
-        fp.setName(authorsName.trim() + " - " + galleryName.trim());
+        fp.setName(authorsName + " - " + galleryName);
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }

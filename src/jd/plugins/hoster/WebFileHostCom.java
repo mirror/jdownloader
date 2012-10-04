@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -27,16 +28,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "veervid.com" }, urls = { "http://(www\\.)?veervid\\.com/file/\\d+/\\d+" }, flags = { 0 })
-public class VeerVidCom extends PluginForHost {
+import org.appwork.utils.formatter.SizeFormatter;
 
-    public VeerVidCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "webfilehost.com" }, urls = { "http://(www\\.)?webfilehost\\.com/\\?mode=viewupload\\&id=\\d+" }, flags = { 0 })
+public class WebFileHostCom extends PluginForHost {
+
+    public WebFileHostCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.veervid.com/";
+        return "http://www.webfilehost.com/?mode=terms";
     }
 
     @Override
@@ -44,22 +47,23 @@ public class VeerVidCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().equals("http://www.veervid.com/") || br.containsHTML(">Requested video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        br.getPage("http://www.veervid.com/flv_player/data/playerConfig/" + new Regex(link.getDownloadURL(), "veervid\\.com/video/(\\d+)/").getMatch(0) + ".xml");
-        link.setFinalFileName(new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0) + ".flv");
+        if (br.containsHTML("File Not Found|>The file you are trying to download is not available")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<td align=\"left\"><b><font style=\\'font\\-family: Verdana, Arial, Helvetica, sans\\-serif; font\\-size: 13px;\\' color=blue>([^<>\"]*?)</font>").getMatch(0);
+        String filesize = br.getRegex("<td><font style=\\'font\\-family: Verdana, Arial, Helvetica, sans\\-serif; font\\-size: 13px;\\'>([^<>\"]*?)</font>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL().replace("/file/", "/file1/"));
-        String finallink = br.getRegex("\"(http://(www\\.)?veervid\\.com/flvideo/[a-z0-9]+/\\d+\\.flv)\"").getMatch(0);
-        if (finallink == null) finallink = br.getRegex("src: \"(http[^<>\"]*?)\"").getMatch(0);
-        if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 0);
+        final String dllink = "http://www.webfilehost.com/download.php?id=" + new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0) + "&time=" + System.currentTimeMillis();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("alert\\(\"This file has been downloaded maximum allowed times")) throw new PluginException(LinkStatus.ERROR_FATAL, "This file has been downloaded maximum allowed times!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -75,7 +79,7 @@ public class VeerVidCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

@@ -223,7 +223,13 @@ public class NCryptIn extends PluginForDecrypt {
                         logger.info("Found a broken link for link: " + parameter);
                         continue;
                     }
-                    decryptedLinks.add(createDownloadlink(finallink));
+                    final DownloadLink dl = createDownloadlink(finallink);
+                    try {
+                        distribute(dl);
+                    } catch (final Exception e) {
+                        // No available in old 0.851 Stable
+                    }
+                    decryptedLinks.add(dl);
                 }
             }
             if (fpName != null) {

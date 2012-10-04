@@ -46,17 +46,17 @@ public class FlickrCom extends PluginForDecrypt {
     private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
     private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+";
     private static final String PHOTOLINK    = "http://(www\\.)?flickr\\.com/photos/.*?";
+    private static final String SETLINK      = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<Integer> pages = new ArrayList<Integer>();
         ArrayList<String> addLinks = new ArrayList<String>();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.setCookie(MAINPAGE, "localization", "en-us%3Bde%3Bde");
         br.setCookie(MAINPAGE, "fldetectedlang", "en-us");
-        pages.add(1);
         String parameter = param.toString();
+        int lastPage = 1;
         // Check if link is for hosterplugin
         if (parameter.matches("http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/\\d+")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("flickr.com/", "flickrdecrypted.com/"));
@@ -72,26 +72,27 @@ public class FlickrCom extends PluginForDecrypt {
         getUserLogin();
         br.getPage(parameter);
 
-        final String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
+        // Some stuff which is different from link to link
+        String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
+        int maxEntriesPerPage = 72;
+        String fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
+        if (parameter.matches(SETLINK)) {
+            picCount = br.getRegex("class=\"Results\">\\((\\d+) in set\\)</div>").getMatch(0);
+            fpName = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\- a set on Flickr</title>").getMatch(0);
+        } else if (parameter.matches(PHOTOLINK)) {
+            maxEntriesPerPage = 18;
+        } else if (parameter.matches(FAVORITELINK)) {
+            fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
+        } else {
+        }
         if (picCount == null) {
             logger.warning("Couldn't find total number of pictures, aborting...");
             return null;
         }
-        final int totalEntries = Integer.parseInt(picCount);
 
-        String fpName = null;
-        if (parameter.matches(FAVORITELINK)) {
-            fpName = br.getRegex("<title>([^<>\"]*?) \\| Flickr</title>").getMatch(0);
-        } else {
-            fpName = br.getRegex("<title>Flickr: ([^<>\"/]+)</title>").getMatch(0);
-            if (fpName == null) fpName = br.getRegex("\"search_default\":\"Search ([^<>\"/]+)\"").getMatch(0);
-        }
-        int maxEntriesPerPage = 0;
-        if (parameter.matches(PHOTOLINK)) {
-            maxEntriesPerPage = 18;
-        } else {
-            maxEntriesPerPage = 72;
-        }
+        final int totalEntries = Integer.parseInt(picCount);
 
         /**
          * Handling for albums/sets: Only decrypt all pages if user did NOT add
@@ -104,7 +105,7 @@ public class FlickrCom extends PluginForDecrypt {
             // Add 2 extra pages because usually the decrypter should already
             // stop before
             lastPageCalculated = (int) StrictMath.ceil(totalEntries / maxEntriesPerPage);
-            pages.add(lastPageCalculated + 2);
+            lastPage = lastPageCalculated + 2;
             logger.info("Found " + lastPageCalculated + " pages using the calculation method.");
         }
 
@@ -114,7 +115,6 @@ public class FlickrCom extends PluginForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPage = parameter + "/page%s/?fragment=1";
         }
-        final int lastPage = pages.get(pages.size() - 1);
         for (int i = 1; i <= lastPage; i++) {
             int addedLinksCounter = 0;
             if (i != 1) br.getPage(String.format(getPage, i));

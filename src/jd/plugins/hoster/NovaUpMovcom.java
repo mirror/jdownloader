@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|embed\\.novamov\\.com/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=[a-z0-9]+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "novaup.com" }, urls = { "http://(www\\.)?(nova(up|mov)\\.com/(download|sound|video)/[a-z0-9]+|(embed\\.)?novamov\\.com/embed\\.php(\\?width=\\d+\\&height=\\d+\\&|\\?)v=[a-z0-9]+)" }, flags = { 0 })
 public class NovaUpMovcom extends PluginForHost {
 
     private final String TEMPORARYUNAVAILABLE         = "(The file is being transfered to our other servers\\.|This may take few minutes\\.</)";
@@ -44,7 +44,7 @@ public class NovaUpMovcom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String videoID = new Regex(link.getDownloadURL(), "embed\\.novamov\\.com/embed\\.php\\?width=\\d+\\&height=\\d+\\&v=([a-z0-9]+)").getMatch(0);
+        final String videoID = new Regex(link.getDownloadURL(), "novamov\\.com/embed\\.php.*?v=([a-z0-9]+)$").getMatch(0);
         if (videoID != null) {
             link.setUrlDownload("http://www.novamov.com/video/" + videoID);
         }

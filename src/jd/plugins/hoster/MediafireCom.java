@@ -51,7 +51,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(www\\.)?mediafire\\.com/(download\\.php\\?|\\?JDOWNLOADER(?!sharekey)|file/).*?(?=http:|$|\r|\n)" }, flags = { 2 })
 public class MediafireCom extends PluginForHost {
 
     /** start of random agents **/
@@ -397,10 +397,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array.
+     * This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release
+     * dates are valid.
      * 
-     * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
+     * @return eg.
+     *         "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
     public static String stringUserAgent() {
         final Random rand = new Random();
@@ -465,10 +468,13 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified
+     * array. This array contains current user agents gathered from httpd access
+     * logs. Benefits over RandomUserAgent.* are: versions and respective
+     * release dates are valid.
      * 
-     * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
+     * @return eg.
+     *         "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
     public static String portableUserAgent() {
         final Random rand = new Random();
@@ -548,7 +554,8 @@ public class MediafireCom extends PluginForHost {
     /** The name of the error page used by MediaFire */
     private static final String ERROR_PAGE        = "error.php";
     /**
-     * The number of retries to be performed in order to determine if a file is available
+     * The number of retries to be performed in order to determine if a file is
+     * available
      */
     private int                 NUMBER_OF_RETRIES = 3;
 
@@ -989,7 +996,8 @@ public class MediafireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         /**
-         * Don't delete cookies as the user might uses a free account to download
+         * Don't delete cookies as the user might uses a free account to
+         * download
          */
         // this.setBrowserExclusive();
         this.br.setFollowRedirects(false);
