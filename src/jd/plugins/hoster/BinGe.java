@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://[\\w\\.]*?bin\\.ge/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es)/)?file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bin.ge" }, urls = { "http://(www\\.)?bin\\.ge/dl/\\d+/" }, flags = { 0 })
 public class BinGe extends PluginForHost {
 
     private static final String COOKIE_HOST = "http://bin.ge";
@@ -150,22 +150,21 @@ public class BinGe extends PluginForHost {
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<b>File name:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+width=[\r\t\n ]+>(.*?)</td>").getMatch(0);
+        String filename = getData("File name:");
         if (filename == null) {
-            filename = br.getRegex("\"Click this to report for(.*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("content=\"(.*?), The best file hosting service").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
-                }
-            }
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        String filesize = br.getRegex("<b>File size:</b></td>[\r\t\n ]+<td align=[\r\t\n ]+>(.*?)</td>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("<b>\\&#4324;\\&#4304;\\&#4312;\\&#4314;\\&#4312;\\&#4321; \\&#4310;\\&#4317;\\&#4315;\\&#4304;:</b></td>[\t\r\n ]+<td align=left>(.*?)</td>").getMatch(0);
+        String filesize = getData("File size:");
         if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private String getData(final String data) {
+        String result = br.getRegex(">" + data + "</strong></li>[\t\n\r ]+<li class=\"col\\-w50\">([^<>\"]*?)</li>").getMatch(0);
+        if (result == null) result = br.getRegex("<b>" + data + "</b></td>[\t\n\r ]+<td align=left( width=\\d+px)?>([^<>\"]*?)</td>").getMatch(1);
+        return result;
     }
 
     @Override

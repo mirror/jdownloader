@@ -413,16 +413,13 @@ public class MovReelCom extends PluginForHost {
                     dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
                     if (dllink == null) {
                         if (dllink == null) {
-                            dllink = br.getRegex("class=\"t_download\"></div></a> \\-\\->.*?<a href=\"(http://.*?)\"").getMatch(0);
+                            dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
                             if (dllink == null) {
-                                dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/d/[a-z0-9]+/.*?)\"").getMatch(0);
-                                if (dllink == null) {
-                                    String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                    if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                        for (String crypted : cryptedScripts) {
-                                            dllink = decodeDownloadLink(crypted);
-                                            if (dllink != null) break;
-                                        }
+                                String cryptedScripts[] = br.getRegex("p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                                    for (String crypted : cryptedScripts) {
+                                        dllink = decodeDownloadLink(crypted);
+                                        if (dllink != null) break;
                                     }
                                 }
                             }
