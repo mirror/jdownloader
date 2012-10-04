@@ -97,7 +97,7 @@ public class ChipDe extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
+        br.setCustomCharset("ISO-8859-1");
         br.getPage(link.getDownloadURL());
         br.setFollowRedirects(false);
         if (br.containsHTML("Seite nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -116,7 +116,7 @@ public class ChipDe extends PluginForHost {
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         link.setName(filename.trim());
-        String filesize = br.getRegex("class=\"col1\">Dateigr\\&ouml;\\&szlig;e:</p>.*?<p class=\"col2\">(.*?)</p>").getMatch(0);
+        String filesize = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<dt>(File size:|Размер файла:|Dimensioni:|Dateigröße:|Velikost:|Fájlméret:|Bestandsgrootte:|Rozmiar pliku:|Mărime fişier:|Dosya boyu:|文件大小：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         String md5 = br.getRegex("<dt>(Контрольная сумма \\(MD 5\\):|Checksum:|Prüfsumme:|Kontrolní součet:|Szumma:|Suma kontrolna|Checksum|Kontrol toplamı:|校验码：)<br /></dt>[\t\n\r ]+<dd>(.*?)<br /></dd>").getMatch(1);

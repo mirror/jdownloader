@@ -942,3 +942,9 @@ jd/plugins/hoster/FileSavrCom.class
 jd/plugins/hoster/ShragleCom.class
 jd/plugins/hoster/CloudnatorCom.class
 jd/plugins/decrypter/ShragleComFolder.class
+jd/plugins/hoster/FreakMovCom.class
+jd/plugins/hoster/AzSharingCom.class
+jd/plugins/hoster/FreeFilesSharingCom.class
+jd/plugins/hoster/FarShareTo.class
+jd/plugins/hoster/EyVxCom.class
+jd/plugins/hoster/DudUploadCom.class

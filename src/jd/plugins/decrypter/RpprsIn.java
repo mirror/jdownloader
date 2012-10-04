@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/(.*?\\-beat\\-\\d+\\.html|[A-Za-z0-9_\\-]+\\-tracks\\.html|(?!news\\-|videos|topvideos|randomvideos|swfobject|register|login|gsearch)[A-Za-z0-9_\\-]{3,})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rappers.in" }, urls = { "http://(www\\.)?rappers\\.in/(.*?\\-beat\\-\\d+\\.html|[A-Za-z0-9_\\-]+\\-tracks\\.html|beatdownload\\.php\\?bid=\\d+|(?!news\\-|videos|topvideos|randomvideos|swfobject|register|login|gsearch)[A-Za-z0-9_\\-]{3,})" }, flags = { 0 })
 public class RpprsIn extends PluginForDecrypt {
 
     public RpprsIn(PluginWrapper wrapper) {
@@ -59,8 +59,10 @@ public class RpprsIn extends PluginForDecrypt {
             } else {
                 String onlyDifference = "main";
                 if (parameter.matches("http://(www\\.)?rappers\\.in/[A-Za-z0-9_\\-]+\\-tracks\\.html")) onlyDifference = "tracks";
+                br.setFollowRedirects(true);
                 br.getPage(parameter);
-                if (!br.containsHTML("rappers\\.in/menue/playbutton\\.gif\"")) {
+                br.setFollowRedirects(false);
+                if (!br.containsHTML("\"rip/vote1\\.png\"")) {
                     logger.info("Link invalid/offline: " + parameter);
                     return decryptedLinks;
                 }

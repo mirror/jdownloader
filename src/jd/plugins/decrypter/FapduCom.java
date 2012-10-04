@@ -37,8 +37,12 @@ public class FapduCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">This video was removed")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
         String externID = br.getRegex("xvideos.com/sitevideos/flv_player_site_v4\\.swf\\?id_video=(\\d+)\"").getMatch(0);
         if (externID != null) {

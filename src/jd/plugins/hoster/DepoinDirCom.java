@@ -68,6 +68,7 @@ public class DepoinDirCom extends PluginForHost {
         br.setCustomCharset("UTF-8");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(> Dosya Link Hatası<|<title>Dosya: Bulunamadı Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Dosya ismi:</b></td><td nowrap>none<|>Dosya boyutu:</b></td><td>none Kb")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<span id=\"name\">[\t\n\r ]+<nobr>(.*?) <img").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Dosya indir  Depoindir\\.com - Dosya upload , File upload , (.*?) Depoindir\\.com \\- Dosya upload , File upload , Dosya Depoindir\\.com \\- Dosya upload</title>").getMatch(0);
         String filesize = br.getRegex("<span id=\"size\">(.*?)</span><br").getMatch(0);

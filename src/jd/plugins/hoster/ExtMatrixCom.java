@@ -57,7 +57,9 @@ public class ExtMatrixCom extends PluginForHost {
     private static final String PREMIUMONLYTEXT     = "(>Premium Only\\!|you have requested require a premium account for download\\.<)";
     private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.extmatrixcom.errors.premiumonly", "Only downloadable via premium account");
 
-    // Using FreakshareScript 1.2.1, heavily modified
+    // private static final String APIKEY = "4LYl9hFH1Xapzycg4fuFtUSPVvWsr";
+
+    // Using FlexShareScript 1.2.1, heavily modified
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -133,7 +135,7 @@ public class ExtMatrixCom extends PluginForHost {
 
     private static final String PREMIUMLIMIT = "out of 1024\\.00 TB</td>";
     private static final String PREMIUMTEXT  = "Account type:</td>[\n ]+<td><b>Premium</b>";
-    private static Object LOCK         = new Object();
+    private static Object       LOCK         = new Object();
 
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
@@ -155,7 +157,7 @@ public class ExtMatrixCom extends PluginForHost {
                 }
             }
             br.setFollowRedirects(true);
-            br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&submit=Login&task=dologin&return=%2F");
+            br.postPage(MAINPAGE + "/login.php", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&captcha=&submit=Login&task=dologin&return=.%2Fmembers%2Fmyfiles.php");
             if (!br.containsHTML(PREMIUMTEXT)) {
                 br.getPage(MAINPAGE + "/members/myfiles.php");
                 if (!br.containsHTML(PREMIUMLIMIT)) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -197,11 +199,16 @@ public class ExtMatrixCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String getLink = getLink();
+        // Little help from their admin^^
+        String getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (getLink == null) getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int maxChunks = -2;
         if (oldStyle()) {
-            /* stable has bug with openDownload and postData, cookies are not forwared to chunks */
+            /*
+             * stable has bug with openDownload and postData, cookies are not
+             * forwared to chunks
+             */
             maxChunks = 1;
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, "task=download", true, maxChunks);

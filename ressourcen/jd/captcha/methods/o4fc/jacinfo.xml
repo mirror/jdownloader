@@ -1,4 +1,4 @@
 <jDownloader>
-  <method name="xfilesharingpro" author="ManiacMansion" services="savefile.ro;midupload.com;turboshare.com;bebasupload.com;azsharing.com;fileplayground.com;fileplanet.com.ua;putshare.com;filebling.com;uploadville.com;uploadstore.net;freefilessharing.com;filezup.com;downupload.com;uploadic.com;xfilesharingprobasic"/>
+  <method name="xfilesharingpro" author="ManiacMansion" services="savefile.ro;midupload.com;turboshare.com;bebasupload.com;fileplayground.com;fileplanet.com.ua;putshare.com;filebling.com;uploadville.com;uploadstore.net;filezup.com;downupload.com;uploadic.com;xfilesharingprobasic"/>
   <format type="jpg" letterNum="4"></format>
 </jDownloader>

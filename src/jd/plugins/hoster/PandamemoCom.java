@@ -80,7 +80,7 @@ public class PandamemoCom extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
-    // other: pandamemo iget and elitedisk all the same crowd
+    // other: pandamemo.com and igetfile.com are all the same crowd
 
     @Override
     public void correctDownloadLink(DownloadLink link) {

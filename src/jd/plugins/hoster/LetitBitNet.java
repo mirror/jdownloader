@@ -257,47 +257,12 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
-        final Form freeForm = br.getFormbyProperty("id", "ifree_form");
-        if (freeForm == null) {
-            logger.info("Found did not found freeForm!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.submitForm(freeForm);
-
-        // Those are steps which are not always there, sometimes, only russian
-        // users have to do those
-        Form[] allforms = br.getForms();
-        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        Form down = null;
-        for (Form singleform : allforms) {
-            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("sms/check")) {
-                down = singleform;
-                break;
-            }
-        }
-        if (down != null) {
-            down.setMethod(Form.MethodType.POST);
-            br.submitForm(down);
-            Form wtf = br.getFormbyProperty("id", "d3_form");
-            if (wtf == null) {
-                logger.info("not found d3_form->try find another correct one");
-                allforms = br.getForms();
-                for (Form singleform : allforms) {
-                    if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("sms/check") && singleform.getAction().contains("download")) {
-                        wtf = singleform;
-                        break;
-                    }
-                }
-                if (wtf != null) {
-                    logger.info("found another plausible form");
-                }
-            } else {
-                logger.info("found d3_form");
-            }
-            if (wtf != null) {
-                br.submitForm(wtf);
-            }
-        }
+        boolean passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #1");
+        passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #2");
+        passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #3");
 
         final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)function DownloadClick\\(\\)").getMatch(0);
         if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -314,7 +279,7 @@ public class LetitBitNet extends PluginForHost {
             logger.info("No waittime found, continuing...");
         }
         sleep((wait + 1) * 1001l, downloadLink);
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
          * this causes issues in 09580 stable, no workaround known, please
@@ -384,6 +349,22 @@ public class LetitBitNet extends PluginForHost {
         sleep(2000, downloadLink);
         /* remove newline */
         return url.replaceAll("%0D%0A", "").trim().replace("\\", "");
+    }
+
+    private boolean submitFreeForm() throws Exception {
+        // this finds the form to "click" on the next "free download" button
+        Form[] allforms = br.getForms();
+        if (allforms == null || allforms.length == 0) return false;
+        Form down = null;
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check")) {
+                down = singleform;
+                break;
+            }
+        }
+        if (down == null) return false;
+        br.submitForm(down);
+        return true;
     }
 
     @Override
