@@ -104,9 +104,9 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
         if (captchasound.exists()) {
             new Thread("Captcha Sound") {
                 public void run() {
+                    AudioInputStream stream = null;
                     try {
-                        File yourFile;
-                        AudioInputStream stream;
+
                         AudioFormat format;
                         DataLine.Info info;
                         Clip clip;
@@ -119,6 +119,12 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
                         clip.start();
                     } catch (Exception e) {
                         Log.exception(e);
+                    } finally {
+                        try {
+                            stream.close();
+                        } catch (Throwable e) {
+
+                        }
                     }
                 }
             }.start();
