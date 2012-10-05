@@ -26,6 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.DataLine;
 import javax.swing.JComponent;
 
 import jd.Launcher;
@@ -35,6 +40,7 @@ import jd.gui.swing.laf.LookAndFeelController;
 import org.appwork.swing.components.ExtTextField;
 import org.appwork.utils.Application;
 import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.logging.Log;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -94,7 +100,29 @@ public class CaptchaDialog extends AbstractCaptchaDialog implements ActionListen
 
             }
         });
+        final File captchasound = Application.getResource("captcha.wav");
+        if (captchasound.exists()) {
+            new Thread("Captcha Sound") {
+                public void run() {
+                    try {
+                        File yourFile;
+                        AudioInputStream stream;
+                        AudioFormat format;
+                        DataLine.Info info;
+                        Clip clip;
 
+                        stream = AudioSystem.getAudioInputStream(captchasound);
+                        format = stream.getFormat();
+                        info = new DataLine.Info(Clip.class, format);
+                        clip = (Clip) AudioSystem.getLine(info);
+                        clip.open(stream);
+                        clip.start();
+                    } catch (Exception e) {
+                        Log.exception(e);
+                    }
+                }
+            }.start();
+        }
     }
 
     @Override
