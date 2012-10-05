@@ -225,7 +225,9 @@ public class JDGui extends SwingGui {
         d.setDoNotShowAgainSelected(true);
         try {
             Dialog.getInstance().showDialog(d);
-            StatsManager.I().setEnabled(true);
+            if (!d.isHiddenByDontShowAgain()) {
+                StatsManager.I().setEnabled(true);
+            }
             return;
         } catch (DialogClosedException e) {
             e.printStackTrace();
