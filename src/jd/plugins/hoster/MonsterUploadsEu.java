@@ -148,27 +148,7 @@ public class MonsterUploadsEu extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
-            if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // traits from download1 page below.
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                            // next two are details from sharing box
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                                if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            fileInfo[0] = new Regex(correctedBR, "monsterdownloader\\.com/monsterdl\\.cgi\\?filename=([^<>\"]*?)\\&").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
@@ -189,8 +169,17 @@ public class MonsterUploadsEu extends PluginForHost {
         doFree(downloadLink, true, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
+
+        // Skip their useless downloadmanager
+        final String stupidMonsterPage = br.getRegex("\\'(http://monsterdownloader\\.com/monsterdl\\.cgi\\?filename=[^<>\"]*?)\\'").getMatch(0);
+        if (stupidMonsterPage != null) {
+            br.setFollowRedirects(true);
+            br.getPage(stupidMonsterPage);
+            br.setFollowRedirects(false);
+        }
+
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
