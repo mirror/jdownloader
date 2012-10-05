@@ -40,6 +40,7 @@ public class AllDebridCom extends PluginForHost {
 
     public AllDebridCom(PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(4 * 1000l);
         this.enablePremium("http://www.alldebrid.com/offer/");
     }
 
@@ -163,31 +164,27 @@ public class AllDebridCom extends PluginForHost {
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
         showMessage(link, "Phase 1/2: Generating Link");
+
+        // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
+
         if (!genlink.startsWith("http://")) {
             logger.severe("AllDebrid(Error): " + genlink);
             if (genlink.contains("_limit")) {
-                try {
-                    /* limit reached for this host, wait 4h */
-                    tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
-                } catch (Exception e) {
-                }
+                /* limit reached for this host, wait 4h */
+                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
             }
             /*
              * after x retries we disable this host and retry with normal plugin
              */
             if (link.getLinkStatus().getRetryCount() >= 3) {
-                try {
-                    // disable hoster for 30min
-                    tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
-                } catch (Exception e) {
-                }
                 /* reset retrycounter */
                 link.getLinkStatus().setRetryCount(0);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                // disable hoster for 30min
+                tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
+
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
-
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
