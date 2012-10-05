@@ -948,3 +948,5 @@ jd/plugins/hoster/FreeFilesSharingCom.class
 jd/plugins/hoster/FarShareTo.class
 jd/plugins/hoster/EyVxCom.class
 jd/plugins/hoster/DudUploadCom.class
+jd/plugins/hoster/GptFileCom.class
+jd/plugins/hoster/DivxBaseCom.class
