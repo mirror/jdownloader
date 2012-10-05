@@ -10,12 +10,15 @@ import jd.plugins.PluginForHost;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.events.GenericConfigEventListener;
+import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
 
-public class StatsManager {
+public class StatsManager implements GenericConfigEventListener<Object> {
     private static final StatsManager INSTANCE = new StatsManager();
 
     /**
@@ -57,7 +60,22 @@ public class StatsManager {
                 logExit();
             }
         });
+        logEnabled();
+        config.getStorageHandler().getKeyHandler("enabled").getEventSender().addListener(this);
+    }
 
+    private synchronized void logEnabled() {
+
+        queue.add(new AsynchLogger() {
+
+            @Override
+            public void doRemoteCall() {
+
+                remote.enabled(isEnabled());
+
+            }
+
+        });
     }
 
     protected void logExit() {
@@ -103,7 +121,9 @@ public class StatsManager {
                 @Override
                 public void doRemoteCall() {
                     if (!isEnabled()) return;
-                    String nID = remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp);
+
+                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp);
+
                 }
 
             });
@@ -144,6 +164,16 @@ public class StatsManager {
         }
         final byte[] digest = md.digest();
         return HexFormatter.byteArrayToHex(digest);
+    }
+
+    @Override
+    public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
+    }
+
+    @Override
+    public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
+
+        logEnabled();
     }
 
 }

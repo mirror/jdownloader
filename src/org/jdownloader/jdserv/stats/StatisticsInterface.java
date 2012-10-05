@@ -1,5 +1,7 @@
 package org.jdownloader.jdserv.stats;
 
+import java.util.HashMap;
+
 import org.appwork.remotecall.RemoteCallInterface;
 
 public interface StatisticsInterface extends RemoteCallInterface {
@@ -36,6 +38,10 @@ public interface StatisticsInterface extends RemoteCallInterface {
      */
     void onExit(String id, long time, long runtime);
 
-    String onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp);
+    void onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp);
+
+    void enabled(boolean enabled);
+
+    HashMap<String, String> getInfo(String hoster, int minutes);
 
 }
