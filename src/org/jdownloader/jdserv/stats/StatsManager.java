@@ -98,18 +98,12 @@ public class StatsManager {
             final boolean accountUsed = downloadLink.getDownloadLinkController().getAccount() != null;
             final long plgVersion = plg.getVersion();
             final String plgHost = plg.getHost();
-            final String linkHost = downloadLink.getHost();
+            final String linkHost = downloadLink.getDomainInfo().getTld();
             queue.add(new AsynchLogger() {
-                private long time;
-                {
-                    time = System.currentTimeMillis();
-                }
-
                 @Override
                 public void doRemoteCall() {
                     if (!isEnabled()) return;
                     String nID = remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp);
-
                 }
 
             });
