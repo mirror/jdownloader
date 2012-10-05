@@ -69,11 +69,16 @@ import org.appwork.utils.Application;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.helpdialogs.HelpDialog;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
+import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
@@ -194,6 +199,40 @@ public class JDGui extends SwingGui {
             }
 
         });
+
+        Launcher.GUI_COMPLETE.executeWhenReached(new Runnable() {
+
+            public void run() {
+                new Thread("StatsDialog") {
+                    public void run() {
+                        try {
+                            Thread.sleep(10000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        showStatsDialog();
+
+                    }
+                }.start();
+
+            }
+        });
+    }
+
+    protected void showStatsDialog() {
+
+        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.BUTTONS_HIDE_CANCEL, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), null, null);
+        d.setDoNotShowAgainSelected(true);
+        try {
+            Dialog.getInstance().showDialog(d);
+            StatsManager.I().setEnabled(true);
+            return;
+        } catch (DialogClosedException e) {
+            e.printStackTrace();
+        } catch (DialogCanceledException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void initToolTipSettings() {

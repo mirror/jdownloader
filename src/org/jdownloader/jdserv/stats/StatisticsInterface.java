@@ -27,8 +27,6 @@ public interface StatisticsInterface extends RemoteCallInterface {
      */
     void onFreshInstall(String id, long time);
 
-    String info();
-
     /**
      * JD has been closed
      * 
@@ -37,5 +35,7 @@ public interface StatisticsInterface extends RemoteCallInterface {
      * @param l
      */
     void onExit(String id, long time, long runtime);
+
+    String onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp);
 
 }

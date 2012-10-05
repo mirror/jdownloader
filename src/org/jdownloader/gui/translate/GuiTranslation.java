@@ -2068,4 +2068,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Valid Range: %s1 - %s2" })
     String RangeValidator_toString_object_(long min, long max);
 
+    @Default(lngs = { "en" }, values = { "We need your help" })
+    String JDGui_showStatsDialog_title_();
+
+    @Default(lngs = { "en" }, values = { "To get a even better user experience in JDownloader 2,\r\nwe need some information about how you use JDownloader, which features you like, and which not.\r\nTo get this information, JDownloader will collect anonymous usage statistics. We understand that there might be users that do not want this. \r\nYou can disable the Stats Manager in the Advanced Settings at any time.\r\n\r\nIf you have any questions about this, feel free to contact our Developer Team in our Support Chat. " })
+    String JDGui_showStatsDialog_message_();
+
 }

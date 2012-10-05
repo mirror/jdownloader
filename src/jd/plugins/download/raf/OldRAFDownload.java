@@ -57,6 +57,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
+import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.translate._JDT;
 
@@ -367,8 +368,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -430,7 +431,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     protected void onChunkFinished() {
         synchronized (this) {
@@ -727,7 +729,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -763,6 +766,8 @@ public class OldRAFDownload extends DownloadInterface {
                     String hash = null;
                     String type = null;
                     Boolean success = null;
+
+                    // StatsManager
                     if ((hash = downloadLink.getMD5Hash()) != null && hash.length() == 32) {
                         /* MD5 Check */
                         type = "MD5";
@@ -810,6 +815,7 @@ public class OldRAFDownload extends DownloadInterface {
                     }
                 }
             }
+
             boolean renameOkay = false;
             int retry = 5;
             /* rename part file to final filename */
@@ -854,6 +860,12 @@ public class OldRAFDownload extends DownloadInterface {
                 }
             }
             if (renameOkay) {
+
+                if (StatsManager.I().isEnabled()) {
+
+                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink);
+                }
+
                 /* save absolutepath as final location property */
                 downloadLink.setProperty(DownloadLink.PROPERTY_FINALLOCATION, outputCompleteFile.getAbsolutePath());
                 Date last = TimeFormatter.parseDateString(connection.getHeaderField("Last-Modified"));

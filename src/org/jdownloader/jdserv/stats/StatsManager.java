@@ -1,16 +1,19 @@
 package org.jdownloader.jdserv.stats;
 
-import java.util.Calendar;
+import java.io.File;
+import java.io.FileInputStream;
+import java.security.MessageDigest;
 
-import jd.utils.JDUtilities;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Application;
 import org.appwork.utils.event.queue.Queue;
-import org.appwork.utils.os.CrossSystem;
-import org.jdownloader.update.JDUpdater;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.logging.LogController;
 
 public class StatsManager {
     private static final StatsManager INSTANCE = new StatsManager();
@@ -27,24 +30,22 @@ public class StatsManager {
     private StatisticsInterface remote;
     private StatsManagerConfig  config;
     private Queue               queue;
-    private String              id;
+
     private long                startTime;
-    private boolean             enabled = true;
+    private LogSource           logger;
 
     /**
-     * Create a new instance of StatsManager. This is a singleton class. Access
-     * the only existing instance by using {@link #getInstance()}.
+     * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private StatsManager() {
         remote = new LoggerRemoteClient(org.jdownloader.jdserv.JD_SERV_CONSTANTS.CLIENT).create(StatisticsInterface.class);
         config = JsonConfig.create(StatsManagerConfig.class);
-        id = config.getAnonymID();
-        boolean fresh = id != null;
-
+        logger = LogController.getInstance().getLogger(StatsManager.class.getName());
         queue = new Queue("StatsManager Queue") {
         };
 
         logStart();
+        boolean fresh = false;
         if (fresh) {
             logFreshInstall();
         }
@@ -60,94 +61,95 @@ public class StatsManager {
     }
 
     protected void logExit() {
-        if (!isEnabled()) return;
-        queue.addWait(new AsynchLogger() {
-            private long time;
-            {
-                time = System.currentTimeMillis();
-            }
-
-            @Override
-            public void doRemoteCall() {
-                remote.onExit(id, time, time - startTime);
-            }
-
-        });
 
     }
 
     private void logFreshInstall() {
-        if (!isEnabled()) return;
-        queue.add(new AsynchLogger() {
-            private long time;
-            {
-                time = System.currentTimeMillis();
-            }
 
-            @Override
-            public void doRemoteCall() {
-                if (!isEnabled()) return;
-                remote.onFreshInstall(id, time);
-            }
-
-        });
     }
 
     public void logAction(String key) {
-        if (!isEnabled()) return;
-        queue.add(new AsynchLogger() {
-            private long time;
-            {
-                time = System.currentTimeMillis();
-            }
-
-            @Override
-            public void doRemoteCall() {
-                if (!isEnabled()) return;
-                remote.onFreshInstall(id, time);
-            }
-
-        });
 
     }
 
     private void logStart() {
-        if (!isEnabled()) return;
-        queue.add(new AsynchLogger() {
-            private long time;
-            {
-                time = System.currentTimeMillis();
-            }
 
-            @Override
-            public void doRemoteCall() {
-                if (!isEnabled()) return;
-                String nID = remote.onStartup(id, time, Calendar.getInstance().getTimeZone().toString(), CrossSystem.getOSString(), Application.getJavaVersion(), Application.isJared(StatsManager.class), JDUpdater.getInstance().getBranch().getName(), JDUtilities.getRevisionNumber());
-
-                if (id == null) {
-                    id = nID;
-                    config.setAnonymID(id);
-
-                }
-                if (id == null) setEnabled(false);
-
-            }
-
-        });
     }
 
     /**
-     * this setter does not set the config flag. Can be used to disable the
-     * logger for THIS session.
+     * this setter does not set the config flag. Can be used to disable the logger for THIS session.
      * 
      * @param b
      */
-    protected void setEnabled(boolean b) {
-        enabled = b;
+    public void setEnabled(boolean b) {
+        config.setEnabled(b);
     }
 
     public boolean isEnabled() {
-        return enabled && config.isEnabled();
+        return config.isEnabled();
+    }
+
+    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink) {
+        if (!isEnabled()) return;
+        try {
+            final String fp = getFingerprint(outputCompleteFile);
+            PluginForHost plg = downloadLink.getLivePlugin();
+            final long size = outputCompleteFile.length();
+            final boolean accountUsed = downloadLink.getDownloadLinkController().getAccount() != null;
+            final long plgVersion = plg.getVersion();
+            final String plgHost = plg.getHost();
+            final String linkHost = downloadLink.getHost();
+            queue.add(new AsynchLogger() {
+                private long time;
+                {
+                    time = System.currentTimeMillis();
+                }
+
+                @Override
+                public void doRemoteCall() {
+                    if (!isEnabled()) return;
+                    String nID = remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp);
+
+                }
+
+            });
+        } catch (Throwable e) {
+
+        }
+    }
+
+    public static String getFingerprint(final File arg) {
+        if (arg == null || !arg.exists() || arg.isDirectory()) { return null; }
+        FileInputStream fis = null;
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("MD5");
+            // if (true) { throw new IOException("Any IOEXCeption"); }
+            final byte[] b = new byte[32767];
+
+            fis = new FileInputStream(arg);
+            int n = 0;
+            long total = 0;
+            while ((n = fis.read(b)) >= 0 && total < 2 * 1024 * 1024) {
+                if (n > 0) {
+                    md.update(b, 0, n);
+                }
+                total += n;
+            }
+            // add random number. We cannot reference back from a pseudo fingerprint to a certain file this way.
+            //
+            md.update((byte) (Math.random() * 3));
+        } catch (final Throwable e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            try {
+                fis.close();
+            } catch (final Throwable e) {
+            }
+        }
+        final byte[] digest = md.digest();
+        return HexFormatter.byteArrayToHex(digest);
     }
 
 }
