@@ -59,7 +59,7 @@ public class TwoSharedCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         String finallink = null;
-        String link = br.getRegex(Pattern.compile("\\$\\.get\\(\\'(.*?)\\'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String link = br.getRegex("(\'|\")(http://[0-9a-z]+\\.2shared\\.com/download/[0-9a-zA-Z]+/.*?\\?tsid=[\\w\\-]+)(\'|\")").getMatch(1);
         // special handling for picture-links
         if (br.containsHTML(">Loading image")) {
             br.getPage(MAINPAGE + link);
