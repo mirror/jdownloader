@@ -90,6 +90,9 @@ public class TeleMuCom extends PluginForDecrypt {
             br.getPage(redirectlink);
             String finallink = br.getRedirectLocation();
             if (finallink != null) {
+                if (finallink.toLowerCase().contains("revivelink")) {
+                    finallink = finallink + "###" + fpName.trim();
+                }
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         }
