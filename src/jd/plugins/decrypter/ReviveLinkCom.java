@@ -68,9 +68,8 @@ public class ReviveLinkCom extends PluginForDecrypt {
 
         jd.parser.Regex rTemp = br.getRegex("<a href=\"(.*?)\"");
         String[][] str = rTemp.getMatches();
-        int iTotalLinks = str.length;
         String[] links = new String[3];
-        for (int iIndex = 0; iIndex < iTotalLinks; iIndex++) {
+        for (int iIndex = 0; iIndex < str.length; iIndex++) {
             links[iIndex] = str[iIndex][0];
         }
         if (links == null || links.length == 0) {
