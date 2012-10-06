@@ -1,1 +1,8 @@
+jd_plugins_optional_infobar_InfoDialog_help=Zona Arrasta e Larga (Drag'N'Drop)
+jd_plugins_optional_infobar_InfoDialog_help_tooltip2=Largar Endereços e ficheiros DLC aqui!
+jd_plugins_optional_infobar_InfoDialog_hideWindow=Esconder Janela de Informação
+jd_plugins_optional_infobar_docking=Activar "Íman" nos cantos
+jd_plugins_optional_infobar_dropLocation2=Activar área de largar/cair endereços
+jd_plugins_optional_infobar_jdinfobar=JD Barra Informações Rápidas
+jd_plugins_optional_infobar_jdinfobar_description=Uma pequena janela flutuante com o estado das descargas em tempo real, caixa de arrastar e largar endereços, URL's ou ficheiros DLC.
 jd_plugins_optional_infobar_opacity=Opacidade da janela [em %]

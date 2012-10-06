@@ -1,7 +1,9 @@
+AutoDetectUpnpAction_AutoDetectUpnpAction_=Tenta encontrar todos os dispositivos UPNP reconectáveis na sua rede.\nMuitos dos Routers FritzBox são reconectáveis por este método.
 UPNPReconnectInvoker_getName_=Reconectar Router UPNP
 UPNPRouterPlugin_run_error=Impossível detectar qualquer dispositivos  UPNP. Tentar reconectar usando Cabeçalhos!
 UPNPRouterPlugin_run_mesg=Pesquisando todas as redes
 UPNPRouterPlugin_run_wizard_title=Assistente de Router UPNP
+UPNPScannerAction_UPNPScannerAction_tt=Tenta encontrar todos os dispositivos UPNP reconectáveis na sua rede,\ne deixa-o escolher qual usar para Reconectar.
 auto=Auto-configuração UPNP
 controlURLTxt_help=Introduzir endereço de controlo...
 interaction_UpnpReconnect_wanservice_ip=Protocolo Internet
@@ -12,4 +14,5 @@ literally_router=Router UPNP
 literally_service_type=Tipo serviço
 malformedservicetype=Tipo de serviço inválido. Tentar UPNP.
 malformedurl=Endereço de controlo inválido. Tentar Auto-configurador de UPNP.
+servicetype_help=Introduzir tipo de serviço (i.e. urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=Tentar Reconectar usando UPNP: %s1
