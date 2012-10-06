@@ -1,3 +1,4 @@
 interaction_externreconnect_command=Comando (utilize caminhos absolutos)
 interaction_externreconnect_dummybat=Usar janela especial
 interaction_externreconnect_parameter=Parâmetros (1 parâmetro por linha)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=Ferramenta Conexão externa

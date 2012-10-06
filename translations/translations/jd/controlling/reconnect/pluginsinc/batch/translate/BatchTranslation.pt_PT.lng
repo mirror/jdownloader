@@ -1,3 +1,4 @@
 interaction_batchreconnect_batch=Script de batch
 interaction_batchreconnect_executein=Iniciar em (pasta Aplicações)
 interaction_batchreconnect_terminal=Interpretador
+jd_controlling_reconnect_plugins_batch_ExternBatchReconnectPlugin_getName=Conexão Externa
