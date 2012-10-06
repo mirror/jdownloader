@@ -65,7 +65,8 @@ public class CloudsTo extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
     /**
-     * More could be possible but server is too slow, limit is reached before more can be started
+     * More could be possible but server is too slow, limit is reached before
+     * more can be started
      */
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(3);
     // don't touch
@@ -76,8 +77,8 @@ public class CloudsTo extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
-    // non account: 20 * 20
-    // free account: 20 * 1
+    // non account: 2 * 1
+    // free account: 2 * 1
     // premium account: untested, set standard limits ( 1 * 1)
     // protocol: no https
     // captchatype: recaptcha
@@ -194,7 +195,7 @@ public class CloudsTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -336,14 +337,19 @@ public class CloudsTo extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -658,7 +664,7 @@ public class CloudsTo extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, 0, "freelink2");
+            doFree(link, true, -2, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
