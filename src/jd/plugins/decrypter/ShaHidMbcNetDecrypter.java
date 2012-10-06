@@ -42,7 +42,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?shahid\\.mbc\\.net/media/video/\\d+(/\\w+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "http://(www\\.)?(shahid\\.mbc\\.net/media/video/\\d+(/\\w+)?|bluefishtv\\.com/Store/[_a-zA-Z]+/\\d+/.*)" }, flags = { 0 })
 public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     public static enum Quality {
@@ -73,8 +73,14 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
 
     private String HASHKEY = "amEtPj5HQmNMa2E5P2hiVA==";
 
+    private String PROVIDER;
+
     public ShaHidMbcNetDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private String getProvider() {
+        return br.getHost().contains("mbc.net") ? "shahid.mbc.net" : "bluefishtv.com";
     }
 
     @Override
@@ -84,6 +90,15 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(parameter);
+
+        PROVIDER = getProvider();
+        FilePackage fp = FilePackage.getInstance();
+        String fpName = null;
+
+        if ("bluefishtv.com".equals(PROVIDER)) {
+            fpName = br.getRegex("<span class=\"ProductDetails_Title\">(.*?)</span>").getMatch(0);
+            if (fpName == null) fpName = br.getRegex("<div id=\"ProductDetails_Overview\" style=\"position.*?alt=\"[^\"]+").getMatch(0);
+        }
 
         if (br.getRedirectLocation() != null) {
             if ("http://shahid.mbc.net/media/episodes".equals(br.getRedirectLocation())) {
@@ -108,6 +123,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         String channelId = br.getRegex("channelId=(.*?)\\&").getMatch(0);
         String playerForm = br.getRegex("playerForm=(.*?)\\&").getMatch(0);
         String mediaId = br.getRegex("mediaId=(.*?)\\&").getMatch(0);
+        if ("bluefishtv.com".equals(PROVIDER)) mediaId = br.getRegex("mediaId=([^\"]+)").getMatch(0);
         if (channelId == null || playerForm == null || mediaId == null) { return null; }
 
         int page = 0;
@@ -118,13 +134,15 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         Map<String, String> links = new HashMap<String, String>();
 
         // processing plugin configuration
-        SubConfiguration cfg = SubConfiguration.getConfig("shahid.mbc.net");
+        SubConfiguration cfg = SubConfiguration.getConfig(PROVIDER);
         Map<String, Object> shProperties = new LinkedHashMap<String, Object>();
+        boolean completeSeason = false;
         if (cfg.getProperties() != null) {
             shProperties.putAll(cfg.getProperties());
+            if (shProperties.containsKey("COMPLETE_SEASON")) completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
         } else {
             for (Quality q : Quality.values()) {
-                qStr.put(q.getHexValue(), q.getName());
+                qStr.put(q.getHexValue(), q.name());
             }
         }
         for (Entry<String, Object> property : shProperties.entrySet()) {
@@ -216,7 +234,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                 String decompressedPlainData = new String(bos.toByteArray(), "UTF-8");
                 String[] finalContent = new Regex(decompressedPlainData, "(.{23}rtmp[^\r\n]+)").getColumn(0);
                 if (finalContent == null || finalContent.length == 0) { return null; }
-                boolean completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
+
                 for (String fC : finalContent) {
                     if (fC.length() < 40) {
                         continue;
@@ -243,18 +261,15 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
             }
         }
 
-        FilePackage fp = FilePackage.getInstance();
-        String fpName;
-
         for (Entry<String, String> link : links.entrySet()) {
             if (link.getKey() == null) {
                 continue;
             }
-            DownloadLink dl = createDownloadlink(link.getKey());
+            DownloadLink dl = createDownloadlink(PROVIDER + link.getKey());
             if (dl.getName() == null) {
                 continue;
             }
-            fpName = new Regex(dl.getName(), "(.*?)(_s\\d+|_?\\-?ep_?\\-?\\d+|_\\d+_vod)").getMatch(0);
+            if ("shahid.mbc.net".equals(PROVIDER)) fpName = new Regex(dl.getName(), "(.*?)(_s\\d+|_?\\-?ep_?\\-?\\d+|_\\d+_vod)").getMatch(0);
             fpName = fpName == null ? dl.getName() : fpName;
             fp.setName(fpName);
             fp.add(dl);

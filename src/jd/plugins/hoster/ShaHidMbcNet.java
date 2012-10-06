@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "rtmpe://mbc\\d\\.csl\\.delvenetworks.com/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shahid.mbc.net" }, urls = { "shahid.mbc.netrtmpe://mbc\\d\\.csl\\.delvenetworks.com/.+" }, flags = { 2 })
 public class ShaHidMbcNet extends PluginForHost {
 
     private static final String ALLOW_HD        = "ALLOW_HD";
@@ -45,6 +45,11 @@ public class ShaHidMbcNet extends PluginForHost {
     public ShaHidMbcNet(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("shahid.mbc.netrtmp", "rtmp"));
     }
 
     private String convertRtmpUrlToHttpUrl(String url) throws Exception {
