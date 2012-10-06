@@ -52,7 +52,7 @@ public class FlickrCom extends PluginForHost {
         return "http://flickr.com";
     }
 
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
     private static final String MAINPAGE = "http://flickr.com";
 
     public void correctDownloadLink(DownloadLink link) {
@@ -100,6 +100,13 @@ public class FlickrCom extends PluginForHost {
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));
             if (ext == null || ext.length() > 5) ext = ".jpg";
             filename = Encoding.htmlDecode(filename.trim() + ext);
+        }
+        // Cut filenames if they're too long
+        if (filename.length() > 180) {
+            final String ext = filename.substring(filename.lastIndexOf("."));
+            int extLength = ext.length();
+            filename = filename.substring(0, 180 - extLength);
+            filename += ext;
         }
         downloadLink.setFinalFileName(filename);
         Browser br2 = br.cloneBrowser();

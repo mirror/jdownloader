@@ -63,8 +63,6 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
             } else {
-                ArrayList<String> picPages = new ArrayList<String>();
-                picPages.add(parameter);
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");
                 Account aa = AccountController.getInstance().getValidAccount(facebookPlugin);
@@ -88,17 +86,33 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 // Account is valid, let's add it to the premium overview
                 if (addAcc) AccountController.getInstance().addAccount(facebookPlugin, aa);
                 br.getPage(parameter);
-                String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 final String setID = new Regex(parameter, "facebook\\.com/media/set/\\?set=(.+)").getMatch(0);
-                final String secondPage = br.getRegex("\"(http://(www\\.)?facebook\\.com/media/set/\\?set=" + setID + "\\&amp;type=\\d+\\&amp;aft=\\d+)\"").getMatch(0);
-                if (secondPage != null) picPages.add(secondPage);
+                final String profileID = new Regex(parameter, "(\\d+)$").getMatch(0);
+                String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+                final String ajaxpipeToken = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
+                final String lastFbid = br.getRegex("\"fbPhotosRedesignMetadata(\\d+)\"").getMatch(0);
+                final String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
+                if (ajaxpipeToken == null || lastFbid == null || user == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+
+                ArrayList<String> allLinks = new ArrayList<String>();
+
                 // Redirects from "http" to "https" can happen
                 br.setFollowRedirects(true);
-                for (final String picPage : picPages) {
-                    br.getPage(Encoding.htmlDecode(picPage.trim()));
+                for (int i = 1; i <= 50; i++) {
+                    int currentMaxPicCount = 28;
+
+                    String[] links;
+                    if (i > 1) {
+                        br.getPage("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__adt=" + i);
+                        links = br.getRegex("data\\-starred\\-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
+                        currentMaxPicCount = 32;
+                    } else {
+                        links = br.getRegex("src=(http[^<>\"]*?_n\\.jpg)\\&amp;size=\\d+%2C\\d+\\&amp;theater\" rel=\"theater\"").getColumn(0);
+                    }
                     boolean doExtended = false;
-                    // Try to grab direct links
-                    String[] links = br.getRegex("src=(http[^<>\"]*?_n\\.jpg)\\&amp;size=\\d+%2C\\d+\\&amp;theater\" rel=\"theater\"").getColumn(0);
                     if (links == null || links.length == 0) {
                         // Can't grab direct links? Try extended mode
                         links = br.getRegex("ajaxify=(\"|\\\\\")https?(://|:\\\\/\\\\/)www\\.facebook\\.com(/|\\\\/)photo\\.php\\?fbid=(\\d+)\\&amp;").getColumn(3);
@@ -108,6 +122,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
+                    boolean stop = false;
                     if (doExtended) {
                         logger.info("Doing extended decrypt, this takes time...");
                         // Old way
@@ -121,12 +136,28 @@ public class FaceBookComGallery extends PluginForDecrypt {
                             }
                             decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
                         }
+                        // This way only works on the first page
+                        stop = true;
                     } else {
-                        logger.info("Doing fast decrypt...");
-                        for (String directlink : links) {
-                            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(directlink.trim()));
+                        logger.info("Decrypting page " + i + " of??");
+                        for (final String directlink : links) {
+                            final String finallink = Encoding.htmlDecode(directlink.trim().replace("\\", ""));
+                            if (allLinks.contains(finallink)) {
+                                logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
+                                stop = true;
+                                break;
+                            } else {
+                                allLinks.add(finallink);
+                            }
+                            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                             dl.setAvailable(true);
                             decryptedLinks.add(dl);
+                        }
+                        // 28 links = max number of links per segment
+                        if (links.length < currentMaxPicCount) stop = true;
+                        if (stop) {
+                            logger.info("Seems like we're done and decrypted all links, stopping at page: " + i);
+                            break;
                         }
                     }
                 }

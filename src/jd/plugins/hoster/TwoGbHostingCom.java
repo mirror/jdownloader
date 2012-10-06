@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2gb-hosting.com" }, urls = { "http://(www\\.)?2gb\\-hosting\\.com/videos/[a-z0-9]+/.*?\\.html" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2gb-hosting.com" }, urls = { "http://(www\\.)?2gb\\-hosting\\.com/(videos|v)/[a-z0-9]+/.*?\\.html" }, flags = { 0 })
 public class TwoGbHostingCom extends PluginForHost {
 
     public TwoGbHostingCom(PluginWrapper wrapper) {
@@ -41,6 +41,10 @@ public class TwoGbHostingCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.2gb-hosting.com/terms-of-use";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("/v/", "/videos/"));
     }
 
     @Override

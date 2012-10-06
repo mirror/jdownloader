@@ -89,8 +89,9 @@ public class LoadTo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         workAroundTimeOut(br);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("Can't find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Can\\'t find file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex("<head><title>(.*?) // Load.to Uploadservice</title>").getMatch(0));
         String filesize = br.getRegex("Size:</div>.*?download_table_right\">(.*?)</div>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -113,7 +114,7 @@ public class LoadTo extends PluginForHost {
     }
 
     /* TODO: remove me after 0.9xx public */
-    private void workAroundTimeOut(Browser br) {
+    private void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
                 br.setConnectTimeout(30000);
