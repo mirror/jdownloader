@@ -239,18 +239,26 @@ public class SharedBitNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("https://sharedbit.net/");
+        br.getPage("https://sharedbit.net/account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex(">valid until \\&#\\d+; <b>([^<>\"]*?)</b>").getMatch(0);
+        final String expire = br.getRegex("subscription renewal at <b>([^<>\"]*?)</b>").getMatch(0);
         if (expire == null) {
             account.setValid(false);
             return ai;
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd, MMMM yyyy", Locale.ENGLISH));
         }
+        final String usedSpace = getData("Storage Used");
+        if (usedSpace != null) ai.setUsedSpace(SizeFormatter.getSize(usedSpace));
+        final String filesnum = getData("Number of files");
+        if (filesnum != null) ai.setFilesNum(Integer.parseInt(filesnum));
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
+    }
+
+    private String getData(final String parameter) {
+        return br.getRegex("<td>" + parameter + "</td>[\t\n\r ]+<td class=\"val\"><b>([^<>\"]*?)</b></td>").getMatch(0);
     }
 
     @Override

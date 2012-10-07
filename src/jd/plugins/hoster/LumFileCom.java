@@ -539,23 +539,27 @@ public class LumFileCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, ">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>").getMatch(2);
-            if (expire == null) expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
-            if (expire == null) {
-                ai.setExpired(true);
-                account.setValid(false);
-                return ai;
+            if (correctedBR.contains(">Premium account expire:</TD><TD><b>Lifetime</b>")) {
+                ai.setStatus("Lifetime Premium User");
             } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
-                try {
-                    maxPrem.set(20);
-                    account.setMaxSimultanDownloads(-1);
-                    account.setConcurrentUsePossible(true);
-                } catch (final Throwable e) {
+                String expire = new Regex(correctedBR, ">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>").getMatch(2);
+                if (expire == null) expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
+                if (expire == null) {
+                    ai.setExpired(true);
+                    account.setValid(false);
+                    return ai;
+                } else {
+                    expire = expire.replaceAll("(<b>|</b>)", "");
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                    try {
+                        maxPrem.set(20);
+                        account.setMaxSimultanDownloads(-1);
+                        account.setConcurrentUsePossible(true);
+                    } catch (final Throwable e) {
+                    }
                 }
+                ai.setStatus("Premium User");
             }
-            ai.setStatus("Premium User");
         }
         return ai;
     }
