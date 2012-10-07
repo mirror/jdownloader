@@ -54,6 +54,7 @@ public class GameTrailersCom extends PluginForDecrypt {
 
         String contentId = br.getRegex("data\\-contentId=(\'|\")([^\'\"]+)").getMatch(1);
         if (contentId == null) return decryptedLinks;
+        String[] dlButton = br.getRegex("<div class=\"download_button\" data\\-video=\"(.*?)\" data\\-token=\"([^\"]+)").getRow(0);
         Browser br2 = br.cloneBrowser();
         /* episodes */
         if (parameter.contains("/full-episodes/")) {
@@ -63,12 +64,20 @@ public class GameTrailersCom extends PluginForDecrypt {
             if (contentIds == null || contentIds.length == 0) return decryptedLinks;
             int i = 1;
             for (String cId : contentIds) {
-                br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(cId) + "&forceProgressive=true");
-                String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+                String link = null;
+                if (dlButton != null && dlButton.length == 2) {
+                    br2.getPage("/feeds/video_download/" + cId + "/" + dlButton[1]);
+                    link = br2.getRegex("\"url\":\"([^\"]+)").getMatch(0);
+                }
+                if (link == null) {
+                    br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(cId) + "&forceProgressive=true");
+                    link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+                }
                 if (link == null) continue;
-                DownloadLink dl = createDownloadlink(link);
+
+                DownloadLink dl = createDownloadlink(link.replace("\\", ""));
                 dl.setFinalFileName(getVideoTitle(episodesTitle + (contentIds.length > 1 ? "_Part" + i++ : "")));
-                dl.setProperty("CONTENTID", cId);
+                dl.setProperty("CONTENTID", br2.getURL());
                 dl.setProperty("GRABBEDTIME", System.currentTimeMillis());
                 decryptedLinks.add(dl);
             }
@@ -78,13 +87,20 @@ public class GameTrailersCom extends PluginForDecrypt {
             }
         } else {
             /* single video file */
-            br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(contentId) + "&forceProgressive=true");
-            String link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+            String link = null;
+            if (dlButton != null && dlButton.length == 2) {
+                br2.getPage("/feeds/video_download/" + Encoding.urlEncode(dlButton[0]) + "/" + dlButton[1]);
+                link = br2.getRegex("\"url\":\"([^\"]+)").getMatch(0);
+            }
+            if (link == null) {
+                br2.getPage("/feeds/mediagen/?uri=" + Encoding.urlEncode(contentId) + "&forceProgressive=true");
+                link = br2.getRegex("<src>(http://.*?)</src>").getMatch(0);
+            }
             if (link == null) return decryptedLinks;
 
-            DownloadLink dl = createDownloadlink(link);
+            DownloadLink dl = createDownloadlink(link.replace("\\", ""));
             dl.setFinalFileName(getVideoTitle(videoTitle));
-            dl.setProperty("CONTENTID", contentId);
+            dl.setProperty("CONTENTID", br2.getURL());
             dl.setProperty("GRABBEDTIME", System.currentTimeMillis());
             decryptedLinks.add(dl);
         }

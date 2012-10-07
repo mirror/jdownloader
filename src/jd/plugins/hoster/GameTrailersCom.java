@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -54,12 +53,13 @@ public class GameTrailersCom extends PluginForHost {
             if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
             } else {
-                br.getPage("http://www.gametrailers.com/feeds/mediagen/?uri=" + Encoding.urlEncode(downloadLink.getStringProperty("CONTENTID", null)) + "&forceProgressive=true");
+                br.getPage(downloadLink.getStringProperty("CONTENTID", "http://www.gametrailers.com"));
                 dllink = br.getRegex("<src>(http://.*?)</src>").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\"url\":\"([^\"]+)").getMatch(0);
                 if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setUrlDownload(dllink);
+                downloadLink.setUrlDownload(dllink.replace("\\", ""));
                 try {
-                    br2.openGetConnection(dllink);
+                    br2.openGetConnection(downloadLink.getDownloadURL());
                     if (!con.getContentType().contains("html")) {
                         downloadLink.setDownloadSize(con.getLongContentLength());
                     } else {
