@@ -128,6 +128,7 @@ public class WrzutaPl extends PluginForHost {
         filename = (Encoding.htmlDecode(br.getRegex("<h1 class=\"header\">(.*?)</h1>").getMatch(0)));
         if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0)));
         if (filename == null) filename = (Encoding.htmlDecode(br.getRegex("div class=\"file-title\">.*?<h1>(.*?)</h1>").getMatch(0)));
+        if (filename == null) filename = br.getRegex("<meta content=\"(.*?)\" name=\"medium\">.+<meta content=\"(.*?)\" name=\"title\">").getMatch(1);
         String filesize = br.getRegex("Rozmiar: <strong>(.*?)</strong>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<span id=\"file_info_size\">[\t\n\r ]+<strong>(.*?)</strong>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
