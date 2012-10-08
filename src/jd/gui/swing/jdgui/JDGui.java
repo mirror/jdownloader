@@ -78,12 +78,12 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.linkgrabber.LinkGrabberView;
 import org.jdownloader.images.NewTheme;
-import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.FrameStatus;
 import org.jdownloader.settings.FrameStatus.ExtendedState;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+import org.jdownloader.statistics.StatsManager;
 
 public class JDGui extends SwingGui {
 

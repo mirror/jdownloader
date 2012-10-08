@@ -1,4 +1,4 @@
-package org.jdownloader.jdserv.stats;
+package org.jdownloader.statistics;
 
 import java.util.logging.Level;
 

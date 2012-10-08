@@ -1,4 +1,4 @@
-package org.jdownloader.jdserv.stats;
+package org.jdownloader.statistics;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,6 +17,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.statistics.interfaces.StatisticsInterface;
 
 public class StatsManager implements GenericConfigEventListener<Object> {
     private static final StatsManager INSTANCE = new StatsManager();
@@ -117,6 +118,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
             final long plgVersion = plg.getVersion();
             final String plgHost = plg.getHost();
             final String linkHost = downloadLink.getDomainInfo().getTld();
+
             queue.add(new AsynchLogger() {
                 @Override
                 public void doRemoteCall() {

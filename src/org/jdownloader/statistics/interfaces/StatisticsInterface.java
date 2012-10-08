@@ -1,4 +1,4 @@
-package org.jdownloader.jdserv.stats;
+package org.jdownloader.statistics.interfaces;
 
 import java.util.HashMap;
 

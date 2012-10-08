@@ -22,11 +22,11 @@ import org.jdownloader.controlling.filter.LinkFilterSettings;
 import org.jdownloader.controlling.packagizer.PackagizerSettings;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.gui.views.linkgrabber.addlinksdialog.LinkgrabberSettings;
-import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.statistics.StatsManagerConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();

@@ -57,8 +57,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.swing.dialog.Dialog;
-import org.jdownloader.jdserv.stats.StatsManager;
 import org.jdownloader.settings.GeneralSettings;
+import org.jdownloader.statistics.StatsManager;
 import org.jdownloader.translate._JDT;
 
 public class OldRAFDownload extends DownloadInterface {
