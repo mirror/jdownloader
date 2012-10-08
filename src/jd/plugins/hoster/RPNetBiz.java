@@ -142,9 +142,16 @@ public class RPNetBiz extends PluginForHost {
         account.setMaxSimultanDownloads(-1);
         expirationDate = expirationDate.replaceFirst("1st", "1").replaceAll("nd", "").replaceAll("rd", "").replaceAll("th", "");
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expirationDate, "dd MMM, yyyy", null));
-        ai.setStatus("Premium User");
-        ArrayList<String> hosts = new ArrayList<String>(Arrays.asList("rapidshare.com", "netload.in", "hotfile.com", "megashares.com", "uploaded.to", "filefactory.com", "bitshare.com", "freakshare.net", "crocko.com", "filepost.com", "turboit.net", "extabit.com", "ifile.it", "uploading.com", "jumbofiles.com", "letitbit.net", "ryushare.com", "share-online.biz", "slingfile.com"));
-        ai.setProperty("multiHostSupport", hosts);
+
+        // get the supported hosts
+        String hosts = br.getPage(mPremium + "hostlist.php");
+        if (hosts != null) {
+            ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts.split(",")));
+            ai.setProperty("multiHostSupport", supportedHosts);
+            ai.setStatus("Premium User - " + supportedHosts.size() + " hosts available!");
+        } else {
+            ai.setStatus("Premium User - 0 Hosts available!");
+        }
         return ai;
     }
 
@@ -234,7 +241,8 @@ public class RPNetBiz extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
+             * download is not contentdisposition, so remove this host from
+             * premiumHosts list
              */
             br.followConnection();
         }
