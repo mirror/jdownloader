@@ -631,7 +631,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN, "Rapidshare Speed Limitation", "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
             }
-            if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle()) {
+            if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
                 this.dl = this.createHackedDownloadInterface(this.br, downloadLink, directurl);
             } else {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, false, 1);
@@ -741,8 +741,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
-                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
+                 * BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
