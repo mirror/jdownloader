@@ -866,7 +866,7 @@ public class OldRAFDownload extends DownloadInterface {
                 if (StatsManager.I().isEnabled()) {
                     long speed = 0;
                     try {
-                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / (System.currentTimeMillis() - getStartTimeStamp()) / 1000;
+                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / ((System.currentTimeMillis() - getStartTimeStamp()) / 1000);
                     } catch (final Throwable e) {
                         LogSource.exception(logger, e);
                     }
