@@ -37,26 +37,40 @@ public class RlGalleriesNt extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        final String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
         br.setFollowRedirects(false);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setCookie(".urlgalleries.net", "popundr", "1");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-us,en;q=0.5");
         br.getPage(parameter);
+        final String host = new Regex(parameter, "(http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net)").getMatch(0);
         final String fpName = br.getRegex("border=\\'0\\' /></a></div>(.*?)</td></tr><tr>").getMatch(0);
         final String[] links = br.getRegex("\\'(/image\\.php\\?cn=\\d+\\&uid=[A-Za-z0-9]+\\&where=.*?)\\'").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        final String host = new Regex(parameter, "(http://(www\\.)?[a-z0-9]+\\.urlgalleries\\.net)").getMatch(0);
-        for (String aLink : links) {
+        int counter = 1;
+        final Browser brc = br.cloneBrowser();
+        for (final String aLink : links) {
             try {
                 if (isAbort()) break;
             } catch (final Throwable e) {
             }
-            sleep(300, param);
-            Browser brc = br.cloneBrowser();
-            brc.getPage(host + aLink);
-            String finallink = brc.getRedirectLocation();
+            logger.info("Decrypting link " + counter + " of " + links.length);
+            sleep(new Random().nextInt(3) + 1000, param);
+            brc.getHeaders().put("Referer", "http://a4you.urlgalleries.net/blog_gallery.php?id=2983923&t=2&g=TLE+-+2010-12-28+-+Mathea+");
+            try {
+                brc.getPage(host + aLink);
+            } catch (final Exception e) {
+                logger.info("Link timed out: " + aLink);
+                counter++;
+                continue;
+            }
+            final String finallink = brc.getRedirectLocation();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -67,6 +81,7 @@ public class RlGalleriesNt extends PluginForDecrypt {
             lol.setName(Integer.toString(new Random().nextInt(1000000000)));
             decryptedLinks.add(lol);
             logger.info(finallink);
+            counter++;
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

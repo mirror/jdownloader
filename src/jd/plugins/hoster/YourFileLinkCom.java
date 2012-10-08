@@ -60,7 +60,10 @@ public class YourFileLinkCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        // Invalid link
+        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL() + "&dv=1");
+        // Link offline
         if (br.containsHTML("(>If you\\'re sure you have the URL correct then the file may have been deleted|>Please re\\-check the URL \\& try again)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div class=\"filenametxt\">(.*?)</div>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

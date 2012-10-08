@@ -950,3 +950,7 @@ jd/plugins/hoster/EyVxCom.class
 jd/plugins/hoster/DudUploadCom.class
 jd/plugins/hoster/GptFileCom.class
 jd/plugins/hoster/DivxBaseCom.class
+jd/plugins/hoster/OvFileCom.class
+jd/plugins/hoster/SavefileRo.class
+jd/plugins/hoster/BebasUploadCom.class
+jd/plugins/hoster/UploadVilleCom.class

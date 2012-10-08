@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tu.tv" }, urls = { "http://(www\\.)?tu\\.tv/videos/[a-z0-9-]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tu.tv" }, urls = { "http://(www\\.)?tu\\.tv/videos/[a-z0-9\\-_]+" }, flags = { 0 })
 public class TuTv extends PluginForHost {
 
     private String DLLINK = null;

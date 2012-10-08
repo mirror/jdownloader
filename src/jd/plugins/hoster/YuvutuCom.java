@@ -66,8 +66,17 @@ public class YuvutuCom extends PluginForHost {
         br.setCookie("http://www.yuvutu.com/", "lang", "english");
         br.setCookie("http://www.yuvutu.com/", "warningcookie", "viewed");
         br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
+        final URLConnectionAdapter conf = br.openGetConnection(downloadLink.getDownloadURL());
+        if (conf.getResponseCode() == 410) {
+            conf.disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.followConnection();
+        conf.disconnect();
+        // Link offline
         if (br.containsHTML(">The video you requested does not exist<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (!br.containsHTML("player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("class=\"userName\">.*?img src.*?href.*?</a>:(.*?)</td").getMatch(0);
         if (filename == null) filename = br.getRegex("<span class=\"authorName\">.*?<a href=\".*?\">.*?</a>.*?</span>(.*?)</td>.*?<td class=\"videoTitle\"").getMatch(0);
         dllink = br.getRegex("value=\"file=(http[^<>\\&\"]*?)\\&").getMatch(0);

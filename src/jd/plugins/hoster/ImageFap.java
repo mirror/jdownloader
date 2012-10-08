@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(image\\.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?|video\\.php\\?vid=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(image\\.php\\?id=.*(\\&pgid=.*\\&gid=.*\\&page=.*)?|video\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class ImageFap extends PluginForHost {
 
     public ImageFap(final PluginWrapper wrapper) {

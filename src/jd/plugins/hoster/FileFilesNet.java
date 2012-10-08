@@ -45,7 +45,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FileFilesNet extends PluginForHost {
 
     private static final String HOST = "http://flyfiles.net";
-    private static Object LOCK = new Object();
+    private static Object       LOCK = new Object();
 
     // TODO: rename plugin when jd2 goes stable, FlyFilesNet
 
@@ -112,7 +112,7 @@ public class FileFilesNet extends PluginForHost {
             dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -3);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

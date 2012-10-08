@@ -52,11 +52,11 @@ public class VideoGoogle extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.getPage(parameter.getDownloadURL());
+        // Check this way because language of site is different for everyone
+        if (!br.containsHTML("googleplayer\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String videoID = new Regex(parameter.getDownloadURL(), "((\\-)?\\d+)$").getMatch(0);
         String name = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        if (br.containsHTML("but this video may not be availabl")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (name == null || "301 Moved".equals(name)) name = videoID;
-        if ("Google Videos Error".equals(name)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         parameter.setFinalFileName(Encoding.htmlDecode(name) + ".flv");
         DLLINK = br.getRegex("videoUrl\\\\x3d(http://.*?\\.googlevideo\\.com/videoplayback.*?)\\\\x26thumbnailUrl").getMatch(0);
         if (DLLINK == null) {

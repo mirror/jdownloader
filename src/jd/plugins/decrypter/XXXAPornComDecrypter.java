@@ -49,6 +49,11 @@ public class XXXAPornComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("value=\\'conf(ig)?=(http://media\\.amateurcumshots\\.org/flv_player/data/playerConfigEmbed/\\d+\\.xml)").getMatch(1);
+        if (tempID != null) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         decryptedLinks.add(createDownloadlink(parameter.replace("xxxaporn.com/", "xxxaporndecrypted.com/")));
         return decryptedLinks;
     }

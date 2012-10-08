@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "http://(www\\.)?archive\\.org/details/[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org" }, urls = { "http://(www\\.)?archive\\.org/details/(?!copyrightrecords)[A-Za-z0-9_\\-\\.]+" }, flags = { 0 })
 public class ArchieveOrg extends PluginForDecrypt {
 
     public ArchieveOrg(PluginWrapper wrapper) {
@@ -38,9 +38,19 @@ public class ArchieveOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("://www.", "://");
         br.getPage(parameter);
-        if (br.containsHTML(">Item cannot be found\\.<")) return decryptedLinks;
-        String[] links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (br.containsHTML(">The item is not available")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("/download/")) {
+            logger.info("Maybe invalid link: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String singleLink : links) {
             decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
         }

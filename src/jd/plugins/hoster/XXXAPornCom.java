@@ -71,16 +71,15 @@ public class XXXAPornCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\" />").getMatch(0);
+        String filename = br.getRegex("<title>Viewing Media \\- (.*?):: Free Amateur Sex, Amateur Porn").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<div class=\"video\\-info\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("Viewing Media \\- (.*?)</title>").getMatch(0);
-            }
         }
-        DLLINK = br.getRegex("addParam\\(\\'flashvars\\',\\'file=(http://.*?)\\'\\)").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("(http://vids\\d+\\.xxxaporn\\.com/\\d+\\.flv)\\'").getMatch(0);
+        DLLINK = br.getRegex("(http://media\\.xxxaporn\\.com/media/player/config_embed\\.php\\?vkey=\\d+)").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(DLLINK);
+        DLLINK = br.getRegex("<src>(http://[^<>\"]*?)</src>").getMatch(0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
