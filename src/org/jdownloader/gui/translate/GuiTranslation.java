@@ -2074,4 +2074,10 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "To get a even better user experience in JDownloader 2,\r\nwe need some information about how you use JDownloader, which features you like, and which not.\r\nTo get this information, JDownloader will collect anonymous usage statistics. We understand that there might be users that do not want this. \r\nYou can disable the Stats Manager in the Advanced Settings at any time.\r\n\r\nIf you have any questions about this, feel free to contact our Developer Team in our Support Chat. " })
     String JDGui_showStatsDialog_message_();
 
+    @Default(lngs = { "en" }, values = { "I want to help" })
+    String JDGui_showStatsDialog_yes_();
+
+    @Default(lngs = { "en" }, values = { "No, thanks" })
+    String JDGui_showStatsDialog_no_();
+
 }
