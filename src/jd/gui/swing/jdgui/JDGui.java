@@ -90,8 +90,7 @@ public class JDGui extends SwingGui {
     private static JDGui INSTANCE;
 
     /**
-     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits
-     * existierende zurück
+     * Factorymethode. Erzeugt eine INstanc der Gui oder gibt eine bereits existierende zurück
      * 
      * @return
      */
@@ -155,8 +154,7 @@ public class JDGui extends SwingGui {
                 if (e.getID() == KeyEvent.KEY_RELEASED && e.isShiftDown() && e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
                     try {
                         /*
-                         * dirty little helper for mac os problem, unable to
-                         * reach window header
+                         * dirty little helper for mac os problem, unable to reach window header
                          */
                         final Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
                         JDGui.this.mainFrame.setExtendedState(Frame.NORMAL);
@@ -212,7 +210,7 @@ public class JDGui extends SwingGui {
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
-                        // showStatsDialog();
+                        showStatsDialog();
 
                     }
                 }.start();
@@ -223,7 +221,7 @@ public class JDGui extends SwingGui {
 
     protected void showStatsDialog() {
 
-        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | Dialog.BUTTONS_HIDE_CANCEL, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), null, null);
+        ConfirmDialog d = new ConfirmDialog(Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI._.JDGui_showStatsDialog_title_(), _GUI._.JDGui_showStatsDialog_message_(), NewTheme.I().getIcon("bug", 32), _GUI._.JDGui_showStatsDialog_yes_(), _GUI._.JDGui_showStatsDialog_no_());
         d.setDoNotShowAgainSelected(true);
         try {
             Dialog.getInstance().showDialog(d);
@@ -533,8 +531,7 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Adds view to the main tabbedpane if setActive is true, the enw panel will
-     * be selected
+     * Adds view to the main tabbedpane if setActive is true, the enw panel will be selected
      */
     @Override
     public void setContent(final View view, boolean setActive) {
@@ -574,18 +571,15 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so
-     * we set different sizes. for 1.5 it is only possible to use
+     * Sets the Windows Icons. lot's of lafs have problems resizing the icon. so we set different sizes. for 1.5 it is only possible to use
      * {@link JFrame#setIconImage(Image)}
      */
     private void setWindowIcon() {
         /*
-         * NOTE: on linux setIconImage only works when the frame is set
-         * invisible and visible again
+         * NOTE: on linux setIconImage only works when the frame is set invisible and visible again
          */
         /*
-         * we only load a single resolution icon here to show a jd icon instead
-         * of java icon and not having a great impact on startup time
+         * we only load a single resolution icon here to show a jd icon instead of java icon and not having a great impact on startup time
          */
         new EDTHelper<Object>() {
             @Override
@@ -638,8 +632,7 @@ public class JDGui extends SwingGui {
     }
 
     /**
-     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays
-     * it
+     * Converts a {@link ConfigContainer} to a {@link AddonConfig} and displays it
      * 
      * @param container
      */
