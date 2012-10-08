@@ -1,4 +1,4 @@
-package org.jdownloader.statistics;
+package org.jdownloader.jdserv.stats;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;

@@ -16,6 +16,7 @@ import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.jdserv.stats.StatsManagerConfig;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.remotecall.RemoteClient;
 import org.jdownloader.statistics.interfaces.StatisticsInterface;
