@@ -1,6 +1,6 @@
-JDUpdater_start_restart_update_now_=Ažuriranje i restart sada!
+JDUpdater_start_restart_update_now_=Ažuriraj i restartaj sada!
 JDUpdater_start_updater_update_msg=Restart radi provedbe ažuriranja.
-JDUpdater_start_updater_update_title=Pronađena nova verzija!
+JDUpdater_start_updater_update_title=Pronađena je nova verzija!
 dialog_rly_cancel=Stvarno prekinuti ažuriranje?
 error_service_not_available_right_now=Servis nije dostupan. Pokušajte ponovno za 60 sek.)
 exit=Zatvori
@@ -10,7 +10,7 @@ install_updates_now=Instaliraj sada!
 literally_exit=Završena provjera ažuriranja - Izlaz
 progress=%s1/%s2
 start=Pokrenut Updater
-udpates_found=Ažuriranje(a) pronađeno!
+udpates_found=Pronađena ažuriranja!
 update_already_running=Ažuriranje je već pokrenuto
 update_dialog_cancel=Prekid
 update_dialog_later=Pitaj me kasnije
