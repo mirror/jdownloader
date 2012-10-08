@@ -38,7 +38,7 @@ public interface StatisticsInterface extends RemoteCallInterface {
      */
     void onExit(String id, long time, long runtime);
 
-    void onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp);
+    void onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp, long speedBytePS);
 
     void enabled(boolean enabled);
 

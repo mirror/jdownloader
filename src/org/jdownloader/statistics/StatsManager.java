@@ -108,7 +108,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         return config.isEnabled();
     }
 
-    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink, long speedBytePS) {
+    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink, final long speedBytePS) {
         if (!isEnabled()) return;
         try {
             final String fp = getFingerprint(outputCompleteFile);
@@ -124,7 +124,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
                 public void doRemoteCall() {
                     if (!isEnabled()) return;
 
-                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp);
+                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS);
 
                 }
 
