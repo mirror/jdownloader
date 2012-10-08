@@ -17,6 +17,7 @@ import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.remotecall.RemoteClient;
 import org.jdownloader.statistics.interfaces.StatisticsInterface;
 
 public class StatsManager implements GenericConfigEventListener<Object> {
@@ -42,7 +43,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
      * Create a new instance of StatsManager. This is a singleton class. Access the only existing instance by using {@link #getInstance()}.
      */
     private StatsManager() {
-        remote = new LoggerRemoteClient(org.jdownloader.jdserv.JD_SERV_CONSTANTS.CLIENT).create(StatisticsInterface.class);
+        remote = new LoggerRemoteClient(new RemoteClient("update3.jdownloader.org/stats")).create(StatisticsInterface.class);
         config = JsonConfig.create(StatsManagerConfig.class);
         logger = LogController.getInstance().getLogger(StatsManager.class.getName());
         queue = new Queue("StatsManager Queue") {
