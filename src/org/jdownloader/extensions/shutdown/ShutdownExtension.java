@@ -198,7 +198,7 @@ public class ShutdownExtension extends AbstractExtension<ShutdownConfig, Shutdow
                 logger.log(e);
             }
             try {
-                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-p", "now" }, null, 0);
+                JDUtilities.runCommand("sudo", new String[] { "shutdown", "-P", "now" }, null, 0);
             } catch (Exception e) {
                 logger.log(e);
             }

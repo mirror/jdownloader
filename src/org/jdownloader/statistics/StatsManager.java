@@ -108,7 +108,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
         return config.isEnabled();
     }
 
-    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink) {
+    public void onFileDownloaded(File outputCompleteFile, final DownloadLink downloadLink, long speedBytePS) {
         if (!isEnabled()) return;
         try {
             final String fp = getFingerprint(outputCompleteFile);

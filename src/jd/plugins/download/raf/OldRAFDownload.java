@@ -112,7 +112,8 @@ public class OldRAFDownload extends DownloadInterface {
     public static final String                  PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
     protected Request                           request                  = null;
     protected ManagedThrottledConnectionHandler connectionHandler        = null;
-    private final long                          startTimeStamp           = System.currentTimeMillis();
+    private long                                startTimeStamp           = -1;
+    private long                                sizeBefore               = 0;
 
     /**
      * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
@@ -368,8 +369,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
-                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
+                 * is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -431,8 +432,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
-     * links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
      */
     protected void onChunkFinished() {
         synchronized (this) {
@@ -455,6 +455,8 @@ public class OldRAFDownload extends DownloadInterface {
      */
     public boolean startDownload() throws Exception {
         try {
+            startTimeStamp = System.currentTimeMillis();
+            sizeBefore = downloadLink.getDownloadCurrent();
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
                 downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
@@ -729,8 +731,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
-     * schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -774,7 +775,6 @@ public class OldRAFDownload extends DownloadInterface {
                         downloadLink.getLinkStatus().setStatusText(_JDT._.system_download_doCRC2("MD5"));
                         String hashFile = Hash.getMD5(part);
                         success = hash.equalsIgnoreCase(hashFile);
-
                     } else if (!StringUtils.isEmpty(hash = downloadLink.getSha1Hash()) && hash.length() == 40) {
                         /* SHA1 Check */
                         type = "SHA1";
@@ -862,8 +862,13 @@ public class OldRAFDownload extends DownloadInterface {
             if (renameOkay) {
 
                 if (StatsManager.I().isEnabled()) {
-
-                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink);
+                    long speed = 0;
+                    try {
+                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / (System.currentTimeMillis() - getStartTimeStamp());
+                    } catch (final Throwable e) {
+                        LogSource.exception(logger, e);
+                    }
+                    StatsManager.I().onFileDownloaded(outputCompleteFile, downloadLink, speed);
                 }
 
                 /* save absolutepath as final location property */
