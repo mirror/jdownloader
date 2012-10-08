@@ -369,8 +369,8 @@ public class OldRAFDownload extends DownloadInterface {
         if (doFilesizeCheck() && (totalLinkBytesLoaded <= 0 || totalLinkBytesLoaded != getFileSize() && getFileSize() > 0)) {
             if (totalLinkBytesLoaded > getFileSize()) {
                 /*
-                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in most cases the file
-                 * is okay! WONTFIX because new downloadsystem is on its way
+                 * workaround for old bug deep in this downloadsystem. more data got loaded (maybe just counting bug) than filesize. but in
+                 * most cases the file is okay! WONTFIX because new downloadsystem is on its way
                  */
                 logger.severe("Filesize: " + getFileSize() + " Loaded: " + totalLinkBytesLoaded);
                 if (!linkStatus.isFailed()) {
@@ -432,7 +432,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des links an
+     * Wartet bis alle Chunks fertig sind, aktuelisiert den downloadlink regelmaesig und fordert beim Controller eine aktualisierung des
+     * links an
      */
     protected void onChunkFinished() {
         synchronized (this) {
@@ -731,7 +732,8 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl schlaegt.,
+     * Setzt vor ! dem download dden requesttimeout. Sollte nicht zu niedrig sein weil sonst das automatische kopieren der Connections fehl
+     * schlaegt.,
      */
     public void setRequestTimeout(int requestTimeout) {
         this.requestTimeout = requestTimeout;
@@ -864,7 +866,7 @@ public class OldRAFDownload extends DownloadInterface {
                 if (StatsManager.I().isEnabled()) {
                     long speed = 0;
                     try {
-                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / (System.currentTimeMillis() - getStartTimeStamp());
+                        speed = (outputCompleteFile.length() - Math.max(0, sizeBefore)) / (System.currentTimeMillis() - getStartTimeStamp()) / 1000;
                     } catch (final Throwable e) {
                         LogSource.exception(logger, e);
                     }
