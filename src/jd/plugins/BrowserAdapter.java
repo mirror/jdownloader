@@ -159,6 +159,22 @@ public class BrowserAdapter {
         return dl;
     }
 
+    /**
+     * returns a DownloadInterface you need to call .startDownload() on to start the download
+     * 
+     * @param br
+     *            a browser
+     * @param downloadLink
+     *            the untouched download link
+     * @param link
+     *            direct link to start the download
+     * @param b
+     *            is this download resumeable
+     * @param c
+     *            number of chunks, positive value to force this number of chunks, negative to set max chunks ("-5" sets max to 5 chunks)
+     * @return DownloadInterface
+     * @throws Exception
+     */
     public static DownloadInterface openDownload(Browser br, DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
         if (downloadLink.getLivePlugin() == null) return null;
         Request r;
