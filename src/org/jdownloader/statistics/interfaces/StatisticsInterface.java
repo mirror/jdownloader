@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.appwork.remotecall.RemoteCallInterface;
-import org.appwork.statserv.HosterInfo;
 
 public interface StatisticsInterface extends RemoteCallInterface {
     /**
