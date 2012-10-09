@@ -126,7 +126,7 @@ public class StatsManager implements GenericConfigEventListener<Object> {
                 public void doRemoteCall() {
                     if (!isEnabled()) return;
 
-                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS);
+                    remote.onDownload(plgHost, linkHost, plgVersion, accountUsed, size, fp, speedBytePS, chunks);
 
                 }
 

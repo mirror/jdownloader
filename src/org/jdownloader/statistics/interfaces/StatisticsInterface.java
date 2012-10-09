@@ -20,7 +20,9 @@ public interface StatisticsInterface extends RemoteCallInterface {
      * @return
      */
     String onStartup(String id, long startTime, String timeZone, String os, long javaVersion, boolean jared, String branch, long revision);
+
     public ArrayList<HosterInfo> listHoster();
+
     //
     /**
      * Will be called once the first time jd started
@@ -39,7 +41,7 @@ public interface StatisticsInterface extends RemoteCallInterface {
      */
     void onExit(String id, long time, long runtime);
 
-    void onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp, long speedBytePS);
+    void onDownload(String plgHost, String linkHost, long plgVersion, boolean accountUsed, long size, String fp, long speedBytePS, int chunks);
 
     void enabled(boolean enabled);
 
