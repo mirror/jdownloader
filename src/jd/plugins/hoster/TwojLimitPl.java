@@ -105,7 +105,7 @@ public class TwojLimitPl extends PluginForHost {
         String hosts = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         try {
-            hosts = br.getPage("http://www.nopremium.pl/clipboard.php");
+            hosts = br.getPage("https://www.twojlimit.pl/clipboard.php");
             login(account, true);
 
         } catch (Exception e) {
