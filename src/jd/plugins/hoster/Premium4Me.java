@@ -39,6 +39,7 @@ public class Premium4Me extends PluginForHost {
 
     public Premium4Me(PluginWrapper wrapper) {
         super(wrapper);
+        setStartIntervall(2 * 1000L);
         this.enablePremium("http://premium4.me/");
     }
 
@@ -136,6 +137,31 @@ public class Premium4Me extends PluginForHost {
             String user = Encoding.urlEncode(acc.getUser());
             String pw = Encoding.urlEncode(acc.getPass());
             String url = link.getDownloadURL().replaceFirst("https?://", "");
+
+            /* begin code from premium4me support */
+            if (url.startsWith("http://")) {
+                url = url.substring(7);
+            }
+            if (url.startsWith("www.")) {
+                url = url.substring(4);
+            }
+            if (url.startsWith("freakshare.com/")) {
+                url = url.replaceFirst("freakshare.com/", "fs.com/");
+            } else if (url.startsWith("depositfiles.com/")) {
+                url = url.replaceFirst("depositfiles.com/", "df.com/");
+            } else if (url.startsWith("netload.in/")) {
+                url = url.replaceFirst("netload.in/", "nl.in/");
+            } else if (url.startsWith("filepost.com/")) {
+                url = url.replaceFirst("filepost.com/", "fp.com/");
+            } else if (url.startsWith("extabit.com/")) {
+                url = url.replaceFirst("extabit.com/", "eb.com/");
+            } else if (url.startsWith("turbobit.net/")) {
+                url = url.replaceFirst("turbobit.net/", "tb.net/");
+            } else if (url.startsWith("filefactory.com/")) {
+                url = url.replaceFirst("filefactory.com/", "ff.com/");
+            }
+            /* end code from premium4me support */
+
             url = Encoding.urlEncode(url);
             showMessage(link, "Phase 1/3: Login...");
             br.postPageRaw("http://premium4.me/login.php", "{\"u\":\"" + user + "\", \"p\":\"" + pw + "\", \"r\":true}");
@@ -146,7 +172,7 @@ public class Premium4Me extends PluginForHost {
             }
             br.setFollowRedirects(true);
             showMessage(link, "Phase 2/3: Get link");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium4.me/getfile.php?link=" + url, true, 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium4.me/getfile.php?link=" + url, true, -5);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
