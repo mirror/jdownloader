@@ -89,6 +89,11 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
     private Throwable                       exception         = null;
 
     private LogSource                       downloadLogger    = null;
+    private long                            startTimestamp    = -1;
+
+    public long getStartTimestamp() {
+        return startTimestamp;
+    }
 
     public DownloadSpeedManager getConnectionHandler() {
         return connectionHandler;
@@ -198,6 +203,7 @@ public class SingleDownloadController extends BrowserSettingsThread implements S
 
     private void handlePlugin() {
         try {
+            startTimestamp = System.currentTimeMillis();
             linkStatus.setStatusText(_JDT._.gui_download_create_connection());
             if ((downloadLink.getLinkStatus().getRetryCount()) <= livePlugin.getMaxRetries(downloadLink, getAccount())) {
                 final long sizeBefore = Math.max(0, downloadLink.getDownloadCurrent());
