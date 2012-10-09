@@ -1,8 +1,10 @@
 package org.jdownloader.statistics.interfaces;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.appwork.remotecall.RemoteCallInterface;
+import org.appwork.statserv.HosterInfo;
 
 public interface StatisticsInterface extends RemoteCallInterface {
     /**
@@ -19,7 +21,7 @@ public interface StatisticsInterface extends RemoteCallInterface {
      * @return
      */
     String onStartup(String id, long startTime, String timeZone, String os, long javaVersion, boolean jared, String branch, long revision);
-
+    public ArrayList<HosterInfo> listHoster();
     //
     /**
      * Will be called once the first time jd started
