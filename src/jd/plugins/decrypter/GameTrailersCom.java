@@ -47,9 +47,17 @@ public class GameTrailersCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
 
-        String videoTitle = br.getRegex("<title>(.*?)\\s?\\|\\s?Gametrailers</title>").getMatch(0);
-        if (videoTitle == null) {
-            videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\\s?\\|\\s?Gametrailers\"").getMatch(0);
+        String videoTitle = null;
+        final String title1 = br.getRegex("<h1><a href=\"http://[^<>\"]*?\">([^<>\"/]*?)</a></h1>").getMatch(0);
+        String title2 = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"/>").getMatch(0);
+        if (title2 == null) title2 = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (title1 != null && title1 != null) {
+            videoTitle = Encoding.htmlDecode(title1.trim()) + " - " + Encoding.htmlDecode(title2.trim());
+        } else {
+            videoTitle = br.getRegex("<title>(.*?)\\s?\\|\\s?Gametrailers</title>").getMatch(0);
+            if (videoTitle == null) {
+                videoTitle = br.getRegex("name=\"title\" content=\"(.*?)\\s?\\|\\s?Gametrailers\"").getMatch(0);
+            }
         }
 
         String contentId = br.getRegex("data\\-contentId=(\'|\")([^\'\"]+)").getMatch(1);

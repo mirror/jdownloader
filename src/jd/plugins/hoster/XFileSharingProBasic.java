@@ -75,14 +75,14 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.6
+    // XfileSharingProBasic Version 2.5.7.7
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
     // protocol: no https
     // captchatype: null 4dignum recaptcha
-    // other: no redirects
+    // other:
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -120,7 +120,6 @@ public class XFileSharingProBasic extends PluginForHost {
         br.setFollowRedirects(true);
         prepBrowser(br);
         getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
@@ -186,7 +185,7 @@ public class XFileSharingProBasic extends PluginForHost {
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
         }
@@ -201,11 +200,13 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+        br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
+
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -217,6 +218,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
             dllink = getDllink();
         }
+
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -295,11 +297,15 @@ public class XFileSharingProBasic extends PluginForHost {
                     skipWaittime = true;
                 }
                 /* Captcha END */
+
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
+
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
+
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
                 checkErrors(downloadLink, true, passCode);
+
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -718,14 +724,14 @@ public class XFileSharingProBasic extends PluginForHost {
         String passCode = null;
         requestFileInformation(downloadLink);
         login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, 0, "freelink2");
         } else {
-            dllink = checkDirectLink(downloadLink, "premlink");
+            String dllink = checkDirectLink(downloadLink, "premlink");
+
             if (dllink == null) {
+                br.setFollowRedirects(false);
                 getPage(downloadLink.getDownloadURL());
                 dllink = getDllink();
                 if (dllink == null) {
@@ -742,6 +748,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {

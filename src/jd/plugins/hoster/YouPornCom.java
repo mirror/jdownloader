@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youporn.com" }, urls = { "http://(www\\.)?((de|fr|es|it|nl|tr)\\.)?youporn\\.com/watch/\\d+/?.+/?" }, flags = { 0 })
 public class YouPornCom extends PluginForHost {
 
     String DLLINK = null;
@@ -46,6 +47,10 @@ public class YouPornCom extends PluginForHost {
         return -1;
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://www.youporn.com/watch/" + new Regex(link.getDownloadURL(), "youporn\\.com/watch/(\\d+)/").getMatch(0) + "/" + System.currentTimeMillis() + "/");
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink parameter) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -54,6 +59,9 @@ public class YouPornCom extends PluginForHost {
         br.setCookie("http://youporn.com/", "language", "en");
         br.getPage(parameter.getDownloadURL());
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        // Offline link
+        if (br.containsHTML("<div id=\"video\\-not\\-found\\-related\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
         if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?) \\- Free Porn Videos - YouPorn</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("addthis:title=\"YouPorn - (.*?)\"></a>").getMatch(0);

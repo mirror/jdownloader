@@ -67,14 +67,14 @@ public class QtyFilesCom extends PluginForHost {
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static Object LOCK                         = new Object();
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.1-raz
     // mods:many, do NOT update xfilesharing version!!
     // non account: 1(no resume) * ? with waits after captcha
     // free account: same as above
-    // premium account: **not tested**
+    // premium account: 10 * 1
     // protocol: no https
     // captchatype: recaptcha
     // other: no redirects
@@ -605,7 +605,7 @@ public class QtyFilesCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(1);
                     account.setMaxSimultanDownloads(-1);
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -672,7 +672,6 @@ public class QtyFilesCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             // Check status again to make sure that we got the filename
@@ -683,6 +682,7 @@ public class QtyFilesCom extends PluginForHost {
             if (dllink == null) {
                 // Check status again to make sure that we got the filename
                 requestFileInformation(link);
+                br.setFollowRedirects(false);
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(link, true, passCode);
@@ -699,7 +699,7 @@ public class QtyFilesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();

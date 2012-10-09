@@ -193,7 +193,12 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
         } else {
-            if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.getRedirectLocation() != null) {
+                logger.info("Redirect done!");
+                br.getPage(br.getRedirectLocation());
+            } else {
+                logger.info("There was no redirect!");
+            }
             if (br.containsHTML("(>File no longer available<|>Error 404 \\- Requested)")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;

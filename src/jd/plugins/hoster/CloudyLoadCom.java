@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.com/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloudyload.com" }, urls = { "http://(www\\.)?cloudyload\\.comdecrypted/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 2 })
 public class CloudyLoadCom extends PluginForHost {
 
     public CloudyLoadCom(PluginWrapper wrapper) {
@@ -64,6 +64,10 @@ public class CloudyLoadCom extends PluginForHost {
     private final String  MAINPAGE  = "http://cloudyload.com";
     private final boolean RESUME    = false;
     private final int     MAXCHUNKS = 1;
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace(this.getHost() + "decrypted", this.getHost()));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

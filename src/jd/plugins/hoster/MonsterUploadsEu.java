@@ -148,7 +148,7 @@ public class MonsterUploadsEu extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "monsterdownloader\\.com/monsterdl\\.cgi\\?filename=([^<>\"]*?)\\&").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);

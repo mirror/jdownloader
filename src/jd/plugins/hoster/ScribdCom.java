@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?(de\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
     private final String   formats    = "formats";
@@ -50,15 +50,24 @@ public class ScribdCom extends PluginForHost {
         setConfigElements();
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("de.scribd.com/", "scribd.com/"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setUrlDownload(br.getRedirectLocation());
-            br.getPage(br.getRedirectLocation());
+        for (int i = 0; i <= 3; i++) {
+            String newurl = br.getRedirectLocation();
+            if (newurl != null) {
+                if (newurl.contains("/removal/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                downloadLink.setUrlDownload(newurl);
+                br.getPage(downloadLink.getDownloadURL());
+            } else {
+                break;
+            }
         }
         String filename = br.getRegex("<meta name=\"title\" content=\"(.*?)\"").getMatch(0);
         if (filename == null) {
@@ -74,7 +83,7 @@ public class ScribdCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (br.containsHTML("class=\"download_disabled_button\"")) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
+        if (true) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
@@ -126,17 +135,12 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("(>\\[not available on mobile\\]<|>You must be <a class=\"login\")")) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
-        // No download handling known
-        if (true) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://www.scribd.com" + null, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            if (br.containsHTML(">Can\\'t download that document") || br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        try {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        } catch (final Throwable e) {
+            if (e instanceof PluginException) throw (PluginException) e;
         }
-        downloadLink.setFinalFileName(downloadLink.getName() + ".pdf");
-        dl.startDownload();
+        throw new PluginException(LinkStatus.ERROR_FATAL, NODOWNLOAD);
     }
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {

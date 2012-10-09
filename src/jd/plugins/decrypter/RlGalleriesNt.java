@@ -62,7 +62,6 @@ public class RlGalleriesNt extends PluginForDecrypt {
             }
             logger.info("Decrypting link " + counter + " of " + links.length);
             sleep(new Random().nextInt(3) + 1000, param);
-            brc.getHeaders().put("Referer", "http://a4you.urlgalleries.net/blog_gallery.php?id=2983923&t=2&g=TLE+-+2010-12-28+-+Mathea+");
             try {
                 brc.getPage(host + aLink);
             } catch (final Exception e) {

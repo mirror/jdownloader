@@ -26,7 +26,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DTemplateDecrypter" }, urls = { "http://(www\\.)?(cloudyload\\.com|filebeer\\.info)/\\d+~f" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "DTemplateDecrypter" }, urls = { "http://(www\\.)?(cloudyload\\.com|filebeer\\.info)/(\\d+~f|[A-Za-z0-9]+)" }, flags = { 0 })
 public class DTemplateDecrypter extends PluginForDecrypt {
 
     public DTemplateDecrypter(PluginWrapper wrapper) {
@@ -38,32 +38,34 @@ public class DTemplateDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getURL().contains("/index.html")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-
-        ArrayList<String> allPages = new ArrayList<String>();
-        allPages.add("1");
-        final String[] tempPages = br.getRegex("\"\\?page=(\\d+)\"").getColumn(0);
-        if (tempPages != null && tempPages.length != 0) {
-            for (final String aPage : tempPages)
-                if (!allPages.contains(aPage)) allPages.add(aPage);
-        }
-
-        final String host = new Regex(parameter, "http://(www\\.)?(.*?)/\\d+~f").getMatch(1);
-        for (final String currentPage : allPages) {
-            if (!currentPage.equals("1")) br.getPage(parameter + "?page=" + currentPage);
-            final String[] links = br.getRegex("<a href=\"(http://(www\\.)?" + host + "/[a-z0-9]+)").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+        final String host = new Regex(parameter, "http://(www\\.)?([^<>\"/]*?)/\\d+(~f)?").getMatch(1);
+        if (parameter.contains("~f")) {
+            br.getPage(parameter);
+            if (br.getURL().contains("/index.html")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink(singleLink));
+            ArrayList<String> allPages = new ArrayList<String>();
+            allPages.add("1");
+            final String[] tempPages = br.getRegex("\"\\?page=(\\d+)\"").getColumn(0);
+            if (tempPages != null && tempPages.length != 0) {
+                for (final String aPage : tempPages)
+                    if (!allPages.contains(aPage)) allPages.add(aPage);
+            }
+
+            for (final String currentPage : allPages) {
+                if (!currentPage.equals("1")) br.getPage(parameter + "?page=" + currentPage);
+                final String[] links = br.getRegex("<a href=\"(http://(www\\.)?" + host + "/[a-z0-9]+)").getColumn(0);
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (String singleLink : links)
+                    decryptedLinks.add(createDownloadlink(singleLink.replace(host, host + "decrypted")));
+            }
+        } else {
+            decryptedLinks.add(createDownloadlink(parameter.replace(host, host + "decrypted")));
         }
         return decryptedLinks;
     }
-
 }

@@ -43,20 +43,27 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "restfile.com" }, urls = { "https?://(www\\.)?restfile\\.(com?|net)/[a-z0-9]{12}" }, flags = { 0 })
 public class RestFileCom extends PluginForHost {
 
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
-    private static final String COOKIE_HOST         = "http://restfile.com";
+    private static final String COOKIE_HOST         = "http://restfile.net";
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
 
     // XfileSharingProBasic Version 2.5.3.5
+    // mods:
+    // non account: 20 * 20
+    // free account: chunk * maxdl
+    // premium account: chunk * maxdl
+    // protocol: no https
+    // captchatype: recaptcha
+    // other: redirects
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload("http://www.restfile.net/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
     }
 
     @Override
@@ -84,11 +91,12 @@ public class RestFileCom extends PluginForHost {
         this.setBrowserExclusive();
         /** Server is really really slow when loading html */
         br.setReadTimeout(3 * 60 * 1000);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         doSomething();
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, Pattern.compile(">File Not Found<", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;

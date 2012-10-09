@@ -46,7 +46,7 @@ public class GameTrailersCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         String dllink = downloadLink.getDownloadURL();
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);

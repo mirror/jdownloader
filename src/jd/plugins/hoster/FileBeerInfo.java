@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeer.info" }, urls = { "http://(www\\.)?filebeer\\.info/(?!faq|register|login|terms|report_file)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeer.info" }, urls = { "http://(www\\.)?filebeer\\.infodecrypted/(?!faq|register|login|terms|report_file)[A-Za-z0-9]+" }, flags = { 2 })
 public class FileBeerInfo extends PluginForHost {
 
     public FileBeerInfo(PluginWrapper wrapper) {
@@ -64,6 +64,10 @@ public class FileBeerInfo extends PluginForHost {
     private final String  TYPE      = "php";
     private final boolean RESUME    = true;
     private final int     MAXCHUNKS = 1;
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace(this.getHost() + "decrypted", this.getHost()));
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {

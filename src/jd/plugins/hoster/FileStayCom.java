@@ -381,32 +381,9 @@ public class FileStayCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "This direct link will be available for your IP next \\d+ hours<br><br>\\-\\->[\t\n\r ]+<a style=\"margin\\-top:15px;\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link
-                        // format.
-                        if (dllink == null) {
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filestay\\.com:\\d+/d/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
             }
         }
         return dllink;
