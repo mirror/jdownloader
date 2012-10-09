@@ -491,8 +491,11 @@ public class Launcher {
                             if (event.getType().equals(ProxyEvent.Types.REFRESH)) {
                                 HTTPProxy proxy = null;
                                 if ((proxy = ProxyController.getInstance().getDefaultProxy()) != Browser._getGlobalProxy()) {
-                                    Launcher.LOG.info("Set new DefaultProxy: " + proxy);
-                                    Browser.setGlobalProxy(proxy);
+                                    try {
+                                        Browser.setGlobalProxy(proxy);
+                                    } finally {
+                                        Launcher.LOG.info("Set new DefaultProxy: " + proxy);
+                                    }
                                 }
                             }
 
