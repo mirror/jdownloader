@@ -149,7 +149,7 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
             filename = Encoding.htmlDecode(filename.trim());
-            externID = br.getRegex("myspace\\.com/videos/vplayer\\.swf\" /><param name=\"flashvars\" value=\"m=(\\d+)").getMatch(0);
+            externID = br.getRegex("mediaservices\\.myspace\\.com/services/media/embed\\.aspx/m=(\\d+)").getMatch(0);
             if (externID != null) {
                 br.getPage("http://mediaservices.myspace.com/services/rss.ashx?videoID=" + externID + "&type=video&el=");
                 final String finallink = br.getRegex("<media:player url=\"(http://[^<>\"]*?)\"").getMatch(0);

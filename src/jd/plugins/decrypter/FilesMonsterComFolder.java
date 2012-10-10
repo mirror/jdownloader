@@ -32,13 +32,14 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
     public FilesMonsterComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
-    
+
     // DEV NOTES:
     // packagename is useless, as Filesmonster decrypter creates its own..
 
-    
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("1");
         String parameter = param.toString();
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(false);
@@ -51,19 +52,22 @@ public class FilesMonsterComFolder extends PluginForDecrypt {
 
         parsePage(decryptedLinks);
 
-        String firstpanel = br.getRegex("<(.*?)<table").getMatch(0);
+        final String firstpanel = br.getRegex("<(.*?)<table").getMatch(0);
         if (firstpanel == null) {
             logger.warning("FilesMonster Folder Decrypter: Page finding broken: " + parameter);
             logger.warning("FilesMonster Folder Decrypter: Please report to JDownloader Development Team.");
             logger.warning("FilesMonster Folder Decrypter: Continuing with the first page only.");
         }
-        String[] Pages = new Regex(firstpanel, "\\&nbsp\\;<a href=\\'(folders.php\\?fid=.*?)\\'").getColumn(0);
-        if (Pages == null || Pages.length == 0) return null;
-        if (Pages != null && Pages.length != 0) {
-            for (String page : Pages) {
-                br.getPage("http://filesmonster.com/" + page);
-                parsePage(decryptedLinks);
-            }
+        /** Multi-Page-Handling is broken */
+        final boolean decryptMultiplePages = false;
+        final String[] pages = new Regex(firstpanel, "\\&nbsp\\;<a href=\\'(folders.php\\?fid=.*?)\\'").getColumn(0);
+        if (pages != null && pages.length != 0 && decryptMultiplePages) {
+            for (final String page : pages)
+                if (!allPages.contains(page)) allPages.add(page);
+        }
+        for (final String currentPage : allPages) {
+            if (!currentPage.equals("1")) br.getPage("http://filesmonster.com/" + currentPage);
+            parsePage(decryptedLinks);
         }
         return decryptedLinks;
     }

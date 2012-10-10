@@ -954,3 +954,4 @@ jd/plugins/hoster/OvFileCom.class
 jd/plugins/hoster/SavefileRo.class
 jd/plugins/hoster/BebasUploadCom.class
 jd/plugins/hoster/UploadVilleCom.class
+jd/plugins/hoster/ShareSharedCom.class

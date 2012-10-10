@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -42,7 +40,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
 
     public static final String FILENAMEREGEX = "\">File name:</td>[\t\n\r ]+<td>(.*?)</td>";
     public static final String FILESIZEREGEX = "\">File size:</td>[\t\n\r ]+<td>(.*?)</td>";
-    private static boolean     LIMITREACHED  = false;
+    private static String      FAILED        = null;
 
     /** Handling similar to BitBonusComDecrypt */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -69,9 +67,26 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         }
         String fname = br.getRegex(FILENAMEREGEX).getMatch(0);
         String fsize = br.getRegex(FILESIZEREGEX).getMatch(0);
-        if (!LIMITREACHED) {
-            String[] decryptedStuff = getTempLinks(br);
-            if (decryptedStuff == null || decryptedStuff.length == 0) return null;
+
+        String[] decryptedStuff = null;
+        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
+        if (postThat != null) {
+            br.postPage("http://filesmonster.com" + postThat, "");
+            final String findOtherLinks = br.getRegex("'(/dl/rft/.*?)\\'").getMatch(0);
+            if (findOtherLinks != null) {
+                br.getPage("http://filesmonster.com" + findOtherLinks);
+                decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
+            }
+        } else {
+            FAILED = "Limit reached";
+        }
+        if (br.containsHTML(">You need Premium membership to download files larger than")) FAILED = "There are no free downloadlinks";
+
+        if (FAILED == null) {
+            if (decryptedStuff == null || decryptedStuff.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             String theImportantPartOfTheMainLink = new Regex(parameter, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
             for (String fileInfo : decryptedStuff) {
                 String filename = new Regex(fileInfo, "\"name\":\"(.*?)\"").getMatch(0);
@@ -92,7 +107,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(finalOne);
             }
         } else {
-            logger.info("postThat is null, probably limit reached, adding only the premium link...");
+            logger.info("Failed to get free links because: " + FAILED);
         }
         final DownloadLink thebigone = createDownloadlink(parameter.replace("filesmonster.com", "filesmonsterdecrypted.com"));
         if (fname != null && fsize != null) {
@@ -105,27 +120,11 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         decryptedLinks.add(thebigone);
         /** All those links belong to the same file so lets make a package */
         if (fname != null) {
-            FilePackage fp = FilePackage.getInstance();
+            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fname.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
-    }
-
-    public static String[] getTempLinks(final Browser br) throws IOException {
-        String[] decryptedStuff = null;
-        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
-        if (postThat != null) {
-            br.postPage("http://filesmonster.com" + postThat, "");
-            final String findOtherLinks = br.getRegex("reserve_ticket\\('(/dl/rft/.*?)'\\)").getMatch(0);
-            if (findOtherLinks != null) {
-                br.getPage("http://filesmonster.com" + findOtherLinks);
-                decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
-            }
-        } else {
-            LIMITREACHED = true;
-        }
-        return decryptedStuff;
     }
 
 }

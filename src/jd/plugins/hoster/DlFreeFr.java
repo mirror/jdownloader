@@ -72,8 +72,11 @@ public class DlFreeFr extends PluginForHost {
 
         /* create challenge url */
         Browser ayl = br.cloneBrowser();
+        // http://api-ayl.appspot.com/challenge?env=prod&key=P~zQ~O0zV0WTiAzC-iw0navWQpCLoYEP&callback=Adyoulike.g._jsonp_16543562935685974
         ayl.getPage("http://api-ayl.appspot.com/challenge?key=" + c.get("key") + "&env=" + c.get("env") + "&callback=Adyoulike.g._jsonp_" + (int) (Math.random() * (99999 - 10000) + 10000));
-        for (String[] s : ayl.getRegex("\"([^\\{\"]+)\":\"?([^,\"\\}]+)\"?").getMatches()) {
+        final String[][] allValues = ayl.getRegex("\"([^\\{\\}\"]+)\":\"?([^,\"\\}\\{]+)\"?").getMatches();
+        if (allValues == null || allValues.length == 0) return false;
+        for (String[] s : allValues) {
             c.put(s[0], s[1]);
         }
 

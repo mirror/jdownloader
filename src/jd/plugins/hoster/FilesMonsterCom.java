@@ -64,7 +64,7 @@ public class FilesMonsterCom extends PluginForHost {
 
     // @Override to keep compatible to stable
     public boolean canHandle(DownloadLink downloadLink, Account account) {
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null && account == null) {
+        if (downloadLink.getBooleanProperty("PREMIUMONLY") && account == null) {
             /* premium only */
             return false;
         }
@@ -116,7 +116,7 @@ public class FilesMonsterCom extends PluginForHost {
             }
         }
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        if (downloadLink.getBooleanProperty("PREMIUMONLY")) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         return AvailableStatus.TRUE;
 
     }
@@ -126,7 +126,7 @@ public class FilesMonsterCom extends PluginForHost {
         String mainlinkpart = new Regex(mainlink, "filesmonster\\.com/download\\.php\\?id=(.+)").getMatch(0);
         String temporaryLink = null;
         br.getPage(mainlink);
-        String[] allInfo = jd.plugins.decrypter.FilesMonsterDecrypter.getTempLinks(br);
+        final String[] allInfo = getTempLinks();
         if (allInfo != null && allInfo.length != 0) {
             for (String singleInfo : allInfo)
                 if (singleInfo.contains("\"name\":\"" + originalfilename + "\"")) temporaryLink = new Regex(singleInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
@@ -166,7 +166,7 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (downloadLink.getStringProperty("PREMIUMONLY") != null) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        if (downloadLink.getBooleanProperty("PREMIUMONLY")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         handleErrors();
         br.setFollowRedirects(true);
         String postThat = br.getRegex(POSTTHATREGEX).getMatch(0);
@@ -178,7 +178,7 @@ public class FilesMonsterCom extends PluginForHost {
         if (!downloadLink.getDownloadURL().contains("/free/2/")) {
             br.postPage(postThat, "");
             if (br.containsHTML("Free download links:")) {
-                downloadLink.setProperty("PREMIUMONLY", "true");
+                downloadLink.setProperty("PREMIUMONLY", true);
                 throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
             }
         } else {
@@ -218,12 +218,12 @@ public class FilesMonsterCom extends PluginForHost {
             String nextLink = firstPart + "2/" + linkPart + "/";
             br.getPage(nextLink);
         }
-        String strangeLink = br.getRegex("get_link\\('(/dl/.*?)'\\)").getMatch(0);
-        if (strangeLink == null) {
+        String overviewLink = br.getRegex("get_link\\('(/dl/.*?)'\\)").getMatch(0);
+        if (overviewLink == null) {
             logger.warning("The following string could not be found: strangeLink");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        strangeLink = "http://filesmonster.com" + strangeLink;
+        overviewLink = "http://filesmonster.com" + overviewLink;
         String regexedwaittime = br.getRegex("id=\\'sec\\'>(\\d+)</span>").getMatch(0);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
@@ -235,7 +235,7 @@ public class FilesMonsterCom extends PluginForHost {
         }
         sleep(shortWaittime * 1100l, downloadLink);
         try {
-            br.getPage(strangeLink);
+            br.getPage(overviewLink);
         } catch (Exception e) {
         }
         handleErrors();
@@ -323,6 +323,20 @@ public class FilesMonsterCom extends PluginForHost {
             br.followConnection();
         }
         dl.startDownload();
+    }
+
+    private String[] getTempLinks() throws IOException {
+        String[] decryptedStuff = null;
+        final String postThat = br.getRegex("\"(/dl/.*?)\"").getMatch(0);
+        if (postThat != null) {
+            br.postPage("http://filesmonster.com" + postThat, "");
+            final String findOtherLinks = br.getRegex("\\'(/dl/rft/.*?)\\'").getMatch(0);
+            if (findOtherLinks != null) {
+                br.getPage("http://filesmonster.com" + findOtherLinks);
+                decryptedStuff = br.getRegex("\\{(.*?)\\}").getColumn(0);
+            }
+        }
+        return decryptedStuff;
     }
 
     @Override

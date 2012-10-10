@@ -41,6 +41,16 @@ public class GeTtDecrypter extends PluginForDecrypt {
         String parameter = param.toString().replace("#", "");
         if (new Regex(parameter, "http://(www\\.)?ge\\.tt/[A-Za-z0-9]+/v/0").matches()) {
             br.getPage(parameter);
+            // Invalid link
+            if (br.containsHTML("Page not found|The page you were looking for was not found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            // Link offline
+            if (br.containsHTML("Files removed|These files have been removed by the owner")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             final String apilink = br.getRegex("\\'(/api/\\d+/files/[A-Za-z0-9]+/[^<>\"]*?)\\' ").getMatch(0);
             if (apilink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);

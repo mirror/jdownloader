@@ -60,7 +60,8 @@ public class ChoMikujPl extends PluginForDecrypt {
             linkending = parameter.substring(parameter.lastIndexOf(","));
         } catch (Exception e) {
         }
-        // Check if link refers to a single file and get it
+
+        /** Handle single links */
         if (linkending != null) {
             // It's a file: Get all important information out of the url and
             // hand it over to the hosterplugin
@@ -82,9 +83,10 @@ public class ChoMikujPl extends PluginForDecrypt {
                 parameter = parameter.replace(linkending, "");
             }
         }
+
+        /** Correct added link */
         parameter = parameter.replace("www.", "");
-        // The message used on errors in this plugin
-        ERROR = "Error while decrypting link: " + parameter;
+        ERROR = "Decrypter broken for link: " + parameter;
         br.setFollowRedirects(false);
         // Check if the link directly wants to access a specified page of the
         // gallery, if so remove it to avoid problems
@@ -98,12 +100,17 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
         br.getPage(parameter);
+        if (br.containsHTML("label for=\"Password\">Hasło</label><input id=\"Password\"")) {
+            logger.warning("This link is password protected but there is so handling sor such links yet!");
+            return null;
+        }
         // If we have a new link we have to use it or we'll have big problems
         // later when POSTing things to the server
         if (br.getRedirectLocation() != null) {
             parameter = br.getRedirectLocation();
             br.getPage(br.getRedirectLocation());
         }
+        /** Get needed values */
         String fpName = br.getRegex("<title>(.*?) \\- .*? \\- Chomikuj\\.pl.*?</title>").getMatch(0);
         if (fpName == null) {
             fpName = br.getRegex("class=\"T_selected\">(.*?)</span>").getMatch(0);
@@ -124,12 +131,40 @@ public class ChoMikujPl extends PluginForDecrypt {
         String folderID = br.getRegex("type=\"hidden\" name=\"FolderId\" value=\"(\\d+)\"").getMatch(0);
         if (folderID == null) folderID = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         REQUESTVERIFICATIONTOKEN = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
-        if (folderID == null || fpName == null || REQUESTVERIFICATIONTOKEN == null) {
+        if (REQUESTVERIFICATIONTOKEN == null) {
             logger.warning(ERROR);
             return null;
         }
+        /** Handle single .RAR files directly */
+        if (parameter.endsWith(".RAR")) {
+            final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
+            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
+            final String fid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+            if (filename == null || filesize == null || fid == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setProperty("fileid", fid);
+            dl.setName(correctFilename(Encoding.htmlDecode(filename)));
+            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim().replace(",", "."))));
+            dl.setAvailable(true);
+            dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (folderID == null || fpName == null) {
+            logger.warning(ERROR);
+            return null;
+        }
+
         fpName = fpName.trim();
-        // Alle Haupt-POSTdaten
+        // All Main-POSTdata
         String postdata = "chomikId=" + chomikID + "&folderId=" + folderID + "&__RequestVerificationToken=" + Encoding.urlEncode(REQUESTVERIFICATIONTOKEN);
         final FilePackage fp = FilePackage.getInstance();
         // Make only one package

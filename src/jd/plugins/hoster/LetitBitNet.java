@@ -305,8 +305,7 @@ public class LetitBitNet extends PluginForHost {
             rc.load();
             for (int i = 0; i <= 5; i++) {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                String c = getCaptchaCode(cf, downloadLink);
-                br2.getHeaders().put("Referer", "http://letitbit.net/download3.php");
+                final String c = getCaptchaCode(cf, downloadLink);
                 br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                 if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
                     rc.reload();
@@ -319,7 +318,7 @@ public class LetitBitNet extends PluginForHost {
             // Normal captcha handling, UNTESTED!
             final DecimalFormat df = new DecimalFormat("0000");
             for (int i = 0; i <= 5; i++) {
-                String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+                final String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                 sleep(2000, downloadLink);
                 br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
                 if (br2.toString().contains("error_wrong_captcha")) continue;
