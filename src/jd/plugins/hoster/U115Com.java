@@ -49,7 +49,6 @@ public class U115Com extends PluginForHost {
     private static final String UNDERMAINTENANCEURL   = "http://u.115.com/weihu.html";
     private static final String UNDERMAINTENANCETEXT  = "The servers are under maintenance";
     private static final String NOFREESLOTS           = "网络繁忙时段，非登陆用户其它下载地址暂时关闭。推荐您使用优蛋下载";
-    private static final String ACCOUNTNEEDED         = ">115网盘已关闭大众分享功能，可以到发布资源者的<";
     private static final String ACCOUNTNEEDEDUSERTEXT = "Account is needed to download this link";
     private static final String EXACTLINKREGEX        = "\"(http://[a-z0-9]+\\.115\\.com/[a-z0-9_\\-]+\\d+/[^<>\"\\'/]*?/[^<>\"\\'/]*?/[^<>\"\\']*?)\"";
     private static Object       LOCK                  = new Object();
@@ -57,7 +56,8 @@ public class U115Com extends PluginForHost {
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         /**
-         * 10 seconds waittime between the downloadstart of simultan DLs of this host
+         * 10 seconds waittime between the downloadstart of simultan DLs of this
+         * host
          */
         this.setStartIntervall(10000l);
         this.enablePremium();
@@ -101,7 +101,7 @@ public class U115Com extends PluginForHost {
         link.setFinalFileName(filename);
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         parseSHA1(link, br);
-        if (br.containsHTML(ACCOUNTNEEDED)) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
+        if (true) link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.u115com.only4registered", ACCOUNTNEEDEDUSERTEXT));
         return AvailableStatus.TRUE;
     }
 
@@ -133,7 +133,8 @@ public class U115Com extends PluginForHost {
     }
 
     /**
-     * Here we got mirrors, sometimes a mirror does not work so we'll check until we find a working one here
+     * Here we got mirrors, sometimes a mirror does not work so we'll check
+     * until we find a working one here
      * 
      * @throws PluginException
      */
@@ -212,7 +213,7 @@ public class U115Com extends PluginForHost {
     public void doFree(DownloadLink link) throws Exception {
         if (UNDERMAINTENANCEURL.equals(br.getRedirectLocation())) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.U115Com.undermaintenance", UNDERMAINTENANCETEXT));
         if (br.containsHTML(NOFREESLOTS)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available at the moment");
-        if (br.containsHTML(ACCOUNTNEEDED)) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
+        if (true) throw new PluginException(LinkStatus.ERROR_FATAL, ACCOUNTNEEDEDUSERTEXT);
         final String dllink = findLink(link);
         if (dllink == null) {
             logger.warning("dllink is null, seems like the regexes are defect!");
@@ -281,7 +282,8 @@ public class U115Com extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         /**
-         * Didn't ever have a premium login, plugin is only designed for free accounts!
+         * Didn't ever have a premium login, plugin is only designed for free
+         * accounts!
          */
         ai.setStatus("Registered (free) User");
         return ai;
