@@ -54,28 +54,28 @@ import org.jdownloader.extensions.neembuu.translate._NT;
  */
 public final class HttpFilePanel extends javax.swing.JPanel implements RangeSelectedListener {
 
-    private final MonitoredHttpFile                 file;
-    private SpeedGraphJFluid                        graphJFluid                     = null;
-    private volatile String                         virtualPathOfFile               = null;
-    private static final Logger                     LOGGER                          = LoggerUtil.getLogger();
-    private volatile Range                          lastRegionSelected              = null;
-    private volatile RegionHandler                  lastRegionHandler               = null;
+    private final MonitoredHttpFile               file;
+    private SpeedGraphJFluid                      graphJFluid                     = null;
+    private volatile String                       virtualPathOfFile               = null;
+    private static final Logger                   LOGGER                          = LoggerUtil.getLogger();
+    private volatile Range                        lastRegionSelected              = null;
+    private volatile RegionHandler                lastRegionHandler               = null;
     // private final Object rangeSelectedLock = new Object();
-    RegionHandler                                   previousRegionOfInterest;
+    RegionHandler                                 previousRegionOfInterest;
     // Map<Long,Color> rm = new
-    private final RequestedRegionColorProvider      requestedRegionColorProvider    = new RequestedRegionColorProvider();
-    private final JLabel                            activateLable                   = new JLabel(_NT._.filePanel_graph_noRegionSelected());
+    private final RequestedRegionColorProvider    requestedRegionColorProvider    = new RequestedRegionColorProvider();
+    private final JLabel                          activateLable                   = new JLabel(_NT._.filePanel_graph_noRegionSelected());
     // ,new
     // ImageIcon(HttpFilePanel.class.getResource("activate.png")),SwingConstants.CENTER
-    private final RangeArrayElementColorProvider    downloadedRegionColorProvider   = new DownloadedRegionColorProvider();
-    private final DownloadedRegionToolTipProvider   downloadedRegionToolTipProvider = new DownloadedRegionToolTipProvider();
-    
+    private final RangeArrayElementColorProvider  downloadedRegionColorProvider   = new DownloadedRegionColorProvider();
+    private final DownloadedRegionToolTipProvider downloadedRegionToolTipProvider = new DownloadedRegionToolTipProvider();
+
     private final class DownloadedRegionColorProvider implements RangeArrayElementColorProvider {
 
         // @Override
         public Color getColor(Color defaultColor, Range element, SelectionState selectionState) {
             RegionHandler rh = (RegionHandler) element.getProperty();
-            Color base = defaultColor;            
+            Color base = defaultColor;
             try {
                 if (rh.isAlive()) {
                     base = new Color(102, 93, 149);
@@ -94,8 +94,8 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
                     base = new Color(138, 170, 231);
                 }
             }
-            if(file.getDownloadConstrainHandler().isComplete()){
-                base = new Color(185,198,222); // download completed
+            if (file.getDownloadConstrainHandler().isComplete()) {
+                base = new Color(185, 198, 222); // download completed
             }
             switch (selectionState) {
             case LIST:
@@ -149,28 +149,27 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
             return base;
         }
     };
-    
-    private final class DownloadedRegionToolTipProvider implements RangeArrayElementToolTipTextProvider{
+
+    private final class DownloadedRegionToolTipProvider implements RangeArrayElementToolTipTextProvider {
 
         public String getToolTipText(Range element, SelectionState selectionState) {
-            if(!(element.getProperty() instanceof RegionHandler))return "";
-            RegionHandler regionHandler = (RegionHandler)element.getProperty();
+            if (!(element.getProperty() instanceof RegionHandler)) return "";
+            RegionHandler regionHandler = (RegionHandler) element.getProperty();
             String toRet = "";
-            if(file.getDownloadConstrainHandler().isComplete()){
-                toRet = "File completely downloaded \n";
+            if (file.getDownloadConstrainHandler().isComplete()) {
+                toRet = "File  completely downloaded \n";
             }
-            return toRet + NumberFormat.getInstance().format( regionHandler.getThrottleStatistics().getDownloadSpeed_KiBps())+" KBps \n"+
-                    " RequestSpeed = " + NumberFormat.getInstance().format( regionHandler.getThrottleStatistics().getRequestSpeed_KiBps())+" KBps \n"+
-                    (regionHandler.isAlive()?"alive":"dead")+" "+(regionHandler.isMainDirectionOfDownload()?"main":"notmain")  ;
+            return toRet + NumberFormat.getInstance().format(regionHandler.getThrottleStatistics().getDownloadSpeed_KiBps()) + " KBps \n" + " RequestSpeed = " + NumberFormat.getInstance().format(regionHandler.getThrottleStatistics().getRequestSpeed_KiBps()) + " KBps \n" + (regionHandler.isAlive() ? "alive" : "dead") + " " + (regionHandler.isMainDirectionOfDownload() ? "main" : "notmain");
         }
-        
+
     }
 
     final Timer updateGraphTimer = new Timer(500, new ActionListener() {
                                      int x = 0;
+
                                      // @Override
                                      public void actionPerformed(ActionEvent e) {
-                                         double d = file.getTotalFileReadStatistics().getTotalAverageDownloadSpeedProvider().getDownloadSpeed_KiBps(),r=file.getTotalFileReadStatistics().getTotalAverageRequestSpeedProvider().getRequestSpeed_KiBps();
+                                         double d = file.getTotalFileReadStatistics().getTotalAverageDownloadSpeedProvider().getDownloadSpeed_KiBps(), r = file.getTotalFileReadStatistics().getTotalAverageRequestSpeedProvider().getRequestSpeed_KiBps();
                                          downloadSpeedVal.setText(new DecimalFormat("###,###,###.###").format(d) + " KiBps");
                                          requestRateVal.setText(new DecimalFormat("###,###,###.###").format(r) + " KiBps");
 
@@ -183,10 +182,11 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
                                              graphJFluid.speedChanged(currentlySelectedRegion.getThrottleStatistics().getDownloadSpeed_KiBps(), currentlySelectedRegion.getThrottleStatistics().getRequestSpeed_KiBps());
                                          }
                                          throttleStateLable.setText(currentlySelectedRegion.getThrottleStatistics().getThrottleState().toString());
-                                         if(x%8==0){
-                                            regionDownloadedBar.repaint();
-                                            regionRequestedBar.repaint();
-                                         }x++;
+                                         if (x % 8 == 0) {
+                                             regionDownloadedBar.repaint();
+                                             regionRequestedBar.repaint();
+                                         }
+                                         x++;
                                      }
                                  });
 
@@ -218,9 +218,9 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
         int dig = (int) (Math.log10(fsz)) + 1;
 
         if (dig > 3 && dig <= 6) { return fsz / 1024d + " KiB"; }
-        if (dig > 6 && dig <= 9) { return fsz / (1024*1024d) + " MiB"; }
-        if (dig > 9 && dig <= 12) { return fsz /(1024*1024*1024d) + " GiB"; }
-        if (dig > 12) { return fsz / (1024*1024*1024*1024d) + " TiB"; }
+        if (dig > 6 && dig <= 9) { return fsz / (1024 * 1024d) + " MiB"; }
+        if (dig > 9 && dig <= 12) { return fsz / (1024 * 1024 * 1024d) + " GiB"; }
+        if (dig > 12) { return fsz / (1024 * 1024 * 1024 * 1024d) + " TiB"; }
         return fsz + "Bytes";
     }
 
@@ -229,8 +229,7 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
     }
 
     /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
+     * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
      */
     @SuppressWarnings("unchecked")
@@ -253,9 +252,9 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
         openFile = new javax.swing.JButton();
         autoCompleteEnabledButton = new javax.swing.JToggleButton();
         jPanel1 = new javax.swing.JPanel();
-        regionDownloadedBar = new neembuu.swing.RangeArrayComponent(file.getRegionHandlers(),downloadedRegionColorProvider,true,downloadedRegionToolTipProvider);
+        regionDownloadedBar = new neembuu.swing.RangeArrayComponent(file.getRegionHandlers(), downloadedRegionColorProvider, true, downloadedRegionToolTipProvider);
         jPanel2 = new javax.swing.JPanel();
-        regionRequestedBar = new neembuu.swing.RangeArrayComponent(file.getRequestedRegion(),requestedRegionColorProvider,true);
+        regionRequestedBar = new neembuu.swing.RangeArrayComponent(file.getRequestedRegion(), requestedRegionColorProvider, true);
         graphAndAdvancedPanel = new JXCollapsiblePane();
         connectionStatusLabel = new javax.swing.JLabel();
         previousButton = new javax.swing.JButton();
@@ -508,8 +507,8 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
     private void killConnectionActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_killConnectionActionPerformed
         System.err.println("kill button pressed for region=" + lastRegionSelected);
         try {
-            if(file.getParams().getConnectionProvider().estimateCreationTime(0)>=Integer.MAX_VALUE){
-                JOptionPane.showMessageDialog(this, "This connection cannot be resumed,\nwhich is why this should not be killed.","Cannot kill connection",JOptionPane.INFORMATION_MESSAGE);
+            if (file.getParams().getConnectionProvider().estimateCreationTime(0) >= Integer.MAX_VALUE) {
+                JOptionPane.showMessageDialog(this, "This connection cannot be resumed,\nwhich is why this should not be killed.", "Cannot kill connection", JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
             neembuu.vfs.readmanager.impl.BasicRegionHandler regionHandler = ((neembuu.vfs.readmanager.impl.BasicRegionHandler) lastRegionSelected.getProperty());
@@ -540,7 +539,7 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
             java.awt.Desktop.getDesktop().open(new java.io.File(virtualPathOfFile));
         } catch (Exception a) {
             JOptionPane.showMessageDialog(this, "Could not show the file");
-            Log.L.log(Level.SEVERE,"Could not show the file",a);
+            Log.L.log(Level.SEVERE, "Could not show the file", a);
         }
     }// GEN-LAST:event_openFileActionPerformed
 
@@ -550,31 +549,32 @@ public final class HttpFilePanel extends javax.swing.JPanel implements RangeSele
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JToggleButton autoCompleteEnabledButton;
-    private javax.swing.JTextField connectionDescText;
-    private javax.swing.JLabel connectionStatusLabel;
-    public javax.swing.JLabel downloadSpeedVal;
-    private javax.swing.JLabel fileNameValue;
-    private javax.swing.JLabel fileSizeValue;
-    private javax.swing.JLabel filenameLabel;
-    private javax.swing.JLabel filesizeLabel;
-    private javax.swing.JPanel graphAndAdvancedPanel;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JButton killConnection;
-    private javax.swing.JButton nextButton;
-    private javax.swing.JPanel normalControls;
-    private javax.swing.JButton openFile;
-    private javax.swing.JButton previousButton;
-    private javax.swing.JButton printStateButton;
-    public javax.swing.JProgressBar regionDownloadedBar;
-    public javax.swing.JProgressBar regionRequestedBar;
-    private javax.swing.JLabel requestRateVal;
-    private javax.swing.JPanel speedGraphPanel;
-    private javax.swing.JLabel throttleStateLable;
+    private javax.swing.JTextField    connectionDescText;
+    private javax.swing.JLabel        connectionStatusLabel;
+    public javax.swing.JLabel         downloadSpeedVal;
+    private javax.swing.JLabel        fileNameValue;
+    private javax.swing.JLabel        fileSizeValue;
+    private javax.swing.JLabel        filenameLabel;
+    private javax.swing.JLabel        filesizeLabel;
+    private javax.swing.JPanel        graphAndAdvancedPanel;
+    private javax.swing.JPanel        jPanel1;
+    private javax.swing.JPanel        jPanel2;
+    private javax.swing.JButton       killConnection;
+    private javax.swing.JButton       nextButton;
+    private javax.swing.JPanel        normalControls;
+    private javax.swing.JButton       openFile;
+    private javax.swing.JButton       previousButton;
+    private javax.swing.JButton       printStateButton;
+    public javax.swing.JProgressBar   regionDownloadedBar;
+    public javax.swing.JProgressBar   regionRequestedBar;
+    private javax.swing.JLabel        requestRateVal;
+    private javax.swing.JPanel        speedGraphPanel;
+    private javax.swing.JLabel        throttleStateLable;
     private javax.swing.JToggleButton toggleAdvancedView;
-    private javax.swing.JLabel totalDownloadSpeedLabel;
-    private javax.swing.JLabel totalRequestRateLabel;
-    private javax.swing.JLabel urlLabel;
+    private javax.swing.JLabel        totalDownloadSpeedLabel;
+    private javax.swing.JLabel        totalRequestRateLabel;
+    private javax.swing.JLabel        urlLabel;
+
     // End of variables declaration//GEN-END:variables
     // @Override
     public void rangeSelected(Range arrayElement) {
