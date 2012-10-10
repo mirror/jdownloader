@@ -29,7 +29,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "http://(www\\.)?(uploaded|ul)\\.(to|net)/folder/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "http://(www\\.)?(uploaded|ul)\\.(to|net)/(folder|f)/[a-z0-9]+" }, flags = { 0 })
 public class UploadedToFolder extends PluginForDecrypt {
 
     public UploadedToFolder(PluginWrapper wrapper) {
@@ -39,7 +39,7 @@ public class UploadedToFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("ul.to/", "uploaded.net/");
-        parameter = parameter.replace("uploaded.to/", "uploaded.net/");
+        parameter = parameter.replace("uploaded.to/", "uploaded.net/").replace("/folder/", "/f/");
         br.setFollowRedirects(true);
         br.setCookie("http://uploaded.net", "lang", "de");
         br.getPage(parameter);

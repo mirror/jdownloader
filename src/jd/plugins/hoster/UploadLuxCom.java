@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -68,6 +69,10 @@ public class UploadLuxCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         br.setFollowRedirects(false);
         final String waittime = br.getRegex("style=\"font\\-size:30px; text\\-decoration:none;\">(\\d+)</span><br />").getMatch(0);
         int wait = 60;
@@ -81,8 +86,9 @@ public class UploadLuxCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE = "http://uploadlux.com";
-    private static Object       LOCK     = new Object();
+    private static final String  MAINPAGE = "http://uploadlux.com";
+    private static Object        LOCK     = new Object();
+    private static AtomicInteger maxPrem  = new AtomicInteger(1);
 
     @SuppressWarnings("unchecked")
     private void login(final Account account, final boolean force) throws Exception {
@@ -108,8 +114,12 @@ public class UploadLuxCom extends PluginForHost {
                 br.postPage("http://uploadlux.com/connexion", "souvenir=on&connexion=Log+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "session_save") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage("http://www.uploadlux.com/profil");
-                if (!br.containsHTML("<b style=\"color: #FF3300\">Premium</b>")) {
-                    logger.info("This is not a premium account!");
+                if (br.containsHTML("<b style=\"color: #FF3300\">Premium</b>")) {
+                    account.setProperty("nopremium", false);
+                } else if (br.containsHTML("<b style=\"color: #FF3300\">Membre</b>")) {
+                    account.setProperty("nopremium", true);
+                } else {
+                    logger.warning("Unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
@@ -131,6 +141,8 @@ public class UploadLuxCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -140,15 +152,33 @@ public class UploadLuxCom extends PluginForHost {
         String space = br.getRegex("<b>([^<>\"]*?)</b> on <b>").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("<td> \\- (\\d{2}/\\d{2}/\\d{4})</td><td><a href=\"index\\.php\\?id=premium\\.php\"").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
+
+        if (account.getBooleanProperty("nopremium")) {
+            ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+            }
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH));
+            final String expire = br.getRegex("<td> \\- (\\d{2}/\\d{2}/\\d{4})</td><td><a href=\"index\\.php\\?id=premium\\.php\"").getMatch(0);
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy", Locale.ENGLISH));
+            }
+            try {
+                maxPrem.set(-1);
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+            }
+            ai.setStatus("Premium User");
         }
+
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
@@ -157,18 +187,23 @@ public class UploadLuxCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL().replace("uploadlux.com/l", "uploadlux.com/lf"), false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("nopremium")) {
+            br.getPage(link.getDownloadURL());
+            doFree(link);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL().replace("uploadlux.com/l", "uploadlux.com/lf"), false, 1);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return maxPrem.get();
     }
 
     @Override

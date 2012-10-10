@@ -158,7 +158,7 @@ public class LetitBitNet extends PluginForHost {
         // This information can only be found before each download so lets set
         // it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
-        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9-]+) \\[<acronym class").getMatch(0);
+        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
         if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
         if (expireDate != null || points != null) {
             AccountInfo accInfo = new AccountInfo();
@@ -296,8 +296,9 @@ public class LetitBitNet extends PluginForHost {
         }
         // reCaptcha handling
         if (ajaxPostpage.contains("recaptcha")) {
+            final String rcControl = new Regex(dlFunction, "var recaptcha_control_field = \\'([^<>\"]*?)\\'").getMatch(0);
             final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-            if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (rcID == null || rcControl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
@@ -305,7 +306,8 @@ public class LetitBitNet extends PluginForHost {
             for (int i = 0; i <= 5; i++) {
                 File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 String c = getCaptchaCode(cf, downloadLink);
-                br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                br2.getHeaders().put("Referer", "http://letitbit.net/download3.php");
+                br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                 if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
                     rc.reload();
                     continue;

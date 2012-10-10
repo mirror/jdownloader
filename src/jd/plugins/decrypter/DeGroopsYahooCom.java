@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[a-z0-9]+/(files/([A-Za-z0-9/ %]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[A-Za-z0-9\\-_]+/(files/([A-Za-z0-9/ %]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
 public class DeGroopsYahooCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */
@@ -61,7 +61,10 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
         br.setCookiesExclusive(false);
         br.getPage("https://login.yahoo.com/config/login?");
         synchronized (LOCK) {
-            if (!getUserLogin()) return null;
+            if (!getUserLogin()) {
+                logger.info("Login wrong or not available!");
+                return null;
+            }
             br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.containsHTML("login\\.yahoo\\.com/login")) {
@@ -101,7 +104,7 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
             } else {
                 String fpName = br.getRegex("<div class=\"ygrp-box\\-content\">[\t\n\r ]+<h3>(.*?)</h3>").getMatch(0);
                 // Handling for photos and albums
-                String[] galleries = br.getRegex("<div class=\"ygrp-right-album\">[\t\n\r ]+<div>[\t\n\r]+<a href=\"(/.*?)\"").getColumn(0);
+                String[] galleries = br.getRegex("<div class=\"ygrp\\-right\\-album\">[\t\n\r ]+<div>[\t\n\r]+<a href=\"(/.*?)\"").getColumn(0);
                 if (galleries == null || galleries.length == 0) galleries = br.getRegex("<a href=\"(/group/[a-z0-9]+/photos/album/\\d+/pic/list)\"").getColumn(0);
                 if (galleries != null && galleries.length != 0) {
                     for (String gallery : galleries) {
