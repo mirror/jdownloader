@@ -62,6 +62,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         }
         externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID == null) externID = br.getRegex("value=\"http://(www\\.)?xvideos\\.com/sitevideos/.*?value=\"id_video=(\\d+)\"").getMatch(1);
+        if (externID == null) externID = br.getRegex("static\\.xvideos\\.com/swf/flv_player_site_v\\d+\\.swf\" /><param name=\"allowFullScreen\" value=\"true\" /><param name=\"flashvars\" value=\"id_video=(\\d+)\"").getMatch(0);
         if (externID != null) {
             decrypted = "http://www.xvideos.com/video" + externID;
             decryptedLinks.add(createDownloadlink(decrypted));
@@ -98,6 +99,25 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
         externID = br.getRegex("dl\\.pornhost\\.com%2F0%2F\\d+%2F(\\d+)%2F").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://pornhost.com/" + externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("(http://(www\\.)?keezmovies\\.com/embed_player\\.php\\?vid=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            externID = br.getRegex("<share>(http://[^<>\"]*?)</share>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // youporn.com handling 1
+        externID = br.getRegex("youporn\\.com/embed/(\\d+)").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.youporn.com/watch/" + externID + "/" + System.currentTimeMillis());
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         // filename needed for stuff below
@@ -153,9 +173,68 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
             dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // youporn.com handling 2
+        externID = br.getRegex("flashvars=\"file=(http%3A%2F%2Fdownload\\.youporn\\.com[^<>\"]*?)\\&").getMatch(0);
+        if (externID != null) {
+            br.setCookie("http://youporn.com/", "age_verified", "1");
+            br.setCookie("http://youporn.com/", "is_pc", "1");
+            br.setCookie("http://youporn.com/", "language", "en");
+            br.getPage(Encoding.htmlDecode(externID));
+            if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+                logger.warning("FourSexFourCom -> youporn link invalid, please check browser to confirm: " + parameter);
+                return null;
+            }
+            if (br.containsHTML("download\\.youporn\\.com/agecheck")) {
+                logger.info("Link broken or offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("\"(http://(www\\.)?download\\.youporn.com/download/\\d+/\\?xml=1)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            br.getPage(externID);
+            final String finallink = br.getRegex("<location>(http://.*?)</location>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+            String type = br.getRegex("<meta rel=\"type\">(.*?)</meta>").getMatch(0);
+            if (type == null) type = "flv";
+            dl.setFinalFileName(filename + "." + type);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?freeviewmovies\\.com/embed/\\d+/)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);
+            if (cb == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String postData = "jsonRequest=%7B%22returnType%22%3A%22json%22%2C%22file%22%3A%22%22%2C%22htmlHostDomain%22%3Anull%2C%22request%22%3A%22getAllData%22%2C%22playerOnly%22%3A%22true%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22appdataurl%22%3A%22" + Encoding.urlEncode(externID) + "%22%2C%22path%22%3A%22%22%2C%22cb%22%3A%22" + cb + "%22%7D&cacheBuster=" + System.currentTimeMillis();
+            br.postPage(externID, postData);
+            externID = br.getRegex("\"file\": \"(http://[^<>\"]*?)\"").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?gayjojo\\.com/embed/\\d+/[a-z0-9\\-]+)\"").getMatch(0);
+        if (externID != null) {
+            logger.info("Link offline because extern link must be offline: " + externID);
+            logger.info("Original link: " + parameter);
             return decryptedLinks;
         }
         decrypted = parameter.replace("badjojo.com", "decryptedbadjojo.com");
