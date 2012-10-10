@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -45,7 +46,20 @@ public class UpWapRu extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getDownloadURL());
+            if (con.getResponseCode() == 503) {
+                br.getRequest().setHtmlCode("error 503");
+                return AvailableStatus.UNCHECKABLE;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         if (br.containsHTML(">Запрошенная страница или файл не найден|>Ошибка 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>Файл \\&laquo;([^<>\"]*?)\\&raquo;</title>").getMatch(0);
         String filesize = br.getRegex(">Скачать</a>]</b> \\(([^<>\"]*?)\\)<br").getMatch(0);
@@ -63,12 +77,14 @@ public class UpWapRu extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML("error 503")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
         String dllink = br.getRegex("<div class=\"tpanel\"><b>\\[<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://mirror\\d+\\.upwap\\.ru/d/\\d+/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 2 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -80,7 +96,7 @@ public class UpWapRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
