@@ -85,7 +85,6 @@ public class FreeWayMe extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        ac.setValidUntil(-1);
         // account should be valid now, let's get account information:
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username + "&pass=" + pass);
         Long guthaben = Long.parseLong(getRegexTag(page, "guthaben").getMatch(0));
@@ -95,6 +94,10 @@ public class FreeWayMe extends PluginForHost {
         String accountType = getRegexTag(page, "premium").getMatch(0);
         if (accountType.equalsIgnoreCase("Flatrate")) {
             ac.setUnlimitedTraffic();
+            long validUntil = Long.parseLong(getRegexTag(page, "Flatrate").getMatch(0));
+            ac.setValidUntil(validUntil * 1000);
+        } else {
+            ac.setValidUntil(-1);
         }
         // now let's get a list of all supported hosts:
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
