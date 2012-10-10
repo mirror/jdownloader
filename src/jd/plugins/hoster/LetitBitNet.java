@@ -587,12 +587,13 @@ public class LetitBitNet extends PluginForHost {
                             skymonk.setCookie("http://letitbit.net/", "lang", "en");
                             skymonk.setCustomCharset("UTF-8");
                             try {
-                                skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=1.76");
+                                skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=2.0");
                             } catch (Throwable e1) {
                             }
                             String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
                             if (skymonk.containsHTML("status:\'error\'")) {
                                 msg = msg == null ? "Error occured!" : msg;
+                                if ("Пользователь с таким email адресом уже существует. Используйте другой email".equals(msg)) msg = "E-Mail already in use. Please use another E-Mail address and try again!";
                                 UserIO.getInstance().requestMessageDialog("Error occured", msg);
                                 return;
                             } else if (skymonk.containsHTML("status:\'ok\'")) {
@@ -608,9 +609,6 @@ public class LetitBitNet extends PluginForHost {
                                     UserIO.getInstance().requestMessageDialog("SkyMonk server answer", msg);
                                 }
                             } else {
-                                // TODO: Implement errorhandling/correct
-                                // errormessage for blocked mailadresses like
-                                // "blabla@gmail.com"
                                 logger.warning("SkyMonk debug output: " + skymonk.toString());
                                 UserIO.getInstance().requestMessageDialog("SkyMonk: Unknown error occured", "Please upload now a logfile, contact our support and add this loglink to your bugreport!");
                             }
