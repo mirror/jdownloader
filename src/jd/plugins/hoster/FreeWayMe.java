@@ -92,6 +92,10 @@ public class FreeWayMe extends PluginForHost {
         ac.setTrafficLeft(guthaben * 1024 * 1024);
         simultanDownloads = Integer.parseInt((new Regex(page, "\"parallel\":([0-9]*)")).getMatch(0));
         ac.setProperty("simultanDownloads", simultanDownloads);
+        String accountType = getRegexTag(page, "premium").getMatch(0);
+        if (accountType.equalsIgnoreCase("Flatrate")) {
+            ac.setUnlimitedTraffic();
+        }
         // now let's get a list of all supported hosts:
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=3");
         hosts = br.getRegex("\"([^\"]*)\"").getColumn(0);
