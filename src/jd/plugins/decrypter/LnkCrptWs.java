@@ -100,6 +100,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             this.load();
             URLConnectionAdapter con = null;
             try {
+                captchaAddress = captchaAddress.replaceAll("%0D%0A", "").trim();
                 Browser.download(captchaFile, con = this.smBr.openGetConnection(this.captchaAddress));
             } catch (IOException e) {
                 captchaFile.delete();

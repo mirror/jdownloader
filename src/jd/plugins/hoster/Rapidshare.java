@@ -31,7 +31,6 @@ import java.util.logging.Level;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.RandomUserAgent;
@@ -623,14 +622,15 @@ public class Rapidshare extends PluginForHost {
                 /* only available after 0.9xx version */
             }
 
-            if (this.getPluginConfig().getBooleanProperty("notifyShown", false) == false) {
-                this.getPluginConfig().setProperty("notifyShown", true);
-                try {
-                    this.getPluginConfig().save();
-                } catch (final Throwable e) {
-                }
-                UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN, "Rapidshare Speed Limitation", "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
-            }
+            // if (this.getPluginConfig().getBooleanProperty("notifyShown", false) == false) {
+            // this.getPluginConfig().setProperty("notifyShown", true);
+            // try {
+            // this.getPluginConfig().save();
+            // } catch (final Throwable e) {
+            // }
+            // UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN, "Rapidshare Speed Limitation",
+            // "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
+            // }
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
                 this.dl = this.createHackedDownloadInterface(this.br, downloadLink, directurl);
             } else {

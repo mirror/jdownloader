@@ -1,6 +1,5 @@
 {
-
-"id":"neembuu",
 "mac":false,
-"linux":false
+"linux":false,
+"parentIDList":["neembuu"]
 }
