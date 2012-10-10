@@ -382,7 +382,7 @@ public class PandamemoCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.pandamemo\\.com:\\d+/f/[^<>\"]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.pandamemo\\.com:\\d+/[a-z0-9]+/\\d+/[^<>\"]*?)\"").getMatch(0);
         }
         return dllink;
     }

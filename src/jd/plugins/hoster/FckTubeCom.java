@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fucktube.com" }, urls = { "http://[\\w\\.]*?fucktube\\.com/video/[0-9]+/.{1}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fucktube.com" }, urls = { "http://(www\\.)?fucktube\\.com/video/[0-9]+/.{1}" }, flags = { 0 })
 public class FckTubeCom extends PluginForHost {
 
     public FckTubeCom(PluginWrapper wrapper) {
@@ -46,23 +46,9 @@ public class FckTubeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        String dllink = br.getRegex("embedVideo\\(.*?,\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("('|\")(http://media[0-9]+\\.fucktube\\.com/.*?\\.flv)('|\")").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.setCookie("http://www.fucktube.com", "checked_yes", "1");
         br.getPage(link.getDownloadURL());
         String refreshed = br.getRegex("content=\"0;url=(.*?)\"").getMatch(0);
@@ -70,7 +56,10 @@ public class FckTubeCom extends PluginForHost {
             link.setUrlDownload(refreshed);
             br.getPage(refreshed);
         }
+        // Invalid link
         if (br.containsHTML("(font-size: 24px\">404</font>|This page cannot be displayed at the current time|If you continue to receive this error)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Link offline
+        if (br.containsHTML(">Video Not Found") || br.getURL().contains("fucktube.com/errors/invalid-video/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<div id=\"video_header\">.*?<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
@@ -92,6 +81,20 @@ public class FckTubeCom extends PluginForHost {
         filename = filename + ".flv";
         link.setFinalFileName(filename.trim());
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        String dllink = br.getRegex("embedVideo\\(.*?,\"(http.*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("('|\")(http://media[0-9]+\\.fucktube\\.com/.*?\\.flv)('|\")").getMatch(1);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override

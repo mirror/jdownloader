@@ -99,7 +99,7 @@ public class ReverBnationCom extends PluginForDecrypt {
                     logger.info("Link offline/invalid: " + parameter);
                     return decryptedLinks;
                 }
-                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to")) {
+                if (br.containsHTML("rel=\"nofollow\" title=\"Listen to") || !br.containsHTML("<div class=\"profile_section_container profile_songs\">")) {
                     logger.info("No content to decrypt: " + parameter);
                     return decryptedLinks;
                 }

@@ -22,11 +22,9 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hqmaturetube.com" }, urls = { "http://(www\\.)?hqmaturetube\\.com/cms/watch/\\d+\\.php" }, flags = { 0 })
 public class HqMatureTubeCom extends PluginForDecrypt {
@@ -40,9 +38,16 @@ public class HqMatureTubeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|was not found on this server\\.<P>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>|was not found on this server\\.<P>)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.getURL().equals("http://www.hqmaturetube.com/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String filename = br.getRegex("<title>(.*?) \\| HQ Mature Tube \\| Free streaming porn videos</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2 style=\"text-transform:uppercase;\">(.*?)</h2>").getMatch(0);
         if (filename == null) {

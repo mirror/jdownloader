@@ -51,15 +51,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class HitFileNet extends PluginForHost {
 
     private final String        UA            = RandomUserAgent.generate();
-
     private static final String RECAPTCHATEXT = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
-
     private static final String CAPTCHATEXT   = "hitfile\\.net/captcha/";
-
     private static final String MAINPAGE      = "http://hitfile.net";
-
     public static Object        LOCK          = new Object();
-
     private static final String BLOCKED       = "Hitfile.net is blocking JDownloader: Please contact the hitfile.net support and complain!";
 
     public HitFileNet(final PluginWrapper wrapper) {

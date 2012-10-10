@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[A-Za-z0-9\\-_]+/(files/([A-Za-z0-9/ %]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "de.groups.yahoo.com" }, urls = { "http://(www\\.)?((de|tv|br)\\.)?groups\\.yahoo\\.com/group/[A-Za-z0-9\\-_]+/(files/([^<>\"/]+)?|photos/album/\\d+(/pic)?/list)" }, flags = { 0 })
 public class DeGroopsYahooCom extends PluginForDecrypt {
 
     /* must be static so all plugins share same lock */

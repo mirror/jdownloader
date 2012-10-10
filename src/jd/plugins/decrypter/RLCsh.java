@@ -49,7 +49,7 @@ public class RLCsh extends PluginForDecrypt {
         String[] ret = new String[names.length];
 
         for (int i = 0; i < ret.length; i++) {
-            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|reset_password|register_new|(index|advertise|create_links|index_new|learnmore|contacts|acontact|abuse)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
+            ret[i] = "(http://[\\w\\.]*?" + names[i].replaceAll("\\.", "\\\\.") + "/(?!\\?ref=|promote|reset_password|register_new|mailto|(.*?)\\.php|https:).+)|(http://(?!master)[\\w\\-]{5,16}\\." + names[i].replaceAll("\\.", "\\\\.") + ")";
 
         }
         return ret;
@@ -84,6 +84,10 @@ public class RLCsh extends PluginForDecrypt {
         if (link == null) link = br.getRegex("onClick=\"top\\.location=\\'(.*?)\\'\">").getMatch(0);
         if (link == null) link = br.getRegex("<iframe name=\\'redirectframe\\' id=\\'redirectframe\\'.*?src=\\'(.*?)\\'.*?></iframe>").getMatch(0);
         if (link == null) link = br.getRedirectLocation();
+        if (link == null && br.containsHTML("<title>URLCash\\.net \\- An URL forwarding service where you make money from")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         if (link == null) {
             logger.warning("Decrypter broken for link:" + parameter);
             return null;

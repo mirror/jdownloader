@@ -38,13 +38,30 @@ public class HomemadeVoyeurCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         String tempID = br.getRedirectLocation();
+        // Invalid link
         if ("http://www.homemade-voyeur.com/".equals(br.getRedirectLocation()) || br.containsHTML(">404 Not Found<")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline link
+        if (br.containsHTML("This video does not exist\\!<")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (tempID != null) {
             decryptedLinks.add(createDownloadlink(tempID));
             return decryptedLinks;
+        }
+        tempID = br.getRegex("\"(http://api\\.slutdrive\\.com/homemadevoyeur\\.php\\?id=\\d+\\&type=v)\"").getMatch(0);
+        if (tempID != null) {
+            br.getPage(tempID);
+            if (br.containsHTML(">404 Not Found<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            logger.warning("Cannot handle link: " + tempID);
+            logger.warning("Mainlink: " + parameter);
+            return null;
         }
         String filename = br.getRegex("class=\"he2\"><span>(.*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>Daily Free Homemade and Voyeur Videos - Beach Sex \\- Hidden Sex \\- Public Sex \\- Voyeur Videos  \\- (.*?)</title>").getMatch(0);

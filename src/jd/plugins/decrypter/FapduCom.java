@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 //EmbedDecrypter 0.1.1
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fapdu.com" }, urls = { "http://(www\\.)?fapdu\\.com/(?!search|embed)[a-z0-9\\-]+" }, flags = { 0 })
 public class FapduCom extends PluginForDecrypt {
 
     public FapduCom(PluginWrapper wrapper) {
@@ -39,8 +39,14 @@ public class FapduCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
+        // Offline link
         if (br.containsHTML(">This video was removed")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Invalid link
+        if (br.containsHTML("The page you were looking for isn|>Page Not Found")) {
+            logger.info("Link invalid: " + parameter);
             return decryptedLinks;
         }
         String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\">").getMatch(0);
@@ -206,6 +212,19 @@ public class FapduCom extends PluginForDecrypt {
         externID = br.getRegex("\\'file\\' : \\'(http://[^<>\"]*?)\\'").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("directhttp://" + Encoding.htmlDecode(externID)));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"http://(www\\.)?freeviewmovies\\.com/vp/embed/embedplayer\\.swf\\?config=(flv/skin/ofconfig\\.php\\?id=\\d+)\"").getMatch(1);
+        if (externID != null) {
+            br.getPage("http://www.freeviewmovies.com/" + externID);
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+            dl.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+            decryptedLinks.add(dl);
             return decryptedLinks;
         }
         logger.warning("Decrypter broken for link: " + parameter);

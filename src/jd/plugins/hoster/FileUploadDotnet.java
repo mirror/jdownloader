@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -55,7 +56,7 @@ public class FileUploadDotnet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getHeaders().put("User-Agent", UA);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
                 /* LinkCheck für DownloadFiles */
@@ -63,12 +64,15 @@ public class FileUploadDotnet extends PluginForHost {
 
                 br.getPage(downloadurl);
                 if (!br.containsHTML(">Datei existiert nicht")) {
-                    String filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
+                    // Get complete name
+                    String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
+                    // This name might be cut
+                    if (filename == null) filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
                     String filesize = br.getRegex("<label>Dateigröße:</label><span>([^<>\"]*?)</span>").getMatch(0);
                     if (filesize != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
-                    downloadLink.setName(filename);
+                    downloadLink.setName(Encoding.htmlDecode(filename));
                     return AvailableStatus.TRUE;
                 }
             } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {

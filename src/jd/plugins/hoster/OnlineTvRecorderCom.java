@@ -51,18 +51,35 @@ public class OnlineTvRecorderCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        link.getLinkStatus().setStatusText("Account needed to download!");
+        link.getLinkStatus().setStatusText("Not checked to save traffic!");
         return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        URLConnectionAdapter con = null;
         try {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) throw (PluginException) e;
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (!con.getContentType().contains("html")) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
+            } else {
+                if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.followConnection();
+                if (br.containsHTML("<div id=\"error_message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
         }
-        throw new PluginException(LinkStatus.ERROR_FATAL, "Account needed to download!");
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private static final String MAINPAGE = "http://onlinetvrecorder.com";

@@ -93,6 +93,10 @@ public class Rdrctr extends PluginForDecrypt {
             declink = declink2;
         }
         if (declink == null) {
+            if (parameter.contains("goo.gl/") && br.containsHTML(">404: Page not found")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }

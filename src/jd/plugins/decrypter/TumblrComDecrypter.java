@@ -84,7 +84,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             while (nextPage != null) {
                 logger.info("Decrypting page " + counter);
                 if (!nextPage.equals("1")) br.getPage(parameter + nextPage);
-                final String[] allPosts = br.getRegex("<div class=\"postmeta\"><a href=\"(http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+)").getColumn(0);
+                final String[] allPosts = br.getRegex("\"(http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+)").getColumn(0);
                 if (allPosts == null || allPosts.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
@@ -95,7 +95,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                     decryptedLinks.add(fpost);
                 }
                 if (decryptSingle) break;
-                nextPage = br.getRegex("\"(/page/\\d+)\" id=\"nav\\-next\"").getMatch(0);
+                nextPage = br.getRegex("\"(/page/" + (counter + 1) + ")\"").getMatch(0);
                 counter++;
             }
         }
