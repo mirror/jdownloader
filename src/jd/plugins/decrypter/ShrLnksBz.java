@@ -112,7 +112,10 @@ public class ShrLnksBz extends PluginForDecrypt {
             for (int i = 0; i <= 3; i++) {
                 String latestPassword = getPluginConfig().getStringProperty("PASSWORD", null);
                 final Form pwform = br.getForm(0);
-                if (pwform == null) { return null; }
+                if (pwform == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 pwform.setAction(parameter);
                 // First try the stored password, if that doesn't work, ask the
                 // user to enter it
@@ -145,7 +148,10 @@ public class ShrLnksBz extends PluginForDecrypt {
             final int max = 5;
             for (int i = 0; i <= max; i++) {
                 String Captchamap = br.getRegex("\"(/captcha\\.gif\\?d=\\d+.*?PHPSESSID=.*?)\"").getMatch(0);
-                if (Captchamap == null) { return null; }
+                if (Captchamap == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
                 Captchamap = Captchamap.replaceAll("(\\&amp;|legend=1)", "");
                 final File file = this.getLocalCaptchaFile();
                 final Browser temp = br.cloneBrowser();
@@ -223,10 +229,16 @@ public class ShrLnksBz extends PluginForDecrypt {
         for (int i = 1; i <= pages; i++) {
             br.getPage(MAINPAGE + pattern);
             final String[] linki = br.getRegex("decrypt\\.gif\" onclick=\"javascript:_get\\('(.*?)'").getColumn(0);
-            if (linki.length == 0) { return null; }
+            if (linki.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             links.addAll(Arrays.asList(linki));
         }
-        if (links.size() == 0) { return null; }
+        if (links.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (final String tmplink : links) {
             br.getPage(MAINPAGE + "get/lnk/" + tmplink);
             final String clink0 = br.getRegex("unescape\\(\"(.*?)\"").getMatch(0);

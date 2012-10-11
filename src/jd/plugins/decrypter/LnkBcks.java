@@ -26,11 +26,11 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "realfiles.net", "youfap.com", "linkgalleries.net", "thesefiles.com", "urlpulse.net", "viraldatabase.com", "seriousfiles.com", "ubucks.net", "thesegalleries.com", "seriousurls.com", "baberepublic.com", "qvvo.com", "linkbucks.com", "linkseer.net", "ubervidz.com", "uberpicz.com", "zxxo.net", "ugalleries.net", "picturesetc.net", "allanalpass.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.ultrafiles\\.net", "http://(www\\.)?[a-z0-9]+\\.miniurls\\.co", "http://[\\w\\.]*?tinylinks\\.co(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[0-9a-fA-F]+\\.yyv\\.co/?", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?youfap\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?linkgalleries\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?",
-        "http://[\\w\\.]*?thesefiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?urlpulse\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?viraldatabase\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?seriousfiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?ubucks\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?thesegalleries\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?seriousurls\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://(www\\.)?(baberepunlic\\.com/(link/[0-9a-zA-Z]+(/\\d+)?|url/.+)|(?!www\\.)[a-z0-9]+\\.baberepunlic\\.com)", "http://[\\w\\.]*?qvvo\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?", "http://(www\\.)?(linkbucks\\.com/(link/[0-9a-zA-Z]+(/\\d+)?|url/.+)|(?!www\\.|forums\\.)[a-z0-9]+\\.linkbucks\\.com)", "http://([0-9a-fA-F]+(\\d+)?)\\.linkseer\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.ubervidz\\.com/?",
-        "http://([0-9a-fA-F]+(\\d+)?)\\.uberpicz\\.com/?", "http://([0-9a-fA-F]+(\\d+)?)\\.zxxo\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.ugalleries\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.picturesetc\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.allanalpass\\.com/?"
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "seriousdeals.net", "any.gs", "goneviral.com", "ultrafiles.net", "miniurls.co", "tinylinks.co", "yyv.co", "realfiles.net", "youfap.com", "linkgalleries.net", "thesefiles.com", "urlpulse.net", "viraldatabase.com", "seriousfiles.com", "ubucks.net", "thesegalleries.com", "seriousurls.com", "baberepublic.com", "qvvo.com", "linkbucks.com", "linkseer.net", "ubervidz.com", "uberpicz.com", "zxxo.net", "ugalleries.net", "picturesetc.net", "allanalpass.com" }, urls = { "http://(www\\.)?[a-z0-9]+\\.ultrafiles\\.net", "http://(www\\.)?[a-z0-9]+\\.miniurls\\.co", "http://[\\w\\.]*?tinylinks\\.co(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[0-9a-fA-F]+\\.yyv\\.co/?", "http://[\\w\\.]*?realfiles\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?youfap\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?",
+        "http://[\\w\\.]*?linkgalleries\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?thesefiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?urlpulse\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?viraldatabase\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?seriousfiles\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?ubucks\\.net(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?thesegalleries\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://[\\w\\.]*?seriousurls\\.com(/link/[0-9a-fA-F]+(/\\d+)?)?", "http://(www\\.)?(baberepunlic\\.com/(link/[0-9a-zA-Z]+(/\\d+)?|url/.+)|(?!www\\.)[a-z0-9]+\\.baberepunlic\\.com)", "http://[\\w\\.]*?qvvo\\.com(/link/[0-9a-zA-Z]+(/\\d+)?)?", "http://(www\\.)?(linkbucks\\.com/(link/[0-9a-zA-Z]+(/\\d+)?|url/.+)|(?!www\\.|forums\\.)[a-z0-9]+\\.linkbucks\\.com)", "http://([0-9a-fA-F]+(\\d+)?)\\.linkseer\\.net/?",
+        "http://([0-9a-fA-F]+(\\d+)?)\\.ubervidz\\.com/?", "http://([0-9a-fA-F]+(\\d+)?)\\.uberpicz\\.com/?", "http://([0-9a-fA-F]+(\\d+)?)\\.zxxo\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.ugalleries\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.picturesetc\\.net/?", "http://([0-9a-fA-F]+(\\d+)?)\\.allanalpass\\.com/?", "http://([0-9a-fA-F]+(\\d+)?)\\.goneviral\\.com/?", "http://([0-9a-fA-F]+(\\d+)?)\\.any\\.gs/?", "http://([0-9a-fA-F]+(\\d+)?)\\.seriousdeals\\.net/?"
 
-}, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
+}, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class LnkBcks extends PluginForDecrypt {
 
     public LnkBcks(PluginWrapper wrapper) {
@@ -54,7 +54,7 @@ public class LnkBcks extends PluginForDecrypt {
             link = br.getRegex(Pattern.compile("Linkbucks\\.TargetUrl = '(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         if (link == null) {
-            link = br.getRegex(Pattern.compile("Lbjs\\.TargetUrl = '(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            link = br.getRegex(Pattern.compile("Lbjs\\.TargetUrl = \\'(http://[^<>\"]*?)\\'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
         if (link == null) {
             link = br.getRegex(Pattern.compile("src=\"http://static\\.linkbucks\\.com/tmpl/mint/img/lb\\.gif\" /></a>.*?<a href=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -68,7 +68,10 @@ public class LnkBcks extends PluginForDecrypt {
         if (link == null) {
             link = br.getRegex(Pattern.compile("id=\"content\" src=\"([^\"]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         }
-        if (link == null) return null;
+        if (link == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;

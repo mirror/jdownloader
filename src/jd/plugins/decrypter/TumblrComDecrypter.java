@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -50,15 +51,34 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         } else if (parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+")) {
             // Single posts
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(parameter);
+                if (con.getResponseCode() == 404) {
+                    logger.info("Link offline (error 404): " + parameter);
+                    return decryptedLinks;
+                }
+                br.followConnection();
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
             final String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
 
-            final String[][] regexes = { { "<meta (property=\"og:image\"|name=\"twitter:image\") content=\"(http://[^<>\"]*?)\"", "1" }, { "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"", "0" } };
+            final String[][] regexes = { { "<meta (property=\"og:image\"|name=\"twitter:image\") content=\"(http://[^<>\"]*?)\"", "1" }, { "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"", "0" }, { "src=\\\\x22(http://[\\w\\.\\-]*?\\.tumblr\\.com/video_file/\\d+/tumblr_[a-z0-9]+)\\\\x22", "0" } };
             for (String[] regex : regexes) {
                 final String[] links = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
-                if (links != null && links.length > 1) {
+                if (links != null && links.length > 0) {
                     for (final String piclink : links) {
-                        decryptedLinks.add(createDownloadlink("directhttp://" + piclink));
+                        final DownloadLink dl = createDownloadlink("directhttp://" + piclink);
+                        try {
+                            distribute(dl);
+                        } catch (final Exception e) {
+                            // Not available in 0.851 Stable
+                        }
+                        decryptedLinks.add(dl);
                     }
                 }
             }
@@ -81,6 +101,10 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             int counter = 1;
             boolean decryptSingle = parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/page/\\d+");
             br.getPage(parameter);
+            if (br.containsHTML(">Not found\\.<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             while (nextPage != null) {
                 logger.info("Decrypting page " + counter);
                 if (!nextPage.equals("1")) br.getPage(parameter + nextPage);

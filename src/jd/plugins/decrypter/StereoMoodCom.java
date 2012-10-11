@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -22,11 +23,32 @@ public class StereoMoodCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter);
+            if (con.getResponseCode() == 400) {
+                logger.info("Link refers to a server error: " + parameter);
+                return decryptedLinks;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+        if (br.getURL().contains("/search/")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         br.setFollowRedirects(false);
-        br.getPage(parameter);
         LinkedList<String> locations = new LinkedList<String>();
-        String link = br.getRegex("playlist_url.*?(http://.*?json)").getMatch(0);
-        if (link == null) return null;
+        final String link = br.getRegex("playlist_url.*?(http://.*?json)").getMatch(0);
+        if (link == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         int index = 1;
         while (true) {
             String add = "";
@@ -43,14 +65,21 @@ public class StereoMoodCom extends PluginForDecrypt {
         }
         for (String location : locations) {
             location = location.replaceAll("\\\\/", "/");
-            Browser br2 = br.cloneBrowser();
+            final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(false);
             br2.getPage(location);
-            String url = br2.getRedirectLocation();
+            final String url = br2.getRedirectLocation();
             if (url == null) continue;
-            decryptedLinks.add(this.createDownloadlink(url));
+            final DownloadLink dl = this.createDownloadlink(url);
+            // Don't create too many requests
+            dl.setAvailable(true);
+            try {
+                distribute(dl);
+            } catch (final Exception e) {
+                // Not available in 0.851 Stable
+            }
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
-
 }

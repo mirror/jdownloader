@@ -56,6 +56,7 @@ public class TwitVidCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().contains("/index.php?") || br.containsHTML(">No videos yet") || br.getURL().contains("telly.com/?s=trending&err=1")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

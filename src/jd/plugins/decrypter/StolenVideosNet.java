@@ -72,6 +72,12 @@ public class StolenVideosNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        tempID = br.getRegex("<frame src=\"(http://(www\\.)?pornhost\\.com/\\d+/?)\"").getMatch(0);
+        if (tempID != null) {
+            final DownloadLink dl = createDownloadlink(tempID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         // For all following ids, a filename is needed
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);

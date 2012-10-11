@@ -36,9 +36,13 @@ public class SzrtPl extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setCustomCharset("iso-8859-2");
         // TODO: Seiten mit Passwort, Seite momentan buggy ...
         if (parameter.contains(".php")) return decryptedLinks;
+        if (parameter.endsWith(".gif")) {
+            logger.info("Invalid link: " + parameter);
+            return decryptedLinks;
+        }
 
         String link;
         while (true) {

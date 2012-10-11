@@ -46,7 +46,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -75,13 +77,13 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.7.7
+    // XfileSharingProBasic Version 2.5.8.7
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
     // protocol: no https
-    // captchatype: null 4dignum recaptcha
+    // captchatype: null 4dignum solvemedia recaptcha
     // other:
 
     @Override
@@ -242,16 +244,16 @@ public class XFileSharingProBasic extends PluginForHost {
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /** Captcha method by ManiacMansion */
-                    String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                     for (String[] letter : letters) {
                         capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
                     }
-                    StringBuilder code = new StringBuilder();
+                    final StringBuilder code = new StringBuilder();
                     for (String value : capMap.values()) {
                         code.append(value);
                     }
@@ -259,7 +261,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
                 } else if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                     String captchaurl = null;
                     if (sitelinks == null || sitelinks.length == 0) {
                         logger.warning("Standard captcha captchahandling broken!");
@@ -280,21 +282,28 @@ public class XFileSharingProBasic extends PluginForHost {
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setForm(dlForm);
-                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     rc.setId(id);
                     rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    Form rcform = rc.getForm();
-                    rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                    rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String chid = sm.verify(code);
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
 
@@ -304,7 +313,6 @@ public class XFileSharingProBasic extends PluginForHost {
 
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true, passCode);
 
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
@@ -318,6 +326,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 }
             }
         }
+        checkErrors(downloadLink, true, passCode);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {

@@ -38,6 +38,10 @@ public class ImgBoxCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("The specified gallery could not be found")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
         final String[] links = br.getRegex("\"(http://t\\.imgbox\\.com/.*?)\"").getColumn(0);
         if (links == null || links.length == 0) {
