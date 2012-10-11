@@ -151,7 +151,7 @@ public class FreeWayMe extends PluginForHost {
         String user = Encoding.urlEncode(acc.getUser());
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        simultanDownloads = (int) acc.getProperty("simultanDownloads", 1);
+        simultanDownloads = (int) acc.getIntegerProperty("simultanDownloads", 1);
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
