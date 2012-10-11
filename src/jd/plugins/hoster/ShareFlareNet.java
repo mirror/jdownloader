@@ -151,7 +151,8 @@ public class ShareFlareNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because shareflare maybe only allows 100 logins per 24hours
+                 * we must save the cookies, because shareflare maybe only
+                 * allows 100 logins per 24hours
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -208,7 +209,8 @@ public class ShareFlareNet extends PluginForHost {
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
-        skymonk.postPage("http://api.letitbit.net/internal/index2.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + appId + "&version=2.0 beta1");
+        int rd = (int) Math.random() * 6 + 1;
+        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + appId + "&version=2.0");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
 
@@ -264,22 +266,12 @@ public class ShareFlareNet extends PluginForHost {
         if (br.containsHTML(FREELIMIT)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         if (br.containsHTML("(В бесплатном режиме вы можете скачивать только один файл|You are currently downloading|Free users are allowed to only one parallel download\\.\\.)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         br.setFollowRedirects(false);
-        String debug = br.toString();
-        final Form fastDl = br.getFormbyProperty("id", "fast_download_form");
-        if (fastDl != null) br.submitForm(fastDl);
-        Form dlform = br.getFormbyProperty("id", "dvifree");
-        if (dlform == null) {
-            if (!br.containsHTML(FREEDOWNLOADPOSSIBLE)) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.shareflarenet.nofreedownloadlink", "No free download link for this file"));
-            logger.warning("dlform is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        debug = debug + br.submitForm(dlform);
-        dlform = br.getFormbyProperty("id", "d3_form");
-        if (dlform == null) {
-            logger.warning("dlform#2 is null...");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.submitForm(dlform);
+        boolean passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #1");
+        passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #2");
+        passed = submitFreeForm();
+        if (passed) logger.info("Sent free form #3");
 
         final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
         if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -297,7 +289,8 @@ public class ShareFlareNet extends PluginForHost {
         }
         sleep((wait + 1) * 1001l, downloadLink);
         /*
-         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please
+         * update to latest jd version
          */
         ajaxBR.getHeaders().put("Content-Length", "0");
         ajaxBR.postPage("http://shareflare.net/ajax/download3.php", "");
@@ -343,6 +336,22 @@ public class ShareFlareNet extends PluginForHost {
         if (ajaxBR.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (dllink == null) return null;
         return dllink.replace("\\", "");
+    }
+
+    private boolean submitFreeForm() throws Exception {
+        // this finds the form to "click" on the next "free download" button
+        Form[] allforms = br.getForms();
+        if (allforms == null || allforms.length == 0) return false;
+        Form down = null;
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("md5crypt") && singleform.getAction() != null && !singleform.containsHTML("/sms/check")) {
+                down = singleform;
+                break;
+            }
+        }
+        if (down == null) return false;
+        br.submitForm(down);
+        return true;
     }
 
     @Override
@@ -476,6 +485,7 @@ public class ShareFlareNet extends PluginForHost {
                             String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
                             if (skymonk.containsHTML("status:\'error\'")) {
                                 msg = msg == null ? "Error occured!" : msg;
+                                if ("Пользователь с таким email адресом уже существует. Используйте другой email".equals(msg)) msg = "E-Mail already in use. Please use another E-Mail address and try again!";
                                 UserIO.getInstance().requestMessageDialog("Error occured", msg);
                                 return;
                             } else if (skymonk.containsHTML("status:\'ok\'")) {

@@ -73,7 +73,7 @@ public class PandamemoCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods: getdllink
+    // mods: getdllink, waittime in errorhandling for reconnect
     // non account: 1 * 1
     // free account: untested, set same as free
     // premium account:
@@ -383,6 +383,10 @@ public class PandamemoCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.pandamemo\\.com:\\d+/[a-z0-9]+/\\d+/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("</center><br>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.[^<>\"]*?)\"><img src=\"http://img\\.ihere\\.org/").getMatch(0);
+            }
         }
         return dllink;
     }

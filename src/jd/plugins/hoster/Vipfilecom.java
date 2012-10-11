@@ -98,7 +98,8 @@ public class Vipfilecom extends PluginForHost {
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
-        skymonk.postPage("http://api.letitbit.net/internal/index2.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + appId + "&version=2.0 beta1");
+        int rd = (int) Math.random() * 6 + 1;
+        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + appId + "&version=2.0");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
 
@@ -320,6 +321,7 @@ public class Vipfilecom extends PluginForHost {
                             String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
                             if (skymonk.containsHTML("status:\'error\'")) {
                                 msg = msg == null ? "Error occured!" : msg;
+                                if ("Пользователь с таким email адресом уже существует. Используйте другой email".equals(msg)) msg = "E-Mail already in use. Please use another E-Mail address and try again!";
                                 UserIO.getInstance().requestMessageDialog("Error occured", msg);
                                 return;
                             } else if (skymonk.containsHTML("status:\'ok\'")) {

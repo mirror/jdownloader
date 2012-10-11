@@ -34,7 +34,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?(de\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?((de|ru)\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
     private final String   formats    = "formats";
@@ -51,7 +51,8 @@ public class ScribdCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("de.scribd.com/", "scribd.com/"));
+        final String linkPart = new Regex(link.getDownloadURL(), "(scribd\\.com/doc/\\d+)").getMatch(0);
+        link.setUrlDownload("http://www." + linkPart);
     }
 
     @Override

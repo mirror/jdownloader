@@ -317,7 +317,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    break;
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
                     continue;
@@ -327,6 +327,7 @@ public class XFileSharingProBasic extends PluginForHost {
             }
         }
         checkErrors(downloadLink, true, passCode);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
