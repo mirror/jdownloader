@@ -111,16 +111,13 @@ public class FreeWayMe extends PluginForHost {
         }
 
         // workaround for uploaded.to
-        if (supportedHosts.contains("uploaded.net") || supportedHosts.contains("ul.to") || supportedHosts.contains("uploaded.to")) {
-            if (!supportedHosts.contains("uploaded.net")) {
-                supportedHosts.add("uploaded.net");
-            }
-            if (!supportedHosts.contains("ul.to")) {
-                supportedHosts.add("ul.to");
-            }
-            if (!supportedHosts.contains("uploaded.to")) {
-                supportedHosts.add("uploaded.to");
-            }
+        if (supportedHosts.contains("uploaded.net")) {
+            supportedHosts.remove("uploaded.net");
+            supportedHosts.add("uploaded.to");
+        }
+        if (supportedHosts.contains("ul.to")) {
+            supportedHosts.remove("ul.to");
+            supportedHosts.add("uploaded.to");
         }
 
         if (supportedHosts.size() == 0) {
