@@ -64,10 +64,10 @@ public class Premium4Me extends PluginForHost {
                 hosts = br.getPage("http://premium4.me/hosters.php");
             }
         } catch (Exception e) {
-            account.setTempDisabled(true);
-            account.setValid(true);
+            // account.setTempDisabled(true);
+            account.setValid(false);
             ac.setProperty("multiHostSupport", Property.NULL);
-            ac.setStatus("Premium4Me Server Error, temp disabled");
+            ac.setStatus("invalid login. Wrong password?");
             return ac;
         }
         if (br.getCookie("http://premium4.me", "auth") == null) {
