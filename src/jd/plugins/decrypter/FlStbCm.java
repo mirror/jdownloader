@@ -142,6 +142,11 @@ public class FlStbCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.vidz.com/video/" + System.currentTimeMillis() + "/vidz_porn_videos/?s=" + externID));
                 return decryptedLinks;
             }
+            externID = br.getRegex("\"http://(www\\.)?dailymotion\\.com/swf/(\\d+)\"").getMatch(0);
+            if (externID != null) {
+                logger.info("Found unsupported dailymotion videolink, stopping...." + parameter);
+                return decryptedLinks;
+            }
             // Filename needed for all ids below here
             String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (filename == null) {
@@ -184,8 +189,12 @@ public class FlStbCm extends PluginForDecrypt {
                 logger.info("Cannot decrypt link (not a bug): " + parameter);
                 return decryptedLinks;
             }
-            if (br.containsHTML("name=\"src\" value=\"http://pornotube\\.com/")) {
+            if (br.containsHTML("dailymotion\\.com/swf/")) {
                 logger.info("Link offline or invalid: " + parameter);
+                return decryptedLinks;
+            }
+            if (br.containsHTML("megaporn\\.com/")) {
+                logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
             if (externID == null) {

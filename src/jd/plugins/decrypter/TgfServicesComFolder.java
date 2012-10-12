@@ -43,8 +43,15 @@ public class TgfServicesComFolder extends PluginForDecrypt {
         // Decrypt folders
         if (br.getURL().contains("tgf-services.com/downloads/")) {
             if (br.getRedirectLocation() != null) {
-                if (br.getRedirectLocation().contains("/Warning/?err_num=15")) return decryptedLinks;
+                if (br.getRedirectLocation().contains("/Warning/?err_num=15")) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
                 return null;
+            }
+            if (br.containsHTML("<h2>Bitrate: , Frequency: , Mode: </h2>")) {
+                logger.info("Empty folder: " + parameter);
+                return decryptedLinks;
             }
             fpName = br.getRegex("<td width=\"93%\"><h1>(.*?)</h1>").getMatch(0);
             String[] links = br.getRegex("<td width=\"10%\" align=\"center\"><a href=\"(/.*?)\"").getColumn(0);

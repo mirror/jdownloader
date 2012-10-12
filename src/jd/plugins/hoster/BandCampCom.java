@@ -69,10 +69,15 @@ public class BandCampCom extends PluginForHost {
         Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
         String artist = filenameRegex.getMatch(1);
         String filename = filenameRegex.getMatch(0);
+        final String trackNum = br.getRegex("\"track_num\":(\\d+)").getMatch(0);
         DLLINK = br.getRegex("\"file\":\"(http:.*?)\"").getMatch(0);
         if (filename == null || artist == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK).replace("\\", "");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+        if (trackNum != null) {
+            downloadLink.setFinalFileName(trackNum + "." + Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+        } else {
+            downloadLink.setFinalFileName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(filename.trim()) + ".mp3");
+        }
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

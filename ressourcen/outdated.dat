@@ -645,6 +645,7 @@ jd/plugins/hoster/MhfScriptBasic.class
 jd/plugins/hoster/CashFileCom.class
 jd/plugins/hoster/FileKeenCom.class
 jd/plugins/hoster/MegaPornVideoCom.class
+jd/plugins/hoster/MegaPornCom.class
 jd/plugins/hoster/MegaRapidEu.class
 jd/plugins/hoster/LoadFilesIn.class
 jd/plugins/hoster/GaiaFileCom.class

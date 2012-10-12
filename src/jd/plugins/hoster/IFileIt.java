@@ -203,7 +203,7 @@ public class IFileIt extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
                 updateBrowser(br);
-                br.getPage("http://filecloud.io/user-login.html");
+                br.getPage("https://secure.filecloud.io/user-login.html");
                 // We don't know if a captcha is needed so first we try without,
                 // if we get an errormessage we know a captcha is needed
                 boolean accountValid = false;
@@ -216,22 +216,22 @@ public class IFileIt extends PluginForHost {
                             break;
                         }
                         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                         rc.setId(rcID);
                         rc.load();
-                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        DownloadLink dummyLink = new DownloadLink(null, "Account", "filecloud.io", "http://filecloud.io", true);
-                        String c = getCaptchaCode(cf, dummyLink);
+                        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        final DownloadLink dummyLink = new DownloadLink(null, "Account", "filecloud.io", "http://filecloud.io", true);
+                        final String c = getCaptchaCode(cf, dummyLink);
                         br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     } else {
                         br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                     }
-                    if (br.getURL().contains("RECAPTCHA__INCORRECT")) {
+                    if (br.getURL().contains("\\$\\(\\'#alertFld\\'\\)\\.empty\\(\\)\\.append\\( \\'incorrect reCaptcha entered, try again\\'") || br.getURL().contains("error=RECAPTCHA__INCORRECT")) {
                         captchaNeeded = true;
                         logger.info("Wrong captcha and/or username/password entered!");
                         continue;
                     }
-                    if (!br.containsHTML("class=\"icon\\-info\\-sign\"></i> you have successfully logged in")) {
+                    if (!br.containsHTML("</i> you have successfully logged in")) {
                         continue;
                     }
                     accountValid = true;
@@ -294,7 +294,7 @@ public class IFileIt extends PluginForHost {
                 ai.setValidUntil(Long.parseLong(expires) * 1000);
             }
             try {
-                maxPrem.set(-1);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
@@ -310,14 +310,11 @@ public class IFileIt extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        // TODO: Next time we have a free account we can implement their API
-        // (works only for premium accounts):
-        // http://code.google.com/p/filecloud/wiki/FetchDownloadUrl
         login(account, false);
         if ("premium".equals(account.getStringProperty("typ", null))) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+                if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -358,7 +355,7 @@ public class IFileIt extends PluginForHost {
     }
 
     private void simulateBrowser() throws IOException {
-        br.cloneBrowser().getPage("http://ifile.it/ads/adframe.js");
+        br.cloneBrowser().getPage("http://filecloud.io/ads/adframe.js");
     }
 
     private void xmlrequest(final Browser br, final String url, final String postData) throws IOException {

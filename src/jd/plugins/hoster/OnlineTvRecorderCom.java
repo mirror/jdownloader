@@ -26,6 +26,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -48,38 +49,65 @@ public class OnlineTvRecorderCom extends PluginForHost {
         return "http://www.onlinetvrecorder.com/";
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        link.getLinkStatus().setStatusText("Not checked to save traffic!");
-        return AvailableStatus.UNCHECKABLE;
-    }
+    private String DLLINK = null;
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
+        filename = filename.trim();
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+        // In case the link redirects to the finallink
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(downloadLink.getDownloadURL());
             if (!con.getContentType().contains("html")) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
+                downloadLink.setDownloadSize(con.getLongContentLength());
+                DLLINK = downloadLink.getDownloadURL();
             } else {
                 if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 br.followConnection();
                 if (br.containsHTML("<div id=\"error_message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            return AvailableStatus.TRUE;
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (DLLINK == null) {
+            final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
+            if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            for (int i = 1; i <= 60; i++) {
+                br.getPage(apilink);
+                int wait = 30;
+                final String waittime = getData("notdone");
+                if (waittime != null) wait = Integer.parseInt(waittime);
+                sleep(wait * 1000l, downloadLink);
+                DLLINK = getData("filedownloadlink");
+                if (DLLINK != null) break;
+            }
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getData(final String parameter) {
+        return br.getRegex("\"" + parameter + "\": (\")?([^<>\"]*?)(\"|,)").getMatch(1);
     }
 
     private static final String MAINPAGE = "http://onlinetvrecorder.com";
