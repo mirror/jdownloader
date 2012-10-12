@@ -16,7 +16,11 @@
 
 package jd.plugins.hoster;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,6 +59,11 @@ public class OnlineTvRecorderCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        try {
+            /* not available in old stable */
+            br.setAllowedResponseCodes(new int[] { 503 });
+        } catch (Throwable e) {
+        }
         String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
         filename = filename.trim();
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
@@ -67,8 +76,9 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 DLLINK = downloadLink.getDownloadURL();
             } else {
                 if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                br.followConnection();
-                if (br.containsHTML("<div id=\"error_message\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // Stable workaround
+                get(downloadLink.getDownloadURL());
+                if (br.containsHTML(">Aufnahme nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return AvailableStatus.TRUE;
         } finally {
@@ -79,23 +89,59 @@ public class OnlineTvRecorderCom extends PluginForHost {
         }
     }
 
+    private void get(final String parameter) throws UnsupportedEncodingException, IOException {
+        try {
+            br.getPage(parameter);
+        } catch (Throwable t) {
+            String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
+            br.getRequest().setHtmlCode(str);
+        }
+    }
+
+    public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
+        BufferedReader f = null;
+        try {
+            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
+            String line;
+            StringBuilder ret = new StringBuilder();
+            String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                if (ret.length() > 0) {
+                    ret.append(sep);
+                }
+                ret.append(line);
+            }
+            return ret.toString();
+        } finally {
+            try {
+                f.close();
+            } catch (Throwable e) {
+            }
+
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         if (DLLINK == null) {
             final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
             if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (int i = 1; i <= 60; i++) {
+            // 2 hours waiting = maximum
+            for (int i = 1; i <= 240; i++) {
                 br.getPage(apilink);
-                int wait = 30;
-                final String waittime = getData("notdone");
-                if (waittime != null) wait = Integer.parseInt(waittime);
-                sleep(wait * 1000l, downloadLink);
                 DLLINK = getData("filedownloadlink");
                 if (DLLINK != null) break;
+                final String currentPosition = getData("queueposition");
+                if (currentPosition != null) downloadLink.getLinkStatus().setStatusText("In queue, current position is: " + currentPosition);
+                logger.info("In queue, current position is: " + currentPosition);
+                int wait = 30;
+                final String waittime = getData("refreshTime");
+                if (waittime != null) wait = Integer.parseInt(waittime);
+                sleep(wait * 1000l, downloadLink);
             }
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            DLLINK = DLLINK.replace("\\", "");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -107,7 +153,8 @@ public class OnlineTvRecorderCom extends PluginForHost {
     }
 
     private String getData(final String parameter) {
-        return br.getRegex("\"" + parameter + "\": (\")?([^<>\"]*?)(\"|,)").getMatch(1);
+        // "queueposition":93
+        return br.getRegex("\"" + parameter + "\":( \")?([^<>\"]*?)(\"|,)").getMatch(1);
     }
 
     private static final String MAINPAGE = "http://onlinetvrecorder.com";

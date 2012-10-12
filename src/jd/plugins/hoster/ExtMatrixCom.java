@@ -198,14 +198,15 @@ public class ExtMatrixCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         // Little help from their admin^^
-        String getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        String getLink = br.getRedirectLocation();
+        if (getLink == null) getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (getLink == null) getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int maxChunks = -2;
-        if (oldStyle()) {
+        if (oldStyle() && !true) {
             /*
              * stable has bug with openDownload and postData, cookies are not
              * forwared to chunks
