@@ -240,7 +240,8 @@ public class Uploadedto extends PluginForHost {
                 int retry = 0;
                 while (true) {
                     /*
-                     * workaround for api issues, retry 5 times when content length is only 20 bytes
+                     * workaround for api issues, retry 5 times when content
+                     * length is only 20 bytes
                      */
                     if (retry == 5) return false;
                     br.postPage("http://uploaded.net/api/filemultiple", sb.toString());
@@ -487,7 +488,8 @@ public class Uploadedto extends PluginForHost {
             if (br.containsHTML("<title>[^<].*?\\- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
+             * Free-Account Errorhandling: This allows users to switch between
+             * free accounts instead of reconnecting if a limit is reached
              */
             if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
                 final long lastdownload = account.getLongProperty("LASTDOWNLOAD", 0);
@@ -498,7 +500,8 @@ public class Uploadedto extends PluginForHost {
                 }
             } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
                 /**
-                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
+                 * Experimental reconnect handling to prevent having to enter a
+                 * captcha just to see that a limit has been reached
                  */
                 logger.info("New Download: currentIP = " + currentIP);
                 if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
@@ -510,6 +513,7 @@ public class Uploadedto extends PluginForHost {
             br.getPage("http://uploaded.net/file/" + id);
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+            if (br.containsHTML(">Sie haben die max\\. Anzahl an Free\\-Downloads f\\&#252;r diese Stunde erreicht")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
             String passCode = null;
             if (br.containsHTML("<h2>Authentifizierung</h2>")) {
                 passCode = getPassword(downloadLink);
@@ -584,7 +588,8 @@ public class Uploadedto extends PluginForHost {
                 if ("No htmlCode read".equalsIgnoreCase(br.toString())) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
                 if (br.containsHTML("Datei herunterladen")) {
                     /*
-                     * we get fresh entry page after clicking download, means we have to start from beginning
+                     * we get fresh entry page after clicking download, means we
+                     * have to start from beginning
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverproblem", 5 * 60 * 1000l);
                 }

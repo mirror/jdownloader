@@ -160,7 +160,7 @@ public class ScribdCom extends PluginForHost {
 
     public void login(Account account) throws Exception {
         setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://www.scribd.com");
         final String thisToken = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([a-z0-9]+)\"").getMatch(0);
