@@ -59,7 +59,7 @@ public class RayFileCom extends PluginForHost {
         String cookie_key = null;
         String cookie_value = null;
         String cookie_host = null;
-        regex = "setCookie\\('(.*?)', '(.*?)', (.*?), '(.*?)', '(.*?)'.*?\\)";
+        regex = "setCookie\\(\\'(.*?)\\', \\'(.*?)\\', (.*?), \\'(.*?)\\', \\'(.*?)\\'.*?\\)";
 
         p = Pattern.compile(regex);
         cookie_key = ajax.getRegex(p).getMatch(0);
@@ -68,6 +68,10 @@ public class RayFileCom extends PluginForHost {
 
         this.br.setCookie(cookie_host, cookie_key, cookie_value);
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
 
         this.dl.startDownload();
     }

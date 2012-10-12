@@ -58,12 +58,13 @@ public class VideoOneCom extends PluginForDecrypt {
         }
 
         br.getPage("http://video-one.com/iframe/" + filename + "?t=" + t + "&h=" + h + "&p=video-one.com/eval/seq/2");
+        if (br.containsHTML(">Video Content Not Available<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
 
         String fuu = jsString();
-        if (fuu == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
+        if (fuu == null) fuu = "";
         String externID = new Regex(fuu, "starturl = \"(http[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
@@ -173,6 +174,11 @@ public class VideoOneCom extends PluginForDecrypt {
         externID = br.getRegex("<iframe src=\"http://(www\\.)?yobt\\.tv/embed/(\\d+)\\.html\"").getMatch(1);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.yobt.tv/content/" + externID + "/" + System.currentTimeMillis() + ".html"));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("src=\"http://(www\\.)?embed\\.porntube\\.com/(\\d+)\"").getMatch(1);
+        if (externID != null) {
+            decryptedLinks.add(createDownloadlink("http://porntube.com/videos/x_" + externID));
             return decryptedLinks;
         }
         // filename needed for all IDs below here

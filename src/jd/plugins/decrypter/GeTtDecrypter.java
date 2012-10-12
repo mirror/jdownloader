@@ -39,8 +39,9 @@ public class GeTtDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString().replace("#", "");
-        if (new Regex(parameter, "http://(www\\.)?ge\\.tt/[A-Za-z0-9]+/v/0").matches()) {
-            br.getPage(parameter);
+        // Link can still change via redirect
+        br.getPage(parameter);
+        if (new Regex(br.getURL(), "http://(www\\.)?ge\\.tt/[A-Za-z0-9]+/v/0").matches()) {
             // Invalid link
             if (br.containsHTML("Page not found|The page you were looking for was not found")) {
                 logger.info("Link offline: " + parameter);

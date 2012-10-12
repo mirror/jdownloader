@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?!trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon)(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pastebin.com" }, urls = { "http://(www\\.)?pastebin\\.com/(?!trends|signup|login|pro|tools|archive|login\\.php|faq|settings|alerts|domains|contact|stats|etc|favicon|users|api|download)(raw.*?=)?[0-9A-Za-z]+" }, flags = { 0 })
 public class PasteBinCom extends PluginForDecrypt {
 
     public PasteBinCom(PluginWrapper wrapper) {
@@ -37,10 +37,10 @@ public class PasteBinCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         /* Error handling for invalid links */
-        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)")) {
+        if (br.containsHTML("(Unknown paste ID|Unknown paste ID, it may have expired or been deleted)") || br.getURL().equals("http://pastebin.com/")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -48,7 +48,10 @@ public class PasteBinCom extends PluginForDecrypt {
         if (plaintxt == null && parameter.contains("raw.php")) {
             plaintxt = br.toString();
         }
-        if (plaintxt == null) return null;
+        if (plaintxt == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         // Find all those links
         String[] links = HTMLParser.getHttpLinks(plaintxt, "");
         if (links == null || links.length == 0) {

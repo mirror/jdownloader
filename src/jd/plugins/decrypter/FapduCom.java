@@ -173,6 +173,22 @@ public class FapduCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("pornative\\.com/embed/player\\.swf\\?movie_id=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://pornative.com/" + externID + ".html");
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // 2nd handling for tnaflix
+        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
+            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            if (externID != null) {
+                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                return decryptedLinks;
+            }
+        }
         // filename needed for all IDs below here
         if (filename == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -198,13 +214,14 @@ public class FapduCom extends PluginForDecrypt {
             }
 
         }
-        // 2nd handling for tnaflix
-        externID = br.getRegex("tnaflix\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
+        externID = br.getRegex("moviefap\\.com/embedding_player/player_[^<>\"]+\\.swf\".*?value=\"config=(embedding_feed\\.php\\?viewkey=[a-z0-9]+)\"").getMatch(0);
         if (externID != null) {
-            br.getPage("http://www.tnaflix.com/embedding_player/" + externID);
-            externID = br.getRegex("start_thumb>http://static\\.tnaflix\\.com/thumbs/[a-z0-9\\-_]+/[a-z0-9]+_(\\d+)l\\.jpg<").getMatch(0);
+            br.getPage("http://www.moviefap.com/embedding_player/" + externID);
+            externID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink("http://www.tnaflix.com/cum-videos/" + System.currentTimeMillis() + "/video" + externID));
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(filename + ".flv");
+                decryptedLinks.add(dl);
                 return decryptedLinks;
             }
         }

@@ -43,12 +43,19 @@ public class UrlGuardOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if ("http://urlguard.org/".equals(br.getRedirectLocation())) {
+        // Link offline
+        if ("http://urlguard.org/".equals(br.getURL())) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
+        // Invalid link
+        if (br.containsHTML(">403 Forbidden<")) {
+            logger.info("Link invalid: " + parameter);
+            return decryptedLinks;
+        }
+        br.setFollowRedirects(false);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);

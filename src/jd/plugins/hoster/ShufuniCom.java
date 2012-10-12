@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -63,7 +64,7 @@ public class ShufuniCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -93,14 +94,18 @@ public class ShufuniCom extends PluginForHost {
                 downloadLink.setFinalFileName(filename);
             }
         } else {
+            // Link offline
+            if (br.containsHTML(">no flv details<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // Invalid link
             if (br.containsHTML("(<title>500 \\- Internal server error\\.</title>|<h2>500 \\- Internal server error\\.</h2>|<h3>There is a problem with the resource you are looking for|The page you are looking for is not available)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?) \\- Free Porn Video[\t\n\r ]+</title>").getMatch(0);
+                if (filename == null) filename = new Regex(downloadLink.getDownloadURL(), "videoCode=(.+)$").getMatch(0);
             }
             dllink = br.getRegex("addVariable\\(\"CDNUrl\", \"(.*?)\"\\);").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://media\\d+\\.shufuni\\.com/.*?)\"").getMatch(0);
-            if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) dllink = br.getRegex("(http://media[a-z0-9]+\\.shufuni\\.com/.*?)(\"|\\&)").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String ext = dllink.substring(dllink.lastIndexOf("."));
             if (ext == null || ext.length() > 5) ext = ".mp4";
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ext);

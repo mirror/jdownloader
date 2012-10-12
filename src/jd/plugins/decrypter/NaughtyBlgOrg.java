@@ -12,7 +12,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|\\d{4}/)[^/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyblog.org" }, urls = { "http://(www\\.)?naughtyblog\\.org/(?!category|\\d{4}/|tag)[^/]+" }, flags = { 0 })
 public class NaughtyBlgOrg extends PluginForDecrypt {
 
     private enum Category {
@@ -89,7 +89,7 @@ public class NaughtyBlgOrg extends PluginForDecrypt {
         for (final String link : links) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(getFpName(contentReleaseName));
-            if (!link.matches("http://(www\\.)?naughtyblog\\.org/(?!category|\\d{4}/)[^/]+")) {
+            if (!link.matches("http://(www\\.)?naughtyblog\\.org/.+")) {
                 final DownloadLink dl = createDownloadlink(link);
                 fp.add(dl);
                 decryptedLinks.add(createDownloadlink(link));
