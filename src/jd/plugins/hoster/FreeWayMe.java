@@ -117,23 +117,12 @@ public class FreeWayMe extends PluginForHost {
             }
         }
 
-        // workaround for uploaded.to
-        if (supportedHosts.contains("uploaded.net")) {
-            supportedHosts.remove("uploaded.net");
-            supportedHosts.add("uploaded.to");
-        }
-        if (supportedHosts.contains("ul.to")) {
-            supportedHosts.remove("ul.to");
-            supportedHosts.add("uploaded.to");
-        }
-
         if (supportedHosts.size() == 0) {
             ac.setStatus("Account valid: 0 Hosts via free-way.me available");
         } else {
             ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via free-way.me available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
-
         return ac;
     }
 
@@ -184,8 +173,7 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal
-                 * plugin
+                 * after x retries we disable this host and retry with normal plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */
