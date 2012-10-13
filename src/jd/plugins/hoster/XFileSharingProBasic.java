@@ -657,6 +657,7 @@ public class XFileSharingProBasic extends PluginForHost {
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
             }
         } else {
             final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -671,6 +672,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
+                    // not available in old Stable 0.9.581
                 }
             }
             ai.setStatus("Premium User");

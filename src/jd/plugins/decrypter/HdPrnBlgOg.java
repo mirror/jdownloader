@@ -100,6 +100,9 @@ public class HdPrnBlgOg extends PluginForDecrypt {
             for (String img : imgs) {
                 decryptedLinks.add(createDownloadlink("directhttp://" + img.replace("/thumb/", "/big/").replace(".jpeg", ".jpg")));
             }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(contentReleaseName + " (Images)");
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

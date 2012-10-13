@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,7 +38,7 @@ import org.appwork.utils.Regex;
 public class FreeWayMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private int                                            simultanDownloads  = 1;
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
 
     public FreeWayMe(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,7 +53,7 @@ public class FreeWayMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanDownload(DownloadLink link, Account account) {
-        return simultanDownloads;
+        return maxPrem.get();
     }
 
     @Override
@@ -89,8 +90,14 @@ public class FreeWayMe extends PluginForHost {
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
         Long guthaben = Long.parseLong(getRegexTag(page, "guthaben").getMatch(0));
         ac.setTrafficLeft(guthaben * 1024 * 1024);
-        simultanDownloads = Integer.parseInt((new Regex(page, "\"parallel\":([0-9]*)")).getMatch(0));
-        ac.setProperty("simultanDownloads", simultanDownloads);
+        try {
+            maxPrem.set(Integer.parseInt((new Regex(page, "\"parallel\":([0-9]*)")).getMatch(0)));
+            // free accounts can still have captcha.
+            account.setMaxSimultanDownloads(maxPrem.get());
+            account.setConcurrentUsePossible(true);
+        } catch (final Throwable e) {
+            // not available in old Stable 0.9.581
+        }
         String accountType = getRegexTag(page, "premium").getMatch(0);
         ac.setValidUntil(-1);
         if (accountType.equalsIgnoreCase("Flatrate")) {
@@ -149,7 +156,6 @@ public class FreeWayMe extends PluginForHost {
         String user = Encoding.urlEncode(acc.getUser());
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        simultanDownloads = (int) acc.getIntegerProperty("simultanDownloads", 1);
         String dllink = "https://www.free-way.me/load.php?multiget=2&user=" + user + "&pw=" + pw + "&url=" + url;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -178,7 +184,8 @@ public class FreeWayMe extends PluginForHost {
                 tempUnavailableHoster(acc, link, 1 * 60 * 1000l);
             } else if (error.equalsIgnoreCase("Es ist ein unbekannter Fehler aufgetreten (#1)")) {
                 /*
-                 * after x retries we disable this host and retry with normal plugin
+                 * after x retries we disable this host and retry with normal
+                 * plugin
                  */
                 if (link.getLinkStatus().getRetryCount() >= 3) {
                     /* reset retrycounter */
