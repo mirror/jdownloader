@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl/(?!action|powiemto)[^<>\"/]+/.+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "chomikuj.pl" }, urls = { "http://((www\\.)?chomikuj\\.pl/(?!action|powiemto|page)[^<>\"/]+/.+|chomikujpagedecrypt\\.pl/.*?,\\d+$)" }, flags = { 0 })
 public class ChoMikujPl extends PluginForDecrypt {
 
     public ChoMikujPl(PluginWrapper wrapper) {
@@ -48,9 +48,10 @@ public class ChoMikujPl extends PluginForDecrypt {
     private static final String PASSWORDTEXT             = "Ten folder jest (<b>)?zabezpieczony oddzielnym hasłem";
     private String              FOLDERPASSWORD           = null;
     private ArrayList<Integer>  REGEXSORT                = new ArrayList<Integer>();
-    private String              ERROR                    = null;
+    private String              ERROR                    = "Decrypter broken for link: ";
     private String              REQUESTVERIFICATIONTOKEN = null;
     private static final String PAGEDECRYPTLINK          = "http://chomikujpagedecrypt\\.pl/.*?\\d+";
+    private static final String ENDINGS                  = "\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -60,6 +61,9 @@ public class ChoMikujPl extends PluginForDecrypt {
             linkending = parameter.substring(parameter.lastIndexOf(","));
         } catch (Exception e) {
         }
+        /** Correct added link */
+        parameter = parameter.replace("www.", "");
+        br.setFollowRedirects(false);
 
         /** Handle single links */
         if (linkending != null) {
@@ -84,26 +88,59 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
 
-        /** Correct added link */
-        parameter = parameter.replace("www.", "");
-        ERROR = "Decrypter broken for link: " + parameter;
-        br.setFollowRedirects(false);
-        // Check if the link directly wants to access a specified page of the
-        // gallery, if so remove it to avoid problems
-        String checkPage = new Regex(parameter, "chomikuj\\.pl/.*?(,\\d+)$").getMatch(0);
-        if (checkPage != null) {
-            br.getPage(parameter.replace(checkPage, ""));
-            if (br.getRedirectLocation() == null) {
-                parameter = parameter.replace(checkPage, "");
-            } else {
-                br.getPage(parameter);
+        /** Handle single links 2 */
+        String ext = parameter.substring(parameter.lastIndexOf("."));
+        if (ext != null && ext.length() <= 5 && ext.matches(ENDINGS)) {
+            br.getPage(parameter);
+            final String redirect = br.getRedirectLocation();
+            if (redirect != null) {
+                // Maybe direct link is no direct link anymore?!
+                ext = redirect.substring(redirect.lastIndexOf("."));
+                if (ext == null || ext.length() > 5 || !ext.matches(ENDINGS)) {
+                    logger.info("Link offline: " + parameter);
+                    return decryptedLinks;
+                }
+                br.getPage(redirect);
             }
+
+            // Check if link can be decrypted
+            final String cantDecrypt = getError();
+            if (cantDecrypt != null) {
+                logger.info(String.format(cantDecrypt, parameter));
+                return decryptedLinks;
+            }
+
+            final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
+            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
+            final String fid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
+            if (filename == null || filesize == null || fid == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
+            dl.setProperty("fileid", fid);
+            dl.setName(correctFilename(Encoding.htmlDecode(filename)));
+            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim().replace(",", "."))));
+            dl.setAvailable(true);
+            dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
+
         br.getPage(parameter);
-        if (br.containsHTML("label for=\"Password\">Hasło</label><input id=\"Password\"")) {
-            logger.warning("This link is password protected but there is so handling sor such links yet!");
-            return null;
+
+        // Check if link can be decrypted
+        final String cantDecrypt = getError();
+        if (cantDecrypt != null) {
+            logger.info(String.format(cantDecrypt, parameter));
+            return decryptedLinks;
         }
+
         // If we have a new link we have to use it or we'll have big problems
         // later when POSTing things to the server
         if (br.getRedirectLocation() != null) {
@@ -132,34 +169,11 @@ public class ChoMikujPl extends PluginForDecrypt {
         if (folderID == null) folderID = br.getRegex("name=\"folderId\" type=\"hidden\" value=\"(\\d+)\"").getMatch(0);
         REQUESTVERIFICATIONTOKEN = br.getRegex("<input name=\"__RequestVerificationToken\" type=\"hidden\" value=\"([^<>\"\\']+)\"").getMatch(0);
         if (REQUESTVERIFICATIONTOKEN == null) {
-            logger.warning(ERROR);
+            logger.warning(ERROR + parameter);
             return null;
         }
-        /** Handle single .RAR files directly */
-        if (parameter.endsWith(".RAR")) {
-            final String filename = br.getRegex("Download: <b>([^<>\"]*?)</b>").getMatch(0);
-            final String filesize = br.getRegex("<p class=\"fileSize\">([^<>\"]*?)</p>").getMatch(0);
-            final String fid = br.getRegex("id=\"fileDetails_(\\d+)\"").getMatch(0);
-            if (filename == null || filesize == null || fid == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            final DownloadLink dl = createDownloadlink(parameter.replace("chomikuj.pl/", "chomikujdecrypted.pl/") + "," + System.currentTimeMillis() + new Random().nextInt(100000));
-            dl.setProperty("fileid", fid);
-            dl.setName(correctFilename(Encoding.htmlDecode(filename)));
-            dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize.trim().replace(",", "."))));
-            dl.setAvailable(true);
-            dl.setProperty("requestverificationtoken", REQUESTVERIFICATIONTOKEN);
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
-            }
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
         if (folderID == null || fpName == null) {
-            logger.warning(ERROR);
+            logger.warning(ERROR + parameter);
             return null;
         }
 
@@ -172,6 +186,18 @@ public class ChoMikujPl extends PluginForDecrypt {
         fp.setName(fpName);
         decryptedLinks = decryptAll(parameter, postdata, param, fp);
         return decryptedLinks;
+    }
+
+    private String getError() {
+        String error = null;
+        if (br.containsHTML("label for=\"Password\">Hasło</label><input id=\"Password\"")) {
+            error = "Password protected links can't be decrypted: %s";
+        } else if (br.containsHTML("Konto czasowo zablokowane")) {
+            error = "Can't decrypt link, the account of the owner is banned: %s";
+        } else if (br.containsHTML("Chomik o takiej nazwie nie istnieje<|Nie znaleziono - błąd 404")) {
+            error = "This link is offline (received error 404): %s";
+        }
+        return error;
     }
 
     private ArrayList<DownloadLink> decryptAll(final String parameter, final String postdata, final CryptedLink param, final FilePackage fp) throws Exception {

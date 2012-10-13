@@ -73,6 +73,8 @@ public class NowDownloadEu extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = (checkDirectLink(downloadLink, "directlink"));
+        if (dllink == null) dllink = getDllink();
+        // This handling maybe isn't needed anymore
         if (dllink == null) {
             final String tokenPage = br.getRegex("\"(/api/token\\.php\\?token=[a-z0-9]+)\"").getMatch(0);
             final String continuePage = br.getRegex("\"(/dl2/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
@@ -85,8 +87,7 @@ public class NowDownloadEu extends PluginForHost {
             br2.getPage(MAINPAGE + tokenPage);
             sleep(wait * 1001l, downloadLink);
             br.getPage(MAINPAGE + continuePage);
-            dllink = br.getRegex("\"(http://f\\d+\\.nowdownload\\.eu/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<p class=\"top30\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = getDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             String filename = new Regex(dllink, ".+/[^_]+_(.+)").getMatch(0);
             if (filename != null) downloadLink.setFinalFileName(Encoding.urlDecode(filename, false));
@@ -98,6 +99,12 @@ public class NowDownloadEu extends PluginForHost {
         }
         downloadLink.setProperty("directlink", dllink);
         dl.startDownload();
+    }
+
+    private String getDllink() {
+        String dllink = br.getRegex(">Download this file</h3>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://f\\d+\\.nowdownload\\.eu/dl/[a-z0-9]+/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        return dllink;
     }
 
     private String checkDirectLink(DownloadLink downloadLink, String property) {

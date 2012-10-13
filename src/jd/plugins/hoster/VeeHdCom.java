@@ -44,11 +44,11 @@ public class VeeHdCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">This is a private video") || br.getURL().contains("/?removed=nc")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 style=\"\">([^<>\"]*?) \\| <font").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) on Veehd</title>").getMatch(0);
+        if (br.containsHTML(">This is a private video") || br.getURL().contains("/?removed=") || br.containsHTML("This video has been removed due")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h2 style=\"\">([^<>]*?) \\| <font").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>]*?) on Veehd</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()) + ".avi");
+        link.setName(Encoding.htmlDecode(filename.trim()).replace("\"", "'") + ".avi");
         return AvailableStatus.TRUE;
     }
 

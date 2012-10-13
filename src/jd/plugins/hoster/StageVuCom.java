@@ -47,8 +47,43 @@ public class StageVuCom extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage(link.getDownloadURL());
+        // Invalid link
+        if (br.containsHTML(">Error: No video with the provided information exists</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Offline link
+        if (br.containsHTML("The video you are attempting to view has been removed<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<title>(.*?)- Stagevu: Your View</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<div id=\"vidbox\">[\n\r\t ]+<h1>(.*?)</h1>").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<param name=\"movieTitle\" value=\"(.*?)\"").getMatch(0);
+            }
+        }
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".avi");
+        if (br.containsHTML(">Restricted Content<")) {
+            link.getLinkStatus().setStatusText("Only downloadable for registered users!");
+            return AvailableStatus.TRUE;
+        }
+        final String filesize = br.getRegex(">Filesize:</td><td>(.*?)</td>").getMatch(0);
+        if (filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(">Restricted Content<")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for registered users!");
+        }
         String dllink = br.getRegex("<embed type=\"video/divx\" src=\"(http.*?\\.avi)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("<param name=\"src\" value=\"(http.*?\\.avi)\"").getMatch(0);
@@ -65,25 +100,6 @@ public class StageVuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">Error: No video with the provided information exists</div>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?)- Stagevu: Your View</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<div id=\"vidbox\">[\n\r\t ]+<h1>(.*?)</h1>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<param name=\"movieTitle\" value=\"(.*?)\"").getMatch(0);
-            }
-        }
-        String filesize = br.getRegex(">Filesize:</td><td>(.*?)</td>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".avi");
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

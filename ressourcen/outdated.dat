@@ -958,3 +958,4 @@ jd/plugins/hoster/UploadVilleCom.class
 jd/plugins/hoster/ShareSharedCom.class
 jd/plugins/hoster/HotShareNet.class
 jd/plugins/hoster/MojeFileCom.class
+jd/plugins/hoster/DeditvCom.class
