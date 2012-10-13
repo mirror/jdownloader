@@ -245,7 +245,7 @@ public class RtmpDump extends RTMPDownload {
                 boolean runTimeSize = false;
                 long tmplen = 0, fixedlen = 0, calc = 0;
                 while ((line = br.readLine()) != null) {
-                    if (!line.equals("")) {
+                    if (!line.equals("") && line.startsWith("ERROR:")) {
                         error = line;
                     }
                     if (!new Regex(line, "^[0-9]").matches()) {
@@ -253,6 +253,20 @@ public class RtmpDump extends RTMPDownload {
                             if (line.contains("length")) runTimeSize = true;
                             String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
                             iSize = SizeFormatter.getSize(size);
+                        }
+                        // handle redirect
+                        if (!this.downloadLink.getBooleanProperty("REDIRECT", false)) {
+                            if (line.startsWith("DEBUG:")) {
+                                String test = line.replaceAll("\\s", "");
+                                if (test.startsWith("DEBUG:Property:")) {
+                                    if (test.matches("DEBUG:Property:<Name:redirect,STRING:[^>]+>")) {
+                                        String redirectUrl = new Regex(test, "STRING:([^>]+)").getMatch(0);
+                                        this.downloadLink.setProperty("REDIRECT", true);
+                                        this.downloadLink.setProperty("REDIRECTURL", redirectUrl);
+                                        return false;
+                                    }
+                                }
+                            }
                         }
                     } else {
                         if (this.downloadLink.getDownloadSize() == 0) {
@@ -344,6 +358,7 @@ public class RtmpDump extends RTMPDownload {
             } else {
                 this.logger.severe("cmd: " + cmd);
                 this.logger.severe(error);
+                if (this.downloadLink.hasProperty("REDIRECT")) this.downloadLink.setProperty("REDIRECT", false);
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
             return true;

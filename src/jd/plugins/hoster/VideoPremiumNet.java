@@ -53,8 +53,7 @@ public class VideoPremiumNet extends PluginForHost {
 
     // DEV NOTES
     /**
-     * Script notes: Streaming versions of this script sometimes redirect you to
-     * their directlinks when accessing this link + the link ID:
+     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -221,26 +220,38 @@ public class VideoPremiumNet extends PluginForHost {
         }
     }
 
-    private void setupRTMPConnection(String dllink, DownloadInterface dl) {
+    private void setupRTMPConnection(String stream, DownloadInterface dl, DownloadLink downloadLink) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-        /*
-         * videopremium.net uses redirections in streams. rtmpdump can't handle
-         * this.
-         */
-        String url = dllink.split("@")[0].replaceAll("//[\\w\\.]+\\.videopremium.net/", "//x" + ((int) (11 * Math.random()) + 1) + ".videopremium.net/");
+        /* videopremium.net uses redirections in streams. rtmpdump can't handle this. */
+        String url = stream.split("@")[0];
+        if (downloadLink.getBooleanProperty("REDIRECT", false)) url = downloadLink.getStringProperty("REDIRECTURL", null);
 
-        rtmp.setPlayPath(dllink.split("@")[1]);
+        rtmp.setPlayPath(stream.split("@")[1]);
         rtmp.setUrl(url);
-        rtmp.setSwfVfy(dllink.split("@")[2]);
+        rtmp.setSwfVfy(stream.split("@")[2]);
+        rtmp.setPageUrl(downloadLink.getDownloadURL());
         rtmp.setResume(false);
-        rtmp.setTimeOut(-10);
+        rtmp.setDebug(); // needed for redirect feature in rtmpdump.class
+        rtmp.setTimeOut(4);
     }
 
     private void download(DownloadLink downloadLink, String dllink) throws Exception {
         dl = new RTMPDownload(this, downloadLink, dllink);
-        setupRTMPConnection(dllink, dl);
-        ((RTMPDownload) dl).startDownload();
+        setupRTMPConnection(dllink, dl, downloadLink);
+        try {
+            if (!((RTMPDownload) dl).startDownload()) {
+                if (downloadLink.getBooleanProperty("REDIRECT", false)) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+            } else {
+                downloadLink.setProperty("REDIRECT", false);
+            }
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == 4) {
+                logger.info("RTMP: Redirect found! Start download with new url.");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+            }
+        }
     }
 
     @Override
@@ -249,19 +260,14 @@ public class VideoPremiumNet extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -425,6 +431,7 @@ public class VideoPremiumNet extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.getProperties().remove("REDIRECT");
     }
 
     // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
