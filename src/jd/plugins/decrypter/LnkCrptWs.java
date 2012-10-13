@@ -48,6 +48,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import javax.swing.event.MouseInputAdapter;
 
 import jd.PluginWrapper;
@@ -55,7 +56,6 @@ import jd.controlling.ProgressController;
 import jd.gui.UserIO;
 import jd.gui.swing.SwingGui;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.Screen;
@@ -74,6 +74,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import net.miginfocom.swing.MigLayout;
 
+import org.appwork.utils.Application;
 import org.appwork.utils.swing.dialog.AbstractDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 
@@ -201,12 +202,12 @@ public class LnkCrptWs extends PluginForDecrypt {
         private static Object LOCK = new Object();
 
         public static void prepareBrowser(final Browser kc, final String a) {
-            kc.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:9.0.1) Gecko/20100101 Firefox/9.0.1");
+            kc.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
             kc.getHeaders().put("Referer", DLURL);
             kc.getHeaders().put("Pragma", null);
             kc.getHeaders().put("Cache-Control", null);
             kc.getHeaders().put("Accept", a);
-            kc.getHeaders().put("Accept-Charset", "UTF-8,*");
+            kc.getHeaders().put("Accept-Charset", null);
             kc.getHeaders().put("Accept-Language", "en-us");
             kc.getHeaders().put("DNT", "1");
             kc.getHeaders().put("Cache-Control", null);
@@ -258,10 +259,32 @@ public class LnkCrptWs extends PluginForDecrypt {
             return false;
         }
 
+        private String getAdditionalQuery(String query) {
+            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngine engine = manager.getEngineByName("javascript");
+            String js = rcBr.toString();
+            String doc = new Regex(query, "(document.*?)$").getMatch(0);
+            js = js.replaceAll(doc + "=s_s_c_web_server_sign4;", "");
+            query = query.replaceAll("\\+" + doc, "");
+            try {
+                engine.eval("var document = new Object();");
+                engine.eval(js);
+            } catch (final Throwable e) {
+                /* ignore rhino Exceptions */
+                try {
+                    query = engine.eval(query).toString() + new Regex(js, doc + "=\"([^\"]+)").getMatch(0);
+                } catch (Throwable e1) {
+                }
+            }
+            return query;
+        }
+
         private void load() throws Exception {
             rcBr = br.cloneBrowser();
             rcBr.setFollowRedirects(true);
+            String additionalQuery = null;
             prepareBrowser(rcBr, "*/*");
+
             if (PARAMS.containsKey("src")) {
                 rcBr.getPage(PARAMS.get("src"));
                 PARAMS.put("src", DLURL);
@@ -270,19 +293,30 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
                 SERVERSTRING = SERVERSTRING + Encoding.urlEncode(DLURL) + "&r=" + Math.random();
                 rcBr.getPage(SERVERSTRING);
-
                 SERVERSTRING = null;
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));
-                SERVERSTRING = rcBr.getRegex("\\.setAttribute\\(\"src\",\"(.*?)\"").getMatch(0);
+                String[] next = rcBr.getRegex("\\.setAttribute\\(\"src\",\"(.*?)\"\\+(.*?)\\+").getRow(0);
+                SERVERSTRING = next[0];
+
+                /* a little bit js processing */
+                additionalQuery = getAdditionalQuery(rcBr.getRegex("var " + next[1] + "=.*?s_s_c_web_server_sign4\\+(.*?);").getMatch(0));
+
             }
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
-                SERVERSTRING = SERVERSTRING + Encoding.urlEncode(getGjsParameter()) + "&r=" + Math.random();
+                rcBr.clearCookies(rcBr.getHost());
+                SERVERSTRING = SERVERSTRING + Encoding.urlEncode(getGjsParameter() + additionalQuery) + "&r=" + Math.random();
                 rcBr.getPage(SERVERSTRING);
-
+                additionalQuery = additionalQuery.substring(0, additionalQuery.lastIndexOf("|"));
                 PARAMS.put("s_s_c_web_server_sign3", rcBr.getRegex("s_s_c_setnewws\\(\"(.*?)\",").getMatch(0));
                 stImgs = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(0);
                 sscStc = rcBr.getRegex("\\(\'([0-9a-f]+)\',\'(http.*?\\.png)\',(.*?),(true|false)\\)").getRow(1);
-                SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter());
+
+                String signFour = PARAMS.get("s_s_c_web_server_sign4");
+                if (signFour.length() < 33) {
+                    signFour = signFour.substring(0, 10) + "378" + signFour.substring(10);
+                    PARAMS.put("s_s_c_web_server_sign4", signFour);
+                }
+                SERVERSTRING = rcBr.getRegex("s_s_c_resscript\\.setAttribute\\(\'src\',\'(.*?)\'").getMatch(0) + Encoding.urlEncode(getGjsParameter() + additionalQuery);
                 if (stImgs == null || sscStc == null || SERVERSTRING == null) throw new Exception("KeyCaptcha Module fails");
             } else {
                 throw new Exception("KeyCaptcha Module fails");
@@ -336,26 +370,30 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
 
             /* Bilderdownload und Verarbeitung */
-            // fragmentierte Puzzleteile
-            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));
-            // fragmentiertes Hintergrundbild
-            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));
+            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
+            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
 
             if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) { return "CANCEL"; }
 
             String out;
+            ArrayList<Integer> marray = new ArrayList<Integer>();
+
+            final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
+            String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
+            mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
 
             if (!isStableEnviroment()) {
 
-                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null);
+                final KeyCaptchaDialog vC = new KeyCaptchaDialog(0, "KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, null, rcBr, mmUrlReq);
                 vC.displayDialog();
                 out = vC.getReturnValue();
                 if (vC.getReturnmask() == 4) {
                     out = "CANCEL";
                 }
+                marray.addAll(vC.mouseArray);
 
             } else {
-                final KeyCaptchaShowDialog vC = new KeyCaptchaShowDialog("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg);
+                final KeyCaptchaDialogForStable vC = new KeyCaptchaDialogForStable("KeyCaptcha - " + br.getHost(), new String[] { stImgs[1], sscStc[1] }, fmsImg, rcBr, mmUrlReq);
                 // Warten bis der KeyCaptcha-Dialog geschlossen ist
                 synchronized (LOCK) {
                     try {
@@ -368,18 +406,23 @@ public class LnkCrptWs extends PluginForDecrypt {
                 out = vC.POSITION;
             }
             if (out == null) { return null; }
-            if (out.equals("CANCEL")) {
+            if ("CANCEL".equals(out)) {
                 System.out.println("KeyCaptcha: User aborted captcha dialog.");
                 return out;
             }
 
-            final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + "02njhd8322");
-            String mmUrlReq = SERVERSTRING.replaceAll("cjs\\?pS=\\d+&cOut", "mm\\?pS=" + pS + "&cP");
-            mmUrlReq = mmUrlReq + "&mms=" + Math.random() + "&r=" + Math.random();
-            rcBr.getPage(mmUrlReq);
+            String key = rcBr.getRegex("\\|([0-9a-zA-Z]+)\'\\.split").getMatch(0);
+            if (key == null) key = Encoding.Base64Decode("OTNodk9FZmhNZGU=");
 
-            SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + out + "&cP=");
-            out = rcBr.getPage(SERVERSTRING);
+            String cOut = "";
+            for (Integer i : marray) {
+                if (cOut.length() > 1) cOut += ".";
+                cOut += String.valueOf(i);
+            }
+
+            SERVERSTRING = SERVERSTRING.replace("cOut=", "cOut=" + sscFsmCheckTwo(out, key) + "..." + cOut + "&cP=");
+            rcBr.clearCookies(rcBr.getHost());
+            out = rcBr.getPage(SERVERSTRING.substring(0, SERVERSTRING.lastIndexOf("%7C")));
             out = new Regex(out, "s_s_c_setcapvalue\\( \"(.*?)\" \\)").getMatch(0);
             // validate final response
             if (!out.matches("[0-9a-f]+\\|[0-9a-f]+\\|http://back\\d+\\.keycaptcha\\.com/swfs/ckc/[0-9a-f-]+\\|[0-9a-f-\\.]+\\|(0|1)")) { return null; }
@@ -431,10 +474,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 }
                 final int sPos = (int) Math.floor(prand.length() / 5);
                 final int mult = Integer.parseInt(String.valueOf(prand.charAt(sPos) + "" + prand.charAt(sPos * 2) + "" + prand.charAt(sPos * 3) + "" + prand.charAt(sPos * 4) + "" + prand.charAt(sPos * 5 - 1)));
-                final int incr = Math.round(arg1.length() / 3);
+                final int incr = (int) Math.ceil(arg1.length() / 3d);
                 final long modu = (int) Math.pow(2, 31);
                 if (mult < 2) { return null; }
-                final int salt = (int) Math.round(Math.random() * 1000000000) % 100000000;
+                int salt = (int) Math.round(Math.random() * 1000000000) % 100000000;
                 prand += salt;
                 while (prand.length() > 9) {
                     prand = String.valueOf(Integer.parseInt(prand.substring(0, 9), 10) + Integer.parseInt(prand.substring(9, Math.min(prand.length(), 14)), 10)) + prand.substring(Math.min(prand.length(), 14), prand.length());
@@ -522,12 +565,20 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private final Dimension                    dimensions;
 
-        public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption) {
+        private ArrayList<Integer>                 mouseArray;
+
+        private Browser                            kc;
+
+        private String                             url;
+
+        public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption, Browser br, String url) {
             super(flag | Dialog.STYLE_HIDE_ICON | Dialog.LOGIC_COUNTDOWN, title, null, null, null);
             setCountdownTime(120);
             this.imageUrl = imageUrl;
             this.coordinates = coordinates;
             dimensions = new Dimension(465, 250);
+            this.kc = br.cloneBrowser();
+            this.url = url;
         }
 
         @Override
@@ -575,6 +626,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             boolean sampleImg = false;
             drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
 
+            mouseArray = new ArrayList<Integer>();
+
             for (int i = 1; i < kcImages.length; i++) {
                 if (kcImages[i] == null) {
                     continue;
@@ -583,7 +636,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 } else {
                     sampleImg = false;
                 }
-                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg), new Integer(JLayeredPane.DEFAULT_LAYER) + i, new Integer(JLayeredPane.DEFAULT_LAYER) + i);
+                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg, mouseArray, kc, url), new Integer(JLayeredPane.DEFAULT_LAYER) + i, new Integer(JLayeredPane.DEFAULT_LAYER) + i);
 
                 offset += 4;
             }
@@ -603,7 +656,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             final MediaTracker mt = new MediaTracker(dialog);
             for (final String imgUrl : imagesUrl) {
                 try {
-                    fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    fragmentedPic = Application.getResource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
@@ -694,16 +747,26 @@ public class LnkCrptWs extends PluginForDecrypt {
         private final MouseAdapter  MOUSEADAPTER;
         private int                 k;
 
-        public KeyCaptchaDragPieces(final BufferedImage image, final int offset, final boolean sampleImg) {
+        public KeyCaptchaDragPieces(final BufferedImage image, final int offset, final boolean sampleImg, final ArrayList<Integer> mouseArray, final Browser br, final String url) {
             IMAGE = image;
+
             MOUSEADAPTER = new MouseInputAdapter() {
                 private Point p1;
+                private Point loc;
+
+                private Timer mArrayTimer = new Timer(1000, new ActionListener() {
+                                              public void actionPerformed(ActionEvent e) {
+                                                  marray(loc);
+                                              }
+                                          });
 
                 @Override
                 public void mouseDragged(final MouseEvent e) {
-                    final Point p2 = e.getPoint();
-                    final Point loc = getLocation();
+                    Point p2 = e.getPoint();
+                    loc = getLocation();
                     loc.translate(p2.x - p1.x, p2.y - p1.y);
+                    mArrayTimer.setRepeats(false);
+                    mArrayTimer.start();
                     setLocation(loc);
                 }
 
@@ -711,6 +774,17 @@ public class LnkCrptWs extends PluginForDecrypt {
                 public void mousePressed(final MouseEvent e) {
                     p1 = e.getPoint();
                     setBorder(BorderFactory.createLineBorder(Color.black));
+                    if (!br.getURL().equals(url)) {
+                        new Thread() {
+                            public void run() {
+                                try {
+                                    br.getPage(url);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }.start();
+                    }
                 }
 
                 @Override
@@ -718,7 +792,46 @@ public class LnkCrptWs extends PluginForDecrypt {
                     p1 = e.getPoint();
                     setBorder(BorderFactory.createEmptyBorder());
                 }
+
+                @Override
+                public void mouseEntered(final MouseEvent e) {
+                    mArrayTimer.start();
+                }
+
+                @Override
+                public void mouseMoved(final MouseEvent e) {
+                    p1 = e.getPoint();
+                    loc = getLocation();
+                    loc.translate(p1.x, p1.y);
+                    mArrayTimer.setRepeats(false);
+                    mArrayTimer.start();
+                }
+
+                @Override
+                public void mouseExited(final MouseEvent e) {
+                    mArrayTimer.stop();
+                }
+
+                private void marray(Point loc) {
+                    if (loc != null) {
+                        if (mouseArray.size() == 0) {
+                            mouseArray.add(loc.x + 465);
+                            mouseArray.add(loc.y + 264);
+                        }
+                        if (mouseArray.get(mouseArray.size() - 2) != loc.x + 465 || mouseArray.get(mouseArray.size() - 1) != loc.y + 264) {
+                            mouseArray.add(loc.x + 465);
+                            mouseArray.add(loc.y + 264);
+                        }
+                        if (mouseArray.size() > 40) {
+                            ArrayList<Integer> tmpMouseArray = new ArrayList<Integer>();
+                            tmpMouseArray.addAll(mouseArray.subList(2, 40));
+                            mouseArray.clear();
+                            mouseArray.addAll(tmpMouseArray);
+                        }
+                    }
+                }
             };
+
             k = 0;
             setOpaque(true);
             setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
@@ -776,7 +889,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
     }
 
-    private static class KeyCaptchaShowDialog extends JFrame {
+    private static class KeyCaptchaDialogForStable extends JFrame {
         private static final long                  serialVersionUID = 1L;
 
         private Image[]                            IMAGE;
@@ -797,7 +910,9 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private final JPanel                       p;
 
-        public KeyCaptchaShowDialog(final String title, final String[] arg0, final LinkedHashMap<String, int[]> arg1) throws Exception {
+        private ArrayList<Integer>                 mouseArray;
+
+        public KeyCaptchaDialogForStable(final String title, final String[] arg0, final LinkedHashMap<String, int[]> arg1, Browser br, String url) throws Exception {
             super(title);
             coordinates = arg1;
             loadImage(arg0);
@@ -809,6 +924,9 @@ public class LnkCrptWs extends PluginForDecrypt {
             makeBackground();
             int offset = 4;
             boolean sampleImg = false;
+
+            mouseArray = new ArrayList<Integer>();
+
             for (int i = 1; i < kcImages.length; i++) {
                 if (kcImages[i] == null) {
                     continue;
@@ -817,7 +935,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 } else {
                     sampleImg = false;
                 }
-                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg), new Integer(JLayeredPane.DEFAULT_LAYER + i), new Integer(JLayeredPane.DEFAULT_LAYER + i));
+                drawPanel.add(new KeyCaptchaDragPieces(kcImages[i], offset, sampleImg, mouseArray, br, url), new Integer(JLayeredPane.DEFAULT_LAYER + i), new Integer(JLayeredPane.DEFAULT_LAYER + i));
                 offset += 4;
             }
             drawPanel.add(new KeyCaptchaDrawBackgroundPanel(kcImages[0]), new Integer(JLayeredPane.DEFAULT_LAYER), new Integer(JLayeredPane.DEFAULT_LAYER));
@@ -906,7 +1024,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             final MediaTracker mt = new MediaTracker(this);
             for (final String imgUrl : imagesUrl) {
                 try {
-                    fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    fragmentedPic = Application.getResource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
@@ -1069,7 +1187,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         setBrowserExclusive();
-        prepareBrowser(RandomUserAgent.generate());
+        prepareBrowser("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
         final String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
         parameter = "http://linkcrypt.ws/dir/" + containerId;
         br.getPage(parameter);
@@ -1081,15 +1199,21 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
             throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
         }
+
+        final String important[] = { "/js/jquery.js", "/dir/image/Warning.png" };
         URLConnectionAdapter con = null;
-        try {
-            con = br.cloneBrowser().openGetConnection("http://linkcrypt.ws/js/jquery.js");
-        } finally {
+        final Browser br2 = br.cloneBrowser();
+        for (final String template : important) {
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br2.openGetConnection(template);
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+
         // Different captcha types
         boolean valid = true;
 
@@ -1101,11 +1225,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                 if (result == null) {
                     continue;
                 }
-                if (result == "CANCEL") { throw new DecrypterException(DecrypterException.CAPTCHA); }
-                final Form kcform = br.getForm(0);
-                kcform.put("capcode", result);
-                br.submitForm(kcform);
-                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result) + "&=Enter+Folder");
+                if ("CANCEL".equals(result)) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                br.postPage(parameter, "capcode=" + Encoding.urlEncode(result));
                 if (!br.containsHTML("<\\!\\-\\- KeyCAPTCHA code")) {
                     break;
                 }
