@@ -21,11 +21,9 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cramit.in" }, urls = { "http://(www\\.)?(cramit\\.in|cramitin\\.(net|eu|us))/user/\\d+(/\\d+)?" }, flags = { 0 })
 public class CramitInUser extends PluginForDecrypt {
@@ -43,9 +41,15 @@ public class CramitInUser extends PluginForDecrypt {
         br.setCookie("http://" + HOST, "lang", "english");
         parameter = parameter.replaceAll("cramitin\\.(net|eu|us)", "cramit.in");
         br.getPage(parameter);
-        if (br.containsHTML("No such user exist")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex("\"(http://(www\\.)?" + HOST + "/[a-z0-9]{12})\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (br.containsHTML("> No such user exist")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("(http://(www\\.)?" + HOST + "/[a-z0-9]{12})").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
 

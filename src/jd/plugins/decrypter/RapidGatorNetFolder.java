@@ -21,13 +21,11 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision: 17642 $", interfaceVersion = 2, names = { "rapidgator.net" }, urls = { "http://(www\\.)?rapidgator\\.net/folder/\\d+/[\\w\\%]+" }, flags = { 0 })
 public class RapidGatorNetFolder extends PluginForDecrypt {
@@ -45,7 +43,10 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         jd.plugins.hoster.RapidGatorNet.prepareBrowser(br);
         // normal stuff
         br.getPage(parameter);
-        if (br.containsHTML("E_FOLDERNOTFOUND")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the folder no longer exists."));
+        if (br.containsHTML("E_FOLDERNOTFOUND")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("Downloading:[\r\n\t ]+</strong>[\r\n\t ]+(.*?)[\r\n\t ]+</p>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>Download file (.*?)</title>").getMatch(0);
         parsePage(decryptedLinks, parameter);

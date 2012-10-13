@@ -48,8 +48,12 @@ public class DataPortCz extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        // Maybe old case
         if (br.containsHTML(">Please click here to continue<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Link offline
+        if (br.containsHTML("alert\\(\"Tento soubor neexistuje\"\\)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(">Název</td>[\t\n\r ]+<td><span itemprop=\"name\">([^<>\"]*?)</span>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2>([^<>\"]*?)</h2>").getMatch(0);
         final String filesize = br.getRegex("<td class=\"fil\">Velikost</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);

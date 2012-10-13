@@ -227,13 +227,17 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             if (finallink == null) finallink = br.getRegex("\\'(http://s\\d+\\.postimage\\.org/[a-z0-9]+/[^<> \"/]*?)\\'").getMatch(0);
         } else if (parameter.contains("imagetwist.com/")) {
             br.getPage(parameter);
-            finallink = br.getRegex("\"(http://img\\d+\\.imagetwist\\.com/i/\\d+/.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
+            if (!br.containsHTML(">Continue to your  image<") && !br.containsHTML(">Show image to friends") && !br.containsHTML("class=\"btndiv\">copy</div>")) {
+                logger.info("Unsupported linktype: " + parameter);
+                return decryptedLinks;
             }
             if (br.containsHTML(">Image Not Found<|Die von Ihnen angeforderte Datei konnte nicht gefunden werden")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
+            }
+            finallink = br.getRegex("\"(http://img\\d+\\.imagetwist\\.com/i/\\d+/.*?)\"").getMatch(0);
+            if (finallink == null) {
+                finallink = br.getRegex("<p><img src=\"(http://.*?)\"").getMatch(0);
             }
         } else if (parameter.contains("cocoimage.com/")) {
             br.getPage(parameter);

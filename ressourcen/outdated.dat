@@ -957,3 +957,4 @@ jd/plugins/hoster/BebasUploadCom.class
 jd/plugins/hoster/UploadVilleCom.class
 jd/plugins/hoster/ShareSharedCom.class
 jd/plugins/hoster/HotShareNet.class
+jd/plugins/hoster/MojeFileCom.class

@@ -53,7 +53,10 @@ public class AstrSk extends PluginForHost {
         br.getPage(link.getDownloadURL());
         // "the file fell into a black hole and is now in parallel universe" <-
         // I like those guys :D
+        // Link offline
         if (br.containsHTML("súbor je fuč|>Možné dôvody:<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<meta property=\"og:title\" content=\"Stiahni si (.*?) \\- mojedata\\.sk\" />").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
