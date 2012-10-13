@@ -1,6 +1,7 @@
 DataCompareDialog_DataCompareDialog_=Comparer les informations du routeur
 DataCompareDialog_layoutDialogContent__desc=S'il vous plaît vérifiez les informations suivantes, et essayez de remplir les champs vides aussi précisément que possible.
 DataCompareDialog_layoutDialogContent_firmware=Firmware/Version
+DataCompareDialog_layoutDialogContent_firmware_help=Entrez la version du micro-programme (Firmware) de votre routeur... Laisser vide si inconnu
 DataCompareDialog_layoutDialogContent_ip=IP ou nom d'hôte
 DataCompareDialog_layoutDialogContent_ip_help=Entrez le nom d'hôte de l'interface web...
 DataCompareDialog_layoutDialogContent_manufactorName=Fabricant

@@ -1,5 +1,7 @@
+action_tooltip=Permettre l'arrêt du système une fois que les téléchargements sont finis
 addons_jdshutdown_statusmessage_disabled=Le Système ne sera pas arrêté par JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader arrêtera le Système après les téléchargements complétés
+config_toolbarbutton=Bouton de la barre d'outils visible
 gui_config_jdshutdown_close=Fermer JD
 gui_config_jdshutdown_forceshutdown=Forcer la mise hors tension (pas pour tous les OS)
 gui_config_jdshutdown_hibernate=Mise en veille prolongée (pas pour tous les OS)
@@ -16,3 +18,4 @@ interaction_shutdown_dialog_title_shutdown=Arrêt PC ?
 interaction_shutdown_dialog_title_standby=Mise en veille ?
 jd_plugins_optional_jdshutdown=JD Mise hors tension
 jd_plugins_optional_jdshutdown_description=Extinction, Mise en veille ou Hibernation automatique à la fin des téléchargements
+lit_shutdownn=Arrêt
