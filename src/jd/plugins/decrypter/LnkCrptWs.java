@@ -101,7 +101,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             URLConnectionAdapter con = null;
             try {
                 captchaAddress = captchaAddress.replaceAll("%0D%0A", "").trim();
-                Browser.download(captchaFile, con = this.smBr.openGetConnection(this.captchaAddress));
+                Browser.download(captchaFile, con = this.smBr.openGetConnection(this.server + this.captchaAddress));
             } catch (IOException e) {
                 captchaFile.delete();
                 throw e;
@@ -117,7 +117,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         private void load() throws Exception {
             this.smBr = this.br.cloneBrowser();
             this.getChallenge();
-            this.setServer(this.secure);
+            this.setServer();
             this.setPath(noscript);
             this.smBr.getPage(this.server + this.path + this.challenge);
             if (this.noscript) {
@@ -138,6 +138,12 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         public String verify(String code) throws Exception {
             if (!this.noscript) return this.chId;
+
+            /** FIXME stable Browser Bug --> Form action handling */
+            String url = this.smBr.getURL();
+            url = url.substring(0, url.indexOf("media?c="));
+            this.verify.setAction((url == null ? "" : url) + this.verify.getAction());
+
             this.verify.put("adcopy_response", code);
             this.smBr.submitForm(verify);
             String verifyUrl = this.smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
@@ -167,7 +173,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (!noscript) this.noscript = false;
         }
 
-        private void setServer(boolean handle) {
+        private void setServer() {
             this.server = "http://api.solvemedia.com";
             if (secure) this.server = "https://api-secure.solvemedia.com";
         }
