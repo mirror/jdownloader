@@ -56,8 +56,9 @@ public class OnlineTvRecorderCom extends PluginForHost {
         return "http://www.onlinetvrecorder.com/";
     }
 
-    private String DLLINK   = null;
-    private long   TIMEDIFF = 0;
+    private String DLLINK            = null;
+    private long   TIMEDIFF          = 0;
+    private long   CURRENTTIMEMILLIS = 0;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -72,17 +73,14 @@ public class OnlineTvRecorderCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
 
         Calendar cal = new GregorianCalendar();
-        long currentTimeMillis = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
-        currentTimeMillis += cal.get(Calendar.MINUTE) * 60;
-        currentTimeMillis += cal.get(Calendar.SECOND);
-        currentTimeMillis = currentTimeMillis * 1000;
+        CURRENTTIMEMILLIS = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
+        CURRENTTIMEMILLIS += cal.get(Calendar.MINUTE) * 60;
+        CURRENTTIMEMILLIS += cal.get(Calendar.SECOND);
+        CURRENTTIMEMILLIS = CURRENTTIMEMILLIS * 1000;
         long expiredTime = 24 * 60 * 60 * 1000l; // 00:00Uhr
-        TIMEDIFF = expiredTime - currentTimeMillis; // Differenz aktuelle
+        TIMEDIFF = expiredTime - CURRENTTIMEMILLIS; // Differenz aktuelle
                                                     // Uhrzeit bis 00:00Uhr
-        if (TIMEDIFF > 0) {
-            downloadLink.getLinkStatus().setStatusText("Not downloadable before 12 o'clock.");
-            return AvailableStatus.TRUE;
-        } else {
+        if (TIMEDIFF > (8 * 60 * 60 * 1000) && (CURRENTTIMEMILLIS >= (24 * 60 * 60 * 1000)) || CURRENTTIMEMILLIS < (8 * 60 * 60 * 1000)) {
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
@@ -103,39 +101,46 @@ public class OnlineTvRecorderCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
+
+        } else {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable before 12 o'clock.");
+            return AvailableStatus.TRUE;
         }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (TIMEDIFF > 0) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not downloadable before 12 o'clock.", TIMEDIFF);
-        if (DLLINK == null) {
-            final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
-            if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            // 2 hours waiting = maximum
-            for (int i = 1; i <= 240; i++) {
-                br.getPage(apilink);
-                DLLINK = getData("filedownloadlink");
-                if (DLLINK != null) break;
-                final String currentPosition = getData("queueposition");
-                if (currentPosition != null) downloadLink.getLinkStatus().setStatusText("In queue, current position is: " + currentPosition);
-                logger.info("In queue, current position is: " + currentPosition);
-                int wait = 30;
-                final String waittime = getData("refreshTime");
-                if (waittime != null) wait = Integer.parseInt(waittime);
-                sleep(wait * 1000l, downloadLink);
+        if (TIMEDIFF > (8 * 60 * 60 * 1000) && (CURRENTTIMEMILLIS >= (24 * 60 * 60 * 1000)) || CURRENTTIMEMILLIS < (8 * 60 * 60 * 1000)) {
+            if (DLLINK == null) {
+                final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
+                if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // 2 hours waiting = maximum
+                for (int i = 1; i <= 240; i++) {
+                    br.getPage(apilink);
+                    DLLINK = getData("filedownloadlink");
+                    if (DLLINK != null) break;
+                    final String currentPosition = getData("queueposition");
+                    if (currentPosition != null) downloadLink.getLinkStatus().setStatusText("In queue, current position is: " + currentPosition);
+                    logger.info("In queue, current position is: " + currentPosition);
+                    int wait = 30;
+                    final String waittime = getData("refreshTime");
+                    if (waittime != null) wait = Integer.parseInt(waittime);
+                    sleep(wait * 1000l, downloadLink);
+                }
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                DLLINK = DLLINK.replace("\\", "");
             }
-            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            DLLINK = DLLINK.replace("\\", "");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
+        } else {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not downloadable before 12 o'clock.", TIMEDIFF);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     private String getData(final String parameter) {
