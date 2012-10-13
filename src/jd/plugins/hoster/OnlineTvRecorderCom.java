@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,10 +56,11 @@ public class OnlineTvRecorderCom extends PluginForHost {
         return "http://www.onlinetvrecorder.com/";
     }
 
-    private String DLLINK = null;
+    private String DLLINK   = null;
+    private long   TIMEDIFF = 0;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         try {
@@ -64,66 +68,48 @@ public class OnlineTvRecorderCom extends PluginForHost {
             br.setAllowedResponseCodes(new int[] { 503 });
         } catch (Throwable e) {
         }
-        String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
-        filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
-        // In case the link redirects to the finallink
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-                DLLINK = downloadLink.getDownloadURL();
-            } else {
-                if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // Stable workaround
-                get(downloadLink.getDownloadURL());
-                if (br.containsHTML(">Aufnahme nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        final String filename = new Regex(downloadLink.getDownloadURL(), "/([^<>\"/]+)$").getMatch(0);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+
+        Calendar cal = new GregorianCalendar();
+        long currentTimeMillis = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
+        currentTimeMillis += cal.get(Calendar.MINUTE) * 60;
+        currentTimeMillis += cal.get(Calendar.SECOND);
+        currentTimeMillis = currentTimeMillis * 1000;
+        long expiredTime = 24 * 60 * 60 * 1000l; // 00:00Uhr
+        TIMEDIFF = expiredTime - currentTimeMillis; // Differenz aktuelle
+                                                    // Uhrzeit bis 00:00Uhr
+        if (TIMEDIFF > 0) {
+            downloadLink.getLinkStatus().setStatusText("Not downloadable before 12 o'clock.");
             return AvailableStatus.TRUE;
-        } finally {
+        } else {
+            // In case the link redirects to the finallink
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
-            }
-        }
-    }
-
-    private void get(final String parameter) throws UnsupportedEncodingException, IOException {
-        try {
-            br.getPage(parameter);
-        } catch (Throwable t) {
-            String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
-            br.getRequest().setHtmlCode(str);
-        }
-    }
-
-    public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
-        try {
-            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
-            String line;
-            StringBuilder ret = new StringBuilder();
-            String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
+                con = br.openGetConnection(downloadLink.getDownloadURL());
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                    DLLINK = downloadLink.getDownloadURL();
+                } else {
+                    if (con.getResponseCode() == 400) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    // Stable workaround
+                    get(downloadLink.getDownloadURL());
+                    if (br.containsHTML(">Aufnahme nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                ret.append(line);
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
-            return ret.toString();
-        } finally {
-            try {
-                f.close();
-            } catch (Throwable e) {
-            }
-
         }
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (TIMEDIFF > 0) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not downloadable before 12 o'clock.", TIMEDIFF);
         if (DLLINK == null) {
             final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
             if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -256,6 +242,38 @@ public class OnlineTvRecorderCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void get(final String parameter) throws UnsupportedEncodingException, IOException {
+        try {
+            br.getPage(parameter);
+        } catch (Throwable t) {
+            String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
+            br.getRequest().setHtmlCode(str);
+        }
+    }
+
+    public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
+        BufferedReader f = null;
+        try {
+            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
+            String line;
+            StringBuilder ret = new StringBuilder();
+            String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                if (ret.length() > 0) {
+                    ret.append(sep);
+                }
+                ret.append(line);
+            }
+            return ret.toString();
+        } finally {
+            try {
+                f.close();
+            } catch (Throwable e) {
+            }
+
+        }
     }
 
     @Override
