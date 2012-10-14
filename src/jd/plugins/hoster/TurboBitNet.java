@@ -354,7 +354,7 @@ public class TurboBitNet extends PluginForHost {
             for (int i = 1; i <= 2; i++) {
                 String captchaCode;
                 if (!getPluginConfig().getBooleanProperty("JAC", false) || i == 2) {
-                    captchaCode = getCaptchaCode(null, captchaUrl, downloadLink);
+                    captchaCode = getCaptchaCode("turbobit.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
                     captchaCode = getCaptchaCode("turbobit.net.basic", captchaUrl, downloadLink);

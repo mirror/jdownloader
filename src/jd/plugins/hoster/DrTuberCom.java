@@ -49,6 +49,10 @@ public class DrTuberCom extends PluginForHost {
         return "http://www.drtuber.com/static/terms";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().toLowerCase());
+    }
+
     private String getContinueLink(String fun) {
         if (fun == null) { return null; }
         fun = fun.replaceAll("s1\\.addVariable\\(\\'config\\',", "var result = ").replaceAll("params\\);", "params;");
@@ -81,7 +85,7 @@ public class DrTuberCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         String continueLink = null, filename = null;

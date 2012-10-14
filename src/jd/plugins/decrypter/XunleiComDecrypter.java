@@ -46,7 +46,7 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("验证码：<")) {
+        if (br.containsHTML("http://verify")) {
             logger.info("xunlei.com decrypter: found captcha, let's see if the experimental captcha implementation works...");
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);

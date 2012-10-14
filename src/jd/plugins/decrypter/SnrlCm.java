@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.URLConnectionAdapter;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -39,7 +40,20 @@ public class SnrlCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter);
+            if (con.getResponseCode() == 410) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         String url = null;
         if (br.getRedirectLocation() != null) {
             url = br.getRedirectLocation();
@@ -54,6 +68,7 @@ public class SnrlCm extends PluginForDecrypt {
 
             for (int i = 1; i <= 3; i++) {
                 String folderPass = UserIO.getInstance().requestInputDialog("File Password");
+                if (folderPass == null) continue;
                 form.put("pkey", folderPass);
                 br.submitForm(form);
                 if (br.getRedirectLocation() != null) {
@@ -61,7 +76,7 @@ public class SnrlCm extends PluginForDecrypt {
                     break;
                 }
             }
-            if (url == null) throw new DecrypterException("Wrong Password");
+            if (url == null) throw new DecrypterException(DecrypterException.PASSWORD);
         }
 
         decryptedLinks.add(createDownloadlink(url));

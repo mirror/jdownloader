@@ -58,7 +58,10 @@ public class JizzHutCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        // Link offline
         if (br.containsHTML("Datei nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Link offline without any errormessage
+        if (!br.containsHTML("\\'http://(www\\.)?jizzhut.com/videos/embed/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("DESCRIPTION\" content=\"(.*?)\"").getMatch(0);

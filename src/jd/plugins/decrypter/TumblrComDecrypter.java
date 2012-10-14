@@ -67,9 +67,32 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             final String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
 
-            final String[][] regexes = { { "<meta (property=\"og:image\"|name=\"twitter:image\") content=\"(http://[^<>\"]*?)\"", "1" }, { "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"", "0" }, { "src=\\\\x22(http://[\\w\\.\\-]*?\\.tumblr\\.com/video_file/\\d+/tumblr_[a-z0-9]+)\\\\x22", "0" } };
-            for (String[] regex : regexes) {
-                final String[] links = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
+            // final String[][] regexes = { {
+            // "<meta (property=\"og:image\"|name=\"twitter:image\") content=\"(http://[^<>\"]*?)\"",
+            // "1" }, {
+            // "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"",
+            // "0" }, {
+            // "src=\\\\x22(http://[\\w\\.\\-]*?\\.tumblr\\.com/video_file/\\d+/tumblr_[a-z0-9]+)\\\\x22",
+            // "0" } };
+            // for (String[] regex : regexes) {
+            // final String[] links = br.getRegex(Pattern.compile(regex[0],
+            // Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
+            // if (links != null && links.length > 0) {
+            // for (final String piclink : links) {
+            // final DownloadLink dl = createDownloadlink("directhttp://" +
+            // piclink);
+            // try {
+            // distribute(dl);
+            // } catch (final Exception e) {
+            // // Not available in 0.851 Stable
+            // }
+            // decryptedLinks.add(dl);
+            // }
+            // }
+            // }
+            final String article = br.getRegex("<article id=\"post\\-\\d+\"(.*?)</article>").getMatch(0);
+            if (article != null) {
+                final String[] links = br.getRegex(Pattern.compile("\"(https?://(www\\.)?(?![a-z0-9]+\\.media\\.tumblr\\.com/avatar.*?|static\\.tumblr.*?)[^<>\"]*?\\.(jpg|png|jpeg))\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                 if (links != null && links.length > 0) {
                     for (final String piclink : links) {
                         final DownloadLink dl = createDownloadlink("directhttp://" + piclink);

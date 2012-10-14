@@ -56,9 +56,9 @@ public class OnlineTvRecorderCom extends PluginForHost {
         return "http://www.onlinetvrecorder.com/";
     }
 
-    private String DLLINK            = null;
-    private long   TIMEDIFF          = 0;
-    private long   CURRENTTIMEMILLIS = 0;
+    private String  DLLINK      = null;
+    private boolean DOWNLOADNOW = false;
+    private int     CURRENTTIME = 0;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, ParseException {
@@ -73,14 +73,12 @@ public class OnlineTvRecorderCom extends PluginForHost {
         downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
 
         Calendar cal = new GregorianCalendar();
-        CURRENTTIMEMILLIS = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
-        CURRENTTIMEMILLIS += cal.get(Calendar.MINUTE) * 60;
-        CURRENTTIMEMILLIS += cal.get(Calendar.SECOND);
-        CURRENTTIMEMILLIS = CURRENTTIMEMILLIS * 1000;
-        long expiredTime = 24 * 60 * 60 * 1000l; // 00:00Uhr
-        TIMEDIFF = expiredTime - CURRENTTIMEMILLIS; // Differenz aktuelle
-                                                    // Uhrzeit bis 00:00Uhr
-        if (TIMEDIFF > (8 * 60 * 60 * 1000) && (CURRENTTIMEMILLIS >= (24 * 60 * 60 * 1000)) || CURRENTTIMEMILLIS < (8 * 60 * 60 * 1000)) {
+        CURRENTTIME = cal.get(Calendar.HOUR_OF_DAY) * 60 * 60;
+        CURRENTTIME += cal.get(Calendar.MINUTE) * 60;
+        CURRENTTIME += cal.get(Calendar.SECOND);
+        int minTime = 0; // 00:00Uhr
+        int maxTime = 8 * 60 * 60; // 08:00Uhr
+        if (CURRENTTIME > minTime && CURRENTTIME < maxTime) {
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
@@ -94,6 +92,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
                     get(downloadLink.getDownloadURL());
                     if (br.containsHTML(">Aufnahme nicht gefunden")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                DOWNLOADNOW = true;
                 return AvailableStatus.TRUE;
             } finally {
                 try {
@@ -103,6 +102,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
             }
 
         } else {
+            DOWNLOADNOW = false;
             downloadLink.getLinkStatus().setStatusText("Not downloadable before 12 o'clock.");
             return AvailableStatus.TRUE;
         }
@@ -111,7 +111,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (TIMEDIFF > (8 * 60 * 60 * 1000) && (CURRENTTIMEMILLIS >= (24 * 60 * 60 * 1000)) || CURRENTTIMEMILLIS < (8 * 60 * 60 * 1000)) {
+        if (DOWNLOADNOW) {
             if (DLLINK == null) {
                 final String apilink = br.getRegex("var apilink = \"(http://[^<>\"]*?)\"").getMatch(0);
                 if (apilink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -139,7 +139,7 @@ public class OnlineTvRecorderCom extends PluginForHost {
             }
             dl.startDownload();
         } else {
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not downloadable before 12 o'clock.", TIMEDIFF);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Not downloadable before 12 o'clock.", (24 * 60 * 60 - CURRENTTIME) * 1000l);
         }
     }
 

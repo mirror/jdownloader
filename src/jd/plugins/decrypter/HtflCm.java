@@ -21,12 +21,10 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "https?://[\\w\\.]*?hotfile\\.com/(list/\\d+/[\\w]+|links/\\d+/[a-z0-9]+/.+)" }, flags = { 0 })
 public class HtflCm extends PluginForDecrypt {
@@ -39,12 +37,23 @@ public class HtflCm extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
+        br.setCookie("http://hotfile.com/", "lang", "en");
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().matches("https?://hotfile\\.com/")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.getRedirectLocation().matches("https?://hotfile\\.com/")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             return null;
         }
-        if (br.containsHTML("Empty Directory")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        if (br.containsHTML("Empty Directory")) {
+            logger.info("Empty folderlink: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline (empty page): " + parameter);
+            return decryptedLinks;
+        }
         if (parameter.contains("/list/")) {
             FilePackage fp = FilePackage.getInstance();
             String fpName = br.getRegex("-2px;\" />(.*?)/?</td>").getMatch(0).trim();
