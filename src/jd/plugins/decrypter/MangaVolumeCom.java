@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangavolume.com" }, urls = { "http://(www\\.)?mangavolume\\.com/[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangavolume.com" }, urls = { "http://(www\\.)?mangavolume\\.com/(?!manga\\-archive|serie\\-archive|sort|forums)[a-z0-9\\-]+/[a-z0-9\\-]+" }, flags = { 0 })
 public class MangaVolumeCom extends PluginForDecrypt {
 
     public MangaVolumeCom(PluginWrapper wrapper) {
@@ -39,9 +39,16 @@ public class MangaVolumeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("name=\"title\" content=\"404\"|<title>404</title>")) {
+        // Offline link
+        if (br.containsHTML("name=\"title\" content=\"404\"|<title>404</title>") || br.containsHTML(">403 Forbidden<")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Broken link
+        if (br.containsHTML("><img src=\"http://media\\d+\\.mangavolume\\.com\" alt=\"CLICK TO VIEW NEXT PAGE")) {
+            logger.info("Link broken (no images shown): " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("\">([^<>\"]*?)</a></h1>").getMatch(0);
@@ -70,5 +77,4 @@ public class MangaVolumeCom extends PluginForDecrypt {
         fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
-
 }

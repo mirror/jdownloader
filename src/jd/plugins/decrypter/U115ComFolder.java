@@ -92,12 +92,18 @@ public class U115ComFolder extends PluginForDecrypt {
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.getPage("http://web.api.115.com/folder/file?aid=" + aid + "&cid=" + cid + "&user_id=" + uid + "&offset=0&limit=1000&_t=" + Integer.toString(new Random().nextInt(100000000)));
 
+        // Errorhandling
+        if (br.containsHTML("\"total_size\":\"0B\",\"count\":0")) {
+            logger.info("This folder is empty: " + parameter);
+            return decryptedLinks;
+        }
+
         // find and process each entry.
-        String[] results = br.getRegex("(\\{\"file_name\":[^\\}]+)").getColumn(0);
+        final String[] results = br.getRegex("(\\{\"file_name\":[^\\}]+)").getColumn(0);
 
         if (results != null && results.length != 0) {
             for (String result : results) {
-                String[][] formatThis = new Regex(result, "\"file_name\":\"([^\"]+).+?\"file_size\":\"([^\"]+)\",\"file_status\":\"([^\"]+)\".+?\"pick_code\":\"([^\"]+)\"").getMatches();
+                final String[][] formatThis = new Regex(result, "\"file_name\":\"([^\"]+).+?\"file_size\":\"([^\"]+)\",\"file_status\":\"([^\"]+)\".+?\"pick_code\":\"([^\"]+)\"").getMatches();
                 if (formatThis == null || formatThis.length == 0) {
                     logger.warning("Problem with 'formatThis' " + parameter);
                     return null;
