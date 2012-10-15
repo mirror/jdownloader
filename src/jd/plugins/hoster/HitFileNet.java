@@ -235,9 +235,9 @@ public class HitFileNet extends PluginForHost {
                     captchaCode = getCaptchaCode("hitfile.net.disabled", captchaUrl, downloadLink);
                 } else if (captchaUrl.contains("/basic/")) {
                     logger.info("Handling basic captchas");
-                    captchaCode = getCaptchaCode("turbobit.net.basic", captchaUrl, downloadLink);
+                    captchaCode = getCaptchaCode("hitfile.net.basic", captchaUrl, downloadLink);
                 } else {
-                    captchaCode = getCaptchaCode("turbobit.net", captchaUrl, downloadLink);
+                    captchaCode = getCaptchaCode("hitfile.net", captchaUrl, downloadLink);
                 }
                 captchaForm.put("captcha_response", captchaCode);
                 br.submitForm(captchaForm);

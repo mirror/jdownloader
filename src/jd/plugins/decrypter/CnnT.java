@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uu.canna.to" }, urls = { "http://[uu\\.canna\\.to|85\\.17\\.36\\.224]+/cpuser/links\\.php\\?action=[cp_]*?popup&kat_id=[\\d]+&fileid=[\\d]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "canna.to" }, urls = { "http://[uu\\.canna\\.to|85\\.17\\.36\\.224]+/cpuser/links\\.php\\?action=[cp_]*?popup&kat_id=[\\d]+&fileid=[\\d]+" }, flags = { 0 })
 public class CnnT extends PluginForDecrypt {
 
     public CnnT(PluginWrapper wrapper) {
@@ -44,10 +44,14 @@ public class CnnT extends PluginForDecrypt {
         br.getPage(parameter);
         synchronized (LOCK) {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                Form captchaForm = br.getFormbyProperty("name", "download_form");
-                String captchaUrl = br.getRegex("<img\\s+src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
-                String captchaCode = getCaptchaCode(captchaUrl, param);
-                captchaForm.put("sicherheitscode", captchaCode);
+                final Form captchaForm = br.getFormbyProperty("name", "download_form");
+                final String captchaUrl = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
+                if (captchaUrl == null || captchaForm == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final String captchaCode = getCaptchaCode("http://uu.canna.to/cpuser/" + captchaUrl, param);
+                captchaForm.put("cp_captcha", captchaCode);
                 br.submitForm(captchaForm);
                 if (br.containsHTML("Der Sicherheitscode ist falsch!")) {
                     /* Falscher Captcha, Seite neu laden */
@@ -67,8 +71,8 @@ public class CnnT extends PluginForDecrypt {
             }
         }
         if (valid == false) {
-            logger.warning("Captcha for the following link was entered wrong for more than 5 times: " + parameter);
-            throw new DecrypterException("Wrong Captcha Code");
+            logger.info("Captcha for the following link was entered wrong for more than 5 times: " + parameter);
+            throw new DecrypterException(DecrypterException.CAPTCHA);
         }
         return decryptedLinks;
     }

@@ -1,4 +1,4 @@
 <jDownloader>
-<method name="turbobit.net.basic" author="JDTeam"  services="turbobit.net.basic" /> 
+<method name="turbobit.net.basic" author="JDTeam"  services="turbobit.net.basic;hitfile.net.basic" /> 
 <format type="png" letterNum="4" />
 </jDownloader>
