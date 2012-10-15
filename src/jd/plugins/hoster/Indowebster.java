@@ -134,7 +134,7 @@ public class Indowebster extends PluginForHost {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("(Requested file is deleted|image/default/404\\.png\")") || br.getURL().contains("/error") || br.getURL().contains("/files_not_found") || br.containsHTML(">404 Page Not Found<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (br.containsHTML(">404 Page Not Found<")) return AvailableStatus.UNCHECKABLE;
         // Convert old links to new links
         String newlink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+;URL=(http://v\\d+\\.indowebster\\.com/.*?)\"").getMatch(0);

@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "http://(www\\.)?egofiles\\.com/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "egofiles.com" }, urls = { "http://(www\\.)?egofiles\\.com/(?!checker|dmca|files|help|logout|policy|premium|remote|settings|style|tos|voucher)[A-Za-z0-9]+" }, flags = { 2 })
 public class EgoFilesCom extends PluginForHost {
 
     public EgoFilesCom(PluginWrapper wrapper) {
@@ -54,14 +54,17 @@ public class EgoFilesCom extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://egofiles.com";
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
+        // Link offline
         if (br.containsHTML(">404 File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

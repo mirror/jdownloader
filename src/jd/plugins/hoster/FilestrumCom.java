@@ -202,7 +202,6 @@ public class FilestrumCom extends PluginForHost {
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
-                download1.remove("method_free");
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }

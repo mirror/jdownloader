@@ -112,7 +112,14 @@ public class SpeedyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime);
         }
         String finallink = null;
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
+        if (br.containsHTML(PREMIUMONLY)) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+            }
+            throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYTEXT);
+        }
         if (!br.containsHTML(CAPTCHATEXT)) {
             finallink = br.getRegex("class=downloadfilename href=\\'(.*?)\\'").getMatch(0);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

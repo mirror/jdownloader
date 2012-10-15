@@ -52,7 +52,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/(?!folder/)[a-z0-9]{6,12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sharpfile.com" }, urls = { "https?://(www\\.)?sharpfile\\.com/(?!folder/|banners|contact|images|register|privacy|premium|affiliates|language|resellers)[a-z0-9]{6,12}" }, flags = { 2 })
 public class SharpFileCom extends PluginForHost {
 
     private String               correctedBR          = "";
@@ -117,6 +117,8 @@ public class SharpFileCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         String filename = new Regex(correctedBR, "<b>File Name: </b>([^<>\"]*?)<br").getMatch(0);
+        // 2nd regex needed if limit is reached
+        if (filename == null) filename = new Regex(correctedBR, "class=\"h3header\">Download File ([^<>\"]*?)</h3>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

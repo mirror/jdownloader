@@ -68,8 +68,8 @@ public class UploadBazCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.5.5-raz
     // mods:
-    // non account: 10 * unlimited?
-    // free account: same as above, not tested
+    // non account: 1 * 20
+    // free account: 1 * 20
     // premium account: 10 * unlimited
     // protocol: no https
     // captchatype: recaptcha
@@ -151,7 +151,7 @@ public class UploadBazCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, -15, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -523,7 +523,7 @@ public class UploadBazCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             getPage(link.getDownloadURL());
-            doFree(link, true, -10, "freelink2");
+            doFree(link, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
