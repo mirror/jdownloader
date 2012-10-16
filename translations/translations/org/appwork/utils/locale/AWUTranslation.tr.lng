@@ -1,6 +1,6 @@
 ABSTRACTDIALOG_BUTTON_CANCEL=İptal
 ABSTRACTDIALOG_BUTTON_OK=Tamam
-ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Bunu tekrar gösterme
+ABSTRACTDIALOG_STYLE_SHOW_DO_NOT_DISPLAY_AGAIN=Bunu bir daha gösterme
 AccountNew_AccountNew_message=Lütfen oturum açma bilgilerinizi buraya girin
 AccountNew_AccountNew_title=Oturum Açma bilgilerini girin
 AccountNew_layoutDialogContent_accountname=Kullanıcı adı
@@ -64,7 +64,7 @@ LOGINDIALOG_LABEL_PASSWORD=Parola
 LOGINDIALOG_LABEL_PASSWORD_REPEAT=Parolayı tekrarlayın
 LOGINDIALOG_LABEL_USERNAME=Oturum aç
 Layover_size=(pks)G:%s1; Y:%s2
-LockColumnWidthAction=Sütun genişliğini kilitle
+LockColumnWidthAction=Bu sütunun genişliğini kilitle
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Yeni Parola:
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Parolayı Onaylayın:
 PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=Eski Parola:
