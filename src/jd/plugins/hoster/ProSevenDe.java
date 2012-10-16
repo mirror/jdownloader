@@ -29,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { 32 })
 public class ProSevenDe extends PluginForHost {
@@ -60,22 +61,32 @@ public class ProSevenDe extends PluginForHost {
         return -1;
     }
 
+    private void setupRTMPConnection(DownloadInterface dl, DownloadLink downloadLink, String[] stream) {
+        jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
+
+        rtmp.setApp(stream[1] + stream[2].substring(stream[2].indexOf("?")));
+        rtmp.setUrl(stream[0] + stream[1]);
+        rtmp.setPlayPath("mp4:" + stream[2]);
+        rtmp.setSwfVfy("http://is.myvideo.de/player/GP/2.6.3/player.swf");
+        rtmp.setPageUrl(downloadLink.getDownloadURL());
+        rtmp.setResume(true);
+    }
+
+    private void download(DownloadLink downloadLink, String[] stream) throws Exception {
+        dl = new RTMPDownload(this, downloadLink, clipUrl);
+        setupRTMPConnection(dl, downloadLink, stream);
+        ((RTMPDownload) dl).startDownload();
+    }
+
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        final String dllink = clipUrl;
-
-        if (dllink.startsWith("rtmp")) {
-            dl = new RTMPDownload(this, downloadLink, dllink);
-            final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-
-            rtmp.setSwfVfy("http://www.kabeleins.de/imperia/moveplayer/HybridPlayer.swf");
-            rtmp.setUrl(dllink);
-            rtmp.setPort(1935);
-            rtmp.setProtocol(0);
-            rtmp.setResume(true);
-
-            ((RTMPDownload) dl).startDownload();
+        clipUrl = clipUrl.replace("mp4:", "");
+        String[] stream = new Regex(clipUrl, "(rtmp.?://[0-9a-z]+\\.fplive\\.net/)([0-9a-z]+/[\\w\\-]+/\\d+)/(.*?)$").getRow(0);
+        if (clipUrl.startsWith("rtmp")) {
+            if (stream != null && stream.length == 3) {
+                download(downloadLink, stream);
+            }
         }
     }
 
@@ -91,6 +102,9 @@ public class ProSevenDe extends PluginForHost {
                 fileDesc = new HashMap<String, String>();
                 if (ta.path("title") != null) {
                     fileDesc.put("title", ta.path("title").getTextValue());
+                }
+                if (ta.path("id") != null) {
+                    fileDesc.put("id", ta.path("id").getTextValue());
                 }
                 if (tb.path(path) != null) {
                     fileDesc.put(path, tb.path(path).getTextValue());
@@ -110,28 +124,35 @@ public class ProSevenDe extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String jsonString = br.getRegex("json:\\s+\"(.*?)\"\n").getMatch(0);
+        String jsonString = br.getRegex("\"json\",\\s+\"(.*?)\"\n").getMatch(0);
         jsonString = decodeUnicode(jsonString).replaceAll("\\\\", "");
         try {
             jsonParser(jsonString, "downloadFilename");
         } catch (final Throwable e) {
             return AvailableStatus.UNCHECKABLE;
         }
-        if (fileDesc == null || fileDesc.size() < 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (fileDesc == null || fileDesc.size() < 5) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         clipUrl = fileDesc.get("downloadFilename");
-        if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null && fileDesc.get("id") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         final String filename = fileDesc.get("show_artist") + "_" + fileDesc.get("title");
         if (!clipUrl.startsWith("rtmp")) {
-            br.getPage("http://www.prosieben.de/static/videoplayer/config/playerConfig.json");
-            final String host = br.getRegex(fileDesc.get("geoblocking") + "\" : \"(.*?)\"").getMatch(0);
-            if (host != null) {
-                clipUrl = String.format(host, fileDesc.get("downloadFilename"));
+            if (!"".equals("")) {// old handling
+                br.getPage("http://www.prosieben.de/static/videoplayer/config/playerConfig.json");
+                String host = br.getRegex(fileDesc.get("geoblocking") + "\" : \"(.*?)\"").getMatch(0);
+                if (host != null) {
+                    host = host.replaceAll("clips:/", "mp4:");
+                    clipUrl = String.format(host, fileDesc.get("downloadFilename"));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                br.getPage("http://ws.vtc.sim-technik.de/video/video.jsonp?clipid=" + fileDesc.get("id") + "&app=moveplayer&method=2&callback=SIMVideoPlayer.FlashPlayer.jsonpCallback");
+                clipUrl = br.getRegex("\"VideoURL\":\\s+\"(rtmp[^\"]+)").getMatch(0);
             }
         }
+        if (clipUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = new Regex(clipUrl, "(\\.\\w{3})$").getMatch(0);
-        ext = ext == null ? ".flv" : ext;
+        ext = ext == null ? ".mp4" : ext;
         downloadLink.setName(filename.trim() + ext);
         return AvailableStatus.TRUE;
     }
