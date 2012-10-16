@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo(\\?album_id=[a-z0-9\\-_]+)?" }, flags = { 0 })
 public class MyMailRu extends PluginForDecrypt {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -40,54 +40,101 @@ public class MyMailRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("class=oranzhe><b>Ошибка</b>")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        String fpName = br.getRegex("<h1 class=\"l\\-header1\">([^<>\"]*?)</h1>").getMatch(0);
-        int offset = 0;
-        final String imgC = br.getRegex("\"imagesTotal\": \"(\\d+)\"").getMatch(0);
-        if (imgC == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        final Regex parameterStuff = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/photo\\?album_id=(.+)");
-        final String albumID = parameterStuff.getMatch(2);
-        final String username = parameterStuff.getMatch(1);
-        final double maxPicsPerSegment = 50;
-
-        final int imgCount = Integer.parseInt(imgC);
-        final int pageCount = (int) StrictMath.ceil(imgCount / maxPicsPerSegment);
-        int segment = 1;
-        while (decryptedLinks.size() != imgCount) {
-            logger.info("Decrypting segment " + segment + " of maybe " + pageCount + " segments...");
-            String[] links = null;
-            if (offset == 0) {
-                links = br.getRegex("style=\"background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
-            } else {
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage("http://my.mail.ru/bk/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
-                links = br.getRegex("background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
+        final String username = new Regex(parameter, "http://(www\\.)?my.mail.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
+        final String dirname = new Regex(parameter, "http://(www\\.)?my.mail.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
+        if (parameter.matches("http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+")) {
+            // Decrypt an album
+            if (br.containsHTML("class=oranzhe><b>Ошибка</b>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
             }
-            if (links == null || links.length == 0) {
+            String fpName = br.getRegex("<h1 class=\"l\\-header1\">([^<>\"]*?)</h1>").getMatch(0);
+            int offset = 0;
+            final Regex parameterStuff = new Regex(parameter, "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/([^<>/\"]+)/photo\\?album_id=(.+)");
+            final String albumID = parameterStuff.getMatch(2);
+            final double maxPicsPerSegment = Double.parseDouble(getData("imagesOffset"));
+
+            final int imgCount = Integer.parseInt(getData("imagesTotal"));
+            final int segmentCount = (int) StrictMath.ceil(imgCount / maxPicsPerSegment);
+            int segment = 1;
+            while (decryptedLinks.size() != imgCount) {
+                logger.info("Decrypting segment " + segment + " of maybe " + segmentCount + " segments...");
+                String[] links = null;
+                if (offset == 0) {
+                    links = br.getRegex("style=\"background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
+                } else {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
+                    links = br.getRegex("background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
+                }
+                if (links == null || links.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (final String singleLink : links) {
+                    final String ending = singleLink.substring(singleLink.lastIndexOf("/"));
+                    final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace(ending, ending.replace("/p", "/i")));
+                    dl.setAvailable(true);
+                    decryptedLinks.add(dl);
+                }
+                offset += maxPicsPerSegment;
+                segment++;
+            }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
+            }
+        } else {
+            final int albumShowed = Integer.parseInt(getData("albumShowed"));
+            final int albumTotal = Integer.parseInt(getData("albumTotal"));
+            final String albumsAllText = br.getRegex("\"albumsAll\": \\[(.*?)\\]").getMatch(0);
+            if (albumsAllText == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links) {
-
-                final String ending = singleLink.substring(singleLink.lastIndexOf("/"));
-                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace(ending, ending.replace("/p", "/i")));
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+            final String[] albumsAll = new Regex(albumsAllText, "\"([^<>\"]*?)\"").getColumn(0);
+            if (albumsAll == null || albumsAll.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            offset += maxPicsPerSegment;
-            segment++;
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+
+            int segment = 1;
+            final int segmentCount = (int) StrictMath.ceil(albumTotal / albumShowed);
+            while (decryptedLinks.size() != albumTotal) {
+                logger.info("Decrypting segment " + segment + " of maybe " + segmentCount + " segments...");
+                String[] albums = null;
+                if (segment == 1) {
+                    albums = br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\"").getColumn(0);
+                } else {
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.get_albums&mna=false&mnb=false&encoding=windows-1251&arg_album_ids=%5B%22" + albumsAll[albumsAll.length - 2] + "%22%2C%22" + albumsAll[albumsAll.length - 1] + "%22%5D");
+                    albums = br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\\\\\"").getColumn(0);
+                }
+                if (albums == null || albums.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setProperty("ALLOW_MERGE", true);
+                fp.setName(username);
+                for (final String album : albums) {
+                    final DownloadLink dl = createDownloadlink(album);
+                    fp.add(dl);
+                    try {
+                        distribute(dl);
+                    } catch (final Exception e) {
+                        // Not available in old 0.9.851 Stable
+                    }
+                    decryptedLinks.add(dl);
+                }
+                segment++;
+            }
         }
         return decryptedLinks;
+    }
+
+    private String getData(final String parameter) {
+        return br.getRegex("\"" + parameter + "\": (\")?([^<>\"]*?)(\"|,)").getMatch(1);
     }
 }

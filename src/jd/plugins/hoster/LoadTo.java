@@ -117,8 +117,8 @@ public class LoadTo extends PluginForHost {
     private void workAroundTimeOut(final Browser br) {
         try {
             if (br != null) {
-                br.setConnectTimeout(30000);
-                br.setReadTimeout(120000);
+                br.setConnectTimeout(120 * 1000);
+                br.setReadTimeout(120 * 1000);
             }
         } catch (Throwable e) {
         }

@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.8.7
+    // XfileSharingProBasic Version 2.5.8.9
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -316,6 +316,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    checkErrors(downloadLink, true, passCode);
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     break;
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
