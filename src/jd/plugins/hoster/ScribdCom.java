@@ -37,12 +37,13 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "scribd.com" }, urls = { "http://(www\\.)?((de|ru)\\.)?scribd\\.com/doc/\\d+" }, flags = { 2 })
 public class ScribdCom extends PluginForHost {
 
-    private final String   formats    = "formats";
+    private final String   formats     = "formats";
 
     /** The list of server values displayed to the user */
-    private final String[] allFormats = new String[] { "PDF", "TXT" };
+    private final String[] allFormats  = new String[] { "PDF", "TXT" };
 
-    private final String   NODOWNLOAD = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
+    private final String   NODOWNLOAD  = JDL.L("plugins.hoster.ScribdCom.NoDownloadAvailable", "Download is disabled for this file!");
+    private final String   PREMIUMONLY = JDL.L("plugins.hoster.ScribdCom.premonly", "Download requires a scribd.com account!");
 
     public ScribdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,7 +85,7 @@ public class ScribdCom extends PluginForHost {
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (true) downloadLink.getLinkStatus().setStatusText(NODOWNLOAD);
+
         downloadLink.setName(filename);
         return AvailableStatus.TRUE;
     }
@@ -136,6 +137,8 @@ public class ScribdCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
+
+        sleep(10000, downloadLink, PREMIUMONLY);
         try {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
         } catch (final Throwable e) {
@@ -162,7 +165,9 @@ public class ScribdCom extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.setFollowRedirects(true);
         br.getPage("http://www.scribd.com");
+
         final String thisToken = br.getRegex("name=\"authenticity_token\" type=\"hidden\" value=\"([a-z0-9]+)\"").getMatch(0);
         if (thisToken == null) {
             logger.warning("Login broken!");
