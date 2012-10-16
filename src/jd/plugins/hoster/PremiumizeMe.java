@@ -187,7 +187,18 @@ public class PremiumizeMe extends PluginForHost {
         }
         dllink = dllink.replaceAll("\\\\/", "/");
         showMessage(link, "Task 2: Download begins!");
-        handleDL(account, link, dllink);
+        try {
+            handleDL(account, link, dllink);
+        } catch (Exception e) {
+            try {
+                if (dl.externalDownloadStop() == false) {
+                    LogSource.exception(logger, e);
+                    sendErrorLog(link, account);
+                }
+            } catch (final Throwable e1) {
+            }
+            throw e;
+        }
     }
 
     @Override
