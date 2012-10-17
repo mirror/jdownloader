@@ -170,6 +170,10 @@ public class AllDebridCom extends PluginForHost {
 
         if (!genlink.startsWith("http://")) {
             logger.severe("AllDebrid(Error): " + genlink);
+            if (genlink.contains("Hoster unsupported or under maintenance.")) {
+                // disable host for 4h
+                tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
+            }
             if (genlink.contains("_limit")) {
                 /* limit reached for this host, wait 4h */
                 tempUnavailableHoster(acc, link, 4 * 60 * 60 * 1000l);
