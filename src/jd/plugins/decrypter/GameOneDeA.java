@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.text.DecimalFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -44,6 +47,51 @@ import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gameone.de" }, urls = { "http://(www\\.)?gameone\\.de/(tv/\\d+(\\?part=\\d+)?|blog/\\d+/\\d+/.+|playtube/[\\w\\-]+/\\d+(/(sd|hd))?)|http://feedproxy.google.com/~r/mtvgameone/.*\\.mp3" }, flags = { 0 })
 public class GameOneDeA extends PluginForDecrypt {
+
+    public class ReplacerInputStream extends InputStream {
+
+        private final byte[]      REPLACEMENT = "amp;".getBytes();
+        private final byte[]      readBuf     = new byte[REPLACEMENT.length];
+        private final Deque<Byte> backBuf     = new ArrayDeque<Byte>();
+        private final InputStream in;
+
+        /**
+         * Replacing & to {@literal &amp;} in InputStreams
+         * 
+         * @author mhaller
+         * @see <a href="http://stackoverflow.com/a/4588005">http://stackoverflow.com/a/4588005</a>
+         */
+        public ReplacerInputStream(InputStream in) {
+            this.in = in;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (!backBuf.isEmpty()) { return backBuf.pop(); }
+            int first = in.read();
+            if (first == '&') {
+                peekAndReplace();
+            }
+            return first;
+        }
+
+        private void peekAndReplace() throws IOException {
+            int read = super.read(readBuf, 0, REPLACEMENT.length);
+            for (int i1 = read - 1; i1 >= 0; i1--) {
+                backBuf.push(readBuf[i1]);
+            }
+            for (int i = 0; i < REPLACEMENT.length; i++) {
+                if (read != REPLACEMENT.length || readBuf[i] != REPLACEMENT[i]) {
+                    for (int j = REPLACEMENT.length - 1; j >= 0; j--) {
+                        // In reverse order
+                        backBuf.push(REPLACEMENT[j]);
+                    }
+                    return;
+                }
+            }
+        }
+
+    }
 
     private Document doc;
 
@@ -212,7 +260,7 @@ public class GameOneDeA extends PluginForDecrypt {
             final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             try {
-                doc = parser.parse(stream);
+                doc = parser.parse(new ReplacerInputStream(stream));
                 return xPath;
             } finally {
                 try {

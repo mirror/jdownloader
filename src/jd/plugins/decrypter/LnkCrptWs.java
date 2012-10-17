@@ -296,6 +296,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 SERVERSTRING = null;
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));
                 String[] next = rcBr.getRegex("\\.setAttribute\\(\"src\",\"(.*?)\"\\+(.*?)\\+").getRow(0);
+                if (next == null) throw new Exception("KeyCaptcha Module fails");
                 SERVERSTRING = next[0];
 
                 /* a little bit js processing */

@@ -94,12 +94,17 @@ public class PanBaiduCom extends PluginForDecrypt {
         FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(unescape(dirName)));
         HashMap<String, String> ret = new HashMap<String, String>();
-        String list = br.getRegex("\"list\":\\[(.*?)\\]").getMatch(0);
+        String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
         for (String[] links : new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches()) {
             for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
                 ret.put(link[0], link[1]);
             }
-            if (!ret.containsKey("dlink")) continue;// subfolder in folder, implemented later
+
+            /**
+             * TODO: subfolder in folder coming soon
+             */
+            if (!ret.containsKey("dlink")) continue;
+
             DownloadLink dl = generateDownloadLink(ret, parameter, dir);
             fp.add(dl);
             try {

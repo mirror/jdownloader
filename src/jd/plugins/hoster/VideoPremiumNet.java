@@ -231,7 +231,7 @@ public class VideoPremiumNet extends PluginForHost {
         rtmp.setUrl(url);
         rtmp.setSwfVfy(stream.split("@")[2]);
         rtmp.setPageUrl(downloadLink.getDownloadURL());
-        rtmp.setResume(false);
+        rtmp.setResume(true);
         rtmp.setDebug(); // needed for redirect feature in rtmpdump.class
         rtmp.setTimeOut(4);
     }
