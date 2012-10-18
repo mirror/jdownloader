@@ -201,4 +201,9 @@ public class MainToolBar extends JToolBar {
         if (speedmeter != null) add(speedmeter, "hidemode 3, width 32:300:300");
     }
 
+	//made speedMeter Instance public. Used in remote API
+    public SpeedMeterPanel getSpeedMeter() {
+        return speedmeter;
+    }
+
 }
