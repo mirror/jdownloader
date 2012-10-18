@@ -40,6 +40,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         for (CaptchaDialogQueueEntry entry : entries) {
             if (entry.isFinished()) continue;
             CaptchaJob job = new CaptchaJob();
+            job.setType(entry.getCaptchaController().getCaptchaType());
             job.setID(entry.getID().getID());
             job.setHoster(entry.getHost().getTld());
             ret.add(job);
@@ -148,6 +149,7 @@ public class CaptchaAPIImpl implements CaptchaAPI, CaptchaEventListener {
         CaptchaDialogQueueEntry entry = controller.getDialog();
         if (entry != null) {
             CaptchaJob job = new CaptchaJob();
+            job.setType(entry.getCaptchaController().getCaptchaType());
             job.setID(entry.getID().getID());
             job.setHoster(entry.getHost().getTld());
             HashMap<String, Object> data = new HashMap<String, Object>();
