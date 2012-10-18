@@ -138,6 +138,10 @@ public class SimplyDebridCom extends PluginForHost {
         String dllink = br.getPage("http://simply-debrid.com/api.php?dl=" + url);
 
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://"))) {
+            if (dllink.contains("UNDER MAINTENANCE")) {
+                // disable host for 4h
+                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
+            }
             if (dllink.contains("03: Invalid link")) {
                 // link is invalid
                 /*
