@@ -139,8 +139,8 @@ public class SimplyDebridCom extends PluginForHost {
 
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://"))) {
             if (dllink.contains("UNDER MAINTENANCE")) {
-                // disable host for 4h
-                tempUnavailableHoster(account, link, 4 * 60 * 60 * 1000l);
+                // disable host for 30min
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
             }
             if (dllink.contains("03: Invalid link")) {
                 // link is invalid
