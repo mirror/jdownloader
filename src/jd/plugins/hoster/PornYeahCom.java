@@ -65,6 +65,7 @@ public class PornYeahCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("pornyeah.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404: File Not Found at Porn Yeah</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Video removed<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1 class=\"porn\\-movies big\">(.*?)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) at Porn Yeah</title>").getMatch(0);
         DLLINK = br.getRegex("(http://(www\\.)?pornyeah\\.com/playerConfig\\.php\\?[%a-z0-9\\.\\-_]+\\|\\d+)").getMatch(0);

@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHexUtils;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist)[A-Za-z0-9_\\-]+/[A-Za-z0-9_\\-]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trilulilu.ro" }, urls = { "http://(www\\.)?trilulilu\\.ro/(?!video|canal|profil|artist|grup)[A-Za-z0-9_\\-]+/(?!fisiere|profil)[A-Za-z0-9_\\-]+" }, flags = { 2 })
 public class TriLuLiLuRo extends PluginForHost {
 
     private String              DLLINK                     = null;
@@ -70,6 +70,7 @@ public class TriLuLiLuRo extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        // Link offline
         if (br.getURL().equals("http://www.trilulilu.ro/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(COUNTRYBLOCK)) {
             try {
@@ -80,6 +81,8 @@ public class TriLuLiLuRo extends PluginForHost {
             br.getPage(downloadLink.getDownloadURL());
         }
         if (br.containsHTML("(Fişierul căutat nu există|Contul acestui utilizator a fost dezactivat)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Invalid link
+        if (br.containsHTML(">Trilulilu 404<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(LIMITREACHED)) return AvailableStatus.TRUE;
         String filename = br.getRegex("<div class=\"file_description floatLeft\">[\r\t\n ]+<h1>(.*?)</h1>").getMatch(0);
         if (filename == null) {

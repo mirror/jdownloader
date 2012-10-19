@@ -26,8 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 //plunder.com by pspzockerscene
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "plunder.com" }, urls = { "http://[\\w\\.]*?(youdownload\\.eu|binarybooty\\.com|mashupscene\\.com|plunder\\.com|files\\.youdownload\\.com)/((-download-[a-z0-9]+|.+-download-.+)\\.htm|(?!/)[0-9a-z]+)" }, flags = { 0 })
 public class PlunderCom extends PluginForHost {
@@ -47,10 +45,11 @@ public class PlunderCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("<h2>Download</h2>.*?a href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://pearl\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL() + "?showlink=1");
+        String dllink = br.getRegex("class=button href=\\'(http://[^<>\"]*?)\\'").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.plunder\\.com/x/.*?/.*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if ((dl.getConnection().getContentType().contains("html"))) {
@@ -89,12 +88,10 @@ public class PlunderCom extends PluginForHost {
         }
         br.setFollowRedirects(true);
         if (br.getURL().contains("/search/?f=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>[\r\n\t]+(.*?) download \\- Plunder").getMatch(0);
-        if (filename == null) filename = br.getRegex("<h2>Download</h2>(.*?) \\(").getMatch(0);
-        String filesize = br.getRegex("<h2>Download</h2>.*?\\((.*?)\\)<BR").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<h1>([^<>\"]*?) Download</h1>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) download[\t\n\r ]+</title>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }

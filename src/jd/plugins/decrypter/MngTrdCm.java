@@ -40,13 +40,13 @@ public class MngTrdCm extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         // return error message for invalid url
-        if (br.containsHTML(">Error - Page Not Found<")) {
+        if (br.containsHTML(">Error \\- Page Not Found<")) {
             logger.warning("Invalid URL: " + parameter);
             return decryptedLinks;
         }
 
         // Set package name and prevent null field from creating plugin errors
-        String fpName = br.getRegex("<title>Manga Traders - (.*?)</title>").getMatch(0);
+        String fpName = br.getRegex("<title>Manga Traders \\- (.*?)</title>").getMatch(0);
         if (fpName == null) fpName = "Untitled";
         FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
@@ -66,8 +66,11 @@ public class MngTrdCm extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("http://www.mangatraders.com/download/file/" + dl));
         }
 
-        // Catch for the first page and links within subsequence pages. Instead of loading back into the plugin as this creates multiple packages of the same name (==bad|dirty).
-        // Might need to adjust in the future. As far as I could tell all pages are shown on the first page.
+        // Catch for the first page and links within subsequence pages. Instead
+        // of loading back into the plugin as this creates multiple packages of
+        // the same name (==bad|dirty).
+        // Might need to adjust in the future. As far as I could tell all pages
+        // are shown on the first page.
         if (pages != null && pages.length != 0) {
             for (String page : pages) {
                 br.getPage(page);

@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -55,7 +56,7 @@ public class TuDouCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("\"notfound\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("tudou.com/error.php?msg=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(",kw = \"(.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("id=\"vcate_title\">(.*?)</span>").getMatch(0);
@@ -73,21 +74,16 @@ public class TuDouCom extends PluginForHost {
         filename = Encoding.htmlDecode(filename.trim());
         downloadLink.setFinalFileName(filename + ".flv");
         String videoID = new Regex(downloadLink.getDownloadURL(), "tudou\\.com/programs/view/(.+)").getMatch(0);
-        String iid = br.getRegex("var iid = (\\d+)").getMatch(0);
-        if (iid == null) iid = br.getRegex("supermail\\.tudou\\.com/supermail/index\\.action\\?iid=(\\d+)\"").getMatch(0);
-        if (iid == null) iid = br.getRegex("var pageID.*?,iid = (\\d+)").getMatch(0);
+        String iid = br.getRegex("iid: (\\d+)").getMatch(0);
         if (videoID == null || iid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String xmllink = "http://v2.tudou.com/v?vn=02&refurl=http://www.tudou.com/programs/view/" + videoID + "/&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
+        final String xmllink = "http://v2.tudou.com/v.action?pw=&ui=0&retc=1&mt=0&sid=11000&refurl=http%3A%2F%2Fwww%2Etudou%2Ecom%2Fprograms%2Fview%2F" + videoID + "&noCache=" + new Random().nextInt(1000) + "&st=2&si=11000&vn=02&hd=1&it=" + iid + "&noCache=&ui=0&st=1,2&si=sp&tAg=";
         br.getPage(xmllink);
         if (br.containsHTML("error=\\'ip is forbidden\\'")) {
             downloadLink.getLinkStatus().setStatusText("Not downloadable in your country");
             return AvailableStatus.TRUE;
         }
-        dllink = br.getRegex("</f><f st=\"2\" s1=\"[a-z0-9]+\" bc=\"10\" brt=\"2\">(http://.*?)</f></v><\\!--pageview_candidate-->").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
-        }
+        dllink = br.getRegex("brt=\"2\".*?(http://.*?)<").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("brt=\"1\".*?(http://.*?)<").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
         Browser br2 = br.cloneBrowser();

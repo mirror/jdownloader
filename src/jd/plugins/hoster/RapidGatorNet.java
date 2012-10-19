@@ -283,7 +283,7 @@ public class RapidGatorNet extends PluginForHost {
             final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
             for (String link : sitelinks) {
                 if (link.matches("(.+\\.(js|css))")) {
-                    Browser br2 = br.cloneBrowser();
+                    final Browser br2 = br.cloneBrowser();
                     simulateBrowser(br2, link);
                 }
             }
@@ -370,11 +370,11 @@ public class RapidGatorNet extends PluginForHost {
                 Browser capt = br.cloneBrowser();
 
                 if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
-                    PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
-                    File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     code = getCaptchaCode(cf, downloadLink);
-                    String chid = sm.verify(code);
+                    final String chid = sm.verify(code);
                     captcha.put("adcopy_challenge", chid);
                     captcha.put("adcopy_response", code);
 
@@ -586,7 +586,10 @@ public class RapidGatorNet extends PluginForHost {
             con = rb.openGetConnection(url);
         } catch (final Throwable e) {
         } finally {
-            con.disconnect();
+            try {
+                con.disconnect();
+            } catch (final Exception e) {
+            }
         }
     }
 

@@ -85,7 +85,7 @@ public class MixtureCloudCom extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) \\- MixtureCloud\\.com \\-").getMatch(0);
         }
-        String filesize = br.getRegex("<h5>Size : ([^<>\"]*?)</h5>").getMatch(0);
+        String filesize = br.getRegex("<h5>Größe : ([^<>\"]*?)</h5>").getMatch(0);
         if (filesize == null) {
             logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
             logger.warning("MixtureCloud: Continuing...");

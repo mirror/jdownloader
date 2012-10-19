@@ -48,8 +48,8 @@ public class PornRabbitComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        String filename = br.getRegex("<title>([^<>\"]*?) : pornrabbit\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex(">Report this video\\!</a></div>[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         String externID = br.getRegex("xvideos\\.com/embedframe/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.xvideos.com/video" + externID));

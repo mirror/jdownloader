@@ -69,48 +69,55 @@ public class Tube8Com extends PluginForHost {
                 filename = br.getRegex("Tube8 bring you(.*?)for all").getMatch(0);
             }
         }
-        Browser br2 = br.cloneBrowser();
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         final String hash = br.getRegex("var hash = \"([a-z0-9]+)\"").getMatch(0);
         if (hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br2.getPage("http://www.tube8.com/ajax/getVideoDownloadURL.php?_=" + System.currentTimeMillis() + "&hash=" + hash + "&video=" + new Regex(downloadLink.getDownloadURL(), ".*?(\\d+)$").getMatch(0));
         final String correctedBR = br2.toString().replace("\\", "");
-        boolean prefer3gp = getPluginConfig().getBooleanProperty(mobile, false);
-        if (prefer3gp) {
-            find3gpLinks(correctedBR);
-            if (dllink == null) {
-                logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
-                findNormalLinks(correctedBR);
-            }
-        } else {
-            findNormalLinks(correctedBR);
-            if (dllink == null) {
-                logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
+        boolean failed = false;
+        for (int i = 1; i <= 2; i++) {
+            boolean prefer3gp = getPluginConfig().getBooleanProperty(mobile, false);
+            if (prefer3gp || failed) {
                 find3gpLinks(correctedBR);
+                if (dllink == null) {
+                    logger.warning("Couldn't find 3gp links even if they're prefered, trying to get the normal links now!");
+                    findNormalLinks(correctedBR);
+                }
+            } else {
+                findNormalLinks(correctedBR);
+                if (dllink == null) {
+                    logger.warning("Couldn't find normal links even if they're prefered, trying to get the 3gp links now!");
+                    find3gpLinks(correctedBR);
+                }
             }
-        }
-        if (filename == null || dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        if (dllink.contains(".3gp")) {
-            downloadLink.setFinalFileName((filename + ".3gp"));
-        } else {
-            downloadLink.setFinalFileName(filename + ".flv");
-        }
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(Encoding.htmlDecode(dllink));
-            if (!con.getContentType().contains("html"))
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return AvailableStatus.TRUE;
-        } finally {
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dllink = Encoding.htmlDecode(dllink);
+            filename = filename.trim();
+            if (dllink.contains(".3gp")) {
+                downloadLink.setFinalFileName((filename + ".3gp"));
+            } else {
+                downloadLink.setFinalFileName(filename + ".flv");
+            }
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (final Throwable e) {
+                con = br.openGetConnection(Encoding.htmlDecode(dllink));
+                if (!con.getContentType().contains("html")) {
+                    downloadLink.setDownloadSize(con.getLongContentLength());
+                } else {
+                    failed = true;
+                    continue;
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
+        return AvailableStatus.FALSE;
     }
 
     @Override

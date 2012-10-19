@@ -509,7 +509,7 @@ public class VimeoCom extends PluginForHost {
         if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
         clipData = br.toString();
         // Info: getClipData("hd") was getClipData("isHD") before
-        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("hd")) ? "hd" : "sd");
+        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("hd")) ? "hd" : "sd") + "&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=";
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         finalURL = br.getRedirectLocation();

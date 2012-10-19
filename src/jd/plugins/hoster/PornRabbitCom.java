@@ -58,8 +58,8 @@ public class PornRabbitCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>Page Not Found<|>Sorry but the page you are looking for has)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>([^<>\"]*?) : pornrabbit\\.com</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex(">Report this video!</a></div>[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?): Porn Rabbit</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
         DLLINK = br.getRegex("class=\"download\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\"(http://cdn\\d+\\.media\\.pornrabbit\\.com/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

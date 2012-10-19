@@ -52,12 +52,13 @@ public class PornUpMe extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replace("pornupdecrypted.me/", "pornup.me/"));
     }
 
+    /** Uses the same script as pornper.com */
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.getURL().equals("http://www.pornup.me/videos/") || br.containsHTML("<title> Most Recent Videos \\- Free Sex Adult Videos \\- PornUp\\.me</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("pornup.me/videos/?m=e")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<h1>(.*?)(<a href=\"|</h1>)").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?)\\- Free Porn Videos and Sex Movies at pornper Kinky Porn Tube</title>").getMatch(0);
         DLLINK = br.getRegex("\\'file\\': \\'(http://.*?)\\'").getMatch(0);

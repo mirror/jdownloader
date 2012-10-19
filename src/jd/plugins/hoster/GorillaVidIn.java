@@ -200,17 +200,18 @@ public class GorillaVidIn extends PluginForHost {
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Check if we can get the stream link directly
-        br.getPage("http://gorillavid.in/vidembed-" + fid);
+        getPage("http://gorillavid.in/vidembed-" + fid);
         dllink = getDllink();
         // Second, check for streaming links on the first page
         if (dllink == null) {
-            br.getPage(downloadLink.getDownloadURL());
+            getPage(downloadLink.getDownloadURL());
             dllink = getDllink();
         }
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
-            br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + downloadLink.getStringProperty("plainfilename") + "&referer=&channel=&method_free=Free+Download");
+            waitTime(System.currentTimeMillis(), downloadLink);
+            postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + fid + "&fname=" + downloadLink.getStringProperty("plainfilename") + "&referer=http%3A%2F%2Fboard.jdownloader.org%2Fshowthread.php%3Ft%3D42745&channel=&method_free=Free+Download");
             dllink = getDllink();
         }
         if (dllink == null) {
@@ -545,7 +546,7 @@ public class GorillaVidIn extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        final String ttt = new Regex(correctedBR, ">Wait <span id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
             tt -= passedTime;

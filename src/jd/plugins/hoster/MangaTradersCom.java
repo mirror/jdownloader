@@ -31,7 +31,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangatraders.com" }, urls = { "http://[\\w\\.]*?mangatraders\\.com/(download|view)/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangatraders.com" }, urls = { "http://(www\\.)*?mangatraders\\.com/(download|view)/file/\\d+" }, flags = { 2 })
 public class MangaTradersCom extends PluginForHost {
 
     private boolean             weAreAlreadyLoggedIn = false;

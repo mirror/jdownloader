@@ -60,19 +60,20 @@ public class FileFactory extends PluginForHost {
     // of this plugin. Adjust COOKIE_HOST to suite future changes, or remove
     // COOKIE_HOST from that section of the script
 
-    private static final String  FILESIZE         = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
-    private static AtomicInteger maxPrem          = new AtomicInteger(1);
-    private static final String  NO_SLOT          = ">All free download slots";
-    private static final String  NO_SLOT_USERTEXT = "No free slots available";
-    private static final String  NOT_AVAILABLE    = "class=\"box error\"";
-    private static final String  SERVERFAIL       = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time)";
-    private static final String  LOGIN_ERROR      = "The email or password you have entered is incorrect";
-    private static final String  SERVER_DOWN      = "server hosting the file you are requesting is currently down";
-    private static final String  CAPTCHALIMIT     = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
-    private static Object        LOCK             = new Object();
-    private static final String  COOKIE_HOST      = "http://www.filefactory.com";
-    private String               dlUrl            = null;
-    private static final String  TRAFFICSHARELINK = "filefactory.com/trafficshare/";
+    private static final String  FILESIZE          = "id=\"info\" class=\"metadata\">[\t\n\r ]+<span>(.*?) file uploaded";
+    private static AtomicInteger maxPrem           = new AtomicInteger(1);
+    private static final String  NO_SLOT           = ">All free download slots";
+    private static final String  NO_SLOT_USERTEXT  = "No free slots available";
+    private static final String  NOT_AVAILABLE     = "class=\"box error\"";
+    private static final String  SERVERFAIL        = "(<p>Your download slot has expired\\.|Unfortunately the file you have requested cannot be downloaded at this time)";
+    private static final String  LOGIN_ERROR       = "The email or password you have entered is incorrect";
+    private static final String  SERVER_DOWN       = "server hosting the file you are requesting is currently down";
+    private static final String  CAPTCHALIMIT      = "<p>We have detected several recent attempts to bypass our free download restrictions originating from your IP Address";
+    private static Object        LOCK              = new Object();
+    private static final String  COOKIE_HOST       = "http://www.filefactory.com";
+    private String               dlUrl             = null;
+    private static final String  TRAFFICSHARELINK  = "filefactory.com/trafficshare/";
+    private static final String  PASSWORDPROTECTED = ">You are trying to access a password protected file";
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -294,6 +295,7 @@ public class FileFactory extends PluginForHost {
     }
 
     public void handleFree0(final DownloadLink parameter) throws Exception {
+        String passCode = parameter.getStringProperty("pass", null);
         try {
             long waittime;
             if (dlUrl != null) {
@@ -302,6 +304,11 @@ public class FileFactory extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, parameter, dlUrl, true, 1);
             } else {
                 this.checkErrors(false);
+                if (br.containsHTML(PASSWORDPROTECTED)) {
+                    if (passCode == null) passCode = Plugin.getUserInput("Password?", parameter);
+                    br.postPage(br.getURL(), "action=password&password=" + Encoding.urlEncode(passCode));
+                    if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+                }
                 String urlWithFilename = null;
                 if (this.br.containsHTML("recaptcha_ajax\\.js")) {
                     urlWithFilename = this.handleRecaptcha(this.br, parameter);
@@ -338,6 +345,7 @@ public class FileFactory extends PluginForHost {
             }
             // Prüft ob content disposition header da sind
             if (this.dl.getConnection().isContentDisposition()) {
+                if (passCode != null) parameter.setProperty("pass", passCode);
                 this.dl.startDownload();
             } else {
                 this.br.followConnection();
@@ -550,6 +558,8 @@ public class FileFactory extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML(FileFactory.SERVER_DOWN)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(PASSWORDPROTECTED)) {
+            downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
             if (isPremiumOnly(br)) {
                 downloadLink.getLinkStatus().setErrorMessage("This file is only available to Premium Members");

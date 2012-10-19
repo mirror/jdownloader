@@ -45,7 +45,10 @@ public class PlunderComFolder extends PluginForDecrypt {
         String fpName = br.getRegex("<title>.*?\\-(.*?)\\- Plunder").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<h1>.*?files \\-(.*?)</h1>").getMatch(0);
         String[] links = br.getRegex("title=\".*?\" href='(.*?)'>").getColumn(0);
-        if (links.length == 0) return null;
+        if (links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
         if (fpName != null) {

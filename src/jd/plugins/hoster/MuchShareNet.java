@@ -344,7 +344,7 @@ public class MuchShareNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(BRBEFORE, "\"(http://[a-z0-9]+\\.muchshare\\.net:\\d+/d/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
+            dllink = new Regex(BRBEFORE, "(http://[a-z0-9]+\\.muchshare\\.net:\\d+/d/[a-z0-9]+/[^<>\"/]*?)(\\&|\")").getMatch(0);
         }
         return dllink;
     }
