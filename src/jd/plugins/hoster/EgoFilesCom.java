@@ -98,6 +98,7 @@ public class EgoFilesCom extends PluginForHost {
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.egofiles\\.com:\\d+/dl/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
