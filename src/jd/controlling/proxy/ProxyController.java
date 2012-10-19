@@ -1,6 +1,5 @@
 package jd.controlling.proxy;
 
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -9,7 +8,6 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.prefs.Preferences;
 
 import jd.config.SubConfiguration;
 import jd.controlling.IOEQ;
@@ -23,7 +21,6 @@ import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.update.updateclient.UpdateHttpClientOptions;
 import org.appwork.update.updateclient.UpdaterConstants;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.DefaultEventListener;
 import org.appwork.utils.event.DefaultEventSender;
@@ -132,7 +129,7 @@ public class ProxyController {
     public static List<HTTPProxy> autoConfig() {
         java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
         try {
-            if (CrossSystem.isWindows()) { return ProxyController.checkReg(); }
+            if (CrossSystem.isWindows()) { return HTTPProxy.getWindowsRegistryProxies(); }
             /* we enable systemproxies to query them for a test getPage */
             System.setProperty("java.net.useSystemProxies", "true");
             List<Proxy> l = null;
@@ -168,77 +165,6 @@ public class ProxyController {
             }
         } catch (final Throwable e1) {
             Log.exception(e1);
-        }
-        return ret;
-    }
-
-    private static byte[] toCstr(final String str) {
-        final byte[] result = new byte[str.length() + 1];
-        for (int i = 0; i < str.length(); i++) {
-            result[i] = (byte) str.charAt(i);
-        }
-        result[str.length()] = 0;
-        return result;
-    }
-
-    /**
-     * Checks windows registry for proxy settings
-     */
-    private static List<HTTPProxy> checkReg() {
-        java.util.List<HTTPProxy> ret = new ArrayList<HTTPProxy>();
-        try {
-            final Preferences userRoot = Preferences.userRoot();
-            final Class<?> clz = userRoot.getClass();
-            final Method openKey = clz.getDeclaredMethod("openKey", byte[].class, int.class, int.class);
-            openKey.setAccessible(true);
-
-            final Method closeKey = clz.getDeclaredMethod("closeKey", int.class);
-            closeKey.setAccessible(true);
-            final Method winRegQueryValue = clz.getDeclaredMethod("WindowsRegQueryValueEx", int.class, byte[].class);
-            winRegQueryValue.setAccessible(true);
-
-            byte[] valb = null;
-            String val = null;
-            String key = null;
-            Integer handle = -1;
-
-            // Query Internet Settings for Proxy
-            key = "Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings";
-            try {
-                handle = (Integer) openKey.invoke(userRoot, ProxyController.toCstr(key), 0x20019, 0x20019);
-                valb = (byte[]) winRegQueryValue.invoke(userRoot, handle.intValue(), ProxyController.toCstr("ProxyServer"));
-                val = valb != null ? new String(valb).trim() : null;
-            } finally {
-                closeKey.invoke(Preferences.userRoot(), handle);
-            }
-            if (val != null) {
-                for (String vals : val.split(";")) {
-                    /* parse ip */
-                    String proxyurl = new Regex(vals, "(\\d+\\.\\d+\\.\\d+\\.\\d+)").getMatch(0);
-                    if (proxyurl == null) {
-                        /* parse domain name */
-                        proxyurl = new Regex(vals, "=(.*?)($|:)").getMatch(0);
-                    }
-                    final String port = new Regex(vals, ":(\\d+)").getMatch(0);
-                    if (proxyurl != null) {
-                        if (vals.trim().contains("socks")) {
-                            final int rPOrt = port != null ? Integer.parseInt(port) : 1080;
-                            HTTPProxy pd = new HTTPProxy(HTTPProxy.TYPE.SOCKS5);
-                            pd.setHost(proxyurl);
-                            pd.setPort(rPOrt);
-                            ret.add(pd);
-                        } else {
-                            final int rPOrt = port != null ? Integer.parseInt(port) : 8080;
-                            HTTPProxy pd = new HTTPProxy(HTTPProxy.TYPE.HTTP);
-                            pd.setHost(proxyurl);
-                            pd.setPort(rPOrt);
-                            ret.add(pd);
-                        }
-                    }
-                }
-            }
-        } catch (final Throwable e) {
-            Log.exception(e);
         }
         return ret;
     }
