@@ -64,7 +64,7 @@ public class TomWansCom extends PluginForHost {
         final String cryptedScript = br.getRegex("eval(.*?)[\r\n]+").getMatch(0);
         final String dllink = getFinalLink(cryptedScript);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -79,7 +79,10 @@ public class TomWansCom extends PluginForHost {
         try {
             /* unpacked js */
             result = engine.eval(s);
-            /* make a function and return jwplayer("mediaspace").setup({'file': value,...}) */
+            /*
+             * make a function and return jwplayer("mediaspace").setup({'file':
+             * value,...})
+             */
             engine.eval("function jwplayer(name) { var newObj = new Object(); function setup(array) { return array.file; } newObj.setup = setup; return newObj; }");
             /* splitting with delimiters and execute jwplayer().setup() function */
             result = engine.eval(result.toString().replaceAll("\\);", "\\);@@@").split("@@@")[0]);

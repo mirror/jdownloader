@@ -38,8 +38,15 @@ public class Antena3ComSalon extends PluginForDecrypt {
         if (html.contains("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>")) return decryptedLinks;
         String xmlURL = "http://www.antena3.com" + new Regex(html, "player_capitulo\\.xml=\\'(.*?)\\';").getMatch(0);
         br.getPage(xmlURL);
-        String[] links = br.getRegex("<archivo>(.*?)</archivo>").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        if (br.containsHTML(">El contenido al que estás intentando acceder ya no está disponible")) {
+            logger.info("Link offline: " + link.toString());
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("<archivo>(.*?)</archivo>").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + link.toString());
+            return null;
+        }
         for (String sdl : links) {
             if (sdl.contains(".mp4")) {
                 sdl = "http://desprogresiva.antena3.com/" + sdl.replace("<![CDATA[", "").replace("]]>", "");

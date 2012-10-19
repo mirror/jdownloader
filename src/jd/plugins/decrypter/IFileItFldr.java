@@ -41,6 +41,10 @@ public class IFileItFldr extends PluginForDecrypt {
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
         br.setCookie("http://filecloud.io/", "lang", "en");
         br.getPage(parameter);
+        if (br.containsHTML(">no such tag")) {
+            logger.info("Invalid/Offline folderlink: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<title>([^<>\"]*?) \\- filecloud\\.io</title>").getMatch(0);
         String[][] linkinformation = br.getRegex("\"size\":\"(\\d+)\",\"name\":\"([^<>\"]*?)\",\"ukey\":\"([^<>\"]*?)\"").getMatches();
         boolean fail = false;

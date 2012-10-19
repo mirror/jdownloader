@@ -81,6 +81,8 @@ public class DailyMotionCom extends PluginForHost {
             logger.warning("filename is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        filename = Encoding.htmlDecode(filename.trim() + ".mp4");
+        filename = correctFilename(filename);
         if (source != null) {
             String allLinks = Encoding.htmlDecode(source).replace("\\", "");
             logger.info("sourcetext: " + allLinks);
@@ -92,13 +94,13 @@ public class DailyMotionCom extends PluginForHost {
                 if (dllink == null) dllink = br.getRegex("\"(http://(www\\.)?dailymotion\\.com/cdn/.*?)\"").getMatch(0);
                 if (dllink == null) {
                     downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.countryblocked", COUNTRYBLOCKUSERTEXT));
-                    downloadLink.setName(filename + ".mp4");
+                    downloadLink.setName(filename);
                     dllink = COUNTRYBLOCK;
                     return AvailableStatus.TRUE;
                 }
             } else if (new Regex(allLinks, REGISTEREDONLY).matches()) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.dailymotioncom.only4registered", REGISTEREDONLYUSERTEXT));
-                downloadLink.setName(filename + ".mp4");
+                downloadLink.setName(filename);
                 dllink = REGISTEREDONLY;
                 return AvailableStatus.TRUE;
             } else {
@@ -118,7 +120,7 @@ public class DailyMotionCom extends PluginForHost {
         if (dllink == null) {
             dllink = downloadLink.getDownloadURL();
             if (isRtmp()) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
+                downloadLink.setFinalFileName(filename);
                 return AvailableStatus.TRUE;
             }
             logger.warning("dllink is null...");
@@ -126,7 +128,7 @@ public class DailyMotionCom extends PluginForHost {
         }
         dllink = dllink.replace("\\", "");
         filename = filename.trim();
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
+        downloadLink.setFinalFileName(filename);
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
@@ -177,6 +179,17 @@ public class DailyMotionCom extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String correctFilename(String filename) {
+        // Cut filenames if they're too long
+        if (filename.length() > 240) {
+            final String ext = filename.substring(filename.lastIndexOf("."));
+            int extLength = ext.length();
+            filename = filename.substring(0, 240 - extLength);
+            filename += ext;
+        }
+        return filename;
     }
 
     @Override

@@ -20,42 +20,34 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bandcamp.com" }, urls = { "http://(www\\.)?[a-z0-9\\-]+\\.bandcamp\\.com/album/[a-z0-9\\-_]+" }, flags = { 0 })
-public class BandCampComDecrypter extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://(www\\.)?mixturecloud\\.com/album/[A-Za-z0-9]+" }, flags = { 0 })
+public class MixtureCloudComFolder extends PluginForDecrypt {
 
-    public BandCampComDecrypter(PluginWrapper wrapper) {
+    public MixtureCloudComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage(parameter);
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        Regex filenameRegex = br.getRegex("<title>(.*?) \\| (.*?)</title>");
-        String[] links = br.getRegex("<div class=\"title\">[\t\n\r ]+<a href=\"(/track/.*?)\"").getColumn(0);
+        if (br.containsHTML("404: page not found|There is no album here<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] links = br.getRegex("\"(media/(?!share)[A-Za-z0-9]+)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String bcLink = new Regex(parameter, "(http://.*?\\.bandcamp\\.com)/album/").getMatch(0);
-        for (String dl : links)
-            decryptedLinks.add(createDownloadlink(bcLink + dl));
-        String artist = filenameRegex.getMatch(1);
-        String albumname = filenameRegex.getMatch(0);
-        if (artist != null && albumname != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(albumname.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+        for (String singleLink : links)
+            decryptedLinks.add(createDownloadlink("https://www.mixturecloud.com/" + singleLink));
+
         return decryptedLinks;
     }
 

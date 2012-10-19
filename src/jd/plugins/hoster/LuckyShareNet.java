@@ -196,7 +196,10 @@ public class LuckyShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://luckyshare.net/auth/login", "remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.getPage("http://luckyshare.net/auth/login");
+                final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
+                if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://luckyshare.net/auth/login", "token=" + Encoding.urlEncode(token) + "&remember=&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 br.getPage("http://luckyshare.net/account/");
                 if (!br.containsHTML(">Account Type:</strong><br /><span>Premium")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies

@@ -55,6 +55,7 @@ public class Antena3Com extends PluginForHost {
         downloadLink.setName(name + ".mp4");
         // get final url (.mp4)
         String xml = getXML(downloadLink);
+        if (br.containsHTML(">El contenido al que estás intentando acceder ya no está disponible")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String finalURL = baseLink + getXmlLabels(xml, "archivo").get(0);
 
         // set real size

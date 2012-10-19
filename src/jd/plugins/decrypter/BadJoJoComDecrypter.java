@@ -44,6 +44,7 @@ public class BadJoJoComDecrypter extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        br.setFollowRedirects(true);
         if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         String decrypted = null;

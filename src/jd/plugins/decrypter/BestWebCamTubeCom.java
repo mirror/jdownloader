@@ -61,6 +61,29 @@ public class BestWebCamTubeCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        externID = br.getRegex("pornhub\\.com/embed/(\\d+)").getMatch(0);
+        if (externID == null) externID = br.getRegex("pornhub\\.com/view_video\\.php\\?viewkey=(\\d+)").getMatch(0);
+        if (externID != null) {
+            DownloadLink dl = createDownloadlink("http://www.pornhub.com/view_video.php?viewkey=" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        // pornhub handling number 2
+        externID = br.getRegex("name=\"FlashVars\" value=\"options=(http://(www\\.)?pornhub\\.com/embed_player(_v\\d+)?\\.php\\?id=\\d+)\"").getMatch(0);
+        if (externID != null) {
+            br.getPage(externID);
+            if (br.containsHTML("<link_url>N/A</link_url>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("<link_url>(http://[^<>\"]*?)</link_url>").getMatch(0);
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
         if (externID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

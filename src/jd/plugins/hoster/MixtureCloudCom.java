@@ -31,7 +31,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "http://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 0 })
 public class MixtureCloudCom extends PluginForHost {
 
     // free: 1maxdl * 1 chunk
@@ -100,7 +100,7 @@ public class MixtureCloudCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("You have already downloaded a file over")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+        if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
         if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);

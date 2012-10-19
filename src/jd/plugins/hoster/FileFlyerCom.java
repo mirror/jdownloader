@@ -36,7 +36,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileflyer.com" }, urls = { "http://[\\w\\.]*?fileflyer\\.com/view/[\\w]+" }, flags = { 2 })
 public class FileFlyerCom extends PluginForHost {
 
-    private static Object LOCK         = new Object();
+    private static Object       LOCK         = new Object();
 
     private static final String ONLY4PREMIUM = "(Access to old files is available to premium users only|>This is an Always Premium Download<|The requested file is over 1 GB and thus is available for download to premium users only|have no free download availability, unlike most other downloads on Fileflyer)";
 
@@ -126,6 +126,7 @@ public class FileFlyerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCustomCharset("utf-8");
         br.setCookie("http://www.fileflyer.com", "lang", "en");
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex(Pattern.compile("id=\"ItemsList_ctl00_size\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -134,7 +135,7 @@ public class FileFlyerCom extends PluginForHost {
         if (br.containsHTML(ONLY4PREMIUM)) downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.FileFlyerCom.errors.Only4Premium", "Only downloadable for premium users"));
         if (br.containsHTML("(class=\"handlink\">Expired</a>|class=\"handlink\">Removed</a>|>To report a bug ,press this link</a>|>Expired</a>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (name == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setName(name.trim());
+        downloadLink.setName(name.trim().replace("", ""));
         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }

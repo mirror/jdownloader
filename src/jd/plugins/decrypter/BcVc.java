@@ -37,14 +37,22 @@ public class BcVc extends PluginForDecrypt {
     }
 
     /**
-     * Important note: Via browser the videos are streamed via RTMP (maybe even in one part) but with this method we get HTTP links which is
-     * fine.
+     * Important note: Via browser the videos are streamed via RTMP (maybe even
+     * in one part) but with this method we get HTTP links which is fine.
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String[] matches = br.getRegex("aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\,ref\\: ?\\'(.*?)\\'\\}").getRow(0);
+        if (br.getURL().equals("http://bc.vc/") || br.containsHTML("top\\.location\\.href = \"http://bc\\.vc/\"")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String[] matches = br.getRegex("aid\\:(.*?)\\,lid\\:(.*?)\\,oid\\:(.*?)\\,ref\\: ?\\'(.*?)\\'\\}").getRow(0);
+        if (matches == null || matches.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         LinkedHashMap<String, String> data = new LinkedHashMap<String, String>();
         data.put("opt", "check_log");
