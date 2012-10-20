@@ -17,6 +17,7 @@ filePanel_selectNextRegionButton=Sélectionner la prochaine région télécharg�
 filePanel_selectPreviousRegionButton=Région précédente
 filePanel_totalDownloadSpeed=Vitesse totale de téléchargement
 filePanel_totalRequestRate=Taux de requête totale
+neembuu_could_not_handle_message=Voulez-vous télécharger ce fichier à la place ?
 settingsPanelTitle=Paramètres
 troubleHandler_pendingRequests_minutes=minute(s)
 troubleHandler_retriedConnection_times=fois

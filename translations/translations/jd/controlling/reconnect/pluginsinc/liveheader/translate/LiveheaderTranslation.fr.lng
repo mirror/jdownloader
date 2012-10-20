@@ -61,6 +61,7 @@ jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=Vous avez désactivé la recherche d'IP. Cela va accroître considérablement les temps de reconnexion ! Plusieurs autres modules servant à la reconnection sont désactivés.
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=IP-Check désactivé !
 jd_nrouter_recorder_Gui_info1=Vérifier l'adresse ip du routeur, puis appuyer sur le bouton Démarrer
+jd_nrouter_recorder_Gui_info2=Fenêtre du navigateur Web s'affihe sur la page d'accueil du routeur
 jd_nrouter_recorder_Gui_info3=Après la reconnexion cliquez sur le bouton d'arrêt et sauvegardez
 jd_router_reconnectrecorder_Gui_icon_bad=Erreur durant l'enregistrement de la reconnection !
 jd_router_reconnectrecorder_Gui_icon_good=Reconnexion enregistrée avec succès !
