@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +32,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?prosieben\\.de/tv/[\\w-]+/video(s)?/(clip/[\\w-\\.]+/?|[\\w-]+)" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "prosieben.de" }, urls = { "http://(www\\.)?(prosieben\\.de/tv/[\\w\\-]+|the\\-voice\\-of\\-germany\\.de)/videos?/(clip/[\\w\\-\\.]+/?|[\\w\\-]+)" }, flags = { 32 })
 public class ProSevenDe extends PluginForHost {
 
     private HashMap<String, String> fileDesc;
@@ -125,6 +126,7 @@ public class ProSevenDe extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String jsonString = br.getRegex("\"json\",\\s+\"(.*?)\"\n").getMatch(0);
+        if (jsonString == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         jsonString = decodeUnicode(jsonString).replaceAll("\\\\", "");
         try {
             jsonParser(jsonString, "downloadFilename");
@@ -132,9 +134,13 @@ public class ProSevenDe extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         if (fileDesc == null || fileDesc.size() < 5) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
+        for (Entry<String, String> next : fileDesc.entrySet()) {
+            if (next.getValue() == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+
         clipUrl = fileDesc.get("downloadFilename");
-        if (fileDesc.get("show_artist") == null && fileDesc.get("title") == null && fileDesc.get("id") == null || clipUrl == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        final String filename = fileDesc.get("show_artist") + "_" + fileDesc.get("title");
+
         if (!clipUrl.startsWith("rtmp")) {
             if (!"".equals("")) {// old handling
                 br.getPage("http://www.prosieben.de/static/videoplayer/config/playerConfig.json");
@@ -153,7 +159,7 @@ public class ProSevenDe extends PluginForHost {
         if (clipUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ext = new Regex(clipUrl, "(\\.\\w{3})$").getMatch(0);
         ext = ext == null ? ".mp4" : ext;
-        downloadLink.setName(filename.trim() + ext);
+        downloadLink.setName((fileDesc.get("show_artist") + "_" + fileDesc.get("title")).trim() + ext);
         return AvailableStatus.TRUE;
     }
 
@@ -168,4 +174,5 @@ public class ProSevenDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
