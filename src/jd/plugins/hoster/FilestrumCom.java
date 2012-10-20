@@ -68,7 +68,7 @@ public class FilestrumCom extends PluginForHost {
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
-    // mods:
+    // mods: many things, DO NOT UPGRADE!
     // non account: 1 * 20
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
@@ -109,11 +109,20 @@ public class FilestrumCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
+        final String adflyID = new Regex(correctedBR, "var adfly_id = (\\d+);").getMatch(0);
+        if (adflyID != null) {
+            final String refurl = "http://adf.ly/" + adflyID + "/int/" + link.getDownloadURL();
+            br.getHeaders().put("Referer", refurl);
+            br.setCookie(COOKIE_HOST, "noadvtday", "0");
+            br.setCookie(COOKIE_HOST, "ad_locked", "1");
+            br.setCookie(COOKIE_HOST, "ref_url", Encoding.urlEncode(refurl));
+            getPage(link.getDownloadURL());
+        }
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
@@ -122,16 +131,6 @@ public class FilestrumCom extends PluginForHost {
         String[] fileInfo = new String[3];
         // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
-        if (fileInfo[0] == null) {
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                sendForm(download1);
-                scanInfo(fileInfo);
-            }
-        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
@@ -142,6 +141,7 @@ public class FilestrumCom extends PluginForHost {
         }
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        link.setProperty("plainfilename", fileInfo[0]);
         link.setFinalFileName(fileInfo[0].trim());
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
@@ -191,7 +191,7 @@ public class FilestrumCom extends PluginForHost {
         doFree(downloadLink, false, 1, "freelink");
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
@@ -202,13 +202,9 @@ public class FilestrumCom extends PluginForHost {
             checkErrors(downloadLink, false, passCode);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                download1.setAction(br.getURL());
-                download1.remove("method_premium");
-                download1.remove("method_free");
-                download1.remove("method_free");
-                download1.remove("method_free");
-                download1.put("method_free", "");
-                sendForm(download1);
+                // sendForm(download1);
+                final String postData = "op=download1&usr_login=&id=" + downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=+";
+                postPage(br.getURL(), postData);
                 checkErrors(downloadLink, false, passCode);
             }
             dllink = getDllink();

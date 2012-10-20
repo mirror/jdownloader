@@ -86,8 +86,6 @@ public class MyMailRu extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
         } else {
-            final int albumShowed = Integer.parseInt(getData("albumShowed"));
-            final int albumTotal = Integer.parseInt(getData("albumTotal"));
             final String albumsAllText = br.getRegex("\"albumsAll\": \\[(.*?)\\]").getMatch(0);
             if (albumsAllText == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -98,38 +96,13 @@ public class MyMailRu extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-
-            int segment = 1;
-            final int segmentCount = (int) StrictMath.ceil(albumTotal / albumShowed);
-            while (decryptedLinks.size() != albumTotal) {
-                logger.info("Decrypting segment " + segment + " of maybe " + segmentCount + " segments...");
-                String[] albums = null;
-                if (segment == 1) {
-                    albums = br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\"").getColumn(0);
-                } else {
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.get_albums&mna=false&mnb=false&encoding=windows-1251&arg_album_ids=%5B%22" + albumsAll[albumsAll.length - 2] + "%22%2C%22" + albumsAll[albumsAll.length - 1] + "%22%5D");
-                    albums = br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\\\\\"").getColumn(0);
-                }
-                if (albums == null || albums.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.setName(username);
-                for (final String album : albums) {
-                    final DownloadLink dl = createDownloadlink(album);
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Exception e) {
-                        // Not available in old 0.9.851 Stable
-                    }
-                    decryptedLinks.add(dl);
-                }
-                segment++;
+            for (final String albumid : albumsAll) {
+                decryptedLinks.add(createDownloadlink("http://my.mail.ru/" + dirname + "/" + username + "/photo?album_id=" + albumid));
             }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setProperty("ALLOW_MERGE", true);
+            fp.setName(username);
+            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
@@ -137,4 +110,47 @@ public class MyMailRu extends PluginForDecrypt {
     private String getData(final String parameter) {
         return br.getRegex("\"" + parameter + "\": (\")?([^<>\"]*?)(\"|,)").getMatch(1);
     }
+
+    /** old album decrypt */
+
+    // final int albumShowed = Integer.parseInt(getData("albumShowed"));
+    // final int albumTotal = Integer.parseInt(getData("albumTotal"));
+    // int segment = 1;
+    // final int segmentCount = (int) StrictMath.ceil(albumTotal / albumShowed);
+    // while (decryptedLinks.size() != albumTotal) {
+    // logger.info("Decrypting segment " + segment + " of maybe " + segmentCount
+    // + " segments...");
+    // String[] albums = null;
+    // if (segment == 1) {
+    // albums =
+    // br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\"").getColumn(0);
+    // } else {
+    // br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+    // br.getPage("http://my.mail.ru/" + dirname + "/" + username +
+    // "/ajax?ajax_call=1&func_name=photo.get_albums&mna=false&mnb=false&encoding=windows-1251&arg_album_ids=%5B%22"
+    // + albumsAll[albumsAll.length - 2] + "%22%2C%22" +
+    // albumsAll[albumsAll.length - 1] + "%22%5D");
+    // albums =
+    // br.getRegex("\"(http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo\\?album_id=[a-z0-9\\-_]+)\\\\\"").getColumn(0);
+    // }
+    // if (albums == null || albums.length == 0) {
+    // logger.warning("Decrypter broken for link: " + parameter);
+    // return null;
+    // }
+    // final FilePackage fp = FilePackage.getInstance();
+    // fp.setProperty("ALLOW_MERGE", true);
+    // fp.setName(username);
+    // for (final String album : albums) {
+    // final DownloadLink dl = createDownloadlink(album);
+    // fp.add(dl);
+    // try {
+    // distribute(dl);
+    // } catch (final Exception e) {
+    // // Not available in old 0.9.851 Stable
+    // }
+    // decryptedLinks.add(dl);
+    // }
+    // segment++;
+    // }
+
 }

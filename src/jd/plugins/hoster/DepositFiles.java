@@ -56,7 +56,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
-    private static final String  UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
+    private static String        UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
     private static final String  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
     private static final String  MAINPAGE                 = "http://depositfiles.com";
@@ -232,6 +232,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        UA = "DepositFiles/FileManager 0.9.9.206";
         setBrowserExclusive();
         String passCode = downloadLink.getStringProperty("pass", null);
         br.forceDebug(true);
@@ -299,7 +300,8 @@ public class DepositFiles extends PluginForHost {
             dllink = getDllink();
             long timeBefore = System.currentTimeMillis();
             /*
-             * seems somethings wrong with waittime parsing so we do wait each time to be sure
+             * seems somethings wrong with waittime parsing so we do wait each
+             * time to be sure
              */
             if (fid == null || dllink == null || id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             Form dlForm = new Form();

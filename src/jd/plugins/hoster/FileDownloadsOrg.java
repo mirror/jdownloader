@@ -32,6 +32,7 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -77,8 +78,8 @@ public class FileDownloadsOrg extends PluginForHost {
      * */
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
-    // non account: 20 * 20
-    // free account: 20 * 20
+    // non account: 1 * 20
+    // free account: 1 * 20
     // premium account: untested, set standard limits
     // protocol: no https
     // captchatype: 4dignum
@@ -113,14 +114,16 @@ public class FileDownloadsOrg extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
+        br.setFollowRedirects(false);
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
@@ -195,7 +198,7 @@ public class FileDownloadsOrg extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {

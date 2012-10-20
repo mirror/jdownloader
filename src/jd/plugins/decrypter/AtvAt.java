@@ -46,12 +46,28 @@ public class AtvAt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">404 Nicht gefunden<")) {
+            logger.info("Link offline (404 error): " + parameter);
+            return decryptedLinks;
+        }
+        if (!br.containsHTML("<div id=\"player_area\">")) {
+            logger.info("There is no downloadable content: " + parameter);
+            return decryptedLinks;
+        }
         final String activeClipID = br.getRegex("active_clip_id%22%3A(\\d+)%2C").getMatch(0);
         if (activeClipID == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         br.getPage("http://atv.at/getclip/" + activeClipID);
+        if (br.containsHTML("\"duration\":0")) {
+            logger.info("Link offline/no downlodable content found: " + parameter);
+            return decryptedLinks;
+        }
+        if (br.toString().trim().equals("false")) {
+            logger.info("This video is not available in your country: " + parameter);
+            return decryptedLinks;
+        }
         String name = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         final String allLinks = br.getRegex("video_urls\":\\[(\".*?\")\\],").getMatch(0);
         if (name == null || allLinks == null) {

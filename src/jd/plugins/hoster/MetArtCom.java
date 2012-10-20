@@ -13,7 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/(media/.+|movie\\.php.+|movie\\.mp4.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "met-art.com" }, urls = { "https?://members\\.met-art\\.com/members/(media/.+|movie\\.php.+|movie\\.mp4.+|zip\\.php\\?zip=[A-Z0-9]+\\&type=(high|med|low))" }, flags = { 2 })
 public class MetArtCom extends PluginForHost {
 
     public MetArtCom(PluginWrapper wrapper) {
@@ -35,9 +35,12 @@ public class MetArtCom extends PluginForHost {
             name = new Regex(parameter.getDownloadURL(), "movie\\.php.+?file=(.*?)($|&)").getMatch(0);
         } else if (parameter.getDownloadURL().contains("movie.mp4")) {
             name = new Regex(parameter.getDownloadURL(), "movie\\.mp4.+?file=(.*?)($|&)").getMatch(0);
+        } else if (parameter.getDownloadURL().contains("zip.php")) {
+            name = new Regex(parameter.getDownloadURL(), "zip\\.php\\?zip=([A-Z0-9]+)\\&").getMatch(0);
         }
         if (name == null) name = "Unknown Filename";
         String type = new Regex(parameter.getDownloadURL(), "movie\\.(php|mp4).*?type=(.*?)&").getMatch(1);
+        if (parameter.getDownloadURL().contains("zip.php")) type = ".zip";
         if (type != null) {
             if ("avi".equalsIgnoreCase(type)) {
                 name = name + ".avi";
@@ -45,6 +48,8 @@ public class MetArtCom extends PluginForHost {
                 name = name + ".wmv";
             } else if ("mpg".equalsIgnoreCase(type)) {
                 name = name + ".mpg";
+            } else if (".zip".equalsIgnoreCase(type)) {
+                name = name + type;
             } else {
                 name = name + "-" + type + ".mp4";
             }
@@ -112,7 +117,7 @@ public class MetArtCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
-
 }

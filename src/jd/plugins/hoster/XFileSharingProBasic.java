@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.8.9
+    // XfileSharingProBasic Version 2.5.9.0
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -132,19 +132,7 @@ public class XFileSharingProBasic extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String[] fileInfo = new String[3];
-        // scan the first page
         scanInfo(fileInfo);
-        // scan the second page. filesize[1] and md5hash[2] are not mission
-        // critical
-        if (fileInfo[0] == null) {
-            Form download1 = getFormByKey("op", "download1");
-            if (download1 != null) {
-                download1.remove("method_premium");
-                waitTime(System.currentTimeMillis(), link);
-                sendForm(download1);
-                scanInfo(fileInfo);
-            }
-        }
         if (fileInfo[0] == null || fileInfo[0].equals("")) {
             if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

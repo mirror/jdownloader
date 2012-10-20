@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/[^<>\"/]+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "http://(www\\.)?flickr\\.com/(photos/([^<>\"/]+/(\\d+|favorites)|[^<>\"/]+(/galleries)?/(page\\d+|sets/\\d+)|[^<>\"/]+)|groups/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?)" }, flags = { 0 })
 public class FlickrCom extends PluginForDecrypt {
 
     public FlickrCom(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class FlickrCom extends PluginForDecrypt {
 
     private static final String MAINPAGE     = "http://flickr.com/";
     private static final String FAVORITELINK = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/favorites";
-    private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+";
+    private static final String GROUPSLINK   = "http://(www\\.)?flickr\\.com/groups/[^<>\"/]+/[^<>\"/]+(/[^<>\"/]+)?";
     private static final String PHOTOLINK    = "http://(www\\.)?flickr\\.com/photos/.*?";
     private static final String SETLINK      = "http://(www\\.)?flickr\\.com/photos/[^<>\"/]+/sets/\\d+";
 

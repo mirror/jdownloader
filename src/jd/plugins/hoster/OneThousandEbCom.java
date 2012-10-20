@@ -36,7 +36,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?1000eb\\.com/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?1000eb\\.com/(?!myspace_)[a-z0-9]+" }, flags = { 0 })
 public class OneThousandEbCom extends PluginForHost {
 
     public OneThousandEbCom(final PluginWrapper wrapper) {
@@ -63,7 +63,8 @@ public class OneThousandEbCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
-        // final String js = br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
+        // final String js =
+        // br.getRegex("src=\"(http://static\\.1000eb\\.com/combo/[^<>]+/file\\.js\\&t=\\d+)\">").getMatch(0);
         final String dllink = requestDownloadLink("http://1000eb.com/base.js");
         if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
