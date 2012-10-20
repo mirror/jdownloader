@@ -248,7 +248,8 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
+        // Force login, see if it works better then
+        login(account, true);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
