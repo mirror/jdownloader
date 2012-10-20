@@ -202,7 +202,6 @@ public class FilestrumCom extends PluginForHost {
             checkErrors(downloadLink, false, passCode);
             Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
-                // sendForm(download1);
                 final String postData = "op=download1&usr_login=&id=" + downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/") + 1) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=+";
                 postPage(br.getURL(), postData);
                 checkErrors(downloadLink, false, passCode);

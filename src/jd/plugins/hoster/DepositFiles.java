@@ -232,7 +232,6 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        UA = "DepositFiles/FileManager 0.9.9.206";
         setBrowserExclusive();
         String passCode = downloadLink.getStringProperty("pass", null);
         br.forceDebug(true);
