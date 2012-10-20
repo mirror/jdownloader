@@ -404,6 +404,7 @@ TestAction_actionPerformed_contains_=Votre saisie %s1 contient %s2 !
 TestAction_actionPerformed_equals_=Votre saisie %s1 égal %s2 !
 TestAction_actionPerformed_match_=%s1: %s2
 TestAction_actionPerformed_match_ext_=Le nom de fichier %s1 correspond à votre type de fichier filtre: %s2.
+TestAction_actionPerformed_msg_=Pour tester votre expression %s1, entrer la correspondance %s2
 TestAction_actionPerformed_nomatch_=Votre saisie %s1 n'égal pas %s2 !
 TestAction_actionPerformed_nomatch_contain=Votre saisie %s1 ne contient pas %s2 !
 TestAction_actionPerformed_nomatch_ext_=Le nom de fichier %s1 ne correspond pas à votre type de fichier filtre.
