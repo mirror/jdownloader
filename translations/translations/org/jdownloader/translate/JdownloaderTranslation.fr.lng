@@ -118,6 +118,7 @@ gui_warning_reconnectFailed=Échec de la reconnexion !
 gui_warning_reconnectSuccess=Reconnexion réussie
 gui_warning_reconnect_running=en cours...
 gui_warning_reconnectunknown=Reconnexion inconnue
+jd_controlling_SingleDownloadController_askexists=Le fichier '%s1' dans le paquet %s2 existe déjà. Que voulez-vous faire ?
 jd_controlling_SingleDownloadController_askexists_title=Fichier existant
 jd_controlling_reconnect_Reconnector_progress_failed2=Reconnexion échouée trop souvent! Autoreconnexion désactivée! S'il vous plaît vérifiez vos paramêtres de reconnexion!
 jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2=<b><u>Reconnexion non sélectionnée</u></b><br/><p>La reconnexion est un moyen avancé pour éviter les longues attentes imposées par certains hébergeurs en utilisation gratuite. <br>Ce moyen est inutile en cas d'utilisation d'un compte premium. </p><p>En savoir plus sur la reconnection : <a href='http://support.jdownloader.org/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=1'>here</a></p>

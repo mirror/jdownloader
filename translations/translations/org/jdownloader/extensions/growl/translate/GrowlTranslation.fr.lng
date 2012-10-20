@@ -1,2 +1,4 @@
-jd_plugins_optional_jdgrowlnotification_description=Prise en charge des notifications Growl (MacOS X)
+jd_plugins_optional_JDGrowlNotification_allfinished=Tous les téléchargements arrêtés
+jd_plugins_optional_JDGrowlNotification_started=JDownloader démarré...
 jd_plugins_optional_jdgrowlnotification=Notifications Growl
+jd_plugins_optional_jdgrowlnotification_description=Prise en charge des notifications Growl (MacOS X)

@@ -62,6 +62,7 @@ LOGINDIALOG_CHECKBOX_REMEMBER=Se souvenir
 LOGINDIALOG_LABEL_PASSWORD=Mot de passe
 LOGINDIALOG_LABEL_PASSWORD_REPEAT=Répéter le mot de passe
 LOGINDIALOG_LABEL_USERNAME=Identifiant
+Layover_size=(px) L : %s1; H : %s2
 LockColumnWidthAction=Verrouiller la largeur des colonnes
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD=Nouveau mot de passe :
 PASSWORDDIALOG_PASSWORDCHANGE_NEWPASSWORD_REPEAT=Confirmez le mot de passe :
