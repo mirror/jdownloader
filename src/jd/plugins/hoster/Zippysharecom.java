@@ -48,7 +48,12 @@ public class Zippysharecom extends PluginForHost {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
+        String[] docfn = new Regex(fun, "var a = document\\.getElementById\\(\'(.*?)\'\\)\\.getAttribute\\(\'(.*?)\'\\)").getRow(0);
+        if (docfn == null) return null;
+        String value = br.getRegex("id=\"" + docfn[0] + "\" " + docfn[1] + "=\"(\\d+)\" ").getMatch(0);
         try {
+            // document.getElementById('id').getAttribute('class')
+            engine.eval("var document = { getElementById : function(a) { var newObj = new Object(); function getAttribute(b) { return " + value + "; } newObj.getAttribute = getAttribute; return newObj;}};");
             result = ((Double) engine.eval(fun)).intValue();
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
