@@ -82,7 +82,7 @@ public class ClpfshD extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        String flashplayer = br.getRegex("(http://(www\\.)?clipfish\\.de/cfng/flash/clipfish_player_\\d+\\.swf)").getMatch(0);
+        String flashplayer = br.getRegex("(clipfish_player_\\d+\\.swf)").getMatch(0);
         String page = br.getPage(NEW_XMP_PATH + vidId + "?ts=" + System.currentTimeMillis());
         String pathToflv = getDllink(page);
         if (pathToflv == null) {
@@ -103,7 +103,7 @@ public class ClpfshD extends PluginForDecrypt {
             if (pathToflv.startsWith("rtmp")) {
                 ext = new Regex(pathToflv, "(\\w+):media/").getMatch(0);
                 ext = ext.length() > 3 ? null : ext;
-                if (flashplayer != null) downloadLink.setProperty("FLASHPLAYER", flashplayer);
+                if (flashplayer != null) downloadLink.setProperty("FLASHPLAYER", "http://www.clipfish.de/cfng/flash/" + flashplayer);
             }
 
             ext = ext == null || ext.equals("f4v") || ext.equals("") ? "mp4" : ext;
