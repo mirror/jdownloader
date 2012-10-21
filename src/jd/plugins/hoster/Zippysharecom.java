@@ -44,16 +44,18 @@ public class Zippysharecom extends PluginForHost {
         super(wrapper);
     }
 
-    private String execJS(final String fun) throws Exception {
+    private String execJS(final String fun, final boolean fromFlash) throws Exception {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
         String[] docfn = new Regex(fun, "var a = document\\.getElementById\\(\'(.*?)\'\\)\\.getAttribute\\(\'(.*?)\'\\)").getRow(0);
-        if (docfn == null) return null;
-        String value = br.getRegex("id=\"" + docfn[0] + "\" " + docfn[1] + "=\"(\\d+)\" ").getMatch(0);
+        if (!fromFlash && docfn == null) return null;
         try {
-            // document.getElementById('id').getAttribute('class')
-            engine.eval("var document = { getElementById : function(a) { var newObj = new Object(); function getAttribute(b) { return " + value + "; } newObj.getAttribute = getAttribute; return newObj;}};");
+            if (!fromFlash) {
+                String value = br.getRegex("id=\"" + docfn[0] + "\" " + docfn[1] + "=\"(\\d+)\" ").getMatch(0);
+                // document.getElementById('id').getAttribute('class')
+                engine.eval("var document = { getElementById : function(a) { var newObj = new Object(); function getAttribute(b) { return " + value + "; } newObj.getAttribute = getAttribute; return newObj;}};");
+            }
             result = ((Double) engine.eval(fun)).intValue();
         } catch (final Exception e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -91,7 +93,7 @@ public class Zippysharecom extends PluginForHost {
                 if (function == null) { return 0; }
             }
         }
-        return Integer.parseInt(execJS(function));
+        return Integer.parseInt(execJS(function, true));
     }
 
     @Override
@@ -132,7 +134,7 @@ public class Zippysharecom extends PluginForHost {
             if (DLLINK != null) {
                 final String var = new Regex(DLLINK, "'\\+(.*?)\\+'").getMatch(0);
                 String data = br.getRegex("var " + var + " = (.*?)\r?\n").getMatch(0);
-                data = execJS(data);
+                data = execJS(data, false);
                 if (DLLINK.contains(var)) {
                     DLLINK = DLLINK.replace("'+" + var + "+'", data);
                 }
@@ -145,7 +147,7 @@ public class Zippysharecom extends PluginForHost {
                     if (var != null) {
                         math += var;
                     }
-                    final String data = execJS(math);
+                    final String data = execJS(math, false);
                     if (DLLINK.contains(var)) {
                         DLLINK = DLLINK.replace("\"+" + var + "+\"", data);
                     }
