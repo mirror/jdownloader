@@ -21,7 +21,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -82,11 +85,13 @@ public class ShrLnksBz extends PluginForDecrypt {
 
         br.getPage(parameter);
         /* Very important! */
-        final String gif[] = br.getRegex("/template/images/(.*?)\\.gif").getColumn(-1);
+        final String gif[] = br.getRegex("/template/images/([^\"]+)\\.gif").getColumn(-1);
         if (gif != null) {
+            Set<String> hashSet = new HashSet<String>(Arrays.asList(gif));
+            List<String> gifList = new ArrayList<String>(hashSet);
             URLConnectionAdapter con = null;
             final Browser br2 = br.cloneBrowser();
-            for (final String template : gif) {
+            for (final String template : gifList) {
                 try {
                     con = br2.openGetConnection(template);
                 } finally {
