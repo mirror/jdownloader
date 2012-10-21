@@ -4,6 +4,7 @@ JDUpdater_start_updater_update_title=Pas de version trouvée !
 dialog_rly_cancel=Voulez-vous vraiment annuler la mise à jour ?
 error_service_not_available_right_now=Service non disponible. Réessayer dans 60 sec.
 exit=Fermer
+guiless_noupdates=Pas de vérification des mises à jour. L'option -noupdates est activé
 install_updates_later=Me demander plus tard !
 install_updates_now=Installer maintenant !
 literally_exit=Vérification de  mise à jour terminée - Quitter
