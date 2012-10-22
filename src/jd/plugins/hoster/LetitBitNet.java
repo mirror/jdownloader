@@ -265,11 +265,15 @@ public class LetitBitNet extends PluginForHost {
         passed = submitFreeForm();
         if (passed) logger.info("Sent free form #3");
 
+        String urlPrefix = new Regex(br.getURL(), "http://(www\\.)?([a-z0-9]+\\.)letitbit\\.net/.+").getMatch(1);
+        if (urlPrefix == null) urlPrefix = "";
+        final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
+
         final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)function DownloadClick\\(\\)").getMatch(0);
         if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
         if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        ajaxPostpage = "http://letitbit.net" + ajaxPostpage;
+        ajaxPostpage = ajaxmainurl + ajaxPostpage;
         int wait = 60;
         String waittime = br.getRegex("id=\"seconds\" style=\"font\\-size:18px\">(\\d+)</span>").getMatch(0);
         if (waittime == null) waittime = br.getRegex("seconds = (\\d+)").getMatch(0);
@@ -287,7 +291,7 @@ public class LetitBitNet extends PluginForHost {
          * update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
-        br2.postPage("http://letitbit.net/ajax/download3.php", "");
+        br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
         br2.getHeaders().remove("Content-Length");
         /* we need to remove the newline in old browser */
         final String resp = br2.toString().replaceAll("%0D%0A", "").trim();
@@ -305,7 +309,7 @@ public class LetitBitNet extends PluginForHost {
             rc.setId(rcID);
             rc.load();
             for (int i = 0; i <= 5; i++) {
-                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
                 final String c = getCaptchaCode(cf, downloadLink);
                 br2.postPage(ajaxPostpage, "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c + "&recaptcha_control_field=" + Encoding.urlEncode(rcControl));
                 if (br2.toString().length() < 2 || br2.toString().contains("error_wrong_captcha")) {
@@ -319,7 +323,7 @@ public class LetitBitNet extends PluginForHost {
             // Normal captcha handling, UNTESTED!
             final DecimalFormat df = new DecimalFormat("0000");
             for (int i = 0; i <= 5; i++) {
-                final String code = getCaptchaCode("letitbitnew", "http://letitbit.net/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
+                final String code = getCaptchaCode("letitbitnew", ajaxmainurl + "/captcha_new.php?rand=" + df.format(new Random().nextInt(1000)), downloadLink);
                 sleep(2000, downloadLink);
                 br2.postPage(ajaxPostpage, "code=" + Encoding.urlEncode(code));
                 if (br2.toString().contains("error_wrong_captcha")) continue;

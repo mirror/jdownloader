@@ -960,3 +960,9 @@ jd/plugins/hoster/HotShareNet.class
 jd/plugins/hoster/MojeFileCom.class
 jd/plugins/hoster/DeditvCom.class
 jd/plugins/hoster/FileServerCc.class
+jd/plugins/hoster/VidreelCom.class
+jd/plugins/hoster/UfliqCom.class
+jd/plugins/hoster/SuperMovCom.class
+jd/plugins/hoster/AnimeGoonCom.class
+jd/plugins/hoster/CixUpCom.class
+jd/plugins/decrypter/MovzTo.class

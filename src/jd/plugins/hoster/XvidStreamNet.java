@@ -32,6 +32,7 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -163,11 +164,14 @@ public class XvidStreamNet extends PluginForHost {
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
-            if (correctedBR.contains("\"download1\"")) {
-                postPage(br.getURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), "/([A-Za-z0-9]{12})$").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getStringProperty("plainfilename")) + "&referer=&method_free=Free+Download");
+            final Form download1 = getFormByKey("op", "download1");
+            if (download1 != null) {
+                download1.remove("method_premium");
+                waitTime(System.currentTimeMillis(), downloadLink);
+                sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
+                dllink = getDllink();
             }
-            dllink = getDllink();
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
@@ -338,25 +342,7 @@ public class XvidStreamNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        if (dllink == null) {
-                            String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                            if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                for (String crypted : cryptedScripts) {
-                                    dllink = decodeDownloadLink(crypted);
-                                    if (dllink != null) break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
         }
         return dllink;
     }
@@ -519,4 +505,27 @@ public class XvidStreamNet extends PluginForHost {
         }
     }
 
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
+    // String value)
+    /**
+     * Returns the first form that has a 'key' that equals 'value'.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    private Form getFormByKey(final String key, final String value) {
+        Form[] workaround = br.getForms();
+        if (workaround != null) {
+            for (Form f : workaround) {
+                for (InputField field : f.getInputFields()) {
+                    if (key != null && key.equals(field.getKey())) {
+                        if (value == null && field.getValue() == null) return f;
+                        if (value != null && value.equals(field.getValue())) return f;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

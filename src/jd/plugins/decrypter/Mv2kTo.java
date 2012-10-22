@@ -38,11 +38,10 @@ public class Mv2kTo extends PluginForDecrypt {
 
     /**
      * Description of the regexes array: 1= nowvideo.co,streamcloud.com
-     * 2=flashx.tv,veervid.com,ginbig
-     * .com,vidbux.com,xvidstage.com,xvidstream.net
+     * 2=flashx.tv,veervid.com,ginbig .com,vidbux.com,xvidstage.com,vidstream.in
      * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos
-     * .net,vidreel.com,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com
-     * and many others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
+     * .net,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com and many
+     * others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

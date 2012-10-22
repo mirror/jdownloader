@@ -107,6 +107,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     String[] links;
                     if (i > 1) {
                         br.getPage("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__adt=" + i);
+                        System.out.println("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__adt=" + i);
                         links = br.getRegex("data\\-starred\\-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
                         currentMaxPicCount = 32;
                     } else {
