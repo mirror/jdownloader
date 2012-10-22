@@ -233,7 +233,7 @@ public class VideoPremiumNet extends PluginForHost {
         rtmp.setPageUrl(downloadLink.getDownloadURL());
         rtmp.setResume(true);
         rtmp.setDebug(); // needed for redirect feature in rtmpdump.class
-        rtmp.setTimeOut(4);
+        // rtmp.setTimeOut(4);
     }
 
     private void download(DownloadLink downloadLink, String dllink) throws Exception {
@@ -241,13 +241,15 @@ public class VideoPremiumNet extends PluginForHost {
         setupRTMPConnection(dllink, dl, downloadLink);
         try {
             if (!((RTMPDownload) dl).startDownload()) {
-                if (downloadLink.getBooleanProperty("REDIRECT", false)) { throw new PluginException(LinkStatus.ERROR_RETRY); }
+                if (downloadLink.getBooleanProperty("REDIRECT", false)) throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 downloadLink.setProperty("REDIRECT", false);
             }
         } catch (PluginException e) {
             if (e.getLinkStatus() == 4) {
                 logger.info("RTMP: Redirect found! Start download with new url.");
+            } else if (e.getErrorMessage().contains("NetStream.Play.StreamNotFound")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
             }

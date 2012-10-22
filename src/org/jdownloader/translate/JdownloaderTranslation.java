@@ -87,6 +87,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Could not overwrite existing file" })
     String system_download_errors_couldnotoverwrite();
 
+    @Default(lngs = { "en" }, values = { "Could not delete existing part file" })
+    String system_download_errors_couldnotdelete();
+
     @Default(lngs = { "en" }, values = { "Network problems" })
     String download_error_message_networkreset();
 

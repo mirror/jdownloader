@@ -257,12 +257,18 @@ public class RtmpDump extends RTMPDownload {
                         // handle redirect
                         if (!this.downloadLink.getBooleanProperty("REDIRECT", false)) {
                             if (line.startsWith("DEBUG:")) {
-                                String test = line.replaceAll("\\s", "");
-                                if (test.startsWith("DEBUG:Property:")) {
-                                    if (test.matches("DEBUG:Property:<Name:redirect,STRING:[^>]+>")) {
-                                        String redirectUrl = new Regex(test, "STRING:([^>]+)").getMatch(0);
+                                String debugOutput = line.replaceAll("\\s", "");
+                                if (debugOutput.startsWith("DEBUG:Property:")) {
+                                    if (debugOutput.matches("DEBUG:Property:<Name:redirect,STRING:[^>]+>")) {
+                                        String redirectUrl = new Regex(debugOutput, "STRING:([^>]+)").getMatch(0);
                                         this.downloadLink.setProperty("REDIRECT", true);
                                         this.downloadLink.setProperty("REDIRECTURL", redirectUrl);
+                                        if (tmpFile.exists() && tmpFile.length() == 0) {
+                                            if (!tmpFile.delete()) {
+                                                this.logger.severe("Could not delete part file " + tmpFile);
+                                                this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
+                                            }
+                                        }
                                         return false;
                                     }
                                 }
