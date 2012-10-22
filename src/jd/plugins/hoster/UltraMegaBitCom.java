@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -36,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -79,12 +81,24 @@ public class UltraMegaBitCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // Only seen in a log
         if (br.containsHTML(">Download slot limit reached<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        final Form dlform = br.getForm(5);
-        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String rcid = br.getRegex("\\?k=([^<>\"]*?)\"").getMatch(0);
+        Form dlform = null;
+        for (final Form form : br.getForms())
+            if (form.containsHTML("ultramegabit\\.com/file/download")) dlform = form;
+        if (rcid == null || dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        rc.setId(rcid);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        dlform.put("recaptcha_response_field", c);
+        dlform.put("recaptcha_challenge_field", rc.getChallenge());
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 30 * 60 * 1000l);
+            if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML(">Account limitation notice")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

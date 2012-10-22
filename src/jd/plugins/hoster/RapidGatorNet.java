@@ -503,7 +503,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 br.setFollowRedirects(true);
 
-                String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&LoginForm%5BrememberMe%5D=1";
+                String loginPostData = "LoginForm%5BverifyCode%5D=&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
                 br.postPage("http://rapidgator.net/auth/login", loginPostData);
 
                 /* jsRedirect */

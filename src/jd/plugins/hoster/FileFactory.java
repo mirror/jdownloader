@@ -73,6 +73,7 @@ public class FileFactory extends PluginForHost {
     private static final String  COOKIE_HOST       = "http://www.filefactory.com";
     private String               dlUrl             = null;
     private static final String  TRAFFICSHARELINK  = "filefactory.com/trafficshare/";
+    private static final String  TRAFFICSHARETEXT  = ">Download with FileFactory TrafficShare<";
     private static final String  PASSWORDPROTECTED = ">You are trying to access a password protected file";
 
     public FileFactory(final PluginWrapper wrapper) {
@@ -287,7 +288,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink parameter) throws Exception {
         this.requestFileInformation(parameter);
-        if (this.br.getURL().contains(TRAFFICSHARELINK)) {
+        if (this.br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
             handleTrafficShare(parameter);
         } else {
             this.handleFree0(parameter);
@@ -320,6 +321,11 @@ public class FileFactory extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 this.br.getPage(urlWithFilename);
+
+                // Sometimes there is an ad
+                final String skipAds = br.getRegex("\"(http://(www\\.)?filefactory\\.com/dlf/[^<>\"]*?)\"").getMatch(0);
+                if (skipAds != null) br.getPage(skipAds);
+
                 String wait = this.br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
                 if (wait != null) {
                     waittime = Long.parseLong(wait) * 1000l;
@@ -384,7 +390,7 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.requestFileInformation(downloadLink);
-        if (this.br.getURL().contains(TRAFFICSHARELINK)) {
+        if (this.br.getURL().contains(TRAFFICSHARELINK) || br.containsHTML(TRAFFICSHARETEXT)) {
             handleTrafficShare(downloadLink);
         } else {
             this.login(account, false);
@@ -427,7 +433,7 @@ public class FileFactory extends PluginForHost {
          * until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
-        String finalLink = this.br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"[^>]+>Download</a>").getMatch(0);
+        String finalLink = this.br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);
         if (finalLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, finalLink, true, 0);
         if (!this.dl.getConnection().isContentDisposition()) {

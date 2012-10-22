@@ -67,8 +67,8 @@ public class EazyUploadNet extends PluginForHost {
             String c = getCaptchaCode(cf, downloadLink);
             rc.setCode(c);
             if (br.containsHTML("Invalid key for download\\.")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            dllink = br.getRegex("\\'(http://dl\\d+\\.eazyupload\\.net/download/[a-z0-9]+/.*?)\\'").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("<p align=\"center\"><span>[\t\n\r ]+<a href=\\'(http://.*?)\\'").getMatch(0);
+            dllink = br.getRegex("((http://)?dl\\d+\\.eazyupload\\.net/download/[a-z0-9]+/.*?)\\'").getMatch(0);
+            if (dllink != null && !dllink.startsWith("http://")) dllink = "http://" + dllink;
         } else {
             URLConnectionAdapter con = br.openGetConnection(dllink);
             if (con.getContentType().contains("html")) {

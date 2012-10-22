@@ -55,6 +55,7 @@ public class TuDouCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("tudou.com/error.php?msg=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(",kw = \"(.*?)\"").getMatch(0);

@@ -56,7 +56,7 @@ public class UploadingItCom extends PluginForHost {
         String postUrl = br.getRegex("<form action=\"(file/download/.*?)\"").getMatch(0);
         if (postUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         postUrl = "http://uploadingit.com/" + postUrl;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postUrl, "a=download", true, -2);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, postUrl, "a=download", true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

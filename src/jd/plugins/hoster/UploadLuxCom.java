@@ -27,6 +27,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -39,7 +40,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadlux.com" }, urls = { "http://(www\\.)?uploadlux\\.com/l\\-[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadlux.com" }, urls = { "http://(www\\.)?uploadlux\\.com/(l|play)\\-[a-z0-9]+" }, flags = { 2 })
 public class UploadLuxCom extends PluginForHost {
 
     public UploadLuxCom(PluginWrapper wrapper) {
@@ -52,12 +53,22 @@ public class UploadLuxCom extends PluginForHost {
         return "http://www.uploadlux.com/conditions";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("uploadlux.com/play-", "uploadlux.com/l-"));
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">Erreur fichier introuvable")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Fichier privée\\.<")) {
+            link.getLinkStatus().setStatusText("Fichier privée!");
+            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<b>Filename:</b> <b title=\"([^<>\"]*?)\"").getMatch(0);
         String filesize = br.getRegex("<b>File Size:</b> <b style=\"color:#2BB2E3\">([^<>\"]*?)</b><br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -73,6 +84,7 @@ public class UploadLuxCom extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        if (br.containsHTML(">Fichier privée\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fichier privée!");
         br.setFollowRedirects(false);
         final String waittime = br.getRegex("style=\"font\\-size:30px; text\\-decoration:none;\">(\\d+)</span><br />").getMatch(0);
         int wait = 60;
@@ -111,7 +123,7 @@ public class UploadLuxCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://uploadlux.com/connexion", "souvenir=on&connexion=Log+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("http://www.uploadlux.com/connexion", "souvenir=on&connexion=Log+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "session_save") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage("http://www.uploadlux.com/profil");
                 if (br.containsHTML("<b style=\"color: #FF3300\">Premium</b>")) {
@@ -185,6 +197,7 @@ public class UploadLuxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
+        if (br.containsHTML(">Fichier privée\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fichier privée!");
         login(account, false);
         br.setFollowRedirects(false);
         if (account.getBooleanProperty("nopremium")) {
