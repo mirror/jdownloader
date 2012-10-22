@@ -150,11 +150,18 @@ public class PremiumizeMe extends PluginForHost {
             resume = (Boolean) ret;
             logger.info("Host:" + link.getHost() + " allows resume: " + resume);
         }
+
+        /* workaround for uploaded.to */
+        if (link.getHost().equalsIgnoreCase("uploaded.to") || link.getHost().equalsIgnoreCase("uploaded.net") || link.getHost().equalsIgnoreCase("ul.to")) { // uploaded
+            resume = false;
+        }
+
         if (resume == false) {
             logger.info("Host:" + link.getHost() + " does not allow resume, set chunks to 1");
             maxConnections = 1;
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxConnections);
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxConnections);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
