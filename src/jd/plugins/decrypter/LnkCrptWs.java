@@ -134,7 +134,10 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void getChallenge() {
             this.challenge = this.br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-            if (secure) this.challenge = this.br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
+            if (secure) {
+                this.challenge = this.br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
+                if (this.challenge == null) this.challenge = this.br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+            }
         }
 
         public String verify(String code) throws Exception {

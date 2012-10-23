@@ -27,12 +27,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -62,8 +66,6 @@ public class SflnkgNt extends PluginForDecrypt {
         notDetected;
     }
 
-    private String PASSWORDPROTECTEDTEXT = "type=\"password\" name=\"link-password\"";
-
     public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
         BufferedReader f = null;
         try {
@@ -88,6 +90,7 @@ public class SflnkgNt extends PluginForDecrypt {
     }
 
     private String AGENT = null;
+    private String cType = "notDetected";
 
     public SflnkgNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -147,104 +150,105 @@ public class SflnkgNt extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
-            String cType = "notDetected";
             HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
             captchaRegex.put("basic", "(https?://safelinking\\.net/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
             captchaRegex.put("threeD", "\"(https?://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
             captchaRegex.put("fancy", "class=\"captcha_image ajax\\-fc\\-container\"");
             captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
-            captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/papi");
+            captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/(papi)?");
 
-            /* cleanup html source */
-            String cleanUp = br.toString();
-            cleanUp = cleanUp.replaceAll("<div class=\"hidden dialog\" title=\"Register on Safelinking\".*?</div>", "");
-            br.getRequest().setHtmlCode(cleanUp);
-
-            for (Entry<String, String> next : captchaRegex.entrySet()) {
-                if (br.containsHTML(next.getValue())) {
-                    cType = next.getKey();
+            /* find protected form */
+            Form pForm = br.getFormbyProperty("id", "protected-form");
+            if (pForm != null) {
+                boolean password = pForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
+                String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div></div>").getMatch(0);// captcha?
+                if (captcha != null) {
+                    prepareCaptchaAdress(captcha, captchaRegex, parameter);
                 }
-            }
-
-            logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this host.");
-            for (int i = 0; i <= 5; i++) {
-                String data = "post-protect=1";
-                if (br.containsHTML(PASSWORDPROTECTEDTEXT)) {
-                    data += "&link-password=" + getUserInput(null, param);
-                }
-
-                Browser captchaBr = null;
-                if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
-
-                switch (CaptchaTyp.valueOf(cType)) {
-                case recaptcha:
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.parse();
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    data += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_challenge_field=" + getCaptchaCode(cf, param);
-                    break;
-                case basic:
-                    data += "&securimage_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("basic")).getMatch(0), param);
-                    break;
-                case threeD:
-                    data += "&3dcaptcha_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("threeD")).getMatch(0), param);
-                    break;
-                case fancy:
-                    captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
-                    data += "&fancy-captcha=" + captchaBr.toString().trim();
-                    break;
-                case qaptcha:
-                    captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    captchaBr.postPage("https://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
-                    if (!captchaBr.containsHTML("\"error\":false")) {
-                        logger.warning("Decrypter broken for link: " + parameter + "\n");
-                        logger.warning("Qaptcha handling broken");
-                        return null;
+                for (int i = 0; i <= 5; i++) {
+                    String data = "post-protect=1";
+                    if (password) {
+                        data += "&link-password=" + getUserInput(null, param);
                     }
-                    data += "&iQapTcha=";
-                    break;
-                case simple:
-                    break;
-                case dotty:
-                    break;
-                case cool:
-                    break;
-                case standard:
-                    break;
-                case cats:
-                    break;
-                case solvemedia:
-                    PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
-                    jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
-                    sm.setSecure(true);
-                    cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                    String code = getCaptchaCode(cf, param);
-                    String chid = sm.verify(code);
-                    data += "&solvemedia_response=" + code.replace(" ", "+") + "&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
-                    break;
-                }
 
-                if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
-                    post(parameter, data, true);
-                    if (br.getHttpConnection().getResponseCode() == 500) logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
-                }
+                    Browser captchaBr = null;
+                    if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
 
-                if ("notDetected".equals(cType)) break;
-                if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML(PASSWORDPROTECTEDTEXT) || br.containsHTML("<strong>Prove you are human</strong>")) {
-                    continue;
+                    switch (CaptchaTyp.valueOf(cType)) {
+                    case recaptcha:
+                        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                        rc.parse();
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        data += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_challenge_field=" + getCaptchaCode(cf, param);
+                        break;
+                    case basic:
+                        data += "&securimage_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("basic")).getMatch(0), param);
+                        break;
+                    case threeD:
+                        data += "&3dcaptcha_response_field=" + getCaptchaCode(br.getRegex(captchaRegex.get("threeD")).getMatch(0), param);
+                        break;
+                    case fancy:
+                        captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0));
+                        data += "&fancy-captcha=" + captchaBr.toString().trim();
+                        break;
+                    case qaptcha:
+                        captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        captchaBr.postPage("https://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "safelinking\\.net/p/(.+)").getMatch(0), "action=qaptcha");
+                        if (!captchaBr.containsHTML("\"error\":false")) {
+                            logger.warning("Decrypter broken for link: " + parameter + "\n");
+                            logger.warning("Qaptcha handling broken");
+                            return null;
+                        }
+                        data += "&iQapTcha=";
+                        break;
+                    case simple:
+                        break;
+                    case dotty:
+                        break;
+                    case cool:
+                        break;
+                    case standard:
+                        break;
+                    case cats:
+                        break;
+                    case solvemedia:
+                        PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                        jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                        sm.setSecure(true);
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                        String code = getCaptchaCode(cf, param);
+                        String chid = sm.verify(code);
+                        data += "&solvemedia_response=" + code.replace(" ", "+") + "&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
+                        break;
+                    }
+
+                    if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
+                        post(parameter, data, true);
+                        if (br.getHttpConnection().getResponseCode() == 500) {
+                            logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
+                            continue;
+                        }
+                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches();// password correct?
+                    }
+
+                    if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
+                        prepareCaptchaAdress(captcha, captchaRegex, parameter);
+                        continue;
+                    }
+                    break;
                 }
-                break;
+                if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>"))) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+                if (password) { throw new DecrypterException(DecrypterException.PASSWORD); }
             }
-            if (!"notDetected".equals(cType) && (br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>"))) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            if (br.containsHTML(PASSWORDPROTECTEDTEXT)) { throw new DecrypterException(DecrypterException.PASSWORD); }
             if (br.containsHTML(">All links are dead\\.<|>Links dead<")) {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
+
             // container handling (if no containers found, use webprotection
             if (br.containsHTML("\\.dlc")) {
                 decryptedLinks = loadcontainer(".dlc", param);
@@ -354,6 +358,42 @@ public class SflnkgNt extends PluginForDecrypt {
             String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
             br.getRequest().setHtmlCode(str);
         }
+    }
+
+    private void prepareCaptchaAdress(String captcha, HashMap<String, String> captchaRegex, String parameter) {
+        br.getRequest().setHtmlCode(captcha);
+
+        for (Entry<String, String> next : captchaRegex.entrySet()) {
+            if (br.containsHTML(next.getValue())) {
+                cType = next.getKey();
+            }
+        }
+
+        logger.info("notDetected".equals(cType) ? "Captcha not detected." : "Detected captcha type \"" + cType + "\" for this host.");
+
+        /* detect javascript */
+        String javaScript = null;
+        for (String js : br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0)) {
+            if (!new Regex(js, captchaRegex.get(cType)).matches()) continue;
+            javaScript = js;
+        }
+        if (javaScript == null) return;
+
+        /* execute javascript */
+        Object result = new Object();
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        String protocol = parameter.startsWith("https:") ? "https:" : "http:";
+        try {
+            /* creating pseudo functions: document.location.protocol + document.write(value) */
+            engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a ; }}");
+            engine.eval("document.location = document.loc();");
+            result = engine.eval(javaScript);
+        } catch (Throwable e) {
+            return;
+        }
+        String res = result != null ? result.toString() : null;
+        br.getRequest().setHtmlCode(res);
     }
 
 }
