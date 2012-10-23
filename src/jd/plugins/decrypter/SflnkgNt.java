@@ -16,13 +16,8 @@
 
 package jd.plugins.decrypter;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -47,6 +42,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Application;
+
 //Similar to SafeUrlMe (safeurl.me)
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?(safelinking\\.net/(p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
 public class SflnkgNt extends PluginForDecrypt {
@@ -64,29 +61,6 @@ public class SflnkgNt extends PluginForDecrypt {
         standard,
         cats,
         notDetected;
-    }
-
-    public static String readInputStreamToString(InputStream fis) throws UnsupportedEncodingException, IOException {
-        BufferedReader f = null;
-        try {
-            f = new BufferedReader(new InputStreamReader(fis, "UTF8"));
-            String line;
-            StringBuilder ret = new StringBuilder();
-            String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                }
-                ret.append(line);
-            }
-            return ret.toString();
-        } finally {
-            try {
-                f.close();
-            } catch (Throwable e) {
-            }
-
-        }
     }
 
     private String AGENT = null;
@@ -115,7 +89,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
         String parameter = param.toString();
         if (parameter.matches("https?://(www\\.)?sflk\\.in/[A-Za-z0-9]+")) {
-            get(parameter);
+            br.getPage(parameter);
             final String newparameter = br.getRedirectLocation();
             if (newparameter == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
@@ -128,13 +102,14 @@ public class SflnkgNt extends PluginForDecrypt {
             parameter = newparameter;
         }
         parameter = parameter.replaceAll("http://", "https://");
-        get(parameter);
+        br.getPage(parameter);
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|>404 Page/File not found<)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (br.containsHTML(">Not yet checked</span>")) { throw new DecrypterException("Not yet checked"); }
         if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the safelinking.net support!"); }
+        /* unprotected links */
         if (parameter.matches("https?://[\\w\\.]*?safelinking\\.net/d/[a-z0-9]+")) {
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
@@ -145,11 +120,12 @@ public class SflnkgNt extends PluginForDecrypt {
                 logger.warning("SafeLinking: Sever issues? continuing...");
                 logger.warning("SafeLinking: Please confirm via browser, and report any bugs to JDownloader Developement Team. :" + parameter);
             }
-            // prevent loop
-            if (!parameter.equals(finallink)) {
+            if (!parameter.equals(finallink)) { // prevent loop
                 decryptedLinks.add(createDownloadlink(finallink));
             }
         } else {
+            /* protected links */
+            String protocol = parameter.startsWith("https:") ? "https:" : "http:";
             HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
             captchaRegex.put("basic", "(https?://safelinking\\.net/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
@@ -158,19 +134,16 @@ public class SflnkgNt extends PluginForDecrypt {
             captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
             captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/(papi)?");
 
-            /* find protected form */
-            Form pForm = br.getFormbyProperty("id", "protected-form");
-            if (pForm != null) {
-                boolean password = pForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
-                String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div></div>").getMatch(0);// captcha?
-                if (captcha != null) {
-                    prepareCaptchaAdress(captcha, captchaRegex, parameter);
-                }
+            /* search for protected form */
+            Form protectedForm = br.getFormbyProperty("id", "protected-form");
+            if (protectedForm != null) {
+                boolean password = protectedForm.getRegex("type=\"password\" name=\"link-password\"").matches(); // password?
+                String captcha = br.getRegex("<div id=\"captcha\\-wrapper\">(.*?)</div></div></div>").getMatch(0); // captcha?
+                if (captcha != null) prepareCaptchaAdress(captcha, captchaRegex, protocol);
+
                 for (int i = 0; i <= 5; i++) {
                     String data = "post-protect=1";
-                    if (password) {
-                        data += "&link-password=" + getUserInput(null, param);
-                    }
+                    if (password) data += "&link-password=" + getUserInput(null, param);
 
                     Browser captchaBr = null;
                     if (!"notDetected".equals(cType)) captchaBr = br.cloneBrowser();
@@ -227,16 +200,16 @@ public class SflnkgNt extends PluginForDecrypt {
                     }
 
                     if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
-                        post(parameter, data, true);
+                        br.postPage(parameter, data);
                         if (br.getHttpConnection().getResponseCode() == 500) {
                             logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
                             continue;
                         }
-                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches();// password correct?
+                        password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
                     }
 
                     if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || password || br.containsHTML("<strong>Prove you are human</strong>")) {
-                        prepareCaptchaAdress(captcha, captchaRegex, parameter);
+                        prepareCaptchaAdress(captcha, captchaRegex, protocol);
                         continue;
                     }
                     break;
@@ -249,24 +222,25 @@ public class SflnkgNt extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            // container handling (if no containers found, use webprotection
+            /* Container handling (if no containers found, use webprotection) */
             if (br.containsHTML("\\.dlc")) {
                 decryptedLinks = loadcontainer(".dlc", param);
-                if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
+                if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
             }
 
             if (br.containsHTML("\\.rsdf")) {
                 decryptedLinks = loadcontainer(".rsdf", param);
-                if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
+                if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
             }
 
             if (br.containsHTML("\\.ccf")) {
                 decryptedLinks = loadcontainer(".ccf", param);
-                if (decryptedLinks != null && decryptedLinks.size() > 0) { return decryptedLinks; }
+                if (decryptedLinks != null && decryptedLinks.size() > 0) return decryptedLinks;
             }
 
-            // Webprotection decryption
-            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) get(parameter);
+            /* Webprotection decryption */
+            if (br.getRedirectLocation() != null && br.getRedirectLocation().equals(parameter)) br.getPage(parameter);
+
             for (String[] s : br.getRegex("<div class=\"links\\-container result\\-form\">(.*?)</div>").getMatches()) {
                 for (String[] ss : new Regex(s[0], "<a href=\"(.*?)\"").getMatches()) {
                     for (String sss : ss) {
@@ -278,7 +252,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
             for (String link : cryptedLinks) {
                 if (link.matches(".*safelinking\\.net/d/.+")) {
-                    get(link);
+                    br.getPage(link);
                     link = br.getRedirectLocation();
                     link = link == null ? br.getRegex("location=\"(http[^\"]+)").getMatch(0) : link;
                     if (link == null) {
@@ -303,22 +277,12 @@ public class SflnkgNt extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void get(String parameter) throws UnsupportedEncodingException, IOException {
-        try {
-            br.getPage(parameter);
-        } catch (Throwable t) {
-            String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
-            br.getRequest().setHtmlCode(str);
-        }
-    }
-
     private ArrayList<DownloadLink> loadcontainer(String format, CryptedLink param) throws IOException, PluginException {
-        ArrayList<DownloadLink> decryptedLinks = null;
         Browser brc = br.cloneBrowser();
         String containerLink = br.getRegex("\"(https?://safelinking\\.net/c/[a-z0-9]+" + format + ")").getMatch(0);
         if (containerLink == null) {
             logger.warning("Contailerlink for link " + param.toString() + " for format " + format + " could not be found.");
-            return null;
+            return new ArrayList<DownloadLink>();
         }
         String test = Encoding.htmlDecode(containerLink);
         File file = null;
@@ -326,41 +290,27 @@ public class SflnkgNt extends PluginForDecrypt {
         try {
             con = brc.openGetConnection(test);
             if (con.getResponseCode() == 200) {
-                file = JDUtilities.getResourceFile("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
-                if (file == null) { return null; }
+                file = Application.getResource("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                if (file == null) return new ArrayList<DownloadLink>();
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
                 if (file != null && file.exists() && file.length() > 100) {
-                    decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    ArrayList<DownloadLink> decryptedLinks = JDUtilities.getController().getContainerLinks(file);
+                    if (decryptedLinks.size() > 0) return decryptedLinks;
+                } else {
+                    return new ArrayList<DownloadLink>();
                 }
-            } else {
-                return null;
             }
+            return new ArrayList<DownloadLink>();
         } finally {
             try {
                 con.disconnect();
             } catch (Throwable e) {
             }
         }
-
-        if (file != null && file.exists() && file.length() > 100) {
-            if (decryptedLinks.size() > 0) { return decryptedLinks; }
-        } else {
-            return null;
-        }
-        return null;
     }
 
-    private void post(String param, String data, boolean useWorkaround) throws MalformedURLException, IOException {
-        try {
-            br.postPage(param, data);
-        } catch (Throwable t) {
-            String str = readInputStreamToString(br.getHttpConnection().getErrorStream());
-            br.getRequest().setHtmlCode(str);
-        }
-    }
-
-    private void prepareCaptchaAdress(String captcha, HashMap<String, String> captchaRegex, String parameter) {
+    private void prepareCaptchaAdress(String captcha, HashMap<String, String> captchaRegex, String protocol) {
         br.getRequest().setHtmlCode(captcha);
 
         for (Entry<String, String> next : captchaRegex.entrySet()) {
@@ -383,10 +333,9 @@ public class SflnkgNt extends PluginForDecrypt {
         Object result = new Object();
         final ScriptEngineManager manager = new ScriptEngineManager();
         final ScriptEngine engine = manager.getEngineByName("javascript");
-        String protocol = parameter.startsWith("https:") ? "https:" : "http:";
         try {
             /* creating pseudo functions: document.location.protocol + document.write(value) */
-            engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a ; }}");
+            engine.eval("var document = { loc : function() { var newObj = new Object(); function protocol() { return \"" + protocol + "\"; } newObj.protocol = protocol(); return newObj; }, write : function(a) { return a; }}");
             engine.eval("document.location = document.loc();");
             result = engine.eval(javaScript);
         } catch (Throwable e) {
