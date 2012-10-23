@@ -56,6 +56,7 @@ public class File4GoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("Arquivo Temporariamente Indisponivel")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<b>Nome do arquivo:</b>([^<>\"]*?)</span>").getMatch(0);
@@ -92,10 +93,11 @@ public class File4GoCom extends PluginForHost {
          * null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
          * dllink = dllUrl + dllink;
          */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         /* resume no longer supported */
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("BAIXE SIMULTANEAMENTE COM VELOCIDADE MÁXIMA")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -123,7 +125,6 @@ public class File4GoCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                // br.getPage("");
                 br.postPage("http://www.file4go.com/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "FILE4GO") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
@@ -202,7 +203,7 @@ public class File4GoCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override

@@ -26,7 +26,6 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "abmp3.com" }, urls = { "http://(www\\.)?abmp3\\.com/download/\\d+-.*?\\.html" }, flags = { 0 })
 public class AbEmPeThreeCom extends PluginForDecrypt {
@@ -44,14 +43,26 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+        // Invalid link
+        if (br.containsHTML("(<TITLE>404 Not Found</TITLE>|<H1>Not Found</H1>)")) {
+            logger.info("Link offline (error 404) : " + parameter);
+            return decryptedLinks;
+        }
+        // Link offline
+        if (br.containsHTML(">This file has been deleted") || br.containsHTML("This file has been removed =\\(")) {
+            logger.info("Link deleted: " + parameter);
+            return decryptedLinks;
+        }
         String captchaUrl = null;
         boolean failed = true;
         String fileID = new Regex(parameter, "abmp3\\.com/download/(\\d+)-").getMatch(0);
         for (int i = 0; i <= 5; i++) {
             captchaUrl = br.getRegex(CAPTCHAREGEX).getMatch(0);
             if (captchaUrl == null) captchaUrl = br.getRegex(CAPTCHAREGEX2).getMatch(0);
-            if (captchaUrl == null) return null;
+            if (captchaUrl == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             captchaUrl = "http://abmp3.com" + captchaUrl;
             String code = getCaptchaCode(captchaUrl, param);
             br.getPage("http://abmp3.com/chk_cd.php?id=" + fileID + "&code=" + code);
@@ -65,7 +76,10 @@ public class AbEmPeThreeCom extends PluginForDecrypt {
         }
         if (failed) throw new DecrypterException(DecrypterException.CAPTCHA);
         String finallink = br.getRegex("Done#\\|#(http://.*?\\.mp3)").getMatch(0);
-        if (finallink == null) return null;
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         decryptedLinks.add(createDownloadlink("directhttp://" + finallink.trim()));
 
         return decryptedLinks;

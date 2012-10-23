@@ -156,12 +156,15 @@ public class MixtureCloudCom extends PluginForHost {
                 br.setCookie(MAINPAGE, "lang", "de");
                 br.setCookie(MAINPAGE, "cc", "DE");
                 br.setCookie(MAINPAGE, "mx_l", "de");
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 br.getPage("https://www.mixturecloud.com/login");
                 final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.postPage("https://www.mixturecloud.com/login", "back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.containsHTML(">Ihr Konto ist bereits unbegrenzt")) {
+                if (!br.containsHTML(">Ihr Konto ist bereits unbegrenzt") && !br.containsHTML(">Votre compte est déjà Illimité")) {
                     logger.info("Unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }

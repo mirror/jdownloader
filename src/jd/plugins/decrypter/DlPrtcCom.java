@@ -35,7 +35,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String CAPTCHATEXT    = ">Copy the code";
+    private static final String CAPTCHATEXT    = ">Security Code";
     private static final String CAPTCHAFAILED  = ">The security code is incorrect";
     private static final String PASSWORDTEXT   = ">Password :";
     private static final String PASSWORDFAILED = ">The password is incorrect";
@@ -44,6 +44,7 @@ public class DlPrtcCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // Prefer English language
         String parameter = param.toString().replaceAll("dl\\-protect\\.com/(en|fr)/", "dl-protect.com/").replace("dl-protect.com/", "dl-protect.com/en/");
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getPage(parameter);
         if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(CAPTCHATEXT)) {
             for (int i = 0; i <= 5; i++) {
@@ -77,14 +78,16 @@ public class DlPrtcCom extends PluginForDecrypt {
             }
             br.submitForm(continueForm);
         }
-        System.out.print(br.toString());
-        String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
+        final String linktext = br.getRegex("class=\"divlink link\" id=\"slinks\"><a(.*?)valign=\"top\" align=\"right\" width=\"500px\" height=\"280px\"><pre style=\"text\\-align:center\">").getMatch(0);
         if (linktext == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
+        final String[] links = new Regex(linktext, "href=\"([^\"\\']+)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
         for (String dl : links)
             decryptedLinks.add(createDownloadlink(dl));
         return decryptedLinks;
