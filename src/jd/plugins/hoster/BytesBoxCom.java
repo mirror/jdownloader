@@ -91,8 +91,6 @@ public class BytesBoxCom extends PluginForHost {
         for (int i = 0; i <= 3; i++) {
             final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
             jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
-            sm.setSecure(false);
-            sm.setNoscript(true);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
             ajaxBR.postPage("http://bytesbox.com/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.verify(code) + "&adcopy_response=" + Encoding.urlEncode(code));

@@ -98,11 +98,11 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         public File downloadCaptcha(final File captchaFile) throws Exception {
-            this.load();
+            load();
             URLConnectionAdapter con = null;
             try {
                 captchaAddress = captchaAddress.replaceAll("%0D%0A", "").trim();
-                Browser.download(captchaFile, con = this.smBr.openGetConnection(this.server + this.captchaAddress));
+                Browser.download(captchaFile, con = smBr.openGetConnection(server + captchaAddress));
             } catch (IOException e) {
                 captchaFile.delete();
                 throw e;
@@ -116,49 +116,51 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         private void load() throws Exception {
-            this.smBr = this.br.cloneBrowser();
-            this.getChallenge();
-            this.setServer();
-            this.setPath(noscript);
-            this.smBr.getPage(this.server + this.path + this.challenge);
-            if (this.noscript) {
-                this.verify = smBr.getForm(0);
-                this.captchaAddress = this.smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
-                if (this.verify == null) throw new Exception("SolveMedia Module fails");
+            smBr = br.cloneBrowser();
+            getChallenge();
+            setServer();
+            setPath();
+            smBr.getPage(server + path + challenge);
+            if (noscript) {
+                verify = smBr.getForm(0);
+                captchaAddress = smBr.getRegex("<img src=\"(/papi/media\\?c=[^\"]+)").getMatch(0);
+                if (verify == null) throw new Exception("SolveMedia Module fails");
             } else {
-                this.chId = this.smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
-                this.captchaAddress = this.chId != null ? this.server + "/papi/media?c=" + this.chId : null;
+                chId = smBr.getRegex("\"chid\"\\s+?:\\s+?\"(.*?)\",").getMatch(0);
+                captchaAddress = chId != null ? server + "/papi/media?c=" + chId : null;
             }
-            if (this.captchaAddress == null) throw new Exception("SolveMedia Module fails");
+            if (captchaAddress == null) throw new Exception("SolveMedia Module fails");
         }
 
         private void getChallenge() {
-            this.challenge = this.br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
-            if (secure) {
-                this.challenge = this.br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
-                if (this.challenge == null) this.challenge = this.br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+            challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+            if (challenge == null) {
+                secure = true;
+                challenge = br.getRegex("ckey:\'([\\w\\-\\.]+)\'").getMatch(0);
+                if (challenge == null) challenge = br.getRegex("https://api\\-secure\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
+                if (challenge == null) secure = false;
             }
         }
 
-        public String verify(String code) throws Exception {
-            if (!this.noscript) return this.chId;
+        public String verify(final String code) throws Exception {
+            if (!noscript) return chId;
 
             /** FIXME stable Browser Bug --> Form action handling */
-            String url = this.smBr.getURL();
+            String url = smBr.getURL();
             url = url.substring(0, url.indexOf("media?c="));
-            this.verify.setAction((url == null ? "" : url) + this.verify.getAction());
+            verify.setAction((url == null ? "" : url) + verify.getAction());
 
-            this.verify.put("adcopy_response", code);
-            this.smBr.submitForm(verify);
-            String verifyUrl = this.smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
+            verify.put("adcopy_response", code);
+            smBr.submitForm(verify);
+            String verifyUrl = smBr.getRegex("URL=(http[^\"]+)").getMatch(0);
             if (verifyUrl == null) return null;
             if (secure) verifyUrl = verifyUrl.replaceAll("http://", "https://");
             try {
-                this.smBr.getPage(verifyUrl);
+                smBr.getPage(verifyUrl);
             } catch (Throwable e) {
                 throw new Exception("SolveMedia Module fails");
             }
-            return this.smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
+            return smBr.getRegex("id=gibberish>([^<]+)").getMatch(0);
         }
 
         /**
@@ -166,7 +168,7 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
          */
         public void setSecure(boolean secure) {
-            if (secure) this.secure = true;
+            if (secure) secure = true;
         }
 
         /**
@@ -174,29 +176,29 @@ public class LnkCrptWs extends PluginForDecrypt {
          * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
          */
         public void setNoscript(boolean noscript) {
-            if (!noscript) this.noscript = false;
+            if (!noscript) noscript = false;
         }
 
         private void setServer() {
-            this.server = "http://api.solvemedia.com";
-            if (secure) this.server = "https://api-secure.solvemedia.com";
+            server = "http://api.solvemedia.com";
+            if (secure) server = "https://api-secure.solvemedia.com";
         }
 
-        private void setPath(boolean b) {
-            this.path = "/papi/challenge.noscript?k=";
-            if (!noscript) this.path = "/papi/_challenge.js?k=";
+        private void setPath() {
+            path = "/papi/challenge.noscript?k=";
+            if (!noscript) path = "/papi/_challenge.js?k=";
         }
 
         public String getChallengeUrl() {
-            return this.server + this.path;
+            return server + path;
         }
 
         public String getChallengeId() {
-            return this.challenge;
+            return challenge;
         }
 
         public String getCaptchaUrl() {
-            return this.captchaAddress;
+            return captchaAddress;
         }
 
     }
@@ -217,21 +219,13 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         private final Browser                br;
-
         private Form                         FORM;
-
         private HashMap<String, String>      PARAMS;
-
         private Browser                      rcBr;
-
         private String                       SERVERSTRING;
-
         private static String                DLURL;
-
         private String[]                     stImgs;
-
         private String[]                     sscStc;
-
         private LinkedHashMap<String, int[]> fmsImg;
 
         public KeyCaptcha(final Browser br) {
@@ -552,27 +546,16 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     private static class KeyCaptchaDialog extends AbstractDialog<String> implements ActionListener {
         private JLayeredPane                       drawPanel;
-
         private final LinkedHashMap<String, int[]> coordinates;
-
         private final String[]                     imageUrl;
-
         private BufferedImage[]                    kcImages;
-
         private int                                kcSampleImg;
-
         private Image[]                            IMAGE;
-
         private Graphics                           go;
-
         private JPanel                             p;
-
         private final Dimension                    dimensions;
-
         private ArrayList<Integer>                 mouseArray;
-
         private Browser                            kc;
-
         private String                             url;
 
         public KeyCaptchaDialog(final int flag, final String title, final String[] imageUrl, final LinkedHashMap<String, int[]> coordinates, final String cancelOption, Browser br, String url) {
@@ -895,25 +878,15 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     private static class KeyCaptchaDialogForStable extends JFrame {
         private static final long                  serialVersionUID = 1L;
-
         private Image[]                            IMAGE;
-
         private BufferedImage[]                    kcImages;
-
         private final LinkedHashMap<String, int[]> coordinates;
-
         private Graphics                           go;
-
         private int                                kcSampleImg;
-
         private final ActionListener               AL;
-
         public String                              POSITION;
-
         private final JFrame                       FRAME            = this;
-
         private final JPanel                       p;
-
         private ArrayList<Integer>                 mouseArray;
 
         public KeyCaptchaDialogForStable(final String title, final String[] arg0, final LinkedHashMap<String, int[]> arg1, Browser br, String url) throws Exception {

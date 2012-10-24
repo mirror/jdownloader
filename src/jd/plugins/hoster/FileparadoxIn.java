@@ -298,7 +298,6 @@ public class FileparadoxIn extends PluginForHost {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
-                    sm.setSecure(true);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     final String code = getCaptchaCode(cf, downloadLink);
                     final String chid = sm.verify(code);

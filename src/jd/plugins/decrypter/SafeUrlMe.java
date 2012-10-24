@@ -170,7 +170,6 @@ public class SafeUrlMe extends PluginForDecrypt {
                 case solvemedia:
                     PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
-                    sm.setSecure(true);
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     String code = getCaptchaCode(cf, param);
                     String chid = sm.verify(code);
