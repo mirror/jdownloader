@@ -295,7 +295,7 @@ public class FileparadoxIn extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
-                } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
