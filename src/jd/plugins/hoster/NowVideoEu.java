@@ -52,15 +52,21 @@ public class NowVideoEu extends PluginForHost {
         link.setUrlDownload("http://www.nowvideo.co/player.php?v=" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
-    private static Object       LOCK     = new Object();
-    private static final String MAINPAGE = "http://nowvideo.co";
+    private static Object       LOCK             = new Object();
+    private static final String MAINPAGE         = "http://nowvideo.co";
+    private static final String ISBEINGCONVERTED = ">The file is being converted.";
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>This file no longer exists on our servers|>Possible reasons:)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(ISBEINGCONVERTED)) {
+            link.getLinkStatus().setStatusText("This file is being converted!");
+            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex("<div class=\"video_details radius\\d+\" style=\"height:125px;position:relative;\">[\t\n\r ]+<h4>([^<>\"]*?)</h4>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
@@ -70,6 +76,7 @@ public class NowVideoEu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        if (br.containsHTML(ISBEINGCONVERTED)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is being converted!", 2 * 60 * 60 * 1000l);
         final String fKey = br.getRegex("flashvars\\.filekey=\"([^<>\"]*?)\"").getMatch(0);
         if (fKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.nowvideo.co/api/player.api.php?pass=undefined&user=undefined&codes=undefined&file=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + "&key=" + Encoding.urlEncode(fKey));
@@ -93,8 +100,9 @@ public class NowVideoEu extends PluginForHost {
     }
 
     /**
-     * Dev note: Never buy premium from them, as freeuser you haveno limits, as premium neither and you can't even download the original
-     * videos as premiumuser->Senseless!!
+     * Dev note: Never buy premium from them, as freeuser you haveno limits, as
+     * premium neither and you can't even download the original videos as
+     * premiumuser->Senseless!!
      */
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {

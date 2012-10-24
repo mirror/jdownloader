@@ -181,12 +181,12 @@ public class TbCm extends PluginForDecrypt {
     }
 
     private void addVideosCurrentPage(final ArrayList<DownloadLink> links, String playlistID) {
-        final String[] videos = this.br.getRegex("href=\"(/watch\\?v=.*?)\"").getColumn(0);
+        final String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+\\&amp;list=[a-z\\-_A-Z0-9]+\\&amp;index=\\d+\\&amp;feature=[a-z\\-_A-Z0-9]+)\"").getColumn(0);
         for (String video : videos) {
+            video = Encoding.htmlDecode(video);
             if (done.contains(video)) continue;
             done.add(video);
-            if (playlistID != null && !video.contains(playlistID)) continue;
-            video = new Regex(video, "(/watch\\?v=.*?)&").getMatch(0);
+            video = new Regex(video, "(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&").getMatch(0);
             if (video == null) continue;
             links.add(this.createDownloadlink("http://www.youtube.com" + video));
         }

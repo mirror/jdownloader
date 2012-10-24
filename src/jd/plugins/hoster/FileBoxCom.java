@@ -51,7 +51,7 @@ public class FileBoxCom extends PluginForHost {
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://filebox.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String MAINTENANCE         = ">This server is in maintenance mode|>Please refresh this page in some minutes";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static Object       LOCK                = new Object();
@@ -91,7 +91,7 @@ public class FileBoxCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         doSomething();
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, Pattern.compile(MAINTENANCE)).matches()) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -133,7 +133,8 @@ public class FileBoxCom extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, "freelink");
 
         /**
-         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
          */
         dllink = getDllink();
         if (dllink == null) {
@@ -292,7 +293,7 @@ public class FileBoxCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, Pattern.compile(MAINTENANCE)).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {

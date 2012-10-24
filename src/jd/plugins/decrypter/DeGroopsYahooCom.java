@@ -152,8 +152,10 @@ public class DeGroopsYahooCom extends PluginForDecrypt {
             final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("yahoo.com");
             final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
             if (aa == null) {
-                username = this.getPluginConfig().getStringProperty("user", null);
-                password = this.getPluginConfig().getStringProperty("pass", null);
+                username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + DOMAIN + " :");
+                if (username == null) return false;
+                password = UserIO.getInstance().requestInputDialog("Enter password for " + DOMAIN + " :");
+                if (password == null) return false;
             } else {
                 this.getPluginConfig().setProperty("user", aa.getUser());
                 this.getPluginConfig().setProperty("pass", aa.getPass());

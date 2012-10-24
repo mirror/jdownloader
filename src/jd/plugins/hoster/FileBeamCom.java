@@ -24,6 +24,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -41,12 +42,19 @@ public class FileBeamCom extends PluginForHost {
         return "http://filebeam.com/index.php?page=tos";
     }
 
+    private static final String PASSWORDTEXT = ">Password Protected File<";
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>This file does not exist|This file was either delete by the uploader|or the file was never uploaded\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            link.getLinkStatus().setStatusText("This file is password protected.");
+            link.setName(link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/")));
+            return AvailableStatus.TRUE;
+        }
         String filename = br.getRegex(">File Download Area</center></h1><center><h3>(.*?)</h3>").getMatch(0);
         String filesize = br.getRegex("<center>File Size \\- ([^<>]+) <br").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -56,8 +64,14 @@ public class FileBeamCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        String passCode = downloadLink.getStringProperty("pass", null);
         requestFileInformation(downloadLink);
+        if (br.containsHTML(PASSWORDTEXT)) {
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(PASSWORDTEXT)) throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+        }
         String dllink = br.getRegex("class=tablebcolor><tr><td><b><font size=5><a href=(http://[^<>\"]+)>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("(http://filebeam\\.com/download2\\.php\\?a=[a-z0-9]{32}\\&b=[a-z0-9]{32})").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

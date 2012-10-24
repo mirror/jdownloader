@@ -37,7 +37,10 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        try {
+            br.getPage(parameter);
+        } catch (final Exception e) {
+        }
         String externID = br.getRegex("player\\.hulu\\.com/express/(\\d+)").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.hulu.com/watch/" + externID));

@@ -77,7 +77,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.9.1
+    // XfileSharingProBasic Version 2.5.9.2
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -283,7 +283,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
-                } else if (br.containsHTML("//api\\.solvemedia\\.com/papi")) {
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
                     logger.info("Detected captcha method \"solvemedia\" for this host");
                     final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);

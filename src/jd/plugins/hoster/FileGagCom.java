@@ -281,19 +281,8 @@ public class FileGagCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                    if (cryptedScripts != null && cryptedScripts.length != 0) {
-                        for (String crypted : cryptedScripts) {
-                            dllink = decodeDownloadLink(crypted);
-                            if (dllink != null) break;
-                        }
-                    }
-                }
-            }
+            dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filegag\\.com:\\d+/d/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = new Regex(correctedBR, "<a id=\"drlink\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
         return dllink;
     }
@@ -373,39 +362,6 @@ public class FileGagCom extends PluginForHost {
             logger.warning("Server says link offline, please recheck that!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    private String decodeDownloadLink(String s) {
-        String decoded = null;
-
-        try {
-            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
-
-            String p = params.getMatch(0).replaceAll("\\\\", "");
-            int a = Integer.parseInt(params.getMatch(1));
-            int c = Integer.parseInt(params.getMatch(2));
-            String[] k = params.getMatch(3).split("\\|");
-
-            while (c != 0) {
-                c--;
-                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
-            }
-
-            decoded = p;
-        } catch (Exception e) {
-        }
-
-        String finallink = null;
-        if (decoded != null) {
-            finallink = new Regex(decoded, "name=\"src\"value=\"(.*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = new Regex(decoded, "type=\"video/divx\"src=\"(.*?)\"").getMatch(0);
-                if (finallink == null) {
-                    finallink = new Regex(decoded, "\\.addVariable\\(\\'file\\',\\'(http://.*?)\\'\\)").getMatch(0);
-                }
-            }
-        }
-        return finallink;
     }
 
     private String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {

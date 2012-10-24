@@ -60,22 +60,26 @@ public class DailyMotionCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookie("http://www.dailymotion.com", "family_filter", "off");
         br.setCookie("http://www.dailymotion.com", "lang", "en_US");
-        br.getPage(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(downloadLink.getDownloadURL());
+            if (con.getResponseCode() == 410) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String source = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);
         if (source != null) source = Encoding.htmlDecode(source).replace("\\", "");
         if (source != null) subtitles = new Regex(source, "\"(http://static\\d+\\.dmcdn\\.net/static/video/\\d+/\\d+/\\d+:subtitle_[a-z]{1,4}\\.srt\\?\\d+)\"").getColumn(0);
-        String filename = br.getRegex("name=\"title\" content=\"Dailymotion \\-(.*?)\\- ein Film").getMatch(0);
+        String filename = br.getRegex("<meta itemprop=\"name\" content=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("videos</a><span> > </span><b>(.*?)</b></div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("class=\"title\" title=\"(.*?)\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("vs_videotitle:\"(.*?)\"").getMatch(0);
-                }
-            }
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null) {
             logger.warning("filename is null...");
@@ -129,21 +133,6 @@ public class DailyMotionCom extends PluginForHost {
         dllink = dllink.replace("\\", "");
         filename = filename.trim();
         downloadLink.setFinalFileName(filename);
-        br.setFollowRedirects(true);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
-        }
         return AvailableStatus.TRUE;
     }
 

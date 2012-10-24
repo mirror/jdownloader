@@ -32,7 +32,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?.html", "http://(www\\.)?chili\\-warez\\.net/.*?/(\\-/)?.*?.html" }, flags = { 0, 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mov-world.net", "xxx-4-free.net", "chili-warez.net" }, urls = { "http://(www\\.)?mov-world\\.net/(?!news/)(\\?id=\\d+|.*?/.*?\\d+\\.html)", "http://(www\\.)?xxx\\-4\\-free\\.net/.*?/.*?.html", "http://(www\\.)?chili\\-warez\\.net/.*?/(\\-/)?.*?.html" }, flags = { 0, 0, 0 })
 public class MvWrldNt extends PluginForDecrypt {
 
     public MvWrldNt(final PluginWrapper wrapper) {

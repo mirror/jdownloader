@@ -40,6 +40,16 @@ public class AnimeRtioCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        // Link offline
+        if (br.containsHTML("<title>Nothing found for")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Link abused
+        if (br.containsHTML(">Link Removed by Request of")) {
+            logger.info("Link abused: " + parameter);
+            return decryptedLinks;
+        }
         String fpName = br.getRegex("<h2 class=\"post\\-title\">([^<>\"]*?)</h2>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"]*?) \\&raquo; AnimeRatio\\.com</title>").getMatch(0);
         final String[] vidEntries = br.getRegex("<div id=\"v\\d+\">(.*?)</div>").getColumn(0);
