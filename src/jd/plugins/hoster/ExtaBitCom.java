@@ -48,7 +48,7 @@ public class ExtaBitCom extends PluginForHost {
 
     private static final String NOTAVAILABLETEXT = "(>File is temporary unavailable<|temporary unavailable<br/>)";
     private static final String NOMIRROR         = ">No download mirror<";
-    private static final String PREMIUMONLY      = ">Only premium users can download (this file|files of this size\\. <)";
+    private static final String PREMIUMONLY      = "(>Only premium users can download (this file|files of this size\\. <)|<h2>The file that you're trying to download is larger than \\d+ (Mb|Gb).*?Upgrade to premium</b>.*?<h2>)";
 
     public ExtaBitCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,8 +74,7 @@ public class ExtaBitCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         /*
-         * They got a Mass-Linkchecker, but it's only available for registered
-         * users and doesn't show the filesize:
+         * They got a Mass-Linkchecker, but it's only available for registered users and doesn't show the filesize:
          * http://extabit.com/linkchecker.jsp
          */
         // To get the english version of the page
