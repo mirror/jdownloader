@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -46,13 +47,30 @@ public class ArchieveOrg extends PluginForDecrypt {
             logger.info("Maybe invalid link: " + parameter);
             return decryptedLinks;
         }
-        final String[] links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        for (String singleLink : links) {
-            decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
+        String[] links = null;
+        final String dlOverview = br.getRegex("<b>All Files: </b><a href=\"(https://[^<>\"]*?)\"").getMatch(0);
+        if (dlOverview != null) {
+            br.setFollowRedirects(true);
+            // New way
+            br.getPage(Encoding.htmlDecode(dlOverview));
+            links = br.getRegex("<a href=\"([^<>\"/]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links) {
+                decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL() + singleLink));
+            }
+        } else {
+            // Old way
+            links = br.getRegex("\"(/download/.*?/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String singleLink : links) {
+                decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
+            }
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "archive\\.org/details/(.+)").getMatch(0).trim());
