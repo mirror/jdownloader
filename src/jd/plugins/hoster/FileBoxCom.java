@@ -19,7 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -118,7 +120,7 @@ public class FileBoxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, true, "freelink");
+        doFree(downloadLink, true, -2, true, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean getLinkWithoutLogin, String directlinkproperty) throws Exception, PluginException {
@@ -185,7 +187,7 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     /** This removes fake messages which can kill the plugin */
@@ -346,6 +348,8 @@ public class FileBoxCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         try {
             login(account, true);
         } catch (PluginException e) {
@@ -363,6 +367,14 @@ public class FileBoxCom extends PluginForHost {
         }
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
         } else {
             String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
             if (expire == null) {
@@ -371,12 +383,22 @@ public class FileBoxCom extends PluginForHost {
                 return ai;
             } else {
                 expire = expire.replaceAll("(<b>|</b>)", "");
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             }
             ai.setStatus("Premium User");
+            try {
+                maxPrem.set(1);
+                // free accounts can still have captcha.
+                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setConcurrentUsePossible(true);
+            } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
+            }
         }
         return ai;
     }
+
+    private static AtomicInteger maxPrem = new AtomicInteger(1);
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
@@ -388,7 +410,7 @@ public class FileBoxCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            doFree(link, true, 0, false, "freelink2");
+            doFree(link, false, 1, false, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
@@ -455,7 +477,11 @@ public class FileBoxCom extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage(COOKIE_HOST + "/?op=my_account");
                 doSomething();
-                if (!new Regex(correctedBR, "value=\"Extend Premium account\"").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (new Regex(correctedBR, "value=\"Extend Premium account\"").matches()) {
+                    account.setProperty("nopremium", false);
+                } else {
+                    account.setProperty("nopremium", true);
+                }
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(COOKIE_HOST);
@@ -493,8 +519,8 @@ public class FileBoxCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        // Max 10 connections at all
-        return 1;
+        /* workaround for free/premium issue on stable 09581 */
+        return maxPrem.get();
     }
 
     @Override

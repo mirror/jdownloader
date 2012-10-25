@@ -380,7 +380,7 @@ public class LetitBitNet extends PluginForHost {
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
             // Get to the premium zone
-            br.postPage(downloadLink.getDownloadURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
+            br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
             /* normal account with only a password */
             logger.info("Premium with pw only");
             Form premiumform = null;

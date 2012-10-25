@@ -383,7 +383,7 @@ public class TerabitTo extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\\'(http://[a-z0-9\\.]+\\.terabit\\.to/files/\\d+/[a-z0-9]+/[^<>\"]*?)\\'").getMatch(0);
+            dllink = new Regex(correctedBR, "\\'(http://([a-z0-9\\.]+\\.terabit\\.to|\\d+\\.\\d+\\.\\d+\\.\\d+)/files/\\d+/[a-z0-9]+/[^<>\"]*?)\\'").getMatch(0);
         }
         return dllink;
     }

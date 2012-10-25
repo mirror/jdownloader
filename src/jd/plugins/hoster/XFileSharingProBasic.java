@@ -66,6 +66,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
@@ -77,7 +78,7 @@ public class XFileSharingProBasic extends PluginForHost {
      * their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
-    // XfileSharingProBasic Version 2.5.9.2
+    // XfileSharingProBasic Version 2.5.9.3
     // mods:
     // non account: chunk * maxdl
     // free account: chunk * maxdl
@@ -88,7 +89,7 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
     }
 
     @Override
@@ -196,6 +197,12 @@ public class XFileSharingProBasic extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
+        // Is it a videohoster? If so, we can get the downloadlink directly!
+        if (dllink == null && VIDEOHOSTER) {
+            final Browser brv = br.cloneBrowser();
+            brv.getPage(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            dllink = brv.getRedirectLocation();
+        }
 
         // Third, continue like normal.
         if (dllink == null) {
@@ -408,7 +415,7 @@ public class XFileSharingProBasic extends PluginForHost {
                             // dllink = new Regex(correctedBR,
                             // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
                             if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                                 if (cryptedScripts != null && cryptedScripts.length != 0) {
                                     for (String crypted : cryptedScripts) {
                                         dllink = decodeDownloadLink(crypted);

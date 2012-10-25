@@ -84,8 +84,6 @@ public class MixtureCloudCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "lang", "de");
-        br.setCookie(MAINPAGE, "cc", "DE");
         br.setCookie(MAINPAGE, "mx_l", "de");
         br.getPage(link.getDownloadURL());
         // Link offline
@@ -153,8 +151,6 @@ public class MixtureCloudCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.setCookie(MAINPAGE, "lang", "de");
-                br.setCookie(MAINPAGE, "cc", "DE");
                 br.setCookie(MAINPAGE, "mx_l", "de");
                 br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
                 br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
