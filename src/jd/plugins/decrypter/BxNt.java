@@ -30,13 +30,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://www\\.box\\.(net|com)/(shared|s)/((\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?|[a-z0-9]{16})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/(shared|s)/((\\w+\\b(?<!\\bstatic))(/rss\\.xml|#\\w*)?|[a-z0-9]{16})" }, flags = { 0 })
 public class BxNt extends PluginForDecrypt {
-    private static final String  BASE_URL_PATTERN             = "(https?://www\\.box\\.com/shared/\\w+)(#\\w*)?";
+    private static final String  BASE_URL_PATTERN             = "(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/shared/\\w+)(#\\w*)?";
     private static final Pattern FEED_FILEINFO_PATTERN        = Pattern.compile("<item>(.*?)<\\/item>", Pattern.DOTALL);
     private static final Pattern FEED_FILETITLE_PATTERN       = Pattern.compile("<title>(.*?)<\\/title>", Pattern.DOTALL);
     private static final Pattern FEED_DL_LINK_PATTERN         = Pattern.compile("<media:content url=\\\"(.*?)\\\"\\s*/>", Pattern.DOTALL);
-    private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://www\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
+    private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
 
     public BxNt(PluginWrapper wrapper) {
         super(wrapper);

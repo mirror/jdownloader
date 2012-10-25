@@ -29,13 +29,13 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(names = { "box.net" }, urls = { "(https?://www\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
+@HostPlugin(names = { "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
     private static final String OUT_OF_BANDWITH_MSG    = "out of bandwidth";
-    private static final String REDIRECT_DOWNLOAD_LINK = "https?://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
-    private static final String DLLINKREGEX            = "href=\"(https?://www\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
+    private static final String REDIRECT_DOWNLOAD_LINK = "https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+";
+    private static final String DLLINKREGEX            = "href=\"(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=[^<>\"\\']+)\"";
     private static final String SLINK                  = "https?://www\\.box\\.(net|com)/s/[a-z0-9]+";
     private String              DLLINK                 = null;
 
