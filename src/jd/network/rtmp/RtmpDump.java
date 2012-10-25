@@ -84,29 +84,29 @@ public class RtmpDump extends RTMPDownload {
      * @return Whether or not rtmpdump executable was found
      */
     private synchronized boolean findRtmpDump() {
-        if (RtmpDump.RTMPDUMP != null) { return RtmpDump.RTMPDUMP.length() > 0; }
+        if (RTMPDUMP != null) { return RTMPDUMP.length() > 0; }
         if (CrossSystem.isWindows()) {
-            RtmpDump.RTMPDUMP = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
+            RTMPDUMP = Application.getResource("tools/Windows/rtmpdump/rtmpdump.exe").getAbsolutePath();
         } else if (CrossSystem.isLinux()) {
-            RtmpDump.RTMPDUMP = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
+            RTMPDUMP = Application.getResource("tools/linux/rtmpdump/rtmpdump").getAbsolutePath();
         } else if (CrossSystem.isMac()) {
-            RtmpDump.RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
+            RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
-        if (RtmpDump.RTMPDUMP != null && !new File(RtmpDump.RTMPDUMP).exists()) {
-            RtmpDump.RTMPDUMP = null;
+        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) {
+            RTMPDUMP = null;
         }
-        if (RtmpDump.RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            if (RtmpDump.RTMPDUMP == null && (RtmpDump.RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RtmpDump.RTMPDUMP).exists()) {
-                RtmpDump.RTMPDUMP = null;
+        if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
+                RTMPDUMP = null;
             }
-            if (RtmpDump.RTMPDUMP == null && (RtmpDump.RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RtmpDump.RTMPDUMP).exists()) {
-                RtmpDump.RTMPDUMP = null;
+            if (RTMPDUMP == null && (RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
+                RTMPDUMP = null;
             }
         }
-        if (RtmpDump.RTMPDUMP == null) {
-            RtmpDump.RTMPDUMP = "";
+        if (RTMPDUMP == null) {
+            RTMPDUMP = "";
         }
-        return RtmpDump.RTMPDUMP.length() > 0;
+        return RTMPDUMP.length() > 0;
     }
 
     private void getProcessId() {
@@ -125,7 +125,7 @@ public class RtmpDump extends RTMPDownload {
      * @return The version number of the RTMPDump executable
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
-        if (RtmpDump.RTMPVERSION != null) { return RtmpDump.RTMPVERSION; }
+        if (RTMPVERSION != null) { return RTMPVERSION; }
         if (!this.findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDump not found!"); }
         final String arg = " -h";
         NativeProcess verNP = null;
@@ -133,10 +133,10 @@ public class RtmpDump extends RTMPDownload {
         InputStreamReader verR = null;
         try {
             if (CrossSystem.isWindows()) {
-                verNP = new NativeProcess(RtmpDump.RTMPDUMP, arg);
+                verNP = new NativeProcess(RTMPDUMP, arg);
                 verR = new InputStreamReader(verNP.getErrorStream());
             } else {
-                verP = Runtime.getRuntime().exec(RtmpDump.RTMPDUMP + arg);
+                verP = Runtime.getRuntime().exec(RTMPDUMP + arg);
                 verR = new InputStreamReader(verP.getErrorStream());
             }
             final BufferedReader br = new BufferedReader(verR);
@@ -145,11 +145,11 @@ public class RtmpDump extends RTMPDownload {
             while ((line = br.readLine()) != null) {
                 final Matcher match = reg.matcher(line);
                 if (match.find()) {
-                    RtmpDump.RTMPVERSION = match.group(1);
-                    return RtmpDump.RTMPVERSION;
+                    RTMPVERSION = match.group(1);
+                    return RTMPVERSION;
                 }
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RtmpDump.RTMPDUMP + " version not found!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " version not found!");
         } finally {
             try {
                 /* make sure we destroyed the process */
@@ -184,7 +184,7 @@ public class RtmpDump extends RTMPDownload {
     }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
-        if (!this.findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RtmpDump.RTMPDUMP + " not found!"); }
+        if (!this.findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
             public long getSpeedMeter() {
@@ -233,10 +233,10 @@ public class RtmpDump extends RTMPDownload {
 
             try {
                 if (CrossSystem.isWindows()) {
-                    this.NP = new NativeProcess(RtmpDump.RTMPDUMP, cmd);
+                    this.NP = new NativeProcess(RTMPDUMP, cmd);
                     this.R = new InputStreamReader(this.NP.getErrorStream());
                 } else {
-                    this.P = Runtime.getRuntime().exec(RtmpDump.RTMPDUMP + cmd);
+                    this.P = Runtime.getRuntime().exec(RTMPDUMP + cmd);
                     this.R = new InputStreamReader(this.P.getErrorStream());
                 }
                 final BufferedReader br = new BufferedReader(this.R);
@@ -245,6 +245,7 @@ public class RtmpDump extends RTMPDownload {
                 boolean runTimeSize = false;
                 long tmplen = 0, fixedlen = 0, calc = 0;
                 while ((line = br.readLine()) != null) {
+                    // System.out.println(line);
                     if (!line.equals("") && line.startsWith("ERROR:")) {
                         error = line;
                     }
@@ -361,6 +362,17 @@ public class RtmpDump extends RTMPDownload {
                     this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
                 }
                 this.downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+            } else if (error != null && error.toLowerCase().contains("last tag size must be greater/equal zero")) {
+                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                this.downloadLink.reset();
+                return false;
+            } else if (error != null && error.toLowerCase().contains("rtmp_readpacket, failed to read rtmp packet header")) {
+                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                return false;
+            } else if (line == null && error.isEmpty()) {
+                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
+                this.downloadLink.reset();
+                return false;
             } else {
                 this.logger.severe("cmd: " + cmd);
                 this.logger.severe(error);

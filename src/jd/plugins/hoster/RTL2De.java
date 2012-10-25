@@ -29,13 +29,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/[\\w\\-]+/video/[\\w\\-]+/" }, flags = { 32 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rtl2.de" }, urls = { "http://(www\\.)?rtl2\\.de/[\\w\\-]+/video/[\\w\\-]+/([\\w\\-]+/)?" }, flags = { 32 })
 public class RTL2De extends PluginForHost {
 
     String DLCONTENT = null;
 
     public RTL2De(final PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall((Math.round(Math.random() * 3 + Math.random() * 3) + 3) * 1000l);
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
@@ -43,11 +44,21 @@ public class RTL2De extends PluginForHost {
             final String[] urlTmp = DLCONTENT.split("/", 5);
             if (urlTmp != null && urlTmp.length < 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             dl = new RTMPDownload(this, downloadLink, DLCONTENT);
-            final String host = urlTmp[0] + "//" + urlTmp[2] + ":1935/" + urlTmp[3];
-            final String playpath = "mp4:" + urlTmp[4];
-            DLCONTENT = host + "@" + playpath;
+
+            String protocol = urlTmp[0];
+            String host = urlTmp[2];
+            String app = urlTmp[3];
+            String path = urlTmp[4];
+
+            final String url = protocol + "//" + host + ":1935/" + app;
+            /* ondemand */
+            String playpath = "mp4:" + path;
+            /* vod */
+            if ("vod".equals(app) || (path.startsWith("flv_free/") || path.startsWith("flv_dach/")) && !path.endsWith(".f4v")) playpath = path.substring(0, path.lastIndexOf("."));
+
+            DLCONTENT = url + "@" + playpath;
             setupRTMPConnection(dl);
-            ((RTMPDownload) dl).startDownload();
+            if (!((RTMPDownload) dl).startDownload()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
 
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -62,7 +73,7 @@ public class RTL2De extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 2;
     }
 
     @Override
@@ -127,6 +138,8 @@ public class RTL2De extends PluginForHost {
         rtmp.setFlashVer("WIN 10,1,102,64");
         rtmp.setUrl(DLCONTENT.split("@")[0]);
         rtmp.setResume(true);
+        rtmp.setTimeOut(-5);
+        rtmp.setBuffer(60 * 1000);
     }
 
 }
