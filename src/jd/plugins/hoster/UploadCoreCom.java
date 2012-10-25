@@ -57,7 +57,7 @@ public class UploadCoreCom extends PluginForHost {
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
@@ -69,7 +69,7 @@ public class UploadCoreCom extends PluginForHost {
      * */
     // XfileSharingProBasic Version 2.5.6.9
     // mods: getdllink
-    // non account: 20 * 20
+    // non account: 2 * 2
     // free account: chunk * maxdl
     // premium account: chunk * maxdl
     // protocol: no https
@@ -188,7 +188,7 @@ public class UploadCoreCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {

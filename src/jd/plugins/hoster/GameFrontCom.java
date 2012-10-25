@@ -67,6 +67,7 @@ public class GameFrontCom extends PluginForHost {
             break;
         }
         if (AVAILABLECHECKFAILED) return AvailableStatus.UNCHECKABLE;
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         if (br.containsHTML("(>File not found, you will be redirected to|<title>Game Front</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().contains("errno=ERROR_CONTENT_QUICKKEY_INVALID")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

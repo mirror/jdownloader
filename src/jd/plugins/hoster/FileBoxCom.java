@@ -182,6 +182,7 @@ public class FileBoxCom extends PluginForHost {
         }
         if (getLinkWithoutLogin) downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
+        if (Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).equals("video.flv")) downloadLink.setFinalFileName(new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".flv");
         dl.startDownload();
     }
 
@@ -368,7 +369,7 @@ public class FileBoxCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(1);
+                maxPrem.set(2);
                 // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(true);
@@ -410,7 +411,7 @@ public class FileBoxCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            doFree(link, false, 1, false, "freelink2");
+            doFree(link, true, -2, false, "freelink2");
         } else {
             dllink = checkDirectLink(link, "premlink");
             if (dllink == null) {
