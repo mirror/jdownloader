@@ -85,6 +85,55 @@ public class FileBoxCom extends PluginForHost {
     }
 
     @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.setCookie(COOKIE_HOST, "lang", "english");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 50 links at once */
+                    if (index == urls.length || links.size() > 50) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                sb.append("op=checkfiles&process=Check+URLs&list=");
+                for (final DownloadLink dl : links) {
+                    sb.append(dl.getDownloadURL());
+                    sb.append("%0A");
+                }
+                br.postPage(COOKIE_HOST + "/?op=checkfiles", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String fid = new Regex(dllink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+                    if (br.containsHTML("filebox\\.com/" + fid + " found</font>")) {
+                        dllink.setAvailable(true);
+                        dllink.setName(fid);
+                    } else if (br.containsHTML("filebox\\.com/" + fid + " not found\\!</font>")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        dllink.setAvailable(false);
+                        dllink.getLinkStatus().setStatusText("Linkchecker is probably broken!");
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         LINKID = new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0);
@@ -97,23 +146,7 @@ public class FileBoxCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        Form dlForm = br.getFormbyProperty("name", "F1");
-        if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dlForm.remove(null);
-        dlForm.put("down_direct", "1");
-        int wait = 5;
-        String waitt = new Regex(correctedBR, "Wait <span id=\".+\">(\\d+)</span> seconds").getMatch(0);
-        if (waitt != null) {
-            wait = Integer.parseInt(waitt);
-        }
-        sleep(wait * 1000l, link);
-        br.submitForm(dlForm);
-        doSomething();
-        String filename = new Regex(correctedBR, "File Name : <span>(.*?)<").getMatch(0);
-        if (filename == null) {
-            filename = LINKID;
-        }
-        link.setName(filename.trim());
+        link.setName(LINKID);
         return AvailableStatus.TRUE;
     }
 
