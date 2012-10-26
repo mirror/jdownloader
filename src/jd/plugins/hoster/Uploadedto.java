@@ -556,7 +556,7 @@ public class Uploadedto extends PluginForHost {
             generalFreeErrorhandling(account);
             if (br.containsHTML("err\":\"Ticket kann nicht")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("err\":\"Leider sind derzeit all unsere")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 15 * 60 * 1000l);
-            if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", 60 * 60 * 1000l);
+            if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", 3 * 60 * 60 * 1000l);
             if (br.containsHTML("welche von Free\\-Usern gedownloadet werden kann")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium users are allowed to download files lager than 1,00 GB.");
             String url = br.getRegex("url:\\'(http:.*?)\\'").getMatch(0);
             if (url == null) url = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
@@ -578,7 +578,7 @@ public class Uploadedto extends PluginForHost {
                 logger.info(br.toString());
                 if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 generalFreeErrorhandling(account);
-                if (br.containsHTML("please try again in an hour or purchase one of our")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+                if (br.containsHTML("please try again in an hour or purchase one of our")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
                 if (dl.getConnection().getResponseCode() == 508) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError(508)", 30 * 60 * 1000l);
                 if (br.containsHTML("try again later")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
                 if (br.containsHTML("All of our free\\-download capacities are")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All of our free-download capacities are exhausted currently", 10 * 60 * 1000l);
@@ -616,7 +616,7 @@ public class Uploadedto extends PluginForHost {
         if (br.containsHTML("Sie haben die max\\. Anzahl an Free\\-Downloads") || br.containsHTML("err\":\"limit-dl")) {
             if (account == null) {
                 logger.info("Limit reached, throwing reconnect exception");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             } else {
                 logger.info("Limit reached, disabling account to use the next one!");
                 account.setProperty("LASTDOWNLOAD", System.currentTimeMillis());
