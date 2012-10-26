@@ -113,7 +113,7 @@ public class ZinWaCom extends PluginForHost {
         br.setFollowRedirects(false);
         prepBrowser();
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>Sorry, this video has been deleted by the user or it was removed for copyright infringement)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (correctedBR.contains(MAINTENANCE)) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
@@ -142,11 +142,12 @@ public class ZinWaCom extends PluginForHost {
         if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
         fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
         fileInfo[0] = Encoding.htmlDecode(fileInfo[0].trim());
-        String ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
+        String ext = null;
+        if (fileInfo[0].contains(".")) ext = fileInfo[0].substring(fileInfo[0].lastIndexOf("."));
         if (ext != null && ext.length() < 5) {
             link.setFinalFileName(fileInfo[0].replace(ext, ".mp4"));
         } else {
-            link.setFinalFileName(fileInfo[0]);
+            link.setFinalFileName(fileInfo[0] + ".mp4");
         }
         if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
@@ -155,7 +156,10 @@ public class ZinWaCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = br.getRegex(">\\[URL=http://(www\\.)?zinwa\\.com/[a-z0-9]{12}\\]([^<>\"]*?) \\- \\d+").getMatch(1);
+            fileInfo[0] = br.getRegex(">\\[URL=http://(www\\.)?zinwa\\.com/[a-z0-9]{12}\\]([^<>\"]*?) \\- \\d+(\\.\\d+)? [A-Z]{1,5}\\[/URL\\]").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = br.getRegex("<div style=\"float:left\"><span style=\"font\\-size:18px; color:#377eca; word\\-break\">([^<>\"]*?)<fb:like").getMatch(1);
+            }
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);

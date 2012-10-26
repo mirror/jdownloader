@@ -29,7 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heaven666.org" }, urls = { "http://(www\\.)?heaven666\\.org/[a-z0-9\\-]+\\-\\d+\\.php" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "heaven666.org" }, urls = { "http://(www\\.)?heaven666\\.orgdecrypted/[a-z0-9\\-]+\\-\\d+\\.php" }, flags = { 0 })
 public class Heaven666Org extends PluginForHost {
 
     public Heaven666Org(PluginWrapper wrapper) {
@@ -41,6 +41,11 @@ public class Heaven666Org extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.heaven666.org/legal/terms.php";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("heaven666.orgdecrypted/", "heaven666.org/"));
     }
 
     @Override

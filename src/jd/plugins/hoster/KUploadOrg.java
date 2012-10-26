@@ -564,7 +564,7 @@ public class KUploadOrg extends PluginForHost {
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage(COOKIE_HOST + "/?op=my_account");
                 doSomething();
-                if (!new Regex(correctedBR, "cart\\.php\">Activar Premium</a>").matches()) {
+                if (new Regex(correctedBR, "/cart\\.php\">Activar Premium</a>").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
                     account.setProperty("nopremium", false);

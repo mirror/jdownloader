@@ -968,3 +968,7 @@ jd/plugins/hoster/CixUpCom.class
 jd/plugins/decrypter/MovzTo.class
 jd/plugins/hoster/DoneShareCom.class
 jd/plugins/hoster/VidHugeCom.class
+jd/plugins/hoster/MonsterUploadsEu.class
+jd/plugins/hoster/FileCosyCom.class
+jd/plugins/hoster/AzuShareNet.class
+jd/plugins/hoster/ShareatorNet.class
