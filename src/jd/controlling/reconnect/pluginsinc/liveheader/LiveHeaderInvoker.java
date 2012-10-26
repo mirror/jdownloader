@@ -2,6 +2,7 @@ package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -392,8 +393,24 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         return script;
     }
 
-    private String getModifiedVariable(String key) {
+    private String getModifiedVariable(String key) throws ReconnectException {
 
+        // random value
+        if (key.toLowerCase(Locale.ENGLISH).startsWith("random:")) {
+            try {
+                String[] params = new Regex(key, "random\\:(\\d+):(.+)").getRow(0);
+
+                String possiblechars = params[1];
+
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < Integer.parseInt(params[0]); i++) {
+                    sb.append(possiblechars.charAt((int) (Math.random() * possiblechars.length())));
+                }
+                return sb.toString();
+            } catch (Exception e) {
+                throw new ReconnectException(e);
+            }
+        }
         if (key.indexOf(":::") == -1 && this.headerProperties.containsKey(key)) { return this.headerProperties.get(key); }
         if (key.indexOf(":::") == -1) { return this.variables.get(key); }
         String ret = this.variables.get(key.substring(key.lastIndexOf(":::") + 3));
