@@ -64,18 +64,20 @@ public class DownloadPath implements Storable {
     public static void saveList(String absolutePath) {
         java.util.List<DownloadPath> history = JsonConfig.create(LinkgrabberSettings.class).getDownloadDestinationHistory();
         boolean found = false;
+        ArrayList<DownloadPath> newList = new ArrayList<DownloadPath>(history.size());
         for (DownloadPath pe : history) {
             if (pe != null && absolutePath != null && pe.getPath().equals(absolutePath)) {
                 pe.setTime(System.currentTimeMillis());
                 found = true;
                 break;
+            } else if (pe != null && absolutePath != null) {
+                newList.add(pe);
             }
         }
-        if (!found) {
-            if (absolutePath != null) history.add(new DownloadPath(absolutePath));
-        }
 
-        JsonConfig.create(LinkgrabberSettings.class).setDownloadDestinationHistory(Lists.unique(history));
+        if (absolutePath != null) newList.add(0, new DownloadPath(absolutePath));
+
+        JsonConfig.create(LinkgrabberSettings.class).setDownloadDestinationHistory(Lists.unique(newList));
 
     }
 }
