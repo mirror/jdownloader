@@ -220,7 +220,7 @@ public class UlozTo extends PluginForHost {
         dl.startDownload();
     }
 
-    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+    public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
         login(account);
         String dllink = parameter.getDownloadURL() + "?do=directDownload";
@@ -228,6 +228,10 @@ public class UlozTo extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML(">Nemáš dostatek kreditu pro neomezené stahování, doplnit kredit můžes kliknutím na tlačítko Dobít kredit")) {
+                logger.info("No traffic available!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -258,7 +262,7 @@ public class UlozTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String trafficleft = br.getRegex("href=\"http://(www\\.)?uloz\\.to/kredit\" title=\"([0-9\\.]+ (GB|MB))").getMatch(1);
+        final String trafficleft = br.getRegex("href=\"http://(www\\.)?uloz\\.to/kredit\" title=\"([0-9\\.]+ (GB|MB|B))").getMatch(1);
         if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         ai.setStatus("Premium User");
         account.setValid(true);

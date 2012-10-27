@@ -53,7 +53,7 @@ public class LiveFileOrg extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("Accept-Language", "en-us;q=0.5,en;de-de,de;q=0.3");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>The requested file is deleted or is not available for download|>Error 404 \\(File not found\\!\\))")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex fInfo = br.getRegex("<title>([^<>\"/]*?) \\(([^<>\"/]*?)\\)</title>x");
@@ -93,7 +93,7 @@ public class LiveFileOrg extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("File not found\\!<br>")) {
+            if (br.containsHTML("File not found\\!<br>|e>Server Error<")) {
                 logger.info("Detected file not found after captcha and waittime!");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

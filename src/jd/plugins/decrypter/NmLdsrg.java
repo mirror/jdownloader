@@ -16,10 +16,12 @@
 
 package jd.plugins.decrypter;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -27,7 +29,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "anime-loads.org" }, urls = { "http://[\\w\\.]*?anime\\-loads\\.org/(redirect/\\d+/[a-z0-9]+|media/\\d+)" }, flags = { 0 })
 public class NmLdsrg extends PluginForDecrypt {
@@ -53,7 +57,10 @@ public class NmLdsrg extends PluginForDecrypt {
             links.add(parameter);
         } else {
             br.getPage(parameter);
-            if (br.containsHTML("Link existiert nicht")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
+            if (br.containsHTML("Link existiert nicht")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             fpName = br.getRegex(":: (.*?)</span></h2>").getMatch(0);
             if (fpName == null) fpName = "No Title";
             String[] continueLinks = br.getRegex("\"(http://(www\\.)?anime\\-loads\\.org/redirect/\\d+/[a-z0-9]+)\"").getColumn(0);
@@ -70,24 +77,45 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Link offline: " + link);
                 continue;
             }
-            String dllink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"5;URL=(.*?)\" />").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("redirect=(http://.*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("txt.innerHTML = \\'<a href=\"(http[^\"]+)\" target=\"_top\">Skip this Ad</a>\\'").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("(https?://(www\\.)?crypt\\-it\\.com/[^\"]+)").getMatch(0);
-                    }
-                }
+            final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
+            final Browser ajax = br.cloneBrowser();
+            ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 3; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
+                ajax.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+                if (ajax.containsHTML("ok\":false")) {
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            if (ajax.containsHTML("ok\":false")) {
+                logger.info("Captcha wrong, stopping...");
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            String dllink = ajax.getRegex("\"response\":\"(http:[^<>\"]*?)\"").getMatch(0);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {
                 logger.info("Found a dead link: " + link);
                 logger.info("Mainlink: " + parameter);
                 continue;
             }
-            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink));
+            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
             dl.setSourcePluginPasswordList(passwords);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
             decryptedLinks.add(dl);
         }
         if (decryptedLinks.size() == 0) {
