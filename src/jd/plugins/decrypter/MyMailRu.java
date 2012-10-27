@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru/[^<>/\"]+/[^<>/\"]+/photo(\\?album_id=[a-z0-9\\-_]+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru(decrypted)?/[^<>/\"]+/[^<>/\"]+/photo(\\?album_id=[a-z0-9\\-_]+)?" }, flags = { 0 })
 public class MyMailRu extends PluginForDecrypt {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -38,7 +38,13 @@ public class MyMailRu extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        String parameter = param.toString();
+        boolean setPackagename = true;
+        if (parameter.contains("mail.rudecrypted/")) {
+            setPackagename = false;
+            parameter = parameter.replace("my.mail.rudecrypted/", "my.mail.ru/");
+        }
+
         br.getPage(parameter);
         final String username = new Regex(parameter, "http://(www\\.)?my.mail.ru/[^<>/\"]+/([^<>/\"]+)/.+").getMatch(1);
         final String dirname = new Regex(parameter, "http://(www\\.)?my.mail.ru/([^<>/\"]+)/[^<>/\"]+/.+").getMatch(1);
@@ -80,9 +86,10 @@ public class MyMailRu extends PluginForDecrypt {
                 offset += maxPicsPerSegment;
                 segment++;
             }
-            if (fpName != null) {
+            if (fpName != null && setPackagename) {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.setProperty("ALLOW_MERGE", true);
                 fp.addLinks(decryptedLinks);
             }
         } else {
@@ -97,7 +104,8 @@ public class MyMailRu extends PluginForDecrypt {
                 return null;
             }
             for (final String albumid : albumsAll) {
-                decryptedLinks.add(createDownloadlink("http://my.mail.ru/" + dirname + "/" + username + "/photo?album_id=" + albumid));
+                final DownloadLink dl = createDownloadlink("http://my.mail.rudecrypted/" + dirname + "/" + username + "/photo?album_id=" + albumid);
+                decryptedLinks.add(dl);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setProperty("ALLOW_MERGE", true);

@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(www\\.)?(fenxiang\\.qq\\.com/filedownload\\.php\\?code=[^<>\"#]+|urlxf\\.qq\\.com/\\?\\w+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "qq.com" }, urls = { "http://(qqdecrypted\\.com/\\d+|(www\\.)?fenxiang\\.qq\\.com/filedownload\\.php\\?code=[^<>\"#]+)" }, flags = { 0 })
 public class QqCom extends PluginForHost {
 
     public QqCom(final PluginWrapper wrapper) {
@@ -46,39 +46,48 @@ public class QqCom extends PluginForHost {
         return -1;
     }
 
+    private static final String DECRYPTEDLINK = "http://qqdecrypted\\.com/\\d+";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL());
-        if (link.getDownloadURL().matches("https?://urlxf\\.qq\\.com/\\?\\w+")) {
+        if (link.getDownloadURL().matches(DECRYPTEDLINK)) {
+            br.getPage(link.getStringProperty("mainlink", null));
+            if (br.containsHTML(">分享文件已过期或者链接错误，请确认后重试。<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            final String[][] linkInfo = br.getRegex("qhref=\"qqdl://(" + link.getStringProperty("qhref", null) + ")\" .*? filesize=\"(\\d+)\" filehash=\"([A-Z0-9]+)\" title=\"(" + link.getStringProperty("plainfilename", null) + ")\"").getMatches();
+            if (linkInfo == null || linkInfo.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            return AvailableStatus.TRUE;
+        } else {
             br.getPage(link.getDownloadURL());
-            String redirect = br.getRegex("window.location=\"(http[^\"]+)").getMatch(0);
-            if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            br.getPage(redirect);
-        }
-        if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("class=\"a_filename\" href=\"###\" title=\"([^<>\"]+)\"").getMatch(0);
+            if (link.getDownloadURL().matches("https?://urlxf\\.qq\\.com/\\?\\w+")) {
+                final String redirect = br.getRegex("window.location=\"(http[^\"]+)").getMatch(0);
+                if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(redirect);
+            }
+            if (br.containsHTML("(>分享文件已过期或者链接错误，请确认后重试。<|>想了解更多有关QQ旋风资源分享的信息，请访问 <a href=)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+            String filename = br.getRegex("filename:\"([^<>\"]+)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("filename=\"([^<>\"]+)\"").getMatch(0);
+                filename = br.getRegex("class=\"a_filename\" href=\"###\" title=\"([^<>\"]+)\"").getMatch(0);
                 if (filename == null) {
-                    filename = br.getRegex("<td id=\"inform_filename\" title=\"([^<>\"]+)\"").getMatch(0);
+                    filename = br.getRegex("filename=\"([^<>\"]+)\"").getMatch(0);
                     if (filename == null) {
-                        filename = br.getRegex("class=\"inform_wrap_box_important\" >([^<>\"]+)</td>").getMatch(0);
+                        filename = br.getRegex("<td id=\"inform_filename\" title=\"([^<>\"]+)\"").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("class=\"inform_wrap_box_important\" >([^<>\"]+)</td>").getMatch(0);
+                        }
                     }
                 }
             }
+            String filesize = br.getRegex("filesize:\"(\\d+)\"").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("<li>大小：([^<>\"]+)</li>").getMatch(0);
+            }
+            if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        String filesize = br.getRegex("filesize:\"(\\d+)\"").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("<li>大小：([^<>\"]+)</li>").getMatch(0);
-        }
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -86,6 +95,7 @@ public class QqCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         String dllink = null;
         requestFileInformation(downloadLink);
+        if (downloadLink.getDownloadURL().matches(DECRYPTEDLINK)) throw new PluginException(LinkStatus.ERROR_FATAL, "Not yet implemented!");
         String[] dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" dllink=\"(.*?)\" (.*?)=\"(.*?)\" filename=\"(.*?)\"></a>").getRow(0);
         if (dlValues == null) dlValues = br.getRegex("<a id=\"btn_normaldl\" class=\"btn_normal\".+ftnlink=\"([^\"]+)\" ftncookie=\"([^\"]+)\" filename=\"(.*?)\"></a>").getRow(0);
         if (dlValues == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }

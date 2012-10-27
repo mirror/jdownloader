@@ -158,15 +158,17 @@ public class YunFileCom extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        br.setFollowRedirects(false);
+        login(account, true);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/downfile/.*?)\"").getMatch(0);
+        final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
+        String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
-        if (dllink == null) {
+        if (dllink == null || vid1 == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setCookie(MAINPAGE, "vid1", vid1);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
