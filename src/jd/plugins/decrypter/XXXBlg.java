@@ -20,8 +20,8 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -59,12 +59,19 @@ public class XXXBlg extends PluginForDecrypt {
             String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
             if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
-            if (pagepiece == null) pagepiece = br.getRegex("table class=\"dltable\">.*?Download:</strong(.*?)</table").getMatch(0);
-            if (pagepiece == null) return null;
-            String[] links = HTMLParser.getHttpLinks(pagepiece, "");
-            if (links == null || links.length == 0) return null;
+            if (pagepiece == null) pagepiece = br.getRegex("<div class=\"entry\">(.*?)<div id=\"respond\">").getMatch(0);
+            if (pagepiece == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final String[] links = new Regex(pagepiece, "<a href=\"(http[^<>\"]*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             for (String link : links) {
-                DownloadLink dlink = createDownloadlink(link);
+                if (link.matches("http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|(blog|typ)/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)")) continue;
+                final DownloadLink dlink = createDownloadlink(link.replace("http://xxx-blog.to/../download/?", ""));
                 dlink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlink);
             }

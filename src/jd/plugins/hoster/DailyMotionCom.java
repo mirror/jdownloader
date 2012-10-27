@@ -71,7 +71,10 @@ public class DailyMotionCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+        // 404
         if (br.containsHTML("(<title>Dailymotion \\– 404 Not Found</title>|url\\(/images/404_background\\.jpg)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // 403
+        if (br.containsHTML("class=\"forbidden\">Access forbidden</h3>|>You don\\'t have permission to access the requested URL")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // We can't download livestreams
         if (br.containsHTML("DMSTREAMMODE=live")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String source = br.getRegex("\"sequence\":\"([^<>\"]*?)\"").getMatch(0);

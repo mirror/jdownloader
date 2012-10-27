@@ -58,7 +58,7 @@ public class FilePostCom extends PluginForHost {
     private boolean             showAccountCaptcha = false;
     private static final String FILEIDREGEX        = "filepost\\.com/files/(.+)";
     private static final String MAINPAGE           = "https://filepost.com/";
-    private static Object LOCK               = new Object();
+    private static Object       LOCK               = new Object();
     private static final String FREEBLOCKED        = "(>The file owner has limited free downloads of this file|premium membership is required to download this file\\.<)";
 
     public FilePostCom(PluginWrapper wrapper) {
@@ -86,7 +86,8 @@ public class FilePostCom extends PluginForHost {
                 int c = 0;
                 for (DownloadLink dl : links) {
                     /*
-                     * append fake filename, because api will not report anything else
+                     * append fake filename, because api will not report
+                     * anything else
                      */
                     if (c > 0) sb.append("%0D%0A");
                     sb.append(Encoding.urlEncode(dl.getDownloadURL()));
@@ -124,7 +125,8 @@ public class FilePostCom extends PluginForHost {
     /*
      * (non-Javadoc)
      * 
-     * @see jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
+     * @see
+     * jd.plugins.PluginForHost#correctDownloadLink(jd.plugins.DownloadLink)
      */
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
@@ -361,7 +363,8 @@ public class FilePostCom extends PluginForHost {
     }
 
     /**
-     * Important: Handling for password protected links is not included yet (only in handleFree)!
+     * Important: Handling for password protected links is not included yet
+     * (only in handleFree)!
      */
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
@@ -401,7 +404,9 @@ public class FilePostCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        // Connectionlimit not tested but user said it didn't work with 2
+        // connections
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

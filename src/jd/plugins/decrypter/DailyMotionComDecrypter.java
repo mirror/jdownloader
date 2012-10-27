@@ -35,7 +35,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(true);
         try {
             br.getPage(parameter);

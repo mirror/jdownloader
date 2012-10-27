@@ -46,7 +46,13 @@ public class MixoticNet extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(strParameter);
 
+        // Offline1
         if (br.containsHTML("(An error has occurred|The article cannot be found)")) {
+            logger.info("Link offline: " + strParameter);
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.containsHTML("Sorry, this page is not existing|<title>Error \\- Page not found</title>")) {
             logger.info("Link offline: " + strParameter);
             return decryptedLinks;
         }

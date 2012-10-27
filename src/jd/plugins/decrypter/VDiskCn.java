@@ -29,7 +29,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vdisk.cn" }, urls = { "http://(www\\.)?vdisk\\.cn/(?!down/|user|file|api)[a-z0-9]+" }, flags = { 0 })
 public class VDiskCn extends PluginForDecrypt {
 
     public VDiskCn(PluginWrapper wrapper) {
@@ -41,6 +41,10 @@ public class VDiskCn extends PluginForDecrypt {
         ArrayList<String> allPages = new ArrayList<String>();
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML(">找不到您需要的页面\\!<|可能您访问的内容已经删除，或您无权访问本页面。<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String[] pages = br.getRegex("<a href=\\'\\?tag=ALLFILES\\&p=(\\d+)\\'").getColumn(0);
         if (pages == null || pages.length == 0)
             allPages.add("1");

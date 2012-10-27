@@ -46,6 +46,41 @@ public class VidaruCom extends PluginForDecrypt {
             DownloadLink dl = createDownloadlink(externID);
             dl.setProperty("Referer", parameter);
             decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("izlesene\\.com/embedplayer\\.swf\\?video=(\\d+)\\'").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.izlesene.com/video/" + System.currentTimeMillis() + "/" + externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("shareUrl=(http%3A//[a-z0-9\\-_]+\\.yahoo\\.com/[^<>\"]*?)\\&\\'").getMatch(0);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("vidivodo\\.com/VideoPlayerShare\\.swf\\?u=([^<>\"]*?)\\'").getMatch(0);
+        if (externID != null) {
+            br.getPage("http://en.vidivodo.com/player/getxml?mediaid=" + externID + "&publisherid=vidivodoEmbed&type=");
+            externID = br.getRegex("<pagelink>(http://[^<>\"]*?)</pagelink>").getMatch(0);
+            if (externID == null && br.containsHTML("<\\?xml version=\"1\\.0\" encoding=\"UTF\\-8\" \\?>")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            if (externID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink(externID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        externID = br.getRegex("name=\\'movie\\' value=\\'http://(www\\.)?dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\\'").getMatch(1);
+        if (externID != null) {
+            final DownloadLink dl = createDownloadlink("http://www.dailymotion.com/video/" + externID + "_" + System.currentTimeMillis());
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         }
         // filename needed for all IDs below here
         if (filename == null) {

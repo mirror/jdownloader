@@ -497,10 +497,12 @@ public class VimeoCom extends PluginForHost {
         downloadLink.setUrlDownload(url);
         if (downloadLink.getStringProperty("Referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer"));
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
+        // For player.vimeo.com links
+        if (br.containsHTML("<title>Sorry</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
         handlePW(downloadLink, br, "http://vimeo.com/" + clipID + "/password");
         br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        if (br.containsHTML("Page not found")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Private Video<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. You have no permission to watch this video!"); }
         final String signature = br.getRegex("\"signature\":\"([a-z0-9]+)\"").getMatch(0);
         final String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);

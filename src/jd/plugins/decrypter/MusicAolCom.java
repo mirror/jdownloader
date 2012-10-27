@@ -41,13 +41,13 @@ public class MusicAolCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         br.getPage(parameter);
         final int cdNum = Integer.parseInt(new Regex(parameter, "(\\d+)").getMatch(0)) - 1;
-        final String feedName = br.getRegex("id=\"album_" + cdNum + "\" playlisturl=\"http://feeds\\.castfire\\.com/cdlp/all/aol/pls:([^<>\"]*?)\"").getMatch(0);
-        if (feedName == null) {
+        final String feed = br.getRegex("id=\"album_" + cdNum + "\" playlisturl=\"(http://[^<>\"]*?)\"").getMatch(0);
+        if (feed == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        br.getPage("http://feeds.castfire.com/cdlp/all/aol/pls:" + feedName + "?track1=stream&track2=Web+App&track3=AOL+Music+Web&callback=&_=" + System.currentTimeMillis());
-        String albumName = br.getRegex("\"album_name\":\"([^<>\"]*?)\"").getMatch(0);
+        br.getPage(feed);
+        String albumName = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         final String[][] content = br.getRegex("\"title\":\"([^<>\"]*?)\",\"url\":\"(http:[^<>\"]*?)\"").getMatches();
         if (content == null || content.length == 0 || albumName == null) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -63,6 +63,7 @@ public class MusicAolCom extends PluginForDecrypt {
             }
             final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setFinalFileName(albumName + " - " + Encoding.htmlDecode(scontent[0]) + ".flv");
+            dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();

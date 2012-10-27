@@ -40,9 +40,8 @@ public class JustinTvDecrypt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         // twitchtv belongs to justin.tv
-        br.setCookie("http://justin.tv", "language", "en");
-        br.setCookie("http://justin.tv", "mature_allowed", "true");
-        String parameter = param.toString().replaceAll("(de\\.)?(twitchtv\\.com|twitch\\.tv)", "justin.tv");
+        br.setCookie("http://justin.tv", "fl", "en-us");
+        String parameter = param.toString().replaceAll("(de\\.)?(twitchtv\\.com|twitch\\.tv)", "twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (parameter.contains("/videos")) {
@@ -60,10 +59,13 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 logger.info("Link offline: " + parameter);
                 return decryptedLinks;
             }
-            String filename = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"/>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<h2 class=\"clip_title\">(.*?)</h2>").getMatch(0);
-            br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
-            String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
+            String filename = br.getRegex("<h2 id=\\'broadcast_title\\'>([^<>\"]*?)</h2>").getMatch(0);
+            if (parameter.contains("/b/")) {
+                br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
+            } else {
+                br.getPage("http://api.justin.tv/api/broadcast/by_chapter/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
+            }
+            final String[] links = br.getRegex("<video_file_url>(http://[^<>\"]*?)</video_file_url>").getColumn(0);
             int counter = 1;
             if (links == null || links.length == 0 || filename == null) {
                 logger.warning("Decrypter broken: " + parameter);

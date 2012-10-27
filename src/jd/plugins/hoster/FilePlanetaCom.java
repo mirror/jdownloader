@@ -71,6 +71,10 @@ public class FilePlanetaCom extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload("http://fileplaneta.com/" + new Regex(link.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0));
+    }
+
     public FilePlanetaCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
@@ -156,7 +160,8 @@ public class FilePlanetaCom extends PluginForHost {
         }
 
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -184,7 +189,7 @@ public class FilePlanetaCom extends PluginForHost {
                 dlForm.put("code", code.toString());
                 logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
             } else if (correctedBR.contains("/captchas/")) {
-                logger.info("Detected captcha method \"Standard captcha\" for this host");
+                logger.info("Detected captcha method \"Standard captcha\"");
                 String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                 String captchaurl = null;
                 if (sitelinks == null || sitelinks.length == 0) {
@@ -205,7 +210,7 @@ public class FilePlanetaCom extends PluginForHost {
                 dlForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
-                logger.info("Detected captcha method \"Re Captcha\" for this host");
+                logger.info("Detected captcha method \"Re Captcha\"");
                 PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
                 jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
                 rc.setForm(dlForm);
@@ -221,6 +226,8 @@ public class FilePlanetaCom extends PluginForHost {
                 dlForm = rc.getForm();
                 /** wait time is often skippable for reCaptcha handling */
                 // skipWaittime = true;
+            } else if (correctedBR.contains("keycaptcha.com/swfs/cap.js'")) {
+                logger.info("Detected captcha method \"keycaptca\"");
             }
             /* Captcha END */
             if (password) passCode = handlePassword(passCode, dlForm, downloadLink);

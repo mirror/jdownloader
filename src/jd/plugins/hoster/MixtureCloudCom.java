@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,6 +35,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -155,10 +157,24 @@ public class MixtureCloudCom extends PluginForHost {
                 br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
                 br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.getPage("https://www.mixturecloud.com/login");
                 final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("https://www.mixturecloud.com/login", "back=&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                String postData = "back=https%3A%2F%2Fwww.mixturecloud.com%2Fpregister&securecode=" + Encoding.urlEncode(secCode) + "&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass());
+                // Check if we have to enter a login captcha
+                final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                if (rcID != null) {
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setId(rcID);
+                    rc.load();
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "mixturecloud.com", "http://mixturecloud.com", true);
+                    final String c = getCaptchaCode(cf, dummyLink);
+                    postData += "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c);
+                }
+                br.postPage("https://www.mixturecloud.com/login", postData);
                 if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 if (!br.containsHTML(">Ihr Konto ist bereits unbegrenzt") && !br.containsHTML(">Votre compte est déjà Illimité")) {
                     logger.info("Unsupported accounttype!");

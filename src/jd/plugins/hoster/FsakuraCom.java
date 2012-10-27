@@ -374,14 +374,7 @@ public class FsakuraCom extends PluginForHost {
     }
 
     public String getDllink() {
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = new Regex(correctedBR, "id=\"link_download\" onClick=\"this.select\\(\\);\" value=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://fs\\d+\\.fsakura\\.com/files/\\d+/[a-z0-9]{12}/[^<>\"]*?)\"").getMatch(0);
-            }
-        }
-        return dllink;
+        return new Regex(correctedBR, "\"(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|[a-z0-9]+\\." + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/\\d+/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
     }
 
     private void getPage(String page) throws Exception {

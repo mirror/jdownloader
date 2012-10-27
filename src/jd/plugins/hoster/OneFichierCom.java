@@ -47,7 +47,7 @@ public class OneFichierCom extends PluginForHost {
 
     private static AtomicInteger maxPrem        = new AtomicInteger(1);
     private static final String  PASSWORDTEXT   = "(Accessing this file is protected by password|Please put it on the box bellow|Veuillez le saisir dans la case ci-dessous)";
-    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download)";
+    private static final String  IPBLOCKEDTEXTS = "(/>Téléchargements en cours|>veuillez patienter avant de télécharger un autre fichier|>You already downloading (some|a) file|>You can download only one file at a time|>Please wait a few seconds before downloading new ones|>You must wait for another download|Without premium status, you can download only one file at a time)";
     private static final String  FREELINK       = "freeLink";
     private static final String  PREMLINK       = "premLink";
     private static final String  SSL_CONNECTION = "SSL_CONNECTION";
@@ -82,7 +82,7 @@ public class OneFichierCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
             return AvailableStatus.UNCHECKABLE;
         }
-        String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+);(\\d+)").getMatches();
+        final String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+);(\\d+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Available Status broken for link");
             return null;
@@ -193,12 +193,14 @@ public class OneFichierCom extends PluginForHost {
         br.getPage("https://1fichier.com/console/account.pl?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
         String timeStamp = br.getRegex("(\\d+)").getMatch(0);
         String freeCredits = br.getRegex("0[\r\n]+([0-9\\.]+)").getMatch(0);
-        if (timeStamp == null || "error".equalsIgnoreCase(timeStamp)) {
+        // Use site login/site download if either API is not working or API says
+        // that there are no credits available
+        if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
              * Only used if the API fails and is wrong but that usually doesn't
              * happen!
              */
-            logger.info("Username/Password invalid via API, trying non-API login");
+            logger.info("Using site login because API is either wrong or no free credits...");
             br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
             final String logincheck = br.getCookie("http://1fichier.com/", "SID");
             if (logincheck == null || logincheck.equals("")) {
