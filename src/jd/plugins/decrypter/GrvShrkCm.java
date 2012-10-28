@@ -40,7 +40,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/(#(\\!|%21)?/)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grooveshark.com" }, urls = { "http://(listen\\.)?grooveshark\\.com/([#!/%21]+)?((album|artist|playlist|s|user)/.*?/([a-zA-z0-9]+|\\d+)(/music/favorites|/similar)?|popular)" }, flags = { 0 })
 public class GrvShrkCm extends PluginForDecrypt {
 
     private String                  LISTEN  = "http://grooveshark.com/";
@@ -93,7 +93,7 @@ public class GrvShrkCm extends PluginForDecrypt {
             return null;
         }
 
-        parameter = parameter.replace("http://listen.", "http://").replace("/#%21/", "/#!/");
+        parameter = parameter.replace("http://listen.", "http://").replace("/#%21/", "/#!/").replaceAll("/#/", "/");
         /* single */
         if (parameter.contains("/s/")) {
             parameter = parameter.replaceFirst(LISTEN, "http://grooveshark.viajd/");
