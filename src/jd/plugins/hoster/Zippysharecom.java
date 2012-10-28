@@ -144,8 +144,9 @@ public class Zippysharecom extends PluginForHost {
                 math = math.replaceAll("document\\.getElementById\\('dlbutton'\\)\\.|\r?\n", "");
                 if (DLLINK != null && math != null) {
                     final String var = new Regex(DLLINK, "\"\\+(.*?)\\+\"").getMatch(0);
-                    if (var != null) {
-                        math += var;
+                    final String varZ = new Regex(math, "\"\\+(.*?)\\+\"").getMatch(0);
+                    if (varZ != null) {
+                        math += varZ;
                     }
                     final String data = execJS(math, true);
                     if (DLLINK.contains(var)) {
