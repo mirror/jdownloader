@@ -67,7 +67,6 @@ public class TwojLimitPl extends PluginForHost {
             } else {
                 expired = false;
             }
-            System.out.println("traffic: " + GetTrasferLeft(br.toString()));
             if (GetTrasferLeft(br.toString()) > 10) {
                 expired = false;
             }
@@ -195,7 +194,6 @@ public class TwojLimitPl extends PluginForHost {
         String genlink = br.postPage("http://crypt.twojlimit.pl", postData);
 
         // link.setProperty("apilink", response);
-        System.out.println("genlink: " + genlink);
         if (!(genlink.startsWith("http://") || genlink.startsWith("https://"))) {
             logger.severe("Twojlimit.pl(Error): " + genlink);
             /*
