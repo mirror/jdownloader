@@ -67,6 +67,10 @@ public class TwojLimitPl extends PluginForHost {
             } else {
                 expired = false;
             }
+            System.out.println("traffic: " + GetTrasferLeft(br.toString()));
+            if (GetTrasferLeft(br.toString()) > 10) {
+                expired = false;
+            }
         } catch (final Exception e) {
         }
         boolean invalid = false;
@@ -135,7 +139,11 @@ public class TwojLimitPl extends PluginForHost {
         } else {
             ac.setExpired(false);
             if (validUntil != null) {
-                ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
+                if (validUntil.trim().equals("expire=00")) {
+                    ac.setValidUntil(-1);
+                } else {
+                    ac.setValidUntil(TimeFormatter.getMilliSeconds(validUntil));
+                }
             }
 
         }
