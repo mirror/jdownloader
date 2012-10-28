@@ -37,7 +37,14 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
         br.getPage(parameter);
+        if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("liveleak.com/", "liveleakdecrypted.com/"));
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
         String externID = br.getRegex("\"(http://(www\\.)?prochan\\.com/embed\\?f=[^<>\"/]*?)\"").getMatch(0);
         if (externID != null) {
             br.getPage(Encoding.htmlDecode(externID));
@@ -52,6 +59,11 @@ public class LiveLeakComDecrypter extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return decryptedLinks;
             }
+            decryptedLinks.add(createDownloadlink(externID));
+            return decryptedLinks;
+        }
+        externID = br.getRegex("\"(http://(www\\.)?youtube\\.com/embed/[^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
             decryptedLinks.add(createDownloadlink(externID));
             return decryptedLinks;
         }

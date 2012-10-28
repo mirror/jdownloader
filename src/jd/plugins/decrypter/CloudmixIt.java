@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,7 +38,23 @@ public class CloudmixIt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(false);
-        br.getPage("http://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)").getMatch(0) + "/download?client_id=apigee");
+
+        // In case the link redirects to the finallink
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection("http://api.soundcloud.com/tracks/" + new Regex(parameter, "(\\d+)").getMatch(0) + "/download?client_id=apigee");
+            if (con.getResponseCode() == 404) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
+
         final String finallink = br.getRedirectLocation();
         if (finallink == null) {
             logger.warning("Decrypter broken for link: " + parameter);

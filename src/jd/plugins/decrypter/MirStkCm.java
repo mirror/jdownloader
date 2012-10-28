@@ -70,7 +70,7 @@ public class MirStkCm extends PluginForDecrypt {
         br.getPage(parameter);
         if (br.containsHTML("(?i)>(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
-            return null;
+            return decryptedLinks;
         }
         br.setFollowRedirects(false);
         String finallink = null;

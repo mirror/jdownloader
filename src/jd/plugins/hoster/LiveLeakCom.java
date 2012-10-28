@@ -56,14 +56,25 @@ public class LiveLeakCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.setCookie("http://liveleak.com/", "liveleak_safe_mode", "0");
         br.getPage(downloadLink.getDownloadURL());
+        // Offline
         if (br.containsHTML("(>Item not found|<title>LiveLeak\\.com \\- </title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // Abused
+        if (br.containsHTML(">This item has been deleted because of a possible violation of our terms of service")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>LiveLeak\\.com \\- (.*?)</title>").getMatch(0);
-        String ext = ".mp4";
-        DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
-        if (DLLINK == null) {
-            ext = ".flv";
-            DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
+        String ext = null;
+        // Differ between pictures and videos
+        if (br.containsHTML("player\\.swf\"")) {
+            ext = ".mp4";
+            DLLINK = br.getRegex("hd_file_url=(http[^<>\"]+)\\&preview_image_url=").getMatch(0);
+            if (DLLINK == null) {
+                ext = ".flv";
+                DLLINK = br.getRegex("file_url=(http[^<>\"]+)\\&").getMatch(0);
+            }
+        } else {
+            ext = ".jpg";
+            DLLINK = br.getRegex("<div id=\"body_text\"><p><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);

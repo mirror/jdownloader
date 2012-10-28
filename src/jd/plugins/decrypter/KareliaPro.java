@@ -38,6 +38,10 @@ public class KareliaPro extends PluginForDecrypt {
         if (parameter.matches("http://(www\\.)?disk\\.karelia\\.pro/fast/[A-Za-z0-9]+")) {
             br.getPage(parameter);
             final String[] links = br.getRegex("18px center no\\-repeat;\">[\t\n\r ]+<a href=\"(http://disk\\.karelia\\.pro/fast/[^<>\"]*?)\"").getColumn(0);
+            if ((links == null || links.length == 0) && !br.containsHTML("\"diskFile\"")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;

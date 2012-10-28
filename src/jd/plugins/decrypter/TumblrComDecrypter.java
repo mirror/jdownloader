@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -65,45 +66,49 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 } catch (Throwable e) {
                 }
             }
-            final String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            if (fpName == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            fpName = Encoding.htmlDecode(fpName.trim());
 
-            // final String[][] regexes = { {
-            // "<meta (property=\"og:image\"|name=\"twitter:image\") content=\"(http://[^<>\"]*?)\"",
-            // "1" }, {
-            // "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"",
-            // "0" }, {
-            // "src=\\\\x22(http://[\\w\\.\\-]*?\\.tumblr\\.com/video_file/\\d+/tumblr_[a-z0-9]+)\\\\x22",
-            // "0" } };
-            // for (String[] regex : regexes) {
-            // final String[] links = br.getRegex(Pattern.compile(regex[0],
-            // Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
-            // if (links != null && links.length > 0) {
-            // for (final String piclink : links) {
-            // final DownloadLink dl = createDownloadlink("directhttp://" +
-            // piclink);
-            // try {
-            // distribute(dl);
-            // } catch (final Exception e) {
-            // // Not available in 0.851 Stable
-            // }
-            // decryptedLinks.add(dl);
-            // }
-            // }
-            // }
-            final String article = br.getRegex("<article id=\"post\\-\\d+\"(.*?)</article>").getMatch(0);
-            if (article != null) {
-                final String[] links = br.getRegex(Pattern.compile("\"(https?://(www\\.)?(?![a-z0-9]+\\.media\\.tumblr\\.com/avatar.*?|static\\.tumblr.*?)[^<>\"]*?\\.(jpg|png|jpeg))\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                if (links != null && links.length > 0) {
-                    for (final String piclink : links) {
-                        final DownloadLink dl = createDownloadlink("directhttp://" + piclink);
-                        try {
-                            distribute(dl);
-                        } catch (final Exception e) {
-                            // Not available in 0.851 Stable
+            boolean stop = false;
+            final String[][] mainRegexes = { { "class=\"post\"(.*?)class=\"(?!media)[a-z0-9]+\"", "0" }, { "<article.*?id=\"post\\-\\d+\"(.*?)</article>", "0" } };
+            for (final String[] textRegex : mainRegexes) {
+                final String post = br.getRegex(textRegex[0]).getMatch(Integer.parseInt(textRegex[1]));
+                if (post != null) {
+                    final String[][] regexes = { { "\"(https?://(www\\.)?(?![a-z0-9]+\\.media\\.tumblr\\.com/avatar.*?|static\\.tumblr.*?)[^<>\"]*?\\.(jpg|png|jpeg))\"", "0" }, { "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"", "0" } };
+                    for (String[] regex : regexes) {
+                        final String[] links = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
+                        if (links != null && links.length > 0) {
+                            // Decrypt last link = Link with the best quality
+                            final DownloadLink dl = createDownloadlink("directhttp://" + links[links.length - 1]);
+                            try {
+                                distribute(dl);
+                            } catch (final Exception e) {
+                                // Not available in 0.851 Stable
+                            }
+                            decryptedLinks.add(dl);
+                            stop = true;
                         }
-                        decryptedLinks.add(dl);
+                        String externID = new Regex(post, "(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
+                        if (externID != null) {
+                            br.getPage(externID);
+                            externID = br.getRegex("<src>(http://[^<>\"]*?\\.flv)</src>").getMatch(0);
+                            if (externID == null) {
+                                logger.warning("Decrypter broken for link: " + parameter);
+                                return null;
+                            }
+                            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                            dl.setFinalFileName(fpName + ".flv");
+                            decryptedLinks.add(dl);
+                            stop = true;
+                            break;
+                        }
                     }
                 }
+                if (stop) break;
             }
 
             if (decryptedLinks == null || decryptedLinks.size() == 0) {

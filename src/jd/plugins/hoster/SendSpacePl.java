@@ -48,12 +48,26 @@ public class SendSpacePl extends PluginForHost {
     }
 
     @Override
+    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(">Podany plik nie istnieje lub został usunięty.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- download\\. Darmowy hosting plików\\.</title>").getMatch(0);
+        final String filesize = br.getRegex("\">Rozmiar pliku:</span></div>.*?<div class=\"info\"><span class=\"blue4\">(.*?)</span></div>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         String dlLink = br.getRegex("\"(http://www\\.sendspace\\.pl/download/.*?)\"").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -71,19 +85,6 @@ public class SendSpacePl extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Podany plik nie istnieje lub został usunięty.<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("style=\"font-size: 12px;\"><b>(.*?)</b>").getMatch(0);
-        String filesize = br.getRegex("\">Rozmiar pliku:</span></div>.*?<div class=\"info\"><span class=\"blue4\">(.*?)</span></div>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
-        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
     }
 
     @Override

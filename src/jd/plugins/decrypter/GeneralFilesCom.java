@@ -20,9 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "general-files.com" }, urls = { "http://(www\\.)?general\\-files\\.com/download/[a-z0-9]+/[^<>\"/]*?\\.html" }, flags = { 0 })
@@ -36,20 +40,47 @@ public class GeneralFilesCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        final String[] links = br.getRegex("\"(/go/\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        String fpName = br.getRegex("<h4 class=\"file\\-header\\-2\">([^<>\"]*?)</h4>").getMatch(0);
+        if (fpName == null) fpName = new Regex(parameter, "general\\-files\\.com/download/[a-z0-9]+/([^<>\"/]*?)\\.html").getMatch(0);
+        fpName = Encoding.htmlDecode(fpName.trim());
+        if (br.containsHTML(">File was removed from filehosting<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        final String goLink = br.getRegex("\"(/go/\\d+)\"").getMatch(0);
+        if (goLink == null) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        for (String singleLink : links) {
-            br.getPage("http://www.general-files.com" + singleLink);
-            final String finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
-            if (finallink == null) {
+        if (br.containsHTML(">Please enter captcha and")) {
+            if (!br.containsHTML("/captcha/")) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            for (int i = 1; i <= 3; i++) {
+                final String c = getCaptchaCode("http://www.general-files.com/captcha/" + new Regex(goLink, "(\\d+)$").getMatch(0), param);
+                br.postPage(goLink, "captcha=" + Encoding.urlEncode(c));
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().matches("http://(www\\.)?general\\-files\\.com/download/[a-z0-9]+/[^<>\"/]*?\\.html")) {
+                    br.getPage(br.getRedirectLocation());
+                    continue;
+                }
+                break;
+            }
+            if (br.containsHTML(">Please enter captcha and")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        } else {
+            br.getPage("http://www.general-files.com" + goLink);
         }
+        final String finallink = br.getRegex("window\\.location\\.replace\\(\\'(http[^<>\"]*?)\\'\\)").getMatch(0);
+        if (finallink == null) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final DownloadLink dl = createDownloadlink(finallink);
+        decryptedLinks.add(dl);
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(fpName);
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 }

@@ -67,7 +67,7 @@ public class FilePlanetaCom extends PluginForHost {
 
     // XfileSharingProBasic Version 2.5.2.2, added special download handling
     // (ajax) & special FNF handling
-    // captchatype: null
+    // captchatype: keyCaptcha
     @Override
     public String getAGBLink() {
         return COOKIE_HOST + "/tos.html";
@@ -162,7 +162,8 @@ public class FilePlanetaCom extends PluginForHost {
         }
 
         /**
-         * Video links can already be found here, if a link is found here we can skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can
+         * skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -535,7 +536,7 @@ public class FilePlanetaCom extends PluginForHost {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (correctedBR.contains("Wrong captcha")) {
+            if (correctedBR.contains("Wrong captcha") || correctedBR.contains("keycaptcha.com/")) {
                 logger.warning("Wrong captcha or wrong password!");
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }

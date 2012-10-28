@@ -188,7 +188,10 @@ public class SafeUrlMe extends PluginForDecrypt {
                 break;
             }
             if (!"notDetected".equals(cType) && br.containsHTML(captchaRegex.get(cType)) || br.containsHTML("<strong>Prove you are human</strong>")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
-            if (br.containsHTML(">All links are dead\\.<|>Links dead<")) { throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore.")); }
+            if (br.containsHTML(">All links are dead\\.<|>Links dead<")) {
+                logger.info("All links are offline for link: " + parameter);
+                return decryptedLinks;
+            }
 
             /* Webprotection decryption */
             for (String s : br.getRegex("<textarea class=\"links\\-plain\\-text\"(.*?)</textarea>").getColumn(0)) {
