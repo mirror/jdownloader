@@ -71,6 +71,8 @@ public class DownloadFolderChooserDialog extends ExtFileChooserDialog {
                 return NewTheme.I().getIcon("audio", 18);
             } else if (((HomeFolder) f).getName().equals(HomeFolder.PICTURES)) {
                 return NewTheme.I().getIcon("image", 18);
+            } else if (((HomeFolder) f).getName().equals(HomeFolder.DOCUMENTS)) {
+                return NewTheme.I().getIcon("document", 18);
             } else if (((HomeFolder) f).getName().equals(HomeFolder.VIDEOS)) {
                 //
                 return NewTheme.I().getIcon("video", 18);
