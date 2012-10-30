@@ -41,7 +41,12 @@ public class FotoAlbumEE extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String parameter = param.toString();
         br.getPage(parameter);
-        System.out.println(br.toString());
+
+        if (br.containsHTML("Sellist albumit ei ole")) {
+            logger.info("Link offline");
+            return decryptedLinks;
+        }
+
         String nextPage = null;
         String[] sets = null;
         final String setName = br.getRegex("<a href=\"/photos/[^<>\"/]*?/sets/\\d+\">[^<>\"]*?</a>([^<>\"]*?)</h1>").getMatch(0);
@@ -50,7 +55,7 @@ public class FotoAlbumEE extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(setName.trim()));
         }
-        if (parameter.matches(".*?fotoalbum\\.ee/photos/[^<>\"\\'/]+/(sets(/)?)?")) {
+        if (parameter.matches(".*?fotoalbum\\.ee/photos/[^<>\"\\'/]+(/sets(/)?)?")) {
             sets = br.getRegex("\"(/photos/[^<>\"\\'/]+/sets/\\d+)\"").getColumn(0);
             for (String set : sets) {
                 decryptedLinks.add(createDownloadlink("http://fotoalbum.ee" + set));

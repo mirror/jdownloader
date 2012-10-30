@@ -88,17 +88,19 @@ public class AlbumEE extends PluginForDecrypt {
         String pictureURL = null;
         String filename = null;
         DownloadLink dlLink;
-        progress.setRange(picLinks.size());
         for (String picLink : picLinks) {
             br.getPage(picLink);
             filename = br.getRegex(fileNamePattern).getMatch(1);
             pictureURL = br.getRegex(pictureURLPattern).getMatch(0);
+            if (pictureURL == null && !br.containsHTML("<a name=\"browse\">")) {
+                logger.info("Found an offline link: " + parameter);
+                continue;
+            }
             if (pictureURL == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dlLink = createDownloadlink(pictureURL);
             if (filename != null) dlLink.setFinalFileName(filename);
             if (fp != null) fp.add(dlLink);
             decryptedLinks.add(dlLink);
-            progress.increase(1);
         }
         return decryptedLinks;
     }

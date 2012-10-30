@@ -381,9 +381,15 @@ public class FileStayCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "This direct link will be available for your IP next \\d+ hours<br><br>\\-\\->[\t\n\r ]+<a style=\"margin\\-top:15px;\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "\"(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|[a-z0-9]+\\." + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filestay\\.com:\\d+/d/[a-z0-9]+/[^<>\"/]*?)\"").getMatch(0);
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
+                    }
+                }
             }
         }
         return dllink;

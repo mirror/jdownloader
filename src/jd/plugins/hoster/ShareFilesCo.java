@@ -209,7 +209,7 @@ public class ShareFilesCo extends PluginForHost {
                     logger.warning("Standard captcha captchahandling broken!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, downloadLink);
+                String code = getCaptchaCode(captchaurl, downloadLink);
                 dlForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
             } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {

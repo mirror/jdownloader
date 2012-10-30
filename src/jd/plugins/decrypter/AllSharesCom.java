@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -40,7 +41,20 @@ public class AllSharesCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(parameter);
+            if (con.getResponseCode() == 410) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (Throwable e) {
+            }
+        }
         if (br.containsHTML("=\"/images/deleted\\.png\"")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

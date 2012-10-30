@@ -93,10 +93,7 @@ public class LiveFileOrg extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("File not found\\!<br>|e>Server Error<")) {
-                logger.info("Detected file not found after captcha and waittime!");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            if (br.containsHTML("File not found\\!<br>|e>Server Error<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         downloadLink.setProperty("freelink", dllink);

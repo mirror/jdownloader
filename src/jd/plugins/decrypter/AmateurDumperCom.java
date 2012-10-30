@@ -38,6 +38,10 @@ public class AmateurDumperCom extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String parameter = param.toString();
         br.getPage(parameter);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link broken: " + parameter);
+            return decryptedLinks;
+        }
         String tempID = br.getRedirectLocation();
         if (tempID != null) {
             DownloadLink dl = createDownloadlink(tempID);
@@ -77,7 +81,7 @@ public class AmateurDumperCom extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-        tempID = br.getRegex("http://flash\\.serious\\-cash\\.com/flvplayer\\.swf\" width=\"\\d+\" height=\"\\d+\" allowfullscreen=\"true\" flashvars=\"file=(.*?)\\&").getMatch(0);
+        tempID = br.getRegex("flash\\.serious\\-cash\\.com/flvplayer\\.swf\".*?flashvars=\"\\&file=([^<>\"]*?)\\&").getMatch(0);
         if (tempID != null) {
             DownloadLink dl = createDownloadlink("directhttp://http://flash.serious-cash.com/" + tempID + ".flv");
             decryptedLinks.add(dl);
@@ -126,6 +130,10 @@ public class AmateurDumperCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
+        }
+        if (br.containsHTML("\"http://(www\\.)?seemybucks\\.com/flvexporter/flvplayer\\.swf\"")) {
+            logger.info("Link broken: " + parameter);
+            return decryptedLinks;
         }
         if (tempID == null) {
             logger.warning("Decrypter broken for link: " + parameter);

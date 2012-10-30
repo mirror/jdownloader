@@ -22,13 +22,11 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-safe.net" }, urls = { "http://(www\\.)?link\\-safe\\.net/folder/[a-z0-9]+\\-[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "link-safe.net" }, urls = { "http://(www\\.)?link\\-safe\\.net/(folder/[a-z0-9]+\\-[a-z0-9]+|out/[a-z0-9]+\\-[a-z0-9]+/\\d+)" }, flags = { 0 })
 public class LnkSafeNet extends PluginForDecrypt {
 
     public LnkSafeNet(PluginWrapper wrapper) {
@@ -40,20 +38,45 @@ public class LnkSafeNet extends PluginForDecrypt {
         String parameter = param.toString();
         br.setCustomCharset("windows-1251");
         br.getPage(parameter);
-        if (br.containsHTML(">ID ссылки является недействительным\\. Пожалуйста, проверьте вашу ссылку")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] links = br.getRegex(":center;\"><a href=\"(http://.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) links = br.getRegex("\"(http://link\\-safe\\.net/out/.*?)\"").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        progress.setRange(links.length);
-        for (String aLink : links) {
-            br.getPage(aLink);
-            String finallink = br.getRegex("src=\"(.*?)\"").getMatch(0);
-            if (finallink == null) return null;
+        if (parameter.matches("http://(www\\.)?link\\-safe\\.net/out/[a-z0-9]+\\-[a-z0-9]+/\\d+")) {
+            if (br.containsHTML("<b>Fehler")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            String finallink = decryptSingle();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
             finallink = Encoding.htmlDecode(finallink);
             decryptedLinks.add(createDownloadlink(finallink));
-            progress.increase(1);
+        } else {
+            if (br.containsHTML(">ID ссылки является недействительным\\. Пожалуйста, проверьте вашу ссылку")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
+            String[] links = br.getRegex(":center;\"><a href=\"(http://.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) links = br.getRegex("\"(http://link\\-safe\\.net/out/.*?)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            for (String aLink : links) {
+                br.getPage(aLink);
+                String finallink = decryptSingle();
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                finallink = Encoding.htmlDecode(finallink);
+                decryptedLinks.add(createDownloadlink(finallink));
+            }
         }
         return decryptedLinks;
+    }
+
+    private String decryptSingle() {
+        return br.getRegex("src=\"(.*?)\"").getMatch(0);
     }
 
 }

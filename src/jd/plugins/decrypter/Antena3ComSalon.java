@@ -38,7 +38,13 @@ public class Antena3ComSalon extends PluginForDecrypt {
         if (html.contains("<h1>¡Uy\\! No encontramos la página que buscas\\.</h1>")) return decryptedLinks;
         String xmlURL = "http://www.antena3.com" + new Regex(html, "player_capitulo\\.xml=\\'(.*?)\\';").getMatch(0);
         br.getPage(xmlURL);
+        // Offline1
         if (br.containsHTML(">El contenido al que estás intentando acceder ya no está disponible")) {
+            logger.info("Link offline: " + link.toString());
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.getURL().equals("http://www.antena3.comnull/")) {
             logger.info("Link offline: " + link.toString());
             return decryptedLinks;
         }
@@ -50,7 +56,7 @@ public class Antena3ComSalon extends PluginForDecrypt {
         for (String sdl : links) {
             if (sdl.contains(".mp4")) {
                 sdl = "http://desprogresiva.antena3.com/" + sdl.replace("<![CDATA[", "").replace("]]>", "");
-                DownloadLink dl = createDownloadlink(sdl);
+                final DownloadLink dl = createDownloadlink(sdl);
                 dl.setName(br.getRegex("<descripcion>(.*?)</descripcion>").getMatch(0).replace("<![CDATA[", "").replace("]]>", "") + " - " + dl.getName());
 
                 decryptedLinks.add(dl);

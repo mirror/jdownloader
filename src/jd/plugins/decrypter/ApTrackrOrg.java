@@ -41,6 +41,10 @@ public class ApTrackrOrg extends PluginForDecrypt {
         String site = new Regex(parameter, "https?://([^/]+)").getMatch(0);
         br.setFollowRedirects(false);
         br.getPage(parameter);
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         for (int i = 0; i <= 5; i++) {
             String captchaLink = br.getRegex("\"(https?://" + site + "/captcha\\.php\\?captchakey=[A-Za-z0-9_\\-]+)\"").getMatch(0);
             if (captchaLink == null) captchaLink = br.getRegex("<img width=\"140px\" src=\"(https?://" + site + "/[^<>\"\\']+)\"").getMatch(0);

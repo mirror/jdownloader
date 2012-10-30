@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/[a-z0-9\\-]+(/\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gogoanime.com" }, urls = { "http://(www\\.)?gogoanime\\.com/(?!category|thumbs|sitemap|img)[a-z0-9\\-]+(/\\d+)?" }, flags = { 0 })
 public class GogoanimeCom extends PluginForDecrypt {
 
     public GogoanimeCom(PluginWrapper wrapper) {
@@ -39,7 +39,19 @@ public class GogoanimeCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.getPage(parameter);
+        br.setFollowRedirects(true);
+        try {
+            br.getPage(parameter);
+        } catch (final Exception e) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+
+        if (br.containsHTML("Oops\\! Page Not Found<")) {
+            logger.info("This link is invalid: " + parameter);
+            return decryptedLinks;
+        }
+
         final String[] links = br.getRegex("<iframe.*?src=(\"|\\')(http[^<>\"]*?)(\"|\\')").getColumn(1);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

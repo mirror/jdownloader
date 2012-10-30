@@ -64,8 +64,8 @@ public class RepoFileCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:
-    // non account: chunk * maxdl
-    // free account:
+    // non account: 1 * 20
+    // free account: untested, set same limits as for FREE
     // premium account:
     // protocol: no https
     // captchatype: null

@@ -40,7 +40,7 @@ public class AllMscFindCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        if (br.containsHTML(">File was removed from filehosting")) {
+        if (br.containsHTML(">File was removed")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }

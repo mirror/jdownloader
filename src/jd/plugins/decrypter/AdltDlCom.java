@@ -16,12 +16,12 @@
 
 package jd.plugins.decrypter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -29,11 +29,8 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
-import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultddl.com" }, urls = { "http://(www\\.)?adultddl\\.com/\\d{4}/\\d{2}/\\d{2}/[^<>\"\\'/]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "adultddl.ws" }, urls = { "http://(www\\.)?adultddl\\.(com|ws)/\\d{4}/\\d{2}/\\d{2}/[^<>\"\\'/]+" }, flags = { 0 })
 public class AdltDlCom extends PluginForDecrypt {
 
     public AdltDlCom(PluginWrapper wrapper) {
@@ -42,39 +39,42 @@ public class AdltDlCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.toString().replace("adultddl.com/", "adultddl.ws/");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         String fpName = br.getRegex(" title=\"Comment on ([^<>\"\\']+)\"").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>([^<>\"\\']+) \\| AdultDDL</title>").getMatch(0);
         final String streamLink = br.getRegex("\\'(http://(www\\.)?putlocker\\.com/embed/[A-Z0-9]+)\\'").getMatch(0);
         if (streamLink != null) decryptedLinks.add(createDownloadlink(streamLink));
-        final String captchaSite = br.getRegex("\\'(http://secure\\.adultddl\\.com/\\?decrypt=\\d+)\\'").getMatch(0);
-        if (captchaSite == null) {
+        final String[] cryptedLinks = br.getRegex("\\'(http://secure\\.adultddl\\.ws/\\?decrypt=\\d+)\\'").getColumn(0);
+        if (cryptedLinks == null || cryptedLinks.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        for (int i = 0; i <= 5; i++) {
-            br.getPage(captchaSite);
-            rc.parse();
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, param);
-            rc.setCode(c);
-            if (br.containsHTML("(The CAPTCHA wasn\\'t entered correctly\\. Please go back and try again|incorrect\\-captcha\\-sol)")) continue;
-            break;
-        }
-        if (br.containsHTML("(The CAPTCHA wasn\\'t entered correctly\\. Please go back and try again|incorrect\\-captcha\\-sol)")) throw new DecrypterException(DecrypterException.CAPTCHA);
-        String[] links = HTMLParser.getHttpLinks(br.toString(), "");
-        if ((links == null || links.length == 0) && streamLink == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        if (links != null && links.length != 0) {
-            for (String singleLink : links)
-                if (!singleLink.contains("adultddl.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+        for (final String cryptedLink : cryptedLinks) {
+            final String cryptID = new Regex(cryptedLink, "(\\d+)$").getMatch(0);
+            for (int i = 1; i <= 3; i++) {
+                br.postPage("http://secure.adultddl.ws/captcha.php", "submit=Click+Here&decrypt=" + cryptID);
+                final String cLnk = br.getRegex("\\'(/securimage/securimage_show\\.php\\?\\d+)\\'").getMatch(0);
+                if (cLnk == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final String c = getCaptchaCode("http://secure.adultddl.ws" + cLnk, param);
+                br.postPage("http://secure.adultddl.ws/verify.php", "submit=Submit&captcha_code=" + Encoding.urlEncode(c) + "&decrypt=" + cryptID);
+                if (br.containsHTML("The CAPTCHA entered was incorrect")) continue;
+                break;
+            }
+            if (br.containsHTML("The CAPTCHA entered was incorrect")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            final String[] links = HTMLParser.getHttpLinks(br.toString(), "");
+            if ((links == null || links.length == 0) && streamLink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            if (links != null && links.length != 0) {
+                for (String singleLink : links)
+                    if (!singleLink.contains("adultddl.com/")) decryptedLinks.add(createDownloadlink(singleLink));
+            }
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

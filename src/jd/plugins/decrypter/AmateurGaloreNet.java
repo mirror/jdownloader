@@ -86,13 +86,38 @@ public class AmateurGaloreNet extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
+        // empflix.com 1
         externID = br.getRegex("player\\.empflix\\.com/video/(\\d+)\"").getMatch(0);
         if (externID != null) {
             decryptedLinks.add(createDownloadlink("http://www.empflix.com/videos/" + System.currentTimeMillis() + "-" + externID + ".html"));
             return decryptedLinks;
         }
+        // empflix.com 2
+        externID = br.getRegex("empflix\\.com/embedding_player/player[^<>\"/]*?\\.swf\".*?value=\"config=embedding_feed\\.php\\?viewkey=([^<>\"]*?)\"").getMatch(0);
+        if (externID != null) {
+            // Find original empflix link and add it to the list
+            br.getPage("http://www.empflix.com/embedding_player/embedding_feed.php?viewkey=" + externID);
+            String finallink = br.getRegex("<link>(http://.*?)</link>").getMatch(0);
+            if (finallink == null) {
+                logger.warning("decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink)));
+            return decryptedLinks;
+        }
+        // Can't be played/downloaded
+        externID = br.getRegex("config=(http://(www\\.)?freudbox\\.com/video/flv/[A-Za-z0-9\\-_]+/config/)\"").getMatch(0);
+        if (externID != null) {
+            logger.info("Link broken: " + parameter);
+            return decryptedLinks;
+        }
         if (br.containsHTML("(name=\"movie\" value=\"http://(www\\.)?megaporn\\.com/|name=\"movie\" value=\"http://video\\.megarotic\\.com/|<h3><center><a href=\"http://seemygf\\.com/vod/)")) {
             logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Nothing there
+        if (!br.containsHTML("id=\"video_extended\"")) {
+            logger.info("Link broken: " + parameter);
             return decryptedLinks;
         }
         if (externID == null) {

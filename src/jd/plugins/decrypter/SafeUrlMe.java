@@ -55,7 +55,7 @@ public class SafeUrlMe extends PluginForDecrypt {
         notDetected;
     }
 
-    private String PASSWORDPROTECTEDTEXT = "(input type=\"password\" (class=\"\" )?(id=\"input\\-password\" )?name=\"password\"|\\{\"status\":\"error\",\"msg\":\"The password entered is not valid\\.\"\\})";
+    private String PASSWORDPROTECTEDTEXT = "(input type=\"password\" (class=\"\" )?(id=\"input\\-password\" )?name=\"password\"|\\{\"status\":\"error\",\"msg\":\"The password entered is not valid\\.\"\\}|\"msg\":\"Password not entered)";
 
     public SafeUrlMe(PluginWrapper wrapper) {
         super(wrapper);

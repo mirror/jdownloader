@@ -79,6 +79,8 @@ public class RapidGatorNet extends PluginForHost {
     private static final String    MAINPAGE             = "http://rapidgator.net/";
     private static Object          LOCK                 = new Object();
     private static StringContainer agent                = new StringContainer();
+    private static final String    PREMIUMONLYTEXT      = "This file can be downloaded by premium only</div>";
+    private static final String    PREMIUMONLYUSERTEXT  = JDL.L("plugins.hoster.rapidgatornet.only4premium", "Only downloadable for premium users!");
     private static AtomicBoolean   hasDled              = new AtomicBoolean(false);
     private static AtomicLong      timeBefore           = new AtomicLong(0);
     private final String           LASTIP               = "LASTIP";
@@ -191,6 +193,7 @@ public class RapidGatorNet extends PluginForHost {
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         br.setFollowRedirects(false);
+        if (br.containsHTML(PREMIUMONLYTEXT)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
         return AvailableStatus.TRUE;
     }
 
@@ -278,6 +281,7 @@ public class RapidGatorNet extends PluginForHost {
                 if (result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Wait time between download session", 2100000 - result);
             }
         }
+        if (br.containsHTML(PREMIUMONLYTEXT)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         try {
             // far as I can tell it's not needed.
             final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
@@ -334,7 +338,7 @@ public class RapidGatorNet extends PluginForHost {
                     con1.disconnect();
                 } catch (final Throwable e) {
                 }
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloading is not possible at the moment", 10 * 60 * 1000l);
             }
             if (con1.getResponseCode() == 302) {
                 try {
