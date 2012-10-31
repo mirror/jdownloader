@@ -9,12 +9,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.network.rtmp.url.RtmpUrlConnection;
+import jd.nutils.JDHash;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.RTMPDownload;
 
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -23,6 +25,7 @@ import org.appwork.utils.net.throttledconnection.ThrottledConnectionHandler;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.speedmeter.SpeedMeterInterface;
 import org.jdownloader.nativ.NativeProcess;
+import org.jdownloader.settings.RtmpdumpSettings;
 import org.jdownloader.translate._JDT;
 
 public class RtmpDump extends RTMPDownload {
@@ -32,7 +35,7 @@ public class RtmpDump extends RTMPDownload {
         private ThrottledConnectionHandler handler;
 
         public ThrottledConnectionHandler getHandler() {
-            return this.handler;
+            return handler;
         }
 
         public int getLimit() {
@@ -50,7 +53,7 @@ public class RtmpDump extends RTMPDownload {
         }
 
         public void setHandler(final ThrottledConnectionHandler manager) {
-            this.handler = manager;
+            handler = manager;
         }
 
         public void setLimit(final int kpsLimit) {
@@ -63,18 +66,28 @@ public class RtmpDump extends RTMPDownload {
     }
 
     private Chunk             CHUNK;
+
     private volatile long     BYTESLOADED = 0l;
+
     private long              SPEED       = 0l;
+
     private int               PID         = -1;
+
     private static String     RTMPDUMP    = null;
+
     private static String     RTMPVERSION = null;
+
     private NativeProcess     NP;
+
     private Process           P;
 
     private InputStreamReader R;
 
+    private RtmpdumpSettings  config;
+
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
+        config = JsonConfig.create(RtmpdumpSettings.class);
     }
 
     /**
@@ -111,12 +124,17 @@ public class RtmpDump extends RTMPDownload {
 
     private void getProcessId() {
         try {
-            final Field pidField = this.P.getClass().getDeclaredField("pid");
+            final Field pidField = P.getClass().getDeclaredField("pid");
             pidField.setAccessible(true);
-            this.PID = pidField.getInt(this.P);
+            PID = pidField.getInt(P);
         } catch (final Exception e) {
-            this.PID = -1;
+            PID = -1;
         }
+    }
+
+    public String getRtmpDumpChecksum() throws Exception {
+        if (!findRtmpDump()) return null;
+        return JDHash.getMD5(new File(RTMPDUMP));
     }
 
     /**
@@ -126,7 +144,7 @@ public class RtmpDump extends RTMPDownload {
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
         if (RTMPVERSION != null) { return RTMPVERSION; }
-        if (!this.findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDump not found!"); }
+        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDump not found!");
         final String arg = " -h";
         NativeProcess verNP = null;
         Process verP = null;
@@ -170,45 +188,48 @@ public class RtmpDump extends RTMPDownload {
 
     @Override
     public long getTotalLinkBytesLoadedLive() {
-        return this.BYTESLOADED;
+        return BYTESLOADED;
     }
 
     private void sendSIGINT() {
-        this.getProcessId();
-        if (this.PID >= 0) {
+        getProcessId();
+        if (PID >= 0) {
             try {
-                Runtime.getRuntime().exec("kill -SIGINT " + String.valueOf(this.PID));
+                Runtime.getRuntime().exec("kill -SIGINT " + String.valueOf(PID));
             } catch (final Throwable e1) {
             }
         }
     }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
-        if (!this.findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
+        if (!findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
+
+        boolean debug = config.isDebugModeEnabled();
+
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
             public long getSpeedMeter() {
-                return RtmpDump.this.SPEED;
+                return SPEED;
             }
 
             @Override
             public long transfered() {
-                return RtmpDump.this.BYTESLOADED;
+                return BYTESLOADED;
             }
         };
         try {
-            this.getManagedConnetionHandler().addThrottledConnection(tcon);
-            this.addChunksDownloading(1);
-            this.downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            getManagedConnetionHandler().addThrottledConnection(tcon);
+            addChunksDownloading(1);
+            downloadLink.getLinkStatus().addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             try {
-                this.downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(this.getManagedConnetionHandler());
+                downloadLink.getDownloadLinkController().getConnectionHandler().addConnectionHandler(getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
             rtmpConnection.connect();
 
-            File tmpFile = new File(this.downloadLink.getFileOutput() + ".part");
+            File tmpFile = new File(downloadLink.getFileOutput() + ".part");
             if (!CrossSystem.isWindows()) {
-                tmpFile = new File(this.downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
+                tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
             }
             String line = "", error = "";
             long iSize = 0;
@@ -228,24 +249,24 @@ public class RtmpDump extends RTMPDownload {
             }
 
             if (cmd.contains(" -e ")) {
-                this.setResume(true);
+                setResume(true);
             }
 
             try {
                 if (CrossSystem.isWindows()) {
-                    this.NP = new NativeProcess(RTMPDUMP, cmd);
-                    this.R = new InputStreamReader(this.NP.getErrorStream());
+                    NP = new NativeProcess(RTMPDUMP, cmd);
+                    R = new InputStreamReader(NP.getErrorStream());
                 } else {
-                    this.P = Runtime.getRuntime().exec(RTMPDUMP + cmd);
-                    this.R = new InputStreamReader(this.P.getErrorStream());
+                    P = Runtime.getRuntime().exec(RTMPDUMP + cmd);
+                    R = new InputStreamReader(P.getErrorStream());
                 }
-                final BufferedReader br = new BufferedReader(this.R);
+                final BufferedReader br = new BufferedReader(R);
                 int sizeCalulateBuffer = 0;
                 float progressFloat = 0;
                 boolean runTimeSize = false;
                 long tmplen = 0, fixedlen = 0, calc = 0;
                 while ((line = br.readLine()) != null) {
-                    // System.out.println(line);
+                    if (debug) logger.finest(line);
                     if (!line.equals("") && line.startsWith("ERROR:")) {
                         error = line;
                     }
@@ -255,29 +276,9 @@ public class RtmpDump extends RTMPDownload {
                             String size = new Regex(line, ".*?(\\d.+)").getMatch(0);
                             iSize = SizeFormatter.getSize(size);
                         }
-                        // handle redirect
-                        if (!this.downloadLink.getBooleanProperty("REDIRECT", false)) {
-                            if (line.startsWith("DEBUG:")) {
-                                String debugOutput = line.replaceAll("\\s", "");
-                                if (debugOutput.startsWith("DEBUG:Property:")) {
-                                    if (debugOutput.matches("DEBUG:Property:<Name:redirect,STRING:[^>]+>")) {
-                                        String redirectUrl = new Regex(debugOutput, "STRING:([^>]+)").getMatch(0);
-                                        this.downloadLink.setProperty("REDIRECT", true);
-                                        this.downloadLink.setProperty("REDIRECTURL", redirectUrl);
-                                        if (tmpFile.exists() && tmpFile.length() == 0) {
-                                            if (!tmpFile.delete()) {
-                                                this.logger.severe("Could not delete part file " + tmpFile);
-                                                this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
-                                            }
-                                        }
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
                     } else {
-                        if (this.downloadLink.getDownloadSize() == 0) {
-                            this.downloadLink.setDownloadSize(iSize);
+                        if (downloadLink.getDownloadSize() == 0) {
+                            downloadLink.setDownloadSize(iSize);
                         }
                         // is resumed
                         if (iSize == 0) iSize = downloadLink.getDownloadSize();
@@ -285,38 +286,38 @@ public class RtmpDump extends RTMPDownload {
                         int pos1 = line.indexOf("(");
                         int pos2 = line.indexOf(")");
                         if (line.toUpperCase().matches("\\d+\\.\\d+\\sKB\\s/\\s\\d+\\.\\d+\\sSEC(\\s\\(\\d+\\.\\d%\\))?")) {
-                            progressFloat = (float) (Math.round(this.BYTESLOADED * 100.0F / (float) iSize * 10) / 10.0F);
+                            progressFloat = (float) (Math.round(BYTESLOADED * 100.0F / (float) iSize * 10) / 10.0F);
                             if (runTimeSize && pos1 != -1 && pos2 != -1) {
                                 progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
                             }
-                            this.BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
+                            BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
 
                             if (Thread.currentThread().isInterrupted()) {
                                 if (CrossSystem.isWindows()) {
-                                    this.NP.sendCtrlCSignal();
+                                    NP.sendCtrlCSignal();
                                 } else {
-                                    this.sendSIGINT();
+                                    sendSIGINT();
                                 }
                                 return true;
                             }
 
                             if (sizeCalulateBuffer > 6 && runTimeSize) {
-                                tmplen = (long) (this.BYTESLOADED * 100.0F / progressFloat);
-                                fixedlen = this.downloadLink.getDownloadSize();
+                                tmplen = (long) (BYTESLOADED * 100.0F / progressFloat);
+                                fixedlen = downloadLink.getDownloadSize();
                                 calc = Math.abs(((fixedlen / 1024) - (tmplen / 1024)) % 1024);
                                 if (calc > 768 && calc < 960) {
-                                    this.downloadLink.setDownloadSize(tmplen);
+                                    downloadLink.setDownloadSize(tmplen);
                                 }
                             } else {
                                 sizeCalulateBuffer++;
                             }
 
                             if (System.currentTimeMillis() - lastTime > 1000) {
-                                this.SPEED = (this.BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
+                                SPEED = (BYTESLOADED - before) / (System.currentTimeMillis() - lastTime) * 1000l;
                                 lastTime = System.currentTimeMillis();
-                                before = this.BYTESLOADED;
+                                before = BYTESLOADED;
                                 // downloadLink.requestGuiUpdate();
-                                this.downloadLink.setChunksProgress(new long[] { this.BYTESLOADED });
+                                downloadLink.setChunksProgress(new long[] { BYTESLOADED });
                             }
                         }
                     }
@@ -326,11 +327,11 @@ public class RtmpDump extends RTMPDownload {
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
                     if (progressFloat < 99.8 && !line.toLowerCase().contains("download complete")) {
-                        System.out.println("Versuch Nr.: " + this.downloadLink.getLinkStatus().getRetryCount() + " ::: " + this.plugin.getMaxRetries(this.downloadLink, null));
-                        if (this.downloadLink.getLinkStatus().getRetryCount() >= this.plugin.getMaxRetries(this.downloadLink, null)) {
-                            this.downloadLink.getLinkStatus().setRetryCount(0);
+                        System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries(downloadLink, null));
+                        if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries(downloadLink, null)) {
+                            downloadLink.getLinkStatus().setRetryCount(0);
                         }
-                        this.downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                        downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
                     }
                     Thread.sleep(500);
                     break;
@@ -339,55 +340,79 @@ public class RtmpDump extends RTMPDownload {
                 rtmpConnection.disconnect();
                 try {
                     /* make sure we destroyed the process */
-                    this.P.destroy();
+                    P.destroy();
                 } catch (final Throwable e) {
                 }
                 try {
                     /* close InputStreamReader */
-                    this.R.close();
+                    R.close();
                 } catch (final Throwable e) {
                 }
-                if (this.NP != null) {
+                if (NP != null) {
                     /* close Streams from native */
-                    this.NP.closeStreams();
+                    NP.closeStreams();
                 }
             }
-            if (this.downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) {
-                return false;
-            } else if (line != null && line.toLowerCase().contains("download complete")) {
-                this.downloadLink.setDownloadSize(this.BYTESLOADED);
-                this.logger.finest("no errors : rename");
-                if (!tmpFile.renameTo(new File(this.downloadLink.getFileOutput()))) {
-                    this.logger.severe("Could not rename file " + tmpFile + " to " + this.downloadLink.getFileOutput());
-                    this.error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+
+            if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) return false;
+            if (line != null) {
+                if (line.toLowerCase().contains("download complete")) {
+                    downloadLink.setDownloadSize(BYTESLOADED);
+                    logger.finest("no errors : rename");
+                    if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
+                        logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
+                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+                    }
+                    downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
+                    /* Stream is succesfully downloaded */
+                    return true;
                 }
-                this.downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
-            } else if (error != null && error.toLowerCase().contains("last tag size must be greater/equal zero")) {
-                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
-                this.downloadLink.reset();
-                return false;
-            } else if (error != null && error.toLowerCase().contains("rtmp_readpacket, failed to read rtmp packet header")) {
-                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                return false;
-            } else if (line == null && error.isEmpty()) {
-                this.downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
-                this.downloadLink.reset();
-                return false;
-            } else {
-                this.logger.severe("cmd: " + cmd);
-                this.logger.severe(error);
-                if (this.downloadLink.hasProperty("REDIRECT")) this.downloadLink.setProperty("REDIRECT", false);
-                throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
-            return true;
+            if (error != null) {
+                if (error.toLowerCase().contains("last tag size must be greater/equal zero")) {
+                    FlvFixer flvfix = new FlvFixer();
+                    flvfix.setInputFile(tmpFile);
+                    if (debug) flvfix.setDebug(true);
+                    if (!flvfix.scan()) return false;
+                    File fixedFile = flvfix.getoutputFile();
+                    if (!fixedFile.exists()) {
+                        logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
+                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
+                    }
+                    if (!tmpFile.delete()) {
+                        logger.severe("Could not delete part file " + tmpFile);
+                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
+                    }
+                    if (!fixedFile.renameTo(tmpFile)) {
+                        logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
+                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+                    }
+                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
+                } else if (error.toLowerCase().contains("rtmp_readpacket, failed to read rtmp packet header")) {
+                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                } else if (error.toLowerCase().contains("netstream.play.streamnotfound")) {
+                    downloadLink.deleteFile(true, false);
+                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    logger.severe("cmd: " + cmd);
+                    logger.severe(error);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, error);
+                }
+            }
+            if (error.isEmpty() && line == null) {
+                logger.severe("RtmpDump: An unknown error has occured!");
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
+                downloadLink.reset();
+            }
+            return false;
         } finally {
-            this.downloadLink.setDownloadCurrent(this.BYTESLOADED);
-            this.downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            this.downloadLink.setDownloadInstance(null);
-            this.downloadLink.getLinkStatus().setStatusText(null);
-            this.getManagedConnetionHandler().removeThrottledConnection(tcon);
+            downloadLink.setDownloadCurrent(BYTESLOADED);
+            downloadLink.getLinkStatus().removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
+            downloadLink.setDownloadInstance(null);
+            downloadLink.getLinkStatus().setStatusText(null);
+            getManagedConnetionHandler().removeThrottledConnection(tcon);
             try {
-                this.downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(this.getManagedConnetionHandler());
+                downloadLink.getDownloadLinkController().getConnectionHandler().removeConnectionHandler(getManagedConnetionHandler());
             } catch (final Throwable e) {
             }
         }

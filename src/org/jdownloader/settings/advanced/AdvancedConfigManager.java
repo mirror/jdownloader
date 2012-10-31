@@ -27,6 +27,7 @@ import org.jdownloader.settings.AccountSettings;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.InternetConnectionSettings;
+import org.jdownloader.settings.RtmpdumpSettings;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -36,7 +37,7 @@ public class AdvancedConfigManager {
     }
 
     private java.util.List<AdvancedConfigEntry> configInterfaces;
-    private AdvancedConfigEventSender      eventSender;
+    private AdvancedConfigEventSender           eventSender;
 
     private AdvancedConfigManager() {
         configInterfaces = new ArrayList<AdvancedConfigEntry>();
@@ -57,6 +58,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(StatsManagerConfig.class));
         register(JsonConfig.create(LogConfig.class));
         register(JsonConfig.create(ShortcutSettings.class));
+        register(JsonConfig.create(RtmpdumpSettings.class));
 
     }
 

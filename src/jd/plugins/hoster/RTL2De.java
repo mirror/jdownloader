@@ -45,6 +45,9 @@ public class RTL2De extends PluginForHost {
             if (urlTmp != null && urlTmp.length < 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             dl = new RTMPDownload(this, downloadLink, DLCONTENT);
 
+            String checksum = ((RTMPDownload) dl).getRtmpDumpChecksum();
+            if (checksum != null && !"422e35de6fb8b333fee3f1fc894ab6e2".equals(checksum)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "JD2 beta update noch nicht vollständig", 24 * 60 * 60 * 1000l);
+
             String protocol = urlTmp[0];
             String host = urlTmp[2];
             String app = urlTmp[3];
@@ -58,7 +61,7 @@ public class RTL2De extends PluginForHost {
 
             DLCONTENT = url + "@" + playpath;
             setupRTMPConnection(dl);
-            if (!((RTMPDownload) dl).startDownload()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 1000l);
+            ((RTMPDownload) dl).startDownload();
 
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -138,8 +141,8 @@ public class RTL2De extends PluginForHost {
         rtmp.setFlashVer("WIN 10,1,102,64");
         rtmp.setUrl(DLCONTENT.split("@")[0]);
         rtmp.setResume(true);
-        rtmp.setTimeOut(-5);
-        rtmp.setBuffer(60 * 1000);
+        rtmp.setRealTime();
+        rtmp.setTimeOut(-10);
     }
 
 }

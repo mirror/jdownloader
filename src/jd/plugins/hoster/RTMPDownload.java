@@ -7,11 +7,12 @@ import jd.network.rtmp.RtmpDump;
 import jd.network.rtmp.url.CustomUrlStreamHandlerFactory;
 import jd.network.rtmp.url.RtmpUrlConnection;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
-//Old librtmp handling in revision < 13938
+/* Old librtmp handling in revision < 13938 */
 
 /**
  * This is a wrapper for RTMP
@@ -33,7 +34,6 @@ public class RTMPDownload extends RAFDownload {
         // TODO Auto-generated constructor stub
         url = new URL(rtmpURL);
         rtmpConnection = (RtmpUrlConnection) url.openConnection();
-        // setResume(false);
         downloadLink.setDownloadInstance(this);
     }
 
@@ -42,7 +42,18 @@ public class RTMPDownload extends RAFDownload {
     }
 
     public boolean startDownload() throws Exception {
+        /* Workaround for retry count loop */
+        if (downloadLink.getLinkStatus().getRetryCount() == plugin.getMaxRetries(downloadLink, null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         final RtmpDump rtmpdump = new RtmpDump(plugin, downloadLink, String.valueOf(url));
         return rtmpdump.start(rtmpConnection);
     }
+
+    public String getRtmpDumpChecksum() throws Exception {
+        return new RtmpDump(plugin, downloadLink, String.valueOf(url)).getRtmpDumpChecksum();
+    }
+
+    public String getRtmpDumpVersion() throws Exception {
+        return new RtmpDump(plugin, downloadLink, String.valueOf(url)).getRtmpDumpVersion();
+    }
+
 }

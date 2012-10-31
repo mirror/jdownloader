@@ -34,6 +34,7 @@ public class RtmpUrlConnection extends URLConnection {
     private static final String       KEY_PLAYPATH  = "y"; // playpath
     private static final String       KEY_LIVE      = "v"; // live
     private static final String       KEY_SUBSCRIBE = "d"; // subscribe
+    private static final String       KEY_REALTIME  = "R"; // realtime
     private static final String       KEY_START     = "A"; // start
     private static final String       KEY_STOP      = "B"; // stop
     private static final String       KEY_BUFFER    = "b"; // buffer
@@ -102,23 +103,17 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Opens a communications link to the resource referenced by this URL, if
-     * such a connection has not already been established.
+     * Opens a communications link to the resource referenced by this URL, if such a connection has not already been established.
      * <p>
-     * If the <code>connect</code> method is called when the connection has
-     * already been opened (indicated by the <code>connected</code> field having
-     * the value <code>true</code>), the call is ignored.
+     * If the <code>connect</code> method is called when the connection has already been opened (indicated by the <code>connected</code>
+     * field having the value <code>true</code>), the call is ignored.
      * <p>
-     * URLConnection objects go through two phases: first they are created, then
-     * they are connected. After being created, and before being connected,
-     * various options can be specified (e.g., doInput and UseCaches). After
-     * connecting, it is an error to try to set them. Operations that depend on
-     * being connected, like getContentLength, will implicitly perform the
-     * connection, if necessary.
+     * URLConnection objects go through two phases: first they are created, then they are connected. After being created, and before being
+     * connected, various options can be specified (e.g., doInput and UseCaches). After connecting, it is an error to try to set them.
+     * Operations that depend on being connected, like getContentLength, will implicitly perform the connection, if necessary.
      * 
      * @throws SocketTimeoutException
-     *             if the timeout expires before the connection can be
-     *             established
+     *             if the timeout expires before the connection can be established
      * @exception IOException
      *                if an I/O error occurs while opening the connection.
      * @see java.net.URLConnection#connected
@@ -131,9 +126,8 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Indicates that other requests to the server are unlikely in the near
-     * future. Calling disconnect() should not imply that this RtmpURLConnection
-     * instance can be reused for other requests.
+     * Indicates that other requests to the server are unlikely in the near future. Calling disconnect() should not imply that this
+     * RtmpURLConnection instance can be reused for other requests.
      */
     public void disconnect() {
         connected = false;
@@ -160,8 +154,7 @@ public class RtmpUrlConnection extends URLConnection {
     /**
      * Returns the value of the <code>content-length</code>.
      * 
-     * @return the content length of the resource that this connection's URL
-     *         references, or <code>-1</code> if the content length is not
+     * @return the content length of the resource that this connection's URL references, or <code>-1</code> if the content length is not
      *         known.
      */
     @Override
@@ -173,8 +166,7 @@ public class RtmpUrlConnection extends URLConnection {
     /**
      * Returns the value of the <code>content-type</code>.
      * 
-     * @return the content type of the resource that the URL references, or
-     *         <code>null</code> if not known.
+     * @return the content type of the resource that the URL references, or <code>null</code> if not known.
      */
     @Override
     public String getContentType() {
@@ -209,9 +201,8 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Name of application to connect to on the RTMP server. Overrides the app
-     * in the RTMP URL. Sometimes the librtmp URL parser cannot determine the
-     * app name automatically, so it must be given explicitly using this option.
+     * Name of application to connect to on the RTMP server. Overrides the app in the RTMP URL. Sometimes the librtmp URL parser cannot
+     * determine the app name automatically, so it must be given explicitly using this option.
      * 
      * @param value
      */
@@ -229,14 +220,10 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Append arbitrary AMF data to the Connect message. The type must be B for
-     * Boolean, N for number, S for string, O for object, or Z for null. For
-     * Booleans the data must be either 0 or 1 for FALSE or TRUE, respectively.
-     * Likewise for Objects the data must be 0 or 1 to end or begin an object,
-     * respectively. Data items in subobjects may be named, by prefixing the
-     * type with 'N' and specifying the name before the value, e.g. NB:myFlag:1.
-     * This option may be used multiple times to construct arbitrary AMF
-     * sequences. E.g.
+     * Append arbitrary AMF data to the Connect message. The type must be B for Boolean, N for number, S for string, O for object, or Z for
+     * null. For Booleans the data must be either 0 or 1 for FALSE or TRUE, respectively. Likewise for Objects the data must be 0 or 1 to
+     * end or begin an object, respectively. Data items in subobjects may be named, by prefixing the type with 'N' and specifying the name
+     * before the value, e.g. NB:myFlag:1. This option may be used multiple times to construct arbitrary AMF sequences. E.g.
      * <p>
      * <tt>
      * conn=B:1 conn=S:authMe conn=O:1 conn=NN:code:1.23 conn=NS:flag:ok conn=O:0
@@ -258,8 +245,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Version of the Flash plugin used to run the SWF player. The default is
-     * "LNX 10,0,32,18".
+     * Version of the Flash plugin used to run the SWF player. The default is "LNX 10,0,32,18".
      * 
      * @param value
      */
@@ -268,8 +254,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Specify that the media is a live stream. No resuming or seeking in live
-     * streams is possible.
+     * Specify that the media is a live stream. No resuming or seeking in live streams is possible.
      * 
      * @param value
      */
@@ -278,8 +263,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * URL of the web page in which the media was embedded. By default no value
-     * will be sent.
+     * URL of the web page in which the media was embedded. By default no value will be sent.
      * 
      * @param value
      */
@@ -288,9 +272,8 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Overrides the playpath parsed from the RTMP URL. Sometimes the rtmpdump
-     * URL parser cannot determine the correct playpath automatically, so it
-     * must be given explicitly using this option.
+     * Overrides the playpath parsed from the RTMP URL. Sometimes the rtmpdump URL parser cannot determine the correct playpath
+     * automatically, so it must be given explicitly using this option.
      * 
      * @param value
      */
@@ -368,10 +351,17 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Specify how many days to use the cached SWF info before re-checking. Use
-     * 0 to always check the SWF URL. Note that if the check shows that the SWF
-     * file has the same modification timestamp as before, it will not be
-     * retrieved again.
+     * Don't attempt to speed up download via the Pause/Unpause BUFX hack
+     * 
+     * @param value
+     */
+    public void setRealTime() {
+        parameterMap.put(KEY_REALTIME, null);
+    }
+
+    /**
+     * Specify how many days to use the cached SWF info before re-checking. Use 0 to always check the SWF URL. Note that if the check shows
+     * that the SWF file has the same modification timestamp as before, it will not be retrieved again.
      * 
      * @param value
      */
@@ -407,8 +397,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Timeout the session after num seconds without receiving any data from the
-     * server. The default is 120.
+     * Timeout the session after num seconds without receiving any data from the server. The default is 120.
      * 
      * @param value
      */
@@ -417,8 +406,7 @@ public class RtmpUrlConnection extends URLConnection {
     }
 
     /**
-     * Key for SecureToken response, used if the server requires SecureToken
-     * authentication.
+     * Key for SecureToken response, used if the server requires SecureToken authentication.
      * 
      * @param value
      */

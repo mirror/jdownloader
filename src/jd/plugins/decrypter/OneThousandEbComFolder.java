@@ -28,7 +28,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://(www\\.)?([A-Za-z0-9\\-_]+\\.)?1000eb\\.com/[A-Za-z0-9\\-_]+\\.htm?" }, flags = { 0 })
+import org.appwork.utils.formatter.SizeFormatter;
+
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "1000eb.com" }, urls = { "http://([\\w\\-\\.]+)?(1000eb\\.com/[\\w\\-]+\\.htm(\\?p=\\d+)?|[\\w\\-\\.]+1000eb\\.com/)" }, flags = { 0 })
 public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public OneThousandEbComFolder(final PluginWrapper wrapper) {
@@ -37,40 +39,70 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> pages = new ArrayList<String>();
-        pages.add("1");
         String parameter = param.toString();
         br.getPage(parameter);
 
-        String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
-        if (fpName == null) fpName = br.getRegex("<meta name=\"keywords\" content=\"([^,\"]+)").getMatch(0);
-
-        int maxCount = 1;
+        int maxCount = 1, minCount = 1;
         String lastPage = br.getRegex("class=\"pager\\-golast\"><a href=\"/[A-Za-z0-9\\-_]+\\.htm\\?p=(\\d+)\"").getMatch(0);
         if (lastPage != null) maxCount = Integer.parseInt(lastPage);
-        for (int i = 1; i <= maxCount; i++) {
+        String firstPage = new Regex(parameter, "\\?p=(\\d+)").getMatch(0);
+        if (firstPage != null) minCount = Integer.parseInt(firstPage);
+        parameter = parameter.replaceAll("\\?p=\\d+", "");
+        if (minCount > maxCount) maxCount = minCount;
+
+        String fpName = br.getRegex("\">我的空间</a>\\&nbsp;\\&gt;\\&gt;\\&nbsp;<a href=\"[^<>\"\\']+\" title=\"([^<>\"\\']+)\">").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<meta name=\"keywords\" content=\"([^,\"]+)").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+
+        for (int i = minCount; i <= maxCount; i++) {
+
             logger.info("Decrypting page " + i + " of " + maxCount);
-            if (i > 1) br.getPage(parameter + "?p=" + i);
-            final String[] links = br.getRegex("class=\"li\\-name\"><a title=\"[^<>\"\\']+\" href=\\'(http://1000eb\\.com/[a-z0-9]+)\\'").getColumn(0);
-            final String[] folderLinks = br.getRegex("\"(/mydirectory[^<>\"]*?)\"").getColumn(0);
-            if ((links == null || links.length == 0) && (folderLinks == null || folderLinks.length == 0)) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+
+            try {
+                if (i > minCount) br.getPage(parameter + "?p=" + i);
+            } catch (Throwable e) {
+                logger.warning("1000eb.com: " + e.getMessage());
+                return decryptedLinks;
             }
-            if (links != null && links.length > 0) {
-                for (final String singleLink : links)
-                    decryptedLinks.add(createDownloadlink(singleLink));
+
+            for (final String[] singleLink : br.getRegex("class=\"li\\-name\"><a title=\"[^\"]+\" href=\'(http://1000eb\\.com/[^\']+)\' target=\"_blank\" class=\"ellipsis\">([^<]+)</a></span> <span class=\"li\\-size\">([^<]+)</span>").getMatches()) {
+                DownloadLink dLink = createDownloadlink(singleLink[0]);
+                dLink.setFinalFileName(singleLink[1].trim());
+                try {
+                    dLink.setDownloadSize(SizeFormatter.getSize(singleLink[2].replace("M", "MB").replace("K", "KB")));
+                } catch (Throwable e) {
+                }
+                dLink.setAvailable(true);
+                fp.add(dLink);
+                try {
+                    if (isAbort()) return decryptedLinks;
+                    distribute(dLink);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dLink);
             }
-            if (folderLinks != null && folderLinks.length > 0) {
-                final String mainlink = new Regex(parameter, "(http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com)").getMatch(0);
-                for (final String folderLink : folderLinks)
-                    decryptedLinks.add(createDownloadlink(mainlink + folderLink));
+
+            sleep(2 * 1000l, param); // prevent a java.out.of.memory error ;-)
+
+            final String mainlink = new Regex(parameter, "(http://(www\\.)?[A-Za-z0-9\\-_]+\\.1000eb\\.com)/?").getMatch(0);
+            for (final String folderLink : br.getRegex("class=\"li\\-name\"><a title=\"[^\"]+\" href=\"([^\"]+)\">[^<]+</a><span class=\"list\\-dir\\-files\">").getColumn(0)) {
+                DownloadLink dLink = createDownloadlink(mainlink + folderLink);
+                fp.add(dLink);
+                try {
+                    distribute(dLink);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dLink);
             }
+
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+
+        if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
         }
         return decryptedLinks;
     }

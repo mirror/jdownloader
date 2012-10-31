@@ -223,36 +223,21 @@ public class VideoPremiumNet extends PluginForHost {
     private void setupRTMPConnection(String stream, DownloadInterface dl, DownloadLink downloadLink) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
 
-        /* videopremium.net uses redirections in streams. rtmpdump can't handle this. */
         String url = stream.split("@")[0];
-        if (downloadLink.getBooleanProperty("REDIRECT", false)) url = downloadLink.getStringProperty("REDIRECTURL", null);
 
         rtmp.setPlayPath(stream.split("@")[1]);
         rtmp.setUrl(url);
         rtmp.setSwfVfy(stream.split("@")[2]);
         rtmp.setPageUrl(downloadLink.getDownloadURL());
         rtmp.setResume(true);
-        rtmp.setVerbose(); // needed for redirect feature in rtmpdump.class
     }
 
     private void download(DownloadLink downloadLink, String dllink) throws Exception {
+        maxFree.set(10);
         dl = new RTMPDownload(this, downloadLink, dllink);
         setupRTMPConnection(dllink, dl, downloadLink);
-        try {
-            if (!((RTMPDownload) dl).startDownload()) {
-                if (downloadLink.getBooleanProperty("REDIRECT", false)) throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                downloadLink.setProperty("REDIRECT", false);
-            }
-        } catch (PluginException e) {
-            if (e.getLinkStatus() == 4) {
-                logger.info("RTMP: Redirect found! Start download with new url.");
-            } else if (e.getErrorMessage().contains("NetStream.Play.StreamNotFound")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
-            }
-        }
+
+        ((RTMPDownload) dl).startDownload();
     }
 
     @Override
