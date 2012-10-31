@@ -89,8 +89,8 @@ public class FileCopterNet extends PluginForHost {
         // Use API with JDownloader API Key
         br.getPage(MAINPAGE.replace("www.", "") + "/api/info.php?api_key=" + APIKEY + "&file_id=" + new Regex(link.getDownloadURL(), "/files/([A-Za-z0-9]+)\\.html").getMatch(0));
         if (br.containsHTML("file does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("\\[file_name\\] => (.*?)\n").getMatch(0);
-        String filesize = br.getRegex("\\[file_size\\] => (\\d+)\n").getMatch(0);
+        String filename = br.getRegex("\\[file_name\\] => (.*?)[\r\n]+").getMatch(0);
+        String filesize = br.getRegex("\\[file_size\\] => (\\d+)[\r\n]+").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Set final filename here because hoster taggs files
         link.setFinalFileName(filename.trim());

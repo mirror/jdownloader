@@ -19,6 +19,7 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -359,6 +360,12 @@ public class BitShareCom extends PluginForHost {
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
+
+        /* 0.95xx comp */
+        String dllink = link.getDownloadURL().replaceAll("(%20|\\s)", "+");
+        String host = dllink.substring(0, dllink.indexOf("/", 10));
+        link.setUrlDownload(dllink.replaceAll(host, dllink.substring(0, dllink.indexOf("/", 10)).toLowerCase(Locale.ENGLISH)));
+
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (new Regex(link.getDownloadURL(), "http://(www\\.)?bitshare\\.com/\\?(f|m)=[a-z0-9]{8}").matches()) {
