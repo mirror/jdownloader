@@ -168,7 +168,7 @@ public class LogAction extends AppAction {
                             ZipIOWriter writer = null;
                             try {
                                 if (lf.isNeedsFlush()) {
-                                    LogController.getInstance().flushSinks(true);
+                                    LogController.getInstance().flushSinks(true, false);
                                 }
                                 writer = new ZipIOWriter(zip) {
                                     public void addFile(final File addFile, final boolean compress, final String fullPath) throws FileNotFoundException, ZipIOException, IOException {
