@@ -39,6 +39,7 @@ AdvancedValueColumn_AdvancedValueColumn_object_=Wartość
 AutoConfirmButton_AutoConfirmButton_tooltip_=Pobieranie zostanie uruchomione za chwilę. Naciśnij aby przerwać odliczanie.
 AutoDetectAction_actionPerformed_d_msg=Proszę czekać. JDownloader próbuje wyszukać poprawne ustawienia twojego połączenia internetowane.\r\nMoże to potrwać kilka minut.
 AutoDetectAction_actionPerformed_d_title=Automatyczna Konfiguracja Ponownego Połączenia
+AutoDetectAction_actionPerformed_dooptimization_title=Optymalizacja - Wykonaj testy, aby zoptymalizować czas Ponownego Połączenia...
 AutoDetectAction_run_optimization=Kontynuuj
 AutoDetectAction_run_optimize=Optymalizacja %s1
 AutoDetectAction_skip_optimization=Pomiń
