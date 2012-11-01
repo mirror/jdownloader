@@ -80,9 +80,9 @@ public class XFileSharingProBasic extends PluginForHost {
      * */
     // XfileSharingProBasic Version 2.5.9.5
     // mods:
-    // non account: chunk * maxdl
-    // free account: chunk * maxdl
-    // premium account: chunk * maxdl
+    // non account: chunks * maxdls
+    // free account: chunks * maxdls
+    // premium account: chunks * maxdls
     // protocol: no https
     // captchatype: null 4dignum solvemedia recaptcha
     // other:
@@ -190,6 +190,7 @@ public class XFileSharingProBasic extends PluginForHost {
         doFree(downloadLink, true, 0, "freelink");
     }
 
+    @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         String passCode = null;
@@ -471,6 +472,7 @@ public class XFileSharingProBasic extends PluginForHost {
         correctBR();
     }
 
+    @SuppressWarnings("unused")
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();

@@ -196,6 +196,8 @@ public class LuckyShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                br.setReadTimeout(3 * 60 * 1000);
+                br.setConnectTimeout(3 * 60 * 1000);
                 br.getPage("http://luckyshare.net/auth/login");
                 final String token = br.getRegex("type=\"hidden\" name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

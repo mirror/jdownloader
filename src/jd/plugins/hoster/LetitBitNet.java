@@ -269,7 +269,7 @@ public class LetitBitNet extends PluginForHost {
         if (urlPrefix == null) urlPrefix = "";
         final String ajaxmainurl = "http://" + urlPrefix + "letitbit.net";
 
-        final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)function DownloadClick\\(\\)").getMatch(0);
+        final String dlFunction = br.getRegex("function getLink\\(\\)(.*?)</script>").getMatch(0);
         if (dlFunction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String ajaxPostpage = new Regex(dlFunction, "\\$\\.post\\(\"(/ajax/[^<>\"]*?)\"").getMatch(0);
         if (ajaxPostpage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -335,7 +335,9 @@ public class LetitBitNet extends PluginForHost {
         if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
         if (br2.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         LinkedList<String> finallinksx = new LinkedList<String>();
-        final String[] finallinks = br2.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
+        String[] finallinks = br2.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
+        // More comon for shareflare.net
+        if ((finallinks == null || finallinks.length == 0) && br2.toString().length() < 500) finallinks = br2.getRegex("(http:[^<>\"].+)").getColumn(0);
         if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (final String finallink : finallinks) {
             if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);

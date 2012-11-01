@@ -62,12 +62,12 @@ public class QueenShareCom extends PluginForHost {
     private static final String  ALLWAIT_SHORT       = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    private static Object LOCK                = new Object();
+    private static Object        LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.0-raz
-    // mods: filesize, correctbr.
+    // mods: filesize, correctbr, many others, do NOT upgrade!
     // non account: 1chunk only, maxdl 2, resumes
     // free account: same as above not tested
     // premium account: upto 5chunk, maxdl 2
@@ -291,6 +291,7 @@ public class QueenShareCom extends PluginForHost {
         regexStuff.add("(visibility:hidden>.*?<)");
         regexStuff.add("(<font style=\"visibility:hidden\">.*?</font>)");
         regexStuff.add("(<font color=\"white\">.*?</font>)");
+        regexStuff.add("(<font color=\"ffffff\"( size=\"1\")?>.*?</font>)");
         for (String aRegex : regexStuff) {
             String lolz[] = br.getRegex(aRegex).getColumn(0);
             if (lolz != null) {

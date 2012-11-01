@@ -80,9 +80,8 @@ public class PeeJeCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No slots available", 10 * 60 * 1000l);
         String passCode = downloadLink.getStringProperty("pass", null);
         if (br.containsHTML(PASSWORDTEXT)) {
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
@@ -92,6 +91,9 @@ public class PeeJeCom extends PluginForHost {
             passCode = "";
         }
         br.postPage(br.getURL(), "securitytoken=guest&psw=" + passCode + "&download=Create+Download+Link");
+        // Skip ad sh1t
+        if (br.getURL().contains("adf.ly/")) br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No slots available", 10 * 60 * 1000l);
         String dllink = br.getRegex("<a href=\"(https?://[^<>\"]*?)\"><b>Click here to Download</b>").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(https?://ww\\d+\\.peeje\\.com/dl/[^<>\"\\']*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

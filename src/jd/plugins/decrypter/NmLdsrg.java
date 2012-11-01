@@ -99,47 +99,44 @@ public class NmLdsrg extends PluginForDecrypt {
             }
 
             // CNL failed? Add links via webdecryption!
-            /** Disabled because the CNL2 Handling has to be tested! */
-            if (!true) {
-                final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 0; i <= 3; i++) {
-                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    final String c = getCaptchaCode(cf, param);
-                    ajax.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-                    if (ajax.containsHTML("ok\":false")) {
-                        rc.reload();
-                        continue;
-                    }
-                    break;
-                }
+            final String rcID = br.getRegex("google\\.com/recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 3; i++) {
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, param);
+                ajax.postPage(br.getURL(), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
                 if (ajax.containsHTML("ok\":false")) {
-                    logger.info("Captcha wrong, stopping...");
-                    throw new DecrypterException(DecrypterException.CAPTCHA);
-                }
-                String dllink = ajax.getRegex("\"response\":\"(http:[^<>\"]*?)\"").getMatch(0);
-                // Links can fail for multiple reasons so let's skip them
-                if (dllink == null) {
-                    logger.info("Found a dead link: " + link);
-                    logger.info("Mainlink: " + parameter);
+                    rc.reload();
                     continue;
                 }
-                final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
-                dl.setSourcePluginPasswordList(passwords);
-                try {
-                    distribute(dl);
-                } catch (final Throwable e) {
-                    /* does not exist in 09581 */
-                }
-                decryptedLinks.add(dl);
+                break;
             }
+            if (ajax.containsHTML("ok\":false")) {
+                logger.info("Captcha wrong, stopping...");
+                throw new DecrypterException(DecrypterException.CAPTCHA);
+            }
+            String dllink = ajax.getRegex("\"response\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            // Links can fail for multiple reasons so let's skip them
+            if (dllink == null) {
+                logger.info("Found a dead link: " + link);
+                logger.info("Mainlink: " + parameter);
+                continue;
+            }
+            final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(dllink.replace("\\", "")));
+            dl.setSourcePluginPasswordList(passwords);
+            try {
+                distribute(dl);
+            } catch (final Throwable e) {
+                /* does not exist in 09581 */
+            }
+            decryptedLinks.add(dl);
         }
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);

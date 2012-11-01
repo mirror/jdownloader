@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws/mediatheek/((programmas|redactietips|nieuws)/)?[\\w\\%]+/\\d\\.\\d+(/\\d\\.\\d+)?(/\\d\\.\\d+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be" }, urls = { "http://(www\\.)?(deredactie|sporza)\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws/mediatheek/((programmas|redactietips|nieuws)/)?[\\w\\%]+/\\d\\.\\d+(/\\d\\.\\d+)?(/\\d\\.\\d+)?)" }, flags = { 0 })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
@@ -46,6 +46,10 @@ public class DeredactieBe extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://deredactie.be/";
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("sporza.be/", "deredactie.be/"));
     }
 
     @Override

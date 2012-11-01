@@ -27,33 +27,31 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/folder/.+/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer.net/folder/.+/.*" }, flags = { 0 })
 public class Flr extends PluginForDecrypt {
 
     public Flr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String[][] links = br.getRegex("<td><a href=\".*?\">(.*?)</a></td>.*?<td>(.*?)</td>.*?<td>.*?<a href=\"(.*?)\"").getMatches();
+        final String[][] links = br.getRegex("\"(/get/[a-z0-9]+)\">([^<>\"]*?)</a>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link:" + parameter);
+            return decryptedLinks;
+        }
 
-        progress.setRange(links.length);
         for (String element[] : links) {
-            DownloadLink link = createDownloadlink("http://www.filer.net" + element[2]);
-            link.setFinalFileName(element[0]);
-            link.setDownloadSize(SizeFormatter.getSize(element[1]));
+            final DownloadLink link = createDownloadlink("http://www.filer.net" + element[0]);
+            link.setFinalFileName(element[1]);
+            link.setDownloadSize(SizeFormatter.getSize(element[2]));
             decryptedLinks.add(link);
-            progress.increase(1);
         }
 
         return decryptedLinks;
     }
-
-    // @Override
-
 }

@@ -24,9 +24,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,13 +36,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
 
     private final Pattern     PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
-
     private static AtomicLong LAST_FREE_DOWNLOAD    = new AtomicLong(0l);
 
     public FilerNet(PluginWrapper wrapper) {
@@ -88,57 +86,69 @@ public class FilerNet extends PluginForHost {
         return 500;
     }
 
+    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download-slots";
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.getPage(link.getDownloadURL());
+        final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
+        if (reconWait != null) {
+            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText("Cannot show filename while the downloadlimit is reached");
+            return AvailableStatus.TRUE;
+        } else if (br.containsHTML(SLOTSFILLED)) {
+            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            link.getLinkStatus().setStatusText("Cannot show filename while all slots are filled");
+            return AvailableStatus.TRUE;
+        }
+        br.setFollowRedirects(false);
+        if (br.containsHTML(">Not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = br.getRegex(">Free Download ([^<>\"]*?)<").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        requestFileInformation(downloadLink);
+        if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All slots are filled", 10 * 60 * 1000l);
+        final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
+        int wait = 0;
+        if (reconWait != null) wait = Integer.parseInt(reconWait);
+        if (wait < 180) {
+            sleep(wait * 1001l, downloadLink);
+            br.getPage(downloadLink.getDownloadURL());
+        } else {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        }
+        final String token = br.getRegex("name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
+        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.postPage(br.getURL(), "token=" + Encoding.urlEncode(token));
         br.setFollowRedirects(false);
         int maxCaptchaTries = 5;
         br.setCookiesExclusive(true);
-        br.clearCookies("filer.net");
-        br.getPage(downloadLink.getDownloadURL());
-        final long waited = System.currentTimeMillis() - FilerNet.LAST_FREE_DOWNLOAD.get();
-        if (FilerNet.LAST_FREE_DOWNLOAD.get() > 0 && waited < 3601000) {
-            FilerNet.LAST_FREE_DOWNLOAD.set(0);
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3601000 - waited);
-        }
         int tries = 0;
         while (tries < maxCaptchaTries) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            rc.parse();
+            String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (id == null) id = this.br.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            rc.setId(id);
             rc.load();
             File cf = rc.downloadCaptcha(getLocalCaptchaFile());
             String c = getCaptchaCode(cf, downloadLink);
-            rc.setCode(c);
             tries++;
-            if (!br.containsHTML("api\\.recaptcha\\.net")) {
+            br.postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)§").getMatch(0));
+            if (!br.containsHTML("google\\.com/recaptcha/")) {
                 break;
             }
         }
-        if (br.containsHTML("api\\.recaptcha\\.net")) {
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
-        if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        if (br.getRegex(PATTERN_MATCHER_ERROR).matches()) {
-            String error = br.getRegex("folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getMatch(0);
-            logger.severe("Error: " + error);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-
-        }
-
-        br.setFollowRedirects(false);
-        if (br.containsHTML("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.filernet.errors.nofreeslots", "All free user slots occupied"), 10 * 1000 * 60l);
-        String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
-
-        }
-        Form[] forms = br.getForms();
-        if (forms == null || forms.length < 2) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l);
-        br.submitForm(forms[0]);
-        String dllink = br.getRedirectLocation();
+        if (br.containsHTML("google\\.com/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -147,11 +157,11 @@ public class FilerNet extends PluginForHost {
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
-        FilerNet.LAST_FREE_DOWNLOAD.set(System.currentTimeMillis());
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        // TODO: Fix ALL premium functions
         setBrowserExclusive();
         login(account);
         br.getPage(downloadLink.getDownloadURL());
@@ -190,15 +200,6 @@ public class FilerNet extends PluginForHost {
             if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        br.setFollowRedirects(false);
-        if (!br.containsHTML("api\\.recaptcha\\.net") && !br.containsHTML("google\\.com/recaptcha")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return AvailableStatus.TRUE;
     }
 
     @Override
