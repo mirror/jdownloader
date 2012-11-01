@@ -17,6 +17,7 @@
 // source@GPLv3: https://github.com/K-S-V/Scripts/blob/master/FlvFixer.php
 package jd.network.rtmp;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -24,14 +25,47 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginProgress;
 import jd.utils.JDHexUtils;
 
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 
 public class FlvFixer {
 
-    public static enum Tag {
+    private static class FlvFixerProgress extends PluginProgress {
+
+        protected long lastCurrent    = -1;
+        protected long lastTotal      = -1;
+        protected long startTimeStamp = -1;
+
+        public FlvFixerProgress(long current, long total, Color color) {
+            super(current, total, color);
+        }
+
+        @Override
+        public void updateValues(long current, long total) {
+            super.updateValues(current, total);
+            if (startTimeStamp == -1 || lastTotal == -1 || lastTotal != total || lastCurrent == -1 || lastCurrent > current) {
+                lastTotal = total;
+                lastCurrent = current;
+                startTimeStamp = System.currentTimeMillis();
+                this.setETA(-1);
+                return;
+            }
+            long currentTimeDifference = System.currentTimeMillis() - startTimeStamp;
+            if (currentTimeDifference <= 0) return;
+            long speed = (current * 10000) / currentTimeDifference;
+            if (speed == 0) return;
+            long eta = ((total - current) * 10000) / speed;
+            this.setETA(eta);
+        }
+
+    }
+
+    private static enum Tag {
         AUDIO((byte) 0x08),
         VIDEO((byte) 0x09),
         SCRIPT_DATA((byte) 0x12),
@@ -49,44 +83,50 @@ public class FlvFixer {
         }
     }
 
-    File                    corruptFile;
+    private File             corruptFile;
 
-    File                    fixedFile;
+    private File             fixedFile;
 
-    FileInputStream         fis               = null;
+    private FileInputStream  fis               = null;
 
-    FileOutputStream        fos               = null;
+    private FileOutputStream fos               = null;
 
-    final static int        FRAMEGAP_DURATION = 8;
+    final static int         FRAMEGAP_DURATION = 8;
 
-    final static int        INVALID_TIMESTAMP = -1;
+    final static int         INVALID_TIMESTAMP = -1;
 
-    boolean                 DEBUG             = false;
+    boolean                  DEBUG             = false;
 
-    private final LogSource logger;
+    private final LogSource  logger;
+
+    DownloadLink             downloadLink;
+
+    PluginProgress           progress;
 
     public FlvFixer() {
         logger = LogController.CL();
     }
 
-    public boolean setDebug(boolean b) {
+    protected boolean setDebug(boolean b) {
         return DEBUG = b;
     }
 
-    public void setInputFile(File f) {
+    protected void setInputFile(File f) {
         this.corruptFile = f;
     }
 
-    public File getoutputFile() {
+    protected File getoutputFile() {
         return fixedFile;
     }
 
-    public boolean scan() throws Exception {
+    protected boolean scan(DownloadLink dl) throws Exception {
 
         if (!(corruptFile.exists() && corruptFile.length() > 0)) {
             logger.severe("File " + corruptFile.getAbsolutePath() + " not found!");
             return false;
         }
+
+        this.downloadLink = dl;
 
         boolean audio = false;
         boolean video = false;
@@ -112,7 +152,7 @@ public class FlvFixer {
         boolean AACHeaderWritten = false;
 
         int fileSize = (int) corruptFile.length();
-        int pFilePos = 0, packetSize = 0, packetTS = 0, tagPos = 0;
+        int cFilePos = 0, pFilePos = 0, packetSize = 0, packetTS = 0, tagPos = 0;
 
         byte[] flvHeader = JDHexUtils.getByteArray("464c5601050000000900000000");
         byte[] flvTag = new byte[tagHeaderLen];
@@ -122,7 +162,13 @@ public class FlvFixer {
         extEnum.add((byte) 0x09);
         extEnum.add((byte) 0x12);
 
+        String msg;
+
         fixedFile = new File(corruptFile.getAbsolutePath().replace(".part", ".fixed"));
+
+        long[] cP = downloadLink.getChunksProgress();
+
+        setProgress(0, 0, null);
 
         try {
 
@@ -139,7 +185,9 @@ public class FlvFixer {
                 fos.write(flvTagH);
             }
 
-            logger.info("#### FlvFixer: starting scan process... ####");
+            msg = "FlvFixer: starting scan process... ";
+            downloadLink.getLinkStatus().setStatusText(msg);
+            logger.info("#### " + msg + " ####");
             logger.info("processing file: " + corruptFile.getAbsolutePath());
             if (DEBUG) logOutput("Type :", formatDebug, "CurrentTS", "PreviousTS", "Size", "Position", Level.FINEST);
             try {
@@ -283,12 +331,15 @@ public class FlvFixer {
                         break;
                     }
                     filePos += totalTagLen;
-                    int cFilePos = (int) filePos / (1024 * 1024);
-                    if (cFilePos > pFilePos) {
-                        // System.out.printf("Processed %d/%.2f MB\r", cFilePos, fileSize);
-                        pFilePos = cFilePos;
+                    cFilePos = (int) filePos / (1024 * 1024);
+                    if (DEBUG || (fileSize / (1024 * 1024)) > 100) {
+                        if (cFilePos > pFilePos && cFilePos % 5 == 0 || cFilePos == 0) {
+                            setProgress(filePos, fileSize, Color.YELLOW.darker());
+                            pFilePos = cFilePos;
+                        }
                     }
                 }
+
                 /* Fix flv header when required */
                 if (!(audio && video)) {
                     if (audio && !video) {
@@ -301,7 +352,13 @@ public class FlvFixer {
                     logger.info("Fix flv header --> " + (audio ? "audio" : "video"));
                 }
             } catch (Throwable e) {
-                logger.severe("#### FlvFixer: an error has occurred! " + e.getMessage());
+                if (filePos != fileSize) {
+                    msg = String.format("FlvFixer: User aborted processing! Processed: %d/%.2f MB", (filePos / (1024 * 1024)), (double) (fileSize / (1024 * 1024)));
+                    logger.warning("#### " + msg);
+                    downloadLink.getLinkStatus().setStatusText(msg);
+                } else {
+                    logger.severe("#### FlvFixer: an error has occurred! " + e.getMessage());
+                }
                 return false;
             }
         } finally {
@@ -313,9 +370,30 @@ public class FlvFixer {
                 fos.close();
             } catch (final Throwable e) {
             }
+            downloadLink.setPluginProgress(null);
+            // downloadLink.getLinkStatus().setStatusText(null);
         }
-        logger.info("#### FlvFixer: scan process done! ####");
+        msg = "FlvFixer: scan process done!";
+        downloadLink.getLinkStatus().setStatusText(msg);
+        logger.info("#### " + msg + " ####");
         return true;
+    }
+
+    public void setProgress(long value, long max, Color color) {
+        if (value <= 0 && max <= 0) {
+            downloadLink.setPluginProgress(null);
+        } else {
+            progress = downloadLink.getPluginProgress();
+            if (progress != null) {
+                progress.updateValues(value, max);
+                progress.setCurrent(value);
+            } else {
+                progress = new FlvFixerProgress(value, max, color);
+                progress.setIcon(NewTheme.I().getIcon("wait", 16));
+                progress.setProgressSource(this);
+                downloadLink.setPluginProgress(progress);
+            }
+        }
     }
 
     private void logOutput(String msg, String formatter, Integer a, Integer b, Integer c, Level l) {

@@ -26,8 +26,9 @@ public class RTMPDownload extends RAFDownload {
         URL.setURLStreamHandlerFactory(new CustomUrlStreamHandlerFactory());
     }
 
-    private final URL                 url;
     protected final RtmpUrlConnection rtmpConnection;
+
+    private final URL                 url;
 
     public RTMPDownload(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, null);
@@ -44,16 +45,19 @@ public class RTMPDownload extends RAFDownload {
     public boolean startDownload() throws Exception {
         /* Workaround for retry count loop */
         if (downloadLink.getLinkStatus().getRetryCount() == plugin.getMaxRetries(downloadLink, null)) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        final RtmpDump rtmpdump = new RtmpDump(plugin, downloadLink, String.valueOf(url));
-        return rtmpdump.start(rtmpConnection);
+        return rtmpDump().start(rtmpConnection);
     }
 
     public String getRtmpDumpChecksum() throws Exception {
-        return new RtmpDump(plugin, downloadLink, String.valueOf(url)).getRtmpDumpChecksum();
+        return rtmpDump().getRtmpDumpChecksum();
     }
 
     public String getRtmpDumpVersion() throws Exception {
-        return new RtmpDump(plugin, downloadLink, String.valueOf(url)).getRtmpDumpVersion();
+        return rtmpDump().getRtmpDumpVersion();
+    }
+
+    private RtmpDump rtmpDump() throws Exception {
+        return new RtmpDump(plugin, downloadLink, String.valueOf(url));
     }
 
 }
