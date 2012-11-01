@@ -43,7 +43,7 @@ public class OneThousandEbComFolder extends PluginForDecrypt {
         br.getPage(parameter);
 
         int maxCount = 1, minCount = 1;
-        String lastPage = br.getRegex("class=\"pager\\-golast\"><a href=\"/[A-Za-z0-9\\-_]+\\.htm\\?p=(\\d+)\"").getMatch(0);
+        String lastPage = br.getRegex("class=\"pager\\-golast\"><a href=\"/([A-Za-z0-9\\-_]+\\.htm)?\\?p=(\\d+)\"").getMatch(1);
         if (lastPage != null) maxCount = Integer.parseInt(lastPage);
         String firstPage = new Regex(parameter, "\\?p=(\\d+)").getMatch(0);
         if (firstPage != null) minCount = Integer.parseInt(firstPage);
