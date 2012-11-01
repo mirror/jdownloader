@@ -2,6 +2,7 @@ package org.jdownloader.api;
 
 import java.util.HashMap;
 
+import org.appwork.remoteapi.RemoteAPIRequest;
 import org.appwork.utils.net.httpserver.session.HttpSessionController;
 
 public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteAPISession> {
@@ -9,14 +10,14 @@ public class RemoteAPISessionControllerImp extends HttpSessionController<RemoteA
     private final HashMap<String, RemoteAPISession> sessions = new HashMap<String, RemoteAPISession>();
 
     @Override
-    public RemoteAPISession getSession(final String id) {
+    public RemoteAPISession getSession(org.appwork.utils.net.httpserver.requests.HttpRequest request, final String id) {
         synchronized (this.sessions) {
             return this.sessions.get(id);
         }
     }
 
     @Override
-    protected RemoteAPISession newSession(final String username, final String password) {
+    protected RemoteAPISession newSession(RemoteAPIRequest request, final String username, final String password) {
         if (!"wron".equals(password)) {
             RemoteAPISession session = new RemoteAPISession(this);
             synchronized (this.sessions) {
