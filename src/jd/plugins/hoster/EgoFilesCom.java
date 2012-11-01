@@ -178,6 +178,8 @@ public class EgoFilesCom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
+        if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
+
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
