@@ -215,6 +215,7 @@ public class FilerNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://filer.net/locale/en");
         br.getPage("http://filer.net/profile");
         final String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>[\t\n\r ]+<td>([^<>\"]*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         final String validuntil = br.getRegex(Pattern.compile("is valid until ([A-Za-z]{3} \\d+, \\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

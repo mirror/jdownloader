@@ -27,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer.net/folder/.+/.*" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer.net/folder/[a-z0-9]+" }, flags = { 0 })
 public class Flr extends PluginForDecrypt {
 
     public Flr(PluginWrapper wrapper) {
@@ -40,6 +40,10 @@ public class Flr extends PluginForDecrypt {
         br.setFollowRedirects(true);
 
         br.getPage(parameter);
+        if (br.containsHTML(">Error: Folder not found<")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         final String[][] links = br.getRegex("\"(/get/[a-z0-9]+)\">([^<>\"]*?)</a>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link:" + parameter);
