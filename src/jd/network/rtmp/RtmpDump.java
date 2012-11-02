@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -70,17 +71,15 @@ public class RtmpDump extends RTMPDownload {
 
     }
 
-    private Chunk             CHUNK;
+    private volatile long     BYTESLOADED = 0l;
 
-    private volatile long     BYTESLOADED  = 0l;
+    private long              SPEED       = 0l;
 
-    private long              SPEED        = 0l;
+    private int               PID         = -1;
 
-    private int               PID          = -1;
+    private static String     RTMPDUMP    = null;
 
-    private static String     RTMPDUMP     = null;
-
-    private static String     RTMPVERSION  = null;
+    private static String     RTMPVERSION = null;
 
     private NativeProcess     NP;
 
@@ -89,10 +88,6 @@ public class RtmpDump extends RTMPDownload {
     private InputStreamReader R;
 
     private RtmpdumpSettings  config;
-
-    private final Object      watchDogLOCK = new Object();
-
-    private Thread            watchDog     = null;
 
     public RtmpDump(final PluginForHost plugin, final DownloadLink downloadLink, final String rtmpURL) throws IOException, PluginException {
         super(plugin, downloadLink, rtmpURL);
@@ -210,38 +205,19 @@ public class RtmpDump extends RTMPDownload {
         }
     }
 
-    // private void startRtmpDumpWatchDog() {
-    // synchronized (this.watchDogLOCK) {
-    // if (this.watchDog != null && this.watchDog.isAlive()) { return; }
-    // /* we have to start a new watchDog */
-    // this.watchDog = new Thread() {
-    // @Override
-    // public void run() {
-    // while (true) {
-    // final long sleepTime = Math.max(1000, 2000);
-    // try {
-    // Thread.sleep(sleepTime);
-    // } catch (final InterruptedException e) {
-    // Log.exception(e);
-    // } catch (Exception e1) {
-    // e1.printStackTrace();
-    // }
-    // /* this watchDog is finished, do some cleanup stuff */
-    // synchronized (watchDogLOCK) {
-    // watchDog = null;
-    // }
-    // }
-    // }
-    // };
-    // this.watchDog.setDaemon(true);
-    // this.watchDog.start();
-    // }
-    // }
+    private void kill() {
+        if (CrossSystem.isWindows()) {
+            NP.sendCtrlCSignal();
+        } else {
+            sendSIGINT();
+        }
+    }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
         if (!findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
 
-        boolean debug = config.isDebugModeEnabled();
+        boolean debug = config.isRtmpDumpDebugModeEnabled();
+        if (debug) rtmpConnection.setVerbose();
 
         final ThrottledConnection tcon = new RTMPCon() {
             @Override
@@ -254,6 +230,10 @@ public class RtmpDump extends RTMPDownload {
                 return BYTESLOADED;
             }
         };
+        File tmpFile = new File(downloadLink.getFileOutput() + ".part");
+        if (!CrossSystem.isWindows()) {
+            tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
+        }
         try {
             getManagedConnetionHandler().addThrottledConnection(tcon);
             addChunksDownloading(1);
@@ -264,22 +244,17 @@ public class RtmpDump extends RTMPDownload {
             }
             rtmpConnection.connect();
 
-            File tmpFile = new File(downloadLink.getFileOutput() + ".part");
-            if (!CrossSystem.isWindows()) {
-                tmpFile = new File(downloadLink.getFileOutput().replaceAll("\\s", "\\\\s") + ".part");
-            }
             String line = "";
             String error = "";
             long iSize = 0;
             long before = 0;
             long lastTime = System.currentTimeMillis();
 
-            /* hanging threads handling */
-            Future<String> future;
-            String crashMessage = "rtmpdump timed out while waiting for a reply after";
-            long readerTimeOut = 5 * 1000l; // wait readerTimeOut then kill process
+            String timeoutMessage = "rtmpdump timed out while waiting for a reply after";
+            long readerTimeOut = 10000l;
 
             String cmd = rtmpConnection.getCommandLineParameter();
+
             if (CrossSystem.isWindows()) {
                 // MAX_PATH Fix --> \\?\ + Path
                 if (String.valueOf(tmpFile).length() >= 260) {
@@ -291,12 +266,9 @@ public class RtmpDump extends RTMPDownload {
                 cmd = cmd.replaceAll("\"", "") + " -o " + String.valueOf(tmpFile);
             }
 
-            if (cmd.contains(" -e ")) {
-                setResume(true);
-            }
+            setResume(rtmpConnection.isResume());
 
             try {
-                ExecutorService executor = Executors.newFixedThreadPool(2);
                 if (CrossSystem.isWindows()) {
                     NP = new NativeProcess(RTMPDUMP, cmd);
                     R = new InputStreamReader(NP.getErrorStream());
@@ -307,6 +279,8 @@ public class RtmpDump extends RTMPDownload {
                 final BufferedReader br = new BufferedReader(R);
 
                 /* hanging threads handling */
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<String> future;
                 Callable<String> readTask = new Callable<String>() {
                     @Override
                     public String call() throws Exception {
@@ -318,28 +292,25 @@ public class RtmpDump extends RTMPDownload {
                 float progressFloat = 0;
                 boolean runTimeSize = false;
                 long tmplen = 0, fixedlen = 0, calc = 0;
-                while ((line = br.readLine()) != null) {
 
-                    /* hanging threads handling */
+                while (true) {
+
                     future = executor.submit(readTask);
                     try {
-                        error = line;
+                        if (!debug && error.isEmpty() && line.startsWith("ERROR")) error = line;
                         line = future.get(readerTimeOut, TimeUnit.MILLISECONDS);
-                        if (line == null) line = error;
-                    } catch (Throwable e) {
-                        if (CrossSystem.isWindows()) {
-                            NP.sendCtrlCSignal();
-                        } else {
-                            sendSIGINT();
-                        }
-                        error = crashMessage + " " + (readerTimeOut / 1000) + " sec";
+                    } catch (TimeoutException e) {
+                        kill();
+                        error = timeoutMessage + " " + readerTimeOut + " ms";
                         break;
+                    } catch (InterruptedException e) {
+                        kill();
+                        return true;
                     }
+                    if (line == null) break;
 
                     if (debug) logger.finest(line);
-                    if (!line.isEmpty() && line.startsWith("ERROR:")) {
-                        error = line;
-                    }
+                    if (line.startsWith("ERROR:")) error = line;
                     if (!new Regex(line, "^[0-9]").matches()) {
                         if (line.contains("length") || line.contains("lastkeyframelocation")) {
                             if (line.contains("length")) runTimeSize = true;
@@ -347,9 +318,7 @@ public class RtmpDump extends RTMPDownload {
                             iSize = SizeFormatter.getSize(size);
                         }
                     } else {
-                        if (downloadLink.getDownloadSize() == 0) {
-                            downloadLink.setDownloadSize(iSize);
-                        }
+                        if (downloadLink.getDownloadSize() == 0) downloadLink.setDownloadSize(iSize);
                         // is resumed
                         if (iSize == 0) iSize = downloadLink.getDownloadSize();
 
@@ -361,15 +330,6 @@ public class RtmpDump extends RTMPDownload {
                                 progressFloat = Float.parseFloat(line.substring(pos1 + 1, pos2 - 1));
                             }
                             BYTESLOADED = SizeFormatter.getSize(line.substring(0, line.toUpperCase().indexOf("KB") + 2));
-
-                            if (Thread.currentThread().isInterrupted()) {
-                                if (CrossSystem.isWindows()) {
-                                    NP.sendCtrlCSignal();
-                                } else {
-                                    sendSIGINT();
-                                }
-                                return true;
-                            }
 
                             if (sizeCalulateBuffer > 6 && runTimeSize) {
                                 tmplen = (long) (BYTESLOADED * 100.0F / progressFloat);
@@ -391,14 +351,14 @@ public class RtmpDump extends RTMPDownload {
                             }
                         }
                     }
-                    if (!line.toLowerCase().contains("download complete")) {
-                        continue;
-                    }
+                    if (!line.toLowerCase().contains("download complete")) continue;
+
                     // autoresuming when FMS sends NetStatus.Play.Stop and
                     // progress less than 100%
                     if (progressFloat < 99.8 && !line.toLowerCase().contains("download complete")) {
-                        System.out.println("Versuch Nr.: " + downloadLink.getLinkStatus().getRetryCount() + " ::: " + plugin.getMaxRetries(downloadLink, null));
-                        if (downloadLink.getLinkStatus().getRetryCount() >= plugin.getMaxRetries(downloadLink, null)) {
+                        int retry = downloadLink.getLinkStatus().getRetryCount() + 1;
+                        System.out.println("Versuch Nr.: " + retry + " ::: " + plugin.getMaxRetries(downloadLink, null));
+                        if (retry == plugin.getMaxRetries(downloadLink, null)) {
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
                         downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
@@ -425,6 +385,12 @@ public class RtmpDump extends RTMPDownload {
             }
 
             if (downloadLink.getLinkStatus().getStatus() == LinkStatus.ERROR_DOWNLOAD_INCOMPLETE) return false;
+            if (error.isEmpty() && line == null) {
+                logger.severe("RtmpDump: An unknown error has occured!");
+                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
+                downloadLink.reset();
+                return false;
+            }
             if (line != null) {
                 if (line.toLowerCase().contains("download complete")) {
                     downloadLink.setDownloadSize(BYTESLOADED);
@@ -434,7 +400,6 @@ public class RtmpDump extends RTMPDownload {
                         error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
                     }
                     downloadLink.getLinkStatus().addStatus(LinkStatus.FINISHED);
-                    /* Stream is succesfully downloaded */
                     return true;
                 }
             }
@@ -442,7 +407,7 @@ public class RtmpDump extends RTMPDownload {
                 if (error.toLowerCase().contains("last tag size must be greater/equal zero")) {
                     FlvFixer flvfix = new FlvFixer();
                     flvfix.setInputFile(tmpFile);
-                    if (debug) flvfix.setDebug(true);
+                    if (config.isFlvFixerDebugModeEnabled()) flvfix.setDebug(true);
 
                     LinkStatus lnkStatus = downloadLink.getLinkStatus();
                     linkStatus.reset();
@@ -459,7 +424,7 @@ public class RtmpDump extends RTMPDownload {
                         error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
                     }
                     if (!fixedFile.renameTo(tmpFile)) {
-                        logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
+                        logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
                         error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
                     }
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
@@ -468,18 +433,14 @@ public class RtmpDump extends RTMPDownload {
                 } else if (error.toLowerCase().contains("netstream.play.streamnotfound")) {
                     downloadLink.deleteFile(true, false);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (error.startsWith(crashMessage)) {
+                } else if (error.startsWith(timeoutMessage)) {
+                    logger.severe(error);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
                 } else {
                     logger.severe("cmd: " + cmd);
                     logger.severe(error);
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
-            }
-            if (error.isEmpty() && line == null) {
-                logger.severe("RtmpDump: An unknown error has occured!");
-                downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
-                downloadLink.reset();
             }
             return false;
         } finally {

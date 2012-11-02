@@ -313,6 +313,10 @@ public class RtmpUrlConnection extends URLConnection {
         }
     }
 
+    public boolean isResume() {
+        return parameterMap.containsKey(KEY_RESUME);
+    }
+
     /**
      * Use the specified SOCKS proxy.
      * 

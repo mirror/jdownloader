@@ -513,8 +513,20 @@ public class RapidGatorNet extends PluginForHost {
                 // } catch (final Exception e) {
                 // }
 
-                String loginPostData = "LoginForm%5BverifyCode%5D=&LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                br.postPage("http://rapidgator.net/auth/login", loginPostData);
+                Form loginForm = br.getFormbyProperty("id", "login");
+                String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
+                if (loginForm != null) {
+                    String user = loginForm.getBestVariable("email");
+                    String pass = loginForm.getBestVariable("password");
+                    if (user == null) user = "LoginForm%5Bemail%5D";
+                    if (pass == null) pass = "LoginForm%5Bpassword%5D";
+                    loginForm.put(user, Encoding.urlEncode(account.getUser()));
+                    loginForm.put(pass, Encoding.urlEncode(account.getPass()));
+                    br.submitForm(loginForm);
+                    loginPostData = loginForm.getPropertyString();
+                } else {
+                    br.postPage("http://rapidgator.net/auth/login", loginPostData);
+                }
 
                 /* jsRedirect */
                 String reDirHash = handleJavaScriptRedirect();

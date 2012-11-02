@@ -9,9 +9,16 @@ public interface RtmpdumpSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry("Enable debug mode, nearly everything will be logged!")
-    boolean isDebugModeEnabled();
+    @DescriptionForConfigEntry("Enable rtmpdump debug mode")
+    boolean isRtmpDumpDebugModeEnabled();
 
-    void setDebugModeEnabled(boolean b);
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Enable flvfixer debug mode. Beware, log file can be rather large!")
+    boolean isFlvFixerDebugModeEnabled();
+
+    void setRtmpDumpDebugModeEnabled(boolean b);
+
+    void setFlvFixerDebugModeEnabled(boolean b);
 
 }
