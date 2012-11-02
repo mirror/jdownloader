@@ -505,13 +505,9 @@ public class RapidGatorNet extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
 
-                // br.postPage("http://rapidgator.net/antifrod/index", "");
-                // try {
-                // br.postPage("http://rapidgator.net/antifrod/dns", "");
-                // } catch (final Exception e) {
-                // }
+                br.setFollowRedirects(true);
+                br.getPage(MAINPAGE);
 
                 Form loginForm = br.getFormbyProperty("id", "login");
                 String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
