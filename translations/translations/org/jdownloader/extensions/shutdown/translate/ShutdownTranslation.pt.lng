@@ -20,6 +20,6 @@ interaction_shutdown_dialog_title_hibernate=Hibernar?
 interaction_shutdown_dialog_title_shutdown=Desligar?
 interaction_shutdown_dialog_title_standby=Suspender?
 jd_plugins_optional_jdshutdown=JD Desligar
-jd_plugins_optional_jdshutdown_description=DEsliga, suspende ou hiberna o computador ou o JD automáticamente, após descarga completa.
+jd_plugins_optional_jdshutdown_description=Desliga, suspende ou hiberna o computador ou o JD automáticamente, após descarga completa.
 lit_shutdownn=Desligar
 show_admin=Direitos Administrativos são necessários para permitir que o JDownloader coloque o sistema em estado de Hibernação ou em Modo de Espera.
