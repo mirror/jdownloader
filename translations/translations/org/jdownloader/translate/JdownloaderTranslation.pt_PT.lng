@@ -134,6 +134,7 @@ settings_sidebar_tooltip_enable_extension=Activar / Desactivar este Extra
 system_download_doCRC2=Verificação CRC - em andamento(%s1)
 system_download_doCRC2_failed=Verificação CRC - ERRO(%s1)
 system_download_doCRC2_success=Verificação CRC - OK(%s1)
+system_download_errors_couldnotdelete=Impossível eliminar parte do ficheiro existente
 system_download_errors_couldnotoverwrite=Não foi possível substituir o ficheiro existente
 system_download_errors_couldnotrename=Não foi possível mudar o nome do ficheiro part
 system_download_errors_invalidoutputfile=Ficheiro de saída inválido
