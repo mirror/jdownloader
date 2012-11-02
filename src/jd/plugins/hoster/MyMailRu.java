@@ -25,7 +25,9 @@ import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -35,9 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://(www\\.)?my\\.mail\\.ru/jdeatme\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "my.mail.ru" }, urls = { "http://my\\.mail\\.ru/jdeatme\\d+" }, flags = { 2 })
 public class MyMailRu extends PluginForHost {
 
     public MyMailRu(PluginWrapper wrapper) {
@@ -50,27 +50,50 @@ public class MyMailRu extends PluginForHost {
         return "http://my.mail.ru/";
     }
 
+    private String DLLINK = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("rzt6i98ukmrg54")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("").getMatch(0);
-        if (filename == null) filename = br.getRegex("").getMatch(0);
-        String filesize = br.getRegex("").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        final String originalLink = link.getStringProperty("mainlink", null);
+        final Regex linkInfo = new Regex(originalLink, "http://foto\\.mail\\.ru/([^<>\"/]*?)/([^<>\"/]*?)/([^<>\"/]*?)/(\\d+)\\.html");
+        br.getPage(originalLink);
+        if (br.containsHTML(">Данная страница не найдена на нашем сервере")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        for (int i = 1; i <= 2; i++) {
+            if (i == 1) DLLINK = br.getRegex("\"(http://content\\.foto\\.mail\\.ru/[^<>\"/]*?/[^<>\"/]*?/[^<>\"/]*?/s\\-\\d+\\.[A-Za-z]{1,5})\"").getMatch(0);
+            if (DLLINK == null) DLLINK = "http://content.foto.mail.ru/" + linkInfo.getMatch(0) + "/" + linkInfo.getMatch(1) + "/" + linkInfo.getMatch(2) + "/i-" + linkInfo.getMatch(3) + link.getStringProperty("ext", null);
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(DLLINK);
+                if (con.getResponseCode() == 500) {
+                    logger.info("High quality link is invalid, using normal link...");
+                    DLLINK = null;
+                    continue;
+                }
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(linkInfo.getMatch(3) + link.getStringProperty("ext", null));
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.setFollowRedirects(false);
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // More chunks possible but not needed because we're only downloading
+        // pictures here
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -141,16 +164,11 @@ public class MyMailRu extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(br, account, false);
-        br.setFollowRedirects(false);
-        br.getPage(link.getDownloadURL());
-        String dllink = br.getRegex("").getMatch(0);
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // More chunks possible but not needed because we're only downloading
+        // pictures here
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

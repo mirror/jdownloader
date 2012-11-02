@@ -65,21 +65,22 @@ public class MyMailRu extends PluginForDecrypt {
             int segment = 1;
             while (decryptedLinks.size() != imgCount) {
                 logger.info("Decrypting segment " + segment + " of maybe " + segmentCount + " segments...");
-                String[] links = null;
-                if (offset == 0) {
-                    links = br.getRegex("style=\"background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
-                } else {
+                if (offset > 0) {
                     br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br.getPage("http://my.mail.ru/" + dirname + "/" + username + "/ajax?ajax_call=1&func_name=photo.photostream&mna=false&mnb=false&encoding=windows-1251&arg_offset=" + offset + "&arg_marker=" + new Random().nextInt(1000) + "&arg_album_id=" + albumID);
-                    links = br.getRegex("background\\-image:url\\((http://[^<>\"]*?/p\\-\\d+\\.jpg)\\)").getColumn(0);
+                    br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
                 }
+                final String[][] links = br.getRegex("\\(http://content\\.[^<>\"/]*?\\.mail\\.ru/mail/[^<>\"/]*?/[^<>\"/]*?/p\\-\\d+(\\.[a-z]{1,5})\\);\".*?<a class=\"l\\-catalog_link\" href=\"(http://foto\\.mail\\.ru/[^<>\"/]+/[^<>\"/]+/[^<>\"/]+/\\d+\\.html)\"").getMatches();
                 if (links == null || links.length == 0) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                for (final String singleLink : links) {
-                    final String ending = singleLink.substring(singleLink.lastIndexOf("/"));
-                    final DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replace(ending, ending.replace("/p", "/i")));
+                for (final String singleLink[] : links) {
+                    final String ending = singleLink[0];
+                    final DownloadLink dl = createDownloadlink("http://my.mail.ru/jdeatme" + System.currentTimeMillis() + new Random().nextInt(100000));
+                    dl.setProperty("mainlink", singleLink[1]);
+                    dl.setProperty("ext", ending);
+                    dl.setFinalFileName(new Regex(singleLink[1], "(\\d+)\\.html").getMatch(0) + ending);
                     dl.setAvailable(true);
                     decryptedLinks.add(dl);
                 }
