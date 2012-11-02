@@ -25,6 +25,7 @@ LiveHeaderDetectionWizard_runOnlineScan_collect=Pesquisando Informação de Liga
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_mm=Este serviço não está de momento disponível. Tente mais tarde!
 LiveHeaderDetectionWizard_runOnlineScan_notavailable_t=Serviço indisponível
 LiveHeaderDetectionWizard_runOnlineScan_warning_badhost=O IP '%s1' do Router é inválido!
+LiveHeaderDetectionWizard_sendRouter_reconnectFailed=Conexão falhou. Apenas pode partilhar opções de conexão que funcionam.
 LiveHeaderDetectionWizard_uploadData_sent_failed=Verificamos que o seu script já existe na nossa base de dados.\nObrigado na mesma.
 LiveHeaderDetectionWizard_uploadData_sent_ok=Obrigado! Adicionamos o seu script à nossa base de dados.
 LiveHeaderInvoker_getName_=Cabeçalho: %s1

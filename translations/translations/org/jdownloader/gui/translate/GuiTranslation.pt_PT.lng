@@ -285,6 +285,7 @@ OpenURLAction_OpenURLAction_=Clicar aqui para adquirir uma conta PREMIUM
 OpenUrlAction_OpenUrlAction_=Abrir no Navegador
 PackagizerFilterRuleDialog_PackagizerFilterRuleDialog_test_help=Introduzir endereço de teste...
 PackagizerFilterRuleDialog_createVariablesMenu_date=Data ou Hora
+PackagizerFilterRuleDialog_createVariablesMenu_filename=Nome original ficheiro (usar * para todos) #%s1
 PackagizerFilterRuleDialog_createVariablesMenu_filename_org=Nome ficheiro original
 PackagizerFilterRuleDialog_createVariablesMenu_filetype_org=Tipo ficheiro original
 PackagizerFilterRuleDialog_createVariablesMenu_menu=Variáveis Dinâmicas
