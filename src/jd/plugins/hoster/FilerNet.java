@@ -18,12 +18,15 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -37,38 +40,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
 
-    private final Pattern     PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
-    private static AtomicLong LAST_FREE_DOWNLOAD    = new AtomicLong(0l);
+    private final String        COOKIE_HOST = "http://filer.net";
+    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download-slots";
+    private static Object       LOCK        = new Object();
 
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://filer.net/premium");
+        this.enablePremium("http://filer.net/upgrade");
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        this.setBrowserExclusive();
-        try {
-            login(account);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
-        }
-        String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String validuntil = br.getRegex(Pattern.compile("<th>Mitglied bis</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        ai.setTrafficLeft(trafficleft);
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
+    private void prepBrowser() {
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
 
-        String[] splitted = validuntil.split("-");
-        Date date = dateFormat.parse(splitted[2] + "." + splitted[1] + "." + splitted[0]);
-        ai.setValidUntil(date.getTime());
-
-        account.setValid(true);
-        return ai;
     }
 
     @Override
@@ -86,12 +74,10 @@ public class FilerNet extends PluginForHost {
         return 500;
     }
 
-    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download-slots";
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
@@ -166,25 +152,6 @@ public class FilerNet extends PluginForHost {
         dl.startDownload();
     }
 
-    @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        // TODO: Fix ALL premium functions
-        setBrowserExclusive();
-        login(account);
-        br.getPage(downloadLink.getDownloadURL());
-        Thread.sleep(500);
-        br.setFollowRedirects(false);
-        String id = br.getRegex("<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
-        if (id == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-        br.getPage("http://www.filer.net/dl/" + id);
-        String url = br.getRegex("url=(http.*?)\"").getMatch(0);
-        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE); }
-        dl.startDownload();
-    }
-
     // do not add @Override here to keep 0.* compatibility
     public boolean hasAutoCaptcha() {
         return true;
@@ -195,18 +162,94 @@ public class FilerNet extends PluginForHost {
         return true;
     }
 
-    public void login(Account account) throws IOException, PluginException, InterruptedException {
-        br.getPage("http://www.filer.net/");
-        Thread.sleep(500);
-        br.getPage("http://www.filer.net/login");
-        Thread.sleep(500);
-        br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&commit=Einloggen");
-        Thread.sleep(500);
-        String cookie = br.getCookie("http://filer.net", "filer_net");
-        if (cookie == null) {
-            if (br.containsHTML("Mit diesem Usernamen ist bereits ein Benutzer eingelogged")) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Fraud Detection. This Username is currently used by someone else.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    public void login(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                prepBrowser();
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return;
+                    }
+                }
+                br.setFollowRedirects(true);
+                br.getPage("http://filer.net/login");
+                final String token = br.getRegex("name=\"_csrf_token\" value=\"([a-z0-9]+)\"").getMatch(0);
+                if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+                br.postPage("http://filer.net/login_check", "_remember_me=on&_submit=&_csrf_token=" + token + "&_target_path=http%3A%2F%2Ffiler.net%2F&_username=" + Encoding.urlEncode(account.getUser()) + "&_password=" + Encoding.urlEncode(account.getPass()));
+                if (br.getCookie(COOKIE_HOST, "REMEMBERME") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
         }
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        this.setBrowserExclusive();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        br.getPage("http://filer.net/profile");
+        final String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>[\t\n\r ]+<td>([^<>\"]*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        final String validuntil = br.getRegex(Pattern.compile("is valid until ([A-Za-z]{3} \\d+, \\d{4} \\d{2}:\\d{2}:\\d{2} (AM|PM))", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (trafficleft == null || validuntil == null) {
+            account.setValid(false);
+            return ai;
+        }
+        ai.setTrafficLeft(trafficleft);
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "MMMM dd, yyyy h:mm:ss a", Locale.US));
+        account.setValid(true);
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        setBrowserExclusive();
+        requestFileInformation(downloadLink);
+        login(account, false);
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex("\"(/dl/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
+            if (dllink != null) dllink = "http://filer.net" + dllink;
+        }
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        // Chunks deactivated to prevent errors
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
+        dl.startDownload();
     }
 
     @Override
