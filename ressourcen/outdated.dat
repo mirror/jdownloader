@@ -975,3 +975,6 @@ jd/plugins/hoster/ShareatorNet.class
 jd/plugins/hoster/FilesTrackCom.class
 jd/plugins/hoster/SharingOnlineCom.class
 jd/plugins/hoster/CosaUploadOrg.class
+jd/plugins/hoster/XtshareCom.class
+jd/plugins/hoster/ZeFileCom.class
+jd/plugins/hoster/FileBitNet.class

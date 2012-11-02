@@ -92,6 +92,7 @@ public class FilerNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
         if (reconWait != null) {
@@ -107,6 +108,12 @@ public class FilerNet extends PluginForHost {
         if (br.containsHTML(">Not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex(">Free Download ([^<>\"]*?)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // The don't show a filesize but there is an estiminate download time :D
+        final Regex downloadTime = br.getRegex("<td><em>~ (\\d+):(\\d+):(\\d+)</em></td>");
+        if (downloadTime.getMatches().length == 1) {
+            int seconds = Integer.parseInt(downloadTime.getMatch(0)) * 60 * 60 + Integer.parseInt(downloadTime.getMatch(1)) * 60 + Integer.parseInt(downloadTime.getMatch(2));
+            link.setDownloadSize((long) (seconds * 2119462.127659574));
+        }
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }

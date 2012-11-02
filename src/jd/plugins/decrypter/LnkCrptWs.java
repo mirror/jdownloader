@@ -165,7 +165,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default false
-         * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
+         * @parameter if true uses "https://api-secure.solvemedia.com" instead
+         *            of "http://api.solvemedia.com"
          */
         public void setSecure(boolean secure) {
             if (secure) secure = true;
@@ -173,7 +174,8 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default true
-         * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
+         * @parameter if false uses "_challenge.js" instead of
+         *            "challenge.noscript" as url path
          */
         public void setNoscript(boolean noscript) {
             if (!noscript) noscript = false;
@@ -368,8 +370,10 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
 
             /* Bilderdownload und Verarbeitung */
-            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
-            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
+            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte
+                                                                                            // Puzzleteile
+            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes
+                                                                                            // Hintergrundbild
 
             if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) { return "CANCEL"; }
 
@@ -1276,6 +1280,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         if (tmpc != null) {
             containers = new Regex(tmpc, "eval(.*?)\n").getColumn(0);
         }
+        String decryptedJS = null;
         for (final String c : containers) {
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
@@ -1284,10 +1289,10 @@ public class LnkCrptWs extends PluginForDecrypt {
                 result = engine.eval(c);
             } catch (final Throwable e) {
             }
-            final String code = result.toString();
-            String[] row = new Regex(code, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
+            decryptedJS = result.toString();
+            String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
             if (row == null) {
-                row = new Regex(code, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
+                row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
             }
             if (row != null) {
                 map.put(row[1], row[0]);
@@ -1329,6 +1334,21 @@ public class LnkCrptWs extends PluginForDecrypt {
                 container.createNewFile();
             }
             br.cloneBrowser().getDownload(container, map.get("rsdf"));
+        } else if (map.containsKey("cnl")) {
+            final String jk = new Regex(decryptedJS, "NAME=\"jk\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String crypted = new Regex(decryptedJS, "name=\"crypted\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String passwrds = new Regex(decryptedJS, "name=\"passwords\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String source = new Regex(decryptedJS, "name=\"source\" value=\"([^<>\"]*?)\"").getMatch(0);
+            if (jk != null && crypted != null) {
+                String cnl2post = "jk=" + Encoding.urlEncode(jk.replace("\\", "")) + "&crypted=" + Encoding.urlEncode(crypted);
+                if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
+                if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
+                br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
+                if (br.containsHTML("success")) {
+                    logger.info("CNL2 = works!");
+                    return decryptedLinks;
+                }
+            }
         }
         if (container != null) {
             // container available

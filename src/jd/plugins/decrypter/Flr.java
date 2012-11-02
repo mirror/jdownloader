@@ -46,7 +46,7 @@ public class Flr extends PluginForDecrypt {
         }
 
         for (String element[] : links) {
-            final DownloadLink link = createDownloadlink("http://www.filer.net" + element[0]);
+            final DownloadLink link = createDownloadlink("http://filer.net" + element[0]);
             link.setFinalFileName(element[1]);
             link.setDownloadSize(SizeFormatter.getSize(element[2]));
             decryptedLinks.add(link);
