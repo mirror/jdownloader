@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -57,6 +58,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // character which is bad in the name of the package
         fpName = Encoding.htmlDecode(fpName);
         fpName = RemoveCharacter(fpName);
+        fpName = FirstLetterUpForEachWord(fpName);
 
         // Array of image to download the cover (It can be usable if the user
         // want to create a subfolder with the name of the package because
@@ -96,7 +98,25 @@ public class SrBoxCom extends PluginForDecrypt {
             for (String strImageLink : TabImage) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
-                    decryptedLinks.add(createDownloadlink(strImageLink, false));
+
+                    DownloadLink DLLink = createDownloadlink(strImageLink, false);
+                    String strExtension = "";
+                    int iIndex = strImageLink.lastIndexOf('.');
+                    if (iIndex > -1) {
+                        strExtension = strImageLink.substring(iIndex);
+                    }
+                    if (strExtension != "") {
+                        if (fpName != null) {
+                            iIndex = fpName.lastIndexOf(')');
+                            String strName = fpName;
+                            if (iIndex == fpName.length() - 1) {
+                                iIndex = fpName.lastIndexOf(" (");
+                                strName = fpName.substring(0, iIndex);
+                            }
+                            DLLink.setFinalFileName(strName + strExtension);
+                        }
+                    }
+                    decryptedLinks.add(DLLink);
                 }
                 progress.increase(1);
             }
@@ -149,5 +169,46 @@ public class SrBoxCom extends PluginForDecrypt {
 
         strName = strName.replace("MP3", "");
         return strName;
+    }
+
+    /**
+     * Allows to put a capital letter on each words of the title
+     * 
+     * @param strName
+     *            The name of the package
+     * @return the name of the package with a capital letter on each words.
+     */
+    private String FirstLetterUpForEachWord(String strName) {
+        String strResult = "";
+        List<String> FirstCaracException = new ArrayList<String>();
+        FirstCaracException.add("(");
+        FirstCaracException.add("-");
+
+        String[] AllWord = strName.split(" ");
+        for (String strWord : AllWord) {
+            strWord = strWord.toLowerCase();
+            if (strWord.length() > 0) {
+                String strFirstCarac = strWord.substring(0, 1);
+
+                if (FirstCaracException.contains(strFirstCarac)) {
+                    if (strWord.length() > 1) {
+                        strFirstCarac += strWord.substring(1, 2);
+                    }
+                }
+
+                try {
+                    strFirstCarac = strFirstCarac.toUpperCase();
+                } catch (Exception e) {
+                }
+                strResult += strFirstCarac + strWord.substring(strFirstCarac.length(), strWord.length()) + " ";
+            }
+        }
+        if (strResult != "")
+            // Remove the last space introduces in the loop
+            strResult = strResult.substring(0, strResult.length() - 1);
+        else
+            // If no result, we return the name pass to the function
+            strResult = strName;
+        return strResult;
     }
 }
