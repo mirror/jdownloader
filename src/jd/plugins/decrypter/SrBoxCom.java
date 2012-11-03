@@ -58,7 +58,7 @@ public class SrBoxCom extends PluginForDecrypt {
         // character which is bad in the name of the package
         fpName = Encoding.htmlDecode(fpName);
         fpName = RemoveCharacter(fpName);
-        fpName = FirstLetterUpForEachWord(fpName);
+        fpName = CapitalLetterForEachWords(fpName);
 
         // Array of image to download the cover (It can be usable if the user
         // want to create a subfolder with the name of the package because
@@ -178,7 +178,7 @@ public class SrBoxCom extends PluginForDecrypt {
      *            The name of the package
      * @return the name of the package with a capital letter on each words.
      */
-    private String FirstLetterUpForEachWord(String strName) {
+    private String CapitalLetterForEachWords(String strName) {
         String strResult = "";
         List<String> FirstCaracException = new ArrayList<String>();
         FirstCaracException.add("(");
