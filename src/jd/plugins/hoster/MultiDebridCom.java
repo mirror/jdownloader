@@ -163,18 +163,22 @@ public class MultiDebridCom extends PluginForHost {
         }
 
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://"))) {
+            if (dllink.contains("Cannot debrid link")) {
+                tempUnavailableHoster(account, link, 20 * 60 * 1000l);
+            }
+
             /*
              * after x retries we disable this host and retry with normal plugin
              */
             if (link.getLinkStatus().getRetryCount() >= 3) {
                 /* reset retrycounter */
                 link.getLinkStatus().setRetryCount(0);
-                // disable hoster for 20min
-                tempUnavailableHoster(account, link, 20 * 60 * 1000l);
+                // disable hoster for 30min
+                tempUnavailableHoster(account, link, 30 * 60 * 1000l);
             }
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             logger.severe("multi-debrid: invalid unrestricted link: " + br);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 15 * 1000l);
         }
         showMessage(link, "Phase 2/2: Download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
@@ -183,7 +187,7 @@ public class MultiDebridCom extends PluginForHost {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             logger.severe("Multi-debrid(Error): " + dllink);
             /*
