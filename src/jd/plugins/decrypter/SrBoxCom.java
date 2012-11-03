@@ -164,9 +164,12 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replace("VA - ", "");
         strName = strName.replace("FLAC", "");
         strName = strName.replace("flac", "");
+        strName = strName.replace("Lossless", "");
+        strName = strName.replace("lossless", "");
         strName = strName.replace("APE", "");
         strName = strName.replace("ape", "");
 
+        strName = strName.replace("mp3", "");
         strName = strName.replace("MP3", "");
         return strName;
     }
