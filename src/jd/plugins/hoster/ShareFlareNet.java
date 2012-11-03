@@ -55,7 +55,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?(u\\d+\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
     private static final String  FREEDOWNLOADPOSSIBLE              = "download4";

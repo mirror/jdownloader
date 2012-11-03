@@ -98,6 +98,7 @@ public class MyMailRu extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(downloadLink);
         dl.startDownload();
     }
 
@@ -167,12 +168,25 @@ public class MyMailRu extends PluginForHost {
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // More chunks possible but not needed because we're only downloading
         // pictures here
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(link);
         dl.startDownload();
+    }
+
+    private void fixFilename(final DownloadLink downloadLink) {
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
+            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
+            if (oldExtension != null)
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
+            else
+                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+        }
     }
 
     @Override
