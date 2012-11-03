@@ -1,6 +1,6 @@
 action_tooltip=Ενεργοποιήστε για Τερματισμό του Συστήματος μετά την ολοκλήρωση των Λήψεων
-addons_jdshutdown_statusmessage_disabled=Το σύστημα ΔΕΝ θα τερματιστεί από το JDownloader
-addons_jdshutdown_statusmessage_enabled=Το σύστημα θα τερματιστεί από το JDownloader όταν ολοκληρωθούν οι λήψεις!
+addons_jdshutdown_statusmessage_disabled=Το σύστημα ΔΕΝ θα τερματιστεί από τον JDownloader
+addons_jdshutdown_statusmessage_enabled=Το σύστημα θα τερματιστεί από τον JDownloader όταν ολοκληρωθούν οι λήψεις!
 config_toolbarbutton=Πλήκτρο Γραμμής Εργαλείων ορατό
 gui_config_jdshutdown_close=Κλείσιμο του JD
 gui_config_jdshutdown_forceshutdown=Κλείσιμο (όχι σε όλα τα λειτουργικά)
@@ -11,7 +11,7 @@ gui_config_jdshutdown_standby=Αναμονή (όχι σε όλα τα λειτο
 install_force=Εγκατάσταση Επιβολής Τερματισμού
 install_msg=Θέλετε να προετοιμάσετε το σύστημά σας για τη δυνατότητα Επιβολής Τερματισμού;
 install_title=Εγκατάσταση Επιβολής Τερματισμού
-interaction_shutdown_dialog_msg_closejd=<h2><font color="red">Το JDownloader θα τερματιστεί!</font></h2>
+interaction_shutdown_dialog_msg_closejd=<h2><font color="red">Ο JDownloader θα τερματιστεί!</font></h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">Το σύστημα θα μεταβεί σε κατάσταση Αδρανοποίησης!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">Το σύστημα θα τερματιστεί!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">Το σύστημα θα μεταβεί σε κατάσταση Αναμονής!</font></h2>
