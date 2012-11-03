@@ -1,5 +1,4 @@
 AutoDetectAction_run_failed=Βρέθηκαν συσκευές UPNP, αλλά δεν ήταν δυνατή η Επανασύνδεση.\r\nΔοκιμάστε καλύτερα την Live Header Επανασύνδεση!
-AutoDetectAction_run_optimize=Βελτιστοποίηση: %s1
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Προσπαθεί να βρει όλες τις UPNP συσκευές Επανασύνδεσης στο δίκτυό σας.\r\nΟι περισσότεροι δρομολογητές Fritzbox μπορούν να επανασυνδεθούν με αυτό τον τρόπο.
 UPNPReconnectInvoker_getName_=Επανασύνδεση UPNP Δρομολογητή
 UPNPRouterPlugin_run_error=Δεν ήταν δυνατή η εύρεση συσκευών UPNP. Δοκιμάστε την LiveHeader Επανασύνδεση!
@@ -10,10 +9,6 @@ auto=Αυτόματη εγκατάσταση UPNP
 controlURLTxt_help=Εισάγετε τη Διεύθυνση Ελέγχου...
 interaction_UpnpReconnect_wanservice_ip=Πρωτόκολλο Διαδικτύου
 interaction_UpnpReconnect_wanservice_ppp=Πρωτόκολλο από Σημείο σε Σημείο
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_message=Δεν βρέθηκαν ενεργοί UPNP Δρομολογητές
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_faileddialog_title=Απέτυχε
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_message=Ο JD όρισε επιτυχώς τις ρυθμίσεις επανασύνδεσης!\r\n\r\nΟ Δρομολογητής είναι\r\n'%s1'
-jd_controlling_reconnect_plugins_upnp_UPNPRouterPlugin_autoFind_successdialog_title=Επιτυχής
 literally_choose_router=Επιλογή συσκευής
 literally_control_url=Διεύθυνση Ελέγχου
 literally_router=Δρομολογητής UPNP
