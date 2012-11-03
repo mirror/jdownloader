@@ -243,7 +243,9 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             finallink = br.getRegex("\"(http://img\\d+\\.cocoimage\\.com/showimg\\.php\\?id=\\d+[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("pic4free.org/")) {
-            finallink = parameter.replace("/?v=", "/images/");
+            br.getPage(parameter);
+            finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/download\\.php\\?id=\\d+)\"").getMatch(0);
+            if (finallink == null) finallink = parameter.replace("/?v=", "/images/");
         }
         if (finallink == null) {
             logger.warning("Imagehoster-Decrypter broken for link: " + parameter);
