@@ -141,6 +141,7 @@ settings_sidebar_tooltip_enable_extension=Habilitar/Deshabilitar esta extensión
 system_download_doCRC2=Verificando CRC (%s1)
 system_download_doCRC2_failed=Verificación CRC fallida (%s1)
 system_download_doCRC2_success=CRC Correcto (%s1)
+system_download_errors_couldnotdelete=No se pudo eliminar una parte
 system_download_errors_couldnotoverwrite=No se puede sobrescribir el archivo existente
 system_download_errors_couldnotrename=No se puede renombrar la parte
 system_download_errors_invalidoutputfile=Archivo de salida inválido

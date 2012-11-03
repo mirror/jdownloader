@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=Ayuda del selector de archivos
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Inicio
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Lista
 DIALOG_FILECHOOSER_lookInLabelText=Buscar en:
+DIALOG_FILECHOOSER_networkfolder=Red
 DIALOG_FILECHOOSER_newFolderAccessibleName=Nueva carpeta
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Error al crear carpeta nueva
