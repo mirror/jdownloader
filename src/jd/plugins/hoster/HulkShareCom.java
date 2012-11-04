@@ -61,7 +61,6 @@ public class HulkShareCom extends PluginForHost {
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://hulkshare.com";
     public boolean              NOPREMIUM           = false;
-
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static Object       LOCK                = new Object();
@@ -74,60 +73,6 @@ public class HulkShareCom extends PluginForHost {
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload("http://www.hulkshare.com/" + new Regex(link.getDownloadURL(), "/([a-z0-9]{12})$").getMatch(0));
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        correctDownloadLink(link);
-        br.setCookie(COOKIE_HOST, "lang", "english");
-        br.getPage(link.getDownloadURL());
-        String argh = br.getRedirectLocation();
-        // Handling for direct links
-        if (argh != null) {
-            Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
-            URLConnectionAdapter con = null;
-            try {
-                con = br2.openGetConnection(argh);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setFinalFileName(getFileNameFromHeader(con));
-                    link.setProperty("freelink", argh);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                return AvailableStatus.TRUE;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
-        }
-        if (br.containsHTML("You have reached the download-limit")) {
-            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
-            return AvailableStatus.UNCHECKABLE;
-        }
-        if (br.containsHTML(">Page not found")) {
-            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<title>Listen to ([^<>\"]*?) on Hulkshare \\- Free Music Streaming \\& Download</title>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<h2 itemprop=\"name\">([^<>\"]*?)</h2>").getMatch(0);
-            }
-        }
-        if (filename == null) {
-            logger.warning("The filename equals null, throwing \"file not found\" now...");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setFinalFileName(filename.trim());
-        return AvailableStatus.TRUE;
     }
 
     private String checkDLLink(DownloadLink downloadLink) {
@@ -259,9 +204,7 @@ public class HulkShareCom extends PluginForHost {
             }
         }
         if (dllink == null) dllink = checkDLLink(downloadLink);
-        // Videolinks can already be found here, if a link is found here we can
-        // skip waittimes and captchas
-
+        // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (BRBEFORE.contains("\"download1\"")) {
@@ -624,6 +567,92 @@ public class HulkShareCom extends PluginForHost {
             account.setProperty("pass", Encoding.urlEncode(account.getPass()));
             account.setProperty("cookies", cookies);
         }
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        correctDownloadLink(link);
+        br.setCookie(COOKIE_HOST, "lang", "english");
+        br.getPage(link.getDownloadURL());
+        String argh = br.getRedirectLocation();
+        // Handling for direct links
+        if (argh != null) {
+            Browser br2 = br.cloneBrowser();
+            // In case the link redirects to the finallink
+            br2.setFollowRedirects(true);
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openGetConnection(argh);
+                if (!con.getContentType().contains("html")) {
+                    link.setDownloadSize(con.getLongContentLength());
+                    link.setFinalFileName(getFileNameFromHeader(con));
+                    link.setProperty("freelink", argh);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return AvailableStatus.TRUE;
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
+            }
+        }
+        if (br.containsHTML("You have reached the download\\-limit")) {
+            logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
+            return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.containsHTML("(No such file|No such user exist|File not found)")) {
+            logger.warning("file is 99,99% offline, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filename = br.getRegex("You have requested.*?http://.*?[a-z0-9]{12}/(.*?)</font>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("fname\" value=\"(.*?)\"").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("Filename:</b></td><td >(.*?)</td>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("File ?name.*?nowrap.*?>(.*?)</td").getMatch(0);
+                    if (filename == null) {
+                        filename = br.getRegex("class=\"jp\\-file\\-string\">(.*?)</div>").getMatch(0);
+                        if (filename == null) {
+                            filename = br.getRegex("<title>Listen to (.*?) on Hulkshare.*</title>").getMatch(0);
+                            if (filename == null) {
+                                filename = br.getRegex("<h2>[\r\n\t ]+(.*?)[\r\n\t ]+<input").getMatch(0);
+                                if (filename == null) {
+                                    filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
+                                    if (filename == null) { // old, duped from new rule
+                                        filename = br.getRegex("<title>(.*?) - Hulk Share -  Music Distribution Platform</title>").getMatch(0);
+                                        if (filename == null) { // old, duped from new rule
+                                            filename = br.getRegex("<h2>(.*?)</h2>[\r\n\t ]+by").getMatch(0);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+                if (filesize == null) {
+                    filesize = br.getRegex("<b>Size:</b> (.*?)<br />").getMatch(0);
+                }
+            }
+        }
+        if (filename == null) {
+            logger.warning("The filename equals null, throwing \"file not found\" now...");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(filename.trim());
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override

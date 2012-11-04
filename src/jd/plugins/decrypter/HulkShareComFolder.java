@@ -27,18 +27,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?hulkshare\\.com/(?!dl/)[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "http://(www\\.)?(hulkshare\\.com|hu\\.lk)/(?!dl/)[a-z0-9]+" }, flags = { 0 })
 public class HulkShareComFolder extends PluginForDecrypt {
 
     public HulkShareComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?hulkshare\\.com/[a-z0-9]{12}";
+    private static final String HULKSHAREDOWNLOADLINK = "http://(www\\.)?(hulkshare\\.com|hu\\/lk)/[a-z0-9]{12}";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
         br.setFollowRedirects(false);
         br.setCookie("http://hulkshare.com/", "lang", "english");
         br.getPage(parameter);
@@ -47,7 +47,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
-        if (br.containsHTML("You have reached the download-limit") || br.containsHTML(">Page not found")) {
+        if (br.containsHTML("You have reached the download\\-limit") || br.containsHTML(">Page not found")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
             dl.setAvailable(false);
             decryptedLinks.add(dl);
