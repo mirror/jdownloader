@@ -278,7 +278,7 @@ public class RtmpDump extends RTMPDownload {
                 }
                 final BufferedReader br = new BufferedReader(R);
 
-                /* hanging threads handling */
+                /* prevents input buffer timed out */
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Future<String> future;
                 Callable<String> readTask = new Callable<String>() {

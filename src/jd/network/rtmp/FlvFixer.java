@@ -21,6 +21,7 @@ import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -161,10 +162,11 @@ public class FlvFixer {
         extEnum.add((byte) 0x12);
 
         String msg;
+        boolean progressView = (DEBUG || fileSize > 100 * 1024 * 1024);
 
         fixedFile = new File(corruptFile.getAbsolutePath().replace(".part", ".fixed"));
 
-        setProgress(0, 0, null);
+        if (progressView) setProgress(0, 0, null);
 
         try {
 
@@ -185,9 +187,10 @@ public class FlvFixer {
             downloadLink.getLinkStatus().setStatusText(msg);
             logger.info("#### " + msg + " ####");
             logger.info("processing file: " + corruptFile.getAbsolutePath());
-            if (DEBUG) logOutput("Type :", formatDebug, "CurrentTS", "PreviousTS", "Size", "Position", Level.FINEST);
-            try {
 
+            if (DEBUG) logOutput("Type :", formatDebug, "CurrentTS", "PreviousTS", "Size", "Position", Level.FINEST);
+
+            try {
                 while (filePos < fileSize) {
 
                     /* 11 byte header */
@@ -328,8 +331,8 @@ public class FlvFixer {
                     }
                     filePos += totalTagLen;
                     cFilePos = (int) filePos / (1024 * 1024);
-                    if (DEBUG || (fileSize / (1024 * 1024)) > 100) {
-                        if (cFilePos > pFilePos && cFilePos % 2 == 0 || cFilePos == 0) {
+                    if (progressView) {
+                        if (cFilePos > pFilePos && cFilePos % 10 == 0 || cFilePos == 0) {
                             setProgress(filePos, fileSize, Color.YELLOW.darker());
                             pFilePos = cFilePos;
                         }
@@ -348,9 +351,8 @@ public class FlvFixer {
                     logger.info("Fix flv header --> " + (audio ? "audio" : "video"));
                 }
 
-                setProgress(filePos, fileSize, Color.YELLOW.darker());
-                Thread.sleep(2 * 1000l);
-            } catch (InterruptedException e) {
+                if (progressView) setProgress(fileSize, fileSize, Color.YELLOW.darker());
+            } catch (ClosedByInterruptException e) {
                 msg = String.format("FlvFixer: User aborted processing! Processed: %d/%.2f MB", (filePos / (1024 * 1024)), (double) (fileSize / (1024 * 1024)));
                 logger.warning("#### " + msg);
                 downloadLink.getLinkStatus().setStatusText(msg);
@@ -360,6 +362,10 @@ public class FlvFixer {
                 e.printStackTrace();
                 return false;
             }
+
+            msg = "FlvFixer: scan process done!";
+            downloadLink.getLinkStatus().setStatusText(msg);
+            logger.info("#### " + msg + " ####");
         } finally {
             try {
                 fis.close();
@@ -371,9 +377,6 @@ public class FlvFixer {
             }
             downloadLink.setPluginProgress(null);
         }
-        msg = "FlvFixer: scan process done!";
-        downloadLink.getLinkStatus().setStatusText(msg);
-        logger.info("#### " + msg + " ####");
         return true;
     }
 

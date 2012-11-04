@@ -45,9 +45,6 @@ public class RTL2De extends PluginForHost {
             if (urlTmp != null && urlTmp.length < 5) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             dl = new RTMPDownload(this, downloadLink, DLCONTENT);
 
-            String checksum = ((RTMPDownload) dl).getRtmpDumpChecksum();
-            if (checksum != null && !"422e35de6fb8b333fee3f1fc894ab6e2".equals(checksum)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "JD2 beta update noch nicht vollständig", 24 * 60 * 60 * 1000l);
-
             String protocol = urlTmp[0];
             String host = urlTmp[2];
             String app = urlTmp[3];

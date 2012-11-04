@@ -144,7 +144,7 @@ public class GrooveShark extends PluginForHost {
     public static boolean fetchingKeys(Browser br) throws Exception {
         Browser br2 = br.cloneBrowser();
         br2.getPage(APPJSURL.string); // ~2000ms
-        String jsKey = br2.getRegex("revToken:\"(.*?)\"").getMatch(0);
+        String jsKey = br2.getRegex(reqk(3)).getMatch(0);
         SWFDecompressor swfd = new SWFDecompressor();
         byte[] swfdec = swfd.decompress(FLASHURL.string);
         if (swfdec == null || swfdec.length == 0) { return false; }
@@ -193,38 +193,22 @@ public class GrooveShark extends PluginForHost {
 
     public static boolean getFileVersion(Browser br) {
         if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
-            APPJSURL.string = br.getRegex("app\\.src = \'(http://.*?/app\\.js\\?[0-9\\.]+)\'").getMatch(0);
+            APPJSURL.string = br.getRegex("app\\.src = \'(http://.*?/app_\\d+\\.js)\'").getMatch(0);
             CLIENTREVISION.string = getClientVersion(br);
-            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(APPJSURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
             FLASHURL.string = br.getRegex("type=\"application\\/x\\-shockwave\\-flash\" data=\"\\/?(.*?)\"").getMatch(0);
-            CLIENTREVISION.string = CLIENTREVISION.string == null ? new Regex(FLASHURL.string, "\\?(\\d+)\\.").getMatch(0) : CLIENTREVISION.string;
             FLASHURL.string = FLASHURL.string == null ? null : LISTEN + FLASHURL.string;
             COUNTRY.string = br.getRegex(",(\"country\":\\{.*?\\}),").getMatch(0);
         }
-        if (APPJSURL.string == null || FLASHURL.string == null || CLIENTREVISION.string == null) {
-            CLIENTREVISION.string = br.getRegex("/gs/core\\.js\\?(\\d+)\\.").getMatch(0);
-            if (CLIENTREVISION.string == null) {
-                CLIENTREVISION.string = br.getRegex("/themes/themes\\.js\\?(\\d+)\\.").getMatch(0);
-                if (CLIENTREVISION.string == null) {
-                    CLIENTREVISION.string = br.getRegex("uri\\.css\\?(\\d+)\\.").getMatch(0);
-                    if (CLIENTREVISION.string == null) { return false; }
-                    if (!CLIENTREVISION.string.matches("[\\d+]{8}\\.\\d\\d")) {
-                        CLIENTREVISION.string = CLIENTREVISION.string + ".01";
-                    }
-                }
-            }
-            APPJSURL.string = APPJSURL.string == null ? "http://static.a.gs-cdn.net/gs/app.js?" + CLIENTREVISION.string + ".03" : APPJSURL.string;
-            FLASHURL.string = FLASHURL.string == null ? LISTEN + "JSQueue.swf?" + CLIENTREVISION.string + ".01" : FLASHURL.string;
-        }
-        if (COUNTRY.string == null) { return false; }
+        if (APPJSURL.string == null || COUNTRY.string == null || FLASHURL.string == null) { return false; }
         return true;
     }
 
     private static String reqk(int i) {
-        String[] s = new String[3];
+        String[] s = new String[4];
         s[0] = "ff8cf9faf900cfe71996b4cedc5046fb2b9c72bb0b5fdbce19195c68103a85d65d88ff6e8c5be634224051bbeb271d2fe07f2ecbc1cd6565a873d3b56e0d333e5ff6c973";
         s[1] = "ff81f9a6f907cfe31896b59fdd5041f82a9072e90b58dacb18195c39176985805d88f8328b5ae33b254154b5eb761925e5722c9bc4cc6634ac74d3e26c0d37395af2cc7f5c2a";
-        s[2] = "fd8bfba0fa0acde31bc1b799dd5742fd289271b60958d8c71a4c5f6e103d82865d83ff69880de66e251a54be";
+        s[2] = "fe80fea7fe01c9ee18c7b699da0746f12d96";
+        s[3] = "fe8efea7fe01c9ee1fc1b2ccdb0346f12d96";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));
     }
