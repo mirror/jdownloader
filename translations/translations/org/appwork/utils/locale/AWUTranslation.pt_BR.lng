@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=Ajuda da Escolha de Arquivo
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Início
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Lista
 DIALOG_FILECHOOSER_lookInLabelText=Verificar Em:
+DIALOG_FILECHOOSER_networkfolder=Rede
 DIALOG_FILECHOOSER_newFolderAccessibleName=Nova Pasta
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Erro ao criar nova pasta
