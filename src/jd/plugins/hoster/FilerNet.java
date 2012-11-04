@@ -46,7 +46,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FilerNet extends PluginForHost {
 
     private final String        COOKIE_HOST = "http://filer.net";
-    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download-slots";
+    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download\\-slots";
     private static Object       LOCK        = new Object();
 
     public FilerNet(PluginWrapper wrapper) {
@@ -54,14 +54,18 @@ public class FilerNet extends PluginForHost {
         this.enablePremium("http://filer.net/upgrade");
     }
 
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("://www.", "://"));
+    }
+
     private void prepBrowser() {
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filer.net/agb.htm";
+        return "http://filer.net/agb.htm";
     }
 
     @Override
