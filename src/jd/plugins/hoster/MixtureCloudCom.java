@@ -153,11 +153,6 @@ public class MixtureCloudCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.setCookie(MAINPAGE, "mx_l", "de");
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
-                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
-                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
                 br.getPage("http://www.mixturecloud.com/login");
                 final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]*?)\"").getMatch(0);
                 if (secCode == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
