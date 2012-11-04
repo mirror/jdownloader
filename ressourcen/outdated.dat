@@ -980,3 +980,6 @@ jd/plugins/hoster/ZeFileCom.class
 jd/plugins/hoster/FileBitNet.class
 jd/plugins/hoster/UptalDotNet.class
 jd/plugins/hoster/UptalCom.class
+jd/plugins/hoster/FileDudeCom.class
+jd/plugins/hoster/FileDinoCom.class
+jd/plugins/hoster/ZeusUploadCom.class

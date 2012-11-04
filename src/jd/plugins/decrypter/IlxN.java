@@ -29,7 +29,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ilix.in" }, urls = { "http://[\\w\\.]*?ilix\\.in/[0-9a-z]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ilix.in" }, urls = { "http://(www\\.)?(ilix\\.in|priva\\.us|urlink\\.at)/[0-9a-z]+" }, flags = { 0 })
 public class IlxN extends PluginForDecrypt {
 
     public IlxN(PluginWrapper wrapper) {
@@ -38,7 +38,7 @@ public class IlxN extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final String parameter = "http://ilix.in/" + new Regex(param.toString(), "([0-9a-z]+)$").getMatch(0);
         br.setFollowRedirects(false);
         br.getPage(parameter);
         for (int i = 0; i <= 5; i++) {

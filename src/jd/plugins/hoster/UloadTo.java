@@ -141,7 +141,7 @@ public class UloadTo extends PluginForHost {
                 return AvailableStatus.UNCHECKABLE;
             }
         }
-        String filesize = new Regex(correctedBR, "<div id=\"upload_div\">[\t\n\r ]+<h2>[^<>\"/]*? \\- (\\d+(\\.\\d+)? [A-Za-z]+)</h2>").getMatch(0);
+        String filesize = new Regex(correctedBR, "\\- (\\d+(\\.\\d+)? [A-Za-z]{1,5})</h2>").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download\\-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

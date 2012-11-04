@@ -59,7 +59,7 @@ public class FileMatesCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.2.4
@@ -320,9 +320,15 @@ public class FileMatesCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "onclick=\"downLinkDo\\(\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + "|([a-z0-9]+\\.)?files\\-dl\\d+\\.com)(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "(\\'|\")(http://filemates\\-srv\\d+\\.com/[^<>\"]*?)(\\'|\")").getMatch(1);
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
+                    }
+                }
             }
         }
         return dllink;
