@@ -51,6 +51,7 @@ public class PanBaiduCom extends PluginForHost {
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = DLLINK.replace("\\", "");
         Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(DLLINK);
