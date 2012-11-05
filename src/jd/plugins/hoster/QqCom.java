@@ -62,7 +62,7 @@ public class QqCom extends PluginForHost {
         } else {
             br.getPage(link.getDownloadURL());
             if (link.getDownloadURL().matches("https?://urlxf\\.qq\\.com/\\?\\w+")) {
-                final String redirect = br.getRegex("window.location=\"(http[^\"]+)").getMatch(0);
+                final String redirect = br.getRegex("window\\.location=\"(http[^\"]+)").getMatch(0);
                 if (redirect == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 br.getPage(redirect);
             }

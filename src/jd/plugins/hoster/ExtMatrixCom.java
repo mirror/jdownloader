@@ -65,7 +65,7 @@ public class ExtMatrixCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">The file you have requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("style=\"text\\-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
+        final Regex fileInfo = br.getRegex("style=\"text\\-align:(center|left|right);\">(Premium Only\\!)?([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+)(\\))?(,[^<>\"/]+)?</h1>");
         String filename = fileInfo.getMatch(2);
         String filesize = fileInfo.getMatch(3);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -202,6 +202,10 @@ public class ExtMatrixCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         // Little help from their admin^^
         String getLink = br.getRedirectLocation();
+        if (getLink != null && getLink.matches("http://(www\\.)?extmatrix\\.com/get/.*?")) {
+            br.getPage(getLink);
+            getLink = br.getRedirectLocation();
+        }
         if (getLink == null) getLink = br.getRegex("<a id=\\'jd_support\\' href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (getLink == null) getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

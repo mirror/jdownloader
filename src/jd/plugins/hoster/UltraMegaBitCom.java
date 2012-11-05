@@ -57,7 +57,7 @@ public class UltraMegaBitCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http:"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
     }
 
     @Override
@@ -98,8 +98,8 @@ public class UltraMegaBitCom extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("guests are only able to download 1 file every")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
-            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             if (br.containsHTML(">Account limitation notice")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users");
+            if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

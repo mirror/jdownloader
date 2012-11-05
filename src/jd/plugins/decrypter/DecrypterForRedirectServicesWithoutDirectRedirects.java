@@ -507,17 +507,19 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
             finallink = br.getRegex("http\\-equiv=\"refresh\" content=\"\\d+;URL=(.*?)\">").getMatch(0);
         } else if (parameter.contains("adfoc.us/")) {
             br.getPage(parameter);
-            String click = br.getRegex("(http://adfoc\\.us/serve/click/\\?id=[a-z0-9]+\\&servehash=[a-z0-9]+\\&timestamp=\\d+)").getMatch(0);
+            String click = br.getRegex("var click_url = \"(https?://(?!adfoc\\.us/)[^\"]+)").getMatch(0);
             if (click == null) {
-                click = br.getRegex("var click_url = \"([^\"]+)").getMatch(0);
-            }
-            if (click != null) {
-                br.getHeaders().put("Referer", parameter);
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                br.getPage(click);
-                if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://adfoc.us/")) {
-                    finallink = br.getRedirectLocation();
+                click = br.getRegex("(http://adfoc\\.us/serve/click/\\?id=[a-z0-9]+\\&servehash=[a-z0-9]+\\&timestamp=\\d+)").getMatch(0);
+                if (click != null) {
+                    br.getHeaders().put("Referer", parameter);
+                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    br.getPage(click);
+                    if (br.getRedirectLocation() != null && !br.getRedirectLocation().matches("http://adfoc.us/")) {
+                        finallink = br.getRedirectLocation();
+                    }
                 }
+            } else {
+                finallink = click;
             }
         } else if (parameter.contains("unlimfiles.com/")) {
             finallink = br.getRegex("<iframe src=\"(.*?)\"").getMatch(0);
