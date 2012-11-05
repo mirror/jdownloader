@@ -152,6 +152,9 @@ public class MixtureCloudCom extends PluginForHost {
                         return;
                     }
                 }
+                /* test for user rdmendo */
+                if (Encoding.Base64Decode("cmRtZW5kb0BnbWFpbC5jb20=").equals(account.getUser())) br.getHeaders().put("Accept-Language", "fr-FR");
+
                 br.setFollowRedirects(true);
                 br.getPage("http://www.mixturecloud.com/login");
                 final String secCode = br.getRegex("type=\"hidden\" name=\"securecode\" value=\"([^<>\"]*?)\"").getMatch(0);
