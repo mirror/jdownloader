@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -190,7 +190,7 @@ public class MdfrFldr extends PluginForDecrypt {
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(fpName.trim());
+            fp.setName(unescape(fpName.trim()));
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
@@ -206,14 +206,11 @@ public class MdfrFldr extends PluginForDecrypt {
             if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nopassword", "Password not entered!"));
             aa = new Account(username, password);
         }
-        // Get a token which we can then use to get links out of (private)
-        // folders
+        // Get a token which we can then use to get links out of (private) folders
         // http://developers.mediafire.com/index.php/REST_API
-        // br.getPage("https://www.mediafire.com/api/user/get_session_token.php?email="
-        // + Encoding.urlEncode(aa.getUser()) + "&password=" +
-        // Encoding.urlEncode(aa.getPass()) + "&application_id=1&signature=" +
-        // JDHash.getSHA1(aa.getUser() + aa.getPass() + "application ID" +
-        // "apikey") + "&version=1");
+        // br.getPage("https://www.mediafire.com/api/user/get_session_token.php?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" +
+        // Encoding.urlEncode(aa.getPass()) + "&application_id=1&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + "application ID"
+        // + "apikey") + "&version=1");
         try {
             ((MediafireCom) hosterPlugin).login(br, aa, true);
         } catch (final PluginException e) {
