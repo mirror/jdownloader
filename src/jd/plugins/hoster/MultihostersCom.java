@@ -59,7 +59,7 @@ public class MultihostersCom extends PluginForHost {
         String loginPage = null;
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
-        long trafficLeft = 0;
+        long trafficLeft = -1;
         String hosts = null;
         try {
             loginPage = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=accountinfo&login=" + username + "&pass=" + pass);
@@ -70,10 +70,13 @@ public class MultihostersCom extends PluginForHost {
 
             String AvailableTodayTraffic = new Regex(infos[3], "AvailableTodayTraffic:(.+)").getMatch(0);
             logger.info("Multihosters: AvailableTodayTraffic=" + AvailableTodayTraffic);
-            ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
+            if (AvailableTodayTraffic.equals("0")) {
+                ac.setUnlimitedTraffic();
+            } else {
+                ac.setTrafficLeft(SizeFormatter.getSize(AvailableTodayTraffic + "mb"));
+            }
 
             if (ac.isExpired()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
             trafficLeft = Long.parseLong(AvailableTodayTraffic);
             hosts = br.getPage("http://www.multihosters.com/jDownloader.ashx?cmd=gethosters");
 
@@ -84,7 +87,7 @@ public class MultihostersCom extends PluginForHost {
         } finally {
             br.setFollowRedirects(follow);
         }
-        if (loginPage == null || trafficLeft <= 0) {
+        if (loginPage == null || trafficLeft < 0) {
             account.setValid(false);
             account.setTempDisabled(false);
             ac.setStatus("Account invalid");
@@ -142,7 +145,7 @@ public class MultihostersCom extends PluginForHost {
         String url = Encoding.urlEncode(link.getDownloadURL());
         showMessage(link, "Phase 1/1: Get Link and begin Download");
         String dllink = "http://www.multihosters.com/jDownloader.ashx?cmd=generatedownloaddirect&login=" + user + "&pass=" + pw + "&olink=" + url + "&FilePass=";
-        System.out.println("link: " + dllink);
+
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
 
