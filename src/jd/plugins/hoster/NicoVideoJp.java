@@ -31,7 +31,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/sm\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nicovideo.jp" }, urls = { "http://(www\\.)?nicovideo\\.jp/watch/(sm|nm)\\d+" }, flags = { 2 })
 public class NicoVideoJp extends PluginForHost {
 
     private static final String MAINPAGE               = "http://www.nicovideo.jp/";
@@ -82,6 +82,7 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
+        if (link.getDownloadURL().matches("http://(www\\.)?nicovideo\\.jp/watch/nm\\d+")) throw new PluginException(LinkStatus.ERROR_FATAL, "This linktype isn't supported yet!");
         login(account);
         br.setFollowRedirects(false);
         // Important, without accessing the link we cannot get the downloadurl!

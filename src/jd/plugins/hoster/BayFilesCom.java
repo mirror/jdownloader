@@ -74,14 +74,17 @@ public class BayFilesCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(Please check your link\\.<|>Invalid security token\\.|>The link is incorrect<|>The file you requested has been deleted<|>We have messed something up<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Regex fileInfo = br.getRegex("<h2>File:</h2>([\t\n\r ]+)?<p title=\"([^\"\\']+)\">[^\"\\']+, <strong>(.*?)</strong>");
-        String filename = fileInfo.getMatch(1);
-        String filesize = fileInfo.getMatch(2);
+        final String filename = fileInfo.getMatch(1);
+        final String filesize = fileInfo.getMatch(2);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -89,7 +92,7 @@ public class BayFilesCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         // Check if free premium download is available (then we can use
         // unlimited chunks)
@@ -163,6 +166,8 @@ public class BayFilesCom extends PluginForHost {
             if (dllink == null) dllink = getExactDllink();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         } catch (final Exception e) {

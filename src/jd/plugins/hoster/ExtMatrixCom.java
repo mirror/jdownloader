@@ -210,7 +210,7 @@ public class ExtMatrixCom extends PluginForHost {
         if (getLink == null) getLink = getLink();
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int maxChunks = -2;
-        if (oldStyle() && !true) {
+        if (oldStyle()) {
             /*
              * stable has bug with openDownload and postData, cookies are not
              * forwared to chunks

@@ -56,7 +56,7 @@ public class FileVelocityCom extends PluginForHost {
     private String              correctedBR         = "";
     private static final String PASSWORDTEXT        = "(<br><b>Password:</b> <input|<br><b>Passwort:</b> <input)";
     private static final String COOKIE_HOST         = "http://filevelocity.com";
-    private static final String MAINTENANCE         = ">This server is in maintenance mode";
+    private static final String MAINTENANCE         = "(>This server is in maintenance mode|>404 Not Found<)";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
     private static Object       LOCK                = new Object();
@@ -101,7 +101,7 @@ public class FileVelocityCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         doSomething();
         if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n|>This file has been removed by the administrator)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
@@ -182,20 +182,23 @@ public class FileVelocityCom extends PluginForHost {
         }
 
         /**
-         * Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
+         * Videolinks can already be found here, if a link is found here we can
+         * skip waittimes and captchas
          */
         boolean finalFormFound = false;
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             if (correctedBR.contains("\"download1\"")) {
-                // for free download - correct final link is availablem after submitting form with <input type="hidden" name="method_free"
+                // for free download - correct final link is availablem after
+                // submitting form with <input type="hidden" name="method_free"
                 // value="Free Download">
                 if (new Regex(correctedBR, "<form action=\"(.*?)\" method=\"post\" target=\"freedl_frame\">").getMatch(0) == null) {
                     br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replaceAll("https?://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + downloadLink.getName() + "&referer=&method_free=Free+Download");
                     doSomething();
                     checkErrors(downloadLink, false, passCode);
                 } else {
-                    // check for and submit form for free download to get final page with Form named "F1"
+                    // check for and submit form for free download to get final
+                    // page with Form named "F1"
                     Form dlForm = br.getFormbyKey("method_free");
                     if (dlForm != null) {
 
@@ -415,7 +418,7 @@ public class FileVelocityCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via premium or registered");
             }
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT), 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
@@ -480,7 +483,8 @@ public class FileVelocityCom extends PluginForHost {
         String points = br.getRegex(Pattern.compile("<td>You have collected:</td.*?b>([^<>\"\\']+)premium points", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (points != null) {
             /**
-             * Who needs half points ? If we have a dot in the points, just remove it
+             * Who needs half points ? If we have a dot in the points, just
+             * remove it
              */
             if (points.contains(".")) {
                 String dot = new Regex(points, ".*?(\\.(\\d+))").getMatch(0);
