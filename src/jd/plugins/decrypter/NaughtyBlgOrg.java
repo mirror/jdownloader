@@ -48,7 +48,27 @@ public class NaughtyBlgOrg extends PluginForDecrypt
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
+        // replace en-dash with a real dash
+        contentReleaseName = contentReleaseName.replace("&#8211;", "-");
         contentReleaseName = Encoding.htmlDecode(contentReleaseName).trim();
+
+        String contentReleaseNamePrecise = br.getRegex("<p>[\\r\\n\\s]*<strong>(.*?)</strong>[\\r\\n\\s]*<br[/\\s]+>[\\r\\n\\s]*<em>Released:").getMatch(0);
+        if (contentReleaseNamePrecise != null)
+        {
+            // remove possible link to tag-cloud
+            contentReleaseNamePrecise = contentReleaseNamePrecise.replaceAll("<.*?>", "");
+            // replace en-dash with a real dash
+            contentReleaseNamePrecise = contentReleaseNamePrecise.replace("&#8211;", "-");
+            contentReleaseNamePrecise = Encoding.htmlDecode(contentReleaseNamePrecise).trim();
+
+            int pos = contentReleaseName.lastIndexOf("-");
+            if (pos != -1)
+            {
+                contentReleaseName = contentReleaseName.substring(0, pos).trim();
+
+                contentReleaseName = contentReleaseName + " - " + contentReleaseNamePrecise;
+            }
+        }
 
         // check if DL is from the 'clips' section
         Regex categoryCheck = null;
@@ -101,7 +121,6 @@ public class NaughtyBlgOrg extends PluginForDecrypt
 
         for (final String link : links)
         {
-
             if (!link.matches("http://(www\\.)?naughtyblog\\.org/.+"))
             {
                 final DownloadLink dl = createDownloadlink(link);
@@ -131,17 +150,17 @@ public class NaughtyBlgOrg extends PluginForDecrypt
         switch (CATEGORY)
         {
         case CLIP:
-            int firstOccurrenceOfSeparator = filePackageName.indexOf(" – ");
+            int firstOccurrenceOfSeparator = filePackageName.indexOf(" - ");
             StringBuffer sb = new StringBuffer(filePackageName);
-            sb.insert(firstOccurrenceOfSeparator, " – Clips");
+            sb.insert(firstOccurrenceOfSeparator, " - Clips");
             filePackageName = sb.toString();
             break;
         case MOVIE:
-            filePackageName += " – Movie";
+            filePackageName += " - Movie";
             break;
         case SITERIP:
             if (!filePackageName.toLowerCase().contains("siterip"))
-                filePackageName += " – SiteRip";
+                filePackageName += " - SiteRip";
             break;
         default:
             break;
