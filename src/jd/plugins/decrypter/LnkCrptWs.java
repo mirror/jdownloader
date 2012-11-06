@@ -165,8 +165,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default false
-         * @parameter if true uses "https://api-secure.solvemedia.com" instead
-         *            of "http://api.solvemedia.com"
+         * @parameter if true uses "https://api-secure.solvemedia.com" instead of "http://api.solvemedia.com"
          */
         public void setSecure(boolean secure) {
             if (secure) secure = true;
@@ -174,8 +173,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         /**
          * @default true
-         * @parameter if false uses "_challenge.js" instead of
-         *            "challenge.noscript" as url path
+         * @parameter if false uses "_challenge.js" instead of "challenge.noscript" as url path
          */
         public void setNoscript(boolean noscript) {
             if (!noscript) noscript = false;
@@ -360,7 +358,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                 parse();
                 load();
             } catch (final Throwable e) {
-                System.out.println(rcBr.getHttpConnection() + "\n" + e.getMessage());
+                e.printStackTrace();
                 throw new Exception(e.getMessage());
             } finally {
                 try {
@@ -377,7 +375,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
             if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) { return "CANCEL"; }
 
-            String out;
+            String out = null;
             ArrayList<Integer> marray = new ArrayList<Integer>();
 
             final String pS = sscFsmCheckTwo(PARAMS.get("s_s_c_web_server_sign"), PARAMS.get("s_s_c_web_server_sign") + Encoding.Base64Decode("S2hkMjFNNDc="));
@@ -1005,7 +1003,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             final MediaTracker mt = new MediaTracker(this);
             for (final String imgUrl : imagesUrl) {
                 try {
-                    fragmentedPic = Application.getResource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    // fragmentedPic = Application.getRessource("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
+                    fragmentedPic = JDUtilities.getResourceFile("captchas/" + imgUrl.substring(imgUrl.lastIndexOf("/") + 1));
                     fragmentedPic.deleteOnExit();
                     Browser.download(fragmentedPic, dlpic.openGetConnection(imgUrl));
                     /* TODO: replace with ImageProvider.read in future */
