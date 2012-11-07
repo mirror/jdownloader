@@ -49,7 +49,7 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDFileFilter;
 import jd.nutils.io.JDIO;
 
-import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.Files;
 import org.appwork.utils.swing.EDTHelper;
 
 public class BackGroundImageDialog implements ActionListener {
@@ -125,7 +125,7 @@ public class BackGroundImageDialog implements ActionListener {
             final File[] fch = UserIO.getInstance().requestFileChooser(null, null, null, new JDFileFilter(null, ".jpg|.png|.gif|.jpeg|.bmp", true), null);
             if (fch == null) { return; }
 
-            final File fout = new File(this.bgim.methode.file, "mask_" + JDHash.getMD5(fch[0]) + "." + CrossSystem.getFileExtension(fch[0].getName()));
+            final File fout = new File(this.bgim.methode.file, "mask_" + JDHash.getMD5(fch[0]) + "." + Files.getExtension(fch[0].getName()));
             JDIO.copyFile(fch[0], fout);
             this.workingImage = new BackGroundImage();
             this.workingImage.setBackgroundImage(fout.getName());

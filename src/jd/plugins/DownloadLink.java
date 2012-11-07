@@ -37,6 +37,7 @@ import jd.http.Browser;
 import jd.plugins.download.DownloadInterface;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -879,7 +880,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      */
     public ImageIcon getIcon() {
         if (icon == null) {
-            String ext = CrossSystem.getFileExtension(getName());
+            String ext = Files.getExtension(getName());
             if (ext != null) {
                 try {
                     icon = CrossSystem.getMime().getFileIcon(ext, 16, 16);

@@ -63,10 +63,10 @@ import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
 
+import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.ImageProvider.ImageProvider;
 import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -75,8 +75,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung. Sie verküpft Letter und captcha Klassen. Gleichzeitig dient sie als
- * Parameter-Dump.
+ * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung. Sie verküpft Letter und captcha Klassen. Gleichzeitig dient
+ * sie als Parameter-Dump.
  * 
  * @author JD-Team
  */
@@ -280,12 +280,13 @@ public class JAntiCaptcha {
     }
 
     /**
-     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden decoedvalue, avlityvalue
-     * und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche Methoden zur Verfügung um an bestimmte
-     * Informationen zu kommen: captcha.getDecodedLetters() gibt Die letter aus der datenbank zurück. Deren werte sind nicht fest. Auf den Wert von
-     * getvalityvalue und getValityPercent kann man sich absolut nicht verlassen. Einzig getDecodedValue() lässt sich zuverlässig auslesen captcha.getLetters()
-     * gibt die Wirklichen Letter des captchas zurück. Hier lassen sich alle wichtigen Infos abfragen. z.B. ValityValue, ValityPercent, Decodedvalue, etc. Wer
-     * immer das hier liest sollte auf keinen fall den fehler machen und sich auf Wert aus dem getdecodedLetters array verlassen
+     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das lettersarray des Catchas wird dabei bearbeitet. Es werden
+     * decoedvalue, avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha herrscht Verwirrung. Es stehen unterschiedliche
+     * Methoden zur Verfügung um an bestimmte Informationen zu kommen: captcha.getDecodedLetters() gibt Die letter aus der datenbank zurück.
+     * Deren werte sind nicht fest. Auf den Wert von getvalityvalue und getValityPercent kann man sich absolut nicht verlassen. Einzig
+     * getDecodedValue() lässt sich zuverlässig auslesen captcha.getLetters() gibt die Wirklichen Letter des captchas zurück. Hier lassen
+     * sich alle wichtigen Infos abfragen. z.B. ValityValue, ValityPercent, Decodedvalue, etc. Wer immer das hier liest sollte auf keinen
+     * fall den fehler machen und sich auf Wert aus dem getdecodedLetters array verlassen
      * 
      * @param captcha
      *            Captcha instanz
@@ -476,7 +477,7 @@ public class JAntiCaptcha {
             try {
                 File file = JDUtilities.getResourceFile(this.srcFile);
                 file.getParentFile().mkdirs();
-                String ext = CrossSystem.getFileExtension(file.getName());
+                String ext = Files.getExtension(file.getName());
                 fos = new FileOutputStream(file);
                 ImageIO.write(toBufferedImage(this.sourceImage), ext, fos);
             } catch (Exception e) {
@@ -839,8 +840,9 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden gegeneinander verschoben und b wird über die Parameter gedreht. Praktisch heißt
-     * das, dass derjenige Treffer als gut eingestuft wird, bei dem der Datenbank Datensatz möglichst optimal überdeckt wird.
+     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden gegeneinander verschoben und b wird über die Parameter
+     * gedreht. Praktisch heißt das, dass derjenige Treffer als gut eingestuft wird, bei dem der Datenbank Datensatz möglichst optimal
+     * überdeckt wird.
      * 
      * @param a
      *            Original Letter
@@ -1603,7 +1605,8 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter zuerst zu prüfen.
+     * Sortiert die letterDB Nach den bad Detections. Der Sortieralgo gehört dringend überarbeitet!!! Diese Sortieren hilft die GUten Letter
+     * zuerst zu prüfen.
      * 
      * @TODO Sortoer ALGO ändern. zu langsam!!
      */
