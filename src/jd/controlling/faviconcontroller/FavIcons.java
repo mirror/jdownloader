@@ -236,7 +236,7 @@ public class FavIcons {
             dummy = "" + dummy.charAt(0) + dummy.charAt(dummy.length() / 2);
         } catch (Throwable t) {
         }
-        if (dummy.length() <= 0 || dummy.length() > 2) dummy = host.substring(0, 2);
+        if (dummy.length() <= 0 || dummy.length() > 2) dummy = host.substring(0, Math.min(host.length(), 2));
         // paint
         Graphics2D g = image.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
