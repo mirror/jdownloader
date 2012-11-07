@@ -53,8 +53,10 @@ public class FavIcons {
     private static final Object                                                  LOCK          = new Object();
     private final static LinkedHashMap<String, java.util.List<FavIconRequestor>> QUEUE         = new LinkedHashMap<String, java.util.List<FavIconRequestor>>();
     private static ArrayList<String>                                             FAILED_LIST   = null;
+    private static LogSource                                                     LOGGER;
     private static final FavIconsConfig                                          CONFIG        = JsonConfig.create(FavIconsConfig.class);
     static {
+        LOGGER = LogController.getInstance().getLogger("FavIcons.class");
         int maxThreads = Math.max(CONFIG.getMaxThreads(), 1);
         int keepAlive = Math.max(CONFIG.getThreadKeepAlive(), 100);
 
@@ -201,6 +203,7 @@ public class FavIcons {
         int size = 9;
         Color fg = Color.BLACK;
         Color bg = Color.WHITE;
+        LOGGER.info("Create Favicon: " + host);
         try {
             bg = new Color(LookAndFeelController.getInstance().getLAFOptions().getPanelHeaderColor());
         } catch (Throwable e) {
