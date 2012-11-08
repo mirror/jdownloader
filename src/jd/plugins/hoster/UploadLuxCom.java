@@ -123,6 +123,7 @@ public class UploadLuxCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
+                br.setCookie(MAINPAGE, "lang", "fr");
                 br.postPage("http://www.uploadlux.com/connexion", "souvenir=on&connexion=Connexion&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("Si cette page reste affichée plus de")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage("http://www.uploadlux.com/profil");
