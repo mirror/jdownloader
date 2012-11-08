@@ -15,7 +15,7 @@ public class RemoteAPISession implements HttpSession {
         this.controller = controller;
     }
 
-    public HttpSessionController<? extends HttpSession> getSessionController() {
+    public HttpSessionController<? extends HttpSession> _getSessionController() {
         return controller;
     }
 
