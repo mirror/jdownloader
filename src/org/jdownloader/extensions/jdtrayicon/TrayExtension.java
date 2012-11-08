@@ -249,16 +249,16 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             if (getSettings().isGnomeTrayIconTransparentEnabled() && CrossSystem.isLinux() && new DesktopSupportLinux().isGnomeDesktop()) {
                 java.awt.Robot robo = new java.awt.Robot();
                 Color tmp, newColor;
-                int cr, cb, cg, alpha;
+                int cr, cb, cg;
+                float alpha;
                 for (int y = 0; y < img.getHeight(); y++) {
-                    newColor = robo.getPixelColor(0, y);
+                    newColor = robo.getPixelColor(1, y);
                     for (int x = 0; x < img.getWidth(); x++) {
                         tmp = new Color(img.getRGB(x, y));
-                        alpha = (img.getRGB(x, y) >> 24) & 0xFF;
-                        // calculate new color values for each channel
-                        cr = (alpha / 255) * tmp.getRed() + ((255 - alpha) / 255) * newColor.getRed();
-                        cg = (alpha / 255) * tmp.getGreen() + ((255 - alpha) / 255) * newColor.getGreen();
-                        cb = (alpha / 255) * tmp.getBlue() + ((255 - alpha) / 255) * newColor.getBlue();
+                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255;
+                        cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
+                        cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
+                        cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());
                         tmp = new Color(cr, cg, cb);
                         img.setRGB(x, y, tmp.getRGB());
                     }
