@@ -87,8 +87,20 @@ public class ImgSrcRu extends PluginForDecrypt {
                 allPages.add(page);
         }
         allPages.add(parameter.replaceAll("http://(www\\.)?imgsrc.ru", ""));
-        for (String page : allPages) {
+        String name = "";
+        if (username != null) {
+            name = username + " ";
+        }
+        if (fpName != null) {
+            name = name + fpName;
+        }
+        FilePackage fp = FilePackage.getInstance();
+        fp.setName("Gallery: " + new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0));
+        if (name != null && name.length() > 0) fp.setName(Encoding.htmlDecode(name.trim()));
+        int pageCounter = 1;
+        for (final String page : allPages) {
             final String currentPage = MAINPAGE + page;
+            logger.info("Decrypting page " + pageCounter + " of " + allPages.size() + " and working on line: " + currentPage);
             br.getPage(currentPage);
             // Check password again, because they don't set any cookies for
             // correctly entered passwords we have to enter them again for each
@@ -117,25 +129,23 @@ public class ImgSrcRu extends PluginForDecrypt {
                 }
                 br.getPage(MAINPAGE + pic);
                 final DownloadLink dlink = getDownloadLink();
-                if (dlink != null) decryptedLinks.add(dlink);
-                counter++;
+                if (dlink != null) {
+                    dlink._setFilePackage(fp);
+                    try {
+                        distribute(dlink);
+                    } catch (final Exception e) {
+                        // Not available in old Stable
+                    }
+                }
+                decryptedLinks.add(dlink);
             }
+            counter++;
+            pageCounter++;
         }
+
         if (decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
-        }
-        String name = "";
-        if (username != null) {
-            name = username + " ";
-        }
-        if (fpName != null) {
-            name = name + fpName;
-        }
-        if (name != null && name.length() > 0) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(name.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }

@@ -82,14 +82,17 @@ public class NicoVideoJp extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        if (link.getDownloadURL().matches("http://(www\\.)?nicovideo\\.jp/watch/nm\\d+")) throw new PluginException(LinkStatus.ERROR_FATAL, "This linktype isn't supported yet!");
+        // if
+        // (link.getDownloadURL().matches("http://(www\\.)?nicovideo\\.jp/watch/nm\\d+"))
+        // throw new PluginException(LinkStatus.ERROR_FATAL,
+        // "This linktype isn't supported yet!");
         login(account);
         br.setFollowRedirects(false);
         // Important, without accessing the link we cannot get the downloadurl!
         br.getPage(link.getDownloadURL());
         if (Encoding.htmlDecode(br.toString()).contains("closed=1\\&done=true")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
-        String vid = new Regex(link.getDownloadURL(), "nicovideo\\.jp/watch/(sm\\d+)").getMatch(0);
-        br.postPage("http://flapi.nicovideo.jp/api/getflv", "v=" + vid);
+        String vid = new Regex(link.getDownloadURL(), "nicovideo\\.jp/watch/((sm|nm)\\d+)").getMatch(0);
+        br.postPage("http://flapi.nicovideo.jp/api/getflv", "eco=4&as3=1&v=" + vid);
         String dllink = new Regex(Encoding.htmlDecode(br.toString()), "\\&url=(http://.*?)\\&").getMatch(0);
         if (dllink == null) dllink = new Regex(Encoding.htmlDecode(br.toString()), "(http://smile-com\\d+\\.nicovideo\\.jp/smile\\?v=[0-9\\.]+)").getMatch(0);
         if (dllink == null) {

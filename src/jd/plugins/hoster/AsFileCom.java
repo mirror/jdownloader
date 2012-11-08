@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +36,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -62,7 +64,6 @@ public class AsFileCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("Download: <strong>([^<>\"\\']+)</strong><br/> \\(([^<>\"\\']+)\\)");
         String filename;
         if (br.getURL().contains("/password/")) {
             filename = br.getRegex("This file ([^<>\"]*?) is password protected.").getMatch(0);
@@ -71,11 +72,8 @@ public class AsFileCom extends PluginForHost {
             filename = br.getRegex("<meta name=\"title\" content=\"Free download ([^<>\"\\']+)\"").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
-                if (filename == null) {
-                    filename = fileInfo.getMatch(0);
-                }
             }
-            String filesize = fileInfo.getMatch(1);
+            String filesize = br.getRegex(">File size:</div><div class=\"div_variable\">([^<>\"]*?)<").getMatch(0);
             if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -119,30 +117,38 @@ public class AsFileCom extends PluginForHost {
             }
         }
 
-        if (!br.containsHTML("/free\\-download/")) {
-            if (br.containsHTML("This file is available only to premium users")) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) throw (PluginException) e;
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
-                }
+        if (br.containsHTML("This file is available only to premium users")) {
+            try {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            } catch (final Throwable e) {
+                if (e instanceof PluginException) throw (PluginException) e;
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
+        final long timeBefore = System.currentTimeMillis();
+        // Captcha waittime can be skipped
+        waitTime(timeBefore, downloadLink, true);
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        rc.setId(id);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        br.postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        if (!br.containsHTML("/free\\-download/file/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
         br.getPage("http://asfile.com/en/free-download/file/" + fileID);
         if (br.containsHTML("You have exceeded the download limit for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         if (br.containsHTML(">This file TEMPORARY unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Temporarily unavailable due technical problems", 60 * 60 * 1000l);
         final String hash = br.getRegex("hash: \\'([a-z0-9]+)\\'").getMatch(0);
         final String storage = br.getRegex("storage: \\'([^<>\"\\']+)\\'").getMatch(0);
         if (hash == null || storage == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>").getMatch(0);
-        int wait = 60;
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        if (wait > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-        sleep(wait * 1001l, downloadLink);
-        Browser brc = br.cloneBrowser();
+
+        waitTime(System.currentTimeMillis(), downloadLink, false);
+        final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.postPage("http://asfile.com/en/index/convertHashToLink", "hash=" + hash + "&path=" + fileID + "&storage=" + Encoding.urlEncode(storage) + "&name=" + Encoding.urlEncode(downloadLink.getName()));
         final String correctedBR = brc.toString().replace("\\", "");
@@ -163,6 +169,18 @@ public class AsFileCom extends PluginForHost {
         downloadLink.setProperty("directFree", dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         dl.startDownload();
+    }
+
+    private void waitTime(long timeBefore, final DownloadLink downloadLink, boolean skip) throws PluginException {
+        int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
+        /** Ticket Time */
+        final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>").getMatch(0);
+        int wait = 60;
+        if (waittime != null) wait = Integer.parseInt(waittime);
+        if (wait > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
+        wait -= passedTime;
+        logger.info("Waittime detected, waiting " + wait + " - " + passedTime + " seconds from now on...");
+        if (wait > 0 && !skip) sleep(wait * 1000l, downloadLink);
     }
 
     @SuppressWarnings("unchecked")

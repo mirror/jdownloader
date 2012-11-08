@@ -39,8 +39,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.matches("http://(www\\.)?tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+")) {
+        String parameter = param.toString().replace("www.", "");
+        if (parameter.matches("http://tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+")) {
             br.setFollowRedirects(false);
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
@@ -49,7 +49,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 return null;
             }
             decryptedLinks.add(createDownloadlink(finallink));
-        } else if (parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+")) {
+        } else if (parameter.matches("http://[\\w\\.\\-]*?\\.tumblr\\.com/post/\\d+")) {
             // Single posts
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
@@ -74,7 +74,11 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             fpName = Encoding.htmlDecode(fpName.trim());
 
             boolean stop = false;
-            final String[][] mainRegexes = { { "class=\"post\"(.*?)class=\"(?!media)[a-z0-9]+\"", "0" }, { "<article.*?id=\"post\\-\\d+\"(.*?)</article>", "0" } };
+            final String[][] mainRegexes = { { "class=\"post\"(.*?)class=\"(?!media)[a-z0-9]+\"", "0" }, { "<article.*?id=\"post\\-\\d+\"(.*?)</article>", "0" }, { "<a href=\"" + parameter + "(/[^<>\"/]*?)?\"(.*?)class=\"(?!media|photo)[a-z0-9]+\"", "1" } };
+            /*
+             * Example for regex 3:
+             * http://summer-is-right-here.tumblr.com/post/35200177900
+             */
             for (final String[] textRegex : mainRegexes) {
                 final String post = br.getRegex(textRegex[0]).getMatch(Integer.parseInt(textRegex[1]));
                 if (post != null) {

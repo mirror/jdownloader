@@ -47,12 +47,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvideos.net" }, urls = { "https?://(www\\.)?allmyvideos\\.net/[a-z0-9]{12}" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "allmyvids.de", "allmyvideos.net" }, urls = { "https?://(www\\.)?(allmyvideos\\.net|allmyvids\\.de)/[a-z0-9]{12}", "et65iuz549tgfr4u89ztg5zht58g590jh40erh7UNUSEDREGEXeTGig5rik" }, flags = { 2, 0 })
 public class AllMyVideosNet extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST                  = "http://allmyvideos.net";
+    private static final String  COOKIE_HOST                  = "http://allmyvids.de";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ENCODINGVIDEO                = "Video is currently being encoded";
@@ -66,6 +66,7 @@ public class AllMyVideosNet extends PluginForHost {
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
     private static Object        LOCK                         = new Object();
+    private static final boolean VIDEOHOSTER                  = true;
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.8-raz
@@ -81,7 +82,7 @@ public class AllMyVideosNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://").replace("allmyvideos.net/", "allmyvids.de/"));
     }
 
     @Override
@@ -113,7 +114,7 @@ public class AllMyVideosNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         prepBrowser();
         getPage(link.getDownloadURL());
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -194,15 +195,23 @@ public class AllMyVideosNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, false, 1, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        br.setFollowRedirects(false);
+        final Browser brv = br.cloneBrowser();
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
+        // Is it a videohoster? If so, we can get the downloadlink directly!
+        if (dllink == null && VIDEOHOSTER) {
+            brv.getPage(COOKIE_HOST + "/vidembed-" + fid);
+            dllink = brv.getRedirectLocation();
+        }
         // Third, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -217,8 +226,14 @@ public class AllMyVideosNet extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink += "?start=0";
         logger.info("Final downloadlink = " + dllink + " starting the download...");
+        brv.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        try {
+            brv.getPage("http://allmyvids.de/timeupdate?_=" + System.currentTimeMillis() + "&id=" + fid + "&time=0&position=0&state=IDLE&csrv=&fsrv=3");
+        } catch (final Exception e) {
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -244,14 +259,19 @@ public class AllMyVideosNet extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One
+     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
+     * the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a
+     * final dllink starts transferring or at a given step within pre download
+     * sequence. But this template(XfileSharingProBasic) allows multiple
+     * slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20)
+     * captcha events all at once and only allows one download to start. This
+     * prevents wasting peoples time and effort on captcha solving and|or
+     * wasting captcha trading credits. Users will experience minimal harm to
+     * downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)

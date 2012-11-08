@@ -80,7 +80,7 @@ public class FrShrdFldr extends PluginForDecrypt {
             }
         }
 
-        final String script = br.getRegex("src=\"(/account/homeScript.*?)\"").getMatch(0);
+        final String script = br.getRegex("(\"|\\')(/account/homeScript\\.jsp\\?ver=\\d+\\&sId=[^<>\"/]*?)(\"|\\')").getMatch(1);
         final String sId = new Regex(script, "^.+sId=(\\w+)").getMatch(0);
         if (script == null || sId == null) { return null; }
 
