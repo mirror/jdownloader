@@ -123,8 +123,8 @@ public class UploadLuxCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.postPage("http://www.uploadlux.com/connexion", "souvenir=on&connexion=Log+in&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(MAINPAGE, "session_save") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.postPage("http://www.uploadlux.com/connexion", "souvenir=on&connexion=Connexion&email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!br.containsHTML("Si cette page reste affichée plus de")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.getPage("http://www.uploadlux.com/profil");
                 if (br.containsHTML("<b style=\"color: #FF3300\">Premium</b>")) {
                     account.setProperty("nopremium", false);
