@@ -45,7 +45,7 @@ public class RTMPDownload extends RAFDownload {
     public boolean startDownload() throws Exception {
         /* Workaround for retry count loop */
         int retry = downloadLink.getLinkStatus().getRetryCount() + 1;
-        if (retry == plugin.getMaxRetries(downloadLink, null)) throw new PluginException(LinkStatus.ERROR_FATAL, "Stream not downloadable with rtmpdump!");
+        if (retry == plugin.getMaxRetries(downloadLink, null)) throw new PluginException(LinkStatus.ERROR_FATAL, "Stream temporary not downloadable with rtmpdump!");
         return rtmpDump().start(rtmpConnection);
     }
 

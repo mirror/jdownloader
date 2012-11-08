@@ -134,7 +134,7 @@ public class UstreamTv extends PluginForHost {
                 ext = ".flv";
             }
         }
-        if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
+        if (NOTFORSTABLE) throw new PluginException(LinkStatus.ERROR_FATAL, "JDownloader2 is needed!");
         if (filename == null || DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         downloadLink.setName(filename.trim() + ext);

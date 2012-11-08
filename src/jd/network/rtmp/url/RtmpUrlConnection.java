@@ -142,9 +142,16 @@ public class RtmpUrlConnection extends URLConnection {
             final Iterator<String> keyIter = parameterMap.keySet().iterator();
             while (keyIter.hasNext()) {
                 final String key = keyIter.next();
-                cmdargs.append(" -").append(key);
                 if (parameterMap.get(key) != null) {
-                    cmdargs.append(" \"").append(parameterMap.get(key)).append("\"");
+                    if (KEY_CONN.equals(key)) { // example: -C B:0 -C S:String -C N:1234
+                        for (String s : parameterMap.get(key).split("#")) {
+                            cmdargs.append(" -").append(key).append(" " + s);
+                        }
+                    } else {
+                        cmdargs.append(" -").append(key).append(" \"").append(parameterMap.get(key)).append("\"");
+                    }
+                } else {
+                    cmdargs.append(" -").append(key);
                 }
             }
         }
@@ -233,7 +240,11 @@ public class RtmpUrlConnection extends URLConnection {
      * @param value
      */
     public void setConn(final String value) {
-        parameterMap.put(KEY_CONN, value);
+        if (parameterMap.containsKey(KEY_CONN)) {
+            parameterMap.put(KEY_CONN, parameterMap.get(KEY_CONN) + "#" + value);
+        } else {
+            parameterMap.put(KEY_CONN, value);
+        }
     }
 
     /**

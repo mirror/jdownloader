@@ -435,7 +435,7 @@ public class RtmpDump extends RTMPDownload {
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (error.startsWith(timeoutMessage)) {
                     logger.severe(error);
-                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
+                    downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TIMEOUT_REACHED);
                 } else {
                     logger.severe("cmd: " + cmd);
                     logger.severe(error);
