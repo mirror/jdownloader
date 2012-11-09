@@ -40,6 +40,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecloud.io", "ifile.it" }, urls = { "http://(www\\.)?(ifile\\.it|filecloud\\.io)/[a-z0-9]+", "fhrfzjnerhfDELETEMEdhzrnfdgvfcas4378zhb" }, flags = { 2, 0 })
 public class IFileIt extends PluginForHost {
 
@@ -54,7 +56,7 @@ public class IFileIt extends PluginForHost {
     private static final String  NORESUME                = "NORESUME";
     private static final String  MAINPAGE                = "http://filecloud.io/";
     private static AtomicInteger maxPrem                 = new AtomicInteger(1);
-    private static final String  JDOWNLOADERAPIKEY       = "8XWkz6k0hPf5wVo/5jGEoA==";
+    private static final String  JDOWNLOADERAPIKEY       = "RjI0WkQrdWpwQ0EzTGVEYW1JWEgydz09";
 
     public IFileIt(final PluginWrapper wrapper) {
         super(wrapper);
@@ -69,25 +71,32 @@ public class IFileIt extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + JDOWNLOADERAPIKEY + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-
-        final String status = get("status");
-        if (status == null) {
-            apifailure("status");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.setFollowRedirects(true);
+        br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY)) + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        if (br.containsHTML("\"message\":\"no such user\"")) {
+            logger.warning("API key is invalid, jumping in other handling...");
+            br.getPage(downloadLink.getDownloadURL());
+            final String filesize = getAb1();
+            if (filesize == null) return AvailableStatus.FALSE;
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            final String status = get("status");
+            if (status == null) {
+                apifailure("status");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (!"ok".equals(get("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String filename = get("name");
+            final String filesize = get("size");
+            if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
+            downloadLink.setDownloadSize(Long.parseLong(filesize));
         }
-        if (!"ok".equals(get("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = get("name");
-        final String filesize = get("size");
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
-        downloadLink.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
     public void doFree(final DownloadLink downloadLink, boolean resume, boolean viaAccount) throws Exception, PluginException {
-        String ab1 = br.getRegex("var __ab1 = (\\d+);").getMatch(0);
-        if (ab1 == null) ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
+        final String ab1 = getAb1();
         if (ab1 == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.setFollowRedirects(true);
         // Br2 is our xml browser now!
@@ -157,6 +166,12 @@ public class IFileIt extends PluginForHost {
                 }
             }
         }
+    }
+
+    private String getAb1() {
+        String ab1 = br.getRegex("var __ab1 = (\\d+);").getMatch(0);
+        if (ab1 == null) ab1 = br.getRegex("\\$\\(\\'#fsize\\'\\)\\.empty\\(\\)\\.append\\( toMB\\( (\\d+) \\) \\);").getMatch(0);
+        return ab1;
     }
 
     @Override

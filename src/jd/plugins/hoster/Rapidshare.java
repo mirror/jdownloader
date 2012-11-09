@@ -61,7 +61,8 @@ public class Rapidshare extends PluginForHost {
             ret.id = Long.parseLong(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
             if (ret.link.getProperty("htmlworkaround", null) == null) {
                 /*
-                 * remove html ending, because rs now checks the complete filename
+                 * remove html ending, because rs now checks the complete
+                 * filename
                  */
                 ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$|;$)").getMatch(1);
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
@@ -172,7 +173,8 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen, kann das über diese Funktion gemacht werden.
+     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
+     * kann das über diese Funktion gemacht werden.
      */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -507,7 +509,7 @@ public class Rapidshare extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     /* get filename of link */
@@ -622,13 +624,15 @@ public class Rapidshare extends PluginForHost {
                 /* only available after 0.9xx version */
             }
 
-            // if (this.getPluginConfig().getBooleanProperty("notifyShown", false) == false) {
+            // if (this.getPluginConfig().getBooleanProperty("notifyShown",
+            // false) == false) {
             // this.getPluginConfig().setProperty("notifyShown", true);
             // try {
             // this.getPluginConfig().save();
             // } catch (final Throwable e) {
             // }
-            // UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN, "Rapidshare Speed Limitation",
+            // UserIO.getInstance().requestMessageDialog(UserIO.NO_COUNTDOWN,
+            // "Rapidshare Speed Limitation",
             // "Rapidshare disabled the ability to resume downloads that were stopped for free users and also limited the average download speed to 30 kb/s.\r\nBecause of the way they are doing this, it may look like the download is frozen!\r\n\r\nDon't worry - it's not. It's just waiting for the next piece of the file to be transferred.\r\n\r\nThe pauses in between are added by Rapidshare in order to make the overall average speed slower for free-users.");
             // }
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
@@ -741,8 +745,10 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
-                 * BIldfiles haben keinen Cache-Control Header
+                 * Download starten prüft ob ein content disposition header
+                 * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
+                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control
+                 * Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
@@ -800,7 +806,8 @@ public class Rapidshare extends PluginForHost {
             final String prtotcol = ssl ? "https" : "http";
 
             /*
-             * we can use cookie login if user does not want to get asked before package upgrade. we dont need live traffic stats here
+             * we can use cookie login if user does not want to get asked before
+             * package upgrade. we dont need live traffic stats here
              */
             Object cookiesRet = account.getProperty(COOKIEPROP);
             Object cookieEnc = account.getProperty(COOKIEPROPENC);
@@ -871,7 +878,8 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * requests the API url req. if the http ip is blocked (UK-BT isp returns 500 or 502 error) https is used.
+     * requests the API url req. if the http ip is blocked (UK-BT isp returns
+     * 500 or 502 error) https is used.
      * 
      * @param br
      * @param req

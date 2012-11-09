@@ -53,16 +53,17 @@ public class UlozTo extends PluginForHost {
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
         this.setConfigElements();
-        this.enablePremium("http://uloz.to/kredit/");
+        this.enablePremium("http://www.ulozto.net/kredit");
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz|ulozto\\.net)", "uloz.to"));
+    public void correctDownloadLink(final DownloadLink link) {
+        // ulozto.net = the english version of the site
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(uloz\\.to|ulozto\\.sk|ulozto\\.cz)", "ulozto.net"));
     }
 
     @Override
     public String getAGBLink() {
-        return "http://img.uloz.to/terms.pdf";
+        return "http://img.uloz.to/podminky.pdf";
     }
 
     @Override
@@ -76,8 +77,9 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
+        correctDownloadLink(downloadLink);
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(false);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) {
@@ -103,7 +105,7 @@ public class UlozTo extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void handleDownloadUrl(DownloadLink downloadLink) throws IOException {
+    private void handleDownloadUrl(final DownloadLink downloadLink) throws IOException {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             logger.info("Getting redirect-page");
@@ -112,7 +114,8 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = null;
@@ -164,7 +167,7 @@ public class UlozTo extends PluginForHost {
 
             // If captcha fails, throws exception
             // If in automatic mode, clears saved data
-            if (br.containsHTML("Text je opsán špatně")) {
+            if (br.containsHTML(">Error rewriting the text")) {
                 if (getPluginConfig().getBooleanProperty(REPEAT_CAPTCHA)) {
                     getPluginConfig().setProperty(CAPTCHA_ID, Property.NULL);
                     getPluginConfig().setProperty(CAPTCHA_TEXT, Property.NULL);
@@ -188,7 +191,7 @@ public class UlozTo extends PluginForHost {
                 } else {
                     br2.followConnection();
                     if (br2.containsHTML("Stránka nenalezena")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    br.clearCookies("http://www.uloz.to/");
+                    br.clearCookies("http://www.ulozto.net/");
                     handleDownloadUrl(downloadLink);
                     continue;
                 }
@@ -242,19 +245,19 @@ public class UlozTo extends PluginForHost {
         return true;
     }
 
-    public void login(Account account) throws Exception {
+    public void login(final Account account) throws Exception {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage("http://uloz.to/?do=web-login");
+        br.getPage("http://www.ulozto.net/login");
         final String key = new Regex(br.getURL(), "uloz\\.to/login\\?key=([a-z0-9]+)").getMatch(0);
         if (key == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        br.postPage("http://uloz.to/login?key=" + key + "&do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&login=P%C5%99ihl%C3%A1sit");
-        if (br.getCookie("http://uloz.to/", "permanentLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.postPage("http://www.ulozto.net/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&login=Submit");
+        if (br.getCookie("http://ulozto.net/", "permanentLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
@@ -274,7 +277,7 @@ public class UlozTo extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
     @Override
