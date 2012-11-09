@@ -98,7 +98,7 @@ public class FilerNet extends PluginForHost {
         if (br.containsHTML(">Not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex(">Free Download ([^<>\"]*?)<").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // The don't show a filesize but there is an estiminate download time :D
+        // The don't show a filesize but there is an estimate download time :D
         final Regex downloadTime = br.getRegex("<td><em>~ (\\d+):(\\d+):(\\d+)</em></td>");
         if (downloadTime.getMatches().length == 1) {
             int seconds = Integer.parseInt(downloadTime.getMatch(0)) * 60 * 60 + Integer.parseInt(downloadTime.getMatch(1)) * 60 + Integer.parseInt(downloadTime.getMatch(2));
@@ -145,6 +145,8 @@ public class FilerNet extends PluginForHost {
             }
         }
         if (br.containsHTML("google\\.com/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // They show this message after recaptcha (very lame). It's in german and not english for some reason....
+        if (br.containsHTML("(<h1 class=\"[^\"]+\">Leider sind alle kostenlosen Download\\-Slots belegt\\.</h1>|>Im Moment sind leider alle Download\\-Slots für kostenlose Downloads belegt\\.)") || br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1001l);
         final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
