@@ -68,6 +68,10 @@ public class ThreeDlTv extends PluginForDecrypt {
                 logger.info("Can't access link, IP blocked, wait at least 10 minutes!");
                 return decryptedLinks;
             }
+            if (br.containsHTML(">Error 404 \\- Ordner nicht gefunden<|>Error 404<")) {
+                logger.info("Link offline: " + parameter);
+                return decryptedLinks;
+            }
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex("(\"|\\')(/index\\.php\\?action=captcha\\&id=\\d+\\&sig=[a-z0-9]+)(\"|\\')").getMatch(1);
                 if (captchaLink == null) {

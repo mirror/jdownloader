@@ -49,6 +49,7 @@ public class UlozTo extends PluginForHost {
     private static final String CAPTCHA_ID          = "CAPTCHA_ID";
     private static final String QUICKDOWNLOAD       = "http://(www\\.)?uloz\\.to/quickDownload/\\d+";
     private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.ulozto.premiumonly", "Only downloadable for premium users!");
+    private static final String PASSWORDPROTECTED   = ">Enter password please<";
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -96,12 +97,20 @@ public class UlozTo extends PluginForHost {
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
-        final String filesize = br.getRegex("<span id=\"fileSize\">(\\d+:\\d+ \\| )?(.*?)</span>").getMatch(1);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (br.containsHTML(PASSWORDPROTECTED)) {
+            String filename = br.getRegex("<title>([^<>\"]*?) \\| Uloz\\.to</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            downloadLink.getLinkStatus().setStatusText("This link is password protected");
+        } else {
+            String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
+            final String filesize = br.getRegex("<span id=\"fileSize\">(\\d+:\\d+ \\| )?(.*?)</span>").getMatch(1);
+            if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
         return AvailableStatus.TRUE;
     }
 
@@ -118,6 +127,7 @@ public class UlozTo extends PluginForHost {
         this.getPluginConfig().setProperty(REPEAT_CAPTCHA, false);
         requestFileInformation(downloadLink);
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_FATAL, "This link is password protected");
         String dllink = null;
         Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
@@ -225,6 +235,7 @@ public class UlozTo extends PluginForHost {
 
     public void handlePremium(final DownloadLink parameter, final Account account) throws Exception {
         requestFileInformation(parameter);
+        if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_FATAL, "This link is password protected");
         login(account);
         String dllink = parameter.getDownloadURL() + "?do=directDownload";
         if (parameter.getDownloadURL().matches(QUICKDOWNLOAD)) dllink = parameter.getDownloadURL();
@@ -249,9 +260,6 @@ public class UlozTo extends PluginForHost {
         setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
-        br.getPage("http://www.ulozto.net/login");
-        final String key = new Regex(br.getURL(), "uloz\\.to/login\\?key=([a-z0-9]+)").getMatch(0);
-        if (key == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         br.postPage("http://www.ulozto.net/login?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on&login=Submit");
         if (br.getCookie("http://ulozto.net/", "permanentLogin") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
@@ -265,7 +273,7 @@ public class UlozTo extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String trafficleft = br.getRegex("href=\"http://(www\\.)?uloz\\.to/kredit\" title=\"([0-9\\.]+ (GB|MB|B))").getMatch(1);
+        final String trafficleft = br.getRegex("href=\"http://(www\\.)?ulozto\\.net/kredit\" title=\"([0-9\\.]+ (GB|MB|B))").getMatch(1);
         if (trafficleft != null) ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
         ai.setStatus("Premium User");
         account.setValid(true);
