@@ -33,6 +33,7 @@ import jd.http.ext.ExtBrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -751,7 +752,17 @@ public class DecrypterForRedirectServicesWithoutDirectRedirects extends PluginFo
                 finallink = br.getRedirectLocation();
             }
         } else if (parameter.contains("peeplink.in/")) {
-            finallink = br.getRegex("</strong><br/><br/>([^<>\"]*?)</article>").getMatch(0);
+            finallink = br.getRegex("<article>(.*?)</article>").getMatch(0);
+            if (finallink != null) {
+                final String[] finallinks = HTMLParser.getHttpLinks(finallink, "");
+                if (finallinks != null && finallinks.length != 0) {
+                    for (final String aLink : finallinks)
+                        decryptedLinks.add(createDownloadlink(aLink));
+                    return decryptedLinks;
+                } else {
+                    finallink = null;
+                }
+            }
         }
         if (offline) {
             logger.info("Link offline: " + parameter);

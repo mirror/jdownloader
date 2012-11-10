@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,19 +44,24 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8}/[^<>\"/]*?\\.html|files/[a-z0-9]{8}/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bitshare.com" }, urls = { "http://(www\\.)?bitshare\\.com/(\\?(f|m)=[a-z0-9]{8}|files/[a-z0-9]{8})" }, flags = { 2 })
 public class BitShareCom extends PluginForHost {
 
     private static final String  JSONHOST         = "http://bitshare.com/files-ajax/";
     private static final String  AJAXIDREGEX      = "var ajaxdl = \"(.*?)\";";
-    private static final String  FILEIDREGEX      = "bitshare\\.com/files/([a-z0-9]{8})/";
+    private static final String  FILEIDREGEX      = "([a-z0-9]{8})$";
     private static final String  DLLINKREGEX      = "SUCCESS#(http://.+)";
     private static final String  MAINPAGE         = "http://bitshare.com/";
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
     private static Object        LOCK             = new Object();
     private final char[]         FILENAMEREPLACES = new char[] { '-' };
+    private static final String  LINKOFFLINE      = "(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)";
 
     private String               agent            = null;
+
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload("http://bitshare.com/?f=" + new Regex(link.getDownloadURL(), "([a-z0-9]{8})$").getMatch(0));
+    }
 
     public BitShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -141,6 +145,8 @@ public class BitShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         doFree(downloadLink);
     }
 
@@ -254,6 +260,7 @@ public class BitShareCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML(LINKOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (account.getBooleanProperty("freeaccount")) {
             doFree(link);
         } else {
@@ -295,6 +302,8 @@ public class BitShareCom extends PluginForHost {
         return true;
     }
 
+    // TODO: Implement API: http://bitshare.com/openAPI.html and maybe use
+    // downloadhandling from their tool: http://bitshare.com/tool.html
     @SuppressWarnings("unchecked")
     private void login(Account account, boolean force) throws Exception {
         synchronized (LOCK) {
@@ -303,7 +312,8 @@ public class BitShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference it
+                     * we first have to load the plugin, before we can reference
+                     * it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
@@ -350,7 +360,7 @@ public class BitShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setReadTimeout(3 * 60 * 1000);
         br.setCookie(MAINPAGE, "language_selection", "EN");
@@ -360,34 +370,15 @@ public class BitShareCom extends PluginForHost {
             agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
         }
         br.getHeaders().put("User-Agent", agent);
+        // Using API: http://bitshare.com/openAPI.html
+        br.postPage("http://bitshare.com/api/openapi/general.php", "action=getFileStatus&files=" + Encoding.urlEncode(link.getDownloadURL()));
+        if (br.containsHTML("#offline#")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex fileInfo = br.getRegex("#online#[a-z0-9]{8}#([^<>\"]*?)#(\\d+)");
 
-        /* 0.95xx comp */
-        String dllink = link.getDownloadURL().replaceAll("(%20|\\s)", "+");
-        String host = dllink.substring(0, dllink.indexOf("/", 10));
-        link.setUrlDownload(dllink.replaceAll(host, dllink.substring(0, dllink.indexOf("/", 10)).toLowerCase(Locale.ENGLISH)));
-
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error - File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (new Regex(link.getDownloadURL(), "http://(www\\.)?bitshare\\.com/\\?(f|m)=[a-z0-9]{8}").matches()) {
-            String newlink = br.getRegex("\"(http://bitshare\\.com/files/[a-z0-9]+/[^/<>\"]+\\.html)\"").getMatch(0);
-            if (newlink == null) {
-                logger.warning("Failed to get new link for shortlink: " + link.getDownloadURL());
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setUrlDownload(newlink);
-        }
-        Regex nameAndSize = br.getRegex("<h1>(Listen to|Downloading|Streaming) (.*?) \\- ([0-9\\.]+ [A-Za-z]+)</h1>");
-        String filename = nameAndSize.getMatch(1);
-        String filesize = nameAndSize.getMatch(2);
-        if (filename == null) {
-            logger.warning("Filename or filesize is null");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        filename = filename.trim();
-        if (filename.contains("...")) {
-            String urlFilename = new Regex(link.getDownloadURL(), "/files/[a-z0-9]+/(.*?)(\\.html|$)").getMatch(0);
-            if (urlFilename != null) filename = urlFilename;
-        }
+        if (br.containsHTML("(>We are sorry, but the requested file was not found in our database|>Error \\- File not available<|The file was deleted either by the uploader, inactivity or due to copyright claim)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = fileInfo.getMatch(0);
+        final String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String suggestedName = null;
         /* special filename modding if we have a suggested filename */
         if ((suggestedName = (String) link.getProperty("SUGGESTEDFINALFILENAME", (String) null)) != null) {
@@ -397,7 +388,7 @@ public class BitShareCom extends PluginForHost {
             }
         }
         link.setName(filename);
-        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replace("yte", "")));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
 
         return AvailableStatus.TRUE;
     }
