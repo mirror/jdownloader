@@ -167,8 +167,12 @@ public class UltraMegaBitCom extends PluginForHost {
         ai.setUnlimitedTraffic();
         final String expire = br.getRegex("Premium[\t\n\r ]+</div>[\t\n\r ]+<div>([^<>\"]*? \\d{2} \\d{4})</div>").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
+            // some premiums have no expiration date, page shows only: Account status: Premium
+            final String accountStatus = getData("Account status").trim();
+            if (!accountStatus.equalsIgnoreCase("Premium")) {
+                account.setValid(false);
+                return ai;
+            }
         } else {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MMMM dd yyyy", Locale.ENGLISH));
         }
