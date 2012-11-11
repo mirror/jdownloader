@@ -50,7 +50,7 @@ public class ZeveraCom extends PluginForHost {
     private static final String mName = "zevera.com";
     private static final String mProt = "http://";
     private static final String mServ = mProt + "api." + mName;
-    private static Object LOCK  = new Object();
+    private static Object       LOCK  = new Object();
 
     public ZeveraCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -151,7 +151,7 @@ public class ZeveraCom extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().getContentType().contains("html")) {
             /* contentdisposition, lets download it */
             dl.startDownload();
             return;

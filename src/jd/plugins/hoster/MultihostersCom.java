@@ -149,7 +149,7 @@ public class MultihostersCom extends PluginForHost {
         /* we want to follow redirects in final stage */
         br.setFollowRedirects(true);
 
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
 
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */

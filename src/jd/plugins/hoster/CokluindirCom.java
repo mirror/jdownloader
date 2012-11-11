@@ -162,7 +162,7 @@ public class CokluindirCom extends PluginForHost {
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
