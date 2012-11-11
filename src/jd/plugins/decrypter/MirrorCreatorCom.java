@@ -20,15 +20,12 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://[\\w\\.]*?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorcreator.com" }, urls = { "http://(www\\.)?(mirrorcreator\\.com/files|mir\\.cr)/[0-9A-Z]{8}" }, flags = { 0 })
 public class MirrorCreatorCom extends PluginForDecrypt {
 
     public MirrorCreatorCom(PluginWrapper wrapper) {
@@ -43,42 +40,35 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         if (!parameter.endsWith("/")) parameter += "/";
         parameter = "http://www." + parameter;
         param.setCryptedUrl(parameter);
-        String host = new Regex(parameter, "(.+)/files").getMatch(0);
-        String id = new Regex(parameter, "files/([0-9A-Z]+)").getMatch(0);
-        // This should never happen but in case a dev changes the plugin without
-        // much testing he ll see the error later!
-        if (host == null || id == null) {
+        br.getPage(parameter);
+        /* Error handling */
+        if (br.containsHTML(">Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid")) {
+            logger.info("The following link should be offline: " + param.toString());
+            return decryptedLinks;
+        }
+
+        final String links = br.getRegex("\"(/status\\.php\\?uid=[A-Z0-9]+\\&h=[a-z0-9]{32})\"").getMatch(0);
+        if (links == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
         }
-        parameter = host + "/status.php?uid=" + id;
-        // Need to access it twice so it works
-        br.getPage(parameter);
-        br.getPage(parameter);
-        /* Error handling */
-        if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
-            logger.info("The following link should be offline: " + param.toString());
-            throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        }
+        br.getPage("http://www.mirrorcreator.com" + links);
         String[] redirectLinks = br.getRegex("(/redirect/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
         if (redirectLinks == null || redirectLinks.length == 0) return null;
-        progress.setRange(redirectLinks.length);
-        String nicelookinghost = host.replaceAll("(www\\.|http://|/)", "");
+
+        final String nicelookinghost = "mirrorcreator.com";
         logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
         for (String singlelink : redirectLinks) {
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get
             // by redirect
             if (singlelink.contains("/redirect/")) {
-                br.getPage(host + singlelink);
+                br.getPage("http://www.mirrorcreator.com" + singlelink);
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    dllink = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
-                    if (dllink == null) {
-                        dllink = br.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
-                        if (dllink == null) dllink = br.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
-                    }
+                    dllink = br.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
+                    if (dllink == null) dllink = br.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
                 }
             } else {
                 // Handling for already regexed final-links
@@ -88,11 +78,9 @@ public class MirrorCreatorCom extends PluginForDecrypt {
                 // Continue away, randomised pages can cause failures.
                 logger.warning("Possible plugin error: " + param.toString());
                 logger.warning("Continuing...");
-                progress.increase(1);
                 continue;
             }
             decryptedLinks.add(createDownloadlink(dllink));
-            progress.increase(1);
         }
         logger.warning("Task Complete! : " + param.toString());
         return decryptedLinks;
