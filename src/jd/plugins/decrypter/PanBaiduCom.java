@@ -16,7 +16,6 @@
 
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -36,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=.+)?)|netdisk/singlepublic\\?fid=\\w+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pan.baidu.com" }, urls = { "http://(www\\.)?pan\\.baidu\\.com/(share/link(\\?(shareid|uk)=\\d+\\&(shareid|uk)=\\d+(#dir/path=.+)?)|netdisk/(singlepublic\\?fid=|extractpublic\\?username=)[\\w\\%]+)" }, flags = { 0 })
 public class PanBaiduCom extends PluginForDecrypt {
 
     public PanBaiduCom(PluginWrapper wrapper) {
@@ -62,11 +61,15 @@ public class PanBaiduCom extends PluginForDecrypt {
 
         /* create HashMap with json key/value pair */
         String json = new Regex(correctedBR, "\\(\"\\[(\\{.*?\\})\\]\"\\)").getMatch(0);
+        if (json == null) json = new Regex(correctedBR, "\"(\\{.*?\\})\"").getMatch(0);
         HashMap<String, String> ret = new HashMap<String, String>();
+
         for (String[] values : new Regex((json == null ? "" : json), "\\{(.*?)\\}").getMatches()) {
+
             for (String[] value : new Regex(values[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
                 ret.put(value[0], value[1]);
             }
+
             if (!(ret.containsKey("headurl") || ret.containsKey("parent_path"))) continue;
             dir = new Regex(ret.get("headurl"), "filename=(.*?)$").getMatch(0);
             ret.put("path", dir);
@@ -76,7 +79,7 @@ public class PanBaiduCom extends PluginForDecrypt {
                 DownloadLink dl = generateDownloadLink(ret, parameter, dir);
                 decryptedLinks.add(dl);
             } else {
-                getDownloadLinks(decryptedLinks, correctedBR, parameter, ret.get("path"), dir);// folder in root
+                getDownloadLinks(decryptedLinks, parameter, ret.get("path"), dir);// folder in root
             }
         }
 
@@ -87,33 +90,47 @@ public class PanBaiduCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private void getDownloadLinks(ArrayList<DownloadLink> decryptedLinks, String correctedBR, final String parameter, String dirName, String dir) throws IOException {
+    private void getDownloadLinks(ArrayList<DownloadLink> decryptedLinks, final String parameter, String dirName, String dir) throws Exception {
         if (dirName == null || dir == null) return;
+        FilePackage fp = null;
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.getPage("http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + new Regex(parameter, "uk=(\\d+)").getMatch(0) + "&shareid=" + new Regex(parameter, "shareid=(\\d+)").getMatch(0) + "&_=" + System.currentTimeMillis());
-        FilePackage fp = FilePackage.getInstance();
+        br.getPage(getFolder(parameter, dir));
+        fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(unescape(dirName)));
         HashMap<String, String> ret = new HashMap<String, String>();
         String list = br.getRegex("\"list\":\\[(\\{.*?\\})\\]").getMatch(0);
+
         for (String[] links : new Regex((list == null ? "" : list), "\\{(.*?)\\}").getMatches()) {
+
             for (String[] link : new Regex(links[0] + ",", "\"(.*?)\":\"?(.*?)\"?,").getMatches()) {
                 ret.put(link[0], link[1]);
             }
 
-            /**
-             * TODO: subfolder in folder coming soon
-             */
-            if (!ret.containsKey("dlink")) continue;
+            /* subfolder in folder */
+            if (!ret.containsKey("dlink")) {
+                if ("1".equals(ret.get("isdir"))) {
+                    String folderName = ret.get("server_filename");
+                    String path = ret.get("path");
+                    if (folderName == null || path == null) continue;
+                    getDownloadLinks(decryptedLinks, parameter, dirName + "-" + folderName, unescape(path));
+                }
+            }
 
             DownloadLink dl = generateDownloadLink(ret, parameter, dir);
-            fp.add(dl);
-            try {
-                distribute(dl);
-            } catch (final Throwable e) {
-                /* does not exist in 09581 */
+            if (dl.getStringProperty("dlink", null) != null) {
+                fp.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Throwable e) {
+                    /* does not exist in 09581 */
+                }
+                decryptedLinks.add(dl);
             }
-            decryptedLinks.add(dl);
         }
+    }
+
+    private String getFolder(final String parameter, String dir) {
+        return "http://pan.baidu.com/share/list?channel=chunlei&clienttype=0&web=1&num=100&t=" + System.currentTimeMillis() + "&page=1&dir=" + dir + "&t=0." + +System.currentTimeMillis() + "&uk=" + new Regex(parameter, "uk=(\\d+)").getMatch(0) + "&shareid=" + new Regex(parameter, "shareid=(\\d+)").getMatch(0) + "&_=" + System.currentTimeMillis();
     }
 
     private static synchronized String unescape(final String s) {
