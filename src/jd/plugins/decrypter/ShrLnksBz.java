@@ -253,7 +253,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 } catch (final Throwable e) {
                     continue;
                 }
-                final String fun = br.getRegex("eval(.*)(\n|\r)").getMatch(0);
+                final String fun = br.getRegex("eval(\\(.*\\))[\r\n]+").getMatch(0);
                 String result = fun != null ? unpackJS(fun, 1) : null;
                 if (result != null) {
                     if (result.contains("share-links.biz")) {
