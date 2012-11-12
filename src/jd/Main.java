@@ -47,7 +47,8 @@ public class Main {
         System.setProperty("java.net.preferIPv4Stack", "true");
         try {
             /*
-             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache timeout
+             * never cache negative answers,workaround for buggy dns servers that can fail and then the cache would be polluted for cache
+             * timeout
              */
             java.security.Security.setProperty("networkaddress.cache.negative.ttl", 0 + "");
         } catch (final Throwable e) {
@@ -80,6 +81,10 @@ public class Main {
                     // not of type ExtLogManager. try to fix this here
                     // we experiences this bug once on a mac system. may be
                     // caused by mac jvm, or the mac install4j launcher
+
+                    // 12.11:
+                    // a winxp user had this problem with install4j (exe4j) as well.
+                    // seems like 4xeej sets a logger before our main is reached.
                     Field field = LogManager.class.getDeclaredField("manager");
                     field.setAccessible(true);
                     ExtLogManager manager = new ExtLogManager();
