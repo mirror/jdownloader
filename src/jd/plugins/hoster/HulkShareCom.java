@@ -466,7 +466,7 @@ public class HulkShareCom extends PluginForHost {
         if (NOPREMIUM) {
             br.getPage(link.getDownloadURL());
             doSomething();
-            doFree(link, true, 0, false);
+            doFree(link, true, 0, true);
         } else {
             dllink = link.getStringProperty("premlink");
             if (dllink != null) {
@@ -636,15 +636,11 @@ public class HulkShareCom extends PluginForHost {
             }
         }
         String filesize = br.getRegex("<small>\\((.*?)\\)</small>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
-                if (filesize == null) {
-                    filesize = br.getRegex("<b>Size:</b> (.*?)<br />").getMatch(0);
-                }
-            }
-        }
+        if (filesize == null) filesize = br.getRegex("\\(([0-9]+ bytes)\\)").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("</font>[ ]+\\((.*?)\\)(.*?)</font>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("<b>Size:</b> (.*?)<br />").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("class=\"tsSize\">(.*?)</sp").getMatch(0);
+
         if (filename == null) {
             logger.warning("The filename equals null, throwing \"file not found\" now...");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
