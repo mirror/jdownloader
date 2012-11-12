@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?(api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+|ge\\.tt/api/\\d+/files/[A-Za-z0-9]+/\\d+/blob\\?download)" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
     private String              DLLINK               = null;
@@ -51,18 +51,22 @@ public class GeTt extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
-        br.getPage("http://ge.tt");
-        Browser brc = br.cloneBrowser();
-        brc.getPage(downloadLink.getDownloadURL());
-        if (brc.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        DLLINK = brc.getRedirectLocation();
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (DLLINK.contains(LIMITREACHED)) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gett.trafficlimit", LIMITREACHEDUSERTEXT));
-            return AvailableStatus.TRUE;
+        final Browser brc = br.cloneBrowser();
+        if (downloadLink.getDownloadURL().matches("http://(www\\.)?api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+")) {
+            br.getPage("http://ge.tt");
+            brc.getPage(downloadLink.getDownloadURL());
+            if (brc.containsHTML("No htmlCode read") || br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            DLLINK = brc.getRedirectLocation();
+            if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (DLLINK.contains(LIMITREACHED)) {
+                downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.gett.trafficlimit", LIMITREACHEDUSERTEXT));
+                return AvailableStatus.TRUE;
+            }
+        } else {
+            DLLINK = downloadLink.getDownloadURL();
         }
         // In case the link redirects to the finallink
         brc.setFollowRedirects(true);

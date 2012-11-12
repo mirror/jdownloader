@@ -44,7 +44,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://[\\w\\.]*?vip-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vip-file.com" }, urls = { "http://(u\\d+.)?vip\\-file\\.com/download(lib)?/.*?/.*?\\.html" }, flags = { 2 })
 public class Vipfilecom extends PluginForHost {
 
     public static final String FREELINKREGEX = "\"(http://vip-file.com/download([0-9]+)/.*?)\"";
@@ -236,6 +236,7 @@ public class Vipfilecom extends PluginForHost {
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:13.0) Gecko/20100101 Firefox/13.0.1");
         br.setReadTimeout(2 * 60 * 1000);
         br.setCookie("http://vip-file.com/", "lang", "en");
+        br.setFollowRedirects(true);
         br.getPage(downloadURL);
         if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);

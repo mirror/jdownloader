@@ -153,38 +153,15 @@ public class PandamemoCom extends PluginForHost {
     }
 
     private String[] scanInfo(String[] fileInfo) {
-        // standard traits from base page
+        final Regex fileRegex = new Regex(correctedBR, "<b>File: ([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</b>");
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            fileInfo[0] = fileRegex.getMatch(0);
             if (fileInfo[0] == null) {
-                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
-                if (fileInfo[0] == null) {
-                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
-                    if (fileInfo[0] == null) {
-                        fileInfo[0] = new Regex(correctedBR, "Download File:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                        // traits from download1 page below.
-                        if (fileInfo[0] == null) {
-                            fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
-                            // next two are details from sharing box
-                            if (fileInfo[0] == null) {
-                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
-                                if (fileInfo[0] == null) {
-                                    fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
-                                }
-                            }
-                        }
-                    }
-                }
+                fileInfo[0] = new Regex(correctedBR, ">\\[URL=http://(www\\.)?pandamemo\\.com/[a-z0-9]{12}\\]([^<>\"]*?) \\- \\d+").getMatch(1);
             }
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-            if (fileInfo[1] == null) {
-                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-                if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
-                }
-            }
+            fileInfo[1] = fileRegex.getMatch(1);
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
@@ -335,19 +312,14 @@ public class PandamemoCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -382,11 +354,8 @@ public class PandamemoCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.pandamemo\\.com:\\d+/[a-z0-9]+/\\d+/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("</center><br>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("\"(http://\\d+\\.\\d+\\.[^<>\"]*?)\"><img src=\"http://img\\.ihere\\.org/").getMatch(0);
-            }
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) dllink = new Regex(correctedBR, "<tr><td><br>[\t\n\r ]+<a href=\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+/[a-z0-9]+)\"").getMatch(0);
         }
         return dllink;
     }

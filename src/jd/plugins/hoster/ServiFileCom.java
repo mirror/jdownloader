@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/files/[^/]+" }, flags = { 2 })
 public class ServiFileCom extends PluginForHost {
@@ -60,29 +60,37 @@ public class ServiFileCom extends PluginForHost {
 
     // Using FreakshareScript 1.2
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML(">The file you have requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        Regex fileInfo = br.getRegex("style=\"text\\-align:(center|left|right);\">([^\"<>]+) \\(([0-9\\.]+ [A-Za-z]+), \\d+ (downloads|descargas)\\)</h1>");
-        String filename = fileInfo.getMatch(1);
-        String filesize = fileInfo.getMatch(2);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Set final filename here because hoster taggs files
-        link.setFinalFileName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        link.setName(new Regex(link.getDownloadURL(), "servifile\\.com/files/(.+)").getMatch(0));
+        // We cannot check status here, only after captcha!
+        link.getLinkStatus().setStatusText("Status can only be chacked after the captcha!");
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+
+        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        rc.setId(id);
+        rc.load();
+        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        final String c = getCaptchaCode(cf, downloadLink);
+        br.postPage(br.getURL(), "entrar=no&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (br.containsHTML(">The file you have requested does not exists")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
         if (getLink == null) getLink = br.getRegex(GETLINKREGEX2).getMatch(0);
         if (getLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // waittime
         String ttt = br.getRegex("var time = (\\d+);").getMatch(0);
-        int tt = 20;
+        int tt = 60;
         if (ttt != null) tt = Integer.parseInt(ttt);
         if (tt > 240) {
             // 10 Minutes reconnect-waittime is not enough, let's wait one
@@ -98,7 +106,13 @@ public class ServiFileCom extends PluginForHost {
             if (unknownError != null) logger.warning("Unknown error occured: " + unknownError);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(downloadLink);
         dl.startDownload();
+    }
+
+    private void fixFilename(final DownloadLink dl) {
+        // Remove unwanted filename tag
+        dl.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(this.dl.getConnection())).trim().replace("[Servifile.com]", ""));
     }
 
     @SuppressWarnings("unchecked")
@@ -192,6 +206,7 @@ public class ServiFileCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        fixFilename(link);
         dl.startDownload();
     }
 
