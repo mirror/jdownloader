@@ -13,6 +13,7 @@ public class RemoteAPISession implements HttpSession {
     protected RemoteAPISession(HttpSessionController<? extends HttpSession> controller) {
         this.sessionID = "" + new UniqueAlltimeID() + ("_" + System.currentTimeMillis()).hashCode() + System.currentTimeMillis();
         this.controller = controller;
+
     }
 
     public HttpSessionController<? extends HttpSession> _getSessionController() {
