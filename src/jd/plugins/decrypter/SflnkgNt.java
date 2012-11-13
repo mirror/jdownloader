@@ -193,7 +193,7 @@ public class SflnkgNt extends PluginForDecrypt {
                         jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
                         cf = sm.downloadCaptcha(getLocalCaptchaFile());
                         String code = getCaptchaCode(cf, param);
-                        String chid = sm.verify(code);
+                        String chid = sm.getChallenge(code);
                         data += "&solvemedia_response=" + code.replace(" ", "+") + "&adcopy_challenge=" + chid + "&adcopy_response=" + code.replace(" ", "+");
                         break;
                     }

@@ -93,7 +93,7 @@ public class BytesBoxCom extends PluginForHost {
             jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
-            ajaxBR.postPage("http://bytesbox.com/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.verify(code) + "&adcopy_response=" + Encoding.urlEncode(code));
+            ajaxBR.postPage("http://bytesbox.com/ajax.solvcaptcha.php", "downsess=" + downsess + "&adcopy_challenge=" + sm.getChallenge(code) + "&adcopy_response=" + Encoding.urlEncode(code));
             if (ajaxBR.containsHTML("\"status\":\"ERROR\"")) continue;
             break;
         }

@@ -378,7 +378,7 @@ public class RapidGatorNet extends PluginForHost {
                     final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
                     final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     code = getCaptchaCode(cf, downloadLink);
-                    final String chid = sm.verify(code);
+                    final String chid = sm.getChallenge(code);
                     captcha.put("adcopy_challenge", chid);
                     captcha.put("adcopy_response", code);
 

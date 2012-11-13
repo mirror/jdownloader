@@ -210,7 +210,7 @@ public class SharpFileCom extends PluginForHost {
                     jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
                     File cf = sm.downloadCaptcha(getLocalCaptchaFile());
                     String code = getCaptchaCode(cf, downloadLink);
-                    String chid = sm.verify(code);
+                    String chid = sm.getChallenge(code);
                     dlForm.put("adcopy_challenge", chid);
                     dlForm.put("adcopy_response", "manual_challenge");
                 }

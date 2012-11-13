@@ -117,7 +117,7 @@ public class LnkCrptWs extends PluginForDecrypt {
 
         private void load() throws Exception {
             smBr = br.cloneBrowser();
-            getChallenge();
+            getChallengeKey();
             setServer();
             setPath();
             smBr.getPage(server + path + challenge);
@@ -132,7 +132,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             if (captchaAddress == null) throw new Exception("SolveMedia Module fails");
         }
 
-        private void getChallenge() {
+        private void getChallengeKey() {
             challenge = br.getRegex("http://api\\.solvemedia\\.com/papi/_?challenge\\.script\\?k=(.{32})").getMatch(0);
             if (challenge == null) {
                 secure = true;
@@ -142,7 +142,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
         }
 
-        public String verify(final String code) throws Exception {
+        public String getChallenge(final String code) throws Exception {
             if (!noscript) return chId;
 
             /** FIXME stable Browser Bug --> Form action handling */

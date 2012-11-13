@@ -87,7 +87,7 @@ public class NitroBitsCom extends PluginForHost {
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
-            final String challenge = sm.verify(code);
+            final String challenge = sm.getChallenge(code);
 
             if (i == 0) {
                 waitTime(timeBefore, downloadLink);
