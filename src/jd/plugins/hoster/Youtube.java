@@ -46,16 +46,25 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
-    private static Object                                    lock         = new Object();
-    private boolean                                          prem         = false;
-    private static final String                              IDASFILENAME = "ISASFILENAME";
-    private static final String                              ALLOW_MP3    = "ALLOW_MP3";
-    private static final String                              ALLOW_MP4    = "ALLOW_MP4";
-    private static final String                              ALLOW_WEBM   = "ALLOW_WEBM";
-    private static final String                              ALLOW_FLV    = "ALLOW_FLV";
-    private static final String                              ALLOW_3GP    = "ALLOW_3GP";
-    private static final String                              FAST_CHECK   = "FAST_CHECK2";
-    private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
+    private static Object                                    lock           = new Object();
+    private boolean                                          prem           = false;
+    private static final String                              IDASFILENAME   = "ISASFILENAME";
+    private static final String                              ALLOW_MP3      = "ALLOW_MP3";
+    private static final String                              ALLOW_MP4      = "ALLOW_MP4";
+    private static final String                              ALLOW_WEBM     = "ALLOW_WEBM";
+    private static final String                              ALLOW_FLV      = "ALLOW_FLV";
+    private static final String                              ALLOW_3GP      = "ALLOW_3GP";
+    private static final String                              ALLOW_240P     = "ALLOW_240P";
+    private static final String                              ALLOW_360P     = "ALLOW_360P";
+    private static final String                              ALLOW_480P     = "ALLOW_480P";
+    private static final String                              ALLOW_720P     = "ALLOW_720P";
+    private static final String                              ALLOW_1080P    = "ALLOW_1080P";
+    private static final String                              ALLOW_ORIGINAL = "ALLOW_ORIGINAL";
+    private static final String                              FAST_CHECK     = "FAST_CHECK2";
+    private static final String                              PROXY_ACTIVE   = "PROXY_ACTIVE";
+    private static final String                              PROXY_ADDRESS  = "PROXY_ADDRESS";
+    private static final String                              PROXY_PORT     = "PROXY_PORT";
+    private static HashMap<Account, HashMap<String, String>> loginCookies   = new HashMap<Account, HashMap<String, String>>();
 
     public static String unescape(final String s) {
         char ch;
@@ -361,6 +370,16 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_MP3, JDL.L("plugins.hoster.youtube.checkmp3", "Grab MP3?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_FLV, JDL.L("plugins.hoster.youtube.checkflv", "Grab FLV?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_3GP, JDL.L("plugins.hoster.youtube.check3gp", "Grab 3GP?")).setDefaultValue(true));
-
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_240P, JDL.L("plugins.hoster.youtube.check240p", "Grab 240p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_360P, JDL.L("plugins.hoster.youtube.check360p", "Grab 360p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_480P, JDL.L("plugins.hoster.youtube.check480p", "Grab 480p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_720P, JDL.L("plugins.hoster.youtube.check720p", "Grab 720p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080P, JDL.L("plugins.hoster.youtube.check1080p", "Grab 1080p?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_ORIGINAL, JDL.L("plugins.hoster.youtube.checkoriginal", "Grab Original?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROXY_ACTIVE, JDL.L("plugins.hoster.youtube.proxyactive", "Use HTTP Proxy?")).setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PROXY_ADDRESS, JDL.L("plugins.hoster.youtube.proxyaddress", "Proxy Address")));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), PROXY_PORT, JDL.L("plugins.hoster.youtube.proxyport", "Proxy Port")));
     }
 }

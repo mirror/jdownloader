@@ -49,11 +49,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
+
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
+import org.appwork.utils.net.httpconnection.HTTPProxyStorable.TYPE;
+
 import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
+    HTTPProxyStorable            proxyStore;
 
     static {
         String installerSource = null;
@@ -164,6 +169,18 @@ public class TbCm extends PluginForDecrypt {
     public TbCm(final PluginWrapper wrapper) {
         super(wrapper);
 
+        SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
+
+        if (cfg.getBooleanProperty("PROXY_ACTIVE")) {
+            final String PROXY_ADDRESS = cfg.getStringProperty("PROXY_ADDRESS");
+            final int PROXY_PORT = cfg.getIntegerProperty("PROXY_PORT");
+
+            proxyStore = new HTTPProxyStorable();
+            proxyStore.setAddress(PROXY_ADDRESS);
+            proxyStore.setPort(PROXY_PORT);
+            proxyStore.setType(TYPE.HTTP);
+        }
+
     }
 
     private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final int fmt) {
@@ -198,6 +215,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
+
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
@@ -207,6 +225,7 @@ public class TbCm extends PluginForDecrypt {
         parameter = parameter.replaceFirst("(watch\\?.*?v)", "watch?v");
         parameter = parameter.replaceFirst("/embed/", "/watch?v=");
         parameter = parameter.replaceFirst("https", "http");
+
         this.br.setFollowRedirects(true);
         this.br.setCookiesExclusive(true);
         this.br.clearCookies("youtube.com");
@@ -304,6 +323,13 @@ public class TbCm extends PluginForDecrypt {
                 final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
                 final boolean flv = cfg.getBooleanProperty("ALLOW_FLV", true);
                 final boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
+
+                final boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
+                final boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
+                final boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
+                final boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
+                final boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
+                final boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
                 /* http://en.wikipedia.org/wiki/YouTube */
                 final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
                     /**
@@ -314,31 +340,52 @@ public class TbCm extends PluginForDecrypt {
                     {
                         // **** FLV *****
                         if (mp3) {
-                            this.put(0, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
-                            this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo" });
-                            this.put(6, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Mono" });
+                            this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
+                            this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
+                            this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                         }
                         if (flv) {
-                            this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
-                            this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo" });
+                            if (q240p) {
+                                this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
+                            }
+                            if (q360p) {
+                                this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
+                            }
+                            if (q480p) {
+                                this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
+                            }
                         }
 
                         // **** 3GP *****
-                        if (threegp) {
-                            this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono" });
-                            this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo" });
+                        if (threegp && q240p) {
+                            this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono", "240p" });
+                            this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
                         }
+
                         // **** MP4 *****
                         if (mp4) {
-                            this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                            this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                            this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
-                            this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo" });
+                            if (q360p) {
+                                this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                            }
+                            if (q720p) {
+                                this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                            }
+                            if (q1080p) {
+                                this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080" });
+                            }
+                            if (qOriginal) {
+                                this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "Original" });
+                            }
                         }
+
                         // **** WebM *****
                         if (webm) {
-                            this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
-                            this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo" });
+                            if (q360p) {
+                                this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                            }
+                            if (q720p) {
+                                this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
+                            }
                         }
                     }
                 };
@@ -356,8 +403,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -413,8 +459,7 @@ public class TbCm extends PluginForDecrypt {
                             thislink.setProperty("name", name);
                         } else {
                             /*
-                             * because demuxer will fail when mp3 file already
-                             * exists
+                             * because demuxer will fail when mp3 file already exists
                              */
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
@@ -433,6 +478,7 @@ public class TbCm extends PluginForDecrypt {
                 return null;
             }
         }
+
         return decryptedLinks;
     }
 
@@ -444,6 +490,16 @@ public class TbCm extends PluginForDecrypt {
         if (br == null) {
             br = this.br;
         }
+
+        // Proxy creation
+        if (proxyStore != null) {
+            org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.getHTTPProxy(proxyStore);
+
+            if (proxy != null && proxy.getHost() != null) {
+                br.setProxy(proxy);
+            }
+        }
+
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         br.setCookie("youtube.com", "PREF", "f2=40100000");
