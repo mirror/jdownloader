@@ -73,6 +73,7 @@ public class NitroBitsCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        String dllink = downloadLink.getDownloadURL();
         final Regex reconnect = br.getRegex("id=\"timer\">(\\d{2}):(\\d{2})</span> minutes");
         if (reconnect.getMatches().length == 1) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(reconnect.getMatch(0)) * 60 + Integer.parseInt(reconnect.getMatch(1))) * 1001l);
         br.setFollowRedirects(false);
@@ -86,21 +87,20 @@ public class NitroBitsCom extends PluginForHost {
             final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
             final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
             final String code = getCaptchaCode(cf, downloadLink);
+            final String challenge = sm.verify(code);
 
             if (i == 0) {
                 waitTime(timeBefore, downloadLink);
             }
 
-            br.postPage("http://nitrobits.com/ajax.solvcaptcha.php", "downsess=" + downSess + "&adcopy_challenge=2@" + Encoding.urlEncode(sm.getChallengeId()) + "&adcopy_response=" + Encoding.urlEncode(code));
-            if (br.containsHTML("status\":\"ERROR\"")) {
-                br.getPage(downloadLink.getDownloadURL());
-                continue;
-            }
+            br.postPage("http://nitrobits.com/ajax.solvcaptcha.php", "downsess=" + downSess + "&adcopy_challenge=" + challenge + "&adcopy_response=" + code);
+            if (br.containsHTML("status\":\"SUCCESS\"")) break;
+            br.getPage(dllink);
         }
         if (br.containsHTML("status\":\"ERROR\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (!br.containsHTML("\"status\":\"SUCCESS\"")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://nitrobits.com/getdownlink.php", "");
-        String dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
+        br.postPage("http://nitrobits.com/getdownlink.php", "down_sess=" + downSess + "&file=" + dllink.substring(dllink.lastIndexOf("/") + 1));
+        dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
