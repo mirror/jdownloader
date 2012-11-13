@@ -89,9 +89,10 @@ public class NitroBitsCom extends PluginForHost {
             final String code = getCaptchaCode(cf, downloadLink);
             final String challenge = sm.getChallenge(code);
 
-            if (i == 0) {
-                waitTime(timeBefore, downloadLink);
-            }
+            // Waittime can be skipped
+            // if (i == 0) {
+            // waitTime(timeBefore, downloadLink);
+            // }
 
             br.postPage("http://nitrobits.com/ajax.solvcaptcha.php", "downsess=" + downSess + "&adcopy_challenge=" + challenge + "&adcopy_response=" + code);
             if (br.containsHTML("status\":\"SUCCESS\"")) break;
@@ -103,7 +104,7 @@ public class NitroBitsCom extends PluginForHost {
         dllink = br.getRegex("\"link\":\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // This case probably never happens
@@ -225,7 +226,7 @@ public class NitroBitsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override

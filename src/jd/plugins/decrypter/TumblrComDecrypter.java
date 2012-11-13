@@ -17,17 +17,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?(tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+|[\\w\\.\\-]*?\\.tumblr\\.com(/post/\\d+|/page/\\d+)?)" }, flags = { 0 })
@@ -73,60 +70,36 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             fpName = Encoding.htmlDecode(fpName.trim());
 
-            boolean stop = false;
-            final String[][] mainRegexes = { { "class=\"post\"(.*?)class=\"(?!media)[a-z0-9]+\"", "0" }, { "<article.*?id=\"post\\-\\d+\"(.*?)</article>", "0" }, { "<a href=\"" + parameter + "(/[^<>\"/]*?)?\"(.*?)class=\"(?!media|photo)[a-z0-9]+\"", "1" } };
-            /*
-             * Example for regex 3:
-             * http://summer-is-right-here.tumblr.com/post/35200177900
-             */
-            for (final String[] textRegex : mainRegexes) {
-                final String post = br.getRegex(textRegex[0]).getMatch(Integer.parseInt(textRegex[1]));
-                if (post != null) {
-                    final String[][] regexes = { { "\"(https?://(www\\.)?(?![a-z0-9]+\\.media\\.tumblr\\.com/avatar.*?|static\\.tumblr.*?)[^<>\"]*?\\.(jpg|png|jpeg))\"", "0" }, { "<p><img src=\"(http://(www\\.)?media\\.tumblr\\.com/[^<>\"]*?)\"", "0" } };
-                    for (String[] regex : regexes) {
-                        final String[] links = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getColumn(Integer.parseInt(regex[1]));
-                        if (links != null && links.length > 0) {
-                            // Decrypt last link = Link with the best quality
-                            final DownloadLink dl = createDownloadlink("directhttp://" + links[links.length - 1]);
-                            try {
-                                distribute(dl);
-                            } catch (final Exception e) {
-                                // Not available in 0.851 Stable
-                            }
-                            decryptedLinks.add(dl);
-                            stop = true;
-                        }
-                        String externID = new Regex(post, "(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
-                        if (externID != null) {
-                            br.getPage(externID);
-                            externID = br.getRegex("<src>(http://[^<>\"]*?\\.flv)</src>").getMatch(0);
-                            if (externID == null) {
-                                logger.warning("Decrypter broken for link: " + parameter);
-                                return null;
-                            }
-                            final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                            dl.setFinalFileName(fpName + ".flv");
-                            decryptedLinks.add(dl);
-                            stop = true;
-                            break;
-                        }
-                    }
+            String externID = br.getRegex("(http://(www\\.)?gasxxx\\.com/media/player/config_embed\\.php\\?vkey=\\d+)\"").getMatch(0);
+            if (externID != null) {
+                br.getPage(externID);
+                externID = br.getRegex("<src>(http://[^<>\"]*?\\.flv)</src>").getMatch(0);
+                if (externID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
                 }
-                if (stop) break;
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(fpName + ".flv");
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            // Try to find the biggest picture
+            for (int i = 1000; i >= 10; i--) {
+                externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/tumblr_[a-z0-9]+_" + i + "\\.jpg)\"").getMatch(0);
+                if (externID != null) break;
+            }
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
             }
 
-            if (decryptedLinks == null || decryptedLinks.size() == 0) {
+            if (externID == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
 
-            if (fpName != null && !param.getBooleanProperty("nopackagename")) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                // Make only one package with same packagenames
-                fp.setProperty("ALLOW_MERGE", true);
-                fp.addLinks(decryptedLinks);
-            }
         } else {
             // Users
             String nextPage = "1";

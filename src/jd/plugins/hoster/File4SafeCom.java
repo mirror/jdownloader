@@ -46,12 +46,9 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class File4SafeCom extends PluginForHost {
 
     private static final String COOKIE_HOST   = "http://www.file4safe.com";
-
     private static final String PASSWORDTEXT0 = "<br><b>Password:</b> <input";
-
     private static final String PASSWORDTEXT1 = "<br><b>Passwort:</b> <input";
     private String              brbefore      = "";
-    public boolean              nopremium     = false;
 
     public File4SafeCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -324,7 +321,7 @@ public class File4SafeCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
@@ -351,15 +348,13 @@ public class File4SafeCom extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
         }
-        if (!nopremium) {
-            String expire = new Regex(brbefore, "<td>Premium-Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
-            if (expire == null) expire = new Regex(brbefore, "<td>Premium Account expire:</td>.*?<td>(.*?)</td>").getMatch(0);
+        if (!account.getBooleanProperty("nopremium")) {
+            final String expire = new Regex(brbefore, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
                 return ai;
             } else {
-                expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
             }
             ai.setStatus("Premium User");
@@ -399,7 +394,6 @@ public class File4SafeCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-
         return 1;
     }
 
@@ -429,13 +423,12 @@ public class File4SafeCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         String passCode = null;
         requestFileInformation(link);
-
         login(account);
         br.setCookie(COOKIE_HOST, "lang", "english");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (nopremium) {
-            doFree(link, true, 0, false);
+        if (account.getBooleanProperty("nopremium")) {
+            doFree(link, true, 1, false);
         } else {
             String dllink = br.getRedirectLocation();
             if (dllink == null) {
@@ -458,9 +451,7 @@ public class File4SafeCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -1 * this.getMaxConnections());
-
             if (passCode != null) {
                 link.setProperty("pass", passCode);
             }
@@ -499,8 +490,11 @@ public class File4SafeCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !brbefore.contains("Upgrade to premium") && !br.containsHTML(">Renew premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (!brbefore.contains("Premium-Account expire") && !br.containsHTML(">Renew premium<")) nopremium = true;
+        if (new Regex(brbefore, "file4safe\\.com/\\?op=payments\">Premium</a>").matches()) {
+            account.setProperty("nopremium", true);
+        } else {
+            account.setProperty("nopremium", false);
+        }
     }
 
     @Override

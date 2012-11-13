@@ -58,12 +58,11 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "shareflare.net" }, urls = { "http://(www\\.)?(u\\d+\\.)?shareflare\\.net/download/.*?/.*?\\.html" }, flags = { 2 })
 public class ShareFlareNet extends PluginForHost {
 
-    private static final String  FREEDOWNLOADPOSSIBLE              = "download4";
     private static Object        LOCK                              = new Object();
-    private static final String  FREELIMIT                         = ">Your limit for free downloads is over for today<";
     private static final String  COOKIE_HOST                       = "http://shareflare.net";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
+    private static final String  APIKEY                            = jd.plugins.hoster.LetitBitNet.APIKEY;
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -85,9 +84,26 @@ public class ShareFlareNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setDebug(true);
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://shareflare.net", "lang", "en");
+        br.setCookie("http://letitbit.net/", "lang", "en");
+        br.postPage("http://api.letitbit.net/", "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
+        if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = getJson("name");
+        final String filesize = getJson("size");
+        final String md5 = getJson("md5");
+        if (filename != null && filesize != null) {
+            downloadLink.setFinalFileName(filename);
+            downloadLink.setDownloadSize(Long.parseLong(filesize));
+            if (md5 != null) downloadLink.setMD5Hash(md5);
+            return AvailableStatus.TRUE;
+        } else {
+            return oldAvailableCheck(downloadLink);
+        }
+    }
+
+    private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
@@ -105,6 +121,10 @@ public class ShareFlareNet extends PluginForHost {
         downloadLink.setName(filename.trim());
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
+    }
+
+    private String getJson(final String parameter) {
+        return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -154,8 +174,7 @@ public class ShareFlareNet extends PluginForHost {
                     }
                 }
                 /*
-                 * we must save the cookies, because shareflare maybe only
-                 * allows 100 logins per 24hours
+                 * we must save the cookies, because shareflare maybe only allows 100 logins per 24hours
                  */
                 br.postPage(COOKIE_HOST, "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
                 String check = br.getCookie(COOKIE_HOST, "log");
@@ -227,7 +246,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         maxFree.set(1);
         if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
@@ -252,6 +271,7 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -281,8 +301,7 @@ public class ShareFlareNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -534,8 +553,7 @@ public class ShareFlareNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff
-         * below ;)
+         * last time they did not block the useragent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");

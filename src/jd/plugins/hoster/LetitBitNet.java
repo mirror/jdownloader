@@ -35,6 +35,7 @@ import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.RandomUserAgent;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -60,6 +61,7 @@ public class LetitBitNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
+    public static final String   APIKEY                            = "VjR1U3JGUkNx";
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,18 +71,34 @@ public class LetitBitNet extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         /* convert directdownload links to normal links */
         link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", "").replaceAll("http://s\\d+.", "http://"));
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setDebug(true);
-        br.setCustomCharset("UTF-8");
+        br.setCustomCharset("utf-8");
+        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://letitbit.net/", "lang", "en");
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
+        br.postPage("http://api.letitbit.net/", "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
+        if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = getJson("name");
+        final String filesize = getJson("size");
+        final String md5 = getJson("md5");
+        if (filename != null && filesize != null) {
+            downloadLink.setFinalFileName(filename);
+            downloadLink.setDownloadSize(Long.parseLong(filesize));
+            if (md5 != null) downloadLink.setMD5Hash(md5);
+            return AvailableStatus.TRUE;
+        } else {
+            return oldAvailableCheck(downloadLink);
+        }
+    }
+
+    private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
@@ -120,23 +138,41 @@ public class LetitBitNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getJson(final String parameter) {
+        return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    }
+
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
-        if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            account.setValid(true);
-            ai.setStatus("Status can only be checked while downloading!");
-            return ai;
-        }
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-            login(account, true);
-        } catch (PluginException e) {
-            account.setValid(false);
-            return ai;
+            br.setVerbose(true);
+            br.setCustomCharset("UTF-8");
+        } catch (Throwable e) {
+            /* only available after 0.9xx version */
         }
-        account.setValid(true);
-        ai.setStatus("Valid account");
-        return ai;
+        maxFree.set(1);
+        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
+        requestFileInformation(downloadLink);
+        String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
+        if (url == null) {
+            url = handleFreeFallback(downloadLink);
+        } else {
+            // Enable unlimited simultan downloads for skymonk users
+            maxFree.set(-1);
+        }
+        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
+        if (!dl.getConnection().isOK()) {
+            dl.getConnection().disconnect();
+            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000); }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     @Override
@@ -152,32 +188,6 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return maxFree.get();
-    }
-
-    private String getUrl(Account account) throws IOException {
-        // This information can only be found before each download so lets set
-        // it here
-        String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
-        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
-        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
-        if (expireDate != null || points != null) {
-            AccountInfo accInfo = new AccountInfo();
-            // 1 point = 1 GB
-            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
-            if (expireDate != null) {
-                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
-            } else {
-                expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
-                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
-            }
-            account.setAccountInfo(accInfo);
-        }
-        String url = br.getRegex("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-        if (url == null) {
-            url = br.getRegex("\"(http://r\\d+\\.letitbit\\.net/f/[a-z0-0]+/[^<>\"\\']+)\"").getMatch(0);
-        }
-        return url;
     }
 
     private boolean validateEmail(String email) {
@@ -224,40 +234,8 @@ public class LetitBitNet extends PluginForHost {
         return res.size() == 1 ? res.get(0) : null;
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        try {
-            br.setVerbose(true);
-            br.setCustomCharset("UTF-8");
-        } catch (Throwable e) {
-            /* only available after 0.9xx version */
-        }
-        maxFree.set(1);
-        if (getPluginConfig().getBooleanProperty(ENABLEUNLIMITEDSIMULTANMAXFREEDLS, false)) maxFree.set(-1);
-        requestFileInformation(downloadLink);
-        String url = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
-        if (url == null) {
-            url = handleFreeFallback(downloadLink);
-        } else {
-            // Enable unlimited simultan downloads for skymonk users
-            maxFree.set(-1);
-        }
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
-        if (!dl.getConnection().isOK()) {
-            dl.getConnection().disconnect();
-            if (dl.getConnection().getResponseCode() == 404) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000); }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        }
-        if (!dl.getConnection().isContentDisposition()) {
-            br.followConnection();
-            if (br.containsHTML("<title>Error</title>") || br.containsHTML("Error")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000); }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
-    }
-
     private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -287,8 +265,7 @@ public class LetitBitNet extends PluginForHost {
         final Browser br2 = br.cloneBrowser();
         prepareBrowser(br2);
         /*
-         * this causes issues in 09580 stable, no workaround known, please
-         * update to latest jd version
+         * this causes issues in 09580 stable, no workaround known, please update to latest jd version
          */
         br2.getHeaders().put("Content-Length", "0");
         br2.postPage(ajaxmainurl + "/ajax/download3.php", "");
@@ -375,41 +352,85 @@ public class LetitBitNet extends PluginForHost {
         return true;
     }
 
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (LOCK) {
+            // Load cookies
+            try {
+                this.setBrowserExclusive();
+                br.setCustomCharset("UTF-8");
+                br.setCookie(COOKIE_HOST, "lang", "en");
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
+                    final Map<String, String> cookies = (Map<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie(COOKIE_HOST, key, value);
+                        }
+                        return false;
+                    }
+                }
+                /*
+                 * we must save the cookies, because letitbit only allows 100 logins per 24hours
+                 */
+                br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
+                String check = br.getCookie(COOKIE_HOST, "log");
+                if (check == null) check = br.getCookie(COOKIE_HOST, "pas");
+                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies(COOKIE_HOST);
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+                return true;
+            } catch (final PluginException e) {
+                account.setProperty("cookies", null);
+                throw e;
+            }
+        }
+    }
+
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            account.setValid(true);
+            ai.setStatus("Status can only be checked while downloading!");
+            return ai;
+        }
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        account.setValid(true);
+        ai.setStatus("Valid account");
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         String dlUrl = null;
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            // Get to the premium zone
-            br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
-            /* normal account with only a password */
-            logger.info("Premium with pw only");
-            Form premiumform = null;
-            Form[] allforms = br.getForms();
-            if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (Form singleform : allforms) {
-                if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
-                    premiumform = singleform;
-                    break;
-                }
+            br.postPage("http://api.letitbit.net/", "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
+            if (br.containsHTML("data\":\"bad password\"")) {
+                logger.info("Wrong password, disabling the account!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            premiumform.put("pass", Encoding.urlEncode(account.getPass()));
-            br.submitForm(premiumform);
-            String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
-            if (iFrame != null) {
-                logger.info("Found iframe(old one), accessing it...");
-                br.getPage("http://letitbit.net" + iFrame);
-            }
-            if (iFrame == null) {
-                iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
-                if (iFrame != null) {
-                    logger.info("Found iframe(new one), accessing it...");
-                    br.getPage("http://letitbit.net" + iFrame);
-                }
-            }
-            dlUrl = getUrl(account);
+            dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dlUrl != null)
+                dlUrl = dlUrl.replace("\\", "");
+            else
+                dlUrl = handleOldPremiumPassWay(account);
         } else {
             /* account login */
             boolean freshLogin = login(account, false);
@@ -421,8 +442,7 @@ public class LetitBitNet extends PluginForHost {
             if (dlUrl == null && br.containsHTML("If you already have a premium")) {
                 if (freshLogin == false) {
                     /*
-                     * no fresh login, ip could have changed, remove cookies and
-                     * retry with fresh login
+                     * no fresh login, ip could have changed, remove cookies and retry with fresh login
                      */
                     synchronized (LOCK) {
                         account.setProperty("cookies", null);
@@ -447,8 +467,7 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
             if (br.containsHTML("callback_tied_to_another")) {
                 /*
-                 * premium code is bound to a registered account,must login with
-                 * username/password
+                 * premium code is bound to a registered account,must login with username/password
                  */
                 AccountInfo ai = account.getAccountInfo();
                 if (ai != null) ai.setStatus("You must login with username/password!");
@@ -471,60 +490,73 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // NOTE: Old!
+    private String handleOldPremiumPassWay(final Account account) throws Exception {
+        // Get to the premium zone
+        br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
+        /* normal account with only a password */
+        logger.info("Premium with pw only");
+        Form premiumform = null;
+        Form[] allforms = br.getForms();
+        if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form singleform : allforms) {
+            if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {
+                premiumform = singleform;
+                break;
+            }
+        }
+        if (premiumform == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        premiumform.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(premiumform);
+        String iFrame = br.getRegex("\"(/sms/check2_iframe\\.php\\?ids=[0-9_]+\\&ids_emerg=\\&emergency_mode=)\"").getMatch(0);
+        if (iFrame != null) {
+            logger.info("Found iframe(old one), accessing it...");
+            br.getPage("http://letitbit.net" + iFrame);
+        }
+        if (iFrame == null) {
+            iFrame = br.getRegex("(/sms/check2_iframe\\.php\\?.*?uid=.*?)\"").getMatch(0);
+            if (iFrame != null) {
+                logger.info("Found iframe(new one), accessing it...");
+                br.getPage("http://letitbit.net" + iFrame);
+            }
+        }
+        return getUrl(account);
+    }
+
+    private String getUrl(final Account account) throws IOException {
+        // This information can only be found before each download so lets set
+        // it here
+        String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
+        String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
+        if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
+        if (expireDate != null || points != null) {
+            AccountInfo accInfo = new AccountInfo();
+            // 1 point = 1 GB
+            if (points != null) accInfo.setTrafficLeft(SizeFormatter.getSize(points.trim() + "GB"));
+            if (expireDate != null) {
+                accInfo.setValidUntil(TimeFormatter.getMilliSeconds(expireDate.trim(), "yyyy-MM-dd", null));
+            } else {
+                expireDate = br.getRegex("\"Total days remaining\">(\\d+)</acronym>").getMatch(0);
+                if (expireDate == null) expireDate = br.getRegex("\"Days remaining in Your account\">(\\d+)</acronym>").getMatch(0);
+                if (expireDate != null) accInfo.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expireDate) * 24 * 60 * 60 * 1000));
+            }
+            account.setAccountInfo(accInfo);
+        }
+        String url = br.getRegex("title=\"Link to the file download\" href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (url == null) {
+            url = br.getRegex("\"(http://r\\d+\\.letitbit\\.net/f/[a-z0-0]+/[^<>\"\\']+)\"").getMatch(0);
+        }
+        return url;
+    }
+
     // do not add @Override here to keep 0.* compatibility
     public boolean hasCaptcha() {
         return true;
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
-        synchronized (LOCK) {
-            // Load cookies
-            try {
-                this.setBrowserExclusive();
-                br.setCustomCharset("UTF-8");
-                br.setCookie(COOKIE_HOST, "lang", "en");
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).matches(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).matches(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof Map<?, ?> && !force) {
-                    final Map<String, String> cookies = (Map<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return false;
-                    }
-                }
-                /*
-                 * we must save the cookies, because letitbit only allows 100
-                 * logins per 24hours
-                 */
-                br.postPage("http://letitbit.net/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&act=login");
-                String check = br.getCookie(COOKIE_HOST, "log");
-                if (check == null) check = br.getCookie(COOKIE_HOST, "pas");
-                if (check == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-                return true;
-            } catch (final PluginException e) {
-                account.setProperty("cookies", null);
-                throw e;
-            }
-        }
-    }
-
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff
-         * below ;)
+         * last time they did not block the useragent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");
