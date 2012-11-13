@@ -63,8 +63,7 @@ public class FileGagCom extends PluginForHost {
 
     // XfileSharingProBasic Version 2.5.4.7
     /**
-     * This is only for developers to easily implement hosters using the
-     * "xfilesharing (Pro)" script (more informations can be found on
+     * This is only for developers to easily implement hosters using the "xfilesharing (Pro)" script (more informations can be found on
      * xfilesharing.net)!
      */
     @Override
@@ -145,8 +144,7 @@ public class FileGagCom extends PluginForHost {
 
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
@@ -282,6 +280,7 @@ public class FileGagCom extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filegag\\.com:\\d+/d/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = new Regex(correctedBR, "'(http://[a-z0-9]+\\.filegag\\.com:\\d+/d/[^<>\"]*?)'").getMatch(0);
             if (dllink == null) dllink = new Regex(correctedBR, "<a id=\"drlink\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
         return dllink;
