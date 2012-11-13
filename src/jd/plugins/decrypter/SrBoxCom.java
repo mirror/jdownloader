@@ -18,6 +18,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -95,6 +97,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
         // Added Image
         if (TabImage != null) {
+            int iImageIndex = 1;
             for (String strImageLink : TabImage) {
                 if (!strImageLink.toLowerCase().contains("foto")) {
                     strImageLink = "http://www.israbox.com/uploads" + strImageLink;
@@ -112,6 +115,10 @@ public class SrBoxCom extends PluginForDecrypt {
                             if (iIndex == fpName.length() - 1) {
                                 iIndex = fpName.lastIndexOf(" (");
                                 strName = fpName.substring(0, iIndex);
+                            }
+                            if (TabImage.length > 1) {
+                                strName += "_" + Integer.toString(iImageIndex);
+                                iImageIndex++;
                             }
                             DLLink.setFinalFileName(strName + strExtension);
                         }
@@ -162,15 +169,34 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = strName.replace(":", ",");
 
         strName = strName.replace("VA - ", "");
-        strName = strName.replace("FLAC", "");
-        strName = strName.replace("flac", "");
-        strName = strName.replace("Lossless", "");
-        strName = strName.replace("lossless", "");
-        strName = strName.replace("APE", "");
-        strName = strName.replace("ape", "");
 
-        strName = strName.replace("mp3", "");
-        strName = strName.replace("MP3", "");
+        Pattern pattern = null;
+        Matcher matcher = null;
+        // Remove the exact words mp3, flac, lossless and ape
+        pattern = Pattern.compile("(?<!\\p{L})mp3(?!\\p{L})|(?<!\\p{L})ape(?!\\p{L})|(?<!\\p{L})flac(?!\\p{L})|(?<!\\p{L})lossless(?!\\p{L})", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
+
+        // Replace Vol ou Vol. par 0
+        pattern = Pattern.compile("Vol(\\.| )", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("0");
+
+        // Replace the [ ] with nothing because the string in this bracket has been removed
+        pattern = Pattern.compile("\\[ *\\]", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
+
+        // Replace the ( ) with nothing because the string in this parenthesis has been removed
+        pattern = Pattern.compile("\\( *\\)", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll("");
+
+        // Replace several space characters in one
+        pattern = Pattern.compile("\\s{2,}", Pattern.CASE_INSENSITIVE);
+        matcher = pattern.matcher(strName);
+        strName = matcher.replaceAll(" ");
+
         return strName;
     }
 
@@ -185,11 +211,45 @@ public class SrBoxCom extends PluginForDecrypt {
         String strResult = "";
         List<String> FirstCaracException = new ArrayList<String>();
         FirstCaracException.add("(");
-        FirstCaracException.add("-");
+        FirstCaracException.add("[");
+
+        List<String> InExpressionCaracException = new ArrayList<String>();
+        InExpressionCaracException.add("-");
+        InExpressionCaracException.add(".");
 
         String[] AllWord = strName.split(" ");
         for (String strWord : AllWord) {
             strWord = strWord.toLowerCase();
+            String strTemp = strWord;
+            Boolean bFind = false;
+            Boolean bFindExpression = false;
+            Boolean bRemoveLastExpression = true;
+            for (String strInExpression : InExpressionCaracException) {
+                if (bFindExpression) strWord = strTemp;
+                bFindExpression = false;
+                strTemp = "";
+                if (strWord.contains(strInExpression)) {
+                    String[] AllCarac = strWord.split("\\" + strInExpression);
+                    for (String strCarac : AllCarac) {
+                        String strFirstCarac = strCarac.substring(0, 1);
+                        try {
+                            strFirstCarac = strFirstCarac.toUpperCase();
+                        } catch (Exception e) {
+                        }
+                        strTemp += strFirstCarac + strCarac.substring(strFirstCarac.length(), strCarac.length()) + strInExpression;
+                        bFind = true;
+                        bFindExpression = true;
+                    }
+                    if (AllCarac.length > 0 && strInExpression == ".") {
+                        bRemoveLastExpression = AllCarac[AllCarac.length - 1].length() > 1;
+                    }
+                    if (bFindExpression && bRemoveLastExpression) {
+                        strTemp = strTemp.substring(0, strTemp.length() - strInExpression.length());
+                    }
+                    if (bFindExpression) strWord = strTemp;
+                }
+            }
+
             if (strWord.length() > 0) {
                 String strFirstCarac = strWord.substring(0, 1);
 
