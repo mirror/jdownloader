@@ -244,6 +244,11 @@ public class ReloadCc extends PluginForHost {
             case 404:
                 /* file offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 409:
+                /* fair use limit reached ,block host for 10 mins */
+                if (statusMessage == null) statusMessage = "Fair use limit reached!";
+                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 10 * 60 * 1000l);
             case 428:
                 /* hoster currently not possible,block host for 30 mins */
                 if (statusMessage == null) statusMessage = "Hoster currently not possible";
@@ -254,11 +259,6 @@ public class ReloadCc extends PluginForHost {
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
                 tempUnavailableHoster(account, downloadLink, 3 * 60 * 1000);
                 /* only disable plugin for this link */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 10 * 60 * 1000l);
-            case 509:
-                /* fair use limit reached ,block host for 10 mins */
-                if (statusMessage == null) statusMessage = "Fair use limit reached!";
-                tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 10 * 60 * 1000l);
             default:
                 /* unknown error, do not try again with this multihoster */
