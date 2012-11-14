@@ -74,8 +74,7 @@ public class ExtaBitCom extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         /*
-         * They got a Mass-Linkchecker, but it's only available for registered
-         * users and doesn't show the filesize:
+         * They got a Mass-Linkchecker, but it's only available for registered users and doesn't show the filesize:
          * http://extabit.com/linkchecker.jsp
          */
         // To get the english version of the page
@@ -92,7 +91,12 @@ public class ExtaBitCom extends PluginForHost {
                 if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        // merged 18872 and 18775
+        // 18872
         String filesize = br.getRegex("Size: ([^<>\"]*?)</div>").getMatch(0);
+        // 18775
+        if (filesize == null) filesize = br.getRegex("class=\"download_filesize(_en)\">.*?\\[(.*?)\\]").getMatch(1);
+        if (filesize == null) filesize = br.getRegex("Size:.*?class=\"col-fileinfo\">(.*?)</").getMatch(0);
         if (filename.startsWith("file ")) {
             String newFilename = br.getRegex("df_html_link\" name=\"df_html_link\" class.*?>(.*?)</").getMatch(0);
             if (newFilename != null && newFilename.length() > filename.length()) {
@@ -119,8 +123,15 @@ public class ExtaBitCom extends PluginForHost {
             return ai;
         }
         br.getPage("http://extabit.com/");
+        // merged 18872 & 18775
+        // 18775
+        String expire = br.getRegex("Premium is active till <span class=\"green\"><strong>(.*?)</strong>").getMatch(0);
+        if (expire == null) expire = br.getRegex("Premium is active till ([\\d\\.]+) ").getMatch(0);
+        // 18872
+        if (expire == null) expire = br.getRegex("Storage valid until (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+
         final String downloadsLeft = br.getRegex("You have <strong>(\\d+)</strong> downloads").getMatch(0);
-        final String expire = br.getRegex("Storage valid until (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+
         if (downloadsLeft != null) {
             ai.setStatus("Downloads left: " + downloadsLeft);
         } else if (expire != null) {
