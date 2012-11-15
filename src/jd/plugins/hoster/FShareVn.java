@@ -47,7 +47,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class FShareVn extends PluginForHost {
 
     private static final String  SERVERERROR = "Tài nguyên bạn yêu cầu không tìm thấy";
-    private static final String  IPBLOCKED   = ">Vui lòng chờ lượt download kế tiếp";
+    private static final String  IPBLOCKED   = "<li>Tài khoản của bạn thuộc GUEST nên chỉ tải xuống";
     private static Object        LOCK        = new Object();
     private static AtomicInteger maxPrem     = new AtomicInteger(1);
 
@@ -85,13 +85,13 @@ public class FShareVn extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink) throws Exception {
-        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         br.setFollowRedirects(true);
         br.setDebug(true);
         final String fid = br.getRegex("name=\"file_id\" value=\"(\\d+)\"").getMatch(0);
         if (fid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(downloadLink.getDownloadURL(), "link_file_pwd_dl=&action=download_file&special=&file_id=" + fid);
-        if (br.containsHTML(IPBLOCKED) || br.containsHTML("Vui lòng chờ cho lượt tải kế tiếp!")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        br.postPage(downloadLink.getDownloadURL(), "special=&action=download_file&file_id=" + fid);
+        if (br.containsHTML(IPBLOCKED)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
             jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
@@ -102,7 +102,7 @@ public class FShareVn extends PluginForHost {
             rc.setCode(c);
             if (br.containsHTML("frm_download")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String downloadURL = br.getRegex("window\\.location='(.*?)'").getMatch(0);
+        String downloadURL = br.getRegex("window\\.location=\\'(.*?)\\'").getMatch(0);
         if (downloadURL == null) {
             downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
             if (downloadURL == null) {

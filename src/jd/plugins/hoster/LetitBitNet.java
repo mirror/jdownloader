@@ -62,6 +62,7 @@ public class LetitBitNet extends PluginForHost {
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
+    public static final String   APIPAGE                           = "http://api.letitbit.net/";
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,7 +84,7 @@ public class LetitBitNet extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage("http://api.letitbit.net/", "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
+        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
         if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = getJson("name");
         final String filesize = getJson("size");
@@ -235,7 +236,9 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String handleFreeFallback(DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -421,16 +424,18 @@ public class LetitBitNet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.setDebug(true);
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            br.postPage("http://api.letitbit.net/", "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
+            br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
             if (br.containsHTML("data\":\"bad password\"")) {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+            if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dlUrl != null)
                 dlUrl = dlUrl.replace("\\", "");
             else
-                dlUrl = handleOldPremiumPassWay(account);
+                dlUrl = handleOldPremiumPassWay(account, downloadLink);
         } else {
             /* account login */
             boolean freshLogin = login(account, false);
@@ -475,9 +480,6 @@ public class LetitBitNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        /* we have to wait little because server too buggy */
-        sleep(5000, downloadLink);
-        br.setDebug(true);
         br.setFollowRedirects(true);
         /* remove newline */
         dlUrl = dlUrl.replaceAll("%0D%0A", "").trim();
@@ -490,14 +492,17 @@ public class LetitBitNet extends PluginForHost {
         dl.startDownload();
     }
 
-    // NOTE: Old!
-    private String handleOldPremiumPassWay(final Account account) throws Exception {
+    // NOTE: Old, tested 15.11.12, works!
+    private String handleOldPremiumPassWay(final Account account, final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
         // Get to the premium zone
         br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
         /* normal account with only a password */
         logger.info("Premium with pw only");
         Form premiumform = null;
-        Form[] allforms = br.getForms();
+        final Form[] allforms = br.getForms();
         if (allforms == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         for (Form singleform : allforms) {
             if (singleform.containsHTML("pass") && singleform.containsHTML("uid5") && singleform.containsHTML("uid") && singleform.containsHTML("name") && singleform.containsHTML("pin") && singleform.containsHTML("realuid") && singleform.containsHTML("realname") && singleform.containsHTML("host") && singleform.containsHTML("ssserver") && singleform.containsHTML("sssize") && singleform.containsHTML("optiondir")) {

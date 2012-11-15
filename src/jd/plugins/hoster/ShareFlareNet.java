@@ -63,6 +63,8 @@ public class ShareFlareNet extends PluginForHost {
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     private static final String  APIKEY                            = jd.plugins.hoster.LetitBitNet.APIKEY;
+    private static final String  APIPAGE                           = jd.plugins.hoster.LetitBitNet.APIPAGE;
+    private static final String  TEMPORARYUNAVAILABLE              = "class=\"wrapper\\-centered\">Code from picture<";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -87,8 +89,8 @@ public class ShareFlareNet extends PluginForHost {
         br.setDebug(true);
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage("http://api.letitbit.net/", "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
+        br.setCookie("http://shareflare.net/", "lang", "en");
+        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
         if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = getJson("name");
         final String filesize = getJson("size");
@@ -271,7 +273,10 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private String handleFreeFallback(final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -390,52 +395,28 @@ public class ShareFlareNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
-        String url = null;
-        if (account.getUser() != null && account.getUser().length() > 0) {
+        String dlUrl = null;
+        if (account.getUser() == null || account.getUser().trim().length() == 0) {
+            br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
+            if (br.containsHTML("data\":\"bad password\"")) {
+                logger.info("Wrong password, disabling the account!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+            if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
+            if (dlUrl != null)
+                dlUrl = dlUrl.replace("\\", "");
+            else
+                dlUrl = handleOldPremiumPassWay(account, downloadLink);
+
+        } else {
             login(account, false);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
-            url = getPremiumDllink();
-        } else {
-            requestFileInformation(downloadLink);
-            Form premForm = null;
-            Form allForms[] = br.getForms();
-            if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (Form aForm : allForms) {
-                if (aForm.containsHTML("\"pass\"")) {
-                    premForm = aForm;
-                    break;
-                }
-            }
-            if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            premForm.put("pass", Encoding.urlEncode(account.getPass()));
-            br.submitForm(premForm);
-            if (br.containsHTML("<b>Given password does not exist")) {
-                logger.info("Downloadpassword seems to be wrong, disabeling account now!");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            /** 1 point = 1 GB */
-            String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
-            if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
-            if (points != null) {
-                AccountInfo ai = account.getAccountInfo();
-                if (ai == null) {
-                    ai = new AccountInfo();
-                    account.setAccountInfo(ai);
-                }
-                ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
-            }
-            if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
-            url = getPremiumDllink();
-            if (url == null) {
-                if (br.containsHTML("The premium key you provided does not exist")) {
-                    logger.info("The premium key you provided does not exist");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            dlUrl = getPremiumDllink();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, url, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -443,10 +424,59 @@ public class ShareFlareNet extends PluginForHost {
         dl.startDownload();
     }
 
+    // NOTE: Old, tested 15.11.12, works!
+    private String handleOldPremiumPassWay(final Account account, final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
+        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+        Form premForm = null;
+        Form allForms[] = br.getForms();
+        if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        for (Form aForm : allForms) {
+            if (aForm.containsHTML("\"pass\"")) {
+                premForm = aForm;
+                break;
+            }
+        }
+        if (premForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        premForm.put("pass", Encoding.urlEncode(account.getPass()));
+        br.submitForm(premForm);
+        if (br.containsHTML("<b>Given password does not exist")) {
+            logger.info("Downloadpassword seems to be wrong, disabeling account now!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        /** 1 point = 1 GB */
+        String points = br.getRegex(">Points:</span>([0-9\\.]+)\\&nbsp;").getMatch(0);
+        if (points == null) points = br.getRegex("<p>You have: ([0-9\\.]+) Points</p>").getMatch(0);
+        if (points != null) {
+            AccountInfo ai = account.getAccountInfo();
+            if (ai == null) {
+                ai = new AccountInfo();
+                account.setAccountInfo(ai);
+            }
+            ai.setTrafficLeft(SizeFormatter.getSize(points + "GB"));
+        }
+        if (br.containsHTML("(>The file is temporarily unavailable for download|Please try a little bit later\\.<)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Servererror", 60 * 60 * 1000l);
+        String dlUrl = getPremiumDllink();
+        if (dlUrl == null) {
+            if (br.containsHTML("The premium key you provided does not exist")) {
+                logger.info("The premium key you provided does not exist");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return dlUrl;
+    }
+
     private String getPremiumDllink() {
-        String url = br.getRegex("class=\"btn\\-corner\\-tl\"><a style=\\'font\\-size: 16px\\' href=\\'(http://[^<>\"\\']*?)\\'").getMatch(0);
-        if (url == null) url = br.getRegex("Link to the file download\" href=\"(http://[^<>\"\\']*?)\"").getMatch(0);
-        return url;
+        String finallink = null;
+        final String allLinks = br.getRegex("var direct_links = \\{(.*?)\\};").getMatch(0);
+        if (allLinks != null) {
+            final String[] theLinks = new Regex(allLinks, "\"(http[^<>\"]*?)\"").getColumn(0);
+            if (theLinks != null && theLinks.length != 0) finallink = theLinks[theLinks.length - 1];
+        }
+        return finallink;
     }
 
     // do not add @Override here to keep 0.* compatibility

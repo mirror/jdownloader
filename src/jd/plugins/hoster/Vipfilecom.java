@@ -50,7 +50,8 @@ public class Vipfilecom extends PluginForHost {
 
     public static final String  FREELINKREGEX = "\"(http://vip\\-file\\.com/download([0-9]+)/.*?)\"";
     private static final String APIKEY        = jd.plugins.hoster.LetitBitNet.APIKEY;
-
+    private static final String APIPAGE       = jd.plugins.hoster.LetitBitNet.APIPAGE;
+    private static final String FILEOFFLINE   = "(This file not found|\">File not found)";
     private static Object       LOCK          = new Object();
 
     public Vipfilecom(PluginWrapper wrapper) {
@@ -80,8 +81,8 @@ public class Vipfilecom extends PluginForHost {
         br.setDebug(true);
         br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.setCookie("http://letitbit.net/", "lang", "en");
-        br.postPage("http://api.letitbit.net/", "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
+        br.setCookie("http://vip-file.com/", "lang", "en");
+        br.postPage(APIPAGE, "r=" + Encoding.urlEncode("[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/info\",{\"link\":\"" + downloadLink.getDownloadURL() + "\"}]]"));
         if (br.containsHTML("status\":\"FAIL\",\"data\":\"bad link\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = getJson("name");
         final String filesize = getJson("size");
@@ -99,7 +100,8 @@ public class Vipfilecom extends PluginForHost {
     private AvailableStatus oldAvailableCheck(final DownloadLink downloadLink) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(This file not found|\">File not found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.setFollowRedirects(false);
+        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String fileSize = br.getRegex("name=\"sssize\" value=\"(.*?)\"").getMatch(0);
         if (fileSize == null) fileSize = br.getRegex("<p>Size of file: <span>(.*?)</span>").getMatch(0);
         String fileName = br.getRegex("<input type=\"hidden\" name=\"realname\" value=\"(.*?)\" />").getMatch(0);
@@ -124,7 +126,10 @@ public class Vipfilecom extends PluginForHost {
         String link = getLinkViaSkymonkDownloadMethod(downloadLink.getDownloadURL());
         boolean skymonk = link == null ? false : true;
         if (link == null) {
+            br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            br.setFollowRedirects(false);
+            if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             /* DownloadLink holen, 2x der Location folgen */
             /* we have to wait little because server too buggy */
             sleep(2000, downloadLink);
@@ -149,7 +154,13 @@ public class Vipfilecom extends PluginForHost {
         }
         // link = link.replaceAll("file.com.*?/", "file.com:8080/");
         br.setFollowRedirects(true);
-        jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1).startDownload();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, link, true, 1);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Finallink doesn't lead to a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
     }
 
     private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
@@ -202,10 +213,38 @@ public class Vipfilecom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
-        br.setCookie("http://vip-file.com/", "lang", "en");
-        Form[] allForms = br.getForms();
+        br.postPage(APIPAGE, "r=[\"" + Encoding.Base64Decode(APIKEY) + "\",[\"download/direct_links\",{\"link\":\"" + downloadLink.getDownloadURL() + "\",\"pass\":\"" + account.getPass() + "\"}]]");
+        if (br.containsHTML("data\":\"bad password\"")) {
+            logger.info("Wrong password, disabling the account!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
+        if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+        if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
+        if (dlUrl != null)
+            dlUrl = dlUrl.replace("\\", "");
+        else
+            dlUrl = handleOldPremiumPassWay(account, downloadLink);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("Finallink doesn't lead to a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+        logger.info("no working link found");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    // NOTE: Old, tested 15.11.12, works!
+    private String handleOldPremiumPassWay(final Account account, final DownloadLink downloadLink) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(false);
+        if (br.containsHTML(FILEOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Form[] allForms = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         Form premiumform = null;
         for (Form singleForm : allForms) {
@@ -250,30 +289,8 @@ public class Vipfilecom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        /* we have to wait little because server too buggy */
-        int index = 0;
-        for (String url : urls) {
-            index++;
-            sleep(2000, downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br.cloneBrowser(), downloadLink, url, true, 0);
-            if (dl.getConnection().getContentType().contains("html")) {
-                if (dl.getConnection().getResponseCode() == 404) {
-                    dl.getConnection().disconnect();
-                    continue;
-                }
-                if (index == urls.length) {
-                    br.followConnection();
-                    if (br.containsHTML("Error")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 2 * 1000l);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    continue;
-                }
-            }
-            dl.startDownload();
-            return;
-        }
-        logger.info("no working link found");
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return urls[urls.length - 1];
+
     }
 
     @Override
@@ -342,7 +359,7 @@ public class Vipfilecom extends PluginForHost {
                                 skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=2");
                             } catch (Throwable e1) {
                             }
-                            String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
+                            String msg = skymonk.getRegex("content:\\'(.*?)\\'").getMatch(0);
                             if (skymonk.containsHTML("status:\'error\'")) {
                                 msg = msg == null ? "Error occured!" : msg;
                                 if ("Пользователь с таким email адресом уже существует. Используйте другой email".equals(msg)) msg = "E-Mail already in use. Please use another E-Mail address and try again!";
