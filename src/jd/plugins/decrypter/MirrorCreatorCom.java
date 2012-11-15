@@ -47,7 +47,8 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             return decryptedLinks;
         }
 
-        final String links = br.getRegex("\"(/status\\.php\\?uid=[A-Z0-9]+\\&h=[a-z0-9]{32})\"").getMatch(0);
+        // String links = br.getRegex("\"(/status\\.php\\?uid=[A-Z0-9]+\\&h=[a-z0-9]{32})\"").getMatch(0);
+        final String links = br.getRegex("\"(/status\\.php\\?uid=[A-Z0-9]+\\&h[0-9]*?=[a-z0-9]{32})\"").getMatch(0);
         if (links == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
