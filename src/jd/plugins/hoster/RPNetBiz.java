@@ -185,7 +185,13 @@ public class RPNetBiz extends PluginForHost {
         // changed in the future, therefore iterate anyway
         for (JSonNode linkNode : links) {
             JSonObject linkObj = (JSonObject) linkNode;
-            if (linkObj.get("error") != null) throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED);
+            JSonNode errorNode = linkObj.get("error");
+            if (errorNode != null) {
+                // shows a more detailed error message returned by the API,
+                // especially if the DL Limit is reached for a host
+                String msg = errorNode.toString();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
+            }
 
             // Only ID given? => request the download from rpnet hdd
             JSonNode idNode = linkObj.get("id");
@@ -229,7 +235,7 @@ public class RPNetBiz extends PluginForHost {
             } catch (PluginException e1) {
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Link generation failed.");
     }
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
