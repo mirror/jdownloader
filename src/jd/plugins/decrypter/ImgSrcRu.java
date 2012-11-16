@@ -88,11 +88,12 @@ public class ImgSrcRu extends PluginForDecrypt {
         }
         allPages.add(parameter.replaceAll("http://(www\\.)?imgsrc.ru", ""));
         String name = "";
-        if (username != null) {
-            name = username + " ";
-        }
-        if (fpName != null) {
-            name = name + fpName;
+        if (username != null && fpName != null) {
+            name = username + "@" + fpName;
+        } else if (username != null) {
+            name = username;
+        } else if (fpName != null) {
+            name = fpName;
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName("Gallery: " + new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0));

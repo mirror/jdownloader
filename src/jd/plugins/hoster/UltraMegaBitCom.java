@@ -66,7 +66,7 @@ public class UltraMegaBitCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("ultramegabit.com/folder/add/")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">File not found<|>File restricted<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>ULTRAMEGABIT\\.COM \\- ([^<>\"]*?)</title>").getMatch(0);
         String filesize = br.getRegex("class=\"label label\\-info\" style=\"font\\-size: 14px; margin\\-left: 10px;\">([^<>\"]*?)</span>").getMatch(0);
         if (filesize == null) filesize = br.getRegex("<input type=\"submit\" value=\"Download file \\(([^<>\"]*?)\\)\"").getMatch(0);

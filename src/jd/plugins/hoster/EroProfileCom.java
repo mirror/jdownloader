@@ -78,7 +78,7 @@ public class EroProfileCom extends PluginForHost {
         } else {
             if (br.containsHTML("(>Photo not found|>The photo could not be found|<title>EroProfile</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             String filename = getFilename();
-            DLLINK = br.getRegex("<div class=\"photo\"><a href=\"([^<>\"]*?)\"").getMatch(0);
+            DLLINK = br.getRegex("<div class=\"viewPhotoContainer\">[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
             if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (!DLLINK.startsWith("http")) DLLINK = "http://www.eroprofile.com" + DLLINK;
             String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

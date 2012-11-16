@@ -238,9 +238,9 @@ public class Zippysharecom extends PluginForHost {
     }
 
     private String getDlCode(final String dlink) {
-        String shortcode = new Regex(dlink, "zippyshare\\.com/v/(\\d+)").getMatch(0);
-        if (shortcode == null) shortcode = new Regex(dlink, "(\\d+)$").getMatch(0);
-        return shortcode;
+        String dlcode = new Regex(dlink, "zippyshare\\.com/v/(\\d+)").getMatch(0);
+        if (dlcode == null) dlcode = new Regex(dlink, "(\\d+)$").getMatch(0);
+        return dlcode;
     }
 
     @Override

@@ -27,6 +27,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flashx.tv" }, urls = { "http://((www\\.)?flashx\\.tv/video/[A-Z0-9]+/|play\\.flashx\\.tv/player/embed\\.php\\?.+)" }, flags = { 0 })
 public class FlashxTv extends PluginForHost {
@@ -39,6 +40,8 @@ public class FlashxTv extends PluginForHost {
     public String getAGBLink() {
         return "http://flashx.tv/page/3/terms-of-service";
     }
+
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -63,7 +66,7 @@ public class FlashxTv extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         final String firstlink = br.getRegex("\"(http://flashx\\.tv/player/embed_player\\.php\\?[^<>\"]*?)\"").getMatch(0);
         if (firstlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -71,16 +74,35 @@ public class FlashxTv extends PluginForHost {
         final String seclink = br.getRegex("\"(http://play\\.flashx\\.tv/player/[^<>\"]*?)\"").getMatch(0);
         if (seclink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(seclink);
-        String dllink = br.getRegex("\"(http://fx\\d+.flashx\\.tv/dl/[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("url: \"(http://[^<>\"]*?)\"").getMatch(0);
+        final String thirdLink = br.getRegex("(http://play\\.flashx\\.tv/nuevo/player/cst\\.php\\?hash=[A-Za-z0-9]+)").getMatch(0);
+        if (thirdLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        br.getPage(thirdLink);
+        String dllink = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -5);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(FlashxTv.NOCHUNKS) == false) {
+                    downloadLink.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(FlashxTv.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(FlashxTv.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     @Override

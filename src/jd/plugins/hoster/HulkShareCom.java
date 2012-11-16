@@ -178,7 +178,7 @@ public class HulkShareCom extends PluginForHost {
         }
     }
 
-    public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, boolean checkFastWay) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final boolean checkFastWay) throws Exception, PluginException {
         String passCode = null;
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         if (md5hash != null) {
@@ -203,6 +203,7 @@ public class HulkShareCom extends PluginForHost {
                 }
             }
         }
+        if (dllink == null) dllink = apiDownload(downloadLink);
         if (dllink == null) dllink = checkDLLink(downloadLink);
         // Videolinks can already be found here, if a link is found here we can skip waittimes and captchas
         if (dllink == null) {
@@ -296,6 +297,7 @@ public class HulkShareCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
+        dllink = Encoding.htmlDecode(dllink);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         // Workaround for missing extensions for audio files
@@ -314,6 +316,17 @@ public class HulkShareCom extends PluginForHost {
         if (passCode != null) downloadLink.setProperty("pass", passCode);
         downloadLink.setProperty("freelink", dllink);
         dl.startDownload();
+    }
+
+    // This is how their downloadmanager works
+    private String apiDownload(final DownloadLink dl) throws IOException {
+        final Browser br2 = br.cloneBrowser();
+        br2.setFollowRedirects(false);
+        br2.getHeaders().put("User-Agent", "Java/1.6.0_37");
+        br2.getHeaders().put("Accept", "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
+        br2.getHeaders().remove("Accept-Language");
+        br2.getPage("http://www.hulkshare.com/api.php?q=%7B%22header%22%3A%7B%22clientRevision%22%3A1.3%2C%22system%22%3A%22windows+7%22%2C%22userId%22%3A%22%22%7D%2C%22function%22%3A%22file%22%2C%22parameters%22%3A%7B%22fileCode%22%3A%5B%22" + new Regex(dl.getDownloadURL(), "([a-z0-9]{12})$").getMatch(0) + "%22%5D%7D%7D");
+        return br2.getRedirectLocation();
     }
 
     // Removed fake messages which can kill the plugin
@@ -546,16 +559,11 @@ public class HulkShareCom extends PluginForHost {
                 }
             }
             br.setCookie(COOKIE_HOST, "lang", "english");
-            br.getPage(COOKIE_HOST + "/login.html");
-            Form loginform = br.getForm(0);
-            if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            loginform.put("login", Encoding.urlEncode(account.getUser()));
-            loginform.put("password", Encoding.urlEncode(account.getPass()));
-            br.submitForm(loginform);
-            if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            br.getPage(COOKIE_HOST + "/?op=my_account");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("http://www.hulkshare.com/ajax/login.php", "simple=1&autologin=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.containsHTML("\"error\":\"1\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            if (br.getCookie(COOKIE_HOST, "hsrememberme") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             doSomething();
-            if (!new Regex(BRBEFORE, "(Premium\\-Account expire|Upgrade to premium|>Renew premium<)").matches()) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             if (!new Regex(BRBEFORE, "(Premium\\-Account expire|>Renew premium<)").matches()) NOPREMIUM = true;
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();

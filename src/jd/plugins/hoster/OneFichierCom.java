@@ -68,7 +68,7 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         pwProtected = false;
         this.setBrowserExclusive();
         prepareBrowser(br);
@@ -76,7 +76,10 @@ public class OneFichierCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">The requested file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) return AvailableStatus.UNCHECKABLE;
+        if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) {
+            link.getLinkStatus().setStatusText("Cannot check availibility because a limit has been reached!");
+            return AvailableStatus.UNCHECKABLE;
+        }
         if (br.containsHTML("password")) {
             pwProtected = true;
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
@@ -197,8 +200,7 @@ public class OneFichierCom extends PluginForHost {
         // that there are no credits available
         if ("error".equalsIgnoreCase(timeStamp) || ("0".equals(timeStamp) && freeCredits == null)) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't
-             * happen!
+             * Only used if the API fails and is wrong but that usually doesn't happen!
              */
             logger.info("Using site login because API is either wrong or no free credits...");
             br.postPage("https://www.1fichier.com/en/login.pl", "lt=on&Login=Login&secure=on&mail=" + Encoding.urlEncode(account.getUser()) + "&pass=" + account.getPass());
@@ -329,8 +331,7 @@ public class OneFichierCom extends PluginForHost {
         }
         if ("FREE".equals(account.getStringProperty("type")) && account.getBooleanProperty("freeAPIdisabled")) {
             /**
-             * Only used if the API fails and is wrong but that usually doesn't
-             * happen!
+             * Only used if the API fails and is wrong but that usually doesn't happen!
              */
             doFree(link);
         } else {

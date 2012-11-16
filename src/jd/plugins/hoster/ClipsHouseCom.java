@@ -101,37 +101,42 @@ public class ClipsHouseCom extends PluginForHost {
         if (DIRECT) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), RESUME, MAXCHUNKS);
         } else {
-            final String reconnectWait = br.getRegex("r<br /> Please wait (\\d+) Minutes").getMatch(0);
-            if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
-            int wait = 10;
-            final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
-            if (waittime != null) wait = Integer.parseInt(waittime);
-            sleep(wait * 1001l, downloadLink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection();
-                final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
-                final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
-                if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                rc.setId(rcID);
-                rc.load();
-                for (int i = 0; i <= 5; i++) {
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
-                    if (!dl.getConnection().isContentDisposition()) {
-                        br.followConnection();
-                        rc.reload();
-                        continue;
+            final String dllink = br.getRegex("\"(http://media\\d+\\.clipshouse\\.com:\\d+/[^<>\"]*?)\"").getMatch(0);
+            if (dllink != null) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, RESUME, MAXCHUNKS);
+            } else {
+                final String reconnectWait = br.getRegex("r<br /> Please wait (\\d+) Minutes").getMatch(0);
+                if (reconnectWait != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(reconnectWait) * 60 * 1001l);
+                int wait = 10;
+                final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
+                if (waittime != null) wait = Integer.parseInt(waittime);
+                sleep(wait * 1001l, downloadLink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
+                if (!dl.getConnection().isContentDisposition()) {
+                    br.followConnection();
+                    final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+                    final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+                    if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    rc.setId(rcID);
+                    rc.load();
+                    for (int i = 0; i <= 5; i++) {
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        String c = getCaptchaCode(cf, downloadLink);
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
+                        if (!dl.getConnection().isContentDisposition()) {
+                            br.followConnection();
+                            rc.reload();
+                            continue;
+                        }
+                        break;
                     }
-                    break;
+                    captcha = true;
                 }
-                captcha = true;
             }
         }
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

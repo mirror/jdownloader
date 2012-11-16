@@ -64,7 +64,7 @@ public class ShareFlareNet extends PluginForHost {
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
     private static final String  APIKEY                            = jd.plugins.hoster.LetitBitNet.APIKEY;
     private static final String  APIPAGE                           = jd.plugins.hoster.LetitBitNet.APIPAGE;
-    private static final String  TEMPORARYUNAVAILABLE              = "class=\"wrapper\\-centered\">Code from picture<";
+    private static final String  SPECIALOFFLINE                    = "class=\"wrapper\\-centered\">Code from picture<";
 
     public ShareFlareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -276,7 +276,7 @@ public class ShareFlareNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -402,7 +402,7 @@ public class ShareFlareNet extends PluginForHost {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dlUrl != null)
@@ -429,7 +429,7 @@ public class ShareFlareNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        if (br.containsHTML(TEMPORARYUNAVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         Form premForm = null;
         Form allForms[] = br.getForms();
         if (allForms == null || allForms.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

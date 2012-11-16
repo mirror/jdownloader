@@ -109,6 +109,7 @@ public class NzbLoadCom extends PluginForHost {
         br.getPage("http://www.nzbload.com/data/download.json?overwrite=get_url&t=" + System.currentTimeMillis() + "&sub=" + params.getMatch(1) + "&params[0]=" + params.getMatch(2) + "&params[1]=" + hash + "&params[2]=" + expiry + "&params[3]=" + downloadLink.getName());
         if (br.containsHTML("Free users can download 1 file at the same time")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 5 * 60 * 1000l);
         if (br.containsHTML("\"Free users can download")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
+        if (br.containsHTML("\"Your session is invalid: retry again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error (server says 'invalid session')", 60 * 60 * 1000l);
         String dllink = get("url");
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("\\", "");

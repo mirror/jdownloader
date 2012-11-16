@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.ProgressController;
 import jd.gui.UserIO;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -35,7 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/captcha_dl\\.php\\?id=[A-Z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jheberg.com" }, urls = { "http://(www\\.)?jheberg\\.net/captcha/[A-Z0-9a-z\\.\\-_]+" }, flags = { 0 })
 public class JBbergCom extends PluginForDecrypt {
 
     public JBbergCom(PluginWrapper wrapper) {
@@ -51,39 +52,54 @@ public class JBbergCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String parameter = param.toString();
-        boolean loggedIn = false;
-        if (!this.getPluginConfig().getBooleanProperty("skiplogin")) loggedIn = getUserLogin();
+        // boolean loggedIn = false;
+        // Login function is probably broken, maybe not even needed anymore
+        // if (!this.getPluginConfig().getBooleanProperty("skiplogin")) loggedIn = getUserLogin();
         br.getPage(parameter);
-        if (br.containsHTML("(<p><strong>Fichier :</strong> </p>|<p><strong>Date d\\&#146;ajout du fichier :</strong> 01/01/1970 01:00</p>)")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        if (!loggedIn) {
-            if (!br.containsHTML("capt_img\\.php")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (int i = 0; i <= 3; i++) {
-                String code = getCaptchaCode("http://www.jheberg.net/capt_img.php", param);
-                br.postPage(parameter, "captcha=" + code);
-                if (br.containsHTML("capt_img\\.php")) continue;
-                break;
-            }
-            if (br.containsHTML("capt_img\\.php")) throw new DecrypterException(DecrypterException.CAPTCHA);
+        if (br.containsHTML(">Oh non, vous avez tué Kenny|>Dommage, la page demandée n'existe pas")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
         }
-        final String fpName = br.getRegex("<p><strong>Fichier :</strong> ([^<>\"\\']+)</p>").getMatch(0);
-        String[] links = br.getRegex("<a href=\"([A-Za-z0-9]+_[A-Z0-9]+)\" target=\"_blank\">").getColumn(0);
-        if (links == null || links.length == 0) return null;
-        for (String singleLink : links) {
+
+        final String fpName = br.getRegex("<li>File : ([^<>\"]*?)</li>").getMatch(0);
+        br.getPage(parameter.replace("/captcha/", "/download/"));
+        final String[] links = br.getRegex("\"/(redirect/[^<>\"/]*?/[^<>\"/]*?)\"").getColumn(0);
+        if (links == null || links.length == 0) {
+            logger.warning("Decrypter broken for link: " + parameter);
+            return null;
+        }
+        final String linkID = parameter.substring(parameter.lastIndexOf("/") + 1);
+
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(linkID);
+        if (fpName != null) fp.setName(Encoding.htmlDecode(fpName.trim()));
+
+        final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("Accept", "*/*");
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        for (final String singleLink : links) {
             br.getPage(COOKIE_HOST + singleLink);
-            final String finallink = br.getRegex("<META HTTP\\-EQUIV=\"Refresh\" CONTENT=\"\\d+; URL=(http://[^<>\"\\']+)\"").getMatch(0);
+
+            // Waittime can be skipped
+            // int wait = 10;
+            // final String waittime = br.getRegex("startNumber: (\\d+),").getMatch(0);
+            // if (waittime != null) wait = Integer.parseInt(waittime);
+            // sleep(wait * 1001l, param);
+
+            br2.postPage("http://www.jheberg.net/redirect-ajax/", "slug=" + Encoding.urlEncode(linkID) + "&host=" + singleLink.substring(singleLink.lastIndexOf("/") + 1));
+            final String finallink = br2.getRegex("\"url\":\"(http[^<>\"]*?)\"").getMatch(0);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
-            if (fpName != null) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlDecode(fpName.trim()));
-                fp.addLinks(decryptedLinks);
+            final DownloadLink dl = createDownloadlink(finallink.replace("\\", ""));
+            dl._setFilePackage(fp);
+            try {
+                distribute(dl);
+            } catch (final Exception e) {
+                // Not available in old Stable 0.9851
             }
+            decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }

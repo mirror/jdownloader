@@ -17,6 +17,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -44,6 +45,13 @@ public class JustinTvDecrypt extends PluginForDecrypt {
         String parameter = param.toString().replaceAll("(de\\.)?(twitchtv\\.com|twitch\\.tv)", "twitch.tv");
         br.setFollowRedirects(true);
         br.getPage(parameter);
+        if (br.containsHTML(">Sorry, we couldn\\'t find that stream\\.")) {
+            // final Regex info = new Regex(parameter, "(twitchtv\\.com|twitch\\.tv))/[^<>/\"]+/((b|c)/\\d+|videos(\\?page=\\d+)?)");
+            final DownloadLink dlink = createDownloadlink("http://media" + new Random().nextInt(1000) + ".twitchdecrypted.tv/archives/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".flv");
+            dlink.setAvailable(false);
+            decryptedLinks.add(dlink);
+            return decryptedLinks;
+        }
         if (parameter.contains("/videos")) {
             if (br.containsHTML("<strong id=\"videos_count\">0")) {
                 logger.info("Nothing to decrypt here: " + parameter);
@@ -51,7 +59,10 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             String[] links = br.getRegex("<p class=\"title\"><a href=\"(/.*?)\"").getColumn(0);
             if (links == null || links.length == 0) links = br.getRegex("<div class=\"left\">[\t\n\r ]+<a href=\"(/.*?)\"").getColumn(0);
-            if (links == null || links.length == 0) return null;
+            if (links == null || links.length == 0) {
+                logger.warning("Decrypter broken: " + parameter);
+                return null;
+            }
             for (String dl : links)
                 decryptedLinks.add(createDownloadlink(HOSTURL + dl));
         } else {
@@ -60,6 +71,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
                 return decryptedLinks;
             }
             String filename = br.getRegex("<h2 id=\\'broadcast_title\\'>([^<>\"]*?)</h2>").getMatch(0);
+            if (parameter.contains("justin.tv/")) filename = br.getRegex("<h2 class=\"clip_title\">([^<>\"]*?)</h2>").getMatch(0);
             if (parameter.contains("/b/")) {
                 br.getPage("http://api.justin.tv/api/broadcast/by_archive/" + new Regex(parameter, "(\\d+)$").getMatch(0) + ".xml");
             } else {
@@ -73,7 +85,7 @@ public class JustinTvDecrypt extends PluginForDecrypt {
             }
             filename = Encoding.htmlDecode(filename.trim());
             for (String dl : links) {
-                DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
+                final DownloadLink dlink = createDownloadlink(dl.replace("twitch.tv/", "twitchdecrypted.tv/").replace("justin.tv/", "justindecrypted.tv/"));
                 dlink.setProperty("directlink", "true");
                 if (links.length != 1) {
                     dlink.setFinalFileName(filename + " - Part " + counter + ".flv");

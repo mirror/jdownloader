@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|(blog|typ)/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xxx-blog.to" }, urls = { "http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site-rips|image-sets|games)/.+/|[a-z0-9\\-_]+/)" }, flags = { 0 })
 public class XXXBlg extends PluginForDecrypt {
 
     private static ArrayList<String> pwList = new ArrayList<String>();
@@ -55,7 +55,22 @@ public class XXXBlg extends PluginForDecrypt {
             logger.warning("Link offline: " + parameter);
             return decryptedLinks;
         }
-        if (parameter.contains("/blog/") || parameter.contains("/typ/")) {
+        if (parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html)")) {
+
+            DownloadLink dLink;
+            if (br.getRedirectLocation() != null) {
+                dLink = createDownloadlink(br.getRedirectLocation());
+            } else {
+                Form form = br.getForm(0);
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dLink = createDownloadlink(form.getAction(null));
+                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
+            }
+            dLink.setSourcePluginPasswordList(pwList);
+            decryptedLinks.add(dLink);
+
+        } else {
+
             String fpname = br.getRegex("<title>(.*?)\\| XXX\\-Blog").getMatch(0);
             if (fpname == null) fpname = br.getRegex("rel=\"bookmark\" title=\"(.*?)\"").getMatch(0);
             String pagepiece = br.getRegex("<strong>(.*?)</a></strong></p>").getMatch(0);
@@ -70,7 +85,7 @@ public class XXXBlg extends PluginForDecrypt {
                 return null;
             }
             for (String link : links) {
-                if (link.matches("http://(www\\.)?xxx-blog\\.to/((share|sto|com-|u|filefactory/|relink/)[\\w\\./-]+|.*?\\.html|(blog|typ)/(dvd-rips|scenes|amateur-clips|hd-(scenes|movies)|site-rips|image-sets|games)/.+/)")) continue;
+                if (link.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image\\-sets|games)/.+/)")) continue;
                 final DownloadLink dlink = createDownloadlink(link.replace("http://xxx-blog.to/../download/?", ""));
                 dlink.setSourcePluginPasswordList(pwList);
                 decryptedLinks.add(dlink);
@@ -80,19 +95,9 @@ public class XXXBlg extends PluginForDecrypt {
                 fp.setName(fpname.trim());
                 fp.addLinks(decryptedLinks);
             }
-        } else {
-            DownloadLink dLink;
-            if (br.getRedirectLocation() != null) {
-                dLink = createDownloadlink(br.getRedirectLocation());
-            } else {
-                Form form = br.getForm(0);
-                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                dLink = createDownloadlink(form.getAction(null));
-                if (!parameter.matches("http://(www\\.)?xxx\\-blog\\.to/((share|sto|com\\-|u|filefactory/|relink/)[\\w\\./\\-]+|.*?\\.html|(blog|typ)/(dvd\\-rips|scenes|amateur\\-clips|hd\\-(scenes|movies)|site\\-rips|image-sets|games)/.+/)")) decryptedLinks.add(createDownloadlink(parameter));
-            }
-            dLink.setSourcePluginPasswordList(pwList);
-            decryptedLinks.add(dLink);
+
         }
+        // if (parameter.contains("/blog/") || parameter.contains("/typ/"))
 
         return decryptedLinks;
     }

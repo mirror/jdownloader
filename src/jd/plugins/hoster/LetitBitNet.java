@@ -61,6 +61,7 @@ public class LetitBitNet extends PluginForHost {
     private static final String  COOKIE_HOST                       = "http://letitbit.net/";
     private static AtomicInteger maxFree                           = new AtomicInteger(1);
     private static final String  ENABLEUNLIMITEDSIMULTANMAXFREEDLS = "ENABLEUNLIMITEDSIMULTANMAXFREEDLS";
+    /* For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
 
@@ -429,7 +430,7 @@ public class LetitBitNet extends PluginForHost {
                 logger.info("Wrong password, disabling the account!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+            if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
             if (dlUrl != null)

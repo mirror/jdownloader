@@ -220,7 +220,7 @@ public class Vipfilecom extends PluginForHost {
             logger.info("Wrong password, disabling the account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
-        if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!", 60 * 60 * 1000l);
+        if (br.containsHTML("\"data\":\"no mirrors\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("\"data\":\"file is not found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String dlUrl = br.getRegex("\"(http:[^<>\"]*?)\"").getMatch(0);
         if (dlUrl != null)

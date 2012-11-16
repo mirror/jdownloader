@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -30,27 +31,27 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primeshare.tv" }, urls = { "http://(www\\.)?primeshare\\.tv/download/[A-Z0-9]+" }, flags = { 0 })
-public class PrimeShareTv extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filetrip.net" }, urls = { "http://(www\\.)?filetrip.net/dl\\?[A-Za-z0-9]+" }, flags = { 0 })
+public class FileTripNet extends PluginForHost {
 
-    public PrimeShareTv(PluginWrapper wrapper) {
+    public FileTripNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://primeshare.tv/help/terms";
+        return "https://filetrip.net/document.php?id=1";
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(>File not exist<|>The file you have requested does not)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex info = br.getRegex("<h1>Watch\\&nbsp;[\t\n\r ]+\\(([^<>\"]*?)\\)\\&nbsp;<strong>\\(([^<>\"]*?)\\)</strong></h1>");
-        final String filename = info.getMatch(0);
-        final String filesize = info.getMatch(1);
+        if (br.containsHTML(">You might want to check that URL<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex fileInfo = br.getRegex("<h3><b>([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5})\\)</b></h3>");
+        String filename = fileInfo.getMatch(0);
+        String filesize = fileInfo.getMatch(1);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -60,22 +61,13 @@ public class PrimeShareTv extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        int wait = 10;
-        final String waittime = br.getRegex("var qTime = (\\d+);").getMatch(0);
-        if (waittime != null) wait = Integer.parseInt(waittime);
-        sleep(wait * 1001, downloadLink);
-        br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
-        if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        String dllink = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://s\\d+\\.primeshare\\.tv:\\d+/get/[^<>\"]*?)(\"|\\')").getMatch(1);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // Chunkload possible but deactivated because of server problems
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        final Form dlform = br.getFormbyProperty("target", "hidframe");
+        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlform, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         dl.startDownload();
     }
 
@@ -89,7 +81,7 @@ public class PrimeShareTv extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }

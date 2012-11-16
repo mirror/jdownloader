@@ -17,15 +17,16 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -60,11 +61,34 @@ public class LuckyShareNet extends PluginForHost {
     private static Object       LOCK     = new Object();
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("(There is no such file available|<title>LuckyShare \\- Download</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(There is no such file available|<title>LuckyShare \\- Download</title>)")) {
+            // Some links only work via account and are shown as "offline" without account
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa != null) {
+                login(aa, false);
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openGetConnection(link.getDownloadURL());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    if (!con.getContentType().contains("html")) {
+                        link.setDownloadSize(con.getLongContentLength());
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    return AvailableStatus.TRUE;
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (Throwable e) {
+                    }
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String filename = br.getRegex("<h1 class=\\'file_name\\'>([^<>\"/]+)</h1>").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>LuckyShare \\- ([^<>\"/]+)</title>").getMatch(0);
         String filesize = br.getRegex("<span class=\\'file_size\\'>Filesize: ([^<>\"/]+)</span>").getMatch(0);
@@ -176,7 +200,7 @@ public class LuckyShareNet extends PluginForHost {
     }
 
     @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 // Load cookies
@@ -250,8 +274,7 @@ public class LuckyShareNet extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
-        // Force login, see if it works better then
-        login(account, true);
+        login(account, false);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
         String dllink = br.getRedirectLocation();
