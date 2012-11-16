@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -49,16 +48,11 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable;
-import org.appwork.utils.net.httpconnection.HTTPProxyStorable.TYPE;
-
 import de.savemytube.flv.FLV;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
-    HTTPProxyStorable            proxyStore;
 
     static {
         String installerSource = null;
@@ -166,21 +160,24 @@ public class TbCm extends PluginForDecrypt {
         }
     }
 
-    public TbCm(final PluginWrapper wrapper) {
-        super(wrapper);
-
+    private void gsProxy(boolean b) {
         SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
-
-        if (cfg.getBooleanProperty("PROXY_ACTIVE")) {
-            final String PROXY_ADDRESS = cfg.getStringProperty("PROXY_ADDRESS");
-            final int PROXY_PORT = cfg.getIntegerProperty("PROXY_PORT");
-
-            proxyStore = new HTTPProxyStorable();
-            proxyStore.setAddress(PROXY_ADDRESS);
-            proxyStore.setPort(PROXY_PORT);
-            proxyStore.setType(TYPE.HTTP);
+        if (cfg != null && cfg.getBooleanProperty("PROXY_ACTIVE")) {
+            String PROXY_ADDRESS = cfg.getStringProperty("PROXY_ADDRESS");
+            int PROXY_PORT = cfg.getIntegerProperty("PROXY_PORT");
+            if (isEmpty(PROXY_ADDRESS) || PROXY_PORT < 0) return;
+            PROXY_ADDRESS = new Regex(PROXY_ADDRESS, "^[0-9a-zA-Z]+://").matches() ? PROXY_ADDRESS : "http://" + PROXY_ADDRESS;
+            org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.parseHTTPProxy(PROXY_ADDRESS + ":" + PROXY_PORT);
+            if (b && proxy != null && proxy.getHost() != null) {
+                br.setProxy(proxy);
+                return;
+            }
         }
+        br.setProxy(br.getThreadProxy());
+    }
 
+    private boolean isEmpty(String ip) {
+        return ip == null || ip.trim().length() == 0;
     }
 
     private void addtopos(final DestinationFormat mode, final String link, final long size, final String desc, final int fmt) {
@@ -491,15 +488,11 @@ public class TbCm extends PluginForDecrypt {
             br = this.br;
         }
 
-        // Proxy creation
-        if (proxyStore != null) {
-            org.appwork.utils.net.httpconnection.HTTPProxy proxy = org.appwork.utils.net.httpconnection.HTTPProxy.getHTTPProxy(proxyStore);
-
-            if (proxy != null && proxy.getHost() != null) {
-                br.setProxy(proxy);
-            }
+        try {
+            gsProxy(true);
+        } catch (Throwable e) {
+            /* does not exist in 09581 */
         }
-
         br.setFollowRedirects(true);
         /* this cookie makes html5 available and skip controversy check */
         br.setCookie("youtube.com", "PREF", "f2=40100000");
