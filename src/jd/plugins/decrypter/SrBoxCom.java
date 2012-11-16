@@ -219,7 +219,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
         String[] AllWord = strName.split(" ");
         for (String strWord : AllWord) {
-            strWord = strWord.toLowerCase();
+            // strWord = strWord.toLowerCase();
             String strTemp = strWord;
             Boolean bFind = false;
             Boolean bFindExpression = false;
