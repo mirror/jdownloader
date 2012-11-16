@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -79,13 +78,12 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
 import org.appwork.utils.speedmeter.AverageSpeedMeter;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.jdownloader.extensions.extraction.ExtractionProgress;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 1 $", interfaceVersion = 1, names = { "oceanus.ch" }, urls = { "http://oceanus.ch/u/[0-9a-zA-Z\\-]*/[0-9a-zA-Z\\-]*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 18898 $", interfaceVersion = 2, names = { "oceanus.ch" }, urls = { "http://oceanus.ch/u/[0-9a-zA-Z\\-]*/[0-9a-zA-Z\\-]*" }, flags = { 2 })
 public class Oceanus extends PluginForHost {
 
 	private static final String DOWNLOAD_PREPARE_MSG = "Preparing to download...";
@@ -320,7 +318,6 @@ public class Oceanus extends PluginForHost {
 	 */
 	private String getServerIP(ManagementSystemEntry[] msList) throws Exception {
 		String serverIP = null;
-		OCInMemory inmemory = OCInMemory.getInstance();
 		String msIP;
 		for (ManagementSystemEntry ms : msList) {
 			msIP = ms.getIpAddress();
@@ -383,12 +380,14 @@ public class Oceanus extends PluginForHost {
 				downloadLink.setFinalFileName(downloader.getDownloadFileName());
 				downloadLink.setDownloadSize(downloader.getSize());
 				downloadLink.setAvailable(true);
-				OceanusProgress ocProgress = new OceanusProgress(-1,
-						downloader.getSize(), Color.BLACK, downloadLink);
+				OceanusProgress ocProgress = new OceanusProgress(
+						downloader.getSize(), downloadLink);
 				downloader.setDownloadLink(downloadLink);
 				downloader.setOceanus(this);
-				downloader.setProgressUpdate(ocProgress);
-				destDir = new File(downloadLink.getFileOutput());
+				downloader.setocProgress(ocProgress);
+				String fout = downloadLink.getFileOutput().replace(
+						"\\" + downloader.getDownloadFileName(), "");
+				destDir = new File(fout);
 				downloader.setDestinationPath(destDir);
 			} else {
 				throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT,
@@ -414,8 +413,6 @@ public class Oceanus extends PluginForHost {
 		JAXBContext jaxbContext;
 		Unmarshaller jaxbUnmarshaller;
 		Downloader download = null;
-		Oceanus oceanus = this;
-
 		try {
 			inputStream = new ByteArrayInputStream(
 					downloadXMLStr.getBytes(CHAR_SET));
@@ -680,8 +677,7 @@ public class Oceanus extends PluginForHost {
 	 *         Remove speedMeter.
 	 * 
 	 */
-	public class OceanusProgress extends ExtractionProgress implements
-			ProgressUpdate {
+	public class OceanusProgress {
 		private static final String WAIT_MSG = "Please wait...";
 
 		private long totalRead = 0;
@@ -689,43 +685,37 @@ public class Oceanus extends PluginForHost {
 		private DownloadLink downloadLink;
 		private ManagedThrottledConnectionHandler manager;
 
-		public OceanusProgress(long current, long total, Color color,
-				DownloadLink downloadLink) {
-			super(current, total, color);
+		public OceanusProgress(long total, DownloadLink downloadLink) {
 			this.totalSize = total;
 			this.downloadLink = downloadLink;
 			this.manager = new ManagedThrottledConnectionHandler(
 					this.downloadLink);
 			downloadLink.getDownloadLinkController().getConnectionHandler()
 					.addConnectionHandler(manager);
+			// downloadLink.getLinkStatus().addStatus(
+			// LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
 		}
 
-		public synchronized void updateProgress(long bytesRead) {
-			this.totalRead += bytesRead;
-			downloadLink.setDownloadCurrent(totalRead);
-			updateValues(totalRead, totalSize);
-			if (totalRead >= totalSize) {
-				downloadLink.getDownloadLinkController().getConnectionHandler()
-						.removeConnectionHandler(manager);
-				downloadLink.getLinkStatus().setStatusText(WAIT_MSG);
-			}
-		}
-
-		public synchronized InputStream addSpeedMeter(InputStream inputStream) {
+		public InputStream addSpeedMeter(InputStream inputStream) {
 			MeteredThrottledInputStream meteredStream = new MeteredThrottledInputStream(
 					inputStream, new AverageSpeedMeter(10));
 			manager.addThrottledConnection(meteredStream);
 			return meteredStream;
 		}
 
-		public synchronized void removeSpeedMeter(InputStream inputStream) {
+		public void removeSpeedMeter(InputStream inputStream) {
 			MeteredThrottledInputStream meteredStream = (MeteredThrottledInputStream) inputStream;
 			manager.removeThrottledConnection(meteredStream);
 		}
 
-		@Override
-		public void updateProgress(long bytesRead, int rowNum) {
-			updateProgress(bytesRead);
+		public void updateProgress(long bytesRead) {
+			this.totalRead += bytesRead;
+			downloadLink.setDownloadCurrent(totalRead);
+			if (totalRead >= totalSize) {
+				downloadLink.getDownloadLinkController().getConnectionHandler()
+						.removeConnectionHandler(manager);
+				downloadLink.getLinkStatus().setStatusText(WAIT_MSG);
+			}
 		}
 	}
 
@@ -870,7 +860,7 @@ public class Oceanus extends PluginForHost {
 		private static final String EMPTY_STR = "";
 		private Long totalChunks = 0l, completedChunks = 0l;
 		@XmlAnyElement(lax = true)
-		protected ProgressUpdate progressUpdate;
+		protected OceanusProgress ocProgress;
 		@XmlAttribute(name = "scrambledPW")
 		private String encryptionPwd;
 		@XmlAttribute(name = "uploadid")
@@ -967,12 +957,12 @@ public class Oceanus extends PluginForHost {
 			return size;
 		}
 
-		public ProgressUpdate getProgressUpdate() {
-			return progressUpdate;
+		public OceanusProgress getocProgress() {
+			return ocProgress;
 		}
 
-		public void setProgressUpdate(ProgressUpdate progressUpdate) {
-			this.progressUpdate = progressUpdate;
+		public void setocProgress(OceanusProgress ocProgress) {
+			this.ocProgress = ocProgress;
 		}
 
 		public void setDownloadLink(DownloadLink downloadLink) {
@@ -1129,7 +1119,7 @@ public class Oceanus extends PluginForHost {
 					// Connect with CDN using the download URL
 					urlConnection = connectToCDN(chunk.getDownloadURL());
 					// add speedmeter to the inputstream.
-					inputStream = progressUpdate.addSpeedMeter(urlConnection
+					inputStream = ocProgress.addSpeedMeter(urlConnection
 							.getInputStream());
 					// Read chunk from CDN
 					readChunk(chunk, inputStream, fileOutputStream);
@@ -1144,7 +1134,7 @@ public class Oceanus extends PluginForHost {
 			} finally {
 				if (inputStream != null) {
 					try {
-						progressUpdate.removeSpeedMeter(inputStream);
+						ocProgress.removeSpeedMeter(inputStream);
 						inputStream.close();
 					} catch (IOException ie) {
 						throw ie;
@@ -1209,7 +1199,7 @@ public class Oceanus extends PluginForHost {
 					// Set bytes transferred for chunk
 					chunk.setBytesTransferred(tBytesRead);
 					// updateProgress(bytesRead);
-					progressUpdate.updateProgress(bytesRead, -1);
+					ocProgress.updateProgress(bytesRead);
 				}
 			} catch (Exception ie) {
 				throw ie;
@@ -1370,6 +1360,8 @@ public class Oceanus extends PluginForHost {
 				oceanus.sendPostRequest("wholeDownloadComplete",
 						mapper.writeValueAsString(jsonReq), EMPTY_STR);
 				OCInMemory.getInstance().removeActiveDownload(uploadId);
+				// downloadLink.getLinkStatus().removeStatus(
+				// LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
 				downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
 				downloadLink.getLinkStatus().setStatusText(
 						DOWNLOAD_COMPLETE_MSG);
@@ -1807,14 +1799,6 @@ public class Oceanus extends PluginForHost {
 				file.delete();
 			}
 		}
-	}
-
-	public interface ProgressUpdate {
-		public void updateProgress(long bytesRead, int rowNum);
-
-		public InputStream addSpeedMeter(InputStream inputStream);
-
-		public void removeSpeedMeter(InputStream inputStream);
 	}
 
 	public static class OCInMemory {
