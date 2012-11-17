@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1})" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.{1}|photo/\\d+)" }, flags = { 0 })
 public class MgfpCm extends PluginForDecrypt {
 
     public MgfpCm(PluginWrapper wrapper) {
@@ -42,76 +42,79 @@ public class MgfpCm extends PluginForDecrypt {
         allPages.add("0");
         br.setFollowRedirects(false);
         String parameter = param.toString();
-        parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-        if (new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
-            /**
-             * Workaround to get all images on one page for private galleries
-             * (site buggy)
-             */
-            br.getPage("http://www.imagefap.com/gallery.php?view=2");
-        } else if (!parameter.contains("view=2")) parameter += "?view=2";
-        br.getPage(parameter);
-        if (br.getRedirectLocation() != null) {
-            if (br.getRedirectLocation().contains("/pictures/")) {
-                parameter = br.getRedirectLocation();
-                logger.info("New parameter is set: " + parameter);
-                br.getPage(parameter);
-            } else {
-                logger.warning("Getting unknown redirect page");
-                br.getPage(br.getRedirectLocation());
+        if (parameter.matches("http://(www\\.)?imagefap\\.com/photo/\\d+")) {
+            final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + new Regex(parameter, "(\\d+)$").getMatch(0));
+            decryptedLinks.add(link);
+        } else {
+            parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
+            if (new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
+                /**
+                 * Workaround to get all images on one page for private galleries (site buggy)
+                 */
+                br.getPage("http://www.imagefap.com/gallery.php?view=2");
+            } else if (!parameter.contains("view=2")) parameter += "?view=2";
+            br.getPage(parameter);
+            if (br.getRedirectLocation() != null) {
+                if (br.getRedirectLocation().contains("/pictures/")) {
+                    parameter = br.getRedirectLocation();
+                    logger.info("New parameter is set: " + parameter);
+                    br.getPage(parameter);
+                } else {
+                    logger.warning("Getting unknown redirect page");
+                    br.getPage(br.getRedirectLocation());
+                }
             }
-        }
 
-        // First find all the information we need (name of the gallery, name of
-        // the galleries author)
-        String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
-        if (galleryName == null) {
-            galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-            if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
-        }
-        String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
-        if (authorsName == null) authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
-        if (galleryName == null) {
-            logger.warning("Gallery name could not be found!");
-            return null;
-        }
-        if (authorsName == null) authorsName = "Anonymous";
-        galleryName = Encoding.htmlDecode(galleryName.trim());
-        authorsName = Encoding.htmlDecode(authorsName.trim());
-
-        /**
-         * Max number of images per page = 1000, if we got more we always have
-         * at least 2 pages
-         */
-        final String[] pages = br.getRegex("<a class=link3 href=\"\\?pgid=\\&amp;gid=\\d+\\&amp;page=(\\d+)").getColumn(0);
-        if (pages != null && pages.length != 0) for (final String page : pages)
-            if (!allPages.contains(page)) allPages.add(page);
-        int counter = 1;
-        DecimalFormat df = new DecimalFormat("0000");
-        for (final String page : allPages) {
-            if (!page.equals("0")) br.getPage(parameter + "&page=" + page);
-            final String info[][] = br.getRegex("\"/image\\.php\\?id=(\\d+)[^<>\"/]+\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
-            if (info == null || info.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
+            // First find all the information we need (name of the gallery, name of
+            // the galleries author)
+            String galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
+            if (galleryName == null) {
+                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
+                if (galleryName == null) galleryName = br.getRegex("<meta name=\"description\" content=\"Airplanes porn pics - Imagefap\\.com\\. The ultimate social porn pics site\" />").getMatch(0);
+            }
+            String authorsName = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
+            if (authorsName == null) authorsName = br.getRegex("<td class=\"mnu0\"><a href=\"http://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+            if (galleryName == null) {
+                logger.warning("Gallery name could not be found!");
                 return null;
             }
-            for (final String elements[] : info) {
-                final String orderID = df.format(counter);
-                final DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + elements[0]);
-                link.setProperty("orderid", orderID);
-                link.setProperty("galleryname", galleryName);
-                link.setProperty("authorsname", authorsName);
-                link.setName(authorsName + " - " + galleryName + " - " + df.format(counter) + Encoding.htmlDecode(elements[1].trim()));
-                link.setAvailable(true);
-                decryptedLinks.add(link);
-                counter++;
+            if (authorsName == null) authorsName = "Anonymous";
+            galleryName = Encoding.htmlDecode(galleryName.trim());
+            authorsName = Encoding.htmlDecode(authorsName.trim());
+
+            /**
+             * Max number of images per page = 1000, if we got more we always have at least 2 pages
+             */
+            final String[] pages = br.getRegex("<a class=link3 href=\"\\?pgid=\\&amp;gid=\\d+\\&amp;page=(\\d+)").getColumn(0);
+            if (pages != null && pages.length != 0) for (final String page : pages)
+                if (!allPages.contains(page)) allPages.add(page);
+            int counter = 1;
+            DecimalFormat df = new DecimalFormat("0000");
+            for (final String page : allPages) {
+                if (!page.equals("0")) br.getPage(parameter + "&page=" + page);
+                final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
+                if (info == null || info.length == 0) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                for (final String elements[] : info) {
+                    final String orderID = df.format(counter);
+                    final DownloadLink link = createDownloadlink("http://imagefap.com/imagedecrypted/" + elements[0]);
+                    link.setProperty("orderid", orderID);
+                    link.setProperty("galleryname", galleryName);
+                    link.setProperty("authorsname", authorsName);
+                    link.setName(authorsName + " - " + galleryName + " - " + df.format(counter) + Encoding.htmlDecode(elements[1].trim()));
+                    link.setAvailable(true);
+                    decryptedLinks.add(link);
+                    counter++;
+                }
             }
+            // Finally set the packagename even if its set again in the linkgrabber
+            // available check of the imagefap hosterplugin
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(authorsName + " - " + galleryName);
+            fp.addLinks(decryptedLinks);
         }
-        // Finally set the packagename even if its set again in the linkgrabber
-        // available check of the imagefap hosterplugin
-        FilePackage fp = FilePackage.getInstance();
-        fp.setName(authorsName + " - " + galleryName);
-        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

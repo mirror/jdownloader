@@ -60,14 +60,14 @@ public class PutMeOrg extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /** DEV NOTES */
     // XfileSharingProBasic Version 2.5.9.6
     // mods:
-    // non account: 1 * 2
+    // non account: 1 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https

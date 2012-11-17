@@ -30,12 +30,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(image\\.php\\?id=.*(\\&pgid=.*\\&gid=.*\\&page=.*)?|video\\.php\\?vid=\\d+)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "http://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" }, flags = { 0 })
 public class ImageFap extends PluginForHost {
 
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
         // this.setStartIntervall(500l);
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        final String addedLink = link.getDownloadURL();
+        if (addedLink.contains("imagedecrypted/")) link.setUrlDownload("http://www.imagefap.com/photo/" + new Regex(addedLink, "(\\d+)$").getMatch(0) + "/");
     }
 
     private static final String VIDEOLINK = "http://(www\\.)?imagefap.com/video\\.php\\?vid=\\d+";
@@ -80,12 +85,9 @@ public class ImageFap extends PluginForHost {
     private String getGalleryName(final DownloadLink dl) {
         String galleryName = dl.getStringProperty("galleryname");
         if (galleryName == null) {
-            galleryName = br.getRegex("<title>Porn pics of (.*?) \\(Page 1\\)</title>").getMatch(0);
+            galleryName = br.getRegex("<font face=verdana size=3>([^<>\"]*?)<BR>").getMatch(0);
             if (galleryName == null) {
-                galleryName = br.getRegex("<font face=\"verdana\" color=\"white\" size=\"4\"><b>(.*?)</b></font>").getMatch(0);
-                if (galleryName == null) {
-                    galleryName = br.getRegex("<td bgcolor=\\'#FCFFE0\\'><a href=\"/gallery\\.php\\?gid=\\d+\">(.*?)</a></td>").getMatch(0);
-                }
+                galleryName = br.getRegex("<title>.*? in gallery ([^<>\"]*?) \\(Picture \\d+\\) uploaded by").getMatch(0);
             }
         }
         return galleryName;
@@ -208,8 +210,7 @@ public class ImageFap extends PluginForHost {
                     }
                 } catch (final Throwable e) {
                     /*
-                     * does not work in stable 0.9580, can be removed with next
-                     * major update
+                     * does not work in stable 0.9580, can be removed with next major update
                      */
                     try {
                         if (downloadLink.getFilePackage() == FilePackage.getDefaultFilePackage()) {
