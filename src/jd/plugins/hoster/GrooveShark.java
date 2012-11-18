@@ -206,7 +206,7 @@ public class GrooveShark extends PluginForHost {
     private static String reqk(int i) {
         String[] s = new String[4];
         s[0] = "ff8cf9faf900cfe71996b4cedc5046fb2b9c72bb0b5fdbce19195c68103a85d65d88ff6e8c5be634224051bbeb271d2fe07f2ecbc1cd6565a873d3b56e0d333e5ff6c973";
-        s[1] = "ff81f9a6f907cfe31896b59fdd5041f82a9072e90b58dacb18195c39176985805d88f8328b5ae33b254154b5eb761925e5722c9bc4cc6634ac74d3e26c0d37395af2cc7f5c2a";
+        s[1] = "fc8bfbf6fa00cce41b91b799dc0742fd289d75bc0c53db9d1b1d5b691165828759d8fc3b890ae338221150bdef201922e4212dcdc5c76760ac24d3e4";
         s[2] = "fe80fea7fe01c9ee18c7b699da0746f12d96";
         s[3] = "fe8efea7fe01c9ee1fc1b2ccdb0346f12d96";
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
