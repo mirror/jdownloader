@@ -170,7 +170,7 @@ public class Zippysharecom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 }
             }
-        } else if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+        } else if (br.containsHTML("Recaptcha\\.create\\(")) {
             final String rcID = br.getRegex("Recaptcha\\.create\\(\"([^<>\"/]*?)\"").getMatch(0);
             final String shortenCode = br.getRegex("shortencode: \\'(\\d+)\\'").getMatch(0);
             if (rcID == null || shortenCode == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
