@@ -289,7 +289,12 @@ public class SflnkgNt extends PluginForDecrypt {
         try {
             con = brc.openGetConnection(test);
             if (con.getResponseCode() == 200) {
-                file = Application.getResource("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                try {
+                    /* does not exist in 09581 */
+                    file = Application.getResource("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                } catch (Throwable e) {
+                    file = JDUtilities.getResourceFile("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                }
                 if (file == null) return new ArrayList<DownloadLink>();
                 file.deleteOnExit();
                 brc.downloadConnection(file, con);
