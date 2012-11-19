@@ -82,7 +82,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-@HostPlugin(revision = "$Revision: 18899 $", interfaceVersion = 2, names = { "oceanus.ch" }, urls = { "http://oceanus.ch/u/[0-9a-zA-Z\\-]*/[0-9a-zA-Z\\-]*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 18910 $", interfaceVersion = 2, names = { "oceanus.ch" }, urls = { "http://oceanus.ch/u/[0-9a-zA-Z\\-]*/[0-9a-zA-Z\\-]*" }, flags = { 2 })
 public class Oceanus extends PluginForHost {
 
 	private static final String DOWNLOAD_PREPARE_MSG = "Preparing to download...";
@@ -143,6 +143,18 @@ public class Oceanus extends PluginForHost {
 			}
 		} catch (Exception e) {
 			throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+		}
+	}
+
+	private void getMaxConcurrentDownloads() throws Exception {
+		Map<String, Object> concurrentDownResp = null;
+		concurrentDownResp = sendPostRequest(CON_DL_REQ, EMPTY_STR, EMPTY_STR);
+
+		if (concurrentDownResp != null) {
+			CON_FREE_DL = Integer.parseInt((String) concurrentDownResp
+					.get(FREE_CNT));
+			CON_PREM_DL = Integer.parseInt((String) concurrentDownResp
+					.get(PREM_CNT));
 		}
 	}
 
