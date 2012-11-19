@@ -63,6 +63,7 @@ extttable_disable_all=全部停用
 extttable_enabled_all=全部啟用
 fileditcontroller_geteditor_for=選擇 %s1 檔案類型的編輯器
 inactive=已停用
+literally_gibibyte=%s1 GB
 literally_kibibyte=%s1 KB
 literally_mebibyte=%s1 MB
 literally_tebibyte=%s1 TB
