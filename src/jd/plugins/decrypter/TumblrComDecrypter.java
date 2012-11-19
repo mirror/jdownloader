@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?(tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+|[\\w\\.\\-]*?\\.tumblr\\.com(/post/\\d+|/page/\\d+)?)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tumblr.com" }, urls = { "http://(www\\.)?(tumblr\\.com/audio_file/\\d+/tumblr_[A-Za-z0-9]+|(?!\\d+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]*?\\.tumblr\\.com(/image/\\d+|/post/\\d+|/page/\\d+)?)" }, flags = { 0 })
 public class TumblrComDecrypter extends PluginForDecrypt {
 
     public TumblrComDecrypter(PluginWrapper wrapper) {
@@ -100,6 +100,18 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 return null;
             }
 
+        } else if (parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/image/\\d+")) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            final String finallink = br.getRegex("class=\"fit_to_screen\" src=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            dl.setAvailable(true);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         } else {
             // Users
             String nextPage = "1";

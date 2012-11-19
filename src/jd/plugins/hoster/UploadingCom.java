@@ -531,7 +531,7 @@ public class UploadingCom extends PluginForHost {
                         rc.setId(id);
                         rc.load();
                         File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        DownloadLink dummy = new DownloadLink(null, null, null, null, true);
+                        final DownloadLink dummy = new DownloadLink(this, "uploading.com", "uploading.com", null, true);
                         String c = getCaptchaCode(cf, dummy);
                         Form rcform = rc.getForm();
                         rcform.put("recaptcha_challenge_field", rc.getChallenge());
