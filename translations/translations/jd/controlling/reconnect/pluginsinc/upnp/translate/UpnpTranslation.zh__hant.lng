@@ -1,3 +1,6 @@
+UPNPReconnectInvoker_getName_=UPNP 路由器重新連線
+UPNPRouterPlugin_run_wizard_title=UPNP 路由器精靈
+auto=UPNP 自動設定
 interaction_UpnpReconnect_wanservice_ip=網際網路協定
 literally_choose_router=選擇裝置
 literally_router=UPNP 路由器

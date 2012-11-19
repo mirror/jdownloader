@@ -7,7 +7,9 @@ gui_config_jdshutdown_hibernate=休眠 （並不適合全部作業系統)
 gui_config_jdshutdown_mode=模式：
 gui_config_jdshutdown_shutdown=關機
 gui_config_jdshutdown_standby=待命 (並不適合全部作業系統)
-interaction_shutdown_dialog_msg_closejd=h2> <font color="red">JDownloader將會關閉！</font> </h2>
+install_force=安裝強制關機
+install_title=安裝強制關機
+interaction_shutdown_dialog_msg_closejd=h2> <font color="red">JDownloader 將會關閉！</font> </h2>
 interaction_shutdown_dialog_msg_hibernate=<h2><font color="red">系統將進入休眠模式!</font></h2>
 interaction_shutdown_dialog_msg_shutdown=<h2><font color="red">系統將執行關機!</font></h2>
 interaction_shutdown_dialog_msg_standby=<h2><font color="red">系統將進入待機模式!</font></h2>

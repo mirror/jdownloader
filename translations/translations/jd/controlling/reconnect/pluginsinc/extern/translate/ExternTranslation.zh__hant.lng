@@ -1,3 +1,4 @@
 interaction_externreconnect_command=指令 (使用絕對路徑)
 interaction_externreconnect_dummybat=在視窗中使用特殊的執行
 interaction_externreconnect_parameter=參數 (1行1個參數)
+jd_controlling_reconnect_plugins_extern_ExternReconnectPlugin_getName=外部工具重新連線
