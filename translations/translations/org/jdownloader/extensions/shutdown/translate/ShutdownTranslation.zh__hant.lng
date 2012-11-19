@@ -4,7 +4,6 @@ gui_config_jdshutdown_close=關閉 JD
 gui_config_jdshutdown_forceshutdown=關機 (並不適合全部作業系統)
 gui_config_jdshutdown_hibernate=休眠 （並不適合全部作業系統)
 gui_config_jdshutdown_mode=模式：
-gui_config_jdshutdown_osx_force_short=安裝
 gui_config_jdshutdown_shutdown=關機
 gui_config_jdshutdown_standby=待命 (並不適合全部作業系統)
 interaction_shutdown_dialog_msg_closejd=h2> <font color="red">JDownloader將會關閉！</font> </h2>

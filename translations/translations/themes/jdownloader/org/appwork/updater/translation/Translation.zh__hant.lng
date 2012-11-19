@@ -1,9 +1,6 @@
 exit=關閉
-guiless_done=更新完成。
 install_updates_later=稍後詢問我！
 install_updates_now=現在安裝！
-restart_required_title=需要重新啟動
-restart_title=重新啟動！
 start=開始更新
 udpates_found=找到數個更新！
 update_dialog_cancel=取消
