@@ -64,6 +64,7 @@ public class LetitBitNet extends PluginForHost {
     /* For linkcheck and premium download we're using their API: http://api.letitbit.net/reg/static/api.pdf */
     public static final String   APIKEY                            = "VjR1U3JGUkNx";
     public static final String   APIPAGE                           = "http://api.letitbit.net/";
+    private static final String  SPECIALOFFLINE                    = "onclick=\"checkCaptcha\\(\\)\" style=\"";
 
     public LetitBitNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -240,6 +241,7 @@ public class LetitBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
+        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         boolean passed = submitFreeForm();
         if (passed) logger.info("Sent free form #1");
         passed = submitFreeForm();
@@ -442,6 +444,7 @@ public class LetitBitNet extends PluginForHost {
             boolean freshLogin = login(account, false);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             dlUrl = getUrl(account);
             if (dlUrl == null && br.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 15 * 60 * 1000l);
             // Maybe invalid or free account
@@ -498,6 +501,7 @@ public class LetitBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
+        if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         // Get to the premium zone
         br.postPage(br.getURL(), "way_selection=1&submit_way_selection1=HIGH+Speed+Download");
         /* normal account with only a password */

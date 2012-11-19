@@ -414,6 +414,7 @@ public class ShareFlareNet extends PluginForHost {
             login(account, false);
             br.setFollowRedirects(true);
             br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML(SPECIALOFFLINE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             dlUrl = getPremiumDllink();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlUrl, true, 1);
