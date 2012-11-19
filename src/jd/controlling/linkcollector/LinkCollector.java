@@ -1012,16 +1012,28 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
         LinkedList<CrawledPackage> lpackages = null;
         final HashMap<CrawledPackage, CrawledPackageStorable> restoreMap = new HashMap<CrawledPackage, CrawledPackageStorable>();
         try {
-            /* load from new json zip */
-            lpackages = load(getLinkCollectorListFile(), restoreMap);
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        try {
             /* try fallback to load tmp file */
             if (lpackages == null) {
                 restoreMap.clear();
                 lpackages = load(new File(getLinkCollectorListFile().getAbsolutePath() + ".tmp"), restoreMap);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        try {
+            /* load from new json zip */
+            if (lpackages == null) {
+                restoreMap.clear();
+                lpackages = load(getLinkCollectorListFile(), restoreMap);
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        try {
+            /* try fallback to load bak file */
+            if (lpackages == null) {
+                restoreMap.clear();
+                lpackages = load(new File(getLinkCollectorListFile().getAbsolutePath() + ".bak"), restoreMap);
             }
         } catch (final Throwable e) {
             logger.log(e);
@@ -1331,6 +1343,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                 if (packages != null && file != null) {
                     /* prepare tmp file */
                     final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
+                    final File bakfile = new File(file.getAbsolutePath() + ".bak");
                     tmpfile.getParentFile().mkdirs();
                     tmpfile.delete();
                     ZipIOWriter zip = null;
@@ -1387,19 +1400,31 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                         } catch (final Throwable e) {
                             return null;
                         }
-                        /* try to delete destination file if it already exists */
+                        /* backup existing file list to .bak */
                         if (file.exists()) {
-                            if (!file.delete()) {
-                                logger.log(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                            if (bakfile.exists() == false || bakfile.delete() == true) {
+                                if (!file.renameTo(bakfile)) {
+                                    logger.log(new WTFException("Could not backup old List: " + file.getAbsolutePath()));
+                                    return null;
+                                }
+                            } else {
+                                logger.log(new WTFException("Could delete existing backup old List: " + bakfile.getAbsolutePath()));
                                 return null;
                             }
                         }
                         /* rename tmpfile to destination file */
                         if (!tmpfile.renameTo(file)) {
                             logger.log(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                            if (bakfile.exists() && bakfile.renameTo(file) == false) {
+                                logger.log(new WTFException("Could not restore file: " + bakfile + " to " + file));
+                            }
+                            return null;
+                        } else {
+                            if (bakfile.exists() && bakfile.delete() == false) {
+                                logger.log(new WTFException("Could delete backup old List: " + bakfile.getAbsolutePath()));
+                            }
                             return null;
                         }
-                        return null;
                     } catch (final Throwable e) {
                         logger.log(e);
                     } finally {

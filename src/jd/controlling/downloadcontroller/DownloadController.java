@@ -384,14 +384,20 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         }
         LinkedList<FilePackage> lpackages = null;
         try {
+            /* try fallback to load tmp file */
+            lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".tmp"));
+        } catch (final Throwable e) {
+            logger.log(e);
+        }
+        try {
             /* load from new json zip */
-            lpackages = load(getDownloadListFile());
+            if (lpackages == null) lpackages = load(getDownloadListFile());
         } catch (final Throwable e) {
             logger.log(e);
         }
         try {
             /* try fallback to load tmp file */
-            if (lpackages == null) lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".tmp"));
+            if (lpackages == null) lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".bak"));
         } catch (final Throwable e) {
             logger.log(e);
         }
@@ -702,6 +708,7 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             if (packages != null && file != null) {
                 /* prepare tmp file */
                 final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
+                final File bakfile = new File(file.getAbsolutePath() + ".bak");
                 tmpfile.getParentFile().mkdirs();
                 tmpfile.delete();
                 ZipIOWriter zip = null;
@@ -741,19 +748,31 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     } catch (final Throwable e) {
                         return false;
                     }
-                    /* try to delete destination file if it already exists */
+                    /* backup existing file list to .bak */
                     if (file.exists()) {
-                        if (!file.delete()) {
-                            logger.log(new WTFException("Could not delete: " + file.getAbsolutePath()));
+                        if (bakfile.exists() == false || bakfile.delete() == true) {
+                            if (!file.renameTo(bakfile)) {
+                                logger.log(new WTFException("Could not backup old List: " + file.getAbsolutePath()));
+                                return false;
+                            }
+                        } else {
+                            logger.log(new WTFException("Could delete existing backup old List: " + bakfile.getAbsolutePath()));
                             return false;
                         }
                     }
                     /* rename tmpfile to destination file */
                     if (!tmpfile.renameTo(file)) {
                         logger.log(new WTFException("Could not rename file: " + tmpfile + " to " + file));
+                        if (bakfile.exists() && bakfile.renameTo(file) == false) {
+                            logger.log(new WTFException("Could not restore file: " + bakfile + " to " + file));
+                        }
                         return false;
+                    } else {
+                        if (bakfile.exists() && bakfile.delete() == false) {
+                            logger.log(new WTFException("Could delete backup old List: " + bakfile.getAbsolutePath()));
+                        }
+                        return true;
                     }
-                    return true;
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {
