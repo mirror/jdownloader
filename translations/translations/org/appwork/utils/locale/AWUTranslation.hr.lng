@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=Pomoć za odabir datoteke
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Početna
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Popis
 DIALOG_FILECHOOSER_lookInLabelText=Pogledaj u:
+DIALOG_FILECHOOSER_networkfolder=Mreža
 DIALOG_FILECHOOSER_newFolderAccessibleName=Nova mapa
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Greška kod stvaranja nove mape
