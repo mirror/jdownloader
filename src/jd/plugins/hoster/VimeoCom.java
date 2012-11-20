@@ -74,11 +74,11 @@ public class VimeoCom extends PluginForHost {
     @Override
     public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
         ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
+
         try {
             if (ret != null && ret.size() > 0) {
                 /*
-                 * we make sure only one result is in ret, thats the case for
-                 * svn/next major version
+                 * we make sure only one result is in ret, thats the case for svn/next major version
                  */
                 final DownloadLink sourceLink = ret.get(0);
                 String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
@@ -96,98 +96,116 @@ public class VimeoCom extends PluginForHost {
                     handlePW(sourceLink, br, "http://vimeo.com/" + ID + "/password");
                     String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
                     if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-                    if (br.containsHTML("iconify_down_b")) {
-                        /*
-                         * little pause needed so the next call does not return
-                         * trash
-                         */
-                        Thread.sleep(1000);
+                    if (title != null) title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
+
+                    boolean withDlBtn = br.containsHTML("iconify_down_b");
+
+                    /*
+                     * little pause needed so the next call does not return trash
+                     */
+                    Thread.sleep(1000);
+                    String qualities[][] = null;
+                    if (withDlBtn) {
                         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                         br.getPage("http://vimeo.com/" + ID + "?action=download");
-                        String qualities[][] = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
-                        ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                        HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                        for (String quality[] : qualities) {
-                            String url = quality[0];
-                            String name = quality[1];
-                            String fmt = quality[2];
-                            if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
-                            if (fmt != null) {
-                                /* best selection is done at the end */
-                                if (fmt.contains("mobile")) {
-                                    if (this.getPluginConfig().getBooleanProperty(Q_MOBILE, true) == false) {
-                                        continue;
-                                    } else {
-                                        fmt = "mobile";
-                                    }
-                                } else if (fmt.contains("hd")) {
-                                    if (this.getPluginConfig().getBooleanProperty(Q_HD, true) == false) {
-                                        continue;
-                                    } else {
-                                        fmt = "hd";
-                                    }
-                                } else if (fmt.contains("sd")) {
-                                    if (this.getPluginConfig().getBooleanProperty(Q_SD, true) == false) {
-                                        continue;
-                                    } else {
-                                        fmt = "sd";
-                                    }
-                                } else if (fmt.contains("original")) {
-                                    if (this.getPluginConfig().getBooleanProperty(Q_ORIGINAL, true) == false) {
-                                        continue;
-                                    } else {
-                                        fmt = "original";
-                                    }
-                                }
-                            }
-                            if (url == null || name == null) continue;
-                            if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
-                            final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
-                            link.setAvailable(true);
-                            link.setFinalFileName(name);
-                            link.setBrowserUrl(sourceLink.getBrowserUrl());
-                            link.setProperty("directURL", url);
-                            link.setProperty("directName", name);
-                            link.setProperty("directQuality", fmt);
-                            link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
-                            if (quality[3] != null) link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
-                            DownloadLink best = bestMap.get(fmt);
-                            if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                                bestMap.put(fmt, link);
-                            }
-                            newRet.add(link);
-                        }
-                        if (newRet.size() > 0) {
-                            if (this.getPluginConfig().getBooleanProperty(Q_BEST, false)) {
-                                /* only keep best quality */
-                                DownloadLink keep = bestMap.get("original");
-                                if (keep == null) keep = bestMap.get("hd");
-                                if (keep == null) keep = bestMap.get("sd");
-                                if (keep == null) keep = bestMap.get("mobile");
-                                if (keep != null) {
-                                    newRet.clear();
-                                    newRet.add(keep);
-                                }
-                            }
-                            /*
-                             * only replace original found links by new ones,
-                             * when we have some
-                             */
-                            if (fp != null) {
-                                fp.addLinks(newRet);
-                                fp.remove(sourceLink);
-                            } else if (title != null && newRet.size() > 1) {
-                                fp = FilePackage.getInstance();
-                                fp.setName(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
-                                fp.addLinks(newRet);
-                            }
-                            ret = newRet;
-                        }
+                        qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
                     } else {
-                        /*
-                         * no other qualities*&
-                         */
+                        /* withoutDlBtn */
+                        String[] queryValues = br.getRegex("\"timestamp\":(\\d+),\"signature\":\"([0-9a-f]+)\"").getRow(0);
+                        String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
+                        if (queryValues != null && fmts != null) {
+                            String quality[] = fmts.replaceAll("\"", "").split(",");
+                            qualities = new String[quality.length][4];
+                            for (int i = 0; i < quality.length; i++) {
+                                qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + queryValues[1] + "&time=" + queryValues[0] + "&quality=" + quality[i];
+                                qualities[i][1] = title + ".mp4";
+                                qualities[i][2] = quality[i];
+                                qualities[i][3] = null;
+                            }
+                        }
                     }
+
+                    ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
+                    HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+                    for (String quality[] : qualities) {
+                        String url = quality[0];
+                        String name = quality[1];
+                        String fmt = quality[2];
+                        if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
+                        if (fmt != null) {
+                            /* best selection is done at the end */
+                            if (fmt.contains("mobile")) {
+                                if (this.getPluginConfig().getBooleanProperty(Q_MOBILE, true) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "mobile";
+                                }
+                            } else if (fmt.contains("hd")) {
+                                if (this.getPluginConfig().getBooleanProperty(Q_HD, true) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "hd";
+                                }
+                            } else if (fmt.contains("sd")) {
+                                if (this.getPluginConfig().getBooleanProperty(Q_SD, true) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "sd";
+                                }
+                            } else if (fmt.contains("original")) {
+                                if (this.getPluginConfig().getBooleanProperty(Q_ORIGINAL, true) == false) {
+                                    continue;
+                                } else {
+                                    fmt = "original";
+                                }
+                            }
+                        }
+                        if (url == null || name == null) continue;
+                        if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
+                        final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
+                        link.setAvailable(true);
+                        link.setFinalFileName(name);
+                        link.setBrowserUrl(sourceLink.getBrowserUrl());
+                        link.setProperty("directURL", url);
+                        link.setProperty("directName", name);
+                        link.setProperty("directQuality", fmt);
+                        link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
+                        if (quality[3] != null) link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
+                        DownloadLink best = bestMap.get(fmt);
+                        if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
+                            bestMap.put(fmt, link);
+                        }
+                        newRet.add(link);
+                    }
+                    if (newRet.size() > 0) {
+                        if (this.getPluginConfig().getBooleanProperty(Q_BEST, false)) {
+                            /* only keep best quality */
+                            DownloadLink keep = bestMap.get("original");
+                            if (keep == null) keep = bestMap.get("hd");
+                            if (keep == null) keep = bestMap.get("sd");
+                            if (keep == null) keep = bestMap.get("mobile");
+                            if (keep != null) {
+                                newRet.clear();
+                                newRet.add(keep);
+                            }
+                        }
+                        /*
+                         * only replace original found links by new ones, when we have some
+                         */
+                        if (fp != null) {
+                            fp.addLinks(newRet);
+                            fp.remove(sourceLink);
+                        } else if (title != null && newRet.size() > 1) {
+                            fp = FilePackage.getInstance();
+                            fp.setName(title);
+                            fp.addLinks(newRet);
+                        }
+                        ret = newRet;
+                    }
+                } else {
+                    /*
+                     * no other qualities*&
+                     */
                 }
             }
         } catch (final Throwable e) {
