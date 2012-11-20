@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging.Log;
 
 public class PluginClassLoader extends URLClassLoader {
     private static HashMap<String, Class<?>> helperClasses = new HashMap<String, Class<?>>();
@@ -79,8 +78,7 @@ public class PluginClassLoader extends URLClassLoader {
                                     throw new UpdateRequiredClassNotFoundException(libFile);
                                 } else if (!lib.exists()) {
                                     /*
-                                     * library file not existing, create a new one if wished, so the update system replaces it with correct
-                                     * one
+                                     * library file not existing, create a new one if wished, so the update system replaces it with correct one
                                      */
                                     if (createDummyLibs) lib.createNewFile();
                                     throw new UpdateRequiredClassNotFoundException(libFile);
@@ -137,7 +135,6 @@ public class PluginClassLoader extends URLClassLoader {
                 }
             } catch (Exception e) {
                 if (e instanceof UpdateRequiredClassNotFoundException) throw (UpdateRequiredClassNotFoundException) e;
-                Log.exception(e);
                 if (e instanceof ClassNotFoundException) throw (ClassNotFoundException) e;
                 throw new ClassNotFoundException(name, e);
             }

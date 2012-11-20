@@ -64,6 +64,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return SubConfiguration.getConfig(lazyC.getDisplayName());
     }
 
+    public Browser getBrowser() {
+        return br;
+    }
+
     /**
      * @param distributer
      *            the distributer to set
