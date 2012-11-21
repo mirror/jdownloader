@@ -709,6 +709,7 @@ public class Oceanus extends PluginForHost {
                             } catch (final Throwable e) {
                             }
                             if (partCompleteFile.renameTo(outputCompleteFile) == false) { throw new IOException("Could not rename " + partCompleteFile + " to " + outputCompleteFile); }
+                            downloadLink.getLinkStatus().setStatusText(null);
                             downloadLink.getLinkStatus().setStatus(LinkStatus.FINISHED);
                             try {
                                 Map<String, Object> jsonReq = new HashMap<String, Object>();
