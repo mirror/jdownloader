@@ -586,6 +586,8 @@ public class Oceanus extends PluginForHost {
         @XmlAnyElement(lax = true)
         private ManagedThrottledConnectionHandler manager             = null;
         private long                              startTimeStamp      = -1;
+        @XmlAnyElement(lax = true)
+        private MeteredThrottledInputStream       meteredStream       = null;
 
         public Downloader() {
             fileList = new ArrayList<OCFile>();
@@ -689,6 +691,16 @@ public class Oceanus extends PluginForHost {
                                         break;
                                     }
                                 } catch (final Exception e) {
+                                    if (e instanceof PluginException) {
+                                        PluginException pe = (PluginException) e;
+                                        switch (pe.getLinkStatus()) {
+                                        case LinkStatus.ERROR_PREMIUM:
+                                        case LinkStatus.ERROR_IP_BLOCKED:
+                                        case LinkStatus.ERROR_FATAL:
+                                        case LinkStatus.ERROR_CAPTCHA:
+                                            throw pe;
+                                        }
+                                    }
                                     if (e instanceof InterruptedException) {
                                         if (externalDownloadStop()) return false;
                                         throw (InterruptedException) e;
@@ -726,6 +738,10 @@ public class Oceanus extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } finally {
                 try {
+                    manager.removeThrottledConnection(meteredStream);
+                } catch (final Throwable e) {
+                }
+                try {
                     raf.close();
                 } catch (final Throwable e) {
                 }
@@ -749,6 +765,7 @@ public class Oceanus extends PluginForHost {
             String captchaKey = sendDownloadRequest(chunk, cdnNode.getCdnNodeID());
             if (!StringUtils.isEmpty(captchaKey)) {
                 oceanus.handleCaptcha(downloadLink, captchaKey, uploadId, userID);
+                sendDownloadRequest(chunk, cdnNode.getCdnNodeID());
             }
             if ("OK".equals(chunk.getStatus())) {
                 return download(file, chunk, raf);
@@ -784,7 +801,11 @@ public class Oceanus extends PluginForHost {
                 chunkStatus = (String) respObj.get("Status");
                 if (dwnLimitExceeded) {
                     chunk.setStatus("download limit exceeded");
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000);
+                    if (userID != -1) {
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000);
+                    }
                 }
                 chunk.setDownloadURL((String) respObj.get("downloadURL"));
                 chunk.setStatus(chunkStatus);
@@ -804,22 +825,17 @@ public class Oceanus extends PluginForHost {
          */
         private boolean download(OCFile file, OceanusChunk chunk, RandomAccessFile raf) throws Exception {
             URLConnectionAdapter urlConnection = null;
-            MeteredThrottledInputStream meteredStream = null;
             try {
-                if (!"download limit exceeded".equals(chunk.getStatus())) {
-                    urlConnection = oceanus.br.cloneBrowser().openGetConnection(chunk.getDownloadURL());
+                urlConnection = oceanus.br.cloneBrowser().openGetConnection(chunk.getDownloadURL());
+                if (meteredStream != null) {
+                    meteredStream.setInputStream(urlConnection.getInputStream());
+                } else {
                     meteredStream = new MeteredThrottledInputStream(urlConnection.getInputStream(), new AverageSpeedMeter(10));
                     manager.addThrottledConnection(meteredStream);
-                    readChunk(chunk, meteredStream, raf);
-                    return handleCDNResponse(file, chunk, urlConnection.getResponseCode(), meteredStream);
-                } else {
-                    throw new Exception("download_limit_exceeded");
                 }
+                readChunk(chunk, meteredStream, raf);
+                return handleCDNResponse(file, chunk, urlConnection.getResponseCode(), meteredStream);
             } finally {
-                try {
-                    manager.removeThrottledConnection(meteredStream);
-                } catch (final Throwable e) {
-                }
                 try {
                     urlConnection.disconnect();
                 } catch (final Throwable e) {
@@ -839,21 +855,12 @@ public class Oceanus extends PluginForHost {
             int bytesRead;
             byte[] buf = new byte[32767];
             String decryptionKeyStr = oceanus.getDecryptionKey(downloadLink);
-            InputStream cipherInputStream = null;
-            try {
-                // get the decrypted stream of the input stream
-                cipherInputStream = getDecryptionInputStream(inputStream, decryptionKeyStr);
-                while ((bytesRead = cipherInputStream.read(buf)) != -1) {
-                    if (externalDownloadStop()) throw new InterruptedException("ExternalStop");
-                    if (bytesRead > 0) {
-                        raf.write(buf, 0, bytesRead);
-                        liveBytesLoaded.addAndGet(bytesRead);
-                    }
-                }
-            } finally {
-                try {
-                    inputStream.close();
-                } catch (Throwable e) {
+            InputStream cipherInputStream = getDecryptionInputStream(inputStream, decryptionKeyStr);
+            while ((bytesRead = cipherInputStream.read(buf)) != -1) {
+                if (externalDownloadStop()) throw new InterruptedException("ExternalStop");
+                if (bytesRead > 0) {
+                    raf.write(buf, 0, bytesRead);
+                    liveBytesLoaded.addAndGet(bytesRead);
                 }
             }
         }
@@ -901,13 +908,17 @@ public class Oceanus extends PluginForHost {
          */
         private void calculateNextTryTime(OceanusChunk chunk, String status) throws PluginException, InterruptedException {
             if ("Temporarily not available".equals(status)) {
-                oceanus.sleep(180000l, downloadLink);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 180000l);
             } else if ("OK".equals(status)) {
                 return;
             } else if ("download limit exceeded".equals(status)) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000);
+                if (userID != -1) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 600000);
+                }
             } else {
-                oceanus.sleep(90000l, downloadLink);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 90000l);
             }
         }
 
