@@ -91,6 +91,7 @@ public class SockShareCom extends PluginForHost {
             if (br.containsHTML("You can wait until tomorrow, or get a")) return AvailableStatus.UNCHECKABLE;
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        if (!new Regex(filename, "\\.[0-9a-z]{0,4}$").matches()) filename = filename + ".flv";
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
