@@ -217,8 +217,13 @@ public class VideoFCTwoCom extends PluginForHost {
         String gk = getKey();
         if (filename == null || upid == null || gk == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
-        filename = Encoding.htmlDecode(filename.trim().replaceAll("(:|,|\\s)", "_"));
-        downloadLink.setFinalFileName(filename + (new Regex(filename, "\\.[0-9A-Za-z]{2,5}").matches() ? "" : ".mp4"));
+        filename = filename.replaceAll("\\p{Z}", " ");
+        filename = filename.replaceAll("[\\.\\d]{3,}$", "");
+        filename = filename.trim();
+        filename = filename.replaceAll("(:|,|\\s)", "_");
+        filename = filename + (new Regex(filename, "\\.[0-9A-Za-z]{2,5}$").matches() ? "" : ".mp4");
+
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
 
         /* get url */
         downloadLink.setProperty("ONLYFORPREMIUM", false);
