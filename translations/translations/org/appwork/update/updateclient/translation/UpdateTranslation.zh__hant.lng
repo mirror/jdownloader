@@ -22,6 +22,7 @@ cancel_update=取消更新
 close=關閉
 could_not_overwrite=無法覆寫檔案 %s1。
 details=更多...
+dialog_rly_cancel=確定要取消更新？
 download_failed_retry=下載失敗。請重試...
 error_occured=發生錯誤
 error_occured_detailed=無法完成更新。

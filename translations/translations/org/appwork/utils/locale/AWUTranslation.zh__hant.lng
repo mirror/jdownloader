@@ -31,6 +31,7 @@ DIALOG_FILECHOOSER_openDialogTitleText=開啟
 DIALOG_FILECHOOSER_saveButtonText=儲存
 DIALOG_FILECHOOSER_saveButtonToolTipText=儲存選取的檔案
 DIALOG_FILECHOOSER_saveDialogTitleText=儲存
+DIALOG_FILECHOOSER_saveInLabelText=儲存於：
 DIALOG_FILECHOOSER_upFolderAccessibleName=上移
 DIALOG_FILECHOOSER_updateButtonText=更新
 DIALOG_INPUT_TITLE=請輸入！
