@@ -140,6 +140,7 @@ settings_sidebar_tooltip_enable_extension=Bu uzantıyı Etkinleştir/Devre dış
 system_download_doCRC2=CRC-denetimi yürütülüyor(%s1)
 system_download_doCRC2_failed=CRC-Denetimi BAŞARISIZ(%s1)
 system_download_doCRC2_success=CRC-Denetimi TAMAM(%s1)
+system_download_errors_couldnotdelete=Mevcut dosya bölümü silinemiyor
 system_download_errors_couldnotoverwrite=Mevcut dosyanın üzerine yazılamadı
 system_download_errors_couldnotrename=Parça dosyası yeniden adlandırılamadı
 system_download_errors_invalidoutputfile=Geçersiz Çıktı Dosyası

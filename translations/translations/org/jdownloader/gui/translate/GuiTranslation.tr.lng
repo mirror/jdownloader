@@ -211,6 +211,7 @@ IfFileExistsDialog_getDontShowAgainLabelText_=Bu paket için seçimi hatırla
 IfFileExistsDialog_layoutDialogContent_overwrite_=Mevcut dosyanın üzerine yaz
 IfFileExistsDialog_layoutDialogContent_rename_=Dosya'yı yeniden adlandır
 IfFileExistsDialog_layoutDialogContent_skip_=Dosyayı atla
+JDGui_showStatsDialog_message_=JDownloader 2'de daha iyi bir kullanıcı tecrübesi için JDownloader'ı nasıl kullandığınız, sevip sevmediğiniz özellikleri hakkında bilgilere ihtiyacımız var.\nBu bilgileri almak için JDownloader anonim bir şekilde kullanım istatistiklerini toplayacaktır. Bunu istemeyen kullanıcıları da anlayışla karışılıyoruz.\nBu özelliği gelişmiş ayarlara girip Stats Manager'dan kapayabilirsiniz.\n\nEğer bu konu hakkında sorularınız varsa destek sohbetinden geliştiricilere soru sormaktan çekinmeyin.\n
 JDGui_showStatsDialog_no_=Hayır, teşekkürler
 JDGui_showStatsDialog_title_=Yardımınıza ihtiyacımız var!
 JDGui_showStatsDialog_yes_=Yardım etmek istiyorum
