@@ -583,6 +583,7 @@ public class Oceanus extends PluginForHost {
         private long                              userID              = -1;
         private AtomicLong                        liveBytesLoaded     = new AtomicLong(0);
         private AtomicBoolean                     externalAbort       = new AtomicBoolean(false);
+        @XmlAnyElement(lax = true)
         private ManagedThrottledConnectionHandler manager             = null;
         private long                              startTimeStamp      = -1;
 
