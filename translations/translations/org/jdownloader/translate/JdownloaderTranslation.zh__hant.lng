@@ -73,6 +73,7 @@ gui_settings_basicauth_title=基本驗證
 gui_settings_downloadcontroll_title=下載管理
 gui_settings_downloadpath_description=在這裡設定預設下載路徑。變更預設路徑，只有新的下載會影響。
 gui_settings_general_title=一般設定
+gui_settings_linkgrabber_title=連結擷取器篩選
 gui_settings_plugins_title=外掛設定
 gui_settings_premium_title=帳號管理
 gui_settings_proxy_title=連線管理
