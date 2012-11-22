@@ -342,6 +342,7 @@ settings_linkgrabber_filter_columns_exepriority=優先權
 settings_linkgrabber_filter_columns_name=規則名稱
 settings_linkgrabber_filter_others=其他
 system_download_autostart=應用程式啟動時自動開始下載
+system_download_autostart_countdown=顯示倒數計時 (秒)
 system_download_triggerfileexists=如果檔案已經存在：
 system_download_triggerfileexists_ask=每個檔案皆尋問
 system_download_triggerfileexists_overwrite=覆寫
