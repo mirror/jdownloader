@@ -50,7 +50,7 @@ public class FastShareCz extends PluginForHost {
     }
 
     private static final String MAINPAGE = "http://www.fastshare.cz";
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -63,6 +63,7 @@ public class FastShareCz extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?) \\- FastShare\\.cz</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
         String filesize = br.getRegex("<tr><td>Velikost: </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("Velikost: ([0-9]+ .*?),").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -75,7 +76,8 @@ public class FastShareCz extends PluginForHost {
         if (br.containsHTML("(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-        final String action = br.getRegex("(/free/\\?u=\\d+\\&r=[^<>\"/]*?)><b>").getMatch(0);
+        String action = br.getRegex("(/free/\\?u=\\d+\\&r=[^<>\"/]*?)><b>").getMatch(0);
+        if (action == null) action = br.getRegex("(/free/\\?u=.*?=>)").getMatch(0);
         if (captchaLink == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(MAINPAGE + action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
