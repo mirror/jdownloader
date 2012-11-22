@@ -1,4 +1,5 @@
 DownloadWatchDog_onShutdownRequest_msg=您想停止執行下載退出 JDownloader 嗎？
+Extraction_onShutdownRequest_msg=中止解壓縮？
 LinkCollector_addCrawledLink_offlinepackage=離線檔案
 LinkCollector_archiv=%s1
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=離線檔案

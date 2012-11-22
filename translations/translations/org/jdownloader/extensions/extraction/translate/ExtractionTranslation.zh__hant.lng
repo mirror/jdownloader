@@ -1,4 +1,6 @@
 ValidateArchiveAction_ValidateArchiveAction=驗證 %s1
+ValidateArchiveAction_ValidateArchiveAction_multi=驗證壓縮檔
+ValidateArchiveAction_ValidateArchiveAction_object_=驗證壓縮檔
 archivename=壓縮檔名稱
 close=關閉
 context_password_msg_multi=設定密碼
@@ -49,6 +51,7 @@ settings_cpupriority_low=低
 settings_cpupriority_middle=中
 settings_extract_to_archive_folder=解壓縮到下列資料夾
 settings_extract_to_path=解壓縮到
+settings_extractto=解壓縮目的資料夾
 settings_passwordlist=壓縮檔密碼 (每行一個)
 settings_passwords=密碼清單
 settings_subpath=子資料夾模式
