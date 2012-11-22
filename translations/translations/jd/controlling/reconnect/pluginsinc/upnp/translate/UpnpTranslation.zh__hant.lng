@@ -1,4 +1,5 @@
 UPNPReconnectInvoker_getName_=UPNP 路由器重新連線
+UPNPRouterPlugin_run_mesg=正在掃描所有網路介面
 UPNPRouterPlugin_run_wizard_title=UPNP 路由器精靈
 auto=UPNP 自動設定
 interaction_UpnpReconnect_wanservice_ip=網際網路協定
