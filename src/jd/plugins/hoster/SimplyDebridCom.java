@@ -130,19 +130,27 @@ public class SimplyDebridCom extends PluginForHost {
                 // disable hoster for 15min
                 tempUnavailableHoster(account, link, 15 * 60 * 1000l);
             }
-            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+            String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
         // valid session, we can generate downloadlink:
         showMessage(link, "Phase 2/3: Generate download link");
-        String dllink = br.getPage("http://simply-debrid.com/api.php?dl=" + url);
+        String dllink = null;
+        try {
+            dllink = br.getPage("http://simply-debrid.com/api.php?dl=" + url);
+        } catch (Throwable e) {
+            showMessage(link, "Server überlastet!");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+        }
 
-        if (!(dllink.startsWith("http://") || dllink.startsWith("https://"))) {
+        // crazy API
+        dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+        if (!(dllink.startsWith("http://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min
                 tempUnavailableHoster(account, link, 30 * 60 * 1000l);
             }
-            if (dllink.contains("03: Invalid link")) {
+            if (dllink.contains("03: Invalid link") || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
                 // link is invalid
                 /*
                  * after x retries we disable this host and retry with normal plugin
@@ -153,18 +161,24 @@ public class SimplyDebridCom extends PluginForHost {
                     // disable hoster for 20min
                     tempUnavailableHoster(account, link, 20 * 60 * 1000l);
                 }
-                String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+                String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
             }
             logger.info("Error parsing Simply-Debrid download response: " + page);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+
+        // all ok, start downloading...
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -5);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (dl.getConnection().getContentType().contains("html")) {
+            br.getPage(dllink);
+            if (br.containsHTML("php_network_getaddresses: getaddrinfo failed: No address associated with hostname")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
@@ -179,7 +193,7 @@ public class SimplyDebridCom extends PluginForHost {
                 link.getLinkStatus().setRetryCount(0);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
+            String msg = "(" + (link.getLinkStatus().getRetryCount() + 1) + "/" + 3 + ")";
             showMessage(link, msg);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
         }
