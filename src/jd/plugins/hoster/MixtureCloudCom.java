@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +39,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://(www\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixturecloud.com" }, urls = { "https?://((www|audio|doc|file|image|video)\\.)?mixture(cloud|audio|doc|file|image|video)\\.com/(media/(download/)?|download=)[A-Za-z0-9]+" }, flags = { 2 })
 public class MixtureCloudCom extends PluginForHost {
 
     // free: 1maxdl * 1 chunk
@@ -50,7 +49,7 @@ public class MixtureCloudCom extends PluginForHost {
     // are transferable between each (sub)?domain & section. All links have
     // recaptcha with this one size fits all download method.
     private static final String PREMIUMONLY         = "File access is limited to users with unlimited";
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users");
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users with unlimited account");
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,26 +82,23 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(MAINPAGE, "mx_l", "de");
+        br.setCookie(MAINPAGE, "mx_l", "en");
         br.getPage(link.getDownloadURL());
-        // Link offline
-        if (br.containsHTML("(There is no file here<|404: page not found \\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Link abused
-        if (br.containsHTML("Als Reaktion auf eine Beschwerde")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        checkErrors();
         String filename = br.getRegex("<\\!\\-\\- File header informations  \\-\\->[\t\n\r ]+<h1>([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?) \\- MixtureCloud\\.com \\-").getMatch(0);
         }
-        String filesize = br.getRegex("<h5>Größe : ([^<>\"]*?)</h5>").getMatch(0);
+        String filesize = br.getRegex("<h5>Size : ([^<>\"]*?)</h5>").getMatch(0);
         if (filesize == null) {
             logger.warning("MixtureCloud: Couldn't find filesize. Please report this to the JDownloader Development Team.");
             logger.warning("MixtureCloud: Continuing...");
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         if (br.containsHTML(PREMIUMONLY)) link.getLinkStatus().setStatusText(PREMIUMONLYUSERTEXT);
         return AvailableStatus.TRUE;
@@ -111,8 +107,8 @@ public class MixtureCloudCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
-        if (br.containsHTML(PREMIUMONLY)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
+        checkErrors();
+        if (br.containsHTML("File access is limited to users with unlimited")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://www\\d+\\.mixturecloud\\.com/down\\.php\\?d=[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -172,10 +168,13 @@ public class MixtureCloudCom extends PluginForHost {
                 }
                 br.postPage("http://www.mixturecloud.com/login", postData);
                 if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.containsHTML(">Ihr Konto ist bereits unbegrenzt") && !br.containsHTML(">Votre compte est déjà Illimité")) {
+
+                br.getPage("http://www.mixturecloud.com/account");
+                if (!br.containsHTML("(<\\!\\-\\- BASIC \\-\\->|<\\!\\-\\- PREMIUM \\-\\->)")) {
                     logger.info("Unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
+
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -192,6 +191,12 @@ public class MixtureCloudCom extends PluginForHost {
         }
     }
 
+    private void checkErrors() throws Exception {
+        if (br.containsHTML("(There is no file here<|404: page not found \\!<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("In response to a complaint received under the US Digital Millennium Copyright Act, you can't access to this file")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Sie haben in den letzten 30 Minuten eine Datei")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1001l);
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -203,7 +208,9 @@ public class MixtureCloudCom extends PluginForHost {
         }
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
+        if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) ai.setStatus("Premium User");
+        if (br.containsHTML("<\\!\\-\\- BASIC \\-\\->")) ai.setStatus("Free registered User");
+
         return ai;
     }
 
@@ -211,8 +218,10 @@ public class MixtureCloudCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
+        br.setCookie(MAINPAGE, "mx_l", "en");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.containsHTML("File access is limited to users with unlimited")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
