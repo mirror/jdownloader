@@ -94,6 +94,7 @@ plugins_errors_nointernetconn=沒有網路連線？
 plugins_errors_pluginerror=外掛錯誤. 回報錯誤
 plugins_errors_wrongpassword=密碼錯誤
 reconnectmanager_wizard=重新連線精靈
+system_download_doCRC2=CRC 檢查正在執行 (%s1)
 system_download_errors_couldnotoverwrite=無法覆寫已存在檔案
 system_download_errors_couldnotrename=無法重新命名部份檔案
 system_download_errors_invalidoutputfile=輸出檔案錯誤
