@@ -18,4 +18,6 @@ interaction_shutdown_dialog_title_hibernate=休眠?
 interaction_shutdown_dialog_title_shutdown=關機?
 interaction_shutdown_dialog_title_standby=待命?
 jd_plugins_optional_jdshutdown=JDShutdown
+jd_plugins_optional_jdshutdown_description=當下載完畢時，自動關機，暫停，休眠您的 PC 或關閉 JDownloader。
 lit_shutdownn=關機
+show_admin=管理員權限才能設定 JDownloader 休眠或待機模式

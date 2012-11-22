@@ -1,4 +1,5 @@
 gui_config_antistandby_whiledl2=下載正在進行中
 gui_config_antistandby_whilejd2=JDownloader 正在執行
+jd_plugins_optional_antistandby_jdantistandby=防止待命
 jd_plugins_optional_antistandby_jdantistandby_description=防止您的電腦在下載時進入待機或睡眠模式。
 mode=防止待機/睡眠當
