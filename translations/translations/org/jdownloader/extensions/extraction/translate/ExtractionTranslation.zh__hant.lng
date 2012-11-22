@@ -11,6 +11,7 @@ contextmenu_loading=%s1 (正在載入...)
 contextmenu_main=壓縮檔
 contextmenu_password=設定壓縮檔密碼
 date=日期
+description=解壓縮所有常用類型的壓縮檔 (zip、rar、7zip、......)
 downloadedok=檔案已存在
 dummyarchivedialog_title=壓縮檔 %s1
 exists=連結狀態
