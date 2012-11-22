@@ -1,12 +1,16 @@
 JDUpdater_start_updater_update_title=找到新版本！
-error_service_not_available_right_now=沒有可用的服務。請 60 秒號再重試一次。
+error_service_not_available_right_now=沒有可用的服務。請 60 秒後再重試一次。
 exit=關閉
 install_updates_later=稍後詢問我！
 install_updates_now=現在安裝！
+literally_exit=已完成更新檢查 - 結束
+progress=%s1/%s2
 start=開始更新
 udpates_found=找到數個更新！
 update_dialog_cancel=取消
 update_dialog_later=稍後提醒我
+update_dialog_news_button=開啟變更日誌
+update_dialog_news_button_url=http://www.jdownloader.org/changelog
 update_dialog_title_updates_available=可用更新
 update_dialog_yes=是(建議)
 updates_are_ready_for_install_now=%s1 更新準備安裝。
