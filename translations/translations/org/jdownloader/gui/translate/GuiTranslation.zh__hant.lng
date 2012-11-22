@@ -33,6 +33,7 @@ ConnectionColumn_DownloadUsesAccount=使用中的帳號：%s1
 ContextMenuFactory_createPopup_cleanup=刪除和...
 ContextMenuFactory_createPopup_properties_package=內容
 ContextMenuFactory_createPopup_speed=下載速度限制
+ContextMenuFactory_createPopup_url=顯示下載網址
 CreateDLCAction_actionPerformed_title_=儲存 DLC 檔案到...
 CustomSpeedLimitator_SpeedlimitEditor__lbl=自訂速限
 DLCFactory_createDLC_created_=已建立 DLC 檔案：%s1
