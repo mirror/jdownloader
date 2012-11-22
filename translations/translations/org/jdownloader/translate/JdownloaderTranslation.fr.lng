@@ -141,6 +141,7 @@ settings_sidebar_tooltip_enable_extension=Activer/Désactiver cette extension
 system_download_doCRC2=Contrôle du CRC (%s1)
 system_download_doCRC2_failed=Contrôle CRC ECHEC (%s1)
 system_download_doCRC2_success=Contrôle CRC OK (%s1)
+system_download_errors_couldnotdelete=Impossible d'effacer la partie du fichier existant
 system_download_errors_couldnotoverwrite=Ne peut pas écraser le fichier existant
 system_download_errors_couldnotrename=Impossible de renommer le fichier (part)
 system_download_errors_invalidoutputfile=Fichier de sortie invalide
