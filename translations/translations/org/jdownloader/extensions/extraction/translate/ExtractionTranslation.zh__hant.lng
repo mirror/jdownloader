@@ -57,3 +57,4 @@ settings_various=雜項
 subfolder=下載路徑子資料夾
 tooltip_NameColumn=封存名稱
 unknown=未知
+unknown_tt=這部分的連結是可用的，但它可能處於離線狀態。

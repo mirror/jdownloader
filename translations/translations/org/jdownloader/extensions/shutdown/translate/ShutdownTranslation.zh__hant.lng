@@ -1,3 +1,4 @@
+action_tooltip=下載完畢後啟用關閉系統
 addons_jdshutdown_statusmessage_disabled=系統將不會由 JDownloader 來關機
 addons_jdshutdown_statusmessage_enabled=下載完成後，將會由 JDownloader 來關閉您的系統
 config_toolbarbutton=工具列按鈕可見
