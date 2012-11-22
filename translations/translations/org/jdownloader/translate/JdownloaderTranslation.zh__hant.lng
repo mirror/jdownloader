@@ -1,4 +1,5 @@
 DownloadWatchDog_onShutdownRequest_msg=您想停止執行下載退出 JDownloader 嗎？
+DuplicateAction_DuplicateAction_=複製規則
 Extraction_onShutdownRequest_msg=中止解壓縮？
 LinkCollector_addCrawledLink_offlinepackage=離線檔案
 LinkCollector_archiv=%s1
@@ -74,6 +75,7 @@ gui_settings_basicauth_title=基本驗證
 gui_settings_downloadcontroll_title=下載管理
 gui_settings_downloadpath_description=在這裡設定預設下載路徑。變更預設路徑，只有新的下載會影響。
 gui_settings_general_title=一般設定
+gui_settings_linkgrabber_filter_description=連結篩選用於篩選連結。根據連結、位址、網址或檔案的屬性來忽略。加入例外以便接受特殊的連結。例外情況在連結擷取器的側邊列中的自訂檢視將可以使用。
 gui_settings_linkgrabber_title=連結擷取器篩選
 gui_settings_plugins_title=外掛設定
 gui_settings_premium_title=帳號管理
