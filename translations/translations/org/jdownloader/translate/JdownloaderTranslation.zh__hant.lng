@@ -1,5 +1,7 @@
 LinkCollector_addCrawledLink_offlinepackage=離線檔案
+LinkCollector_archiv=%s1
 LinkFilterSettings_DefaultFilterList_getDefaultValue_=離線檔案
+LinkgrabberFilterRule_duplicate=%s1 (複製)
 Main_run_autostart_=開始下載
 SetDownloadFolderAction_actionPerformed_=分割套件 %s1
 SetDownloadFolderAction_yes=套件
