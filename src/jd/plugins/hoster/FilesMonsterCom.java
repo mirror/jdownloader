@@ -309,7 +309,7 @@ public class FilesMonsterCom extends PluginForHost {
         String premlink = br.getRegex("\"(http://filesmonster\\.com/get/.*?)\"").getMatch(0);
         if (premlink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage(premlink);
-        if (br.containsHTML("but it has exceeded the daily limit download in total")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        if (br.containsHTML("but it has exceeded the daily download limit")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         String ajaxurl = br.getRegex("get_link\\(\"(.*?)\"\\)").getMatch(0);
         Browser ajax = br.cloneBrowser();
         ajax.getPage(ajaxurl);
