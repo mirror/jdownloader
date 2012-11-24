@@ -256,7 +256,7 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
                                  * Einzellinks. Bei kompletten Staffeln und Qualitätsstufe HD wird auch die Mediumqualität als HD angegeben.
                                  * Scheint ein Tippfehler zu sein ;-). Wird demnächst fixed
                                  */
-                                if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && "3f3f".equals(quality)) quality = "7d3f";
+                                if (!completeSeason && links != null && links.containsValue(Quality.valueOf(qStr.get(quality)).getName()) && ("3f3f".equals(quality) || "3f20".equals(quality))) quality = "7d3f";
                                 links.put(new Regex(fC, "(rtmp[\\w:\\/\\.\\-]+)").getMatch(0), Quality.valueOf(qStr.get(quality)).getName());
                             }
                         }
