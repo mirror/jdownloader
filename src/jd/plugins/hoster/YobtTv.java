@@ -45,16 +45,17 @@ public class YobtTv extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>This Video Was Not Found On Our Servers<|>404<|<title>Porn tube, Free HD Porn Videos, XXX Porno Tube Movies, Online Streaming Porn and Free Sex Clips, Pornute</title>)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<div id=\"contents\">[\t\n\r ]+<h1>(.*?)</h1>").getMatch(0);
+        String filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://www.yobt.tv/freeporn/" + new Regex(downloadLink.getDownloadURL(), "yobt\\.tv/content/(\\d+)/").getMatch(0) + ".xml");
         final String bismarkishID = br.getRegex("file=\\'(.*?)\\'").getMatch(0);
-        if (bismarkishID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (bismarkishID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (bismarkishID.equals("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         DLLINK = decryptTheSecret(bismarkishID);
-        if (DLLINK == null || !DLLINK.startsWith("http")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (DLLINK == null || !DLLINK.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
         String ext = DLLINK.substring(DLLINK.lastIndexOf("."));

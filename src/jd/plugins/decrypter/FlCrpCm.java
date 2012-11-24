@@ -30,7 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrop.com" }, urls = { "http://[\\w\\.]*?filecrop\\.com/\\d+/index\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filecrop.com" }, urls = { "http://(www\\.)?filecrop\\.com/\\d+/index\\.html" }, flags = { 0 })
 public class FlCrpCm extends PluginForDecrypt {
 
     public FlCrpCm(PluginWrapper wrapper) {

@@ -92,7 +92,7 @@ public class FizyCom extends PluginForHost {
         final String dllink = clipNetConnectionUrl + clipUrl;
 
         if (dllink.startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!"); }
+            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
 
             final String swfUrl = "http://apiplayer1.fizy.org/lib/player/fizyPlay1410a.swf";
             final String app = "fizy/";

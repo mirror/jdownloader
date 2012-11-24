@@ -68,7 +68,7 @@ public class FileUploadDotnet extends PluginForHost {
                     String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
                     // This name might be cut
                     if (filename == null) filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
-                    String filesize = br.getRegex("<label>Dateigröße:</label><span>([^<>\"]*?)</span>").getMatch(0);
+                    String filesize = br.getRegex("<b>Dateigröße:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
                     if (filesize != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
@@ -99,9 +99,12 @@ public class FileUploadDotnet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getHeaders().put("User-Agent", UA);
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
-            final String dllink = br.getRegex("\\'(http://(www\\.)?file\\-upload\\.net/download\\.php\\?valid=[0-9\\.]+\\&id=\\d+\\&name=[^<>\"]*?)\\'").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
+            String dllink = br.getRegex("\"(http://(www\\.)?file\\-upload\\.net/[a-z0-9\\-]+/data\\.php\\?id=\\d+\\&amp;name=[^<>\"/]*?)\"").getMatch(0);
+            final String valid = br.getRegex("name=\"valid\" value=\"(\\d+)\"").getMatch(0);
+            if (dllink == null || valid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = Encoding.htmlDecode(dllink);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "load6=+&valid=" + valid);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);

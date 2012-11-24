@@ -89,7 +89,7 @@ public class VidboxNet extends PluginForHost {
         try {
             DLLINK = getRtmpUrl(flashUrl);
         } catch (Throwable e) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD or JD2Beta needed!");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
         }
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = DLLINK + "@" + fileName + "@" + flashUrl + "@" + dllink;

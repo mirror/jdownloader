@@ -239,7 +239,7 @@ public class IFileIt extends PluginForHost {
                         rc.setId(rcID);
                         rc.load();
                         final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                        final DownloadLink dummyLink = new DownloadLink(null, "Account", "filecloud.io", "http://filecloud.io", true);
+                        final DownloadLink dummyLink = new DownloadLink(this, "Account", "filecloud.io", "http://filecloud.io", true);
                         final String c = getCaptchaCode(cf, dummyLink);
                         br.postPage("https://secure.filecloud.io/user-login_p.html", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                     } else {

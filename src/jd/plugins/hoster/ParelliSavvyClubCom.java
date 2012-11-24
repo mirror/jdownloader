@@ -42,7 +42,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
 
     private static final String MAINPAGE = "http://www.parellisavvyclub.com";
 
-    private static Object LOCK     = new Object();
+    private static Object       LOCK     = new Object();
 
     public ParelliSavvyClubCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -108,7 +108,7 @@ public class ParelliSavvyClubCom extends PluginForHost {
         if (urlValues == null || urlValues.length != 2) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
         if (urlValues[1].startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!"); }
+            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
 
             dl = new RTMPDownload(this, link, urlValues[1] + "/" + urlValues[0]);
             final jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();

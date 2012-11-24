@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livefile.org" }, urls = { "http://(www\\.)?livefile\\.org/get/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livefile.org" }, urls = { "https?://(www\\.)?livefile\\.org/get/[A-Za-z0-9]+" }, flags = { 0 })
 public class LiveFileOrg extends PluginForHost {
 
     public LiveFileOrg(PluginWrapper wrapper) {
@@ -49,8 +49,12 @@ public class LiveFileOrg extends PluginForHost {
         return "http://livefile.org/";
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
@@ -67,7 +71,7 @@ public class LiveFileOrg extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         String dllink = checkDirectLink(downloadLink, "freelink");
         if (dllink == null) {
@@ -87,6 +91,7 @@ public class LiveFileOrg extends PluginForHost {
             br.setFollowRedirects(false);
             br.postPage(freeLink, "checkcaptcha=1&cpid=" + code);
             if (br.containsHTML(">Captcha Error\\!")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            if (br.containsHTML(">Unfortunately, all the free for download slots for this file currently busy")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 30 * 60 * 1000l);
             dllink = br.getRedirectLocation();
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -100,7 +105,7 @@ public class LiveFileOrg extends PluginForHost {
         dl.startDownload();
     }
 
-    private String checkDirectLink(DownloadLink downloadLink, String property) {
+    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
         String dllink = downloadLink.getStringProperty(property);
         if (dllink != null) {
             try {
@@ -120,7 +125,7 @@ public class LiveFileOrg extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         final String postdata = "file=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "&keycode=" + account.getPass();
         // Chunkload = Temporary account block -> Bad idea ;)
@@ -136,7 +141,7 @@ public class LiveFileOrg extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         account.setValid(true);
         ai.setStatus("Status can only be checked while downloading!");

@@ -160,7 +160,7 @@ public class Zippysharecom extends PluginForHost {
                 try {
                     time = getHashfromFlash(flashurl, time);
                 } catch (final Throwable e) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!");
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!");
                 }
                 if (time == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 DLLINK = DLLINK + "&time=" + time;

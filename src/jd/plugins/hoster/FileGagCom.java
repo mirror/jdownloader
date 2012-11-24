@@ -279,9 +279,7 @@ public class FileGagCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "\"(http://[a-z0-9]+\\.filegag\\.com:\\d+/d/[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) dllink = new Regex(correctedBR, "'(http://[a-z0-9]+\\.filegag\\.com:\\d+/d/[^<>\"]*?)'").getMatch(0);
-            if (dllink == null) dllink = new Regex(correctedBR, "<a id=\"drlink\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
         }
         return dllink;
     }

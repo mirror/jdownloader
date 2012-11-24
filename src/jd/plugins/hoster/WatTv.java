@@ -106,7 +106,7 @@ public class WatTv extends PluginForHost {
         requestFileInformation(downloadLink);
         String finallink = getFinalLink();
         if (finallink.startsWith("rtmp")) {
-            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Developer Version of JD needed!"); }
+            if (isStableEnviroment()) { throw new PluginException(LinkStatus.ERROR_FATAL, "JD2 BETA needed!"); }
             /**
              * NOT WORKING IN RTMPDUMP
              */
