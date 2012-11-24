@@ -17,9 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -36,7 +34,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.FilePackage;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -44,18 +41,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "https?://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://(www\\.|player\\.)?vimeo\\.com/(video/)?\\d+" }, flags = { 2 })
 public class VimeoCom extends PluginForHost {
 
     private static final String MAINPAGE   = "http://vimeo.com";
     static private final String AGB        = "http://www.vimeo.com/terms";
-    private String              clipData;
     private String              finalURL;
     private static Object       LOCK       = new Object();
     private static final String Q_MOBILE   = "Q_MOBILE";
-    private static final String Q_ORIGINAL = "Q_Q_ORIGINAL";
+    private static final String Q_ORIGINAL = "Q_ORIGINAL";
     private static final String Q_HD       = "Q_HD";
     private static final String Q_SD       = "Q_SD";
     private static final String Q_BEST     = "Q_BEST";
@@ -68,150 +62,36 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replace("decryptedforVimeoHosterPlugin://", "http://"));
     }
 
-    @Override
-    public ArrayList<DownloadLink> getDownloadLinks(String data, FilePackage fp) {
-        ArrayList<DownloadLink> ret = super.getDownloadLinks(data, fp);
-
-        try {
-            if (ret != null && ret.size() > 0) {
-                /*
-                 * we make sure only one result is in ret, thats the case for svn/next major version
-                 */
-                final DownloadLink sourceLink = ret.get(0);
-                String ID = new Regex(sourceLink.getDownloadURL(), ".com/(\\d+)").getMatch(0);
-                if (ID != null) {
-                    Browser br = new Browser();
-                    setBrowserExclusive();
-                    br.setFollowRedirects(true);
-                    br.setCookie("http://vimeo.com", "v6f", "1");
-                    br.getPage("http://vimeo.com/" + ID);
-                    if (br.containsHTML("Page not found")) {
-                        sourceLink.setAvailable(false);
-                        ret.set(0, sourceLink);
-                        return ret;
-                    }
-                    handlePW(sourceLink, br, "http://vimeo.com/" + ID + "/password");
-                    String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-                    if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-                    if (title != null) title = Encoding.htmlDecode(title.replaceAll("(\\\\|/)", "_").replaceAll("_+", "_").trim());
-
-                    boolean withDlBtn = br.containsHTML("iconify_down_b");
-
-                    /*
-                     * little pause needed so the next call does not return trash
-                     */
-                    Thread.sleep(1000);
-                    String qualities[][] = null;
-                    if (withDlBtn) {
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getPage("http://vimeo.com/" + ID + "?action=download");
-                        qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
-                    } else {
-                        /* withoutDlBtn */
-                        String[] queryValues = br.getRegex("\"timestamp\":(\\d+),\"signature\":\"([0-9a-f]+)\"").getRow(0);
-                        String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-                        if (queryValues != null && fmts != null) {
-                            String quality[] = fmts.replaceAll("\"", "").split(",");
-                            qualities = new String[quality.length][4];
-                            for (int i = 0; i < quality.length; i++) {
-                                qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + queryValues[1] + "&time=" + queryValues[0] + "&quality=" + quality[i];
-                                qualities[i][1] = title + ".mp4";
-                                qualities[i][2] = quality[i];
-                                qualities[i][3] = null;
-                            }
-                        }
-                    }
-
-                    ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
-                    HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
-                    for (String quality[] : qualities) {
-                        String url = quality[0];
-                        String name = quality[1];
-                        String fmt = quality[2];
-                        if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
-                        if (fmt != null) {
-                            /* best selection is done at the end */
-                            if (fmt.contains("mobile")) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_MOBILE, true) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "mobile";
-                                }
-                            } else if (fmt.contains("hd")) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_HD, true) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "hd";
-                                }
-                            } else if (fmt.contains("sd")) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_SD, true) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "sd";
-                                }
-                            } else if (fmt.contains("original")) {
-                                if (this.getPluginConfig().getBooleanProperty(Q_ORIGINAL, true) == false) {
-                                    continue;
-                                } else {
-                                    fmt = "original";
-                                }
-                            }
-                        }
-                        if (url == null || name == null) continue;
-                        if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
-                        final DownloadLink link = new DownloadLink(this, name, getHost(), sourceLink.getDownloadURL(), true);
-                        link.setAvailable(true);
-                        link.setFinalFileName(name);
-                        link.setBrowserUrl(sourceLink.getBrowserUrl());
-                        link.setProperty("directURL", url);
-                        link.setProperty("directName", name);
-                        link.setProperty("directQuality", fmt);
-                        link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
-                        if (quality[3] != null) link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
-                        DownloadLink best = bestMap.get(fmt);
-                        if (best == null || link.getDownloadSize() > best.getDownloadSize()) {
-                            bestMap.put(fmt, link);
-                        }
-                        newRet.add(link);
-                    }
-                    if (newRet.size() > 0) {
-                        if (this.getPluginConfig().getBooleanProperty(Q_BEST, false)) {
-                            /* only keep best quality */
-                            DownloadLink keep = bestMap.get("original");
-                            if (keep == null) keep = bestMap.get("hd");
-                            if (keep == null) keep = bestMap.get("sd");
-                            if (keep == null) keep = bestMap.get("mobile");
-                            if (keep != null) {
-                                newRet.clear();
-                                newRet.add(keep);
-                            }
-                        }
-                        /*
-                         * only replace original found links by new ones, when we have some
-                         */
-                        if (fp != null) {
-                            fp.addLinks(newRet);
-                            fp.remove(sourceLink);
-                        } else if (title != null && newRet.size() > 1) {
-                            fp = FilePackage.getInstance();
-                            fp.setName(title);
-                            fp.addLinks(newRet);
-                        }
-                        ret = newRet;
-                    }
-                } else {
-                    /*
-                     * no other qualities*&
-                     */
+    private String[][] getQualities(Browser br, String ID, String title) throws Exception {
+        boolean withDlBtn = br.containsHTML("iconify_down_b");
+        /*
+         * little pause needed so the next call does not return trash
+         */
+        Thread.sleep(1000);
+        String qualities[][] = null;
+        if (withDlBtn) {
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getPage("http://vimeo.com/" + ID + "?action=download");
+            qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
+        } else {
+            /* withoutDlBtn */
+            String[] queryValues = br.getRegex("\"timestamp\":(\\d+),\"signature\":\"([0-9a-f]+)\"").getRow(0);
+            String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
+            if (queryValues != null && fmts != null) {
+                String quality[] = fmts.replaceAll("\"", "").split(",");
+                qualities = new String[quality.length][4];
+                for (int i = 0; i < quality.length; i++) {
+                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + queryValues[1] + "&time=" + queryValues[0] + "&quality=" + quality[i];
+                    qualities[i][1] = title + ".mp4";
+                    qualities[i][2] = quality[i];
+                    qualities[i][3] = null;
                 }
             }
-        } catch (final Throwable e) {
-            logger.severe(e.getMessage());
         }
-        return ret;
+        return qualities;
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception {
@@ -268,10 +148,6 @@ public class VimeoCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB;
-    }
-
-    private String getClipData(final String tag) {
-        return new Regex(clipData, "\"" + tag + "\":(\\d+)").getMatch(0);
     }
 
     @Override
@@ -430,35 +306,6 @@ public class VimeoCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
-        if (downloadLink.getStringProperty("directName", null) != null) {
-            AvailableStatus ret = requestFileInformationDirect(downloadLink);
-            if (AvailableStatus.TRUE == ret) {
-                downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null));
-            }
-            return ret;
-        } else {
-            return requestFileInformationDefault(downloadLink);
-        }
-    }
-
-    private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
-        if (br.containsHTML("This is a private video")) {
-            String passCode = downloadLink.getStringProperty("pass", null);
-            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
-            if (passCode == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
-            final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
-            br.setCookie(MAINPAGE, "xsrft", xsrft);
-            br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
-            if (br.containsHTML("This is a private video")) {
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
-            }
-            downloadLink.setProperty("pass", passCode);
-        }
-    }
-
-    private AvailableStatus requestFileInformationDirect(final DownloadLink downloadLink) throws Exception {
-        setBrowserExclusive();
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         finalURL = downloadLink.getStringProperty("directURL", null);
@@ -467,6 +314,7 @@ public class VimeoCom extends PluginForHost {
                 con = br.openGetConnection(finalURL);
                 if (con.getContentType() != null && con.getContentType().contains("video")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
+                    downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null));
                     return AvailableStatus.TRUE;
                 } else {
                     /* durectURL no longer valid */
@@ -490,68 +338,35 @@ public class VimeoCom extends PluginForHost {
         br.getPage("http://vimeo.com/" + ID);
         handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
         String newURL = null;
-        if (br.containsHTML("iconify_down_b")) {
-            Thread.sleep(1000);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getPage("http://vimeo.com/" + ID + "?action=download");
-            String qualities[][] = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
-            for (String quality[] : qualities) {
-                String url = quality[0];
-                if (name.equals(quality[1])) {
-                    if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
-                    newURL = url;
-                    break;
-                }
+        String qualities[][] = getQualities(br, ID, name);
+        for (String quality[] : qualities) {
+            String url = quality[0];
+            if (name.equals(quality[1])) {
+                if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
+                newURL = url;
+                break;
             }
         }
+
         if (newURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setProperty("directURL", newURL);
+        downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null));
         return AvailableStatus.TRUE;
     }
 
-    private AvailableStatus requestFileInformationDefault(final DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        String url = downloadLink.getDownloadURL().replaceFirst("www\\.vimeo\\.com", "vimeo.com");
-        downloadLink.setUrlDownload(url);
-        if (downloadLink.getStringProperty("Referer", null) != null) br.getHeaders().put("Referer", downloadLink.getStringProperty("Referer"));
-        br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        // For player.vimeo.com links
-        if (br.containsHTML("<title>Sorry</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String clipID = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-        handlePW(downloadLink, br, "http://vimeo.com/" + clipID + "/password");
-        br.getPage(downloadLink.getDownloadURL() + "?hd=1");
-        if (br.containsHTML("Page not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Private Video<")) { throw new PluginException(LinkStatus.ERROR_FATAL, "This is a private video. You have no permission to watch this video!"); }
-        final String signature = br.getRegex("\"signature\":\"([a-z0-9]+)\"").getMatch(0);
-        final String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
-        if (signature == null || time == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
-        if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);
-        clipData = br.toString();
-        // Info: getClipData("hd") was getClipData("isHD") before
-        final String dlURL = "http://player.vimeo.com/play_redirect?clip_id=" + clipID + "&sig=" + signature + "&time=" + time + "&quality=" + ("1".equals(getClipData("hd")) ? "hd" : "sd") + "&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=";
-        br.setFollowRedirects(false);
-        br.getPage(dlURL);
-        finalURL = br.getRedirectLocation();
-        if (finalURL == null || title == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        title = Encoding.htmlDecode(title);
-        URLConnectionAdapter con = null;
-        try {
-            con = br.openGetConnection(finalURL);
-            if (con.getContentType() != null && con.getContentType().contains("mp4")) {
-                downloadLink.setName(title + ".mp4");
-            } else {
-                downloadLink.setName(title + ".flv");
+    private void handlePW(DownloadLink downloadLink, Browser br, String url) throws PluginException, IOException {
+        if (br.containsHTML("This is a private video")) {
+            String passCode = downloadLink.getStringProperty("pass", null);
+            if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
+            if (passCode == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
+            final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+            br.setCookie(MAINPAGE, "xsrft", xsrft);
+            br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
+            if (br.containsHTML("This is a private video")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             }
-            if ("FREE".equals(downloadLink.getStringProperty("LASTTYPE", "FREE"))) {
-                downloadLink.setDownloadSize(con.getLongContentLength());
-            }
-            return AvailableStatus.TRUE;
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
-            }
+            downloadLink.setProperty("pass", passCode);
         }
     }
 
@@ -578,7 +393,6 @@ public class VimeoCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_ORIGINAL, JDL.L("plugins.hoster.vimeo.loadoriginal", "Load Original Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HD, JDL.L("plugins.hoster.vimeo.loadsd", "Load HD Version")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SD, JDL.L("plugins.hoster.vimeo.loadhd", "Load SD Version")).setDefaultValue(true));
-
     }
 
 }
