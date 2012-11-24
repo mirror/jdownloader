@@ -57,16 +57,6 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         parameter = parameter.replace("https://", "http://");
 
         FilePackage fp = FilePackage.getInstance();
-
-        if (br.getRedirectLocation() != null) {
-            if ("http://shahid.mbc.net/media/episodes".equals(br.getRedirectLocation())) {
-                logger.info("Content not found! Link: " + parameter);
-                return decryptedLinks;
-            }
-            br.setFollowRedirects(true);
-            br.getPage(br.getRedirectLocation());
-        }
-
         SubConfiguration cfg = SubConfiguration.getConfig("vimeo.com");
 
         String ID = new Regex(parameter, "/(\\d+)").getMatch(0);
