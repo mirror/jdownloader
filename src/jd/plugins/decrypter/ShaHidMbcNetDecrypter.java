@@ -140,14 +140,20 @@ public class ShaHidMbcNetDecrypter extends PluginForDecrypt {
         if (cfg.getProperties() != null) {
             shProperties.putAll(cfg.getProperties());
             if (shProperties.containsKey("COMPLETE_SEASON")) completeSeason = (Boolean) shProperties.get("COMPLETE_SEASON");
-        } else {
-            for (Quality q : Quality.values()) {
-                qStr.put(q.getHexValue(), q.name());
-            }
         }
+
+        int i = 0;
         for (Entry<String, Object> property : shProperties.entrySet()) {
             if (property.getKey().matches("(ALLOW_HD|ALLOW_HIGH|ALLOW_MEDIUM|ALLOW_LOW|ALLOW_LOWEST)") && (Boolean) property.getValue()) {
                 qStr.put(Quality.valueOf(property.getKey()).getHexValue(), Quality.valueOf(property.getKey()).toString());
+                i++;
+            }
+        }
+
+        // if pluginconfig empty or all qualities deselected
+        if (i == 0) {
+            for (Quality q : Quality.values()) {
+                qStr.put(q.getHexValue(), q.name());
             }
         }
 
