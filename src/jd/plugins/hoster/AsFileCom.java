@@ -62,6 +62,7 @@ public class AsFileCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        br.getHeaders().put("Accept-Language", "en-EN");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(<title>ASfile\\.com</title>|>Page not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename;
@@ -70,10 +71,10 @@ public class AsFileCom extends PluginForHost {
             link.getLinkStatus().setStatusText("This link is password protected!");
         } else {
             filename = br.getRegex("<meta name=\"title\" content=\"Free download ([^<>\"\\']+)\"").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
-            }
+            if (filename == null) filename = br.getRegex("<title>Free download ([^<>\"\\']+)</title>").getMatch(0);
+            if (filename == null) filename = br.getRegex(">Download:</div><div class=\"div_variable\"><strong>(.*?)</strong>").getMatch(0);
             String filesize = br.getRegex(">File size:</div><div class=\"div_variable\">([^<>\"]*?)<").getMatch(0);
+            if (filesize == null) filename = br.getRegex(">File size:</div><div class=\"div_variable\">(.*?)</div>").getMatch(0);
             if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -157,8 +158,7 @@ public class AsFileCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         sleep(2000, downloadLink);
         /*
-         * resume no longer possible? at least with a given password it does not
-         * work
+         * resume no longer possible? at least with a given password it does not work
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

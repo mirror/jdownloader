@@ -66,25 +66,25 @@ public class VimeoCom extends PluginForHost {
     }
 
     private String[][] getQualities(Browser br, String ID, String title) throws Exception {
-        boolean withDlBtn = br.containsHTML("iconify_down_b");
         /*
          * little pause needed so the next call does not return trash
          */
         Thread.sleep(1000);
         String qualities[][] = null;
-        if (withDlBtn) {
+        if (br.containsHTML("iconify_down_b")) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage("http://vimeo.com/" + ID + "?action=download");
             qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
-            String[] queryValues = br.getRegex("\"timestamp\":(\\d+),\"signature\":\"([0-9a-f]+)\"").getRow(0);
+            String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
+            String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-            if (queryValues != null && fmts != null) {
+            if (fmts != null) {
                 String quality[] = fmts.replaceAll("\"", "").split(",");
                 qualities = new String[quality.length][4];
                 for (int i = 0; i < quality.length; i++) {
-                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + queryValues[1] + "&time=" + queryValues[0] + "&quality=" + quality[i];
+                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
                     qualities[i][1] = title + ".mp4";
                     qualities[i][2] = quality[i];
                     qualities[i][3] = null;
