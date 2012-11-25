@@ -47,19 +47,23 @@ public class NzbLoadComFolder extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/plain, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("http://www.nzbload.com/data/download.json?t=" + System.currentTimeMillis() + "&sub=" + fid);
-        String[][] fileInfo = br.getRegex("(\\d+)\":\\{\"filename\":\"([^<>\"]*?)\",\"date\":\\d+,\"size\":\"(\\d+)\"").getMatches();
+        // String[][] fileInfo = br.getRegex("(\\d+)\":\\{\"filename\":\"([^<>\"]*?)\",\"date\":\\d+,\"size\":\"(\\d+)\"").getMatches();
+        String[][] fileInfo = br.getRegex("(\\d+)\":\\{(.*?)\\}").getMatches();
         if (fileInfo == null || fileInfo.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (final String[] singleLinkInfo : fileInfo) {
             final DownloadLink dl = createDownloadlink("http://nzbloaddecrypted.com/en/download/" + fid + "/" + singleLinkInfo[0]);
-            dl.setName(singleLinkInfo[1]);
-            dl.setDownloadSize(SizeFormatter.getSize(singleLinkInfo[2]));
+            dl.setName(getJson("filename", singleLinkInfo[1]));
+            dl.setDownloadSize(SizeFormatter.getSize(getJson("size", singleLinkInfo[1])));
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
         return decryptedLinks;
     }
 
+    private String getJson(final String parameter, final String source) {
+        return new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    }
 }

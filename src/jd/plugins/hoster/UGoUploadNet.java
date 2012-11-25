@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -50,8 +52,11 @@ public class UGoUploadNet extends PluginForHost {
         return "http://www.ugoupload.net/terms.html";
     }
 
-    private static Object LOCK     = new Object();
-    private final String  MAINPAGE = "http://ugoupload.net";
+    // Captcha type: reCaptcha
+    private static Object LOCK      = new Object();
+    private final String  MAINPAGE  = "http://ugoupload.net";
+    private final boolean RESUME    = false;
+    private final int     MAXCHUNKS = 1;
 
     /** Uses same script as filegig.com */
     @Override
@@ -74,18 +79,39 @@ public class UGoUploadNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        boolean captcha = false;
         requestFileInformation(downloadLink);
-        String dllink = br.getRegex("\\$\\(\\'\\.download\\-timer\\'\\)\\.html\\(\"<a href=\\'(http://[^<>\"\\']*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(http://(www\\.)?ugoupload\\.net/[A-Za-z0-9]+/[^<>\"]*?\\?d=1)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        int wait = 250;
-        final String waittime = br.getRegex("var seconds = (\\d+);").getMatch(0);
+        int wait = 420;
+        final String waittime = br.getRegex("\\$\\(\\'\\.download\\-timer\\-seconds\\'\\)\\.html\\((\\d+)\\);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "?d=1", RESUME, MAXCHUNKS);
+        if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            final String captchaAction = br.getRegex("<div class=\"captchaPageTable\">[\t\n\r ]+<form method=\"POST\" action=\"(http://[^<>\"]*?)\"").getMatch(0);
+            final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
+            if (rcID == null || captchaAction == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            rc.setId(rcID);
+            rc.load();
+            for (int i = 0; i <= 5; i++) {
+                File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                String c = getCaptchaCode(cf, downloadLink);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaAction, "submit=continue&submitted=1&d=1&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c, RESUME, MAXCHUNKS);
+                if (!dl.getConnection().isContentDisposition()) {
+                    br.followConnection();
+                    rc.reload();
+                    continue;
+                }
+                break;
+            }
+            captcha = true;
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection();
+            if (captcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

@@ -70,8 +70,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
-                 * Retry if login failed Those are 2 different errormessages but
-                 * refreshing the cookies works fine for both
+                 * Retry if login failed Those are 2 different errormessages but refreshing the cookies works fine for both
                  * */
                 String cookie = br.getCookie("http://vk.com", "remixsid");
                 if (br.containsHTML(">Security Check<") || cookie == null || "deleted".equals(cookie)) {
@@ -111,28 +110,22 @@ public class VKontakteRu extends PluginForDecrypt {
                     decryptedLinks = decryptSingleVideo(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?(tag|album(\\-)?\\d+_|photos|id)\\d+")) {
                     /**
-                     * Photo album Examples: http://vk.com/photos575934598
-                     * http://vk.com/id28426816 http://vk.com/album87171972_0
+                     * Photo album Examples: http://vk.com/photos575934598 http://vk.com/id28426816 http://vk.com/album87171972_0
                      */
                     decryptedLinks = decryptPhotoAlbum(decryptedLinks, parameter, progress);
                 } else if (parameter.matches(".*?vk\\.com/photo(\\-)?\\d+_\\d+")) {
                     /**
-                     * Single photo links, those are just passed to the
-                     * hosterplugin!
-                     * Example:http://vk.com/photo125005168_269986868
+                     * Single photo links, those are just passed to the hosterplugin! Example:http://vk.com/photo125005168_269986868
                      */
                     decryptedLinks = decryptSinglePhoto(decryptedLinks, parameter);
                 } else if (parameter.matches(".*?vk\\.com/(albums(\\-)?\\d+|id\\d+\\?z=albums\\d+)")) {
                     /**
-                     * Photo albums lists/overviews Example:
-                     * http://vk.com/albums46486585
+                     * Photo albums lists/overviews Example: http://vk.com/albums46486585
                      */
                     decryptedLinks = decryptPhotoAlbums(decryptedLinks, parameter, progress);
                 } else {
                     /**
-                     * Video-Albums Example: http://vk.com/videos575934598
-                     * Example2:
-                     * http://vk.com/video?section=tagged&id=46468795637
+                     * Video-Albums Example: http://vk.com/videos575934598 Example2: http://vk.com/video?section=tagged&id=46468795637
                      */
                     if (!parameter.matches("http://(www\\.)?vk\\.com/(video\\?section=tagged\\&id=\\d+|video\\?id=\\d+\\&section=tagged|videos\\d+)")) {
                         logger.info("Link to add regex for is: " + parameter);
@@ -219,7 +212,13 @@ public class VKontakteRu extends PluginForDecrypt {
             /* not needed as we already have requested this page */
             // br.getPage(parameter);
         }
+        // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline2
+        if (br.containsHTML("class=\"title\">Error</div>")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -342,7 +341,7 @@ public class VKontakteRu extends PluginForDecrypt {
                 logger.info("Link offline: " + completeVideolink);
                 continue;
             }
-            DownloadLink finallink = findVideolink(completeVideolink);
+            final DownloadLink finallink = findVideolink(completeVideolink);
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter + "\n");
                 logger.warning("stopped at: " + completeVideolink);
@@ -355,6 +354,8 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private DownloadLink findVideolink(String parameter) throws IOException {
+        final String userID = new Regex(parameter, "(\\d+)_\\d+$").getMatch(0);
+        final String vidID = new Regex(parameter, "(\\d+)$").getMatch(0);
         String correctedBR = br.toString().replace("\\", "");
         // Find youtube.com link if it exists
         String embeddedVideo = new Regex(correctedBR, "youtube\\.com/embed/(.*?)\\?autoplay=").getMatch(0);
@@ -383,18 +384,22 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         embeddedVideo = new Regex(correctedBR, "url: \\'(http://player\\.digitalaccess\\.ru/[^<>\"/]*?\\&siteId=\\d+)\\&").getMatch(0);
         if (embeddedVideo != null) { return createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo)); }
+
+        final Browser br2 = br.cloneBrowser();
+        br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br2.postPage("https://vk.com/al_video.php", "act=load_videos_silent&al=1&offset=12&oid=" + userID);
+
         // No external video found, try finding a hosted video
-        String additionalStuff = "video/";
-        String urlPart = new Regex(correctedBR, "\"thumb\":\"(http:.{10,100})/video").getMatch(0);
+        String additionalStuff = "videos/";
+        String urlPart = br2.getRegex(vidID + ", \\'(https?://[a-z0-9\\.]+/[a-z0-9]+(/[a-z0-9]+)?)/video/").getMatch(0);
         if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
         String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
         String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);
         if (videoID == null) videoID = new Regex(parameter, ".*?vk\\.com/video(\\-)?\\d+_(\\d+)").getMatch(1);
         if (videoID == null || urlPart == null || vtag == null) return null;
         /**
-         * Find the highest possible quality, also every video is only available
-         * in 1-2 formats so we HAVE to use the highest one, if we don't do that
-         * we get wrong links
+         * Find the highest possible quality, also every video is only available in 1-2 formats so we HAVE to use the highest one, if we
+         * don't do that we get wrong links
          */
         String quality = ".vk.flv";
         if (correctedBR.contains("\"hd\":1")) {
@@ -426,8 +431,12 @@ public class VKontakteRu extends PluginForDecrypt {
         if (videoName == null) {
             videoName = new Regex(correctedBR, "\\{\"title\":\"(.*?)\"").getMatch(0);
         }
-        String completeLink = "directhttp://http://" + urlPart.replace("http://", "") + "/" + additionalStuff + vtag + videoID + quality;
-        DownloadLink dl = createDownloadlink(completeLink);
+
+        // Workaround
+        if (urlPart.contains("userapi")) quality = quality.replace(".mov", ".mp4");
+
+        final String completeLink = urlPart + "/" + additionalStuff + vtag + videoID + quality;
+        final DownloadLink dl = createDownloadlink(completeLink);
         // Set filename so we have nice filenames here ;)
         if (videoName != null) {
             if (videoName.length() > 100) {
