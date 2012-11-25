@@ -45,6 +45,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
     private static final String Q_HD       = "Q_HD";
     private static final String Q_SD       = "Q_SD";
     private static final String Q_BEST     = "Q_BEST";
+    private String              password   = null;
 
     public VimeoComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -81,7 +82,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
         for (String quality[] : qualities) {
             String url = quality[0];
-            String name = quality[1];
+            String name = Encoding.htmlDecode(quality[1]);
             String fmt = quality[2];
             if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
             if (fmt != null) {
@@ -120,6 +121,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             link.setProperty("directName", name);
             link.setProperty("directQuality", fmt);
             link.setProperty("LINKDUPEID", "vimeo" + ID + name + fmt);
+            link.setProperty("pass", password);
             if (quality[3] != null) {
                 link.setDownloadSize(SizeFormatter.getSize(quality[3].trim()));
                 link.setAvailable(true);
@@ -145,10 +147,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /*
              * only replace original found links by new ones, when we have some
              */
-            if (fp != null) {
-                fp.addLinks(newRet);
-                fp.remove(param.getDecryptedLink());
-            } else if (title != null && newRet.size() > 1) {
+            if (title != null && newRet.size() > 1) {
                 fp = FilePackage.getInstance();
                 fp.setName(title);
                 fp.addLinks(newRet);
@@ -172,13 +171,14 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             qualities = br.getRegex("href=\"(/\\d+/download.*?)\" download=\"(.*?)\" .*?>(.*? file)<.*?\\d+x\\d+ /(.*?)\\)").getMatches();
         } else {
             /* withoutDlBtn */
-            String[] queryValues = br.getRegex("\"timestamp\":(\\d+),\"signature\":\"([0-9a-f]+)\"").getRow(0);
+            String sig = br.getRegex("\"signature\":\"([0-9a-f]+)\"").getMatch(0);
+            String time = br.getRegex("\"timestamp\":(\\d+)").getMatch(0);
             String fmts = br.getRegex("\"files\":\\{\"h264\":\\[(.*?)\\]\\}").getMatch(0);
-            if (queryValues != null && fmts != null) {
+            if (fmts != null) {
                 String quality[] = fmts.replaceAll("\"", "").split(",");
                 qualities = new String[quality.length][4];
                 for (int i = 0; i < quality.length; i++) {
-                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + queryValues[1] + "&time=" + queryValues[0] + "&quality=" + quality[i];
+                    qualities[i][0] = "http://player.vimeo.com/play_redirect?clip_id=" + ID + "&sig=" + sig + "&time=" + time + "&quality=" + quality[i];
                     qualities[i][1] = title + ".mp4";
                     qualities[i][2] = quality[i];
                     qualities[i][3] = null;
@@ -192,34 +192,45 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         // check for a password. Store latest password in DB
         Form pwForm = br.getFormbyProperty("id", "pw_form");
         if (pwForm != null) {
+            String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+            br.setCookie(br.getHost(), "xsrft", xsrft);
             String latestPassword = getPluginConfig().getStringProperty("PASSWORD");
             if (latestPassword != null) {
                 pwForm.put("password", latestPassword);
+                pwForm.put("token", xsrft);
                 try {
                     br.submitForm(pwForm);
                 } catch (Throwable e) {
                     if (br.getHttpConnection().getResponseCode() == 401) logger.warning("vimeo.com: Wrong password for Link: " + param.toString());
+                    if (br.getHttpConnection().getResponseCode() == 418) {
+                        br.getPage(param.toString());
+                        xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+                        br.setCookie(br.getHost(), "xsrft", xsrft);
+                    }
                 }
             }
             // no defaultpassword, or defaultpassword is wrong
             for (int i = 0; i < 3; i++) {
                 pwForm = br.getFormbyProperty("id", "pw_form");
-                if (pwForm != null) {
-                    latestPassword = Plugin.getUserInput("Password?", param);
-                    pwForm.put("password", latestPassword);
-                    try {
-                        br.submitForm(pwForm);
-                    } catch (Throwable e) {
-                        if (br.getHttpConnection().getResponseCode() == 401) {
-                            logger.warning("vimeo.com: Wrong password for Link: " + param.toString());
-                            if (i < 2) br.getPage(param.toString());
-                            continue;
-                        }
+                if (pwForm == null) break;
+                latestPassword = Plugin.getUserInput("Password?", param);
+                pwForm.put("password", latestPassword);
+                pwForm.put("token", xsrft);
+                try {
+                    br.submitForm(pwForm);
+                } catch (Throwable e) {
+                    if (br.getHttpConnection().getResponseCode() == 401) {
+                        logger.warning("vimeo.com: Wrong password for Link: " + param.toString());
+                        if (i < 2) br.getPage(param.toString());
+                        xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
+                        br.setCookie(br.getHost(), "xsrft", xsrft);
+                        continue;
                     }
-                    getPluginConfig().setProperty("PASSWORD", latestPassword);
-                    getPluginConfig().save();
-                    break;
                 }
+                password = latestPassword;
+                getPluginConfig().setProperty("PASSWORD", latestPassword);
+                getPluginConfig().save();
+                break;
             }
             if (br.getHttpConnection().getResponseCode() == 401) throw new DecrypterException(DecrypterException.PASSWORD);
         }

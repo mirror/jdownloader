@@ -312,7 +312,7 @@ public class VimeoCom extends PluginForHost {
         if (finalURL != null) {
             try {
                 con = br.openGetConnection(finalURL);
-                if (con.getContentType() != null && con.getContentType().contains("video")) {
+                if (con.getContentType() != null && !con.getContentType().contains("html")) {
                     downloadLink.setDownloadSize(con.getLongContentLength());
                     downloadLink.setFinalFileName(downloadLink.getStringProperty("directName", null));
                     return AvailableStatus.TRUE;
@@ -341,7 +341,7 @@ public class VimeoCom extends PluginForHost {
         String qualities[][] = getQualities(br, ID, name);
         for (String quality[] : qualities) {
             String url = quality[0];
-            if (name.equals(quality[1])) {
+            if (name.equals(Encoding.htmlDecode(quality[1]))) {
                 if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
                 newURL = url;
                 break;
