@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -279,12 +280,12 @@ public class FilesMonsterCom extends PluginForHost {
             return ai;
         }
         ai.setUnlimitedTraffic();
-        String expires = br.getRegex("\">Valid until: <span class=\\'green\\'>(.*?)</span>").getMatch(0);
+        String expires = br.getRegex("<span>Valid until: <span class=\\'green\\'>([^<>\"]*?)</span>").getMatch(0);
         long ms = 0;
         if (expires != null) {
             ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy HH:mm", null);
             if (ms <= 0) {
-                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", null);
+                ms = TimeFormatter.getMilliSeconds(expires, "MM/dd/yy", Locale.ENGLISH);
             }
             ai.setValidUntil(ms);
             account.setValid(true);

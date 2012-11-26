@@ -108,6 +108,7 @@ public class TbCm extends PluginForDecrypt {
     private final Pattern                       StreamingShareLink  = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
     static public final Pattern                 YT_FILENAME_PATTERN = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
+    private static final String                 UNSUPPORTEDRTMP     = "itag%2Crtmpe%2";
 
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
@@ -292,7 +293,10 @@ public class TbCm extends PluginForDecrypt {
                 final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
+                if (error == null) error = br.getRegex("\\&reason=([^<>\"/]*?)\\&").getMatch(0);
+                if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
+                    error = Encoding.urlDecode(error, false);
                     logger.info("Video unavailable: " + parameter);
                     logger.info("Reason: " + error.trim());
                     return decryptedLinks;
@@ -577,6 +581,7 @@ public class TbCm extends PluginForDecrypt {
                 return getLinks(video, prem, br, retrycount + 1);
             }
             if (html5_fmt_map != null) {
+                if (html5_fmt_map.contains(UNSUPPORTEDRTMP)) { return null; }
                 String[] html5_hits = new Regex(html5_fmt_map, "(.*?)(,|$)").getColumn(0);
                 if (html5_hits != null) {
                     for (String hit : html5_hits) {
@@ -654,7 +659,7 @@ public class TbCm extends PluginForDecrypt {
                 links.get(fmt)[1] = Videoq;
             }
         }
-        if (YT_FILENAME != null) {
+        if (YT_FILENAME != null && links != null && !links.isEmpty()) {
             links.put(-1, new String[] { YT_FILENAME });
         }
         return links;
