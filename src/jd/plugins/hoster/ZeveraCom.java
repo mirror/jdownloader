@@ -202,9 +202,9 @@ public class ZeveraCom extends PluginForHost {
         // br.getPage(mServ + "/jDownloader.ashx?cmd=accountinfo");
         // grab website page instead.
         br.getPage(mServ + "/Member/Dashboard.aspx");
-        String expire = br.getRegex("(?i)>Expiration date:</label>.+(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))</label>").getMatch(0);
+        String expire = br.getRegex("(?i)>Expiration date:</label>.+?(\\d+/\\d+/\\d+ [\\d\\:]+ (AM|PM))</label>").getMatch(0);
         if (expire != null) {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "M/d/yyyy h:mm a", null));
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM/dd/yyyy hh:mm:ss a", null));
         }
         ai.setStatus("Premium User");
         try {
@@ -242,6 +242,7 @@ public class ZeveraCom extends PluginForHost {
                         return;
                     }
                 }
+                br.getPage(mServ);
                 br.getPage(mServ + "/OfferLogin.aspx?login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(mProt + mName, ".ASPNETAUTH") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
