@@ -29,6 +29,7 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -154,6 +155,12 @@ public class ShareOnlineBiz extends PluginForHost {
                 }
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.shareonlinebiz.errors.servernotavailable3", "No free Free-User Slots! Get PremiumAccount or wait!"), waitNoFreeSlot);
+        }
+        // premium shared IP error
+        if (br.containsHTML("<strong>The usage of different IPs is not possible!</strong>")) {
+            acc.setValid(false);
+            UserIO.getInstance().requestMessageDialog(0, "ShareOnlineBiz Premium Error (account has been deactivated, free mode enabled)", "Server reports: " + "You're trying to use your account from more than one IP-Adress.\n" + "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n" + "You are free to buy a further access for pay accounts, in order to use it from every place you want to.\n" + "A contempt of this rules can result in a complete account deactivation.");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium disabled, continued as free user");
         }
         String url = br.getURL();
         if (url.endsWith("/free/") || url.endsWith("/free")) {
@@ -283,8 +290,7 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         /*
-         * because of You have got max allowed threads from same download
-         * session
+         * because of You have got max allowed threads from same download session
          */
         return 10;
     }
@@ -362,8 +368,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitNoFreeSlot) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to
-                             * stop
+                             * reset counter this error does not cause plugin to stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -379,8 +384,7 @@ public class ShareOnlineBiz extends PluginForHost {
                     if (System.currentTimeMillis() - ret < waitOverloadedServer) {
                         if (downloadLink.getLinkStatus().getRetryCount() >= 5) {
                             /*
-                             * reset counter this error does not cause plugin to
-                             * stop
+                             * reset counter this error does not cause plugin to stop
                              */
                             downloadLink.getLinkStatus().setRetryCount(0);
                         }
@@ -545,8 +549,7 @@ public class ShareOnlineBiz extends PluginForHost {
             if (valid == false) valid = a != null && !"not_available".equalsIgnoreCase(a);
             if (valid == false) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             /*
-             * check expire date, expire >0 (normal handling) expire<0 (never
-             * expire)
+             * check expire date, expire >0 (normal handling) expire<0 (never expire)
              */
             final Long validUntil = Long.parseLong(infos.get("expire_date"));
             if (validUntil > 0 && System.currentTimeMillis() / 1000 > validUntil) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
