@@ -145,6 +145,7 @@ public class Zevera extends PluginForHost {
                     account.setAccountInfo(ai);
                 }
             }
+            br.getPage("http://www.zevera.com/");
             String res = br.getPage("http://www.zevera.com/jDownloader.ashx?cmd=accountinfo&login=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
             if ("No trafic".equals(res) || res == null || res.trim().length() == 0) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             res = res.trim();
