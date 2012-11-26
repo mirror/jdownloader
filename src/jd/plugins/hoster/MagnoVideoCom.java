@@ -64,7 +64,7 @@ public class MagnoVideoCom extends PluginForHost {
         br.getPage("/player_config.php?mdid=" + fid);
         String dlHost = br.getRegex("<storage_path>(.*?)</storage_path>").getMatch(0);
         String burst = br.getRegex("<movie_burst>(\\d+)</movie_burst>").getMatch(0);
-        if (path == null || dlHost == null | burst == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (path == null || dlHost == null || burst == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dlHost + path + "?burst=" + burst, true, 1);
         fixFilename(downloadLink);
