@@ -648,6 +648,7 @@ public class Uploadedto extends PluginForHost {
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
+            case 410:
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 8000:
                 /* traffic exhausted */
