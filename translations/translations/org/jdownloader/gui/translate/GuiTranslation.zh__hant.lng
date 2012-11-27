@@ -274,6 +274,7 @@ gui_config_general_toDoWithDownloads_atstart=在啟動時
 gui_config_general_toDoWithDownloads_never=從不
 gui_config_general_todowithdownloads=移除已完成的下載 ...
 gui_config_language=語言
+gui_config_simple_container=自動開啟連結容器 (dlc,ccf,...)
 gui_config_various=雜項
 gui_dialogs_message_title=訊息
 gui_downloadlist_delete=刪除所選擇的連結？
