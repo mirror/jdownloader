@@ -103,8 +103,12 @@ public class HellShareCom extends PluginForHost {
         } else if (premiumActive.contains("Active")) {
 
             String validUntil = premiumActive.substring(premiumActive.indexOf(":") + 1);
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy", null));
+            // page only displays full day, so JD fails in the last day of Premium
+            // added time as if the account is Premium until the midnight
+            validUntil += " 23:59:59";
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm:ss", null));
             ai.setStatus("Premium User");
+            ai.setExpired(false);
             account.setValid(true);
 
         } else if (premiumActive.contains("Download credit")) {
