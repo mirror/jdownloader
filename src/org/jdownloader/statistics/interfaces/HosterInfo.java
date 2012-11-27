@@ -61,6 +61,10 @@ public class HosterInfo implements Storable {
     private long speedFree;
     private long downloadsPremiumTotal;
     private long downloadsFreeTotal;
+    private long trafficFree;
+    private long trafficPremium;
+    private long trafficPremiumTotal;
+    private long trafficFreeTotal;
 
     public HosterInfo(String string) {
         this.host = string;
@@ -94,16 +98,52 @@ public class HosterInfo implements Storable {
         downloadsPremiumTotal = totalPremium;
     }
 
-    public long getDownloadsPremiumTotal() {
-        return downloadsPremiumTotal;
-    }
+    // public long getDownloadsPremiumTotal() {
+    // return downloadsPremiumTotal;
+    // }
 
-    public long getDownloadsFreeTotal() {
-        return downloadsFreeTotal;
-    }
+    // public long getDownloadsFreeTotal() {
+    // return downloadsFreeTotal;
+    // }
 
     public void setDownloadsFreeTotal(long totalFree) {
         downloadsFreeTotal = totalFree;
+    }
+
+    public void setTrafficFree(long long1) {
+        trafficFree = long1;
+    }
+
+    public void setTrafficPremium(long long1) {
+        trafficPremium = long1;
+    }
+
+    public long getTrafficFree() {
+        return trafficFree;
+    }
+
+    public long getTrafficPremium() {
+        return trafficPremium;
+    }
+
+    public void setTrafficPremiumTotal(long trafficPremium2) {
+        trafficPremiumTotal = trafficPremium2;
+    }
+
+    public void setTrafficFreeTotal(long trafficFree2) {
+        trafficFreeTotal = trafficFree2;
+    }
+
+    public double getTrafficPremiumPercent() {
+        if (trafficPremiumTotal == 0) return -1d;
+        return (trafficPremium * 10000 / trafficPremiumTotal) / 100d;
+
+    }
+
+    public double getTrafficFreePercent() {
+        if (trafficFreeTotal == 0) return -1d;
+        return (trafficFree * 10000 / trafficFreeTotal) / 100d;
+
     }
 
 }

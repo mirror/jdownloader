@@ -618,7 +618,7 @@ public class TranslatorExtension extends AbstractExtension<TranslatorConfig, Tra
             getGUI().stopEditing(false);
             if (loaded == null || getTranslationEntries() == null || getTranslationEntries().size() == 0) return;
             TLocale localLoaded = loaded;
-            TranslationInfo info = JSonStorage.restoreFrom(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
+            TranslationInfo info = JSonStorage.restoreFromFile(Application.getResource("translations/custom/" + localLoaded.getId() + ".json"), new TranslationInfo());
 
             int more = getTranslationEntries().size() - info.getTotal();
 

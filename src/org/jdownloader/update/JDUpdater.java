@@ -140,7 +140,7 @@ public class JDUpdater extends AppUpdater {
 
     protected String getUrl(Actions action, Parameters[] parameters) throws UnsupportedEncodingException {
         String ret = super.getUrl(action, parameters);
-        HashMap<String, Object> build = JSonStorage.restoreFrom(Application.getResource("build.json"), new HashMap<String, Object>());
+        HashMap<String, Object> build = JSonStorage.restoreFromFile(Application.getResource("build.json"), new HashMap<String, Object>());
         StringBuilder sb = new StringBuilder();
         sb.append(ret);
 

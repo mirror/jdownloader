@@ -36,7 +36,7 @@ public class OpenDefaultDownloadFolderAction extends AbstractToolbarAction {
     public void actionPerformed(ActionEvent e) {
         final String dlDir = JsonConfig.create(GeneralSettings.class).getDefaultDownloadFolder();
         if (dlDir == null) { return; }
-        CrossSystem.openFile(new File(dlDir));
+        CrossSystem.showInExplorer(new File(dlDir));
     }
 
     @Override

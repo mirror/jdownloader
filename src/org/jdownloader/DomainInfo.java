@@ -66,6 +66,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
                 return ia;
             }
         }
+
         /* use default favicon */
         ia = setFavIcon(null);
         return ia;
@@ -108,8 +109,8 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo> {
     }
 
     /**
-     * returns a high quality icon for this domain. most domains do not support
-     * this and will return null; the icon is NOT cached. use with care
+     * returns a high quality icon for this domain. most domains do not support this and will return null; the icon is NOT cached. use with
+     * care
      * 
      * @param i
      * @return

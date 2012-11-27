@@ -355,7 +355,7 @@ public class Launcher {
             logFile = Application.getResource(org.appwork.update.standalone.Main.SESSION_INSTALL_LOG_LOG);
             if (logFile.exists()) {
                 Launcher.LOG.info("Check SessionInstallLog");
-                tmpInstallLog = JSonStorage.restoreFrom(logFile, tmpInstallLog);
+                tmpInstallLog = JSonStorage.restoreFromFile(logFile, tmpInstallLog);
 
                 for (InstalledFile iFile : tmpInstallLog) {
                     if (iFile.getRelPath().endsWith(".class")) {

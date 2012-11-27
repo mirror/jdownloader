@@ -97,7 +97,7 @@ public class JSonWrapper extends Property {
             return storage.get(key, def);
         } else {
             System.out.println("Read " + path + "." + key + (plain ? ".json" : ".ejs"));
-            return JSonStorage.restoreFrom(new File(path + "." + key + (plain ? ".json" : ".ejs")), def);
+            return JSonStorage.restoreFromFile(new File(path + "." + key + (plain ? ".json" : ".ejs")), def);
         }
     }
 
@@ -151,7 +151,7 @@ public class JSonWrapper extends Property {
             } else if (getObjectKey(key).exists()) {
 
                 if (def != null) {
-                    return JSonStorage.restoreFrom(getObjectKey(key), def);
+                    return JSonStorage.restoreFromFile(getObjectKey(key), def);
                 } else {
                     TypeRef<?> ref = getType(key);
                     System.out.println("Read " + path + "." + key + (plain ? ".json" : ".ejs"));

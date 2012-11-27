@@ -170,7 +170,7 @@ public class Main {
 
     public static void checkLanguageSwitch(final String[] args) {
         try {
-            String lng = JSonStorage.restoreFrom("cfg/language.json", TranslationFactory.getDesiredLanguage());
+            String lng = JSonStorage.restoreFromFile("cfg/language.json", TranslationFactory.getDesiredLanguage());
             TranslationFactory.setDesiredLanguage(lng);
 
             for (int i = 0; i < args.length; i++) {
