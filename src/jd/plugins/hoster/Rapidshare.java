@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -61,8 +62,7 @@ public class Rapidshare extends PluginForHost {
             ret.id = Long.parseLong(new Regex(ret.url, "files/(\\d+)/").getMatch(0));
             if (ret.link.getProperty("htmlworkaround", null) == null) {
                 /*
-                 * remove html ending, because rs now checks the complete
-                 * filename
+                 * remove html ending, because rs now checks the complete filename
                  */
                 ret.name = new Regex(ret.url, "files/\\d+/(.*?/)?(.*?)(\\.html?|$|;$)").getMatch(1);
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
@@ -173,8 +173,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
-     * kann das über diese Funktion gemacht werden.
+     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen, kann das über diese Funktion gemacht werden.
      */
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
@@ -531,7 +530,7 @@ public class Rapidshare extends PluginForHost {
         return 100;
     }
 
-    private void handleErrors(final Browser br) throws PluginException {
+    private void handleErrors(DownloadLink link, final Browser br) throws PluginException {
         String error = null;
         if (this.br.toString().startsWith("ERROR: ")) {
             error = this.br.getRegex("ERROR: ([^\r\n]+)").getMatch(0);
@@ -558,8 +557,11 @@ public class Rapidshare extends PluginForHost {
             } else if ("No traffic left.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             } else if ("You need RapidPro to download more files from your IP address.".equals(error)) {
-
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+            } else if (error.contains("traffic exhausted")) {
+                /* anti ddos protection */
+                sleep(Math.max(2, new Random().nextInt(10)) * 60 * 1000, link);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File owner's traffic exhausted", 60 * 60 * 1000l);
             } else {
                 logger.fine(br.toString());
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
@@ -598,7 +600,7 @@ public class Rapidshare extends PluginForHost {
                 query += "&seclinktimeout=" + link.getSecTimout();
             }
             this.queryAPI(this.br, query);
-            this.handleErrors(this.br);
+            this.handleErrors(downloadLink, this.br);
             // RS URL wird aufgerufen
             // this.br.getPage(link);
             final String host = this.br.getRegex("DL:(.*?),").getMatch(0);
@@ -715,7 +717,7 @@ public class Rapidshare extends PluginForHost {
                 query += "&seclinktimeout=" + link.getSecTimout();
             }
             this.queryAPI(this.br, query);
-            this.handleErrors(this.br);
+            this.handleErrors(downloadLink, this.br);
             boolean retry = true;
             String host = this.br.getRegex("DL:(.*?),").getMatch(0);
             while (true) {
@@ -745,10 +747,8 @@ public class Rapidshare extends PluginForHost {
                 this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, directurl, true, 0);
                 final URLConnectionAdapter urlConnection = this.dl.getConnection();
                 /*
-                 * Download starten prüft ob ein content disposition header
-                 * geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei
-                 * oder eine Fehlerseite. BIldfiles haben keinen Cache-Control
-                 * Header
+                 * Download starten prüft ob ein content disposition header geschickt wurde. Falls nicht, ist es eintweder eine Bilddatei oder eine Fehlerseite.
+                 * BIldfiles haben keinen Cache-Control Header
                  */
                 if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
                     // Lädt die zuletzt aufgebaute vernindung
@@ -806,8 +806,7 @@ public class Rapidshare extends PluginForHost {
             final String prtotcol = ssl ? "https" : "http";
 
             /*
-             * we can use cookie login if user does not want to get asked before
-             * package upgrade. we dont need live traffic stats here
+             * we can use cookie login if user does not want to get asked before package upgrade. we dont need live traffic stats here
              */
             Object cookiesRet = account.getProperty(COOKIEPROP);
             Object cookieEnc = account.getProperty(COOKIEPROPENC);
@@ -878,8 +877,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * requests the API url req. if the http ip is blocked (UK-BT isp returns
-     * 500 or 502 error) https is used.
+     * requests the API url req. if the http ip is blocked (UK-BT isp returns 500 or 502 error) https is used.
      * 
      * @param br
      * @param req
