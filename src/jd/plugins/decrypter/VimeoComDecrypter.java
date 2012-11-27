@@ -65,12 +65,17 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://vimeo.com", "v6f", "1");
+        br.setCookie("vimeo.com", "v6f", "1");
         br.getPage("http://vimeo.com/" + ID);
-        if (br.containsHTML("Page not found")) {
+
+        /* Workaround for User from Iran */
+        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
+
+        if (br.containsHTML("(Page not found|This video does not exist)")) {
             logger.info("vimeo.com: File not found for Link: " + parameter);
             return decryptedLinks;
         }
+
         handlePW(param, br);
         String title = br.getRegex("\"title\":\"([^<>\"]*?)\"").getMatch(0);
         if (title == null) title = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\">").getMatch(0);

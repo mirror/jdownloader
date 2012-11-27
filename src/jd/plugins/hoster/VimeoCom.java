@@ -334,8 +334,12 @@ public class VimeoCom extends PluginForHost {
         Browser br = new Browser();
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie("http://vimeo.com", "v6f", "1");
+        br.setCookie("vimeo.com", "v6f", "1");
         br.getPage("http://vimeo.com/" + ID);
+
+        /* Workaround for User from Iran */
+        if (br.containsHTML("<body><iframe src=\"http://10\\.10\\.\\d+\\.\\d+\\?type=(Invalid Site)?\\&policy=MainPolicy")) br.getPage("http://player.vimeo.com/config/" + ID);
+
         handlePW(downloadLink, br, "http://vimeo.com/" + ID + "/password");
         String newURL = null;
         String qualities[][] = getQualities(br, ID, name);
@@ -360,7 +364,7 @@ public class VimeoCom extends PluginForHost {
             if (passCode == null) passCode = Plugin.getUserInput("Password?", downloadLink);
             if (passCode == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Password needed!");
             final String xsrft = br.getRegex("xsrft: '(.*?)'").getMatch(0);
-            br.setCookie(MAINPAGE, "xsrft", xsrft);
+            br.setCookie(br.getHost(), "xsrft", xsrft);
             br.postPage(url, "password=" + Encoding.urlEncode(passCode) + "&token=" + xsrft);
             if (br.containsHTML("This is a private video")) {
                 downloadLink.setProperty("pass", null);
