@@ -19,6 +19,7 @@ contextmenu_extract=Jetzt Entpacken
 contextmenu_extract_to=Entpacker Zielordner setzen
 contextmenu_loading=%s1 (Lädt...)
 contextmenu_main=Archiv(e)
+contextmenu_password=Archivpasswort setzen
 date=Datum
 description=Entpackt alle üblichen Archivtypen (zip,rar,7zip,..)
 downloadedbad=Die Datei muss erst herunter geladen werden
