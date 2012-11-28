@@ -1,18 +1,18 @@
-//    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//jDownloader - Downloadmanager
+//Copyright (C) 2011  JD-Team support@jdownloader.org
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//    GNU General Public License for more details.
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//GNU General Public License for more details.
 //
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypter;
 
@@ -44,9 +44,10 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.Application;
 
-//Similar to SafeUrlMe (safeurl.me) and XSharezCom (xsharez.com)
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safelinking.net" }, urls = { "https?://(www\\.)?(safelinking\\.net/(p|d)/[a-z0-9]+|sflk\\.in/[A-Za-z0-9]+)" }, flags = { 0 })
-public class SflnkgNt extends PluginForDecrypt {
+//Similar to SafeUrlMe (safeurl.me) and SflnkgNt (safelinking.net)
+//NOTE: Nearly the complete code is copied from SflnkgNt and works just fine!
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xsharez.com" }, urls = { "https?://(www\\.)?xsharez\\.com/(p|d)/[a-z0-9]+" }, flags = { 0 })
+public class XSharezCom extends PluginForDecrypt {
 
     private enum CaptchaTyp {
         solvemedia,
@@ -66,7 +67,7 @@ public class SflnkgNt extends PluginForDecrypt {
     private String AGENT = null;
     private String cType = "notDetected";
 
-    public SflnkgNt(PluginWrapper wrapper) {
+    public XSharezCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -88,37 +89,23 @@ public class SflnkgNt extends PluginForDecrypt {
         br.setFollowRedirects(false);
 
         String parameter = param.toString();
-        if (parameter.matches("https?://(www\\.)?sflk\\.in/[A-Za-z0-9]+")) {
-            br.getPage(parameter);
-            final String newparameter = br.getRedirectLocation();
-            if (newparameter == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            if (!newparameter.matches("https?://(www\\.)?safelinking\\.net/(p|d)/[a-z0-9]+")) {
-                logger.warning("Decrypter broken for link (received invalid redirect link): " + parameter);
-                return null;
-            }
-            parameter = newparameter;
-        }
-        parameter = parameter.replaceAll("http://", "https://");
         br.getPage(parameter);
         if (br.containsHTML("(\"This link does not exist\\.\"|ERROR \\- this link does not exist|>404 Page/File not found<)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         if (br.containsHTML(">Not yet checked</span>")) { throw new DecrypterException("Not yet checked"); }
-        if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the safelinking.net support!"); }
+        if (br.containsHTML("To use reCAPTCHA you must get an API key from")) { throw new DecrypterException("Server error, please contact the xsharez.com support!"); }
         /* unprotected links */
-        if (parameter.matches("https?://(www\\.)?safelinking\\.net/d/[a-z0-9]+")) {
+        if (parameter.matches("https?://(www\\.)??xsharez\\.com/d/[a-z0-9]+")) {
             br.getPage(parameter);
             String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 finallink = br.getRegex("location=\"(https?[^\"]+)").getMatch(0);
             }
             if (finallink == null) {
-                logger.warning("SafeLinking: Sever issues? continuing...");
-                logger.warning("SafeLinking: Please confirm via browser, and report any bugs to JDownloader Developement Team. :" + parameter);
+                logger.warning("XSharez: Sever issues? continuing...");
+                logger.warning("XSharez: Please confirm via browser, and report any bugs to JDownloader Developement Team. :" + parameter);
             }
             if (!parameter.equals(finallink)) { // prevent loop
                 decryptedLinks.add(createDownloadlink(finallink));
@@ -128,8 +115,8 @@ public class SflnkgNt extends PluginForDecrypt {
             String protocol = parameter.startsWith("https:") ? "https:" : "http:";
             HashMap<String, String> captchaRegex = new HashMap<String, String>();
             captchaRegex.put("recaptcha", "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)");
-            captchaRegex.put("basic", "(https?://safelinking\\.net/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
-            captchaRegex.put("threeD", "\"(https?://safelinking\\.net/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
+            captchaRegex.put("basic", "(https?://xsharez\\.com/includes/captcha_factory/securimage/securimage_(show\\.php\\?hash=[a-z0-9]+|register\\.php\\?hash=[^\"]+sid=[a-z0-9]{32}))");
+            captchaRegex.put("threeD", "\"(https?://xsharez\\.com/includes/captcha_factory/3dcaptcha/3DCaptcha\\.php)\"");
             captchaRegex.put("fancy", "class=\"captcha_image ajax\\-fc\\-container\"");
             captchaRegex.put("qaptcha", "class=\"protected\\-captcha\"><div id=\"QapTcha\"");
             captchaRegex.put("solvemedia", "api(\\-secure)?\\.solvemedia\\.com/(papi)?");
@@ -165,12 +152,12 @@ public class SflnkgNt extends PluginForDecrypt {
                         break;
                     case fancy:
                         captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        captchaBr.getPage("https://safelinking.net/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0));
+                        captchaBr.getPage("https://xsharez.com/includes/captcha_factory/fancycaptcha.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0));
                         data += "&fancy-captcha=" + captchaBr.toString().trim();
                         break;
                     case qaptcha:
                         captchaBr.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        captchaBr.postPage("https://safelinking.net/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
+                        captchaBr.postPage("https://xsharez.com/includes/captcha_factory/Qaptcha.jquery.php?hash=" + new Regex(parameter, "/p/(.+)").getMatch(0), "action=qaptcha");
                         if (!captchaBr.containsHTML("\"error\":false")) {
                             logger.warning("Decrypter broken for link: " + parameter + "\n");
                             logger.warning("Qaptcha handling broken");
@@ -201,7 +188,7 @@ public class SflnkgNt extends PluginForDecrypt {
                     if (captchaRegex.containsKey(cType) || data.contains("link-password")) {
                         br.postPage(parameter, data);
                         if (br.getHttpConnection().getResponseCode() == 500) {
-                            logger.warning("SafeLinking: 500 Internal Server Error. Link: " + parameter);
+                            logger.warning("XSharez: 500 Internal Server Error. Link: " + parameter);
                             continue;
                         }
                         password = br.getRegex("type=\"password\" name=\"link-password\"").matches(); // password correct?
@@ -250,13 +237,13 @@ public class SflnkgNt extends PluginForDecrypt {
             }
 
             for (String link : cryptedLinks) {
-                if (link.matches(".*safelinking\\.net/d/.+")) {
+                if (link.matches(".*xsharez\\.com/d/.+")) {
                     br.getPage(link);
                     link = br.getRedirectLocation();
                     link = link == null ? br.getRegex("location=\"(http[^\"]+)").getMatch(0) : link;
                     if (link == null) {
-                        logger.warning("SafeLinking: Sever issues? continuing...");
-                        logger.warning("SafeLinking: Please confirm via browser, and report any bugs to developement team. :" + parameter);
+                        logger.warning("XSharez: Sever issues? continuing...");
+                        logger.warning("XSharez: Please confirm via browser, and report any bugs to developement team. :" + parameter);
                         continue;
                     }
                 }
@@ -278,7 +265,7 @@ public class SflnkgNt extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> loadcontainer(String format, CryptedLink param) throws IOException, PluginException {
         Browser brc = br.cloneBrowser();
-        String containerLink = br.getRegex("\"(https?://safelinking\\.net/c/[a-z0-9]+" + format + ")").getMatch(0);
+        String containerLink = br.getRegex("\"(https?://xsharez\\.com/c/[a-z0-9]+" + format + ")").getMatch(0);
         if (containerLink == null) {
             logger.warning("Contailerlink for link " + param.toString() + " for format " + format + " could not be found.");
             return new ArrayList<DownloadLink>();
@@ -291,9 +278,9 @@ public class SflnkgNt extends PluginForDecrypt {
             if (con.getResponseCode() == 200) {
                 try {
                     /* does not exist in 09581 */
-                    file = Application.getResource("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                    file = Application.getResource("tmp/xsharezcom/" + test.replaceAll("(:|/|\\?)", "") + format);
                 } catch (Throwable e) {
-                    file = JDUtilities.getResourceFile("tmp/safelinknet/" + test.replaceAll("(:|/|\\?)", "") + format);
+                    file = JDUtilities.getResourceFile("tmp/xsharezcom/" + test.replaceAll("(:|/|\\?)", "") + format);
                 }
                 if (file == null) return new ArrayList<DownloadLink>();
                 file.deleteOnExit();

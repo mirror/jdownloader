@@ -35,7 +35,7 @@ import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-//Similar to SflnkgNt (safelinking.net)
+//Similar to SflnkgNt (safelinking.net) and XSharezCom (xsharez.com)
 //They only have fancycaptcha and reCaptcha, the other stuff is just here in case they add more captchatypes
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "safeurl.me" }, urls = { "https?://(www\\.)?safeurl\\.me/(p|d)/[a-z0-9]+" }, flags = { 0 })
 public class SafeUrlMe extends PluginForDecrypt {

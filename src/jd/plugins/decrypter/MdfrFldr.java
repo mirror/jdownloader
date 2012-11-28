@@ -16,27 +16,25 @@
 
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
-import jd.gui.UserIO;
-import jd.http.URLConnectionAdapter;
+import jd.http.Browser;
+import jd.nutils.JDHash;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.MediafireCom;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediafire.com" }, urls = { "http://(?!download|blog)(\\w+\\.)?(mediafire\\.com|mfi\\.re)/(?!select_account_type\\.php|reseller|policies|tell_us_what_you_think\\.php|about\\.php|lost_password\\.php|blank\\.html|js/|common_questions/|software/|error\\.php|favicon|acceptable_use_policy\\.php|privacy_policy\\.php|terms_of_service\\.php)(imageview|i/\\?|\\\\?sharekey=|view/\\?|(?!download|file|\\?JDOWNLOADER|imgbnc\\.php)).{4,}" }, flags = { 0 })
 public class MdfrFldr extends PluginForDecrypt {
@@ -44,6 +42,11 @@ public class MdfrFldr extends PluginForDecrypt {
     public MdfrFldr(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    private String             SESSIONTOKEN  = null;
+    public static final String APIKEY        = "czQ1cDd5NWE3OTl2ZGNsZmpkd3Q1eXZhNHcxdzE4c2Zlbmt2djdudw==";
+    public static final String APPLICATIONID = "27112";
+    private String             ERRORCODE     = null;
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -67,7 +70,7 @@ public class MdfrFldr extends PluginForDecrypt {
         if (parameter.contains("imageview.php")) {
             String ID = new Regex(parameter, "\\.com/.*?quickkey=(.+)").getMatch(0);
             if (ID != null) {
-                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
@@ -76,7 +79,7 @@ public class MdfrFldr extends PluginForDecrypt {
         if (parameter.contains("/i/?")) {
             String ID = new Regex(parameter, "\\.com/i/\\?(.+)").getMatch(0);
             if (ID != null) {
-                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
+                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
                 decryptedLinks.add(link);
                 return decryptedLinks;
             }
@@ -84,151 +87,85 @@ public class MdfrFldr extends PluginForDecrypt {
             return null;
         }
         br.setFollowRedirects(false);
-        br.getPage(parameter);
         // Private link? Login needed!
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("error.php?errno=999")) {
-            if (!getUserLogin()) {
-                logger.info("Wrong logindata entered, stopping...");
-                return decryptedLinks;
-            }
-            br.getPage(parameter);
+        if (getUserLogin()) {
+            logger.info("Decrypting with logindata...");
+        } else {
+            logger.info("Decrypting without logindata...");
         }
-        if (br.getRedirectLocation() != null) {
-            /* check for direct download stuff */
-            String red = br.getRedirectLocation();
-            if (red.matches("http://download\\d+\\.mediafire.+")) {
-                /* direct download */
-                String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-                if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
-                if (ID != null) {
-                    DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
-                    decryptedLinks.add(link);
-                    return decryptedLinks;
-                }
-            } else {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(red);
-                    if (con.isContentDisposition()) {
-                        String ID = new Regex(red, "//.*?/.*?/(.*?)/").getMatch(0);
-                        if (ID != null) {
-                            DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
-                            decryptedLinks.add(link);
-                            return decryptedLinks;
-                        }
-                    }
-                    br.followConnection();
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            }
-        }
-        if (br.containsHTML(">This page cannot be found")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
-        }
-        br.setFollowRedirects(true);
-        Thread.sleep(500);
-        String reqlink = br.getRegex("(This is a shared Folder)").getMatch(0);
-        if (reqlink == null) {
-            String ID = new Regex(parameter, "\\.com/\\?(.+)").getMatch(0);
-            if (ID == null) ID = new Regex(parameter, "\\.com/.*?/(.*?)/").getMatch(0);
-            if (ID != null) {
-                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + ID);
-                decryptedLinks.add(link);
-                return decryptedLinks;
-            }
+        // Not found, either invalid link or filelink
+        // if ("112".equals(ERRORCODE)) {
+        // final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter,
+        // "([a-z0-9]+)$").getMatch(0));
+        // decryptedLinks.add(link);
+        // return decryptedLinks;
+        // }
+        if (!br.containsHTML("<result>Success</result>")) {
+            logger.info("Either invalid folder or decrypter failure for link: " + parameter);
             return null;
         }
-        String ID = new Regex(parameter, "\\.com/\\?([a-zA-Z0-9]+)").getMatch(0);
-        if (ID == null) ID = new Regex(parameter, "\\.com/.*?/([a-zA-Z0-9]*?)/").getMatch(0);
-        if (ID == null) {
-            ID = br.getRegex("var afI= '(.*?)'").getMatch(0);
-        }
-        if (ID != null) {
-            br.getPage("http://www.mediafire.com/api/folder/get_info.php?r=nuul&recursive=yes&folder_key=" + ID + "&response_format=json&version=2");
-            if (br.containsHTML("\"message\":\"Unknown or invalid FolderKey\"")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+        // Check if we have a single link or multiple folders/files
+        final String folderKey = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + folderKey);
+        if ("110".equals(this.ERRORCODE)) {
+            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=folders");
+            final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
+            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=files");
+            final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
+            if ((subFolders == null || subFolders.length == 0) && (files == null || files.length == 0)) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
-            String fileCounter = br.getRegex("file_count\":\"(\\d+)").getMatch(0);
-            fpName = br.getRegex("name\":\"([^\"]+)").getMatch(0);
-            HashSet<String> avoidDuplicates = new HashSet<String>();
-            /* folder */
-            // br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=nuul&content_type=folders&order_by=name&order_direction=asc&version=2.6&folder_key="
-            // + ID + "&response_format=json");
-            int loop = 1;
-            while (true) {
-                if (loop > 1) {
-                    br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&chunk=" + loop + "&version=2.6&folder_key=" + ID + "&response_format=json");
-                } else {
-                    br.getPage("http://www.mediafire.com/api/folder/get_content.php?r=null&content_type=files&order_by=name&order_direction=asc&version=2.6&folder_key=" + ID + "&response_format=json");
+            if (subFolders != null && subFolders.length != 0) {
+                for (final String folderID : subFolders) {
+                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/?" + folderID);
+                    decryptedLinks.add(link);
                 }
-                final String links[][] = br.getRegex("quickkey\":\"(.*?)\",\"filename\":\"(.*?)\".*?\"size\":\"(\\d+)").getMatches();
-                boolean freshAdded = false;
-                for (String[] element : links) {
-                    if (!element[2].equalsIgnoreCase("0") && avoidDuplicates.add(element[0]) == true) {
-                        DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                        link.setName(unescape(element[1]));
-                        link.setDownloadSize(Long.parseLong(element[2]));
-                        link.setProperty("origin", "decrypter");
-                        link.setAvailable(true);
-                        decryptedLinks.add(link);
-                        freshAdded = true;
-
+            }
+            if (files != null && files.length != 0) {
+                for (final String fileInfo : files) {
+                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + getXML("quickkey", fileInfo));
+                    link.setDownloadSize(SizeFormatter.getSize(getXML("size", fileInfo) + "b"));
+                    link.setName(getXML("filename", fileInfo));
+                    if ("private".equals(getXML("privacy", br.toString()))) {
+                        link.setProperty("privatefile", true);
                     }
-                }
-                if (freshAdded == false) {
-                    break;
-                } else {
-                    loop++;
+                    link.setAvailable(true);
+                    decryptedLinks.add(link);
                 }
             }
+            return decryptedLinks;
+        } else {
+            final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
+            decryptedLinks.add(link);
+            return decryptedLinks;
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(unescape(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
     }
 
     private boolean getUserLogin() throws Exception {
+        /*
+         * we have to load the plugins first! we must not reference a plugin class without loading it before
+         */
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
-        Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
-        if (aa == null) {
-            final String username = UserIO.getInstance().requestInputDialog("Enter Loginname for " + this.getHost() + " :");
-            if (username == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nousername", "Username not entered!"));
-            final String password = UserIO.getInstance().requestInputDialog("Enter password for " + this.getHost() + " :");
-            if (password == null) throw new DecrypterException(JDL.L("plugins.decrypter.mdfrfldr.nopassword", "Password not entered!"));
-            aa = new Account(username, password);
+        final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
+        if (aa != null) {
+            // Get token for user account
+            apiRequest(this.br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
+            SESSIONTOKEN = getXML("session_token", br.toString());
+            return true;
         }
-        // Get a token which we can then use to get links out of (private) folders
-        // http://developers.mediafire.com/index.php/REST_API
-        // br.getPage("https://www.mediafire.com/api/user/get_session_token.php?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" +
-        // Encoding.urlEncode(aa.getPass()) + "&application_id=1&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + "application ID"
-        // + "apikey") + "&version=1");
-        try {
-            ((MediafireCom) hosterPlugin).login(br, aa, true);
-        } catch (final PluginException e) {
-            aa.setEnabled(false);
-            aa.setValid(false);
-            return false;
-        }
-        // Account is valid, let's just add it
-        AccountController.getInstance().addAccount(hosterPlugin, aa);
-        return true;
+        return false;
     }
 
-    private static synchronized String unescape(final String s) {
-        /* we have to make sure the youtube plugin is loaded */
+    private void apiRequest(final Browser br, final String url, final String data) throws IOException {
+        if (SESSIONTOKEN == null)
+            br.getPage(url + data);
+        else
+            br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
+        ERRORCODE = getXML("error", br.toString());
+    }
 
-        final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
-        if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
-
-        return jd.plugins.hoster.Youtube.unescape(s);
+    private String getXML(final String parameter, final String source) {
+        return new Regex(source, "<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
     }
 }
