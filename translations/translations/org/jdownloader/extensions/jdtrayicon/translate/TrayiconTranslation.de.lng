@@ -34,5 +34,5 @@ popup_exit=JDownloader beenden
 popup_pause=Downloads pausieren
 popup_premiumtoggle=Premium aktiviert
 popup_reconnect=Reconnect durchführen
-popup_reconnecttoggle=Automatischer Reconnect
+popup_reconnecttoggle=Automatischer Reconnect aktiviert
 popup_update=Nach neuer Version suchen

@@ -19,6 +19,6 @@ interaction_shutdown_dialog_title_hibernate=Energiesparmodus?
 interaction_shutdown_dialog_title_shutdown=System herunterfahren?
 interaction_shutdown_dialog_title_standby=Ruhezustand?
 jd_plugins_optional_jdshutdown=Herunterfahren
-jd_plugins_optional_jdshutdown_description=Automatisches Herunterfahren, Standby, Ruhezustand deines PC's oder JDownloader schließen wenn die Downloads fertig sind
+jd_plugins_optional_jdshutdown_description=Automatisches Herunterfahren, Standby, Ruhezustand deines PC's oder JDownloader schließen wenn die Downloads fertig sind.
 lit_shutdownn=Herunterfahren
 show_admin=Es sind administrative Rechte erforderlich um Ruhezustand oder Standby konfigurieren zu können
