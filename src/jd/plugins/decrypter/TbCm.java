@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -64,6 +65,10 @@ public class TbCm extends PluginForDecrypt {
             e.printStackTrace();
         }
     }
+
+    public TbCm(PluginWrapper wrapper) {
+        super(wrapper);
+    };
 
     public static enum DestinationFormat {
         AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }),

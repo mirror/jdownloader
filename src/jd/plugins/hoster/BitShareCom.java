@@ -49,7 +49,7 @@ public class BitShareCom extends PluginForHost {
 
     private static final String  JSONHOST         = "http://bitshare.com/files-ajax/";
     private static final String  AJAXIDREGEX      = "var ajaxdl = \"(.*?)\";";
-    private static final String  FILEIDREGEX      = "([a-z0-9]{8})$";
+    private static final String  FILEIDREGEX      = "bitshare\\.com/.*?([a-z0-9]{8})";
     private static final String  DLLINKREGEX      = "SUCCESS#(http://.+)";
     private static final String  MAINPAGE         = "http://bitshare.com/";
     private static AtomicInteger maxPrem          = new AtomicInteger(1);
@@ -154,6 +154,7 @@ public class BitShareCom extends PluginForHost {
         if (br.containsHTML("Only Premium members can access this file\\.<")) throw new PluginException(LinkStatus.ERROR_FATAL, JDL.L("plugins.hoster.bitsharecom.premiumonly", "Only downloadable for premium users!"));
         if (br.containsHTML("Sorry, you cant download more then 1 files at time")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l);
         if (br.containsHTML("> Your Traffic is used up for today")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
+        String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         if (br.containsHTML("You reached your hourly traffic limit")) {
             String wait = br.getRegex("id=\"blocktimecounter\">(\\d+) Seconds</span>").getMatch(0);
             if (wait != null) {
@@ -164,7 +165,6 @@ public class BitShareCom extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        String fileID = new Regex(downloadLink.getDownloadURL(), FILEIDREGEX).getMatch(0);
         String tempID = br.getRegex(AJAXIDREGEX).getMatch(0);
         if (fileID == null || tempID == null) {
             logger.warning("fileID or tempID is null");
@@ -312,8 +312,7 @@ public class BitShareCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 if (agent == null) {
                     /*
-                     * we first have to load the plugin, before we can reference
-                     * it
+                     * we first have to load the plugin, before we can reference it
                      */
                     JDUtilities.getPluginForHost("mediafire.com");
                     agent = jd.plugins.hoster.MediafireCom.stringUserAgent();

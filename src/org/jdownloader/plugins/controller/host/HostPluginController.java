@@ -161,7 +161,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                         names = (String[]) c.getClazz().getDeclaredMethod("getAnnotationNames", new Class[] {}).invoke(null, new Object[] {});
                         flags = (int[]) c.getClazz().getDeclaredMethod("getAnnotationFlags", new Class[] {}).invoke(null, new Object[] {});
                     }
-                    if (patterns.length != names.length) throw new WTFException("names.length != patterns.length");
+                    if (patterns.length != names.length) {
+                        //
+                        throw new WTFException("names.length != patterns.length");
+                    }
                     if (flags.length != names.length && a.interfaceVersion() == 2) {
                         /* interfaceVersion 2 is for Stable/Nightly */
                         logger.log((new WTFException("PLUGIN STABLE ISSUE!! names.length(" + names.length + ")!= flags.length(" + flags.length + ")->" + simpleName)));
