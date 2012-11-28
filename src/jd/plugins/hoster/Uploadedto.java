@@ -817,6 +817,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handlePremium_API(DownloadLink downloadLink, Account account) throws Exception {
+        correctDownloadLink(downloadLink);
         String token = api_getAccessToken(account, false);
         String tokenType = api_getTokenType(account, token, false);
         if (!"premium".equals(tokenType)) {
