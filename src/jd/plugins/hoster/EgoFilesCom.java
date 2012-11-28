@@ -67,7 +67,7 @@ public class EgoFilesCom extends PluginForHost {
         if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -76,10 +76,13 @@ public class EgoFilesCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final Regex limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+):(\\d+)s</strong>");
-        if (limitReached.getMatches().length > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limitReached.getMatch(0)) * 60 + Integer.parseInt(limitReached.getMatch(1))) * 1001l);
+        Regex limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+)m (\\d+)s</strong>");
+        if (limitReached.getMatches().length > 0) {
+            logger.warning("Free download limit reached, waittime is applied.");
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limitReached.getMatch(0)) * 60 + Integer.parseInt(limitReached.getMatch(1))) * 1001l);
+        }
         final String rcID = br.getRegex("google\\.com/recaptcha/api/challenge\\?k=([^<>\"]*?)\"").getMatch(0);
-        if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (rcID == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "reCaptcha ID not recognized"); }
         final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
         jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
         rc.setId(rcID);
@@ -94,16 +97,30 @@ public class EgoFilesCom extends PluginForHost {
             }
             break;
         }
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+            logger.info("6 reCaptcha tryouts for <" + downloadLink.getDownloadURL() + "> were incorrect");
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA, "reCaptcha error");
+        }
         br.setFollowRedirects(false);
         String dllink = br.getRegex("<h2 class=\"grey\\-brake\"><a href=\"(http://[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://s\\d+\\.egofiles\\.com:\\d+/dl/[a-z0-9]+/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink == null) {
+            limitReached = br.getRegex(">For next free download you have to wait <strong>(\\d+)m (\\d+)s</strong>");
+            if (limitReached.getMatches().length > 0) {
+                logger.warning("Free download limit reached, waittime is applied.");
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, (Integer.parseInt(limitReached.getMatch(0)) * 60 + Integer.parseInt(limitReached.getMatch(1))) * 1001l);
+            } else {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
+            }
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!\nGot response:\n" + dl.getConnection().getResponseMessage());
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("browser code: " + br.getRequest().getHtmlCode());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
         }
         dl.startDownload();
     }
@@ -181,14 +198,15 @@ public class EgoFilesCom extends PluginForHost {
         if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
+            logger.warning("The final dllink seems not to be a file!\nGot response:\n" + dl.getConnection().getResponseMessage());
             br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("browser code: " + br.getRequest().getHtmlCode());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
         }
         dl.startDownload();
     }
