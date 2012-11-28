@@ -150,7 +150,7 @@ public class FilesMonsterCom extends PluginForHost {
                         if (wait == null) {
                             wait = br.getRegex("<br>Next free download will be available in (\\d+) min").getMatch(0);
                             if (wait == null) {
-                                wait = br.getRegex("will be available for free download in (\\d+) min").getMatch(0);
+                                wait = br.getRegex("will be available for download in (\\d+) min").getMatch(0);
                             }
                         }
                     }
