@@ -872,7 +872,7 @@ public class Oceanus extends PluginForHost {
             }
             if (!StringUtils.isEmpty(chunk.getCheckSum())) {
                 byte[] digest = HexFormatter.hexToByteArray(chunk.getCheckSum());
-                if (!Arrays.equals(digest, is.getMessageDigest().digest())) throw new IOException("MD5 failed!");
+                // if (!Arrays.equals(digest, is.getMessageDigest().digest())) throw new IOException("MD5 failed!");
             }
         }
 
