@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
@@ -62,6 +63,7 @@ public class DlPrtcCom extends PluginForDecrypt {
                     String code = getCaptchaCode(captchaLink, param);
                     importantForm.put("secure", code);
                 }
+                importantForm.put("i", Encoding.Base64Encode(String.valueOf(System.currentTimeMillis())));
                 br.submitForm(importantForm);
                 if (getCaptchaLink() != null || br.containsHTML(CAPTCHAFAILED) || br.containsHTML(PASSWORDFAILED) || br.containsHTML(PASSWORDTEXT)) continue;
                 break;
