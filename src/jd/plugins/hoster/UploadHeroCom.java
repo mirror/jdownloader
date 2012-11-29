@@ -42,25 +42,25 @@ import org.appwork.utils.formatter.SizeFormatter;
  * They have a linkchecker but it's only available for registered users (well maybe it also works so) but it doesn't show the filenames of
  * the links: http://uploadhero.com/api/linktester.php postvalues: "linktest=" + links to check
  */
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com/(dl|v)/[A-Za-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploadhero.co", "uploadhero.com" }, urls = { "http://(www\\.)?uploadhero\\.com?/(dl|v)/[A-Za-z0-9]+", "http://NULL_REGEX_BLAAAH12312321" }, flags = { 2, 0 })
 public class UploadHeroCom extends PluginForHost {
+
+    private static final String MAINPAGE = "http://uploadhero.co";
+    private static Object       LOCK     = new Object();
 
     public UploadHeroCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://uploadhero.com/premium");
+        this.enablePremium(MAINPAGE + "/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://uploadhero.com/tos";
+        return MAINPAGE + "/tos";
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(www\\.)?uploadhero\\.com/(dl|v)/", "http://uploadhero.com/dl/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(www\\.)?uploadhero\\.com?/(dl|v)/", MAINPAGE + "/dl/"));
     }
-
-    private static final String MAINPAGE = "http://uploadhero.com";
-    private static Object       LOCK     = new Object();
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -87,7 +87,7 @@ public class UploadHeroCom extends PluginForHost {
         if (blockmin != null && blocksec != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, ((Integer.parseInt(blockmin) + 5) * 60 + Integer.parseInt(blocksec)) * 1001l);
         final String captchaLink = br.getRegex("\"(/captchadl\\.php\\?[a-z0-9]+)\"").getMatch(0);
         if (captchaLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String code = getCaptchaCode("http://uploadhero.com" + captchaLink, downloadLink);
+        String code = getCaptchaCode(MAINPAGE + captchaLink, downloadLink);
         br.getPage(downloadLink.getDownloadURL() + "?code=" + code);
         if (!br.containsHTML("\"dddl\"")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         String dllink = getDllink();
@@ -102,7 +102,7 @@ public class UploadHeroCom extends PluginForHost {
 
     private String getDllink() {
         String dllink = br.getRegex("var magicomfg = \\'<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://storage\\d+\\.uploadhero\\.com/\\?d=[A-Za-z0-9]+/[^<>\"/]+)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(http://storage\\d+\\.uploadhero\\.com?/\\?d=[A-Za-z0-9]+/[^<>\"/]+)\"").getMatch(0);
         return dllink;
     }
 
@@ -126,10 +126,10 @@ public class UploadHeroCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(false);
+                br.setFollowRedirects(true);
                 // br.getPage("");
                 br.setCookie(MAINPAGE, "lang", "en");
-                br.postPage("http://uploadhero.com/lib/connexion.php", "pseudo_login=" + Encoding.urlEncode(account.getUser()) + "&password_login=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE + "/lib/connexion.php", "pseudo_login=" + Encoding.urlEncode(account.getUser()) + "&password_login=" + Encoding.urlEncode(account.getPass()));
                 final String cookie = br.getRegex("id=\"cookietransitload\" style=\"display:none;\">([^<>\"]*?)</div>").getMatch(0);
                 if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.setCookie(MAINPAGE, "uh", cookie);
@@ -158,7 +158,7 @@ public class UploadHeroCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://uploadhero.com/my-account");
+        br.getPage(MAINPAGE + "/my-account");
         Regex otherStuff = br.getRegex("\">Used storage</div><div class=\"champdeux\">([^<>\"]*?) \\- (\\d+) Files</div></div>");
         String space = otherStuff.getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
@@ -201,7 +201,7 @@ public class UploadHeroCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
                 Browser brc = br.cloneBrowser();
-                brc.getPage("http://uploadhero.com/my-account");
+                brc.getPage(MAINPAGE + "/my-account");
                 String expire = brc.getRegex("<td><b>Days:</b></td>[\t\n\r ]+<td>(\\d+) days</td>").getMatch(0);
                 if (expire == null) {
                     logger.info("try to refresh cookie, as it seems to be invalid!");
