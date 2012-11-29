@@ -106,11 +106,15 @@ public class FShareVn extends PluginForHost {
         if (downloadURL == null) {
             downloadURL = br.getRegex("value=\"Download\" name=\"btn_download\" value=\"Download\"  onclick=\"window\\.location=\\'(http://.*?)\\'\"").getMatch(0);
             if (downloadURL == null) {
-                downloadURL = br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                // downloadURL = br.getRegex("\\'(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\\'").getMatch(0);
+                downloadURL = br.getRegex("<form action=\"(http://download\\d+\\.fshare\\.vn/download/[A-Za-z0-9]+/.*?)\"").getMatch(0);
             }
         }
+        logger.info("downloadURL = " + downloadURL);
         // Waittime
         String wait = br.getRegex("var count = \"(\\d+)\";").getMatch(0);
+        if (wait == null) wait = br.getRegex("var count = (\\d+);").getMatch(0);
+        if (wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // No downloadlink shown, host is buggy
         if (downloadURL == null && "0".equals(wait)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
         if (wait == null || downloadURL == null || !downloadURL.contains("fshare.vn")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
