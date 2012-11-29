@@ -1054,6 +1054,8 @@ public class Oceanus extends PluginForHost {
         private long          size;
         @XmlElement(name = "Status")
         private String        status;
+        @XmlElement(name = "CheckSum")
+        private String        checkSum;
         @XmlElementWrapper(name = "CDNNodes")
         @XmlElement(name = "CDNNode")
         private List<CDNNode> cdnNodes;
@@ -1135,6 +1137,14 @@ public class Oceanus extends PluginForHost {
 
         public void setChunkId(Long chunkId) {
             this.chunkId = chunkId;
+        }
+
+        public String getCheckSum() {
+            return checkSum;
+        }
+
+        public void setCheckSum(String checkSum) {
+            this.checkSum = checkSum;
         }
 
         /**
