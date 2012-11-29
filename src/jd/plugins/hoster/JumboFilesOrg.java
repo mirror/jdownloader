@@ -82,15 +82,14 @@ public class JumboFilesOrg extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(PREMIUMONLYLINK)) throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable for premium users!");
         if (br.containsHTML("of free download slots for your country")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available for your country", 10 * 60 * 1000l);
         if (true) throw new PluginException(LinkStatus.ERROR_FATAL, "Free mode is not (yet) supported!");
-        br.setFollowRedirects(false);
-        final String dllink = br.getRegex("").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        // final String dllink = br.getRegex("").getMatch(0);
+        // if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        // if (dl.getConnection().getContentType().contains("html")) {
+        // br.followConnection();
+        // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // }
+        // dl.startDownload();
     }
 
     private static final String MAINPAGE = "http://jumbofiles.org";
@@ -117,11 +116,7 @@ public class JumboFilesOrg extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.getPage("http://jumbofiles.org/login");
-                if (!br.containsHTML("\"ckimg\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                final DownloadLink dummy = new DownloadLink(this, "uploading.com", "uploading.com", null, true);
-                final String code = getCaptchaCode("http://jumbofiles.org/ckimg", dummy);
-                br.postPage("http://jumbofiles.org/login", "id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&key=" + Encoding.urlEncode(code));
+                br.postPage("http://jumbofiles.org/login", "sukey=yes&id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("Account type:<br> <h3>Premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.RandomUserAgent;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -36,14 +36,13 @@ public class AdfLy extends PluginForDecrypt {
     }
 
     private static Object LOCK = new Object();
-    private static String ua   = RandomUserAgent.generate();
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString().replace("www.", "");
         br.setFollowRedirects(false);
         br.setReadTimeout(3 * 60 * 1000);
-        br.getHeaders().put("User-Agent", ua);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         synchronized (LOCK) {
             br.getPage(parameter);
             if (parameter.contains("9.bb/") && br.getRedirectLocation() != null) {
@@ -71,19 +70,23 @@ public class AdfLy extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(aLink));
             }
         }
+        skipWait();
         for (int i = 0; i <= 2; i++) {
             String extendedProtectionPage = br.getRegex("\\'(https?://adf\\.ly/go/[^<>\"\\']*?)\\'").getMatch(0);
             if (extendedProtectionPage == null) {
-                extendedProtectionPage = br.getRegex("var url = '(/go/[^<>\"\\']*?)\\'").getMatch(0);
+                extendedProtectionPage = br.getRegex("var url = \\'(/go/[^<>\"\\']*?)\\'").getMatch(0);
                 if (extendedProtectionPage != null) {
                     extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
                 }
             }
+            final boolean skipWait = true;
             if (extendedProtectionPage != null) {
                 int wait = 7;
                 String waittime = br.getRegex("var countdown = (\\d+);").getMatch(0);
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
-                sleep(wait * 1000l, param);
+                if (!skipWait) {
+                    sleep(wait * 1000l, param);
+                }
                 br.getPage(extendedProtectionPage);
                 String tempLink = br.getRedirectLocation();
                 if (tempLink != null) {
@@ -120,6 +123,17 @@ public class AdfLy extends PluginForDecrypt {
         }
 
         return decryptedLinks;
+    }
+
+    private void skipWait() {
+        final Browser brAds = br.cloneBrowser();
+        final String[] skpWaitLinks = { "http://cdn.adf.ly/css/adfly_1.css", "http://cdn.adf.ly/js/adfly.js", "http://cdn.adf.ly/images/logo_fb.png", "http://cdn.adf.ly/images/skip_ad/en.png", "http://adf.ly/favicon.ico", "http://adf.ly/favicon.ico", "http://cdn.adf.ly/images/ad_top_bg.png", "http://adf.ly/omnigy7425325410.swf" };
+        for (final String skWaitLink : skpWaitLinks) {
+            try {
+                brAds.openGetConnection(skWaitLink);
+            } catch (final Exception e) {
+            }
+        }
     }
 
 }

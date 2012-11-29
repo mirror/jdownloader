@@ -483,16 +483,15 @@ public class MediafireCom extends PluginForHost {
 
     /** end of random agents **/
 
-    private static final String                              PRIVATEFILE             = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
-    private static AtomicInteger                             maxPrem                 = new AtomicInteger(1);
-    private static final String                              TEMPUNAVAILABLE         = ">Temporarily Unavailable<";
-    private static final String                              TEMPUNAVAILABLEUSERTEXT = JDL.L("plugins.hoster.mediafirecom.temporarilyunavailble", "This file is temporarily unavailable");
-    private String                                           SESSIONTOKEN            = null;
-    private String                                           ERRORCODE               = null;
+    private static final String                              PRIVATEFILE           = JDL.L("plugins.hoster.mediafirecom.errors.privatefile", "Private file: Only downloadable for registered users");
+    private static AtomicInteger                             maxPrem               = new AtomicInteger(1);
+    private static final String                              PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
+    private String                                           SESSIONTOKEN          = null;
+    private String                                           ERRORCODE             = null;
     /**
      * Map to cache the configuration keys
      */
-    private static HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS      = new HashMap<Account, HashMap<String, String>>();
+    private static HashMap<Account, HashMap<String, String>> CONFIGURATION_KEYS    = new HashMap<Account, HashMap<String, String>>();
 
     public static abstract class PasswordSolver {
 
@@ -638,13 +637,13 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        requestFileInformation(downloadLink);
+        if (downloadLink.getBooleanProperty("privatefolder")) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
         doFree(downloadLink, null);
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
-
         String url = null;
-        this.br.setDebug(true);
         boolean captchaCorrect = false;
         if (account == null) this.br.getHeaders().put("User-Agent", MediafireCom.agent);
         for (int i = 0; i < NUMBER_OF_RETRIES; i++) {
@@ -654,6 +653,7 @@ public class MediafireCom extends PluginForHost {
             this.requestFileInformation(downloadLink);
             if (downloadLink.getBooleanProperty("privatefile") && account == null) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFILE);
             try {
+                br.setFollowRedirects(true);
                 br.getPage(downloadLink.getDownloadURL());
                 captchaCorrect = false;
                 Form form = br.getFormbyProperty("name", "form_captcha");
@@ -790,10 +790,12 @@ public class MediafireCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         this.requestFileInformation(downloadLink);
+        if (downloadLink.getBooleanProperty("privatefolder")) throw new PluginException(LinkStatus.ERROR_FATAL, PRIVATEFOLDERUSERTEXT);
         this.login(br, account, false);
         if (account.getBooleanProperty("freeaccount")) {
             doFree(downloadLink, account);
         } else {
+            // TODO: See if there is a way to implement the premium API again: http://developers.mediafire.com/index.php/REST_API
             String url = dlURL;
             boolean passwordprotected = false;
             boolean useAPI = false;
@@ -868,8 +870,6 @@ public class MediafireCom extends PluginForHost {
     }
 
     private void handlePremiumPassword(final DownloadLink downloadLink, final Account account) throws Exception {
-        // API currently does not work
-        // http://support.mediafire.com/index.php?_m=knowledgebase&_a=viewarticle&kbarticleid=68
         this.br.getPage(downloadLink.getDownloadURL());
         String url = br.getRedirectLocation();
         if (url != null) br.getPage(url);
@@ -999,36 +999,40 @@ public class MediafireCom extends PluginForHost {
         }
     }
 
-    private String getAPIKEY(Browser br) {
-        if (br == null) return null;
-        String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
-        if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
-        return configurationKey;
-    }
+    // private String getAPIKEY(Browser br) {
+    // if (br == null) return null;
+    // String configurationKey = this.br.getRegex("Configuration Key:.*? value=\"(.*?)\"").getMatch(0);
+    // if (configurationKey == null) configurationKey = this.br.getRegex("Configuration Key.*? value=\"(.*?)\"").getMatch(0);
+    // return configurationKey;
+    // }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
         downloadLink.setProperty("type", Property.NULL);
+        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        if (downloadLink.getBooleanProperty("privatefolder")) {
+            downloadLink.getLinkStatus().setStatusText(PRIVATEFOLDERUSERTEXT);
+            downloadLink.setName(fid);
+            return AvailableStatus.TRUE;
+        }
         final Browser apiBR = br.cloneBrowser();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            // Get token for user account
-            apiRequest(apiBR, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + MdfrFldr.APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + MdfrFldr.APPLICATIONID + Encoding.Base64Decode(MdfrFldr.APIKEY)) + "&version=1");
-            SESSIONTOKEN = getXML("session_token", apiBR.toString());
+            getSessionToken(apiBR, aa);
         }
-        apiRequest(apiBR, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        apiRequest(apiBR, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + fid);
         if ("114".equals(ERRORCODE)) {
             downloadLink.setProperty("privatefile", true);
             return AvailableStatus.TRUE;
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
-        downloadLink.setName(getXML("filename", apiBR.toString()));
+        downloadLink.setName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
         downloadLink.setAvailable(true);
         return AvailableStatus.TRUE;
     }
 
-    public String getXML(final String parameter, final String source) {
+    private String getXML(final String parameter, final String source) {
         return new Regex(source, "<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
     }
 
@@ -1038,6 +1042,25 @@ public class MediafireCom extends PluginForHost {
         else
             br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
         ERRORCODE = getXML("error", br.toString());
+    }
+
+    private void getSessionToken(final Browser apiBR, final Account aa) throws IOException {
+        // Try to re-use session token as long as possible (it's valid for 10 minutes)
+        final String savedusername = this.getPluginConfig().getStringProperty("username");
+        final String savedpassword = this.getPluginConfig().getStringProperty("password");
+        final long sessiontokenCreateDate = this.getPluginConfig().getLongProperty("sessiontokencreated", -1);
+        if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
+            SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
+        } else {
+            // Get token for user account
+            apiRequest(apiBR, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + MdfrFldr.APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + MdfrFldr.APPLICATIONID + Encoding.Base64Decode(MdfrFldr.APIKEY)) + "&version=1");
+            SESSIONTOKEN = getXML("session_token", apiBR.toString());
+            this.getPluginConfig().setProperty("username", aa.getUser());
+            this.getPluginConfig().setProperty("password", aa.getPass());
+            this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
+            this.getPluginConfig().setProperty("sessiontokencreated", System.currentTimeMillis());
+            this.getPluginConfig().save();
+        }
     }
 
     @Override

@@ -54,7 +54,6 @@ public class MdfrFldr extends PluginForDecrypt {
         if (parameter.matches("http://(\\w+\\.)?mediafire\\.com/view/\\?.+")) parameter = parameter.replace("/view", "");
         if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) return decryptedLinks;
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
-        String fpName = null;
         this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7");
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
@@ -93,17 +92,6 @@ public class MdfrFldr extends PluginForDecrypt {
         } else {
             logger.info("Decrypting without logindata...");
         }
-        // Not found, either invalid link or filelink
-        // if ("112".equals(ERRORCODE)) {
-        // final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter,
-        // "([a-z0-9]+)$").getMatch(0));
-        // decryptedLinks.add(link);
-        // return decryptedLinks;
-        // }
-        if (!br.containsHTML("<result>Success</result>")) {
-            logger.info("Either invalid folder or decrypter failure for link: " + parameter);
-            return null;
-        }
         // Check if we have a single link or multiple folders/files
         final String folderKey = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + folderKey);
@@ -113,6 +101,15 @@ public class MdfrFldr extends PluginForDecrypt {
             apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=files");
             final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
             if ((subFolders == null || subFolders.length == 0) && (files == null || files.length == 0)) {
+                // Probably private folder which can only be decrypted with an active account
+                if ("114".equals(ERRORCODE)) {
+                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
+                    link.setProperty("privatefolder", true);
+                    link.setName(folderKey);
+                    link.setAvailable(true);
+                    decryptedLinks.add(link);
+                    return decryptedLinks;
+                }
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
@@ -137,6 +134,7 @@ public class MdfrFldr extends PluginForDecrypt {
             return decryptedLinks;
         } else {
             final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
+            link.setName(folderKey);
             decryptedLinks.add(link);
             return decryptedLinks;
         }
@@ -149,10 +147,22 @@ public class MdfrFldr extends PluginForDecrypt {
         final PluginForHost hosterPlugin = JDUtilities.getPluginForHost("mediafire.com");
         final Account aa = AccountController.getInstance().getValidAccount(hosterPlugin);
         if (aa != null) {
-            // Get token for user account
-            apiRequest(this.br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + APPLICATIONID + Encoding.Base64Decode(APIKEY)) + "&version=1");
-            SESSIONTOKEN = getXML("session_token", br.toString());
-            return true;
+            // Try to re-use session token as long as possible (it's valid for 10 minutes)
+            final String savedusername = this.getPluginConfig().getStringProperty("username");
+            final String savedpassword = this.getPluginConfig().getStringProperty("password");
+            final long sessiontokenCreateDate = this.getPluginConfig().getLongProperty("sessiontokencreated", -1);
+            if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
+                SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
+            } else {
+                // Get token for user account
+                apiRequest(br, "https://www.mediafire.com/api/user/get_session_token.php", "?email=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()) + "&application_id=" + MdfrFldr.APPLICATIONID + "&signature=" + JDHash.getSHA1(aa.getUser() + aa.getPass() + MdfrFldr.APPLICATIONID + Encoding.Base64Decode(MdfrFldr.APIKEY)) + "&version=1");
+                SESSIONTOKEN = getXML("session_token", br.toString());
+                this.getPluginConfig().setProperty("username", aa.getUser());
+                this.getPluginConfig().setProperty("password", aa.getPass());
+                this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
+                this.getPluginConfig().setProperty("sessiontokencreated", System.currentTimeMillis());
+                this.getPluginConfig().save();
+            }
         }
         return false;
     }

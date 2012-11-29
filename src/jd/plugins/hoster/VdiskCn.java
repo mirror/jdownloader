@@ -59,7 +59,7 @@ public class VdiskCn extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return -1;
     }
 
     @Override
@@ -71,7 +71,7 @@ public class VdiskCn extends PluginForHost {
                 br.setReadTimeout(3 * 60 * 1000);
                 br.setFollowRedirects(true);
                 br.setCookie("http://vdisk.cn/", "lang", "en");
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 20);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
                 if (dl.getConnection().getContentType().contains("html") || dl.getConnection().getLongContentLength() == -1) {
                     downloadLink.setProperty("freelink", Property.NULL);
                     dllink = null;

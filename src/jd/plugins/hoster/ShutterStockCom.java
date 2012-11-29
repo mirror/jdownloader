@@ -223,9 +223,9 @@ public class ShutterStockCom extends PluginForHost {
                 }
             }
             if (dLink == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Link might not be downloadable!");
+            // Captcha cannot be skipped without anti captcha method!
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex("\"(show_verify_image_lim\\-\\d+\\.jpg\\?x=\\d+)\"").getMatch(0);
-
                 // Account can get deactivated during requests because of account sharing and maybe also other reasons
                 if (br.containsHTML("Switched computers\\?")) {
                     logger.info("Login fail #1");

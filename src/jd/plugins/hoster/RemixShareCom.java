@@ -112,6 +112,7 @@ public class RemixShareCom extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
+        if (dl.getConnection().getLongContentLength() == 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 2 * 60 * 60 * 1000l);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

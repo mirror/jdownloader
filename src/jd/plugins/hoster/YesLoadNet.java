@@ -47,8 +47,8 @@ public class YesLoadNet extends PluginForHost {
         br.setCookie("http://yesload.net/", "locale", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("style=\"position:relative;z\\-index:9999;color:#fff;width:100%;top:\\-8px\">([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) \\- English Title</title>").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- YesLoad</title>").getMatch(0);
+        if (filename == null) filename = br.getRegex(">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
         return AvailableStatus.TRUE;
