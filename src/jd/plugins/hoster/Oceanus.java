@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.math.BigInteger;
 import java.net.URL;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,6 +77,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.net.throttledconnection.MeteredThrottledInputStream;
@@ -859,12 +862,17 @@ public class Oceanus extends PluginForHost {
             byte[] buf = new byte[32767];
             String decryptionKeyStr = oceanus.getDecryptionKey(downloadLink);
             InputStream cipherInputStream = getDecryptionInputStream(inputStream, decryptionKeyStr);
-            while ((bytesRead = cipherInputStream.read(buf)) != -1) {
+            DigestInputStream is = new DigestInputStream(cipherInputStream, MessageDigest.getInstance("md5"));
+            while ((bytesRead = is.read(buf)) != -1) {
                 if (externalDownloadStop()) throw new InterruptedException("ExternalStop");
                 if (bytesRead > 0) {
                     raf.write(buf, 0, bytesRead);
                     liveBytesLoaded.addAndGet(bytesRead);
                 }
+            }
+            if (!StringUtils.isEmpty(chunk.getCheckSum())) {
+                byte[] digest = HexFormatter.hexToByteArray(chunk.getCheckSum());
+                if (!Arrays.equals(digest, is.getMessageDigest().digest())) throw new IOException("MD5 failed!");
             }
         }
 
