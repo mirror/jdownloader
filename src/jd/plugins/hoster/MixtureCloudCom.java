@@ -49,7 +49,7 @@ public class MixtureCloudCom extends PluginForHost {
     // are transferable between each (sub)?domain & section. All links have
     // recaptcha with this one size fits all download method.
     private static final String PREMIUMONLY         = "File access is limited to users with unlimited";
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable for premium users with unlimited account");
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable via account");
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
