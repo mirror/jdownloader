@@ -255,7 +255,7 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                     newColor = robo.getPixelColor(1, y);
                     for (int x = 0; x < img.getWidth(); x++) {
                         tmp = new Color(img.getRGB(x, y));
-                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255;
+                        alpha = ((img.getRGB(x, y) >> 24) & 0xFF) / 255F;
                         cr = (int) (alpha * tmp.getRed() + (1 - alpha) * newColor.getRed());
                         cg = (int) (alpha * tmp.getGreen() + (1 - alpha) * newColor.getGreen());
                         cb = (int) (alpha * tmp.getBlue() + (1 - alpha) * newColor.getBlue());

@@ -84,7 +84,7 @@ public class FilerNet extends PluginForHost {
         prepBrowser();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
+        final String reconWait = getReconWait();
         if (reconWait != null) {
             link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             link.getLinkStatus().setStatusText("Cannot show filename while the downloadlimit is reached");
@@ -112,7 +112,7 @@ public class FilerNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
         if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All slots are filled", 10 * 60 * 1000l);
-        final String reconWait = br.getRegex("<p>Please wait <span id=\"time\">(\\d+)</span> seconds").getMatch(0);
+        final String reconWait = getReconWait();
         int wait = 0;
         if (reconWait != null) wait = Integer.parseInt(reconWait);
         if (wait < 180) {
@@ -156,6 +156,10 @@ public class FilerNet extends PluginForHost {
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
+    }
+
+    private String getReconWait() {
+        return br.getRegex("<span id=\"time\">(\\d+)</span>").getMatch(0);
     }
 
     // do not add @Override here to keep 0.* compatibility
