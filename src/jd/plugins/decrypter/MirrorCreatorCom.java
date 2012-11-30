@@ -51,7 +51,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         String links = br.getRegex("[\n\r\t ][^//]ajaxRequest.open\\(\"GET\", \"(/mstatus\\.php\\?uid=[A-Z0-9]+\\&[A-Za-z0-9]*?=[a-z0-9]{32})\"").getMatch(0);
         if (links == null) {
             // at the beginning of the line
-            br.getRegex("\najaxRequest.open\\(\"GET\", \"(/mstatus\\.php\\?uid=[A-Z0-9]+\\&[A-Za-z0-9]*?=[a-z0-9]{32})\"").getMatch(0);
+            links = br.getRegex("\najaxRequest.open\\(\"GET\", \"(/mstatus\\.php\\?uid=[A-Z0-9]+\\&[A-Za-z0-9]*?=[a-z0-9]{32})\"").getMatch(0);
         }
         if (links == null) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
