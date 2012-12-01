@@ -80,6 +80,7 @@ gui_settings_linkgrabber_title=連結擷取器篩選
 gui_settings_plugins_title=外掛設定
 gui_settings_premium_description=輸入和管理您的所有進階/黃金/白金帳號。
 gui_settings_premium_title=帳號管理
+gui_settings_proxy_description=如果存取網際網路時，需要提供一個代理伺服器，請在這裡輸入代理伺服器的資料。JDownloader 是能夠同時跳轉幾個代理伺服器，以避免 IP 等待時間。預設的代理伺服器用於所有連接，沒有 IP 限制。
 gui_settings_proxy_title=連線管理
 gui_settings_reconnect_title=重新連線
 gui_settings_reconnect_title_method=重新連線方法

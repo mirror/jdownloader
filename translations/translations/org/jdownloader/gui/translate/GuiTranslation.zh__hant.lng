@@ -10,6 +10,7 @@ AddLinksDialog_layoutDialogContent_help_destination=請輸入一個有效的下�
 AddLinksDialog_layoutDialogContent_input_help=在這裡輸入連結、Url、網站、或其他任何文字...
 AddLinksDialog_layoutDialogContent_packagename_help=輸入任務名稱，或保留為空設定為自動模式
 AddLinksDialog_validateForm_folder_invalid_missing=請確保輸入一個有效的下載目的地。
+AddLinksDialog_validateForm_input_missing=請輸入 Url、連結、網站、或純文字
 AddOptionsAction_actionPerformed_addlinks=分析文字連結
 AddonsMenu_updateMenu_windows_=視窗
 AdvancedSettings_AdvancedSettings_filter_=篩選設定
