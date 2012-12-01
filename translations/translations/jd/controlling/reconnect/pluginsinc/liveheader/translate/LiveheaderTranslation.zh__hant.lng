@@ -13,6 +13,7 @@ DataCompareDialog_layoutDialogContent_user_help=輸入網頁介面使用者名�
 DataCompareDialog_layoutDialogContent_webinterface=路由器網頁介面
 DataCompareDialog_open_webinterface=開啟網頁介面
 EditScriptAction_EditScriptAction_=編輯指令碼
+EditScriptAction_EditScriptAction_tt=輸入自己的重新連線指令碼，或修改一個現有的。
 GetIPAction_GetIPAction_=取得路由器 IP
 GetIPAction_GetIPAction_tt=掃描您的網路並嘗試尋找您的路由器 IP
 GetIPAction_actionPerformed_d_msg=正在搜尋路由器 IP
