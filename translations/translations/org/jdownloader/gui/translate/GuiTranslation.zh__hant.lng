@@ -218,6 +218,7 @@ TaskColumn_getStringValue_finished_=已完成
 TaskColumn_getStringValue_running_=執行中
 TestAction_actionPerformed_match_=%s1: %s2
 TestAction_actionPerformed_match_ext_=檔名 %s1 符合您的檔案類型篩選：%s2。
+TestAction_actionPerformed_msg_=若要測試您的運算式 %s1，請輸入相符 %s2
 TestAction_actionPerformed_nomatch_ext_=檔名 %s1 不符合您的檔案類型篩選。
 TestAction_actionPerformed_test_title_=請輸入 %s1
 TestWaitDialog_TestWaitDialog_title_=測試篩選 - 執行中
