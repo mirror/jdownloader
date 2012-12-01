@@ -2,6 +2,7 @@ AbstractConfigPanel_addPair_enabled=啟用/停用這個選項
 AddLinksAction_=新增下載
 AddLinksDialog_AddLinksDialog_confirm=繼續
 AddLinksDialog_layoutDialogContent_autoextract_lbl=自動解壓縮
+AddLinksDialog_layoutDialogContent_description=JDownloader 可幫助您分析文字或連結的網站。在下面輸入連結、Url、網站、或文字，\n\選擇一個下載的目的地，然後按一下 [開始分析]。\n\在連結擷取器檢視之後會把所有 [可以下載] 的檔案列出來。
 AddOptionsAction_actionPerformed_addlinks=分析文字連結
 AddonsMenu_updateMenu_windows_=視窗
 AdvancedSettings_AdvancedSettings_filter_=篩選設定
