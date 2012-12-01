@@ -22,10 +22,10 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -50,13 +50,20 @@ public class SendspaceCom extends PluginForHost {
         setStartIntervall(5000l);
     }
 
-    private static final String JDOWNLOADERAPIKEY = "OU985MOQCM";
+    private static final String JDOWNLOADERAPIKEY = "T1U5ODVNT1FDTQ==";
+    // private static final String JDUSERNAME = "cHNwem9ja2Vyc2NlbmVqZA==";
     private static String       CURRENTERRORCODE;
+    private static String       SESSIONTOKEN;
     private static String       SESSIONKEY;
 
     // TODO: Add handling for password protected files for handle premium,
     // actually it only works for handle free
-    /** For premium we use their API: http://www.sendspace.com/dev_method.html */
+    /**
+     * For premium we use their API: http://www.sendspace.com/dev_method.html
+     */
+    /**
+     * Usage: create a token, log in and then use the functions via method "apiRequest(String url, String data)
+     * */
     @Override
     public String getAGBLink() {
         return "http://www.sendspace.com/terms.html";
@@ -73,10 +80,34 @@ public class SendspaceCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        prepBrowser();
+        // createSessToken();
+        // final Account aa = AccountController.getInstance().getValidAccount(this);
+        // if (aa != null) {
+        // apiLogin(aa.getUser(), JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(aa.getPass()).toLowerCase()));
+        // } else {
+        // apiLogin(Encoding.Base64Decode(JDUSERNAME), JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5("JD Account Password").toLowerCase()));
+        // }
+        // apiRequest("http://api.sendspace.com/rest/?method=files.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" +
+        // getFid(downloadLink));
+        // if (br.containsHTML("<error code=\"9\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // final String filename = br.getRegex("name=\"([^<>\"]*?)\"").getMatch(0);
+        // final String filesize = br.getRegex("file_size=\"(\\d+)\"").getMatch(0);
+        // if (filename != null && filename != null) {
+        // downloadLink.setFinalFileName(filename);
+        // downloadLink.setDownloadSize(Long.parseLong(filesize));
+        // return AvailableStatus.TRUE;
+        // } else {
+        // return handleOldAvailableStatus(downloadLink);
+        // }
+        return handleOldAvailableStatus(downloadLink);
+
+    }
+
+    private AvailableStatus handleOldAvailableStatus(final DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         String url = downloadLink.getDownloadURL();
         if (!url.contains("/pro/dl/")) {
             br.getPage(url);
@@ -289,44 +320,10 @@ public class SendspaceCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        br.getPage("http://api.sendspace.com/rest/?method=download.getinfo&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
-
-        CURRENTERRORCODE = getErrorcode();
-        if (CURRENTERRORCODE != null) {
-            if (CURRENTERRORCODE.equals("6")) {
-                logger.warning("API_ERROR_SESSION_BAD");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (CURRENTERRORCODE.equals("9")) {
-                logger.info("API_ERROR_FILE_NOT_FOUND");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (CURRENTERRORCODE.equals("11")) {
-                logger.warning("API_ERROR_PERMISSION_DENIED");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (CURRENTERRORCODE.equals("12")) {
-                logger.warning("API_ERROR_DOWNLOAD_TEMP_ERROR");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-            } else if (CURRENTERRORCODE.equals("19")) {
-                logger.warning("API_ERROR_PRO_EXPIRED");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (CURRENTERRORCODE.equals("22")) {
-                logger.info("API_ERROR_BAD_PASSWORD");
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Link is password protected");
-            } else if (CURRENTERRORCODE.equals("23")) {
-                logger.info("API_ERROR_BANDWIDTH_LIMIT");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (CURRENTERRORCODE.equals("26")) {
-                logger.warning("API_ERROR_INVALID_FILE_URL");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
-                logger.warning("Disabling premium account...");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-
+        apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONTOKEN + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         String linkurl = br.getRegex("url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (linkurl == null) {
-            apiFailure("url");
+            logger.warning("Final downloadlink couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);
@@ -351,46 +348,11 @@ public class SendspaceCom extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.getPage("http://api.sendspace.com/rest/?method=auth.createtoken&api_key=" + JDOWNLOADERAPIKEY + "&api_version=1.0&response_format=xml&app_version=0.1");
-        CURRENTERRORCODE = getErrorcode();
-        if (CURRENTERRORCODE != null) {
-            if (CURRENTERRORCODE.equals("5")) {
-                logger.warning("API_ERROR_BAD_API_VERSION");
-            } else if (CURRENTERRORCODE.equals("18")) {
-                logger.warning("Unknown API key");
-            } else if (CURRENTERRORCODE.equals("25")) {
-                logger.warning("API_ERROR_OUTDATED_VERSION");
-            } else {
-                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
-            }
+        createSessToken();
+        try {
+            apiLogin(account.getUser(), account.getPass());
+        } catch (final Exception e) {
             logger.warning("Disabling premium account...");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-
-        final String token = get("token");
-        if (token == null) {
-            apiFailure("token");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-
-        br.getPage("http://api.sendspace.com/rest/?method=auth.login&token=" + token + "&user_name=" + Encoding.urlEncode(account.getUser()) + "&tokened_password=" + JDHash.getMD5(token + JDHash.getMD5(account.getPass())));
-        CURRENTERRORCODE = getErrorcode();
-        if (CURRENTERRORCODE != null) {
-            if (CURRENTERRORCODE.equals("6")) {
-                logger.warning("API_ERROR_SESSION_BAD");
-            } else if (CURRENTERRORCODE.equals("8")) {
-                logger.warning("API_ERROR_AUTHENTICATION_FAILURE");
-            } else if (CURRENTERRORCODE.equals("11")) {
-                logger.warning("API_ERROR_PERMISSION_DENIED");
-            } else {
-                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
-            }
-            logger.warning("Disabling premium account...");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
-        SESSIONKEY = get("session_key");
-        if (SESSIONKEY == null) {
-            apiFailure("session_key");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         if ("Lite".equals(get("membership_type"))) {
@@ -435,18 +397,98 @@ public class SendspaceCom extends PluginForHost {
         return ai;
     }
 
+    private void prepBrowser() {
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+    }
+
     private String get(final String parameter) {
         return br.getRegex("<" + parameter + ">([^<>\"]*?)</" + parameter + ">").getMatch(0);
     }
 
+    private String getFid(final DownloadLink dl) {
+        return new Regex(dl.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
+    }
+
     private String getErrorcode() {
-        final String currenterrcode = br.getRegex("<error code=\"(\\d+)\"").getMatch(0);
-        CURRENTERRORCODE = currenterrcode;
-        return currenterrcode;
+        return br.getRegex("<error code=\"(\\d+)\"").getMatch(0);
     }
 
     private void apiFailure(final String parameter) {
         logger.warning("API failure: " + parameter + " is null");
+    }
+
+    private void createSessToken() throws IOException, PluginException {
+        apiRequest("http://api.sendspace.com/rest/", "?method=auth.createtoken&api_key=" + Encoding.Base64Decode(JDOWNLOADERAPIKEY) + "&api_version=1.0&response_format=xml&app_version=0.1");
+        SESSIONTOKEN = get("token");
+        if (SESSIONTOKEN == null) {
+            logger.warning("sessiontoken could not be found!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private boolean sessionOk() throws IOException, PluginException {
+        apiRequest("http://api.sendspace.com/rest/", "?method=auth.checksession&session_key=" + SESSIONKEY);
+        if (!"ok".equals(get("session")))
+            return false;
+        else
+            return true;
+    }
+
+    private void apiRequest(final String parameter, final String data) throws IOException, PluginException {
+        br.getPage(parameter + data);
+        handleAPIErrors();
+    }
+
+    private void apiLogin(final String username, final String password) throws IOException, PluginException {
+        // lowercase(md5(token+lowercase(md5(password))))
+        apiRequest("http://api.sendspace.com/rest/", "?method=auth.login&token=" + SESSIONTOKEN + "&user_name=" + username + "&tokened_password=" + JDHash.getMD5(SESSIONTOKEN + JDHash.getMD5(password).toLowerCase()));
+        SESSIONKEY = get("session_key");
+        if (SESSIONKEY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    }
+
+    private void handleAPIErrors() throws PluginException {
+        final String errcode = getErrorcode();
+        if (errcode != null) {
+            final int error = Integer.parseInt(errcode);
+            switch (error) {
+            case 5:
+                logger.warning("API_ERROR_BAD_API_VERSION");
+            case 6:
+                logger.warning("API_ERROR_SESSION_BAD");
+            case 7:
+                logger.warning("Session not authenticated");
+            case 8:
+                logger.warning("API_ERROR_AUTHENTICATION_FAILURE");
+            case 9:
+                logger.info("API_ERROR_FILE_NOT_FOUND");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case 11:
+                logger.warning("API_ERROR_PERMISSION_DENIED");
+            case 12:
+                logger.warning("API_ERROR_DOWNLOAD_TEMP_ERROR");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
+            case 18:
+                logger.warning("Unknown API key");
+            case 19:
+                logger.warning("API_ERROR_PRO_EXPIRED");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 22:
+                logger.info("API_ERROR_BAD_PASSWORD");
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Link is password protected");
+            case 23:
+                logger.info("API_ERROR_BANDWIDTH_LIMIT");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 25:
+                logger.warning("API_ERROR_OUTDATED_VERSION");
+            case 26:
+                logger.warning("API_ERROR_INVALID_FILE_URL");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            default:
+                logger.warning("Unknown API errorcode: " + CURRENTERRORCODE);
+            }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
     }
 
     @Override

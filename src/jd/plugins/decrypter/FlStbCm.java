@@ -44,6 +44,7 @@ public class FlStbCm extends PluginForDecrypt {
         final String parameter = param.toString();
         // Allows us to get age restricted videos
         br.setCookie("http://filestube.com/", "adultChecked", "1");
+        br.setFollowRedirects(false);
         br.getPage(parameter);
         if (parameter.contains("/go.html")) {
             if (br.containsHTML("\\- File no longer available<")) {
@@ -202,8 +203,9 @@ public class FlStbCm extends PluginForDecrypt {
                 return null;
             }
         } else {
+            br.setFollowRedirects(true);
             if (br.getRedirectLocation() != null) {
-                logger.info("Redirect done!");
+                logger.info("Redirect done, further redirects should be handled automatically!");
                 br.getPage(br.getRedirectLocation());
             } else {
                 logger.info("There was no redirect!");

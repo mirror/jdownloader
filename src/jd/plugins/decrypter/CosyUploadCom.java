@@ -60,8 +60,14 @@ public class CosyUploadCom extends PluginForDecrypt {
 
         /* container */
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        ArrayList<DownloadLink> tempLinks = new ArrayList<DownloadLink>();
         for (String singleLink : br.getRegex("\"(/uploads/create_container\\?server=[a-z0-9\\-_]+\\&amp;upload_id=[a-z0-9]+)\"").getColumn(0)) {
-            decryptedLinks = loadcontainer(br, "https://cosyupload.com" + Encoding.htmlDecode(singleLink));
+            tempLinks = loadcontainer(br, "https://cosyupload.com" + Encoding.htmlDecode(singleLink));
+            if (tempLinks != null && tempLinks.size() != 0) {
+                for (final DownloadLink dl : tempLinks) {
+                    decryptedLinks.add(dl);
+                }
+            }
         }
 
         if (decryptedLinks.size() == 0) {

@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -72,8 +73,13 @@ public class IFileIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY)) + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-        if (br.containsHTML("\"message\":\"no such user\"")) {
+        boolean failed = false;
+        try {
+            br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY)) + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        } catch (final BrowserException e) {
+            failed = true;
+        }
+        if (br.containsHTML("\"message\":\"no such user\"") || failed) {
             logger.warning("API key is invalid, jumping in other handling...");
             br.getPage(downloadLink.getDownloadURL());
             final String filesize = getAb1();
