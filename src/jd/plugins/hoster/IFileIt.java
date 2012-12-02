@@ -81,8 +81,8 @@ public class IFileIt extends PluginForHost {
             final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             String apikey = this.getPluginConfig().getStringProperty("apikey");
-            final String username = this.getPluginConfig().getStringProperty("apikey");
-            final String password = this.getPluginConfig().getStringProperty("apikey");
+            final String username = this.getPluginConfig().getStringProperty("username");
+            final String password = this.getPluginConfig().getStringProperty("password");
             // First try API via apikey from account
             if (aa != null) {
                 try {
