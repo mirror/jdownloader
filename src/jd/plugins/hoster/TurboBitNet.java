@@ -265,8 +265,7 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         requestFileInformation(downloadLink);
@@ -546,8 +545,7 @@ public class TurboBitNet extends PluginForHost {
                 String ua = null;
                 if (force == false) {
                     /*
-                     * we have to reuse old UA, else the cookie will become
-                     * invalid
+                     * we have to reuse old UA, else the cookie will become invalid
                      */
                     ua = account.getStringProperty("UA", null);
                 }
@@ -576,6 +574,19 @@ public class TurboBitNet extends PluginForHost {
                 }
                 br.getPage(MAINPAGE);
                 br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bmemory%5D=on&user%5Bsubmit%5D=Login");
+                // Check for stupic login captcha
+                if (br.containsHTML(">Limit of login attempts exeeded")) {
+                    final String captchaLink = br.getRegex("\"(http://turbobit\\.net/captcha/[^<>\"]*?)\"").getMatch(0);
+                    if (captchaLink == null) {
+                        logger.warning("Login captchalink was not found...");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    }
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "turbobit.net", "http://turbobit.net", true);
+                    String captchaSubtype = "3";
+                    final String code = getCaptchaCode(captchaLink, dummyLink);
+                    if (captchaLink.contains("/basic/")) captchaSubtype = "5";
+                    br.postPage(MAINPAGE + "/user/login", "user%5Blogin%5D=" + Encoding.urlEncode(account.getUser()) + "&user%5Bpass%5D=" + Encoding.urlEncode(account.getPass()) + "&user%5Bcaptcha_response%5D=" + Encoding.urlEncode(code) + "&user%5Bcaptcha_type%5D=securimg&user%5Bcaptcha_subtype%5D=" + captchaSubtype + "&user%5Bsubmit%5D=Login");
+                }
                 if (!br.containsHTML("yesturbo")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 if (br.getCookie(MAINPAGE + "/", "sid") == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE); }
                 // cookies
@@ -698,8 +709,7 @@ public class TurboBitNet extends PluginForHost {
         s[10] = "f9def8a1fa02c9b21ac5b5c9da0746ae2ac671be0c0fd99f194e5b69113a85d65c8bf86e8d00e23d254751eded741d72e7262ecdc19c6267af72d2e26b5e326a59a5ce295d28f89e21ae29ea523acfb545fd8adb";
         s[11] = "f980fea5fa0ac9ef1bc7b694de0142f1289075bd0d0ddb9d1b195a6d103d82865cddff69890ae76a251b53efef711d74e07e299bc098";
         /*
-         * we have to load the plugin first! we must not reference a plugin
-         * class without loading it before
+         * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
         JDUtilities.getPluginForDecrypt("linkcrypt.ws");
         return JDHexUtils.toString(jd.plugins.decrypter.LnkCrptWs.IMAGEREGEX(s[i]));

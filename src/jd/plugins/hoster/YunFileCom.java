@@ -63,7 +63,7 @@ public class YunFileCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account, true, "http://www.yunfile.com/explorer/list.html");
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -156,11 +156,10 @@ public class YunFileCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, true);
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        login(account, true, link.getDownloadURL());
+        if (!br.getURL().equals(link.getDownloadURL())) br.getPage(link.getDownloadURL());
         final String vid1 = br.getRegex("\"vid1\", \"([a-z0-9]+)\"").getMatch(0);
         String dllink = br.getRegex("\"(http://dl\\d+\\.yunfile\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("<td align=center>[\t\n\r ]+<a href=\"(http://.*?)\"").getMatch(0);
@@ -178,11 +177,12 @@ public class YunFileCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private void login(Account account, final boolean force) throws Exception {
+    private void login(Account account, final boolean force, final String returnPath) throws Exception {
         synchronized (LOCK) {
             // Load/Save cookies, if we do NOT do this parallel downloads fail
             br.setReadTimeout(3 * 60 * 1000);
             br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = account.getUser().matches(account.getStringProperty("name", account.getUser()));
             if (acmatch) acmatch = account.getPass().matches(account.getStringProperty("pass", account.getPass()));
@@ -198,8 +198,8 @@ public class YunFileCom extends PluginForHost {
                 }
             }
             br.getPage(MAINPAGE);
-            br.postPage("http://www.yunfile.com/view?module=user&action=validateLogin", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&remember=on");
-            if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null || !br.getCookie(MAINPAGE, "membership").equals("2")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            br.postPage("http://www.yunfile.com/view", "remember=on&module=user&action=validateLogin&returnPath=" + Encoding.urlEncode(returnPath) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(MAINPAGE, "jforumUserHash") == null || br.getCookie(MAINPAGE, "membership") == null || !"2".equals(br.getCookie(MAINPAGE, "membership"))) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             // Save cookies
             final HashMap<String, String> cookies = new HashMap<String, String>();
             final Cookies add = this.br.getCookies(MAINPAGE);
