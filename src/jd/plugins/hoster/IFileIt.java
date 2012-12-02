@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Browser.BrowserException;
 import jd.http.Cookie;
@@ -73,17 +74,31 @@ public class IFileIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        boolean failed = false;
+        boolean failed = true;
         try {
-            br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY)) + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            final Account aa = AccountController.getInstance().getValidAccount(this);
+            if (aa != null) {
+                String apikey = this.getPluginConfig().getStringProperty("apikey");
+                if (apikey == null) {
+                    br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
+                    apikey = get("akey");
+                    if (apikey == null) {
+                        apikey = Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY));
+                    } else {
+                        this.getPluginConfig().setProperty("apikey", apikey);
+                        this.getPluginConfig().save();
+                    }
+                }
+                apikey = Encoding.urlEncode(Encoding.Base64Decode(JDOWNLOADERAPIKEY));
+                br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(apikey) + "&ukey=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            }
         } catch (final BrowserException e) {
-            failed = true;
         }
         if (br.containsHTML("\"message\":\"no such user\"") || failed) {
             logger.warning("API key is invalid, jumping in other handling...");
             br.getPage(downloadLink.getDownloadURL());
             final String filesize = getAb1();
-            if (filesize == null) return AvailableStatus.FALSE;
+            if (filesize == null || "0".equals(filesize)) return AvailableStatus.FALSE;
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             final String status = get("status");

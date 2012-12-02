@@ -39,6 +39,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "https?://(www\\.)?facebook\\.com/(video/video\\.php\\?v=|profile\\.php\\?id=\\d+\\&ref=ts#\\!/video/video\\.php\\?v=|(photo/)?photo\\.php\\?v=)\\d+" }, flags = { 2 })
@@ -46,9 +47,9 @@ public class FaceBookComVideos extends PluginForHost {
 
     private String        FACEBOOKMAINPAGE = "http://www.facebook.com";
     private String        PREFERHD         = "http://www.facebook.com";
-    private final String  DLLINKREGEXP     = "\\(\"(highqual|video)_src\", \"(http.*?)\"\\)";
     private static Object LOCK             = new Object();
     public static String  Agent            = "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:10.0.2) Gecko/20100101 Firefox/10.0.2";
+    private boolean       pluginloaded     = false;
 
     public FaceBookComVideos(final PluginWrapper wrapper) {
         super(wrapper);
@@ -109,11 +110,11 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     private String getHigh() {
-        return br.getRegex("\"highqual_src\",\"(http[^<>\"\\']+)\"").getMatch(0);
+        return br.getRegex("%22hd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
     }
 
     private String getLow() {
-        return br.getRegex("\"lowqual_src\",\"(http[^<>\"\\']+)\"").getMatch(0);
+        return br.getRegex("%22sd_src%22%3A%22(http[^<>\"\\']*?)%22").getMatch(0);
     }
 
     @Override
@@ -121,6 +122,7 @@ public class FaceBookComVideos extends PluginForHost {
         requestFileInformation(downloadLink);
         boolean preferHD = getPluginConfig().getBooleanProperty(PREFERHD);
         String dllink = null;
+        br.getRequest().setHtmlCode(unescape(br.toString()));
         if (preferHD) {
             dllink = getHigh();
             if (dllink == null) getLow();
@@ -133,6 +135,8 @@ public class FaceBookComVideos extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.urlDecode(decodeUnicode(dllink), true);
+        dllink = Encoding.htmlDecode(dllink);
+        dllink = dllink.replace("\\", "");
         if (dllink == null) {
             logger.warning("Final downloadlink (dllink) is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -221,12 +225,9 @@ public class FaceBookComVideos extends PluginForHost {
         String getThisPage = br.getRegex("window\\.location\\.replace\\(\"(http:.*?)\"").getMatch(0);
         if (getThisPage != null) br.getPage(getThisPage.replace("\\", ""));
         if (br.containsHTML(">Dieser Inhalt ist derzeit nicht verfügbar")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("tabindex=\"0\" class=\"uiHeaderTitle\">([^<>\"\\']+)</h2>").getMatch(0);
+        String filename = br.getRegex("id=\"pageTitle\">([^<>\"]*?)</title>").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("\">Titel:</span>([^<>\"\\']+)</div>").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"\\']+) \\| Facebook</title>").getMatch(0);
-            }
+            filename = br.getRegex("class=\"mtm mbs mrs fsm fwn fcg\">[A-Za-z0-9:]+</span>([^<>\"]*?)</div>").getMatch(0);
         }
 
         // wurde Filename extrahiert, setze entgültiger Dateiname &
@@ -243,6 +244,16 @@ public class FaceBookComVideos extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFERHD, JDL.L("plugins.hoster.facebookcomvideos.preferhd", "Prefer HD quality")).setDefaultValue(true));
+    }
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        if (pluginloaded == false) {
+            final PluginForHost plugin = JDUtilities.getPluginForHost("youtube.com");
+            if (plugin == null) throw new IllegalStateException("youtube plugin not found!");
+            pluginloaded = true;
+        }
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
     @Override

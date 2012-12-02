@@ -83,6 +83,31 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("\"(http://video\\.vulture\\.com/video/[^<>\"]*?)\"").getMatch(0);
+            if (externID != null) {
+                br.getPage(Encoding.htmlDecode(externID));
+                String cid = br.getRegex("\\&media_type=video\\&content=([A-Z0-9]+)\\&").getMatch(0);
+                if (cid == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                br.getPage("http://video.vulture.com/item/player_embed.js/" + cid);
+                externID = br.getRegex("(http://videos\\.cache\\.magnify\\.net/[^<>\"]*?)\\'").getMatch(0);
+                if (externID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                dl.setFinalFileName(fpName + externID.substring(externID.lastIndexOf(".")));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
+            externID = br.getRegex("\"(http://(www\\.)?facebook\\.com/v/\\d+)\"").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink(externID.replace("/v/", "/video/video.php?v="));
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             // Try to find the biggest picture
             for (int i = 1000; i >= 10; i--) {
                 externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/tumblr_[a-z0-9]+_" + i + "\\.jpg)\"").getMatch(0);
