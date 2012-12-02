@@ -282,8 +282,7 @@ public class UnrestrictLi extends PluginForHost {
 			ai.setProperty("multiHostSupport", Property.NULL);
 			return ai;
 		}
-		// 1 VIP account/user
-		account.setConcurrentUsePossible(false);
+		account.setConcurrentUsePossible(true);
 		// Max. 16 connections
 		account.setMaxSimultanDownloads(16);
 
