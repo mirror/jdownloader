@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.gui.UserIO;
 import jd.http.Cookie;
@@ -40,14 +42,21 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19043 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
-    private static Object LOCK = new Object();
+    private static final String VERSION = "0.1";
+
+    private static Object       LOCK    = new Object();
 
     public UnrestrictLi(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
         this.enablePremium("http://unrestrict.li");
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPluginConfig(), "Version", "Current version: " + VERSION));
     }
 
     public void setBrowser() {
