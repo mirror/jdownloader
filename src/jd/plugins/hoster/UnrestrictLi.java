@@ -248,7 +248,7 @@ public class UnrestrictLi extends PluginForHost {
         if (generated.startsWith("https")) {
             generated = generated.replace("https://", "http://");
         }
-        // Get and set chunks, default = 1
+        // Get and set chunks, default = 0
         int chunks = link.hasProperty("cons") ? ((int) link.getProperty("cons")) : 0;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, chunks);
         if (dl.getConnection().isContentDisposition()) {
