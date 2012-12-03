@@ -90,12 +90,18 @@ public class UnrestrictLi extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        requestFileInformation(downloadLink);
+        handleDL(downloadLink, downloadLink.getDownloadURL());
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 16;
     }
 
     @Override
