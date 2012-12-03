@@ -56,6 +56,7 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     public void setConfigElements() {
+        // Version (testing)
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, getPluginConfig(), "Version", "Current version: " + VERSION));
     }
 
