@@ -27,7 +27,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
-import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -41,8 +40,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+//import jd.gui.UserIO;
 
-@HostPlugin(revision = "$Revision: 19045 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19046 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static final String VERSION = "0.1";
@@ -285,7 +285,7 @@ public class UnrestrictLi extends PluginForHost {
     }
 
     private void MessageDialog(String title, String text, boolean report) {
-        UserIO.getInstance().requestMessageDialog(0, title, text);
+        // UserIO.getInstance().requestMessageDialog(0, title, text);
         // To do: Reporting errors
         /*
          * if(report && UserIO.getInstance().requestConfirmDialog(0, "Error", "Do you want to report this error?") == 2){
