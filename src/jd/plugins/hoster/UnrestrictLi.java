@@ -39,7 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 19034 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19037 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static Object LOCK = new Object();
@@ -290,6 +290,7 @@ public class UnrestrictLi extends PluginForHost {
             // with multihosters as it has geolocation issues. To over come this we need to pass the watch link and not decrypted finallink
             // results...
             supportedHosts.remove("youtube.com");
+            supportedHosts.remove("youtu.be");
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);
@@ -329,5 +330,4 @@ public class UnrestrictLi extends PluginForHost {
             }
         }
     }
-
 }
