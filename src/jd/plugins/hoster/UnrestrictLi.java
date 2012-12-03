@@ -42,7 +42,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision: 19043 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19045 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static final String VERSION = "0.1";
@@ -258,7 +258,7 @@ public class UnrestrictLi extends PluginForHost {
         if (generated.startsWith("https")) {
             generated = generated.replace("https://", "http://");
         }
-        // Get and set chunks, default = 0
+        // Get and set chunks, default = 0 (up to 20)
         int chunks = link.hasProperty("cons") ? ((int) link.getProperty("cons")) : 0;
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, chunks);
         if (dl.getConnection().isContentDisposition()) {
