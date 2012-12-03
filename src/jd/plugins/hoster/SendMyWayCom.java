@@ -283,7 +283,7 @@ public class SendMyWayCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 2;
     }
 
     /** This removes fake messages which can kill the plugin */

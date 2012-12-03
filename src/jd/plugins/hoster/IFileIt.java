@@ -76,9 +76,9 @@ public class IFileIt extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        boolean failed = false;
+        boolean failed = true;
         try {
-            final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+            final String fid = getFid(downloadLink);
             final Account aa = AccountController.getInstance().getValidAccount(this);
             String apikey = this.getPluginConfig().getStringProperty("apikey");
             final String username = this.getPluginConfig().getStringProperty("username");
@@ -87,19 +87,22 @@ public class IFileIt extends PluginForHost {
             if (aa != null) {
                 try {
                     if (apikey == null || username == null || password == null || !aa.getUser().equals(username) || !aa.getPass().equals(password)) {
-                        br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
-                        apikey = get("akey");
+                        this.getPluginConfig().setProperty("apikey", Property.NULL);
+                        this.getPluginConfig().setProperty("username", Property.NULL);
+                        this.getPluginConfig().setProperty("password", Property.NULL);
+                        apikey = getAPIkey(aa);
                         if (apikey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     this.getPluginConfig().setProperty("apikey", apikey);
                     this.getPluginConfig().setProperty("username", aa.getUser());
                     this.getPluginConfig().setProperty("password", aa.getPass());
                     br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + Encoding.urlEncode(apikey) + "&ukey=" + fid);
+                    failed = false;
                 } catch (final BrowserException e) {
-                    failed = true;
                 } catch (final ConnectException e) {
-                    failed = true;
                 }
+            } else {
+                failed = true;
             }
             // If API via account fails, try public check API
             if (failed) {
@@ -115,6 +118,7 @@ public class IFileIt extends PluginForHost {
         } catch (final ConnectException e) {
             failed = true;
         }
+        this.getPluginConfig().save();
         // Check without API if everything fails
         if (br.containsHTML("\"message\":\"no such user\"") || failed) {
             logger.warning("API key is invalid, jumping in other handling...");
@@ -140,10 +144,7 @@ public class IFileIt extends PluginForHost {
         } else {
             // Check with API
             final String status = get("status");
-            if (status == null) {
-                apifailure("status");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            if (status == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             if (!"ok".equals(get("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             final String filename = get("name");
             final String filesize = get("size");
@@ -389,7 +390,14 @@ public class IFileIt extends PluginForHost {
         if (UNDERMAINTENANCE) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         login(account, false);
         if ("premium".equals(account.getStringProperty("typ", null))) {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, -10);
+            final String apikey = getAPIkey(account);
+            final String fid = getFid(link);
+            if (apikey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
+            String finallink = get("download_url");
+            if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            finallink = finallink.replace("\\", "");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -10);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
                 br.followConnection();
@@ -401,6 +409,15 @@ public class IFileIt extends PluginForHost {
             br.getPage(link.getDownloadURL());
             doFree(link, true, true);
         }
+    }
+
+    private String getAPIkey(final Account aa) throws IOException {
+        String apikey = this.getPluginConfig().getStringProperty("apikey");
+        if (apikey == null) {
+            br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
+            apikey = get("akey");
+        }
+        return apikey;
     }
 
     @Override
@@ -419,16 +436,8 @@ public class IFileIt extends PluginForHost {
         return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
     }
 
-    private void apifailure(final String parameter) {
-        logger.warning("API failure: " + parameter + " is null");
-    }
-
-    @Override
-    public void reset() {
-    }
-
-    @Override
-    public void resetDownloadlink(final DownloadLink link) {
+    private String getFid(final DownloadLink downloadLink) {
+        return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
     private void simulateBrowser() throws IOException {
@@ -444,4 +453,11 @@ public class IFileIt extends PluginForHost {
         br.getHeaders().remove("X-Requested-With");
     }
 
+    @Override
+    public void reset() {
+    }
+
+    @Override
+    public void resetDownloadlink(final DownloadLink link) {
+    }
 }

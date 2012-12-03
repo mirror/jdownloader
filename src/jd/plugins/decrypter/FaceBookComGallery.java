@@ -37,7 +37,7 @@ import jd.plugins.hoster.FaceBookComVideos;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "facebook.com" }, urls = { "http(s)?://(www\\.)?(on\\.fb\\.me/[A-Za-z0-9]+\\+?|facebook\\.com/(#\\!/)?media/set/\\?set=a\\.\\d+\\.\\d+\\.\\d+|facebook\\.com/photo\\.php\\?fbid=\\d+)" }, flags = { 0 })
 public class FaceBookComGallery extends PluginForDecrypt {
 
     public FaceBookComGallery(PluginWrapper wrapper) {
@@ -47,6 +47,8 @@ public class FaceBookComGallery extends PluginForDecrypt {
     /* must be static so all plugins share same lock */
     private static Object       LOCK             = new Object();
     private static final String FACEBOOKMAINPAGE = "http://www.facebook.com";
+    private static final String FBSHORTLINK      = "http(s)?://(www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
+    private static final String SINGLEPHOTO      = "http(s)?://(www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         synchronized (LOCK) {
@@ -54,14 +56,22 @@ public class FaceBookComGallery extends PluginForDecrypt {
             String parameter = param.toString().replace("#!/", "");
             br.getHeaders().put("User-Agent", jd.plugins.hoster.FaceBookComVideos.Agent);
             br.setFollowRedirects(false);
-            if (parameter.contains("on.fb.me/")) {
+            if (parameter.matches(FBSHORTLINK)) {
                 br.getPage(parameter);
-                String finallink = br.getRedirectLocation();
+                final String finallink = br.getRedirectLocation();
                 if (finallink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 decryptedLinks.add(createDownloadlink(finallink));
+            } else if (parameter.matches(SINGLEPHOTO)) {
+                br.getPage(parameter);
+                final String finallink = br.getRegex("id=\"fbPhotoImage\" src=\"(https?://[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                decryptedLinks.add(createDownloadlink("directhttp://" + finallink));
             } else {
                 br.setCookie(FACEBOOKMAINPAGE, "locale", "en_GB");
                 final PluginForHost facebookPlugin = JDUtilities.getPluginForHost("facebook.com");

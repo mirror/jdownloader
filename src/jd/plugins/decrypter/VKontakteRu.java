@@ -30,7 +30,6 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -63,10 +62,7 @@ public class VKontakteRu extends PluginForDecrypt {
         synchronized (LOCK) {
             try {
                 /** Login process */
-                if (!getUserLogin(false)) {
-                    logger.info("Logindata invalid, stopping...");
-                    return decryptedLinks;
-                }
+                if (!getUserLogin(false)) { return decryptedLinks; }
                 br.setFollowRedirects(true);
                 br.getPage(parameter);
                 /**
@@ -502,13 +498,10 @@ public class VKontakteRu extends PluginForDecrypt {
 
     private boolean getUserLogin(final boolean force) throws Exception {
         final PluginForHost vkPlugin = JDUtilities.getPluginForHost("vkontakte.ru");
-        Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
+        final Account aa = AccountController.getInstance().getValidAccount(vkPlugin);
         if (aa == null) {
-            String username = UserIO.getInstance().requestInputDialog("Enter Loginname for vkontakte.ru :");
-            if (username == null) throw new DecrypterException("Username not entered!");
-            String password = UserIO.getInstance().requestInputDialog("Enter password for vkontakte.ru :");
-            if (password == null) throw new DecrypterException("Password not entered!");
-            aa = new Account(username, password);
+            logger.warning("There is no account available, stopping...");
+            return false;
         }
         try {
             ((VKontakteRuHoster) vkPlugin).login(this.br, aa, force);

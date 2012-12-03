@@ -126,6 +126,12 @@ public class AsFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Premium only");
             }
         }
+        long totalReconnectWait = 0;
+        final String waitMin = br.getRegex("id=\"clock\" class=\"orange\">(\\d+)</span>").getMatch(0);
+        if (waitMin != null) totalReconnectWait += Long.parseLong(waitMin) * 60 * 1001l;
+        final String waitSec = br.getRegex("<span id=\"clock_sec\" class=\"orange\">(\\d+)</span>").getMatch(0);
+        if (waitSec != null) totalReconnectWait += Long.parseLong(waitSec) * 1001l;
+        if (totalReconnectWait > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalReconnectWait);
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
         final long timeBefore = System.currentTimeMillis();
         // Captcha waittime can be skipped

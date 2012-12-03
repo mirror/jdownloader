@@ -216,13 +216,11 @@ public class FShareVn extends PluginForHost {
         if (account.getStringProperty("acctype") != null) {
             doFree(link);
         } else {
-            if (br.getRedirectLocation() != null) {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), true, 1);
-            } else {
-                final String dllink = br.getRegex("\"(http://sdownload\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
-            }
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) dllink = br.getRegex("\"(http://sdownload\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink.contains("logout")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
                 if (br.containsHTML(SERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.fsharevn.Servererror", "Servererror!"), 60 * 60 * 1000l);

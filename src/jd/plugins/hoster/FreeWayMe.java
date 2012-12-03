@@ -59,6 +59,8 @@ public class FreeWayMe extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ac = new AccountInfo();
+        /* reset maxPrem workaround on every fetchaccount info */
+        maxPrem.set(1);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String username = Encoding.urlEncode(account.getUser());
@@ -91,8 +93,6 @@ public class FreeWayMe extends PluginForHost {
         Long guthaben = Long.parseLong(getRegexTag(page, "guthaben").getMatch(0));
         ac.setTrafficLeft(guthaben * 1024 * 1024);
         try {
-            maxPrem.set(Integer.parseInt((new Regex(page, "\"parallel\":([0-9]*)")).getMatch(0)));
-            // free accounts can still have captcha.
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
         } catch (final Throwable e) {

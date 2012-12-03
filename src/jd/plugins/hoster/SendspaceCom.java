@@ -41,7 +41,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://[\\w\\.]*?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "http://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" }, flags = { 2 })
 public class SendspaceCom extends PluginForHost {
 
     public SendspaceCom(PluginWrapper wrapper) {
@@ -77,6 +77,10 @@ public class SendspaceCom extends PluginForHost {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("beta.sendspace.com/", "sendspace.com/"));
     }
 
     @Override
@@ -134,7 +138,7 @@ public class SendspaceCom extends PluginForHost {
                     String filesize = br.getRegex("<b>File Size:</b> (.*?)</div>").getMatch(0);
                     if (filename != null) {
                         downloadLink.setName(Encoding.htmlDecode(filename).trim());
-                        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", "\\.")));
+                        if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim().replaceAll(",", ".")));
                         return AvailableStatus.TRUE;
                     }
                 }
@@ -320,7 +324,7 @@ public class SendspaceCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account);
-        apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONTOKEN + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+        apiRequest("http://api.sendspace.com/rest/?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
         String linkurl = br.getRegex("url=\"(http[^<>\"]*?)\"").getMatch(0);
         if (linkurl == null) {
             logger.warning("Final downloadlink couldn't be found!");

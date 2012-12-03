@@ -176,6 +176,11 @@ public class FileFactory extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
+        if (!isMail(account.getUser())) {
+            ai.setStatus("Please enter your E-Mail adress as username!");
+            account.setValid(false);
+            return ai;
+        }
         try {
             this.login(account, true);
         } catch (final PluginException e) {
@@ -229,6 +234,10 @@ public class FileFactory extends PluginForHost {
             }
         }
         return ai;
+    }
+
+    private boolean isMail(final String parameter) {
+        return parameter.matches(".+@.+");
     }
 
     @Override
@@ -428,9 +437,8 @@ public class FileFactory extends PluginForHost {
 
     public void handleTrafficShare(final DownloadLink downloadLink) throws Exception {
         /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess
-         * what we call public premium links. This might replace dlUrl, Unknown
-         * until proven otherwise.
+         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
+         * Unknown until proven otherwise.
          */
         logger.finer("Traffic sharing link - Free Premium Donwload");
         String finalLink = this.br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/[^\"]+)\"([^>]+)?>Download").getMatch(0);

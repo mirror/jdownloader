@@ -57,7 +57,7 @@ public class VKontakteRuHoster extends PluginForHost {
         return "http://vk.com/help.php?page=terms";
     }
 
-    private boolean linkOk(DownloadLink downloadLink) throws IOException {
+    private boolean linkOk(final DownloadLink downloadLink) throws IOException {
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
@@ -85,14 +85,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Download only possible with account!");
     }
 
-    public void doFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         /**
-         * Chunks disabled because (till now) this plugin only exists to
-         * download pictures
+         * Chunks disabled because (till now) this plugin only exists to download pictures
          */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, FINALLINK, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -105,7 +104,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("unchecked")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         FINALLINK = null;
         this.setBrowserExclusive();
 
@@ -134,8 +133,8 @@ public class VKontakteRuHoster extends PluginForHost {
         br.postPage("http://vk.com/al_photos.php", "act=show&al=1&module=photos&list=" + albumID + "&photo=" + photoID);
         final String correctedBR = br.toString().replace("\\", "");
         /**
-         * Try to get best quality and test links till a working link is found
-         * as it can happen that the found link is offline but others are online
+         * Try to get best quality and test links till a working link is found as it can happen that the found link is offline but others
+         * are online
          */
         String[] qs = { "w_", "z_", "y_", "x_", "m_" };
         for (String q : qs) {
@@ -158,7 +157,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(br, account, true);
@@ -172,19 +171,19 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(br, account, false);
         doFree(link);
     }
 
     @SuppressWarnings("unchecked")
-    public void login(Browser br, Account account, boolean force) throws Exception {
+    public void login(final Browser br, final Account account, final boolean force) throws Exception {
         synchronized (LOCK) {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
-                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:11.0) Gecko/20100101 Firefox/11.0");
+                br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -206,11 +205,17 @@ public class VKontakteRuHoster extends PluginForHost {
                 String damnIPH = br.getRegex("name=\"ip_h\" value=\"(.*?)\"").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("\\{loginscheme: \\'https\\', ip_h: \\'(.*?)\\'\\}").getMatch(0);
                 if (damnIPH == null) damnIPH = br.getRegex("loginscheme: \\'https\\'.*?ip_h: \\'(.*?)\\'").getMatch(0);
-                if (damnIPH == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (damnIPH == null) {
+                    logger.info("damnIPH String is null, marking account as invalid...");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 br.postPage("https://login.vk.com/", "act=login&success_url=&fail_url=&try_to_login=1&to=&vk=1&al_test=3&from_host=vk.com&from_protocol=http&ip_h=" + damnIPH + "&email=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&expire=");
-                if (br.getCookie(DOMAIN, "remixsid") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.getCookie(DOMAIN, "remixsid") == null) {
+                    logger.info("remixsid cookie is null, marking account as invalid...");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 // Finish login
-                Form lol = br.getFormbyProperty("name", "login");
+                final Form lol = br.getFormbyProperty("name", "login");
                 if (lol != null) {
                     lol.put("email", Encoding.urlEncode(account.getUser()));
                     lol.put("pass", Encoding.urlEncode(account.getPass()));
@@ -244,7 +249,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
