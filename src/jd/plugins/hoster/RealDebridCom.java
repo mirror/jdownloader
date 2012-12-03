@@ -68,7 +68,7 @@ public class RealDebridCom extends PluginForHost {
         // define custom browser headers and language settings.
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
         br.setCookie(mProt + mName, "lang", "english");
-        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -178,8 +178,9 @@ public class RealDebridCom extends PluginForHost {
         String generatedLinks = br.getRegex("\"generated_links\":\\[\\[(.*?)\\]\\]").getMatch(0);
         String dlLinks[] = new Regex(generatedLinks, "\"([^\"]*?)\"").getColumn(0);
         if (dlLinks == null || dlLinks.length == 0) {
-            if (br.containsHTML("error\":9")) {
-                logger.info("Host is currently not possible because no server is available!");
+            if (br.containsHTML("error\":(9|10),")) {
+                if (br.containsHTML("error\":9,")) logger.info("Host is currently not possible because no server is available!");
+                if (br.containsHTML("error\":10,")) logger.info("File's hoster is in maintenance. Try again later");
                 removeHostFromMultiHost(link, acc);
             }
             if (br.containsHTML("error\":11")) {
@@ -242,7 +243,7 @@ public class RealDebridCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         br.getPage(mProt + mName + "/api/account.php");
-        String expire = br.getRegex("(?i)<expiration\\-txt>([^<]+)").getMatch(0);
+        String expire = br.getRegex("<expiration\\-txt>([^<]+)").getMatch(0);
         if (expire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         }
@@ -254,8 +255,12 @@ public class RealDebridCom extends PluginForHost {
         }
         try {
             String hostsSup = br.cloneBrowser().getPage(mProt + mName + "/api/hosters.php");
-            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\",").getColumn(0);
+            String[] hosts = new Regex(hostsSup, "\"([^\"]+)\"").getColumn(0);
             ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+            // remove youtube support from this multihoster. Our youtube plugin works from cdn/cached final links and this does not work
+            // with multihosters as it has geolocation issues. To over come this we need to pass the watch link and not decrypted finallink
+            // results...
+            supportedHosts.remove("youtube.com");
             /*
              * set ArrayList<String> with all supported multiHosts of this service
              */
@@ -274,7 +279,7 @@ public class RealDebridCom extends PluginForHost {
             ai.setProperty("multiHostSupport", supportedHosts);
         } catch (Throwable e) {
             account.setProperty("multiHostSupport", Property.NULL);
-            logger.info("Could not fetch ServerList from Multishare: " + e.toString());
+            logger.info("Could not fetch ServerList: " + e.toString());
         }
 
         return ai;
@@ -285,6 +290,7 @@ public class RealDebridCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -299,7 +305,6 @@ public class RealDebridCom extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 br.getPage(mProt + mName + "/ajax/login.php?user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Hash.getMD5(account.getPass()) + "&captcha_challenge=&captcha_answer=&time=" + System.currentTimeMillis());
                 if (br.getCookie(mProt + mName, "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
