@@ -626,6 +626,7 @@ public class Uploadedto extends PluginForHost {
         String errCode = br.getRegex("code\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode == null) errCode = br.getRegex("errCode\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode != null) {
+            logger.info("ErrorCode: " + errCode);
             int code = Integer.parseInt(errCode);
             switch (code) {
             case 1:
@@ -674,7 +675,11 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (throwPluginDefect) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (throwPluginDefect) {
+            logger.info("ErrorCode: unknown\r\n" + br);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
     }
 
     private String api_getAccessToken(Account account, boolean liveToken) throws Exception {

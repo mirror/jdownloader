@@ -51,6 +51,7 @@ import java.rmi.ConnectException;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
+import jd.controlling.authentication.AuthenticationController;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 
@@ -698,11 +699,31 @@ public class SimpleFTP {
         String host = url.getHost();
         int port = url.getPort();
         if (port <= 0) port = 21;
-        if (url.getUserInfo() != null) {
-            String[] auth = url.getUserInfo().split(":");
-            connect(host, port, auth[0], auth[1]);
-        } else {
-            connect(host, port);
+        boolean autoTry = false;
+        try {
+            if (url.getUserInfo() != null) {
+                String[] auth = url.getUserInfo().split(":");
+                connect(host, port, auth[0], auth[1]);
+            } else {
+                String[] ret = AuthenticationController.getInstance().getLogins("ftp://" + url.getHost());
+                if (ret != null) {
+                    autoTry = true;
+                    connect(host, port, ret[0], ret[1]);
+                } else {
+                    connect(host, port);
+                }
+            }
+        } catch (IOException e) {
+            if (e.getMessage().contains("was unable to log in with the supplied")) {
+                disconnect();
+                if (autoTry) {
+                    connect(host, port);
+                } else {
+                    String[] ret = AuthenticationController.getInstance().getLogins("ftp://" + url.getHost());
+                    if (ret == null) throw e;
+                    connect(host, port, ret[0], ret[1]);
+                }
+            }
         }
     }
 
