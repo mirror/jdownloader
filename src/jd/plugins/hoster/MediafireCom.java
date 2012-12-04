@@ -1010,6 +1010,7 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
         downloadLink.setProperty("type", Property.NULL);
+        if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
         final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
         if (downloadLink.getBooleanProperty("privatefolder")) {
             downloadLink.getLinkStatus().setStatusText(PRIVATEFOLDERUSERTEXT);

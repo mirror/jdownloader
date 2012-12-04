@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Browser.BrowserException;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -96,7 +97,15 @@ public class MdfrFldr extends PluginForDecrypt {
         final String folderKey = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
         apiRequest(this.br, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + folderKey);
         if ("110".equals(this.ERRORCODE)) {
-            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=folders");
+            try {
+                apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=folders");
+            } catch (final BrowserException e) {
+                final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + folderKey);
+                link.setProperty("offline", true);
+                link.setName(folderKey);
+                decryptedLinks.add(link);
+                return decryptedLinks;
+            }
             final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
             apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=files");
             final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
