@@ -149,6 +149,7 @@ public class DataPortCz extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -157,9 +158,8 @@ public class DataPortCz extends PluginForHost {
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
         br.setCustomCharset("utf-8");
-        br.setFollowRedirects(false);
-        // br.getPage("");
-        br.postPage("http://dataport.cz/?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginFormSubmit=");
+        br.setFollowRedirects(true);
+        br.postPage("http://www.dataport.cz/?do=loginForm-submit", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&loginFormSubmit=");
         if (br.getCookie(MAINPAGE, "PHPSESSID") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (br.getCookie(MAINPAGE, "nette-browser") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }

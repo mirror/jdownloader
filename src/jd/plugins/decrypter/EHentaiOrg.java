@@ -37,6 +37,8 @@ public class EHentaiOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<String> allPages = new ArrayList<String>();
+        allPages.add("0");
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML("Key missing, or incorrect key provided")) {
@@ -44,32 +46,41 @@ public class EHentaiOrg extends PluginForDecrypt {
             return decryptedLinks;
         }
         String fpName = br.getRegex("<title>([^<>\"]*?) \\- E\\-Hentai Galleries</title>").getMatch(0);
-        final String[] links = br.getRegex("\"(http://g\\.e\\-hentai\\.org/s/[a-z0-9]+/\\d+\\-\\d+)\"").getColumn(0);
-        if (links == null || links.length == 0 || fpName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         fpName = Encoding.htmlDecode(fpName.trim());
+        final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
+        if (pages != null && pages.length != 0) {
+            for (final String aPage : pages) {
+                if (!allPages.contains(aPage)) allPages.add(aPage);
+            }
+        }
         final DecimalFormat df = new DecimalFormat("0000");
         int counter = 1;
-        for (final String singleLink : links) {
-            br.getPage(singleLink);
-            final String finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+:\\d+/h/[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
+        for (final String currentPage : allPages) {
+            if (!currentPage.equals("0")) br.getPage(parameter + "/?p=" + currentPage);
+            final String[] links = br.getRegex("\"(http://g\\.e\\-hentai\\.org/s/[a-z0-9]+/\\d+\\-\\d+)\"").getColumn(0);
+            if (links == null || links.length == 0 || fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
-            dl.setFinalFileName(fpName + "_" + df.format(counter) + finallink.substring(finallink.lastIndexOf(".")));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            try {
-                distribute(dl);
-            } catch (final Exception e) {
-                // No available in old Stable
+            for (final String singleLink : links) {
+                br.getPage(singleLink);
+                final String finallink = br.getRegex("\"(http://\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?/h/[^<>\"]*?)\"").getMatch(0);
+                if (finallink == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+                dl.setFinalFileName(fpName + "_" + df.format(counter) + finallink.substring(finallink.lastIndexOf(".")));
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
+                try {
+                    distribute(dl);
+                } catch (final Exception e) {
+                    // No available in old Stable
+                }
+                sleep(2 * 1000, param);
+                counter++;
             }
-            sleep(2 * 1000, param);
-            counter++;
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);

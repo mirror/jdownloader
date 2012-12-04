@@ -64,7 +64,7 @@ public class PeeJeCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML(">The file you requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex("<br />File information:<b> (.*?) \\- (\\d+.*?) </b>");
+        final Regex fileInfo = br.getRegex(">File information:<b>([^<>\"]*?)\\- (\\d+(\\.\\d+)? [A-Za-z]{1,5} ?)</b>");
         String filename = null;
         if (br.containsHTML(PASSWORDTEXT) || br.containsHTML(SLOTSFILLED)) {
             filename = br.getRegex("var RELPATH = \"([^<>\"]*?)(\\.html)?\"").getMatch(0);
