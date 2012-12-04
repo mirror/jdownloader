@@ -213,6 +213,32 @@ public class RtmpDump extends RTMPDownload {
         }
     }
 
+    private boolean FixFlv(File tmpFile) throws Exception {
+        FlvFixer flvfix = new FlvFixer();
+        flvfix.setInputFile(tmpFile);
+        if (config.isFlvFixerDebugModeEnabled()) flvfix.setDebug(true);
+
+        LinkStatus lnkStatus = downloadLink.getLinkStatus();
+        linkStatus.reset();
+        if (!flvfix.scan(downloadLink)) return false;
+        linkStatus.setStatus(lnkStatus.getStatus());
+
+        File fixedFile = flvfix.getoutputFile();
+        if (!fixedFile.exists()) {
+            logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
+            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
+        }
+        if (!tmpFile.delete()) {
+            logger.severe("Could not delete part file " + tmpFile);
+            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
+        }
+        if (!fixedFile.renameTo(tmpFile)) {
+            logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
+            error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
+        }
+        return true;
+    }
+
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
         if (!findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
 
@@ -394,7 +420,10 @@ public class RtmpDump extends RTMPDownload {
             if (line != null) {
                 if (line.toLowerCase().contains("download complete")) {
                     downloadLink.setDownloadSize(BYTESLOADED);
-                    logger.finest("no errors : rename");
+                    if (downloadLink.getBooleanProperty("FLVFIXER", false)) {
+                        if (!FixFlv(tmpFile)) return false;
+                    }
+                    logger.finest("rtmpdump: no errors -> rename");
                     if (!tmpFile.renameTo(new File(downloadLink.getFileOutput()))) {
                         logger.severe("Could not rename file " + tmpFile + " to " + downloadLink.getFileOutput());
                         error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
@@ -404,33 +433,13 @@ public class RtmpDump extends RTMPDownload {
                 }
             }
             if (error != null) {
-                if (error.toLowerCase().contains("last tag size must be greater/equal zero")) {
-                    FlvFixer flvfix = new FlvFixer();
-                    flvfix.setInputFile(tmpFile);
-                    if (config.isFlvFixerDebugModeEnabled()) flvfix.setDebug(true);
-
-                    LinkStatus lnkStatus = downloadLink.getLinkStatus();
-                    linkStatus.reset();
-                    if (!flvfix.scan(downloadLink)) return false;
-                    linkStatus.setStatus(lnkStatus.getStatus());
-
-                    File fixedFile = flvfix.getoutputFile();
-                    if (!fixedFile.exists()) {
-                        logger.severe("File " + fixedFile.getAbsolutePath() + " not found!");
-                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.downloadlink_status_error_file_not_found());
-                    }
-                    if (!tmpFile.delete()) {
-                        logger.severe("Could not delete part file " + tmpFile);
-                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotdelete());
-                    }
-                    if (!fixedFile.renameTo(tmpFile)) {
-                        logger.severe("Could not rename file " + fixedFile.getName() + " to " + tmpFile.getName());
-                        error(LinkStatus.ERROR_LOCAL_IO, _JDT._.system_download_errors_couldnotrename());
-                    }
+                String e = error.toLowerCase();
+                if (e.contains("last tag size must be greater/equal zero")) {
+                    if (!FixFlv(tmpFile)) return false;
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE);
-                } else if (error.toLowerCase().contains("rtmp_readpacket, failed to read rtmp packet header")) {
+                } else if (e.contains("rtmp_readpacket, failed to read rtmp packet header")) {
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                } else if (error.toLowerCase().contains("netstream.play.streamnotfound")) {
+                } else if (e.contains("netstream.play.streamnotfound")) {
                     downloadLink.deleteFile(true, false);
                     downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (error.startsWith(timeoutMessage)) {

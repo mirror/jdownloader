@@ -144,7 +144,7 @@ public class SimplyDebridCom extends PluginForHost {
         }
 
         // crazy API
-        dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
+        if (dllink.contains("Erreur")) dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
         if (!(dllink.startsWith("http://") || dllink.startsWith("https://")) || dllink.endsWith("/Invalid link") || dllink.contains("php_network_getaddresses: getaddrinfo failed: Name or service not known")) {
             if (dllink.contains("UNDER MAINTENANCE")) {
                 // disable host for 30min

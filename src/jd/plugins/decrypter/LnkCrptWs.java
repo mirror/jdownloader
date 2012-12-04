@@ -1406,6 +1406,11 @@ public class LnkCrptWs extends PluginForDecrypt {
                                                 /* does not exist in 09581 */
                                             }
                                             decryptedLinks.add(dl);
+                                            try {
+                                                if (this.isAbort()) return decryptedLinks;
+                                            } catch (Throwable e) {
+                                                /* does not exist in 09581 */
+                                            }
                                         }
                                     }
                                 }
