@@ -40,6 +40,106 @@ import org.jdownloader.api.toolbar.LinkCheckResult.STATUS;
 import org.jdownloader.api.toolbar.specialurls.YouTubeSpecialUrlHandling;
 import org.jdownloader.gui.views.linkgrabber.actions.AddLinksProgress;
 
+//Toolbar NameSpace
+//http://localhost:3128/toolbar/
+//---------------------------------------------------------------------------------------------------------------
+//toggleStopAfterCurrentDownload:
+//->toggles the internal StopAfterCurrentDownload and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//togglePremium:
+//->toggles the internal *use Premium Accounts* and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//togglePauseDownloads:
+//->toggles the internal *Pause* and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//toggleDownloadSpeedLimit:
+//->toggles the internal *enable/disable Speedlimiter* and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//toggleClipboardMonitoring:
+//->toggles the internal *enable/disable clipboard monitoring* and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//toggleAutomaticReconnect:
+//->toggles the internal *enable/disable auto-reconnect* and returns its new State
+//->boolean as return value
+//---------------------------------------------------------------------------------------------------------------
+//stopDownloads:
+//->tell JDownloader to stop all running downloads
+//->will always return true
+//---------------------------------------------------------------------------------------------------------------
+//startDownloads:
+//->tell JDownloader to start downloads
+//->will always return true
+//---------------------------------------------------------------------------------------------------------------
+//isAvailable:
+//->will always return true, to check if API is available
+//---------------------------------------------------------------------------------------------------------------
+//getStatus:
+//->returns current states of internal stuff and other usefull information
+//Example:
+//{
+//  "data" : {
+//    "pause" : false, /*pause state, use togglePauseDownloads to change*/
+//    "limit" : false, /*limit state, use toggleDownloadSpeedLimit to change*/
+//    "speed" : 0, /*average download speed in byte/s, for speedgraph*/
+//    "reconnect" : false, /*auto-reconnect state, use toggleAutomaticReconnect to change*/
+//    "download_complete" : 0, /*size of all enabled/todo downloads in bytes, for progress bar*/
+//    "premium" : true, /*premium state, use togglePremium to change*/
+//    "stopafter" : false, /*stopAfter state, use toggleStopAfterCurrentDownload to change*/
+//    "clipboard" : false, /*clipboard-state, use toggleClipboardMonitoring to change*/
+//    "running" : false, /*running-state, use stopDownloads/startDownloads to change*/
+//    "download_current" : 0, /*already downloaded bytes, for progress bar*/
+//    "limitspeed" : 0 /*speedlimit in byte/s if limit is true*/
+//  }
+//}
+//---------------------------------------------------------------------------------------------------------------
+//addLinksFromDOM:
+//->send current DOM/Source to JDownloader in multiple Chunks as get-Requests are limited in length
+//->The following parameters are available:
+//1.) index: number of current Chunk (integer, 0,1,2,3....)
+//2.) data: data of current Chunk (part of the DOM,String)
+//3.) sessionID: a unique ID, so we know what chunks belong to the same DOM (unique String, must be same for all Chunks of current DOM/Page)
+//4.) url: current URL (String)
+//5.) lastchunk: boolean (must be true if this is the last Chunk of this sessionID
+//
+//returns:(json)
+//-status, boolean value
+//-msg, string in case something went wrong (will contain an exception message)
+//---------------------------------------------------------------------------------------------------------------
+//checkLinksFromDOM:
+//->send current DOM/Source to JDownloader in multiple Chunks as get-Requests are limited in length
+//->see addLinksFromDOM how to send DOM
+//
+//returns: (json)
+//-same as addLinksFromDOM
+//-when lastchunk was submitted, then checkLinksFromDOM will return additional checkID (String, unique)
+//---------------------------------------------------------------------------------------------------------------
+//pollCheckedLinksFromDOM:
+//->check result for given checkID (provided by checkLinksFromDOM)
+//->example: /pollCheckedLinksFromDOM?checkID
+//
+//returns: (json)
+//-status(String): NA (not available, no such checkID known, results no longer available),PENDING(linkcheck still in progress),FINISHED(linkcheck finished, this will be the last response for given checkID)
+//-links(Array<LinkStatus>): (optional, whenever there are new links available from linkchecker
+//LinkStatus:
+//Name(String): name of the file
+//Host(String): name of the host
+//Size(long): size in bytes, can be -1 for unknown
+//URL(String): url of the file
+//LinkState(String): status of the file (can be ONLINE,OFFLINE,UKNOWN,TEMP_UNKNOWN)
+//---------------------------------------------------------------------------------------------------------------
+//specialURLHandling:
+//->check if we have special LinkCheck features for given URL
+//->example: /specialURLHandling?http://google.de
+//
+//returns:(json)
+//-nothing in case we do not have special LinkCheck features available for given URL (default for now)
+//-js code we want to inject, we do LinkCheck ourselves
+
 public class JDownloaderToolBarAPIImpl implements JDownloaderToolBarAPI, StateEventListener {
 
     private class ChunkedDom {
