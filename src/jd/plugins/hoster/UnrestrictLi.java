@@ -16,6 +16,7 @@
 
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -38,7 +40,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
+import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision: 19051 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
@@ -305,7 +310,7 @@ public class UnrestrictLi extends PluginForHost {
             login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
-            ai.setStatus("Wrong username/password");
+            ai.setStatus("Wrong username/password or Captcha");
             ai.setProperty("multiHostSupport", Property.NULL);
             return ai;
         }
@@ -365,7 +370,25 @@ public class UnrestrictLi extends PluginForHost {
                     }
                 }
                 setBrowser();
-                br.postPage("http://unrestrict.li/sign_in", "return=home&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&signin=Log%20in");
+                br.getPage("http://unrestrict.li/sign_in");
+                Form form = br.getFormbyProperty("id", "signin_form");
+                if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    DownloadLink dummyLink = new DownloadLink(this, "Account", "unrestrict.li", "http://unrestrict.li", true);
+                    String code = getCaptchaCode(cf, dummyLink);
+                    String chid = sm.getChallenge(code);
+                    form.put("adcopy_challenge", chid);
+                    form.put("adcopy_response", code.replace(" ", "+"));
+
+                }
+                form.put("return", "home");
+                form.put("username", Encoding.urlEncode(account.getUser()));
+                form.put("password", Encoding.urlEncode(account.getPass()));
+                form.put("signin", "Log%20in");
+                br.submitForm(form);
                 if (br.getCookie("http://unrestrict.li", "unrestrict_user") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies("http://unrestrict.li");
