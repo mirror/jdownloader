@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 19051 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19056 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static Object LOCK = new Object();
@@ -253,10 +253,10 @@ public class UnrestrictLi extends PluginForHost {
         if (generated.startsWith("https")) {
             generated = generated.replace("https://", "http://");
         }
-        // Get and set chunks, default = 0 (up to 20)
-        int chunks = 0;
+        // Get and set chunks, default = 16 (up to 16)
+        int chunks = 16;
         try {
-            chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 0;
+            chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 16;
         } catch (final Throwable e) {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, chunks);
@@ -331,8 +331,8 @@ public class UnrestrictLi extends PluginForHost {
         } else {
             // Not a VIP member
             account.setValid(false);
-            MessageDialog("Error", "Please upgrade to VIP to use this plugin", false);
-            ai.setStatus("Upgrade to VIP");
+            // MessageDialog("Error", "Please upgrade to VIP to use this plugin", false);
+            ai.setStatus("only VIP members can use this plugin");
             ai.setProperty("multiHostSupport", Property.NULL);
             return ai;
         }
