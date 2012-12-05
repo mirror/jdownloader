@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 19056 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19059 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static Object LOCK = new Object();
@@ -96,7 +96,9 @@ public class UnrestrictLi extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        showMessage(downloadLink, "Task 1: Check URL validity!");
         requestFileInformation(downloadLink);
+        showMessage(downloadLink, "Task 2: Download begins!");
         handleDL(downloadLink, downloadLink.getDownloadURL());
     }
 
@@ -112,7 +114,6 @@ public class UnrestrictLi extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        login(account, false);
         showMessage(link, "Task 1: Check URL validity!");
         requestFileInformation(link);
         showMessage(link, "Task 2: Download begins!");
@@ -253,10 +254,10 @@ public class UnrestrictLi extends PluginForHost {
         if (generated.startsWith("https")) {
             generated = generated.replace("https://", "http://");
         }
-        // Get and set chunks, default = 16 (up to 16)
-        int chunks = 16;
+        // Get and set chunks, default = 1
+        int chunks = 1;
         try {
-            chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 16;
+            chunks = link.hasProperty("cons") ? ((Integer) link.getProperty("cons")) : 1;
         } catch (final Throwable e) {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generated, true, chunks);
