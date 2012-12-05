@@ -59,7 +59,7 @@ public class RockDizFileCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.3.6
@@ -158,8 +158,7 @@ public class RockDizFileCom extends PluginForHost {
         // previous download saved final dllink
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         /**
-         * Video links can already be found here, if a link is found here we can
-         * skip wait times and captchas
+         * Video links can already be found here, if a link is found here we can skip wait times and captchas
          */
         // they have public final dllink on the first page!
         if (dllink == null) dllink = getDllink();
@@ -308,7 +307,7 @@ public class RockDizFileCom extends PluginForHost {
             if (dllink == null) {
                 dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
                 if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
+                    dllink = new Regex(correctedBR, "\"download-link\"><a href=\"(.*?)\"").getMatch(0); // <--- 12/5/2012
                     if (dllink == null) {
                         dllink = new Regex(correctedBR, "so.addVariable\\(\\'file\\',\\'(.*?)\\'\\);").getMatch(0);
                         if (dllink == null) {
