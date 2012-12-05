@@ -241,8 +241,14 @@ public class HellShareCom extends PluginForHost {
                 captchaLink = br.getRegex("\"(http://(www\\.)?hellshare\\.com/captcha\\?sv=.*?)\"").getMatch(0);
             }
             if (captchaLink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            final String code = getCaptchaCode(Encoding.htmlDecode(captchaLink), downloadLink);
-            captchaForm.put("captcha", code);
+
+            try {
+                final String code = getCaptchaCode(Encoding.htmlDecode(captchaLink), downloadLink);
+                captchaForm.put("captcha", code);
+            } catch (Exception e) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "reCaptcha aborted!");
+            }
+
             br.setFollowRedirects(true);
             br.setReadTimeout(120 * 1000);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, captchaForm, false, 1);
@@ -311,6 +317,11 @@ public class HellShareCom extends PluginForHost {
                 UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "Daily limit exceeded!\r\nPremium disabled, will continue downloads as Free User");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Daily limit exceeded!");
+            }
+            // Hellshare Premium sharing not allowed!
+            if (br.containsHTML("HellShare not allowed to share the login information to the accounts.")) {
+                UserIO.getInstance().requestMessageDialog(0, "Hellshare.com Premium Error", "HellShare not allowed to share the login information to the accounts!");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
             logger.warning("dllink (premium) is null...");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
