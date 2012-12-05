@@ -23,6 +23,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.gui.UserIO;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -171,6 +172,8 @@ public class EgoFilesCom extends PluginForHost {
         try {
             login(account, true);
         } catch (PluginException e) {
+            ai.setStatus("Login failed");
+            UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error", "Login failed!\r\nPlease check your Username and Password!");
             account.setValid(false);
             return ai;
         }
