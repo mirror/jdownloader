@@ -422,7 +422,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     private String getID(final DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "uploaded.net/file/(.*?)/").getMatch(0);
+        return new Regex(downloadLink.getDownloadURL(), "uploaded.net/file/([\\w]+)/?").getMatch(0);
     }
 
     @Override

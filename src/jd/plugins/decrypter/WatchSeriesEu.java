@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchseries.eu" }, urls = { "http://(www\\.)?watchseries\\.eu/episode/[a-z0-9\\-_]+\\-(\\d+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchseries.eu" }, urls = { "http://(www\\.)?watchseries\\.(eu|li)/episode/[a-z0-9\\-_]+\\-(\\d+)\\.html" }, flags = { 0 })
 public class WatchSeriesEu extends PluginForDecrypt {
 
     public WatchSeriesEu(PluginWrapper wrapper) {
@@ -44,15 +44,15 @@ public class WatchSeriesEu extends PluginForDecrypt {
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>Watch Online ([^<>\"]*?) \\- Watch Series</title>").getMatch(0);
-        br.postPage("http://watchseries.eu/getlinks.php", "domain=all&q=" + new Regex(parameter, "(\\d+)\\.html$").getMatch(0));
+        br.postPage("http://watchseries.li/getlinks.php", "domain=all&q=" + new Regex(parameter, "(\\d+)\\.html$").getMatch(0));
         final String[] links = br.getRegex("(/open/cale/\\d+/idepisod/\\d+\\.html)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         for (String singleLink : links) {
-            br.getPage("http://watchseries.eu" + singleLink);
-            final String continuelnk = br.getRegex("\"(http://watchseries\\.eu/gateway\\.php\\?link=[^<>\"]*?)\"").getMatch(0);
+            br.getPage("http://watchseries.li" + singleLink);
+            final String continuelnk = br.getRegex("\"(http://watchseries\\.(eu|li)/gateway\\.php\\?link=[^<>\"]*?)\"").getMatch(0);
             if (continuelnk == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
