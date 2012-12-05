@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 19059 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19065 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static Object LOCK = new Object();
@@ -109,7 +109,7 @@ public class UnrestrictLi extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 16;
     }
 
     @Override
@@ -317,7 +317,7 @@ public class UnrestrictLi extends PluginForHost {
         }
         account.setConcurrentUsePossible(true);
         // Max. 1 downloads
-        account.setMaxSimultanDownloads(1);
+        account.setMaxSimultanDownloads(16);
 
         br.getPage("http://unrestrict.li/api/jdownloader/user.php");
         String expires = br.getRegex("<expires>(\\d+)</expires>").getMatch(0);
