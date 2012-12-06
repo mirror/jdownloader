@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,18 +40,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 //Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vkontakte.ru" }, urls = { "http://vkontaktedecrypted\\.ru/picturelink/(\\-)?\\d+_\\d+(\\?tag=\\d+)?" }, flags = { 2 })
 public class VKontakteRuHoster extends PluginForHost {
 
-    private static final String DOMAIN    = "http://vk.com";
-    private static Object       LOCK      = new Object();
-    private String              FINALLINK = null;
+    private static final String DOMAIN         = "http://vk.com";
+    private static Object       LOCK           = new Object();
+    private String              FINALLINK      = null;
+    private final String        USECOOKIELOGIN = "USECOOKIELOGIN";
 
     public VKontakteRuHoster(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+        setConfigElements();
     }
 
     @Override
@@ -160,7 +165,11 @@ public class VKontakteRuHoster extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(br, account, true);
+            if (this.getPluginConfig().getBooleanProperty(USECOOKIELOGIN, false)) {
+                login(br, account, false);
+            } else {
+                login(br, account, true);
+            }
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
@@ -237,6 +246,10 @@ public class VKontakteRuHoster extends PluginForHost {
                 throw e;
             }
         }
+    }
+
+    public void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USECOOKIELOGIN, JDL.L("plugins.hoster.vkontakteruhoster.alwaysUseCookiesForLogin", "Always use cookies for login (this can cause out of date errors)")).setDefaultValue(false));
     }
 
     @Override

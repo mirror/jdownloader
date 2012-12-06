@@ -357,7 +357,7 @@ public class IFileIt extends PluginForHost {
             ai.setStatus("Normal User");
             account.setProperty("typ", "free");
             try {
-                maxPrem.set(2);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);

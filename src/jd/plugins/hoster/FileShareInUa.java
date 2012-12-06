@@ -47,6 +47,10 @@ public class FileShareInUa extends PluginForHost {
         this.enablePremium("http://fileshare.in.ua/premium.aspx");
     }
 
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("www.fileshare.in.ua/", "fileshare.in.ua/"));
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -107,6 +111,7 @@ public class FileShareInUa extends PluginForHost {
             // Some countries got captchas
             br.postPage(downloadLink.getDownloadURL(), "post2=1");
             if (br.containsHTML("(Файл удален|К сожалению, cсылка на этот файл не больше не действительна и запрашиваемый файл отсутствует на сервер)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.getURL().equals(downloadLink.getDownloadURL())) throw new PluginException(LinkStatus.ERROR_FATAL, "Site is broken, please contact the fileshare.in.ua support!");
             String captchapart = br.getRegex("\"(/capture\\.gif\\?m=\\d+)\"").getMatch(0);
             if (captchapart == null) captchapart = br.getRegex("<img height=\"18\" align=\"absmiddle\"  src=\"(/.*?)\"").getMatch(0);
             Form captchaForm = getFormWhichContainsHTML("capture");

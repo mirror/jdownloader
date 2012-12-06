@@ -31,6 +31,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
@@ -107,9 +108,26 @@ public class MdfrFldr extends PluginForDecrypt {
                 return decryptedLinks;
             }
             final String[] subFolders = br.getRegex("<folderkey>([a-z0-9]+)</folderkey>").getColumn(0);
-            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php?folder_key=", folderKey + "&content_type=files");
-            final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
-            if ((subFolders == null || subFolders.length == 0) && (files == null || files.length == 0)) {
+            apiRequest(this.br, "http://www.mediafire.com/api/folder/get_info.php", "?folder_key=" + folderKey);
+            String fpName = getXML("name", br.toString());
+            if (fpName == null) fpName = folderKey;
+            // Decrypt max 100 * 100 = 10 000 links
+            for (int i = 1; i <= 100; i++) {
+                apiRequest(this.br, "http://www.mediafire.com/api/folder/get_content.php", "?folder_key=" + folderKey + "&content_type=files&chunk=" + i);
+                final String[] files = br.getRegex("<file>(.*?)</file>").getColumn(0);
+                for (final String fileInfo : files) {
+                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + getXML("quickkey", fileInfo));
+                    link.setDownloadSize(SizeFormatter.getSize(getXML("size", fileInfo) + "b"));
+                    link.setName(getXML("filename", fileInfo));
+                    if ("private".equals(getXML("privacy", br.toString()))) {
+                        link.setProperty("privatefile", true);
+                    }
+                    link.setAvailable(true);
+                    decryptedLinks.add(link);
+                }
+                if (files == null || files.length < 100) break;
+            }
+            if ((subFolders == null || subFolders.length == 0) && (decryptedLinks == null || decryptedLinks.size() == 0)) {
                 // Probably private folder which can only be decrypted with an active account
                 if ("114".equals(ERRORCODE)) {
                     final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + new Regex(parameter, "([a-z0-9]+)$").getMatch(0));
@@ -128,17 +146,10 @@ public class MdfrFldr extends PluginForDecrypt {
                     decryptedLinks.add(link);
                 }
             }
-            if (files != null && files.length != 0) {
-                for (final String fileInfo : files) {
-                    final DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + getXML("quickkey", fileInfo));
-                    link.setDownloadSize(SizeFormatter.getSize(getXML("size", fileInfo) + "b"));
-                    link.setName(getXML("filename", fileInfo));
-                    if ("private".equals(getXML("privacy", br.toString()))) {
-                        link.setProperty("privatefile", true);
-                    }
-                    link.setAvailable(true);
-                    decryptedLinks.add(link);
-                }
+            if (fpName != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
+                fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
         } else {

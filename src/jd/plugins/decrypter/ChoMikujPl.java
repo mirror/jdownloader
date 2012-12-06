@@ -88,11 +88,20 @@ public class ChoMikujPl extends PluginForDecrypt {
             }
         }
 
+        br.getPage(parameter);
+
+        // Check for redirect and apply new link
+        String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            parameter = redirect;
+            br.getPage(parameter);
+        }
+
         /** Handle single links 2 */
         String ext = parameter.substring(parameter.lastIndexOf("."));
         if (ext != null && ext.length() <= 5 && ext.matches(ENDINGS)) {
             br.getPage(parameter);
-            final String redirect = br.getRedirectLocation();
+            redirect = br.getRedirectLocation();
             if (redirect != null) {
                 // Maybe direct link is no direct link anymore?!
                 ext = redirect.substring(redirect.lastIndexOf("."));
@@ -131,8 +140,6 @@ public class ChoMikujPl extends PluginForDecrypt {
             decryptedLinks.add(dl);
             return decryptedLinks;
         }
-
-        br.getPage(parameter);
 
         // Check if link can be decrypted
         final String cantDecrypt = getError();
@@ -201,6 +208,7 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> decryptAll(final String parameter, final String postdata, final CryptedLink param, final FilePackage fp) throws Exception {
+        br.setFollowRedirects(true);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String savePost = postdata;
         String saveLink = null;
@@ -269,15 +277,25 @@ public class ChoMikujPl extends PluginForDecrypt {
             final String linkPart = new Regex(parameter, "chomikuj\\.pl(/.+)").getMatch(0);
             /** Decrypt all pages, start with 1 (not 0 as it was before) */
             logger.info("Decrypting page " + pageCount + " of link: " + parameter);
-            final Browser tempBr = new Browser();
+            final Browser tempBr = br.cloneBrowser();
             prepareBrowser(parameter, tempBr);
-            accessPage(postdata, tempBr, pageCount);
+            /** Only request further pages is folder isn't password protected */
+            if (FOLDERPASSWORD != null) {
+                tempBr.getPage(parameter);
+            } else {
+                accessPage(postdata, tempBr, pageCount);
+            }
+            String[][] allFolders = null;
+            final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
+            if (folderTable != null) {
+                allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
+            }
             // Every full page has 30 links
             /** For photos */
             String[][] fileIds = tempBr.getRegex("<div class=\"left\">[\t\n\r ]+<p class=\"filename\">[\t\n\r ]+<a class=\"downloadAction\" href=\"[^<>\"\\']+\"> +<span class=\"bold\">(.{1,300})</span>(\\..{1,20})</a>[\t\n\r ]+</p>[\t\n\r ]+<div class=\"thumbnail\">.*?title=\"([^<>\"]*?)\".*?</div>[\t\n\r ]+<div class=\"smallTab\">[\t\n\r ]+<ul class=\"tabGradientBg borderRadius\">[\t\n\r ]+<li>([^<>\"\\'/]+)</li>.*?class=\"galeryActionButtons visibleOpt fileIdContainer\" rel=\"(\\d+)\"").getMatches();
             addRegexInt(0, 1, 3, 4, 2);
             if (fileIds == null || fileIds.length == 0) {
-                /** Specified for videos */
+                /** Specified for videos (also works for mp3s, maybe also for other types) */
                 fileIds = tempBr.getRegex("<ul class=\"borderRadius tabGradientBg\">[\t\n\r ]+<li><span>([^<>\"\\']+)</span></li>[\t\n\r ]+<li><span class=\"date\">[^<>\"\\']+</span></li>[\t\n\r ]+</ul>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"fileActionsButtons clear visibleButtons  fileIdContainer\" rel=\"(\\d+)\" style=\"visibility: hidden;\">.*?class=\"expanderHeader downloadAction\" href=\"[^<>\"\\']+\" title=\"[^<>\"\\']+\">[\t\n\r ]+<span class=\"bold\">([^<>\"\\']*?(<span class=\"e\"> </span>[^<>\"\\']*?)?)</span>([^<>\"\\']+)</a>[\t\n\r ]+<img alt=\"pobierz\" class=\"downloadArrow visibleArrow\" src=\"").getMatches();
                 addRegexInt(2, 4, 0, 1, 0);
                 /**
@@ -286,11 +304,6 @@ public class ChoMikujPl extends PluginForDecrypt {
                 if (fileIds == null || fileIds.length == 0) {
                     fileIds = tempBr.getRegex("fileIdContainer\" rel=\"(\\d+)\"").getMatches();
                 }
-            }
-            String[][] allFolders = null;
-            final String folderTable = tempBr.getRegex("<div id=\"foldersList\">[\t\n\r ]+<table>(.*?)</table>[\t\n\r ]+</div>").getMatch(0);
-            if (folderTable != null) {
-                allFolders = new Regex(folderTable, "<a href=\"(/[^<>\"]*?)\" rel=\"\\d+\" title=\"([^<>\"]*?)\"").getMatches();
             }
             if ((fileIds == null || fileIds.length == 0) && (allFolders == null || allFolders.length == 0)) {
                 if (tempBr.containsHTML("class=\"noFile\">Nie ma plik\\&#243;w w tym folderze</p>")) {
@@ -314,8 +327,7 @@ public class ChoMikujPl extends PluginForDecrypt {
                         dl.setDownloadSize(SizeFormatter.getSize(id[REGEXSORT.get(2)].replace(",", ".")));
                         dl.setAvailable(true);
                         /**
-                         * If the link is a video it needs other download
-                         * handling
+                         * If the link is a video it needs other download handling
                          */
                         if (id[REGEXSORT.get(1)].trim().matches("\\.(avi|flv|mp4|mpg|rmvb|divx|wmv|mkv)")) dl.setProperty("video", "true");
                     } else {
@@ -367,11 +379,11 @@ public class ChoMikujPl extends PluginForDecrypt {
     }
 
     public int getPageCount(final String theParameter) throws NumberFormatException, DecrypterException, IOException {
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         prepareBrowser(theParameter, br2);
-        br.setFollowRedirects(false);
-        br.getPage(theParameter + ",20000");
-        final String result = br.getRedirectLocation();
+        br2.setFollowRedirects(false);
+        br2.getPage(theParameter + ",20000");
+        final String result = br2.getRedirectLocation();
         if (result == null) {
             logger.info("Couldn't find any pages, returning 1");
             return 1;

@@ -87,7 +87,7 @@ public class FreeUploadsFr extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-
+            if (br.containsHTML(">404 Not Found<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1000l);
             if (br.containsHTML(">AccessKey is expired, please request")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

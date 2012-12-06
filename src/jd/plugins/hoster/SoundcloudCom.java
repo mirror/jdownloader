@@ -17,8 +17,11 @@
 package jd.plugins.hoster;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -27,9 +30,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "http://(www\\.)?soundclouddecrypted\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(www\\.)?soundclouddecrypted\\.com/[a-z\\-_0-9]+/[a-z\\-_0-9]+" }, flags = { 0 })
 public class SoundcloudCom extends PluginForHost {
 
     private String url;
@@ -37,6 +38,8 @@ public class SoundcloudCom extends PluginForHost {
     public SoundcloudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
+    public final static String CLIENTID = "b45b1aa10f1ac2941910a7f0d10f8e28";
 
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("soundclouddecrypted", "soundcloud"));
@@ -53,48 +56,91 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(parameter.getDownloadURL());
-        if (br.containsHTML("Oops, looks like we can\\'t find that page")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<em>(.*?)</em>").getMatch(0);
         br.setFollowRedirects(true);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String username = br.getRegex("\"username\":\"(.*?)\"").getMatch(0);
-        filename = Encoding.htmlDecode(filename.trim());
-        String type = br.getRegex("title=\"Uploaded format\">(.*?)<").getMatch(0);
-        if (type == null) {
-            type = br.getRegex("class=\"file\\-type\">(.*?)</span>").getMatch(0);
-            if (type == null) type = "mp3";
+        url = parameter.getStringProperty("directlink");
+        if (url != null) {
+            checkDirectLink(parameter, url);
+            if (url != null) return AvailableStatus.TRUE;
         }
+        br.getPage("https://api.sndcdn.com/resolve?url=" + Encoding.urlEncode(parameter.getDownloadURL()) + "&_status_code_map%5B302%5D=200&_status_format=json&client_id=" + CLIENTID);
+        if (br.containsHTML("\"404 \\- Not Found\"")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        AvailableStatus status = checkStatus(parameter, this.br.toString());
+        if (status.equals(AvailableStatus.FALSE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        checkDirectLink(parameter, url);
+        return AvailableStatus.TRUE;
+    }
+
+    public AvailableStatus checkStatus(final DownloadLink parameter, final String source) {
+        String filename = getXML("title", source);
+        if (filename == null) {
+            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            return AvailableStatus.FALSE;
+        }
+        final String filesize = getXML("original-content-size", source);
+        if (filesize != null) parameter.setDownloadSize(Integer.parseInt(filesize));
+        final String description = getXML("description", source);
+        if (description != null) parameter.setComment(description);
+        String username = getXML("username", source);
+        filename = Encoding.htmlDecode(filename.trim());
+        String type = getXML("original-format", source);
+        if (type == null) type = "mp3";
         username = username.trim();
         if (username != null && !filename.contains(username)) filename += " - " + username;
         filename += "." + type;
-        if (!br.containsHTML("class=\"download pl\\-button\"")) {
-            String[] data = br.getRegex("\"uid\":\"(.*?)\".*?\"token\":\"(.*?)\"").getRow(0);
-            url = "http://media.soundcloud.com/stream/" + data[0] + "?stream_token=" + data[1];
-            URLConnectionAdapter con = br.openGetConnection(url);
-            if (!con.getContentType().contains("html"))
-                parameter.setDownloadSize(con.getLongContentLength());
-            else
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            con.disconnect();
-            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview is downloadable"));
-        } else {
-            String filesize = br.getRegex("The file you're about to download has a size of (.*?)\"").getMatch(0);
-            if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
-            url = parameter.getDownloadURL() + "/download";
+        url = getXML("download-url", source);
+        if (url != null) {
             parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.downloadavailable", "Original file is downloadable"));
+        } else {
+            url = getXML("stream-url", source);
+            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.previewavailable", "Preview (Stream) is downloadable"));
+        }
+        if (url == null) {
+            parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
+            return AvailableStatus.FALSE;
         }
         parameter.setFinalFileName(filename);
+        parameter.setProperty("directlink", url + "?client_id=" + CLIENTID);
         return AvailableStatus.TRUE;
+    }
+
+    private void checkDirectLink(final DownloadLink downloadLink, final String property) {
+        try {
+            Browser br2 = br.cloneBrowser();
+            URLConnectionAdapter con = br2.openGetConnection(url);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+                downloadLink.setProperty(property, Property.NULL);
+                url = null;
+                return;
+            }
+            downloadLink.setDownloadSize(con.getLongContentLength());
+            con.disconnect();
+        } catch (Exception e) {
+            downloadLink.setProperty(property, Property.NULL);
+            url = null;
+        }
+    }
+
+    private String getJson(final String parameter) {
+        return br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    }
+
+    public String getXML(final String parameter, final String source) {
+        return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>\"]*?)</" + parameter + ">").getMatch(1);
     }
 
     @Override

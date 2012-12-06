@@ -127,10 +127,11 @@ public class AsFileCom extends PluginForHost {
             }
         }
         long totalReconnectWait = 0;
-        final String waitMin = br.getRegex("id=\"clock\" class=\"orange\">(\\d+)</span>").getMatch(0);
+        final String waitMin = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+minutes").getMatch(0);
         if (waitMin != null) totalReconnectWait += Long.parseLong(waitMin) * 60 * 1001l;
-        final String waitSec = br.getRegex("<span id=\"clock_sec\" class=\"orange\">(\\d+)</span>").getMatch(0);
-        if (waitSec != null) totalReconnectWait += Long.parseLong(waitSec) * 1001l;
+        final String waitSec = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+seconds").getMatch(0);
+        // waitSe is always there so only add it if we also have minutes
+        if (waitSec != null && waitMin != null) totalReconnectWait += Long.parseLong(waitSec) * 1001l;
         if (totalReconnectWait > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, totalReconnectWait);
         final String fileID = new Regex(downloadLink.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
         final long timeBefore = System.currentTimeMillis();
@@ -180,7 +181,7 @@ public class AsFileCom extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink, boolean skip) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>").getMatch(0);
+        final String waittime = br.getRegex("class=\"orange\">(\\d+)</span>[\t\n\r ]+<span id=\"measure\">[\t\n\r ]+seconds").getMatch(0);
         int wait = 60;
         if (waittime != null) wait = Integer.parseInt(waittime);
         if (wait > 180) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
@@ -350,7 +351,7 @@ public class AsFileCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
