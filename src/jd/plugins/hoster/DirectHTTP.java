@@ -85,9 +85,8 @@ public class DirectHTTP extends PluginForHost {
 
         /**
          * 
-         * DO NOT use in Plugins at the moment, cause the current nightly is not
-         * able to use this function, directHTTP is included in jar and not
-         * updatable at the moment
+         * DO NOT use in Plugins at the moment, cause the current nightly is not able to use this function, directHTTP is included in jar
+         * and not updatable at the moment
          */
         public void findID() throws PluginException {
             this.id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
@@ -381,14 +380,11 @@ public class DirectHTTP extends PluginForHost {
         if (hotFixSynthethica.get()) {
             try {
                 /*
-                 * hotfix for synthetica license issues, as some java versions
-                 * have broken aes support
+                 * hotfix for synthetica license issues, as some java versions have broken aes support
                  */
                 /*
-                 * NOTE: This Licensee Information may only be used by AppWork
-                 * UG. If you like to create derived creation based on this
-                 * sourcecode, you have to remove this license key. Instead you
-                 * may use the FREE Version of synthetica found on javasoft.de
+                 * NOTE: This Licensee Information may only be used by AppWork UG. If you like to create derived creation based on this
+                 * sourcecode, you have to remove this license key. Instead you may use the FREE Version of synthetica found on javasoft.de
                  */
                 String[] li = { "Licensee=AppWork UG", "LicenseRegistrationNumber=289416475", "Product=Synthetica", "LicenseType=Small Business License", "ExpireDate=--.--.----", "MaxVersion=2.999.999" };
                 javax.swing.UIManager.put("Synthetica.license.info", li);
@@ -595,13 +591,11 @@ public class DirectHTTP extends PluginForHost {
                 this.br.followConnection();
                 /* search urls */
                 /*
-                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls
-                 * with next major-update
+                 * TODO: Change to org.appwork.utils.parser.HTMLParser.findUrls with next major-update
                  */
                 final ArrayList<String> follow = DirectHTTP.findUrls(this.br.toString());
                 /*
-                 * if we already tried htmlRedirect or not exactly one link
-                 * found, throw File not available
+                 * if we already tried htmlRedirect or not exactly one link found, throw File not available
                  */
                 if (follow.size() != 1 || downloadLink.getBooleanProperty("htmlRedirect", false)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 /* found one valid url */
@@ -617,6 +611,9 @@ public class DirectHTTP extends PluginForHost {
                 /* restore filename from property */
                 if (downloadLink.getStringProperty("fixName", null) != null) {
                     downloadLink.setFinalFileName(downloadLink.getStringProperty("fixName", null));
+                } else if (downloadLink.getBooleanProperty("MOVIE2K", false)) {
+                    String ext = new Regex(this.contentType, "(audio|video)/(x\\-)?(.*?)$").getMatch(2);
+                    downloadLink.setFinalFileName(downloadLink.getName() + "." + ext);
                 } else {
                     downloadLink.setFinalFileName(Plugin.getFileNameFromHeader(urlConnection));
                 }
@@ -677,8 +674,7 @@ public class DirectHTTP extends PluginForHost {
         if (custom != null && custom.size() > 0) {
             for (final Object header : custom) {
                 /*
-                 * this is needed because we no longer serialize the stuff, we
-                 * use json as storage and it does not differ between String[]
+                 * this is needed because we no longer serialize the stuff, we use json as storage and it does not differ between String[]
                  * and ArrayList<String>
                  */
                 if (header instanceof ArrayList) {
@@ -689,8 +685,7 @@ public class DirectHTTP extends PluginForHost {
             }
         }
         /*
-         * seems like flashgot catches the wrong referer and some downloads do
-         * not work then, we do not set referer as a workaround
+         * seems like flashgot catches the wrong referer and some downloads do not work then, we do not set referer as a workaround
          */
         if (downloadLink.getStringProperty("refURL", null) != null) {
             /* refURL is for internal use */
@@ -712,8 +707,7 @@ public class DirectHTTP extends PluginForHost {
     private void downloadWorkaround(final Browser br, final DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().contains("fileplanet.com")) {
             /*
-             * it seems fileplanet firewall checks referer and ip must have
-             * called the page lately
+             * it seems fileplanet firewall checks referer and ip must have called the page lately
              */
             // br.getPage("http://www.fileplanet.com/");
             br.getHeaders().put("Referer", "http://fileplanet.com/");

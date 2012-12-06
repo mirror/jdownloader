@@ -50,7 +50,13 @@ public class YesLoadNet extends PluginForHost {
         String filename = br.getRegex("<title>([^<>\"]*?)\\- YesLoad</title>").getMatch(0);
         if (filename == null) filename = br.getRegex(">([^<>\"]*?)</h1>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+
+        if (link.getBooleanProperty("MOVIE2K", false) && link.getName().contains("__Part_")) {
+            if (!link.getName().endsWith(".flv")) link.setName(link.getName() + ".flv");
+        } else {
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        }
+
         return AvailableStatus.TRUE;
     }
 

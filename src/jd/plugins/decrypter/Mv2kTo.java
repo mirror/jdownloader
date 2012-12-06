@@ -37,46 +37,90 @@ public class Mv2kTo extends PluginForDecrypt {
     }
 
     /**
-     * Description of the regexes array: 1= nowvideo.co,streamcloud.com
-     * 2=flashx.tv,veervid.com,ginbig .com,vidbux.com,xvidstage.com,vidstream.in
-     * ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos
-     * .net,putlocker .com,vureel.com,vidbox.net,watchfreeinhd.com and many
-     * others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
+     * Description of the regexes array: 1= nowvideo.co,streamcloud.com 2=flashx.tv,veervid.com,ginbig
+     * .com,vidbux.com,xvidstage.com,vidstream.in ,flashstream.in,hostingbulk.com ,vreer.com,uploadc.com,allmyvideos .net,putlocker
+     * .com,vureel.com,vidbox.net,watchfreeinhd.com and many others 3=zalaa.com,sockshare.com 4=stream2k.com 5=flashx.tv
      */
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        String initalMirror = parameter.substring(parameter.lastIndexOf("/") + 1);
         br.getPage(parameter);
-        final String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);
+        String fpName = br.getRegex("<title>Watch ([^<>\"]*?) online \\- Watch Movies Online, Full Movies, Download</title>").getMatch(0);
+        if (fpName == null) fpName = br.getRegex("<title>(.*?) online").getMatch(0);
         Browser br2 = br.cloneBrowser();
-        final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(http://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(http://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" } };
-        for (String[] regex : regexes) {
-            String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
-            if (finallink != null) {
-                if (finallink.contains("facebook.com/")) {
-                    continue;
-                } else if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
-                    br2.getPage(finallink);
-                    finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
-                    if (finallink == null) finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
-                    if (finallink != null) finallink = "directhttp://" + finallink;
-                } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
-                    br2.setFollowRedirects(true);
-                    br2.getPage(finallink);
-                    finallink = br2.getRegex("\"(http://flashx\\.tv/video/[A-Z0-9]+/)").getMatch(0);
+
+        int mirror = 1, part = 1, m = 0;
+        String mirrors[] = br.getRegex("<OPTION value=\"([^\"]+)\"").getColumn(0);
+        if (mirrors != null && mirrors.length > 1) mirror = mirrors.length;
+        String parts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
+        if (parts != null && parts.length > 1) part = parts.length;
+
+        for (int i = 0; i <= mirror; i++) {
+            m++;
+            FilePackage fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName.trim() + (mirror > 1 ? "@Mirror " + i : "")));
+            for (int j = 1; j <= part; j++) {
+                final String[][] regexes = { { "width=\"\\d+\" height=\"\\d+\" frameborder=\"0\"( scrolling=\"no\")? src=\"(http://[^<>\"]*?)\"", "1" }, { "<a target=\"_blank\" href=\"(http://[^<>\"]*?)\"", "0" }, { "<IFRAME SRC=\"(http://[^<>\"]*?)\"", "0" }, { "<iframe width=\\d+% height=\\d+px frameborder=\"0\" scrolling=\"no\" src=\"(http://embed\\.stream2k\\.com/[^<>\"]*?)\"", "0" }, { "\"(http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+)", "0" }, { "\\'(http://(www\\.)?novamov\\.com/embed\\.php\\?v=[^<>\"/]*?)\\'", "0" }, { "\"(http://(www\\.)?video\\.google\\.com/googleplayer\\.swf\\?autoplay=1\\&fs=true\\&fs=true\\&docId=\\d+)", "0" } };
+                for (String[] regex : regexes) {
+                    String finallink = br.getRegex(Pattern.compile(regex[0], Pattern.CASE_INSENSITIVE)).getMatch(Integer.parseInt(regex[1]));
+                    if (finallink != null) {
+                        if (finallink.contains("facebook.com/")) {
+                            continue;
+                        } else if (finallink.matches("http://embed\\.stream2k\\.com/[^<>\"]+")) {
+                            br2.getPage(finallink);
+                            finallink = br2.getRegex("file: \\'(http://[^<>\"]*?)\\',").getMatch(0);
+                            if (finallink == null) finallink = br2.getRegex("\\'(http://server\\d+\\.stream2k\\.com/dl\\d+/[^<>\"/]*?)\\'").getMatch(0);
+                            if (finallink != null) finallink = "directhttp://" + finallink;
+                        } else if (finallink.matches("http://flashx\\.tv/player/embed_player\\.php\\?vid=\\d+")) {
+                            br2.setFollowRedirects(true);
+                            br2.getPage(finallink);
+                            finallink = br2.getRegex("\"(http://flashx\\.tv/video/[A-Z0-9]+/)").getMatch(0);
+                        }
+                        if (finallink != null) {
+                            DownloadLink dl = createDownloadlink(finallink);
+                            dl.setName(fpName + (mirror > 1 && part == 1 ? "__Mirror_" + m : "") + (part > 1 ? "__Part_" + j : ""));
+                            dl.setProperty("MOVIE2K", true);
+                            fp.add(dl);
+                            if (!finallink.startsWith("directhttp://")) {
+                                try {
+                                    distribute(dl);
+                                } catch (final Throwable e) {
+                                    /* does not exist in 09581 */
+                                }
+                            }
+                            decryptedLinks.add(dl);
+                        }
+                    }
                 }
-                if (finallink != null) decryptedLinks.add(createDownloadlink(finallink));
+                if (j > 0 && j < parts.length) {
+                    String nextPart = parts[j];
+                    if (!nextPart.startsWith("/")) nextPart = "/" + nextPart;
+                    br.getPage(nextPart);
+                    br2 = br.cloneBrowser();
+                }
+            }
+            if (mirrors.length == 0) break;
+            if (i < mirrors.length) {
+                String next = mirrors[i];
+                if (initalMirror.equalsIgnoreCase(next)) i++;
+                next = mirrors[i];
+                if (!next.startsWith("http://") || !next.startsWith("https://")) {
+                    if (!next.startsWith("/")) next = "/" + next;
+                }
+                br.getPage(next);
+                br2 = br.cloneBrowser();
+                String mirrorParts[] = br.getRegex("<a href=\"(movie\\.php\\?id=\\d+\\&part=\\d)\">").getColumn(0);
+                if (mirrorParts != null && mirrorParts.length > 1) part = mirrorParts.length;
+                System.arraycopy(mirrorParts, 0, parts, 0, parts.length);
             }
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
-        if (fpName != null) {
-            FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
+
         return decryptedLinks;
     }
+
 }
