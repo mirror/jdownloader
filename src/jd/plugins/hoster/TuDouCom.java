@@ -58,17 +58,11 @@ public class TuDouCom extends PluginForHost {
         br.setConnectTimeout(3 * 60 * 1000);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getURL().contains("tudou.com/error.php?msg=")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex(",kw = \"(.*?)\"").getMatch(0);
+        String filename = br.getRegex(",kw: \\'([^<>\"]*?)\\'").getMatch(0);
         if (filename == null) {
-            filename = br.getRegex("id=\"vcate_title\">(.*?)</span>").getMatch(0);
+            filename = br.getRegex("class=\"vcate_title\">([^<>\"]*?)</span>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("id=\"playerBox\"><h1>(.*?)</h1><div class=\"player\"").getMatch(0);
-                if (filename == null) {
-                    filename = br.getRegex("id=\"videoDes\">(.*?)</div></div>").getMatch(0);
-                    if (filename == null) {
-                        filename = br.getRegex("\"http://so\\.tudou\\.com/isearch\\.do\\?type=relative\\&kw=(.*?)\"").getMatch(0);
-                    }
-                }
+                filename = br.getRegex("class=\"player\"><h1>([^<>\"]*?)</h1>").getMatch(0);
             }
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
