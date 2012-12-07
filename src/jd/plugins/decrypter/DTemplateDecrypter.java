@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -38,7 +38,11 @@ public class DTemplateDecrypter extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String parameter = param.toString();
-        final String host = new Regex(parameter, "http://(www\\.)?([^<>\"/]*?)/\\d+(~f)?").getMatch(1);
+        final String host = new Regex(parameter, "http://(www\\.)?([^:/]+)").getMatch(1);
+        if (host == null) {
+            logger.warning("Failure finding 'host' : " + parameter);
+            return null;
+        }
         if (parameter.contains("~f")) {
             br.getPage(parameter);
             if (br.getURL().contains("/index.html")) {

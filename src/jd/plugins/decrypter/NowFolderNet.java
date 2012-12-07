@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -53,7 +54,12 @@ public class NowFolderNet extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(finallink));
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("<table style=\"margin: 0 auto; text\\-align: left;\">[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
+        String fpName = br.getRegex("<table style=\"margin: 0 auto; text\\-align: left;\">[\t\n\r ]+<strong>([^<>\"]*?)</strong>").getMatch(0);
+        FilePackage fp = FilePackage.getInstance();
+        // we want a fail over to prevent null pointer
+        if (fpName == null) fpName = "NowFolder Folder - " + lid;
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+
         final String[] links = br.getRegex("\"(http://nowfolder\\.net/[a-z0-9]+/)\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
@@ -61,13 +67,16 @@ public class NowFolderNet extends PluginForDecrypt {
         }
         for (final String singleLink : links) {
             if (!singleLink.contains(lid)) {
-                br.getPage(singleLink);
-                final String finalink = br.getRedirectLocation();
+                // this makes sure all referrals are of current folder page and not download links
+                Browser br2 = br.cloneBrowser();
+                br2.getPage(singleLink);
+                final String finalink = br2.getRedirectLocation();
                 if (finalink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
                 final DownloadLink dl = createDownloadlink(singleLink);
+                fp.add(dl);
                 try {
                     distribute(dl);
                 } catch (final Exception e) {
@@ -75,11 +84,6 @@ public class NowFolderNet extends PluginForDecrypt {
                 }
                 decryptedLinks.add(dl);
             }
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
     }
