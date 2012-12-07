@@ -45,7 +45,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision: 19065 $", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "unrestrict.li" }, urls = { "http://\\w+\\.(unrestrict|unr)\\.li/dl/\\w+/.+" }, flags = { 2 })
 public class UnrestrictLi extends PluginForHost {
 
     private static Object LOCK = new Object();
