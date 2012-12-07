@@ -16,8 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -31,7 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -203,15 +200,7 @@ public class ShareFlareNet extends PluginForHost {
         return maxFree.get();
     }
 
-    private boolean validateEmail(String email) {
-        return new Regex(email, ".+@.+\\.[a-z]+").matches();
-    }
-
     private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
-        String appId = getPluginConfig().getStringProperty("APPID", null);
-        boolean validate = getPluginConfig().getBooleanProperty("APPIDVALIDATE", false);
-
-        if (!validate || !getPluginConfig().getBooleanProperty("STATUS", false)) return null;
         Browser skymonk = new Browser();
         skymonk.setCustomCharset("UTF-8");
         skymonk.getHeaders().put("Pragma", null);
@@ -225,7 +214,7 @@ public class ShareFlareNet extends PluginForHost {
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
         int rd = (int) Math.random() * 6 + 1;
-        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + appId + "&version=2.0");
+        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.12");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
 
@@ -494,91 +483,6 @@ public class ShareFlareNet extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "The SkyMonk method without waittime and captcha needs an activation!"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "IMPORTANT note!"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "JDownloader only uses the download technique which skymonk uses, the programm \"skymonk\" is NOT required for JDownloader to use this method!"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Just enter a mailadress, click on activate and wait for the confirmation window, that's all!"));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.shareflare.status", "Use SkyMonk?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry configEntry;
-        getConfig().addEntry(configEntry = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "SKYMONKEMAIL", JDL.L("plugins.hoster.shareflare.email", "E-Mail:")));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new Thread() {
-                    public void run() {
-                        String email = getPluginConfig().getStringProperty("SKYMONKEMAIL", null);
-                        try {
-                            jd.config.GuiConfigListener listener = configEntry.getGuiListener();
-                            if (listener != null) {
-                                email = (String) listener.getText();
-                            }
-                        } catch (Throwable e2) {
-                            /* does not exist in 09581 */
-                        }
-                        String emailChanged = getPluginConfig().getStringProperty("SKYMONKEMAILCHANGED", null);
-                        if (!email.equalsIgnoreCase(emailChanged)) {
-                            getPluginConfig().setProperty("APPID", null);
-                            getPluginConfig().setProperty("SKYMONKVALIDATE", null);
-                            getPluginConfig().setProperty("APPIDVALIDATE", false);
-                        }
-                        String appId = getPluginConfig().getStringProperty("APPID", null);
-                        appId = appId == null ? JDHash.getMD5(String.valueOf(Math.random())) : appId;
-                        boolean validate = getPluginConfig().getBooleanProperty("SKYMONKVALIDATE", false);
-
-                        if (email == null || email.length() == 0) {
-                            UserIO.getInstance().requestMessageDialog("E-Mail is empty!");
-                            return;
-                        }
-                        if (!validateEmail(email)) {
-                            logger.warning("E-Mail is no valid --> " + email);
-                            UserIO.getInstance().requestMessageDialog("E-Mail is not valid!");
-                            return;
-                        }
-                        if (!validate) {
-                            Browser skymonk = new Browser();
-                            skymonk.setCookie("http://shareflare.net/", "lang", "en");
-                            skymonk.setCustomCharset("UTF-8");
-                            try {
-                                skymonk.postPage("http://skymonk.net/?page=activate", "act=get_activation_key&phone=+49" + String.valueOf((int) (Math.random() * (999999999 - 1111111111) + 1111111111)) + "&email=" + email + "&app_id=" + appId + "&app_version=2");
-                            } catch (Throwable e1) {
-                            }
-                            String msg = skymonk.getRegex("content:\'(.*?)\'").getMatch(0);
-                            if (skymonk.containsHTML("status:\'error\'")) {
-                                msg = msg == null ? "Error occured!" : msg;
-                                if ("Пользователь с таким email адресом уже существует. Используйте другой email".equals(msg)) msg = "E-Mail already in use. Please use another E-Mail address and try again!";
-                                UserIO.getInstance().requestMessageDialog("Error occured", msg);
-                                return;
-                            } else if (skymonk.containsHTML("status:\'ok\'")) {
-                                if (skymonk.containsHTML("(activation code has been sent to your e\\-mail|Код активации SkyMonk выслан на Ваш мобильный телефон)")) {
-                                    getPluginConfig().setProperty("APPID", appId);
-                                    getPluginConfig().setProperty("APPIDVALIDATE", true);
-                                    getPluginConfig().setProperty("SKYMONKEMAIL", email);
-                                    getPluginConfig().setProperty("SKYMONKEMAILCHANGED", email);
-                                    getPluginConfig().setProperty("SKYMONKVALIDATE", true);
-                                    UserIO.getInstance().requestMessageDialog("Activation succesfully!");
-                                } else {
-                                    msg = msg == null ? "OK!" : msg;
-                                    UserIO.getInstance().requestMessageDialog("SkyMonk server answer", msg);
-                                }
-                            } else {
-                                logger.warning("SkyMonk debug output: " + skymonk.toString());
-                                UserIO.getInstance().requestMessageDialog("SkyMonk: Unknown error occured", "Please upload now a logfile, contact our support and add this loglink to your bugreport!");
-                            }
-                            getPluginConfig().save();
-                        } else {
-                            UserIO.getInstance().requestMessageDialog("SkyMonk is already activated!");
-                        }
-                    };
-                }.start();
-
-            }
-        }, "Activation", null, null));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ShareFlareNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.shareflarenet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads (can cause problems, use at your own risc)")).setDefaultValue(false));
     }
 
@@ -594,4 +498,5 @@ public class ShareFlareNet extends PluginForHost {
         br.getHeaders().put("Content-Length", "0");
         br.setCustomCharset("utf-8");
     }
+
 }
