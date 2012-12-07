@@ -104,8 +104,8 @@ public class UlozTo extends PluginForHost {
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             downloadLink.getLinkStatus().setStatusText("This link is password protected");
         } else {
-            String filename = br.getRegex("<title>(.*?) \\| Ulož\\.to</title>").getMatch(0);
-            if (filename == null) filename = br.getRegex("<a href=\"#download\" class=\"jsShowDownload\">(.*?)</a>").getMatch(0);
+            String filename = br.getRegex("<title>(.*?) \\|").getMatch(0);
+            // if (filename == null) filename = br.getRegex("<a href=\"#download\"\t\n\r<span id=\"jsNameNoExt\">(.*?)</span>").getMatch(0);
             final String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
             if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
