@@ -52,7 +52,7 @@ public class TeleFiveDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.ustream.tv/terms";
+        return "http://www.tele5.de/nutzungsbedingungen";
     }
 
     @Override
