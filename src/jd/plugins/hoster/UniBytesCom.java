@@ -200,7 +200,7 @@ public class UniBytesCom extends PluginForHost {
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             AccountInfo ai = new AccountInfo();
-            String expireDate = br.getRegex("(??? VIP-??????? ???????????? ??|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
+            String expireDate = br.getRegex("(Ваш VIP-аккаунт действителен до|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
             if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
             } else {
