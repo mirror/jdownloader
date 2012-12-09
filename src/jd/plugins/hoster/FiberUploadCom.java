@@ -74,7 +74,7 @@ public class FiberUploadCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?(fibreupload\\.(com|net)|bulletupload\\.com)", COOKIE_HOST));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?(fiberupload\\.(com|net)|bulletupload\\.com)", COOKIE_HOST));
     }
 
     @Override
@@ -114,9 +114,9 @@ public class FiberUploadCom extends PluginForHost {
         }
         String filename = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
         if (filename == null) {
-            filename = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            filename = new Regex(correctedBR, "input type=\"hidden\" name=\"fname\" value=\"(.*?)\"").getMatch(0);
             if (filename == null) {
-                filename = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                filename = new Regex(correctedBR, "<h2>Download File :<[^>]+> (.*?) \\- [\\d\\.]+ ?(KB|MB|GB)<").getMatch(0);
                 if (filename == null) {
                     filename = new Regex(correctedBR, "(?i)Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
                 }
