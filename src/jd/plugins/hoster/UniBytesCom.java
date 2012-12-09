@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -30,6 +29,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -43,18 +43,31 @@ public class UniBytesCom extends PluginForHost {
     private static final String CAPTCHATEXT      = "captcha\\.jpg";
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
-    private static String       UA               = RandomUserAgent.generate();
+    private static String       agent            = null;
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.unibytes.com/vippay");
     }
 
+    public void prepBrowser() {
+        br.setCookiesExclusive(true);
+        // define custom browser headers and language settings.
+        br.setCookie(MAINPAGE, "lang", "en");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        if (agent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            agent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", agent);
+    }
+
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser();
         br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", UniBytesCom.UA);
         // Use the english language
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
@@ -62,8 +75,13 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3>").getMatch(0);
-        if (filename == null || filesize == null) {
+        if (filesize == null) {
+            filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
+            if (filesize == null) {
+                filesize = br.getRegex("\\(([\\d\\.]+ ?(KB|MB|GB))\\)").getMatch(0);
+            }
+        }
+        if (filename == null) {
             // Leave this in
             logger.warning("Fatal error happened in the availableCheck...");
             logger.warning("Filename = " + filename);
@@ -73,7 +91,7 @@ public class UniBytesCom extends PluginForHost {
         }
         // Set final name here because server sometimes sends bad filenames
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -112,13 +130,6 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         final String addedLink = downloadLink.getDownloadURL();
-        // br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
-        // br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
-        String freelp = br.getRegex("<span class=\"c2\"><a href=\"/(.*?/free\\?step=.*?\\&referer=)\" class=\"btn btn_100 btn_red\">Free</a>").getMatch(0);
-        if (freelp != null) {
-            String freel = MAINPAGE + freelp; // freelp = free link part
-            br.getPage(freel);
-        }
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
@@ -132,20 +143,23 @@ public class UniBytesCom extends PluginForHost {
                 String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
                 if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
                 if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
-                String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-                if (s == null) {
-                    logger.warning("s1 equals null!");
+                String step = br.getRegex("/free\\?step=([^\"&]+)").getMatch(0);
+                if (step == null) {
+                    logger.warning("Couldn't find 'step'");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 sleep(iwait * 1001l, downloadLink);
-                br.postPage(downloadLink.getDownloadURL(), "step=next&s=" + s + "&referer=" + addedLinkCoded);
-                s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
+                br.getPage(downloadLink.getDownloadURL() + "/free?&step=" + step + "&referer=");
                 dllink = br.getRedirectLocation();
                 if (dllink == null) {
-                    if (s == null) {
-                        logger.warning("s2 equals null!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
+                }
+                String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
+                if (dllink == null && s == null) {
+                    logger.warning("s2 equals null!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dllink == null) {
                     br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLinkCoded);
                     if (br.containsHTML(CAPTCHATEXT)) {
                         logger.info("Captcha found");
@@ -186,7 +200,7 @@ public class UniBytesCom extends PluginForHost {
         Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             AccountInfo ai = new AccountInfo();
-            String expireDate = br.getRegex("(Ваш VIP-аккаунт действителен до|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
+            String expireDate = br.getRegex("(??? VIP-??????? ???????????? ??|Your VIP account valid till) ([0-9\\.]+)\\.<").getMatch(1);
             if (expireDate != null) {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDate, "dd.MM.yyyy", null));
             } else {
@@ -218,9 +232,7 @@ public class UniBytesCom extends PluginForHost {
 
     private void login(Account account) throws Exception {
         this.setBrowserExclusive();
-
-        br.getHeaders().put("User-Agent", UniBytesCom.UA);
-        br.setCookie(MAINPAGE, "lang", "en");
+        prepBrowser();
         br.postPage(MAINPAGE, "lb_login=" + Encoding.urlEncode(account.getUser()) + "&lb_password=" + Encoding.urlEncode(account.getPass()) + "&lb_remember=true");
         if (br.getCookie(MAINPAGE, "hash") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     }
