@@ -66,10 +66,12 @@ public class EcoStreamTv extends PluginForHost {
         String var4 = importantVars.getMatch(3);
         if (var1 == null || var2 == null || var3 == null || var4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("http://www.ecostream.tv/lc/m.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
-        DLLINK = br.getRegex("flashvars=\"file=(http://[^\"\\']+)\\&image=").getMatch(0);
+        // They often change this link
+        br.postPage("http://www.ecostream.tv/lc/mq.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
+        DLLINK = br.getRegex("flashvars=\"file=((http:/)?/[^\"\\']+)\\&image=").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
+        if (!DLLINK.startsWith("http://")) DLLINK = "http://www.ecostream.tv" + DLLINK;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

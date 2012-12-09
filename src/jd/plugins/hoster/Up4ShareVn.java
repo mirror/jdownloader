@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -45,7 +44,7 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         URLConnectionAdapter con = null;
         try {
@@ -59,9 +58,8 @@ public class Up4ShareVn extends PluginForHost {
             }
         }
         if (br.containsHTML(">FID Không hợp lệ\\!")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final Regex fileInfo = br.getRegex(">Tập tin: <b> ([^<>\"]*?)</b> <br /> Kích thước: <strong>([^<>\"]*?)</strong>");
-        String filename = fileInfo.getMatch(0);
-        String filesize = fileInfo.getMatch(1);
+        final String filename = br.getRegex("Downloading: <strong>([^<>\"]*?)</strong>").getMatch(0);
+        final String filesize = br.getRegex("Kích thước: <strong>([^<>\"]*?)</strong>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -69,7 +67,7 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account);
@@ -109,11 +107,10 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         if (!br.containsHTML("captcha1\\.html")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.setFollowRedirects(false);
-        String captchaurl = "http://up.4share.vn/library/captcha1.html";
         String dllink = null;
         // Can be skipped
         int wait = 60;
@@ -121,7 +118,7 @@ public class Up4ShareVn extends PluginForHost {
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001l, downloadLink);
         for (int i = 0; i <= 3; i++) {
-            String code = getCaptchaCode(captchaurl, downloadLink);
+            final String code = getCaptchaCode("http://up.4share.vn/library/captcha1.html", downloadLink);
             br.postPage(downloadLink.getDownloadURL(), "&submit=DOWNLOAD&s=&security_code=" + code);
             dllink = br.getRedirectLocation();
             if (dllink == null && br.containsHTML("captcha1\\.html")) continue;
@@ -138,7 +135,7 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account);
         br.getPage(link.getDownloadURL());
@@ -162,7 +159,7 @@ public class Up4ShareVn extends PluginForHost {
         return true;
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.postPage(MAINPAGE, "inputUserName=" + Encoding.urlEncode(account.getUser()) + "&inputPassword=" + Encoding.urlEncode(account.getPass()) + "&rememberlogin=on");
@@ -174,7 +171,7 @@ public class Up4ShareVn extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
     }
 
 }
