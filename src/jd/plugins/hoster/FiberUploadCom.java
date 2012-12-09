@@ -51,12 +51,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bulletupload.com", "fiberupload.com" }, urls = { "https://(www\\.)?dgegfhet938560r0thjbo043zblablaUNUSED_REGEX", "https?://(www\\.)?(fiberupload|bulletupload)\\.com/[a-z0-9]{12}" }, flags = { 0, 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bulletupload.com", "fiberupload.com", "fiberupload.net" }, urls = { "https://(www\\.)?dgegfhet938560r0thjbo043zblablaUNUSED_REGEX", "https?://BLAHFASHFASHFASFASfasdfuasdjfasnm9fUNUSED_REGEX", "https?://(www\\.)?(fiberupload\\.(com|net)|bulletupload\\.com)/[a-z0-9]{12}" }, flags = { 0, 0, 2 })
 public class FiberUploadCom extends PluginForHost {
 
     private String               correctedBR         = "";
     private static final String  PASSWORDTEXT        = "<br><b>Passwor(d|t):</b> <input";
-    private static final String  COOKIE_HOST         = "http://fiberupload.com";
+    private static final String  COOKIE_HOST         = "http://fiberupload.net";
     private static final String  MAINTENANCE         = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String  ALLWAIT_SHORT       = "Waiting till new downloads can be started";
@@ -74,7 +74,7 @@ public class FiberUploadCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?", "http://").replace("bulletupload.com/", "fiberupload.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("https?://(www\\.)?(fibreupload\\.(com|net)|bulletupload\\.com)", COOKIE_HOST));
     }
 
     @Override
