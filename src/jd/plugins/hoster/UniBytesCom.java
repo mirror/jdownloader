@@ -62,7 +62,7 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3><script>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("</span>[\t\n\r ]+\\((.*?)\\)</h3>").getMatch(0);
         if (filename == null || filesize == null) {
             // Leave this in
             logger.warning("Fatal error happened in the availableCheck...");
@@ -112,8 +112,13 @@ public class UniBytesCom extends PluginForHost {
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         final String addedLink = downloadLink.getDownloadURL();
-        br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
-        br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
+        // br.postPage(addedLink + "/phone", "step=phone&referer=&reg=bp&ad=");
+        // br.postPage(addedLink + "/timer", "referer=" + addedLinkCoded + "&step=timer");
+        String freelp = br.getRegex("<span class=\"c2\"><a href=\"/(.*?/free\\?step=.*?\\&referer=)\" class=\"btn btn_100 btn_red\">Free</a>").getMatch(0);
+        if (freelp != null) {
+            String freel = MAINPAGE + freelp; // freelp = free link part
+            br.getPage(freel);
+        }
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
