@@ -207,14 +207,13 @@ public class LnkCrptWs extends PluginForDecrypt {
         private static Object LOCK = new Object();
 
         public static void prepareBrowser(final Browser kc, final String a) {
-            kc.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:15.0) Gecko/20100101 Firefox/15.0.1");
+            kc.getHeaders().put("User-Agent", "Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
             kc.getHeaders().put("Referer", DLURL);
             kc.getHeaders().put("Pragma", null);
             kc.getHeaders().put("Cache-Control", null);
             kc.getHeaders().put("Accept", a);
             kc.getHeaders().put("Accept-Charset", null);
-            kc.getHeaders().put("Accept-Language", "en-us");
-            kc.getHeaders().put("DNT", "1");
+            kc.getHeaders().put("Accept-Language", "en-EN");
             kc.getHeaders().put("Cache-Control", null);
         }
 
@@ -276,19 +275,35 @@ public class LnkCrptWs extends PluginForDecrypt {
             return query;
         }
 
+        private void makeFirstRequest() {
+            ScriptEngineManager manager = new ScriptEngineManager();
+            ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                /* creating pseudo functions: document.location */
+                engine.eval("var document = { loc : function() { return \"" + DLURL + "\";}}");
+                engine.eval("document.location = document.loc();");
+                engine.put("s_s_c_user_id", PARAMS.get("s_s_c_user_id"));
+                engine.eval(SERVERSTRING);
+                SERVERSTRING = engine.get("_13").toString();
+            } catch (final Throwable e) {
+                SERVERSTRING = null;
+            }
+        }
+
         private void load() throws Exception {
             rcBr = br.cloneBrowser();
             rcBr.setFollowRedirects(true);
             String additionalQuery = null;
-            prepareBrowser(rcBr, "*/*");
+            prepareBrowser(rcBr, "application/javascript, */*;q=0.8");
 
             if (PARAMS.containsKey("src")) {
                 rcBr.getPage(PARAMS.get("src"));
                 PARAMS.put("src", DLURL);
-                SERVERSTRING = rcBr.getRegex("var _13=\"(.*?)\"").getMatch(0);
+                SERVERSTRING = rcBr.getRegex("(var _13=[^;]+;)").getMatch(0);
+                makeFirstRequest();
             }
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
-                SERVERSTRING = SERVERSTRING + Encoding.urlEncode(DLURL) + "&r=" + Math.random();
+                // SERVERSTRING = SERVERSTRING + Encoding.urlEncode(DLURL) + "&r=" + Math.random();
                 rcBr.getPage(SERVERSTRING);
                 SERVERSTRING = null;
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));
@@ -368,10 +383,8 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
 
             /* Bilderdownload und Verarbeitung */
-            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte
-                                                                                            // Puzzleteile
-            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes
-                                                                                            // Hintergrundbild
+            sscGetImagest(stImgs[0], stImgs[1], stImgs[2], Boolean.parseBoolean(stImgs[3]));// fragmentierte Puzzleteile
+            sscGetImagest(sscStc[0], sscStc[1], sscStc[2], Boolean.parseBoolean(sscStc[3]));// fragmentiertes Hintergrundbild
 
             if (sscStc == null || sscStc.length == 0 || stImgs == null || stImgs.length == 0 || fmsImg == null || fmsImg.size() == 0) { return "CANCEL"; }
 
@@ -1274,13 +1287,13 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (password != null && password.hasInputFieldByName("password")) { throw new DecrypterException(DecrypterException.PASSWORD); }
         // Look for containers
-        String[] containers = br.getRegex("eval(.*?)\n").getColumn(0);
+        String[] containers = br.getRegex("eval(.*?)[\r\n]+").getColumn(0);
         final String tmpc = br.getRegex("<div id=\"containerfiles\"(.*?)</script>").getMatch(0);
         if (tmpc != null) {
-            containers = new Regex(tmpc, "eval(.*?)\n").getColumn(0);
+            containers = new Regex(tmpc, "eval(.*?)[\r\n]+").getColumn(0);
         }
         String decryptedJS = null;
-        for (final String c : containers) {
+        for (String c : containers) {
             Object result = new Object();
             final ScriptEngineManager manager = new ScriptEngineManager();
             final ScriptEngine engine = manager.getEngineByName("javascript");
@@ -1290,12 +1303,9 @@ public class LnkCrptWs extends PluginForDecrypt {
             }
             decryptedJS = result.toString();
             String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
-            if (row == null) {
-                row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-            }
-            if (row != null) {
-                map.put(row[1], row[0]);
-            }
+            if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
+            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[0-9a-zA-Z/]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0);
+            if (row != null) map.put(row[1], row[0]);
         }
 
         final Form preRequest = br.getForm(0);
@@ -1310,6 +1320,24 @@ public class LnkCrptWs extends PluginForDecrypt {
                         con.disconnect();
                     } catch (final Throwable e) {
                     }
+                }
+            }
+        }
+
+        /* CNL --> Container --> Webdecryption */
+        if (map.containsKey("cnl")) {
+            Browser cnlbr = br.cloneBrowser();
+            cnlbr.getRequest().setHtmlCode(decryptedJS.replaceAll("\\\\", ""));
+            Form cnlForm = cnlbr.getForm(0);
+            if (cnlForm != null) {
+                try {
+                    cnlbr.submitForm(cnlForm);
+                    if (cnlbr.containsHTML("success")) return decryptedLinks;
+                    if (cnlbr.containsHTML("failed null")) {
+                        logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                    }
+                } catch (Throwable e) {
+                    logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
                 }
             }
         }
@@ -1333,22 +1361,8 @@ public class LnkCrptWs extends PluginForDecrypt {
                 container.createNewFile();
             }
             br.cloneBrowser().getDownload(container, map.get("rsdf"));
-        } else if (map.containsKey("cnl")) {
-            final String jk = new Regex(decryptedJS, "NAME=\"jk\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String crypted = new Regex(decryptedJS, "name=\"crypted\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String passwrds = new Regex(decryptedJS, "name=\"passwords\" value=\"([^<>\"]*?)\"").getMatch(0);
-            final String source = new Regex(decryptedJS, "name=\"source\" value=\"([^<>\"]*?)\"").getMatch(0);
-            if (jk != null && crypted != null) {
-                String cnl2post = "jk=" + Encoding.urlEncode(jk.replace("\\", "")) + "&crypted=" + Encoding.urlEncode(crypted);
-                if (passwrds != null) cnl2post += "&passwords=" + Encoding.urlEncode(source);
-                if (source != null) cnl2post += "&source=" + Encoding.urlEncode(source);
-                br.postPage("http://127.0.0.1:9666/flash/addcrypted2", cnl2post);
-                if (br.containsHTML("success")) {
-                    logger.info("CNL2 = works!");
-                    return decryptedLinks;
-                }
-            }
         }
+
         if (container != null) {
             // container available
             logger.info("Container found: " + container);
@@ -1378,7 +1392,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                             clone.getPage(col);
                             // Thread.sleep(600);
                             if (clone.containsHTML("eval")) {
-                                final String[] evals = clone.getRegex("eval(.*?)\n").getColumn(0);
+                                final String[] evals = clone.getRegex("eval(.*?)[\r\n]+").getColumn(0);
                                 for (final String c : evals) {
                                     Object result = new Object();
                                     final ScriptEngineManager manager = new ScriptEngineManager();
@@ -1387,6 +1401,7 @@ public class LnkCrptWs extends PluginForDecrypt {
                                         result = engine.eval(c);
                                     } catch (final Throwable e) {
                                     }
+                                    if (result == null) continue;
                                     final String code = result.toString();
                                     if (code.contains("ba2se") || code.contains("premfree")) {
                                         String versch;
