@@ -98,12 +98,12 @@ public class TurboBitNet extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
-                    sb.append("http://" + getHost() + "/" + dl.getLinkID() + ".html");
+                    sb.append("http://" + getHost() + "/" + dl.getProperty("LINKUID") + ".html");
                     sb.append("%0A");
                 }
                 br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final Regex fileInfo = br.getRegex("<td>" + dllink.getLinkID() + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex("<td>" + dllink.getProperty("LINKUID") + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
@@ -141,15 +141,15 @@ public class TurboBitNet extends PluginForHost {
             }
         }
         if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
-            link.setLinkID(uid);
+            link.setProperty("LINKUID", uid);
             link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
         }
         if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
-            link.setLinkID(uid);
+            link.setProperty("LINKUID", uid);
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://turbobit.net/download"));
         }
         if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+\\.html")) {
-            link.setLinkID(uid);
+            link.setProperty("LINKUID", uid);
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
     }
