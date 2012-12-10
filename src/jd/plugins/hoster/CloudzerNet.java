@@ -33,8 +33,6 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.crypt.Base64;
@@ -54,7 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
-import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
@@ -66,16 +63,14 @@ public class CloudzerNet extends PluginForHost {
         public String string = null;
     }
 
-    private static AtomicInteger   maxPrem                      = new AtomicInteger(1);
-    private char[]                 FILENAMEREPLACES             = new char[] { '_' };
-    private final String           ACTIVATEACCOUNTERRORHANDLING = "ACTIVATEACCOUNTERRORHANDLING";
-    private final String           EXPERIMENTALHANDLING         = "EXPERIMENTALHANDLING";
-    private Pattern                IPREGEX                      = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
-    private static AtomicBoolean   hasDled                      = new AtomicBoolean(false);
-    private static AtomicLong      timeBefore                   = new AtomicLong(0);
-    private String                 LASTIP                       = "LASTIP";
-    private static StringContainer lastIP                       = new StringContainer();
-    private static final long      RECONNECTWAIT                = 10800000;
+    private static AtomicInteger   maxPrem          = new AtomicInteger(1);
+    private char[]                 FILENAMEREPLACES = new char[] { '_' };
+    private Pattern                IPREGEX          = Pattern.compile("(([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9])\\.([1-2])?([0-9])?([0-9]))", Pattern.CASE_INSENSITIVE);
+    private static AtomicBoolean   hasDled          = new AtomicBoolean(false);
+    private static AtomicLong      timeBefore       = new AtomicLong(0);
+    private String                 LASTIP           = "LASTIP";
+    private static StringContainer lastIP           = new StringContainer();
+    private static final long      RECONNECTWAIT    = 3600000;
 
     private static void showFreeDialog(final String domain) {
         try {
@@ -188,7 +183,6 @@ public class CloudzerNet extends PluginForHost {
 
     public CloudzerNet(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.enablePremium("http://cloudzer.net/");
         this.setStartIntervall(2000l);
     }
@@ -387,24 +381,12 @@ public class CloudzerNet extends PluginForHost {
             if (br.containsHTML("<title>[^<].*?\\- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
 
             /**
-             * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
+             * Reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
              */
-            if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
-                final long lastdownload = account.getLongProperty("LASTDOWNLOAD", 0);
-                final long passedTime = System.currentTimeMillis() - lastdownload;
-                if (passedTime < RECONNECTWAIT && lastdownload > 0) {
-                    logger.info("Limit must still exist on account, disabling it");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                }
-            } else if (account == null && this.getPluginConfig().getBooleanProperty(EXPERIMENTALHANDLING, false)) {
-                /**
-                 * Experimental reconnect handling to prevent having to enter a captcha just to see that a limit has been reached
-                 */
-                logger.info("New Download: currentIP = " + currentIP);
-                if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
-                    long result = System.currentTimeMillis() - timeBefore.get();
-                    if (result < RECONNECTWAIT && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
-                }
+            logger.info("New Download: currentIP = " + currentIP);
+            if (hasDled.get() && ipChanged(currentIP, downloadLink) == false) {
+                long result = System.currentTimeMillis() - timeBefore.get();
+                if (result < RECONNECTWAIT && result > 0) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT - result);
             }
 
             br.getPage("http://cloudzer.net/file/" + id);
@@ -744,15 +726,18 @@ public class CloudzerNet extends PluginForHost {
     // br.setCookie("http://cloudzer.net", "lang", "en");
     // br.getPage("http://cloudzer.net");
     // br.getPage("http://cloudzer.net/language/en");
-    // br.postPage("http://cloudzer.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" + Encoding.urlEncode(account.getPass()));
-    // if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
+    // br.postPage("http://cloudzer.net/io/login", "id=" + Encoding.urlEncode(account.getUser()) + "&pw=" +
+    // Encoding.urlEncode(account.getPass()));
+    // if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new
+    // PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE,
     // "ServerMaintenance", 10 * 60 * 1000);
     // if (br.containsHTML("User and password do not match")) {
     // AccountInfo ai = account.getAccountInfo();
     // if (ai != null) ai.setStatus("User and password do not match");
     // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
-    // if (br.getCookie("http://cloudzer.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+    // if (br.getCookie("http://cloudzer.net", "auth") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,
+    // PluginException.VALUE_ID_PREMIUM_DISABLE);
     // }
 
     @Override
@@ -811,11 +796,6 @@ public class CloudzerNet extends PluginForHost {
         String lastIP = link.getStringProperty(LASTIP, null);
         if (lastIP == null) lastIP = CloudzerNet.lastIP.string;
         return !currentIP.equals(lastIP);
-    }
-
-    public void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ACTIVATEACCOUNTERRORHANDLING, JDL.L("plugins.hoster.cloudzernet.activateExperimentalFreeAccountErrorhandling", "Activate experimental free account errorhandling: Swith between free accounts instead of reconnecting if a limit is reached.")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), EXPERIMENTALHANDLING, JDL.L("plugins.hoster.cloudzernet.activateExperimentalReconnectHandling", "Activate experimental reconnect handling for freeusers: Prevents having to enter captchas in between downloads.")).setDefaultValue(true));
     }
 
     @Override

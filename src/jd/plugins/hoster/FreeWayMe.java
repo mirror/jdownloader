@@ -90,6 +90,10 @@ public class FreeWayMe extends PluginForHost {
         }
         // account should be valid now, let's get account information:
         page = br.getPage("https://www.free-way.me/ajax/jd.php?id=4&user=" + username);
+        int maxPremi = 1;
+        final String maxPremApi = getJson("parallel", br.toString());
+        if (maxPremApi != null) maxPremi = Integer.parseInt(maxPremApi);
+        maxPrem.set(maxPremi);
         Long guthaben = Long.parseLong(getRegexTag(page, "guthaben").getMatch(0));
         ac.setTrafficLeft(guthaben * 1024 * 1024);
         try {
@@ -126,6 +130,12 @@ public class FreeWayMe extends PluginForHost {
         return ac;
     }
 
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
+    }
+
     private Regex getRegexTag(String content, String tag) {
         return new Regex(content, "\"" + tag + "\":\"([^\"]*)\"");
     }
@@ -152,7 +162,7 @@ public class FreeWayMe extends PluginForHost {
             String page = br.toString();
             String error = "";
             try {
-                error = (new Regex(page, "<p id='error'>([^<]*)</p>")).getMatch(0);
+                error = (new Regex(page, "<p id=\\'error\\'>([^<]*)</p>")).getMatch(0);
             } catch (Exception e) {
                 // we handle this few lines later
             }

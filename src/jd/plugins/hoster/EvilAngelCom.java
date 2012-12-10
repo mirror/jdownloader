@@ -91,7 +91,7 @@ public class EvilAngelCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_FATAL, "Links can only be chacked and downloaded via account!");
     }
 
-    private static final String MAINPAGE = "http://examplehoster.com";
+    private static final String MAINPAGE = "http://evilangel.com";
     private static Object       LOCK     = new Object();
 
     @SuppressWarnings("unchecked")
@@ -117,6 +117,7 @@ public class EvilAngelCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.setCookie(MAINPAGE, "enterSite", "en");
                 br.getPage("http://www.evilangel.com/en/login");
+                // Not working yet!
                 br.postPage("http://www.evilangel.com/en/login", "mDate=2012-12-02&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&mTime=13%3A49&submit=Click+here+to+login&mOffset=1&back=");
                 if (br.getCookie(MAINPAGE, "save_login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
