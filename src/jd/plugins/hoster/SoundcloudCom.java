@@ -92,7 +92,7 @@ public class SoundcloudCom extends PluginForHost {
             return AvailableStatus.FALSE;
         }
         final String filesize = getXML("original-content-size", source);
-        if (filesize != null) parameter.setDownloadSize(Integer.parseInt(filesize));
+        if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
         final String description = getXML("description", source);
         if (description != null) parameter.setComment(description);
         String username = getXML("username", source);
@@ -119,19 +119,25 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     private void checkDirectLink(final DownloadLink downloadLink, final String property) {
+        URLConnectionAdapter con = null;
         try {
             Browser br2 = br.cloneBrowser();
-            URLConnectionAdapter con = br2.openGetConnection(url);
-            if (con.getContentType().contains("html") || con.getLongContentLength() == -1) {
+            con = br2.openGetConnection(url);
+            if (con.getContentType().contains("html") || con.getLongContentLength() == -1 || con.getResponseCode() == 401) {
                 downloadLink.setProperty(property, Property.NULL);
                 url = null;
                 return;
             }
             downloadLink.setDownloadSize(con.getLongContentLength());
-            con.disconnect();
+
         } catch (Exception e) {
             downloadLink.setProperty(property, Property.NULL);
             url = null;
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
     }
 

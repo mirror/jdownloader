@@ -88,6 +88,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
 
         ArrayList<DownloadLink> newRet = new ArrayList<DownloadLink>();
         HashMap<String, DownloadLink> bestMap = new HashMap<String, DownloadLink>();
+        int format = 0;
         for (String quality[] : qualities) {
             String url = quality[0];
             String name = Encoding.htmlDecode(quality[1]);
@@ -100,30 +101,34 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         continue;
                     } else {
                         fmt = "mobile";
+                        format = 1;
                     }
                 } else if (fmt.contains("hd")) {
                     if (cfg.getBooleanProperty(Q_HD, true) == false) {
                         continue;
                     } else {
                         fmt = "hd";
+                        format = 2;
                     }
                 } else if (fmt.contains("sd")) {
                     if (cfg.getBooleanProperty(Q_SD, true) == false) {
                         continue;
                     } else {
                         fmt = "sd";
+                        format = 3;
                     }
                 } else if (fmt.contains("original")) {
                     if (cfg.getBooleanProperty(Q_ORIGINAL, true) == false) {
                         continue;
                     } else {
                         fmt = "original";
+                        format = 4;
                     }
                 }
             }
             if (url == null || name == null) continue;
             if (!url.startsWith("http://")) url = "http://vimeo.com" + url;
-            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin://"));
+            final DownloadLink link = createDownloadlink(parameter.replace("http://", "decryptedforVimeoHosterPlugin" + format + "://"));
             link.setFinalFileName(name);
             link.setProperty("directURL", url);
             link.setProperty("directName", name);

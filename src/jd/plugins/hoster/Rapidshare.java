@@ -640,7 +640,7 @@ public class Rapidshare extends PluginForHost {
             if (downloadLink.getDownloadSize() > 30 * 1024 * 1024 && oldStyle() && false) {
                 this.dl = this.createHackedDownloadInterface(this.br, downloadLink, directurl);
             } else {
-                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, false, 1);
+                this.dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, directurl, true, 0);
             }
             final URLConnectionAdapter urlConnection = this.dl.getConnection();
             if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
