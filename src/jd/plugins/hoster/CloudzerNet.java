@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,10 +29,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Property;
+import jd.config.SubConfiguration;
 import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.nutils.JDHash;
@@ -52,6 +57,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?cloudzer\\.net/.*?(file/|\\?id=|\\&id=)[\\w]+/?" }, flags = { 2 })
 public class CloudzerNet extends PluginForHost {
@@ -70,6 +76,67 @@ public class CloudzerNet extends PluginForHost {
     private String                 LASTIP                       = "LASTIP";
     private static StringContainer lastIP                       = new StringContainer();
     private static final long      RECONNECTWAIT                = 10800000;
+
+    private static void showFreeDialog(final String domain) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " Free Download";
+                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
+                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
+                        } else {
+                            title = domain + " Free Download";
+                            message = "You are using the " + domain + " Free Mode.\r\n";
+                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkShowFreeDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    File checkFile = JDUtilities.getResourceFile("tmp/cldzn");
+                    if (!checkFile.exists()) {
+                        checkFile.mkdirs();
+                        showFreeDialog("cloudzer.net");
+                    }
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
@@ -309,6 +376,7 @@ public class CloudzerNet extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         logger.info("Free mode");
+        checkShowFreeDialog();
         String currentIP = getIP();
         try {
             workAroundTimeOut(br);
