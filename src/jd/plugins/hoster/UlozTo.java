@@ -97,6 +97,7 @@ public class UlozTo extends PluginForHost {
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Ulož.to</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORDPROTECTED)) {
             String filename = br.getRegex("<title>([^<>\"]*?) \\| Uloz\\.to</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
