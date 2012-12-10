@@ -58,7 +58,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
 //When adding new domains here also add them to the turbobit.net decrypter (TurboBitNetFolder)
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф)/(.*?\\.html|download/free/[a-z0-9]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turbobit.net" }, urls = { "http://(www\\.)?(maxisoc\\.ru|turo\\-bit\\.net|depositfiles\\.com\\.ua|dlbit\\.net|sharephile\\.com|filesmail\\.ru|hotshare\\.biz|bluetooths\\.pp\\.ru|speed-file\\.ru|sharezoid\\.com|turbobit\\.pl|dz-files\\.ru|file\\.alexforum\\.ws|file\\.grad\\.by|file\\.krut-warez\\.ru|filebit\\.org|files\\.best-trainings\\.org\\.ua|files\\.wzor\\.ws|gdefile\\.ru|letitshare\\.ru|mnogofiles\\.com|share\\.uz|sibit\\.net|turbo-bit\\.ru|turbobit\\.net|upload\\.mskvn\\.by|vipbit\\.ru|files\\.prime-speed\\.ru|filestore\\.net\\.ru|turbobit\\.ru|upload\\.dwmedia\\.ru|upload\\.uz|xrfiles\\.ru|unextfiles\\.com|e-flash\\.com\\.ua|turbobax\\.net|zharabit\\.net|download\\.uzhgorod\\.name|trium-club\\.ru|alfa-files\\.com|turbabit\\.net|filedeluxe\\.com|turbobit\\.name|files\\.uz\\-translations\\.uz|turboblt\\.ru|fo\\.letitbook\\.ru|freefo\\.ru|bayrakweb\\.com|savebit\\.net|filemaster\\.ru|файлообменник\\.рф)/(.*?\\.html|download/free/[a-z0-9]+|/?download/redirect/[A-Za-z0-9]+/[a-z0-9]+)" }, flags = { 2 })
 public class TurboBitNet extends PluginForHost {
 
     private static String       UA            = RandomUserAgent.generate();
@@ -98,13 +98,12 @@ public class TurboBitNet extends PluginForHost {
                 sb.delete(0, sb.capacity());
                 sb.append("links_to_check=");
                 for (final DownloadLink dl : links) {
-                    sb.append(dl.getDownloadURL());
+                    sb.append("http://" + getHost() + "/" + dl.getLinkID() + ".html");
                     sb.append("%0A");
                 }
                 br.postPage("http://" + getHost() + "/linkchecker/check", sb.toString());
                 for (final DownloadLink dllink : links) {
-                    final String linkID = getID(dllink.getDownloadURL());
-                    final Regex fileInfo = br.getRegex("<td>" + linkID + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
+                    final Regex fileInfo = br.getRegex("<td>" + dllink.getLinkID() + "</td>[\t\n\r ]+<td>([^<>/\"]*?)</td>[\t\n\r ]+<td style=\"text\\-align:center;\"><img src=\"/img/icon/(done|error)\\.png\"");
                     if (fileInfo.getMatches() == null || fileInfo.getMatches().length == 0) {
                         dllink.setAvailable(false);
                         logger.warning("Linkchecker broken for " + getHost() + " Example link: " + dllink.getDownloadURL());
@@ -129,11 +128,28 @@ public class TurboBitNet extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        final String freeId = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
-        if (freeId != null) {
-            link.setUrlDownload(MAINPAGE + "/" + freeId + ".html");
-        } else {
+    public void correctDownloadLink(final DownloadLink link) throws PluginException {
+        // standard link
+        String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)\\.html").getMatch(0);
+        if (uid == null) {
+            // download/free/
+            uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+            if (uid == null) {
+                // support for public premium links
+                uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
+                if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+            }
+        }
+        if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
+            link.setLinkID(uid);
+            link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
+        }
+        if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
+            link.setLinkID(uid);
+            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://turbobit.net/download"));
+        }
+        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+\\.html")) {
+            link.setLinkID(uid);
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
     }
@@ -185,10 +201,6 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://turbobit.net/rules";
-    }
-
-    private String getID(final String downloadlink) {
-        return new Regex(downloadlink, "http://.*?/([a-zA-Z0-9]+)").getMatch(0);
     }
 
     @Override
@@ -264,6 +276,11 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+        // support for public premium links
+        if (downloadLink.getDownloadURL().matches("https?://[^/]+/download/redirect/.*")) {
+            handlePremiumLink(downloadLink);
+            return;
+        }
         /*
          * we have to load the plugin first! we must not reference a plugin class without loading it before
          */
@@ -475,6 +492,11 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        // support for public premium links
+        if (link.getDownloadURL().matches("https?://[^/]+/download/redirect/.*")) {
+            handlePremiumLink(link);
+            return;
+        }
         requestFileInformation(link);
         login(account, false);
         sleep(2000, link);
@@ -520,6 +542,39 @@ public class TurboBitNet extends PluginForHost {
             }
             br.followConnection();
             logger.warning("dllink doesn't seem to be a file...");
+            if (br.containsHTML("<h1>404 Not Found</h1>")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
+            if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl.startDownload();
+    }
+
+    public void handlePremiumLink(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        br.setCookie(MAINPAGE, "JD", "1");
+        String dllink = link.getDownloadURL();
+        br.setFollowRedirects(true);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 403) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                logger.info("No traffic available");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
+            if (dl.getConnection().getResponseCode() == 404) {
+                try {
+                    dl.getConnection().disconnect();
+                } catch (final Throwable e) {
+                }
+                logger.info("File is offline");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            br.followConnection();
+            logger.warning("dllink doesn't seem to be a file...");
+            if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
             if (br.containsHTML("<h1>404 Not Found</h1>")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error"); }
             if (br.containsHTML("Try to download it once again after")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 20 * 60 * 1000l); }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
