@@ -17,7 +17,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -31,15 +30,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "euroshare.eu" }, urls = { "http://(www\\.)?euroshare\\.(eu|sk)/file/\\d+/[^<>\"/]+" }, flags = { 2 })
 public class EuroShareEu extends PluginForHost {
 
+    /** API documentation: http://euroshare.eu/euroshare-api/ */
     private static final String  TOOMANYSIMULTANDOWNLOADS = "<p>Naraz je z jednej IP adresy možné sťahovať iba jeden súbor";
-    private static Object        LOCK                     = new Object();
     private static AtomicInteger maxPrem                  = new AtomicInteger(1);
 
     public EuroShareEu(PluginWrapper wrapper) {
@@ -47,60 +43,30 @@ public class EuroShareEu extends PluginForHost {
         this.enablePremium("http://euroshare.eu/premium-accounts");
     }
 
-    public boolean checkLinks(DownloadLink[] urls) {
-        if (urls == null || urls.length == 0) { return false; }
-        try {
-            br.setCustomCharset("utf-8");
-            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
-            int index = 0;
-            StringBuilder sb = new StringBuilder();
-            while (true) {
-                sb.delete(0, sb.capacity());
-                sb.append("data=");
-                links.clear();
-                while (true) {
-                    /* we test 100 links at once */
-                    if (index == urls.length || links.size() > 100) break;
-                    links.add(urls[index]);
-                    index++;
-                }
-                int c = 0;
-                for (DownloadLink dl : links) {
-                    /*
-                     * append fake filename, because api will not report
-                     * anything else
-                     */
-                    if (c > 0) sb.append("%0D%0A");
-                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
-                    c++;
-                }
-                br.postPage("http://euroshare.eu/checker/", sb.toString());
-                for (final DownloadLink dl : links) {
-                    String linkWithoutHttp = new Regex(dl.getDownloadURL(), "euroshare\\.eu(/file/\\d+/.+)").getMatch(0);
-                    if (linkWithoutHttp == null) {
-                        logger.warning("Euroshare.eu availablecheck is broken!");
-                        return false;
-                    }
-                    boolean online = br.containsHTML(linkWithoutHttp + "</a>[\t\n\r ]+</div>[\t\n\r ]+<div class=\"state\">[\t\n\r ]+<img src=\"/public/images/web/icons/ok\\.png\"");
-                    if (!online) {
-                        dl.setAvailable(false);
-                        continue;
-                    } else {
-                        dl.setAvailable(true);
-                    }
-                    final String filename = new Regex(dl.getDownloadURL(), "file/\\d+/(.+)").getMatch(0);
-                    dl.setName(filename);
-                }
-                if (index == urls.length) break;
-            }
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("euroshare.sk", "euroshare.eu"));
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("euroshare.sk", "euroshare.eu"));
+    @Override
+    public String getAGBLink() {
+        return "http://euroshare.eu/terms";
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.getPage("http://euroshare.eu/euroshare-api/?sub=checkfile&file=" + Encoding.urlEncode(downloadLink.getDownloadURL()));
+        if (br.containsHTML("ERR: File does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String filename = getJson("file_name");
+        final String description = getJson("file_description");
+        if (description != null) downloadLink.setComment(description);
+        final String filesize = getJson("file_size");
+        final String md5 = getJson("md5_hash");
+        downloadLink.setFinalFileName(filename);
+        downloadLink.setDownloadSize(Long.parseLong(filesize));
+        downloadLink.setMD5Hash(md5);
+
+        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -114,21 +80,27 @@ public class EuroShareEu extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-
-        ai.setUnlimitedTraffic();
         account.setValid(true);
-        String expire = br.getRegex(">Prémium účet máte aktívny do: ([^<>\"]*?)</a>").getMatch(0);
-        if (expire == null) {
+        final String expire = getJson("unlimited_download_until");
+        if (expire.equals("0")) {
             ai.setStatus("Free (registered) User");
             try {
-                maxPrem.set(-1);
+                maxPrem.set(1);
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
             account.setProperty("FREE", true);
+            ai.setUnlimitedTraffic();
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy", null) + (1000l * 60 * 60 * 24));
+            // Not sure if this behaviour is correct
+            final String availableTraffic = getJson("credit");
+            if (availableTraffic.equals("0")) {
+                ai.setUnlimitedTraffic();
+            } else {
+                ai.setTrafficLeft(Long.parseLong(availableTraffic));
+            }
+            ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(expire));
             ai.setStatus("Premium User");
             try {
                 maxPrem.set(-1);
@@ -142,13 +114,8 @@ public class EuroShareEu extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://euroshare.eu/terms";
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return 1;
     }
 
     @Override
@@ -163,21 +130,13 @@ public class EuroShareEu extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Požadovaný súbor sa na serveri nenachádza alebo bol odstránený")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-        if (br.containsHTML("(>Všetky sloty pre Free užívateľov sú obsadené|Skúste prosím neskôr\\.<br)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.euroshareeu.nofreeslots", "No free slots available"), 5 * 60 * 1000l);
-        // br.setFollowRedirects(false);
-        // String dllink =
-        // br.getRegex("iba jeden súbor\\.<a href=\"(http://.*?)\"").getMatch(0);
-        // if (dllink == null) dllink =
-        // br.getRegex("\"(http://euroshare\\.eu/download/\\d+/.*?/\\d+/.*?)\"").getMatch(0);
-        // if (dllink == null) throw new
-        // PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL() + "/download/", false, 1);
+        String dllink = getJson("free_link");
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML(TOOMANYSIMULTANDOWNLOADS)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
+            if (br.containsHTML("Z Vasej IP uz prebieha stahovanie")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max simultan free downloads-limit reached!", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -186,12 +145,14 @@ public class EuroShareEu extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        if (br.containsHTML("Požadovaný súbor sa na serveri nenachádza alebo bol odstránený")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        login(account);
         if (account.getBooleanProperty("FREE")) {
             doFree(link);
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL() + "/download/", true, 0);
+            br.getPage("http://euroshare.eu/euroshare-api/?sub=premiumdownload&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(link.getDownloadURL()));
+            String dllink = getJson("link");
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = dllink.replace("\\", "");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
@@ -201,24 +162,26 @@ public class EuroShareEu extends PluginForHost {
         }
     }
 
-    private void login(Account account) throws Exception {
+    private void login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getPage("http://euroshare.eu/customer-zone/login/");
-        br.postPage("http://euroshare.eu/customer-zone/login/", "trvale=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        // There are no cookies so we can only check via text on the website
-        if (!br.containsHTML("title=\"Môj profil\"")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (br.containsHTML(">Nesprávne prihlasovacie meno alebo heslo")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        br.setFollowRedirects(false);
+        br.getPage("http://euroshare.eu/euroshare-api/?sub=getaccountdetails&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (br.containsHTML("(ERR: User does not exist|ERR: Invalid password)")) {
+            logger.info("Cannot accept account because: " + br.toString().trim());
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        checkLinks(new DownloadLink[] { downloadLink });
-        if (!downloadLink.isAvailabilityStatusChecked()) {
-            downloadLink.setAvailableStatus(AvailableStatus.UNCHECKABLE);
-        } else if (!downloadLink.isAvailable()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return downloadLink.getAvailableStatus();
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
+    }
+
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     @Override

@@ -144,6 +144,9 @@ public class ShareFlareNet extends PluginForHost {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
                 ai.setStatus("Premium User");
             } else {
+                // Reset stuff because it can only be checked while downloading
+                ai.setValidUntil(-1);
+                ai.setTrafficLeft(-1);
                 ai.setStatus("Status can only be checked while downloading!");
                 account.setValid(true);
             }

@@ -396,6 +396,9 @@ public class LetitBitNet extends PluginForHost {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
             account.setValid(true);
+            // Reset stuff because it can only be checked while downloading
+            ai.setValidUntil(-1);
+            ai.setTrafficLeft(-1);
             ai.setStatus("Status can only be checked while downloading!");
             return ai;
         }

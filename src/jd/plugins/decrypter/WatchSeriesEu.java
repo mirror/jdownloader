@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchseries.eu" }, urls = { "http://(www\\.)?watchseries\\.(eu|li)/episode/[a-z0-9\\-_]+\\-(\\d+)\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchseries.eu" }, urls = { "http://(www\\.)?watchseries\\.(eu|li)/episode/[^<>\"/]*?\\-(\\d+)\\.html" }, flags = { 0 })
 public class WatchSeriesEu extends PluginForDecrypt {
 
     public WatchSeriesEu(PluginWrapper wrapper) {

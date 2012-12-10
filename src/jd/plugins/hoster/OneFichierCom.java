@@ -76,7 +76,7 @@ public class OneFichierCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">The requested file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Software error:<") || br.toString().matches("(\\s+)?wait(\\s+)?")) {
+        if (br.containsHTML(">Software error:<") || br.toString().equals("wait")) {
             link.getLinkStatus().setStatusText("Cannot check availibility because a limit has been reached!");
             return AvailableStatus.UNCHECKABLE;
         }
@@ -112,6 +112,12 @@ public class OneFichierCom extends PluginForHost {
 
     public boolean bypassMaxSimultanDownloadNum(DownloadLink link, Account acc) {
         return acc == null && link.getProperty("HOTLINK", null) != null;
+    }
+
+    @Override
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        requestFileInformation(downloadLink);
+        doFree(downloadLink);
     }
 
     public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
@@ -282,12 +288,6 @@ public class OneFichierCom extends PluginForHost {
     public int getMaxSimultanPremiumDownloadNum() {
         /* workaround for free/premium issue on stable 09581 */
         return maxPrem.get();
-    }
-
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink);
     }
 
     private String handlePassword(final DownloadLink downloadLink, String passCode) throws IOException, PluginException {

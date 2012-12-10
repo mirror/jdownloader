@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -421,7 +422,7 @@ public class LumFileCom extends PluginForHost {
         if (correctedBR.contains("You're using all download slots for IP")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l); }
         if (correctedBR.contains("Error happened when generating Download Link")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error!", 10 * 60 * 1000l);
         /** Error handling for only-premium links */
-        if (new Regex(correctedBR, ">(Unfortunately, the file owner has limited free downloads of this file|premium membership is required to download this file\\.<)").matches() || new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit)").matches()) {
+        if (new Regex(correctedBR, ">(Unfortunately, the file owner has limited free downloads of this file|premium membership is required to download this file\\.<)").matches() || new Regex(correctedBR, "( can download files up to |Upgrade your account to download bigger files|>Upgrade your account to download larger files|>The file you requested reached max downloads limit for Free Users|Please Buy Premium To download this file<|This file reached max downloads limit|>This file is available for Premium Users only\\.)").matches()) {
             String filesizelimit = new Regex(correctedBR, "You can download files up to(.*?)only").getMatch(0);
             if (filesizelimit != null) {
                 filesizelimit = filesizelimit.trim();
@@ -538,15 +539,13 @@ public class LumFileCom extends PluginForHost {
             if (lifetime != null && lifetime.length() != 0) {
                 ai.setStatus("Lifetime Premium User");
             } else {
-                String expire = new Regex(correctedBR, ">Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>").getMatch(2);
-                if (expire == null) expire = new Regex(correctedBR, "(\\d{1,2} [A-Za-z]+ \\d{4})").getMatch(0);
+                final String expire = new Regex(correctedBR, "Premium Expire: (\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
                 if (expire == null) {
                     ai.setExpired(true);
                     account.setValid(false);
                     return ai;
                 } else {
-                    expire = expire.replaceAll("(<b>|</b>)", "");
-                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
+                    ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
                     try {
                         maxPrem.set(20);
                         account.setMaxSimultanDownloads(-1);

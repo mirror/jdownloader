@@ -76,11 +76,11 @@ public class OteUploadCom extends PluginForHost {
      * */
     // XfileSharingProBasic Version 2.5.7.4
     // mods:
-    // non account: 20 * 20
+    // non account: 1 * 1
     // free account: untested, set same as free
     // premium account: 20 * 20
     // protocol: no https
-    // captchatype: null 4dignum recaptcha
+    // captchatype: null
     // other: no redirects
 
     @Override
@@ -196,7 +196,7 @@ public class OteUploadCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, 1, "freelink");
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -382,30 +382,13 @@ public class OteUploadCom extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        // generic fail over for COOKIE_HOST on final link
-                        // format.
-                        if (dllink == null) {
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/cgi\\-bin/dl\\.cgi/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            // dllink = new Regex(correctedBR,
-                            // "(https?://[^/]+/files/\\d+/[a-z0-9]+/[^\"\\']+)").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }
@@ -483,7 +466,8 @@ public class OteUploadCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        // final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        // final String ttt = new Regex(correctedBR,
+        // "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         final String ttt = new Regex(correctedBR, "id=\"countdown_str\">Please Wait.*?<span id=\".*?\" style=\"font-size:18px;\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
@@ -630,7 +614,7 @@ public class OteUploadCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(-1);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -717,11 +701,13 @@ public class OteUploadCom extends PluginForHost {
         String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 0, "freelink2");
+            doFree(downloadLink, true, 1, "freelink2");
         } else {
             dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
+                br.setFollowRedirects(true);
                 getPage(downloadLink.getDownloadURL());
+                br.setFollowRedirects(false);
                 dllink = getDllink();
                 if (dllink == null) {
                     checkErrors(downloadLink, true, passCode);
