@@ -62,7 +62,7 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("decryptedforVimeoHosterPlugin://", "http://"));
+        link.setUrlDownload(link.getDownloadURL().replaceFirst("decryptedforVimeoHosterPlugin\\d+?://", "http://"));
     }
 
     private String[][] getQualities(Browser br, String ID, String title) throws Exception {
