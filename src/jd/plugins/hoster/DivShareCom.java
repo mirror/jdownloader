@@ -31,7 +31,7 @@ import jd.plugins.PluginUtils;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "http://[\\w\\.]*?divshare\\.com/(download|image|direct)/\\d+-.+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "divshare.com" }, urls = { "https?://(www\\.)?divshare\\.com/(download|image|direct)/\\d+\\-[a-z0-9]+" }, flags = { 0 })
 public class DivShareCom extends PluginForHost {
 
     public DivShareCom(PluginWrapper wrapper) {
@@ -45,6 +45,10 @@ public class DivShareCom extends PluginForHost {
 
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
     }
 
     @Override
@@ -87,8 +91,7 @@ public class DivShareCom extends PluginForHost {
             }
             String infolink2 = infolink.replaceAll("divshare\\.com/(download|image)", "divshare.com/download/launch");
             br.getPage(infolink2);
-            String dllink = br.getRegex("class=\"download_message\">Your download will start momentarily\\. If it doesn\\'t, <a href=\"(http://.*?)\"").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\"(http://storagestart\\.divshare\\.com/launch\\.php\\?f=.*?)\"").getMatch(0);
+            String dllink = br.getRegex("\"(http://storagestart(\\d+)?\\.divshare\\.com/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null && br.containsHTML("application/mp3")) {
                 String id = br.getRegex("divshare.com/download/([0-9a-f]+)").getMatch(0);
                 String id2 = br.getRegex("divshare.com/download/.*?-([0-9a-f]+)").getMatch(0);

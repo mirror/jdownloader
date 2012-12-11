@@ -74,7 +74,7 @@ public class SpeedLoadOrg extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("style=\"font\\-size:24pt;font\\-family:Arial;color:#545454;min\\-width:300px\">([^<>\"]*?)\\.\\.\\.</div>").getMatch(0);
+        final String filename = br.getRegex("<div style=\"font\\-size:24pt;font\\-family:Arial;color:#545454;min\\-width:300px\">([^<>\"]*?)</div>").getMatch(0);
         final String filesize = br.getRegex(">File Size:\\&nbsp;</span>([^<>\"]*?)</span>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
@@ -188,7 +188,7 @@ public class SpeedLoadOrg extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();

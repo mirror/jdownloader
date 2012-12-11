@@ -79,12 +79,12 @@ public class AdfLy extends PluginForDecrypt {
                     extendedProtectionPage = "http://adf.ly" + extendedProtectionPage;
                 }
             }
-            final boolean skipWait = true;
+            boolean skipWait = true;
             if (extendedProtectionPage != null) {
                 int wait = 7;
-                String waittime = br.getRegex("var countdown = (\\d+);").getMatch(0);
+                String waittime = getWaittime();
                 if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
-                if (!skipWait) {
+                if (skipWait == false) {
                     sleep(wait * 1000l, param);
                 }
                 br.getPage(extendedProtectionPage);
@@ -95,9 +95,11 @@ public class AdfLy extends PluginForDecrypt {
                     if (tempLink.equals(parameter)) {
                         continue;
                         // They blocked us for a short time, wait and try again
-                    } else if (tempLink.contains("adf.ly/locked/")) {
+                    } else if (tempLink.contains("adf.ly/locked/") || tempLink.contains("adf.ly/blocked")) {
+                        logger.info("Failed to skip countdown, trying again with countdown...");
+                        skipWait = false;
                         wait = 8;
-                        waittime = br.getRegex("var countdown = (\\d+);").getMatch(0);
+                        waittime = getWaittime();
                         if (waittime != null && Integer.parseInt(waittime) <= 20) wait = Integer.parseInt(waittime);
                         sleep(wait * 1000l, param);
                         br.getPage(parameter);
@@ -134,6 +136,10 @@ public class AdfLy extends PluginForDecrypt {
             } catch (final Exception e) {
             }
         }
+    }
+
+    private String getWaittime() {
+        return br.getRegex("var countdown = (\\d+);").getMatch(0);
     }
 
 }

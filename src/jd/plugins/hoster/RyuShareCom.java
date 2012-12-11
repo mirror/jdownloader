@@ -69,7 +69,7 @@ public class RyuShareCom extends PluginForHost {
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.0-raz
     // mods: premium traffic available
-    // non account: 1 * 1
+    // non account: 2 * 1
     // free account: same as above
     // premium: unlimited
     // protocol: no https
@@ -159,7 +159,7 @@ public class RyuShareCom extends PluginForHost {
         requestFileInformation(downloadLink);
         // More chunks sometimes possible but server error chance is very high
         // then
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -289,7 +289,7 @@ public class RyuShareCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     /** Remove HTML code which could break the plugin */
@@ -498,8 +498,8 @@ public class RyuShareCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(2);
-                account.setMaxSimultanDownloads(2);
+                maxPrem.set(1);
+                account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -586,7 +586,7 @@ public class RyuShareCom extends PluginForHost {
         if (account.getBooleanProperty("nopremium", false)) {
             logger.info("no premium");
             getPage(link.getDownloadURL());
-            doFree(link, true, 1, "freelink2");
+            doFree(link, true, -2, "freelink2");
         } else {
             logger.info("premium");
             dllink = checkDirectLink(link, "premlink");

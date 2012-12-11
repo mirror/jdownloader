@@ -18,16 +18,9 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
-import jd.http.Cookies;
-import jd.http.RandomUserAgent;
+import jd.http.Browser.BrowserException;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -40,14 +33,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.TimeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://[\\w\\.]*?filer.net/(file[\\d]+|get|dl)/.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
 
-    private final String        COOKIE_HOST = "http://filer.net";
-    private static final String SLOTSFILLED = ">Slots filled<|>Download Slots max<|You have used all your available download\\-slots";
-    private static Object       LOCK        = new Object();
+    private static Object       LOCK                            = new Object();
+    private int                 STATUSCODE                      = 0;
+    private static final int    APIDISABLED                     = 400;
+    private static final String APIDISABLEDTEXT                 = "API is disabled, please wait or use filer.net from your browser";
+    private static final int    DOWNLOADTEMPORARILYDISABLED     = 500;
+    private static final String DOWNLOADTEMPORARILYDISABLEDTEXT = "Download temporarily disabled!";
+    private static final int    UNKNOWNERROR                    = 599;
+    private static final String UNKNOWNERRORTEXT                = "Unknown file error";
 
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,11 +52,12 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("://www.", "://"));
+        link.setUrlDownload(link.getDownloadURL().replace("://www.", "://").replace("/dl/", "/get/"));
     }
 
     private void prepBrowser() {
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", "JDownloader");
     }
 
     @Override
@@ -74,6 +71,11 @@ public class FilerNet extends PluginForHost {
     }
 
     @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 10;
+    }
+
+    @Override
     public int getTimegapBetweenConnections() {
         return 500;
     }
@@ -82,73 +84,58 @@ public class FilerNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBrowser();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        final String reconWait = getReconWait();
-        if (reconWait != null) {
-            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-            link.getLinkStatus().setStatusText("Cannot show filename while the downloadlimit is reached");
-            return AvailableStatus.TRUE;
-        } else if (br.containsHTML(SLOTSFILLED)) {
-            link.setName(new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
-            link.getLinkStatus().setStatusText("Cannot show filename while all slots are filled");
-            return AvailableStatus.TRUE;
+        callAPI("http://api.filer.net/api/status/" + getFID(link) + ".json");
+        if (STATUSCODE == APIDISABLED) {
+            link.getLinkStatus().setStatusText(APIDISABLEDTEXT);
+            return AvailableStatus.UNCHECKABLE;
+        } else if (STATUSCODE == 505) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (STATUSCODE == DOWNLOADTEMPORARILYDISABLED) {
+            link.getLinkStatus().setStatusText(DOWNLOADTEMPORARILYDISABLEDTEXT);
+        } else if (STATUSCODE == UNKNOWNERROR) {
+            link.getLinkStatus().setStatusText(UNKNOWNERRORTEXT);
+            return AvailableStatus.UNCHECKABLE;
         }
-        br.setFollowRedirects(false);
-        if (br.containsHTML(">Not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex(">Free Download ([^<>\"]*?)<").getMatch(0);
-        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        // The don't show a filesize but there is an estimate download time :D
-        final Regex downloadTime = br.getRegex("<td><em>~ (\\d+):(\\d+):(\\d+)</em></td>");
-        if (downloadTime.getMatches().length == 1) {
-            int seconds = Integer.parseInt(downloadTime.getMatch(0)) * 60 * 60 + Integer.parseInt(downloadTime.getMatch(1)) * 60 + Integer.parseInt(downloadTime.getMatch(2));
-            link.setDownloadSize((long) (seconds * 2119462.127659574));
-        }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setFinalFileName(getJson("name", br.toString()));
+        link.setDownloadSize(Long.parseLong(getJson("size", br.toString())));
+        link.setMD5Hash(getJson("hash", br.toString()));
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        if (br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "All slots are filled", 10 * 60 * 1000l);
-        final String reconWait = getReconWait();
-        int wait = 0;
-        if (reconWait != null) wait = Integer.parseInt(reconWait);
-        if (wait < 180) {
+        handleDownloadErrors();
+        callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json");
+
+        if (STATUSCODE == 501) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available, wait or buy premium!", 10 * 60 * 1000l);
+        } else if (STATUSCODE == 502) { throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max free simultan-downloads-limit reached, please finish running downloads before starting new ones!", 5 * 60 * 1000l); }
+
+        int wait = Integer.parseInt(getJson("wait", br.toString()));
+        if (STATUSCODE == 203) {
             sleep(wait * 1001l, downloadLink);
-            br.getPage(downloadLink.getDownloadURL());
-        } else {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
-        }
-        final String token = br.getRegex("name=\"token\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (token == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage(br.getURL(), "token=" + Encoding.urlEncode(token));
-        br.setFollowRedirects(false);
-        int maxCaptchaTries = 5;
-        br.setCookiesExclusive(true);
-        int tries = 0;
-        while (tries < maxCaptchaTries) {
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-            String id = this.br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (id == null) id = this.br.getRegex("Recaptcha\\.create\\(\"([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-            if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            rc.setId(id);
-            rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
-            tries++;
-            br.postPage(br.getURL(), "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)§").getMatch(0));
-            if (!br.containsHTML("google\\.com/recaptcha/")) {
+        } else if (STATUSCODE == 503) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l); }
+        callAPI("http://filer.net/get/" + getFID(downloadLink) + ".json" + "?token=" + getJson("token", br.toString()));
+        String dllink = null;
+        if (STATUSCODE == 202) {
+            int maxCaptchaTries = 5;
+            int tries = 0;
+            while (tries < maxCaptchaTries) {
+                PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                rc.setId(getJson("recaptcha_challange", br.toString()));
+                rc.load();
+                final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                final String c = getCaptchaCode(cf, downloadLink);
+                tries++;
+                br.postPage("http://filer.net/get/" + getFID(downloadLink) + ".json", "recaptcha_challenge_field=" + Encoding.urlEncode(rc.getChallenge()) + "&recaptcha_response_field=" + Encoding.urlEncode(c) + "&hash=" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)§").getMatch(0));
+                dllink = br.getRedirectLocation();
+                if (dllink == null) continue;
                 break;
             }
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        if (br.containsHTML("google\\.com/recaptcha/")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        // They show this message after recaptcha (very lame). It's in german and not english for some reason....
-        if (br.containsHTML("(<h1 class=\"[^\"]+\">Leider sind alle kostenlosen Download\\-Slots belegt\\.</h1>|>Im Moment sind leider alle Download\\-Slots für kostenlose Downloads belegt\\.)") || br.containsHTML(SLOTSFILLED)) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1001l);
-        final String dllink = br.getRedirectLocation();
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
@@ -156,10 +143,6 @@ public class FilerNet extends PluginForHost {
         }
         dl.setAllowFilenameFromURL(true);
         dl.startDownload();
-    }
-
-    private String getReconWait() {
-        return br.getRegex("<span id=\"time\">(\\d+)</span>").getMatch(0);
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -172,69 +155,37 @@ public class FilerNet extends PluginForHost {
         return true;
     }
 
-    public void login(final Account account, final boolean force) throws IOException, PluginException, InterruptedException {
+    public void login(final Account account) throws IOException, PluginException, InterruptedException {
         synchronized (LOCK) {
+            /** Load cookies */
+            br.setCookiesExclusive(true);
+            prepBrowser();
+            br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             try {
-                /** Load cookies */
-                br.setCookiesExclusive(true);
-                prepBrowser();
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(COOKIE_HOST, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                br.getPage("http://filer.net/login");
-                final String token = br.getRegex("name=\"_csrf_token\" value=\"([a-z0-9]+)\"").getMatch(0);
-                if (token == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-
-                br.postPage("http://filer.net/login_check", "_remember_me=on&_submit=&_csrf_token=" + token + "&_target_path=http%3A%2F%2Ffiler.net%2F&_username=" + Encoding.urlEncode(account.getUser()) + "&_password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(COOKIE_HOST, "REMEMBERME") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                /** Save cookies */
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(COOKIE_HOST);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
+                callAPI("http://api.filer.net/profile.json");
+            } catch (final BrowserException e) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         try {
-            login(account, true);
+            login(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://filer.net/locale/en");
-        br.getPage("http://filer.net/profile");
-        final String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>[\t\n\r ]+<td>([^<>\"]*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        final String validuntil = br.getRegex(Pattern.compile("is valid until ([A-Za-z]{3} \\d+, \\d{4} \\d{1,2}:\\d{1,2}:\\d{1,2} (AM|PM))", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (trafficleft == null || validuntil == null) {
+        if (getJson("state", br.toString()).equals("free")) {
+            ai.setStatus("Free Account (dieser Accounttyp wird nicht unterstützt)");
             account.setValid(false);
             return ai;
         }
-        ai.setTrafficLeft(trafficleft);
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(validuntil, "MMMM dd, yyyy h:mm:ss a", Locale.US));
+        ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
+        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(getJson("until", br.toString())));
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;
@@ -244,16 +195,14 @@ public class FilerNet extends PluginForHost {
     public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         setBrowserExclusive();
         requestFileInformation(downloadLink);
-        login(account, false);
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = br.getRegex("\"(/dl/[a-z0-9]+/[a-z0-9]+)\"").getMatch(0);
-            if (dllink != null) dllink = "http://filer.net" + dllink;
-        }
+        handleDownloadErrors();
+        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+        br.getPage("http://filer.net/api/dl/" + getFID(downloadLink) + ".json");
+        if (br.containsHTML("\"code\":599")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown file error", 5 * 60 * 1000l);
+        final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.setFollowRedirects(true);
+        // Important!!
+        br.getHeaders().put("Authorization", "");
         // Chunks deactivated to prevent errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -261,6 +210,30 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
         }
         dl.startDownload();
+    }
+
+    private void handleDownloadErrors() throws PluginException {
+        if (STATUSCODE == APIDISABLED) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, APIDISABLEDTEXT, 2 * 60 * 60 * 1000l);
+        } else if (STATUSCODE == DOWNLOADTEMPORARILYDISABLED) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, DOWNLOADTEMPORARILYDISABLEDTEXT, 2 * 60 * 60 * 1000l);
+        } else if (STATUSCODE == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
+    private void callAPI(final String url) throws IOException {
+        br.getPage(url);
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
+        STATUSCODE = Integer.parseInt(getJson("code", br.toString()));
+    }
+
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 
     @Override

@@ -20,9 +20,13 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 import org.appwork.utils.formatter.SizeFormatter;
@@ -37,26 +41,56 @@ public class Flr extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        br.setFollowRedirects(true);
-
-        br.getPage(parameter);
-        if (br.containsHTML(">Error: Folder not found<")) {
-            logger.info("Link offline: " + parameter);
+        br.setFollowRedirects(false);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        final String folderID = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
+        br.getPage("http://api.filer.net/api/folder/" + folderID + ".json");
+        if (getJson("code", br.toString()).equals("506")) {
+            logger.info("Folderlink offline: " + parameter);
             return decryptedLinks;
         }
-        final String[][] links = br.getRegex("\"(/get/[a-z0-9]+)\">([^<>\"]*?)</a>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatches();
-        if (links == null || links.length == 0) {
+        if (getJson("count", br.toString()).equals("0")) {
+            logger.info("Folderlink empty: " + parameter);
+            return decryptedLinks;
+        }
+        if (getJson("count", br.toString()).equals("599")) {
+            logger.info("unknown file error for link: " + parameter);
+            return decryptedLinks;
+        }
+        if (getJson("code", br.toString()).equals("201")) {
+            for (int i = 1; i <= 3; i++) {
+                final String passCode = getUserInput("Password?", param);
+                br.getPage("http://api.filer.net/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
+                if (getJson("code", br.toString()).equals("201")) continue;
+                break;
+            }
+            if (getJson("code", br.toString()).equals("201")) throw new DecrypterException(DecrypterException.PASSWORD);
+        }
+        String fpName = getJson("name", br.toString());
+        if (fpName == null) fpName = "filer.net folder: " + folderID;
+        final String allLinks = br.getRegex("\"files\":\\[(.*?)\\]").getMatch(0);
+        final String[] linkInfo = new Regex(allLinks, "\\{(.*?)\\}").getColumn(0);
+        if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Decrypter broken for link:" + parameter);
             return decryptedLinks;
         }
 
-        for (String element[] : links) {
-            final DownloadLink link = createDownloadlink("http://filer.net" + element[0]);
-            link.setFinalFileName(element[1]);
-            link.setDownloadSize(SizeFormatter.getSize(element[2]));
+        for (final String singleLinkInfo : linkInfo) {
+            final DownloadLink link = createDownloadlink(getJson("link", singleLinkInfo).replace("\\", ""));
+            link.setFinalFileName(getJson("name", singleLinkInfo).replace("\\", ""));
+            link.setDownloadSize(SizeFormatter.getSize(getJson("size", singleLinkInfo).replace("\\", "")));
+            link.setAvailable(true);
             decryptedLinks.add(link);
         }
-
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(fpName.trim()));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
+    }
+
+    private String getJson(final String parameter, final String source) {
+        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
     }
 }

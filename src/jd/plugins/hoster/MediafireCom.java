@@ -796,6 +796,10 @@ public class MediafireCom extends PluginForHost {
             doFree(downloadLink, account);
         } else {
             // TODO: See if there is a way to implement the premium API again: http://developers.mediafire.com/index.php/REST_API
+            /** Problem: This API doesn't (yet) work with password protected links... */
+            // getSessionToken(this.br, account);
+            // apiRequest(this.br, "http://www.mediafire.com/api/file/get_links.php", "?link_type=direct_download&session_token=" +
+            // this.SESSIONTOKEN + "&quick_key=" + getFID(downloadLink) + "&response_format=json");
             String url = dlURL;
             boolean passwordprotected = false;
             boolean useAPI = false;
@@ -1011,7 +1015,7 @@ public class MediafireCom extends PluginForHost {
         this.br.setFollowRedirects(false);
         downloadLink.setProperty("type", Property.NULL);
         if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
-        final String fid = new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+        final String fid = getFID(downloadLink);
         if (downloadLink.getBooleanProperty("privatefolder")) {
             downloadLink.getLinkStatus().setStatusText(PRIVATEFOLDERUSERTEXT);
             downloadLink.setName(fid);
@@ -1062,6 +1066,10 @@ public class MediafireCom extends PluginForHost {
             this.getPluginConfig().setProperty("sessiontokencreated", System.currentTimeMillis());
             this.getPluginConfig().save();
         }
+    }
+
+    private String getFID(final DownloadLink downloadLink) {
+        return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
     @Override

@@ -53,7 +53,10 @@ public class ImgSrcRu extends PluginForDecrypt {
         br.setCookie(MAINPAGE + "/", "per_page", "48");
 
         boolean passwordprotected = false;
-        if (parameter.matches("http://(www\\.)?imgsrc\\.ru/main/passchk\\.php\\?ad=\\d+")) passwordprotected = true;
+        if (parameter.matches("http://(www\\.)?imgsrc\\.ru/main/passchk\\.php\\?ad=\\d+")) {
+            br.getPage(parameter);
+            passwordprotected = true;
+        }
         if (!passwordprotected) {
             br.getPage(parameter + "?per_page=48");
             if (br.containsHTML(">Album foreword:")) {
