@@ -733,11 +733,11 @@ public class TbCm extends PluginForDecrypt {
 					}
 				}
 
+				final String VIDEOID = new Regex(parameter,
+						"watch\\?v=([\\w_\\-]+)").getMatch(0);
+
 				// Grab Subtitles
 				if (cfg.getBooleanProperty("ALLOW_SUBTITLES", true)) {
-					final String VIDEOID = new Regex(parameter,
-							"watch\\?v=([\\w_\\-]+)").getMatch(0);
-
 					br.getPage("http://video.google.com/timedtext?type=list&v="
 							+ VIDEOID);
 
@@ -772,6 +772,37 @@ public class TbCm extends PluginForDecrypt {
 						decryptedLinks.add(dlink);
 					}
 				}
+
+				// Grab thumbnails
+				FilePackage filePackage = null;
+				if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false)
+						|| cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false)
+						|| cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT",
+								false)) {
+					filePackage = FilePackage.getInstance();
+					filePackage.setProperty("ALLOW_MERGE", true);
+					filePackage.setName("YouTube thumbnails");
+				}
+
+				if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false)) {
+					decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME
+							+ " (HQ).jpg", "http://img.youtube.com/vi/"
+							+ VIDEOID + "/hqdefault.jpg", parameter,
+							filePackage));
+				}
+
+				if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false)) {
+					decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME
+							+ " (MQ).jpg", "http://img.youtube.com/vi/"
+							+ VIDEOID + "/mqdefault.jpg", parameter,
+							filePackage));
+				}
+
+				if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false)) {
+					decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME
+							+ ".jpg", "http://img.youtube.com/vi/" + VIDEOID
+							+ "/default.jpg", parameter, filePackage));
+				}
 			} catch (final IOException e) {
 				this.br.getHttpConnection().disconnect();
 				logger.log(java.util.logging.Level.SEVERE,
@@ -781,6 +812,21 @@ public class TbCm extends PluginForDecrypt {
 		}
 
 		return decryptedLinks;
+	}
+
+	private DownloadLink createThumbnailDownloadLink(String name, String link,
+			String browserurl, FilePackage filePackage) {
+		DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http",
+				"httpJDYoutube"));
+		dlink.setProperty("ALLOW_DUPE", true);
+		filePackage.add(dlink);
+		dlink.setBrowserUrl(browserurl);
+
+		dlink.setFinalFileName(name);
+		dlink.setProperty("name", name);
+		dlink.setProperty("thumbnail", true);
+
+		return dlink;
 	}
 
 	public HashMap<Integer, String[]> getLinks(final String video,
