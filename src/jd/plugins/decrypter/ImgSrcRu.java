@@ -79,7 +79,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
-        final String fpName = br.getRegex("from \\'<strong>([^<>\"']+)</strong>").getMatch(0);
+        final String fpName = br.getRegex("from \\'<strong>([^<>\']+)</strong>").getMatch(0);
         final String username = new Regex(parameter, "imgsrc\\.ru/([^<>\"\\'/]+)/").getMatch(0);
         final String[] pages = br.getRegex("href=(/" + username + "/\\d+\\.html)>\\d+</a>").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -89,11 +89,11 @@ public class ImgSrcRu extends PluginForDecrypt {
         allPages.add(parameter.replaceAll("http://(www\\.)?imgsrc.ru", ""));
         String name = "";
         if (username != null && fpName != null) {
-            name = username + "@" + fpName;
+            name = username.trim() + " @ " + fpName.trim();
         } else if (username != null) {
-            name = username;
+            name = username.trim();
         } else if (fpName != null) {
-            name = fpName;
+            name = fpName.trim();
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setName("Gallery: " + new Regex(parameter, "([a-z0-9]+)\\.html$").getMatch(0));
@@ -103,8 +103,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             final String currentPage = MAINPAGE + page;
             logger.info("Decrypting page " + pageCounter + " of " + allPages.size() + " and working on line: " + currentPage);
             br.getPage(currentPage);
-            // Check password again, because they don't set any cookies for
-            // correctly entered passwords we have to enter them again for each
+            // Check password again, because they don't set any cookies for correctly entered passwords we have to enter them again for each
             // page
             if (isPasswordProtected()) handlePassword(parameter, param);
             // Get the picture we're currently viewing
@@ -112,6 +111,7 @@ public class ImgSrcRu extends PluginForDecrypt {
             if (singlePic == null) singlePic = br.getRegex("onclick=\"t\\(\\'down_(\\d+)\\'\\)").getMatch(0);
             if (singlePic != null) {
                 DownloadLink dlink = getDownloadLink();
+                fp.add(dlink);
                 if (dlink != null) decryptedLinks.add(dlink);
             }
             // Password protected links contain the "?pwd?" string
@@ -131,7 +131,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                 br.getPage(MAINPAGE + pic);
                 final DownloadLink dlink = getDownloadLink();
                 if (dlink != null) {
-                    dlink._setFilePackage(fp);
+                    fp.add(dlink);
                     try {
                         distribute(dlink);
                     } catch (final Exception e) {
