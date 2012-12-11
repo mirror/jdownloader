@@ -188,7 +188,7 @@ public class SpeedLoadOrg extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
         if (!dl.getConnection().isContentDisposition()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
