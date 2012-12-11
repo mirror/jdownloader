@@ -303,7 +303,6 @@ public class LnkCrptWs extends PluginForDecrypt {
                 makeFirstRequest();
             }
             if (SERVERSTRING != null && SERVERSTRING.startsWith("https")) {
-                // SERVERSTRING = SERVERSTRING + Encoding.urlEncode(DLURL) + "&r=" + Math.random();
                 rcBr.getPage(SERVERSTRING);
                 SERVERSTRING = null;
                 PARAMS.put("s_s_c_web_server_sign4", rcBr.getRegex("s_s_c_web_server_sign4=\"(.*?)\"").getMatch(0));

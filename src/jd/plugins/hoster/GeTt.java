@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://(www\\.)?(api(\\d+)?\\.ge\\.tt/\\d/[A-Za-z0-9]+/.+|ge\\.tt/api/\\d+/files/[A-Za-z0-9]+/\\d+/blob\\?download)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ge.tt" }, urls = { "http://((www|open)\\.)?ge\\.tt/(api/)?\\d/files/[0-9a-zA-z]+/\\d+/blob(\\?download)?" }, flags = { 0 })
 public class GeTt extends PluginForHost {
 
     private String              DLLINK               = null;
@@ -112,4 +112,5 @@ public class GeTt extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }
