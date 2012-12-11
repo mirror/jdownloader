@@ -40,42 +40,37 @@ public class CineonCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
+        br.setFollowRedirects(false);
         String fpName = br.getRegex("title=\'([^\']+)").getMatch(0);
         if (fpName != null) fpName = Encoding.htmlDecode(fpName);
         String allLinks = br.getRegex("var subcats = \\{([^;]+)").getMatch(0);
         if (allLinks != null) {
             allLinks = allLinks.replaceAll("\\\\|\"", "");
-            for (String[] s : new Regex(allLinks, "([\\w\\-]+):\\[(\\[.*?\\])\\]").getMatches()) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName((fpName + "@" + s[0]).trim());
-                for (String[] ss : new Regex(s[1], "\\[(\\d),\\w+,.*?,(.*?),\\d+\\]").getMatches()) {
-                    final DownloadLink dl = createDownloadlink(ss[1].trim());
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
+            for (String q[] : new Regex(allLinks, "(XVID|720p|1080p):\\{(.*?)\\}\\}\\}").getMatches()) {
+                for (String s[] : new Regex(q[1], "([\\w\\-]+):\\[(\\[.*?\\])\\]").getMatches()) {
+                    FilePackage fp = FilePackage.getInstance();
+                    fp.setName(fpName + "@" + s[0].trim() + "__" + q[0]);
+                    for (String ss[] : new Regex(s[1], "\\[(\\d),(\\w+),.*?,(.*?),\\d+\\]").getMatches()) {
+                        String link = ss[2].trim();
+                        if ("redirect".equalsIgnoreCase(ss[1].trim())) link = getRedirectUrl(link);
+                        final DownloadLink dl = createDownloadlink(link);
+                        fp.add(dl);
+                        try {
+                            distribute(dl);
+                        } catch (final Throwable e) {
+                            /* does not exist in 09581 */
+                        }
+                        decryptedLinks.add(dl);
                     }
-                    decryptedLinks.add(dl);
-                }
-            }
-            final String[] uploadedLinks = new Regex(allLinks, "\\[\\d+,redirect,ul\\.ico,(http://(www\\.)?(uploaded|ul)\\.(to|net)/file/[A-Za-z0-9]+)").getColumn(0);
-            if (uploadedLinks != null && uploadedLinks.length != 0) {
-                FilePackage fp = FilePackage.getInstance();
-                fp.setName((fpName + "@uploaded.net"));
-                for (final String ullink : uploadedLinks) {
-                    final DownloadLink dl = createDownloadlink(ullink);
-                    fp.add(dl);
-                    try {
-                        distribute(dl);
-                    } catch (final Throwable e) {
-                        /* does not exist in 09581 */
-                    }
-                    decryptedLinks.add(dl);
                 }
             }
         }
         return decryptedLinks;
+    }
+
+    private String getRedirectUrl(String s) throws Exception {
+        br.getPage(s);
+        return br.getRedirectLocation();
     }
 
 }
