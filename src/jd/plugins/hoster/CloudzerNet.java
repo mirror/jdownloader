@@ -56,7 +56,7 @@ import jd.utils.JDUtilities;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?cloudzer\\.net/.*?(file/|\\?id=|\\&id=)[\\w]+/?" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19039 $", interfaceVersion = 2, names = { "cloudzer.net" }, urls = { "http://(www\\.)?(cloudzer\\.net/.*?(file/|\\?id=|\\&id=)[\\w]+/?|clz\\.to/[\\w]+/?)" }, flags = { 2 })
 public class CloudzerNet extends PluginForHost {
 
     public static class StringContainer {
@@ -335,7 +335,9 @@ public class CloudzerNet extends PluginForHost {
     }
 
     private String getID(final DownloadLink downloadLink) {
-        return new Regex(downloadLink.getDownloadURL(), "cloudzer.net/file/([\\w]+)/?").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "cloudzer.net/file/([\\w]+)/?").getMatch(0);
+        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "clz.to/([\\w]+)/?").getMatch(0);
+        return id;
     }
 
     @Override

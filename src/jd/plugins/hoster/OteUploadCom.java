@@ -340,14 +340,14 @@ public class OteUploadCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
-     * which allows the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree which allows the next
+     * singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
-     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
-     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
-     * minimal harm to downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre download sequence.
+     * But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence, this.setstartintival does not resolve
+     * this issue. Which results in x(20) captcha events all at once and only allows one download to start. This prevents wasting peoples time and effort on
+     * captcha solving and|or wasting captcha trading credits. Users will experience minimal harm to downloading as slots are freed up soon as current download
+     * begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -706,17 +706,32 @@ public class OteUploadCom extends PluginForHost {
             dllink = checkDirectLink(downloadLink, "premlink");
             if (dllink == null) {
                 br.setFollowRedirects(true);
-                getPage(downloadLink.getDownloadURL());
-                br.setFollowRedirects(false);
-                dllink = getDllink();
+                URLConnectionAdapter con = null;
+                try {
+                    /* enabled direct download handling */
+                    con = br.openGetConnection(downloadLink.getDownloadURL());
+                    if (!con.getContentType().contains("html")) {
+                        dllink = br.getURL();
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
                 if (dllink == null) {
-                    checkErrors(downloadLink, true, passCode);
-                    Form dlform = br.getFormbyProperty("name", "F1");
-                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
-                    sendForm(dlform);
+                    getPage(downloadLink.getDownloadURL());
+                    br.setFollowRedirects(false);
                     dllink = getDllink();
-                    checkErrors(downloadLink, true, passCode);
+                    if (dllink == null) {
+                        checkErrors(downloadLink, true, passCode);
+                        Form dlform = br.getFormbyProperty("name", "F1");
+                        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
+                        sendForm(dlform);
+                        dllink = getDllink();
+                        checkErrors(downloadLink, true, passCode);
+                    }
                 }
             }
             if (dllink == null) {
@@ -724,6 +739,7 @@ public class OteUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
+            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
