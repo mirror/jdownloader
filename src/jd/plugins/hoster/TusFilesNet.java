@@ -146,12 +146,12 @@ public class TusFilesNet extends PluginForHost {
 
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
-        final Regex fInfo = new Regex(correctedBR, "<li>([^<>\"]*?)</li>[\t\n\r ]+<li><b>Size:</b> <small>([^<>\"]*?)</small></li>");
+        final Regex fInfo = new Regex(correctedBR, "<li>(<small>)?([^<>\"]*?)(</small>)?</li>[\t\n\r ]+<li><b>Size:</b> <small>([^<>\"]*?)</small></li>");
         if (fileInfo[0] == null) {
-            fileInfo[0] = fInfo.getMatch(0);
+            fileInfo[0] = fInfo.getMatch(1);
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = fInfo.getMatch(1);
+            fileInfo[1] = fInfo.getMatch(3);
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;

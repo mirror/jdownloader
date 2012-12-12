@@ -44,15 +44,12 @@ public class MotherLessCom extends PluginForDecrypt {
     // motherless.com/UID1/UID
     // motherless.com/UID
     //
-    // - don't support: groups(/g[a-z]{1}/), images or videos they can have over
-    // 1000 pages
+    // - don't support: groups(/g[a-z]{1}/), images or videos they can have over 1000 pages
     // - supports spanning pages and galleries with submenu (MORE links).
     // - set same UA from hoster plugin, making it harder to distinguish.
     // - Server issues can return many 503's in high load situations.
-    // - Server also punishes user who downloads with too many connections. This
-    // is a linkchecking issue also, as grabs info from headers.
-    // - To reduce server loads associated with linkchecking, I've set
-    // 'setAvailable(true) for greater than 5 pages.
+    // - Server also punishes user who downloads with too many connections. This is a linkchecking issue also, as grabs info from headers.
+    // - To reduce server loads associated with linkchecking, I've set 'setAvailable(true) for greater than 5 pages.
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
@@ -69,8 +66,7 @@ public class MotherLessCom extends PluginForDecrypt {
             logger.info("This is a forum link without any downloadable content: " + parameter);
             return decryptedLinks;
         }
-        // Common bug: It can happen that the texts that we use to differ
-        // between the kinds of links change so the decrypter breaks down,
+        // Common bug: It can happen that the texts that we use to differ between the kinds of links change so the decrypter breaks down,
         // always check that first!
         if (br.containsHTML("The member uploaded this image for subscribers only")) {
             DownloadLink dl = createDownloadlink(parameter.replace("motherless", "premiummotherlesspictures"));
@@ -135,9 +131,9 @@ public class MotherLessCom extends PluginForDecrypt {
             }
         }
         // grabs final page as count.
-        String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\">(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+        String totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>(\\d+)</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
         if (totalpages == null) {
-            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\">\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\">NEXT").getMatch(0);
+            totalpages = br.getRegex("<a href=\"/[A-Z0-9]{9}\\?page=(\\d+)\"[^>]+>\\d+</a><a href=\"/[A-Z0-9]{9}\\?page=\\d+\"[^>]+>NEXT").getMatch(0);
             if (totalpages == null) totalpages = "1";
         }
 
@@ -182,5 +178,4 @@ public class MotherLessCom extends PluginForDecrypt {
             progress.increase(1);
         }
     }
-
 }

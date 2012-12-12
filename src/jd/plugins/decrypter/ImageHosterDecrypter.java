@@ -28,9 +28,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postimage\\.org/image/[a-z0-9]+", "http://(www\\.)?imgur\\.com(/gallery|/a)?/(?!register|contact|removalrequest|stats|https|download)[A-Za-z0-9]{5,}", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html",
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pic4free.org", "cocoimage.com", "imagetwist.com", "postimage.org", "imgur.com", "imgchili.com", "pimpandhost.com", "turboimagehost.com", "imagehyper.com", "imagebam.com", "photobucket.com", "freeimagehosting.net", "pixhost.org", "sharenxs.com", "9gag.com" }, urls = { "http://(www\\.)?pic4free\\.org/\\?v=[^<>\"/]+", "http://(www\\.)?img\\d+\\.cocoimage\\.com/img\\.php\\?id=\\d+", "http://(www\\.)?imagetwist\\.com/[a-z0-9]{12}", "http://(www\\.)?postimage\\.org/image/[a-z0-9]+", "http://((www|i)\\.)?imgur\\.com(/gallery|/a|/download)?/(?!register|contact|removalrequest|stats|https)[A-Za-z0-9]{5,}", "http://(www\\.)?imgchili\\.com/show/\\d+/[a-z0-9_\\.]+", "http://(www\\.)?pimpandhost\\.com/image/(show/id/\\d+|\\d+\\-(original|medium|small)\\.html)", "http://(www\\.)?turboimagehost\\.com/p/\\d+/.*?\\.html",
         "http://(www\\.)?(img\\d+|serve)\\.imagehyper\\.com/img\\.php\\?id=\\d+\\&c=[a-z0-9]+", "http://[\\w\\.]*?imagebam\\.com/(image|gallery)/[a-z0-9]+", "http://(www\\.)?(media\\.photobucket.com/image/.+\\..{3,4}\\?o=[0-9]+|gs\\d+\\.photobucket\\.com/groups/[A-Za-z0-9]+/[A-Za-z0-9]+/\\?action=view\\&current=[^<>\"/]+)", "http://[\\w\\.]*?freeimagehosting\\.net/image\\.php\\?.*?\\..{3,4}", "http://(www\\.)?pixhost\\.org/show/\\d+/.+", "http://(www\\.)?sharenxs\\.com/view/\\?id=[a-z0-9-]+", "https?://(www\\.)?9gag\\.com/gag/\\d+" }, flags = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })
 public class ImageHosterDecrypter extends PluginForDecrypt {
 
@@ -186,24 +188,17 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 logger.warning("Possible Error, please make sure link is valid within browser.");
                 logger.warning("If plugin is out of date please report issue to JDownloader Developement : " + parameter);
             }
+            String imgUID = null;
             if (links != null && links.length != 0) {
-                for (String link : links)
-                    if (link.endsWith("s.jpg"))
-                        decryptedLinks.add(createDownloadlink("directhttp://" + link.replaceAll("s.jpg", ".jpg")));
-                    else
-                        decryptedLinks.add(createDownloadlink("directhttp://" + link));
-            }
-            String[] downloadLinks = br.getRegex("Download full resolution.*?href=\"(/download/.*?)\"").getColumn(0);
-            if (downloadLinks != null) {
-                if (downloadLinks.length == decryptedLinks.size()) {
-                    /*
-                     * we have a full resolution image for each picture, so lets
-                     * only download them
-                     */
-                    decryptedLinks.clear();
-                }
-                for (String link : downloadLinks) {
-                    decryptedLinks.add(createDownloadlink("directhttp://http://imgur.com" + link.replaceAll(" ", "%20").replaceAll(";", "%27")));
+                for (String link : links) {
+                    imgUID = new Regex(link, "https?://[^/]+/([a-zA-Z0-9]+)").getMatch(0);
+                    if (imgUID == null) {
+                        logger.warning("Can't find imgUID");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
+                    dl.setProperty("imgUID", imgUID);
+                    decryptedLinks.add(dl);
                 }
             }
             if (fpName != null) {
@@ -212,12 +207,19 @@ public class ImageHosterDecrypter extends PluginForDecrypt {
                 fp.addLinks(decryptedLinks);
             }
             return decryptedLinks;
-        } else if (parameter.contains("imgur.com/")) {
-            br.getPage(parameter.replace("gallery/", ""));
-            finallink = br.getRegex("<link rel=\"image_src\" href=\"(http://[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("\"(http://i\\.imgur\\.com/[A-Za-z0-9]+\\..{1,5})\"").getMatch(0);
+        } else if (parameter.matches("http://(i\\.imgur\\.com/[A-Za-z0-9]{5,}|(www\\.)?imgur\\.com/(download|gallery)/[A-Za-z0-9]{5,})")) {
+            String imgUID = new Regex(parameter, "https?://i\\.imgur\\.com/([A-Za-z0-9]{5,})").getMatch(0);
+            if (imgUID == null) {
+                imgUID = new Regex(parameter, "https?://(www\\.)?imgur\\.com/(download|gallery)?/([A-Za-z0-9]{5,})").getMatch(2);
+                if (imgUID == null) {
+                    logger.warning("Can't find imgUID");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
+            DownloadLink dl = createDownloadlink("http://imgurdecrypted/download/" + imgUID);
+            dl.setProperty("imgUID", imgUID);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
         } else if (parameter.contains("picsapart.com/")) {
             finallink = parameter.replace("/photo/", "/download/");
             finalfilename = new Regex(parameter, "picsapart\\.com/photo/(\\d+)").getMatch(0) + ".jpg";
