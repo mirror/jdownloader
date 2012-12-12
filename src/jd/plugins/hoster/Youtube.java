@@ -295,24 +295,57 @@ public class Youtube extends PluginForHost {
 					throw new PluginException(LinkStatus.ERROR_PREMIUM,
 							PluginException.VALUE_ID_PREMIUM_DISABLE);
 				}
-				String setCookies[] = br.getRegex(
-						"DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
-				String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'")
-						.getMatch(0);
-				if (setCookies == null || signIn == null) {
-					account.setValid(false);
-					throw new PluginException(LinkStatus.ERROR_PREMIUM,
-							PluginException.VALUE_ID_PREMIUM_DISABLE);
+
+				// 2-step verification
+				if (br.containsHTML("2-step verification")) {
+					String step = UserIO
+							.getInstance()
+							.requestInputDialog(
+									UserIO.NO_COUNTDOWN | UserIO.NO_ICON,
+									JDL.L("plugins.hoster.youtube.2step.title",
+											"2-Step verification required"),
+									JDL.L("plugins.hoster.youtube.2step.message",
+											"Youtube.com requires Google's 2-Step verification. Please input the code from your phone or the backup list."),
+									"", null, null, null);
+					Form stepform = br.getForm(0);
+					stepform.put("smsUserPin", step);
+					stepform.remove("exp");
+					stepform.remove("ltmpl");
+					br.setFollowRedirects(true);
+					br.submitForm(stepform);
+
+					if (br.containsHTML("The code you entered didn&#39;t verify")) {
+						account.setValid(false);
+						throw new PluginException(
+								LinkStatus.ERROR_PREMIUM,
+								JDL.L("plugins.hoster.youtube.2step.failed",
+										"2-Step verification code couldn't be verified!"));
+					}
+
+					stepform = br.getForm(0);
+					stepform.remove("nojssubmit");
+					br.submitForm(stepform);
+					br.getPage("http://www.youtube.com/signin?action_handle_signin=true");
+				} else {
+					String setCookies[] = br.getRegex(
+							"DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
+					String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'")
+							.getMatch(0);
+					if (setCookies == null || signIn == null) {
+						account.setValid(false);
+						throw new PluginException(LinkStatus.ERROR_PREMIUM,
+								PluginException.VALUE_ID_PREMIUM_DISABLE);
+					}
+					for (String page : setCookies) {
+						br.cloneBrowser().getPage(unescape(page));
+					}
+					br.getPage(unescape(signIn));
+					if (br.getRedirectLocation() != null)
+						br.getPage(br.getRedirectLocation());
+					br.getPage("http://www.youtube.com/index?hl=en");
+					if (br.getRedirectLocation() != null)
+						br.getPage(br.getRedirectLocation());
 				}
-				for (String page : setCookies) {
-					br.cloneBrowser().getPage(unescape(page));
-				}
-				br.getPage(unescape(signIn));
-				if (br.getRedirectLocation() != null)
-					br.getPage(br.getRedirectLocation());
-				br.getPage("http://www.youtube.com/index?hl=en");
-				if (br.getRedirectLocation() != null)
-					br.getPage(br.getRedirectLocation());
 				if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
 					account.setValid(false);
 					throw new PluginException(LinkStatus.ERROR_PREMIUM,
