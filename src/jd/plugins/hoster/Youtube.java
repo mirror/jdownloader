@@ -69,7 +69,6 @@ public class Youtube extends PluginForHost {
 	private static final String PROXY_ACTIVE = "PROXY_ACTIVE";
 	private static final String PROXY_ADDRESS = "PROXY_ADDRESS";
 	private static final String PROXY_PORT = "PROXY_PORT";
-	private static HashMap<Account, HashMap<String, String>> loginCookies = new HashMap<Account, HashMap<String, String>>();
 
 	public static String unescape(final String s) {
 		char ch;
@@ -225,8 +224,10 @@ public class Youtube extends PluginForHost {
 			try {
 				br.setDebug(true);
 				this.setBrowserExclusive();
-				if (refresh == false && loginCookies.containsKey(account)) {
-					HashMap<String, String> cookies = loginCookies.get(account);
+				if (account.getProperty("cookies") != null) {
+					@SuppressWarnings("unchecked")
+					HashMap<String, String> cookies = (HashMap<String, String>) account
+							.getProperty("cookies");
 					if (cookies != null) {
 						if (cookies.containsKey("LOGIN_INFO")) {
 							for (final Map.Entry<String, String> cookieEntry : cookies
@@ -235,10 +236,19 @@ public class Youtube extends PluginForHost {
 								final String value = cookieEntry.getValue();
 								br.setCookie("youtube.com", key, value);
 							}
-							return;
+
+							if (refresh == false)
+								return;
+							else {
+								br.getPage("http://www.youtube.com");
+								if (!br.containsHTML("<span class=\"yt-uix-button-content\">Sign In </span></button></div>")) {
+									return;
+								}
+							}
 						}
 					}
 				}
+
 				br.setFollowRedirects(true);
 				br.getPage("http://www.youtube.com/");
 				/* first call to google */
@@ -356,9 +366,10 @@ public class Youtube extends PluginForHost {
 				for (final Cookie c : cYT.getCookies()) {
 					cookies.put(c.getKey(), c.getValue());
 				}
-				loginCookies.put(account, cookies);
+				// set login cookie of the account.
+				account.setProperty("cookies", cookies);
 			} catch (PluginException e) {
-				loginCookies.remove(account);
+				account.setProperty("cookies", null);
 				throw e;
 			}
 		}
