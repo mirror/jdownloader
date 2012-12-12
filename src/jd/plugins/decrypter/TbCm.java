@@ -543,6 +543,7 @@ public class TbCm extends PluginForDecrypt {
 						true);
 				final boolean qOriginal = cfg.getBooleanProperty(
 						"ALLOW_ORIGINAL", true);
+				final boolean best = cfg.getBooleanProperty("ALLOW_BEST", true);
 				/* http://en.wikipedia.org/wiki/YouTube */
 				final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
 					/**
@@ -563,18 +564,18 @@ public class TbCm extends PluginForDecrypt {
 									DestinationFormat.AUDIOMP3, "H.263", "MP3",
 									"Mono" });
 						}
-						if (flv) {
-							if (q240p) {
+						if (flv || best) {
+							if (q240p || best) {
 								this.put(5, new Object[] {
 										DestinationFormat.VIDEOFLV, "H.263",
 										"MP3", "Stereo", "240p" });
 							}
-							if (q360p) {
+							if (q360p || best) {
 								this.put(34, new Object[] {
 										DestinationFormat.VIDEOFLV, "H.264",
 										"AAC", "Stereo", "360p" });
 							}
-							if (q480p) {
+							if (q480p || best) {
 								this.put(35, new Object[] {
 										DestinationFormat.VIDEOFLV, "H.264",
 										"AAC", "Stereo", "480p" });
@@ -582,7 +583,7 @@ public class TbCm extends PluginForDecrypt {
 						}
 
 						// **** 3GP *****
-						if (threegp && q240p) {
+						if ((threegp && q240p) || best) {
 							this.put(13, new Object[] {
 									DestinationFormat.VIDEO3GP, "H.263", "AMR",
 									"Mono", "240p" });
@@ -592,23 +593,23 @@ public class TbCm extends PluginForDecrypt {
 						}
 
 						// **** MP4 *****
-						if (mp4) {
-							if (q360p) {
+						if (mp4 || best) {
+							if (q360p || best) {
 								this.put(18, new Object[] {
 										DestinationFormat.VIDEOMP4, "H.264",
 										"AAC", "Stereo", "360p" });
 							}
-							if (q720p) {
+							if (q720p || best) {
 								this.put(22, new Object[] {
 										DestinationFormat.VIDEOMP4, "H.264",
 										"AAC", "Stereo", "720p" });
 							}
-							if (q1080p) {
+							if (q1080p || best) {
 								this.put(37, new Object[] {
 										DestinationFormat.VIDEOMP4, "H.264",
 										"AAC", "Stereo", "1080" });
 							}
-							if (qOriginal) {
+							if (qOriginal || best) {
 								this.put(38, new Object[] {
 										DestinationFormat.VIDEOMP4, "H.264",
 										"AAC", "Stereo", "Original" });
@@ -616,13 +617,13 @@ public class TbCm extends PluginForDecrypt {
 						}
 
 						// **** WebM *****
-						if (webm) {
-							if (q360p) {
+						if (webm || best) {
+							if (q360p || best) {
 								this.put(43, new Object[] {
 										DestinationFormat.VIDEOWEBM, "VP8",
 										"Vorbis", "Stereo", "360p" });
 							}
-							if (q720p) {
+							if (q720p || best) {
 								this.put(45, new Object[] {
 										DestinationFormat.VIDEOWEBM, "VP8",
 										"Vorbis", "Stereo", "720p" });
@@ -632,6 +633,69 @@ public class TbCm extends PluginForDecrypt {
 				};
 
 				/* check for wished formats first */
+				if (best) {
+					// 1080p
+					if (LinksFound.get(37) != null) {
+						String[] temp = LinksFound.get(37);
+						LinksFound.clear();
+						LinksFound.put(37, temp);
+						// 720p
+					} else if (LinksFound.get(45) != null
+							|| LinksFound.get(22) != null) {
+						String[] temp1 = LinksFound.get(45);
+						String[] temp2 = LinksFound.get(22);
+
+						LinksFound.clear();
+
+						if (temp1 != null)
+							LinksFound.put(45, temp1);
+						if (temp2 != null)
+							LinksFound.put(22, temp2);
+						// 480p
+					} else if (LinksFound.get(35) != null) {
+						String[] temp = LinksFound.get(35);
+						LinksFound.clear();
+						LinksFound.put(35, temp);
+						// 360p
+					} else if (LinksFound.get(43) != null
+							|| LinksFound.get(18) != null
+							|| LinksFound.get(34) != null) {
+						String[] temp1 = LinksFound.get(43);
+						String[] temp2 = LinksFound.get(18);
+						String[] temp3 = LinksFound.get(34);
+
+						LinksFound.clear();
+
+						if (temp1 != null)
+							LinksFound.put(43, temp1);
+						if (temp2 != null)
+							LinksFound.put(18, temp2);
+						if (temp3 != null)
+							LinksFound.put(34, temp3);
+						// 240p
+					} else if (LinksFound.get(13) != null
+							|| LinksFound.get(17) != null
+							|| LinksFound.get(5) != null) {
+						String[] temp1 = LinksFound.get(13);
+						String[] temp2 = LinksFound.get(17);
+						String[] temp3 = LinksFound.get(5);
+
+						LinksFound.clear();
+
+						if (temp1 != null)
+							LinksFound.put(13, temp1);
+						if (temp2 != null)
+							LinksFound.put(17, temp2);
+						if (temp3 != null)
+							LinksFound.put(5, temp3);
+					} else {
+						// Original
+						String[] temp = LinksFound.get(38);
+						LinksFound.clear();
+						LinksFound.put(38, temp);
+					}
+				}
+
 				String dlLink = "";
 				String vQuality = "";
 				DestinationFormat cMode = null;
