@@ -129,6 +129,8 @@ public class AdfLy extends PluginForDecrypt {
 
     private void skipWait() {
         final Browser brAds = br.cloneBrowser();
+        brAds.setConnectTimeout(5 * 1000);
+        brAds.setReadTimeout(5 * 1000);
         final String[] skpWaitLinks = { "http://cdn.adf.ly/css/adfly_1.css", "http://cdn.adf.ly/js/adfly.js", "http://cdn.adf.ly/images/logo_fb.png", "http://cdn.adf.ly/images/skip_ad/en.png", "http://adf.ly/favicon.ico", "http://adf.ly/favicon.ico", "http://cdn.adf.ly/images/ad_top_bg.png", "http://adf.ly/omnigy7425325410.swf" };
         for (final String skWaitLink : skpWaitLinks) {
             try {

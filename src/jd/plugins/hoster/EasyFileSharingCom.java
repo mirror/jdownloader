@@ -104,7 +104,7 @@ public class EasyFileSharingCom extends PluginForHost {
         final String finalLink = findLink(ajaxBR);
         if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         int wait = DEFAULTWAITTIME;
-        String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
+        String waittime = ajaxBR.getRegex("countdown\\((\\d+)\\);").getMatch(0);
         // Fol older versions it's usually skippable
         // if (waittime == null) waittime =
         // br.getRegex("var timeout=\\'(\\d+)\\';").getMatch(0);

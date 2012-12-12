@@ -85,6 +85,7 @@ public class ReverBnationCom extends PluginForDecrypt {
         } else if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+|artist/downloads/\\d+|[^<>\"/]+)")) {
             String fpName = null;
             String[][] allInfo = null;
+            String artistID = null;
             if (parameter.matches("http://(www\\.)?reverbnation\\.com/(artist/artist_songs/\\d+|playlist/view_playlist/\\d+\\?page_object=artist_\\d+|open_graph/song/\\d+)")) {
                 br.getPage(parameter);
                 fpName = getFpname();
@@ -104,15 +105,30 @@ public class ReverBnationCom extends PluginForDecrypt {
                     return decryptedLinks;
                 }
                 fpName = br.getRegex("<h1 class=\"profile_user_name\">([^<>\"]*?)</h1>").getMatch(0);
-                allInfo = br.getRegex("reverbnation\\.com/artist/artist_songs/(\\d+)\\?song_id=(\\d+)\">[\t\n\r ]+<a href=\"#\" class=\"standard_play_button black_34 song\\-action play\" data\\-song\\-id=\"\\d+\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
+                artistID = br.getRegex("onclick=\"playSongNow\\(\\'all_artist_songs_(\\d+)\\'\\)").getMatch(0);
+                if (artistID == null) {
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                allInfo = br.getRegex("data\\-song\\-id=\"(\\d+)\" title=\"Play \\&quot;([^<>\"]*?)\\&quot;\"").getMatches();
             }
             if (allInfo == null || allInfo.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             for (String singleInfo[] : allInfo) {
-                final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + singleInfo[1] + "reverbnationcomartist" + singleInfo[0]);
-                String name = Encoding.htmlDecode(singleInfo[2]);
+                String name = null;
+                String artistsID = artistID;
+                String songID = null;
+                if (artistsID != null) {
+                    songID = singleInfo[0];
+                    name = Encoding.htmlDecode(singleInfo[1]);
+                } else {
+                    artistsID = singleInfo[0];
+                    songID = singleInfo[1];
+                    name = Encoding.htmlDecode(singleInfo[2]);
+                }
+                final DownloadLink dlLink = createDownloadlink("http://reverbnationcomid" + songID + "reverbnationcomartist" + artistsID);
                 if (name.contains(".mp3"))
                     dlLink.setName(name);
                 else

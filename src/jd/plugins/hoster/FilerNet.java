@@ -163,6 +163,7 @@ public class FilerNet extends PluginForHost {
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             try {
                 callAPI("http://api.filer.net/profile.json");
+                if (br.getRedirectLocation() != null) callAPI(br.getRedirectLocation());
             } catch (final BrowserException e) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
@@ -197,8 +198,11 @@ public class FilerNet extends PluginForHost {
         requestFileInformation(downloadLink);
         handleDownloadErrors();
         br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-        br.getPage("http://filer.net/api/dl/" + getFID(downloadLink) + ".json");
-        if (br.containsHTML("\"code\":599")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown file error", 5 * 60 * 1000l);
+        callAPI("http://filer.net/api/dl/" + getFID(downloadLink) + ".json");
+        if (STATUSCODE == 504) {
+            logger.info("No traffic available!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        } else if (STATUSCODE == UNKNOWNERROR) { throw new PluginException(LinkStatus.ERROR_FATAL, UNKNOWNERRORTEXT); }
         final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Important!!
@@ -226,8 +230,12 @@ public class FilerNet extends PluginForHost {
 
     private void callAPI(final String url) throws IOException {
         br.getPage(url);
-        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
-        STATUSCODE = Integer.parseInt(getJson("code", br.toString()));
+        updateStatuscode();
+    }
+
+    private void updateStatuscode() {
+        final String code = getJson("code", br.toString());
+        if (code != null) STATUSCODE = Integer.parseInt(code);
     }
 
     private String getJson(final String parameter, final String source) {

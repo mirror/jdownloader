@@ -44,9 +44,10 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "putlocker.com" }, urls = { "http://(www\\.)?putlocker\\.com/(file|embed)/[A-Z0-9]+" }, flags = { 2 })
 public class PutLockerCom extends PluginForHost {
 
-    private final String  MAINPAGE = "http://www.putlocker.com";
-    private static Object LOCK     = new Object();
-    private String        agent    = null;
+    private final String        MAINPAGE = "http://www.putlocker.com";
+    private static Object       LOCK     = new Object();
+    private String              agent    = null;
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     public PutLockerCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -163,7 +164,11 @@ public class PutLockerCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!dllink.startsWith("http")) dllink = MAINPAGE + dllink;
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int chunks = 0;
+        if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // My experience was that such files just don't work, i wasn't able
@@ -172,7 +177,17 @@ public class PutLockerCom extends PluginForHost {
             if (br.containsHTML(">This link has expired\\. Please try again") || br.containsHTML("This content server is down for maintenance\\. Please try again")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (downloadLink.getBooleanProperty(PutLockerCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(PutLockerCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override

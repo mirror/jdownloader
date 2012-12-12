@@ -49,7 +49,7 @@ public class MixtureCloudCom extends PluginForHost {
     // are transferable between each (sub)?domain & section. All links have
     // recaptcha with this one size fits all download method.
     private static final String PREMIUMONLY         = "File access is limited to users with unlimited";
-    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable via account");
+    private static final String PREMIUMONLYUSERTEXT = JDL.L("plugins.hoster.mixturecloudcom", "Only downloadable via free or premium account [Not downloadable now]");
 
     public MixtureCloudCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -105,8 +105,12 @@ public class MixtureCloudCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        doFree(downloadLink);
+    }
+
+    public void doFree(final DownloadLink downloadLink) throws Exception, PluginException {
         checkErrors();
         if (br.containsHTML("File access is limited to users with unlimited")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         String dllink = br.getRegex("style=\"padding\\-left:30px\"></div>[\t\n\r ]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
@@ -169,12 +173,6 @@ public class MixtureCloudCom extends PluginForHost {
                 br.postPage("http://www.mixturecloud.com/login", postData);
                 if (br.getCookie(MAINPAGE, "mx") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
 
-                br.getPage("http://www.mixturecloud.com/account");
-                if (!br.containsHTML("(<\\!\\-\\- BASIC \\-\\->|<\\!\\-\\- PREMIUM \\-\\->)")) {
-                    logger.info("Unsupported accounttype!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -206,10 +204,20 @@ public class MixtureCloudCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://www.mixturecloud.com/account");
         ai.setUnlimitedTraffic();
         account.setValid(true);
-        if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) ai.setStatus("Premium User");
-        if (br.containsHTML("<\\!\\-\\- BASIC \\-\\->")) ai.setStatus("Free registered User");
+        if (br.containsHTML("<\\!\\-\\- PREMIUM \\-\\->")) {
+            ai.setStatus("Premium User");
+            account.setProperty("freeacc", false);
+        } else if (br.containsHTML("<\\!\\-\\- BASIC \\-\\->")) {
+            ai.setStatus("Free registered User");
+            account.setProperty("freeacc", true);
+        } else {
+            ai.setStatus("Unknown (invalid) accounttype");
+            account.setValid(false);
+            return ai;
+        }
 
         return ai;
     }
@@ -221,19 +229,22 @@ public class MixtureCloudCom extends PluginForHost {
         br.setCookie(MAINPAGE, "mx_l", "en");
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
-        if (br.containsHTML("File access is limited to users with unlimited")) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (account.getBooleanProperty("freeacc")) {
+            doFree(link);
+        } else {
+            String dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
+            if (dl.getConnection().getContentType().contains("html")) {
+                logger.warning("The final dllink seems not to be a file!");
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dl.startDownload();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
     }
 
     @Override

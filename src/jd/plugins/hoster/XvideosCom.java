@@ -43,16 +43,32 @@ public class XvideosCom extends PluginForHost {
         return -1;
     }
 
+    private static final String NOCHUNKS = "NOCHUNKS";
+
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         String dllink = br.getRegex("flv_url=(.*?)\\&").getMatch(0);
         if (dllink == null) dllink = decode(br.getRegex("encoded=(.*?)\\&").getMatch(0));
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = Encoding.htmlDecode(dllink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -10);
-        dl.startDownload();
+        int chunks = 0;
+        if (link.getBooleanProperty(XvideosCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, chunks);
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (link.getBooleanProperty(XvideosCom.NOCHUNKS, false) == false) {
+                link.setProperty(XvideosCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     private static String decode(String encoded) {

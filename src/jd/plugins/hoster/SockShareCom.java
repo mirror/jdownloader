@@ -48,6 +48,7 @@ public class SockShareCom extends PluginForHost {
     private static final String SERVERUNAVAILABLE = "(>This content server has been temporarily disabled for upgrades|Try again soon\\. You can still download it below\\.<)";
     private static Object       LOCK              = new Object();
     private String              agent             = null;
+    private static final String NOCHUNKS          = "NOCHUNKS";
 
     public SockShareCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -138,12 +139,26 @@ public class SockShareCom extends PluginForHost {
         if (dllink == null) dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dllink = dllink.replace("&amp;", "&");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        int chunks = 0;
+        if (downloadLink.getBooleanProperty(SockShareCom.NOCHUNKS, false)) {
+            chunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (downloadLink.getBooleanProperty(SockShareCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(SockShareCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
