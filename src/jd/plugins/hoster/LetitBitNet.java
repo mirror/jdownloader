@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +27,13 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -50,6 +55,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "letitbit.net" }, urls = { "http://(www\\.|u\\d+\\.)?letitbit\\.net/d?download/(.*?\\.html|[0-9a-zA-z/.-]+)" }, flags = { 2 })
 public class LetitBitNet extends PluginForHost {
@@ -74,6 +80,67 @@ public class LetitBitNet extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         /* convert directdownload links to normal links */
         link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", "").replaceAll("http://s\\d+.", "http://"));
+    }
+
+    private static void showFreeDialog(final String domain) {
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+
+                @Override
+                public void run() {
+                    try {
+                        String lng = System.getProperty("user.language");
+                        String message = null;
+                        String title = null;
+                        String tab = "                        ";
+                        if ("de".equalsIgnoreCase(lng)) {
+                            title = domain + " Free Download";
+                            message = "Du lädst im kostenlosen Modus von " + domain + ".\r\n";
+                            message += "Wie bei allen anderen Hostern holt JDownloader auch hier das Beste für dich heraus!\r\n\r\n";
+                            message += tab + "  Falls du allerdings mehrere Dateien\r\n" + "          - und das möglichst mit Fullspeed und ohne Unterbrechungen - \r\n" + "             laden willst, solltest du dir den Premium Modus anschauen.\r\n\r\nUnserer Erfahrung nach lohnt sich das - Aber entscheide am besten selbst. Jetzt ausprobieren?  ";
+                        } else {
+                            title = domain + " Free Download";
+                            message = "You are using the " + domain + " Free Mode.\r\n";
+                            message += "JDownloader always tries to get the best out of each hoster's free mode!\r\n\r\n";
+                            message += tab + "   However, if you want to download multiple files\r\n" + tab + "- possibly at fullspeed and without any wait times - \r\n" + tab + "you really should have a look at the Premium Mode.\r\n\r\nIn our experience, Premium is well worth the money. Decide for yourself, though. Let's give it a try?   ";
+                        }
+                        if (CrossSystem.isOpenBrowserSupported()) {
+                            int result = JOptionPane.showConfirmDialog(jd.gui.swing.jdgui.JDGui.getInstance().getMainFrame(), message, title, JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null);
+                            if (JOptionPane.OK_OPTION == result) CrossSystem.openURL(new URL("http://update3.jdownloader.org/jdserv/BuyPremiumInterface/redirect?" + domain + "&freedialog"));
+                        }
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        } catch (Throwable e) {
+        }
+    }
+
+    private void checkShowFreeDialog() {
+        SubConfiguration config = null;
+        try {
+            config = getPluginConfig();
+            if (config.getBooleanProperty("premAdShown", Boolean.FALSE) == false) {
+                if (config.getProperty("premAdShown2") == null) {
+                    File checkFile = JDUtilities.getResourceFile("tmp/libit");
+                    if (!checkFile.exists()) {
+                        checkFile.mkdirs();
+                        showFreeDialog("letitbit.net");
+                    }
+                } else {
+                    config = null;
+                }
+            } else {
+                config = null;
+            }
+        } catch (final Throwable e) {
+        } finally {
+            if (config != null) {
+                config.setProperty("premAdShown", Boolean.TRUE);
+                config.setProperty("premAdShown2", "shown");
+                config.save();
+            }
+        }
     }
 
     @Override
@@ -144,6 +211,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        checkShowFreeDialog();
         try {
             br.setVerbose(true);
             br.setCustomCharset("UTF-8");
