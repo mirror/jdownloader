@@ -337,24 +337,31 @@ public class Youtube extends PluginForHost {
 					br.submitForm(stepform);
 					br.getPage("http://www.youtube.com/signin?action_handle_signin=true");
 				} else {
-					String setCookies[] = br.getRegex(
-							"DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
-					String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'")
-							.getMatch(0);
-					if (setCookies == null || signIn == null) {
-						account.setValid(false);
-						throw new PluginException(LinkStatus.ERROR_PREMIUM,
-								PluginException.VALUE_ID_PREMIUM_DISABLE);
-					}
-					for (String page : setCookies) {
-						br.cloneBrowser().getPage(unescape(page));
-					}
-					br.getPage(unescape(signIn));
-					if (br.getRedirectLocation() != null)
-						br.getPage(br.getRedirectLocation());
-					br.getPage("http://www.youtube.com/index?hl=en");
-					if (br.getRedirectLocation() != null)
-						br.getPage(br.getRedirectLocation());
+					br.setFollowRedirects(true);
+					br.getPage(br.getRedirectLocation());
+
+					String location = unescape(br.getRegex(
+							"location\\.replace\\(\"(.*?)\"").getMatch(0));
+					br.getPage(location);
+
+					// String setCookies[] = br.getRegex(
+					// "DOMAIN_SETTINGS.*?uri: '(https.*?)'").getColumn(0);
+					// String signIn = br.getRegex("CONTINUE_URL = '(http.*?)'")
+					// .getMatch(0);
+					// if (setCookies == null || signIn == null) {
+					// account.setValid(false);
+					// throw new PluginException(LinkStatus.ERROR_PREMIUM,
+					// PluginException.VALUE_ID_PREMIUM_DISABLE);
+					// }
+					// for (String page : setCookies) {
+					// br.cloneBrowser().getPage(unescape(page));
+					// }
+					// br.getPage(unescape(signIn));
+					// if (br.getRedirectLocation() != null)
+					// br.getPage(br.getRedirectLocation());
+					// br.getPage("http://www.youtube.com/index?hl=en");
+					// if (br.getRedirectLocation() != null)
+					// br.getPage(br.getRedirectLocation());
 				}
 				if (br.getCookie("http://www.youtube.com", "LOGIN_INFO") == null) {
 					account.setValid(false);
