@@ -504,7 +504,7 @@ public class TurboBitNet extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String dllink = br.getRegex("<h1><a href=\\'(.*?)\\'>").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("(\\'|\")(http://(www\\.)?turbobit\\.net//download/redirect/.*?)(\\'|\")").getMatch(1);
+            dllink = br.getRegex("(\\'|\")(http://([a-z0-9\\.]+)?turbobit\\.net//?download/redirect/.*?)(\\'|\")").getMatch(1);
         }
         if (dllink == null) {
             if (br.containsHTML("Our service is currently unavailable in your country.")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Our service is currently unavailable in your country."); }
