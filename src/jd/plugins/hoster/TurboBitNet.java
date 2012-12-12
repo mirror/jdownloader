@@ -132,12 +132,16 @@ public class TurboBitNet extends PluginForHost {
         // standard link
         String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)\\.html").getMatch(0);
         if (uid == null) {
-            // download/free/
-            uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+            // http(s)://turbobit.net/uid/name.html
+            uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)/.*").getMatch(0);
             if (uid == null) {
-                // support for public premium links
-                uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
-                if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                // download/free/
+                uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+                if (uid == null) {
+                    // support for public premium links
+                    uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
+                    if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                }
             }
         }
         if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
@@ -152,6 +156,11 @@ public class TurboBitNet extends PluginForHost {
             link.setProperty("LINKUID", uid);
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
+        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+/.*")) {
+            link.setProperty("LINKUID", uid);
+            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
+        }
+
     }
 
     private String escape(final String s) {
