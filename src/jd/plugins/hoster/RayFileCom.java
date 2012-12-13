@@ -1,25 +1,55 @@
-package jd.plugins.hoster;
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import java.util.regex.Pattern;
+package jd.plugins.hoster;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.RandomUserAgent;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rayfile.com" }, urls = { "http://[\\w]*?\\.rayfile\\.com/(.*?|zh-cn/)files/(.*?)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rayfile.com" }, urls = { "http://[\\w]*?\\.rayfile\\.com/[^/]+/files/[^/]+/" }, flags = { 0 })
 public class RayFileCom extends PluginForHost {
+
+    private String userAgent = null;
 
     public RayFileCom(final PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public void prepBrowser(final Browser br) {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.setCookie("http://rayfile.com", "lang", "english");
+        if (userAgent == null) {
+            /* we first have to load the plugin, before we can reference it */
+            JDUtilities.getPluginForHost("mediafire.com");
+            userAgent = jd.plugins.hoster.MediafireCom.stringUserAgent();
+        }
+        br.getHeaders().put("User-Agent", userAgent);
+        br.setConnectTimeout(2 * 60 * 1000);
+        br.setReadTimeout(2 * 60 * 1000);
+
     }
 
     @Override
@@ -31,43 +61,25 @@ public class RayFileCom extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
 
-        String downloadUrl = null;
-        String freeDownloadLink = null;
-        String vid = null;
-        String vkey = null;
-
         // use their regex
+        String vid = br.getRegex("var vid = \"(.*?)\"").getMatch(0);
+        String vkey = br.getRegex("var vkey = \"(.*?)\"").getMatch(0);
 
-        String regex = "var vid = \"(.*?)\"";
-        Pattern p = Pattern.compile(regex);
-        vid = this.br.getRegex(p).getMatch(0);
+        Browser ajax = this.br.cloneBrowser();
+        ajax.getPage("http://www.rayfile.com/zh-cn/files/" + vid + "/" + vkey + "/");
 
-        regex = "var vkey = \"(.*?)\"";
-        p = Pattern.compile(regex);
-        vkey = this.br.getRegex(p).getMatch(0);
-
-        // freeDownloadLink = this.br.getRegex(p).getMatch(0);
-        freeDownloadLink = "http://www.rayfile.com/zh-cn/files/" + vid + "/" + vkey + "/";
-
-        final Browser ajax = this.br.cloneBrowser();
-        ajax.getPage(freeDownloadLink);
-
-        regex = "downloads_url = \\['(.*?)'\\]";
-        p = Pattern.compile(regex);
-        downloadUrl = ajax.getRegex(p).getMatch(0);
+        String downloadUrl = ajax.getRegex("downloads_url = \\['(.*?)'\\]").getMatch(0);
         if (downloadUrl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        String cookie_key = null;
-        String cookie_value = null;
-        String cookie_host = null;
-        regex = "setCookie\\(\\'(.*?)\\', \\'(.*?)\\', (.*?), \\'(.*?)\\', \\'(.*?)\\'.*?\\)";
 
-        p = Pattern.compile(regex);
-        cookie_key = ajax.getRegex(p).getMatch(0);
-        cookie_value = ajax.getRegex(p).getMatch(1);
-        cookie_host = ajax.getRegex(p).getMatch(4);
+        String cookie = "setCookie\\(\\'(.*?)\\', \\'(.*?)\\', (.*?), \\'(.*?)\\', \\'(.*?)\\'.*?\\)";
 
-        this.br.setCookie(cookie_host, cookie_key, cookie_value);
-        this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
+        String cookie_key = ajax.getRegex(cookie).getMatch(0);
+        String cookie_value = ajax.getRegex(cookie).getMatch(1);
+        String cookie_host = ajax.getRegex(cookie).getMatch(4);
+
+        if (cookie_key == null || cookie_value == null || cookie_host == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        br.setCookie(cookie_host, cookie_key, cookie_value);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, downloadUrl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -77,30 +89,25 @@ public class RayFileCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        br.getPage(parameter.getDownloadURL());
+        prepBrowser(br);
+        br.getPage(link.getDownloadURL());
 
         if (br.containsHTML("Not HTML Code. Redirect to: ")) {
-
             String redirectUrl = br.getRequest().getLocation();
-            // System.out.println(redirectUrl);
-            parameter.setUrlDownload(redirectUrl);
+            link.setUrlDownload(redirectUrl);
             br.getPage(redirectUrl);
         }
 
-        if (this.br.containsHTML("page404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("page404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        Regex fname = br.getRegex("var fname = \"(.*?)\";");
-        Regex fsize = br.getRegex("formatsize = \"(.*?)\";");
+        String filename = br.getRegex("var fname = \"(.*?)\";").getMatch(0);
+        String filesize = br.getRegex("formatsize = \"(.*?)\";").getMatch(0);
 
-        String filename = fname.getMatch(0);
-        String filesize = fsize.getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        parameter.setName(filename.trim());
-        // parameter.setDownloadSize(Regex.getSize(filesize));
-        parameter.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(filename.trim());
+        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 

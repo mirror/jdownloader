@@ -32,7 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.ru/(main/passchk\\.php\\?ad=\\d+|main/preword\\.php\\?ad=\\d+|[^<>\"\\'/]+/[a-z0-9]+\\.html)" }, flags = { 2 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "http://(www\\.)?imgsrc\\.(ru|su|ro)/(main/passchk\\.php\\?ad=\\d+|main/preword\\.php\\?ad=\\d+|[^<>\"\\'/]+/[a-z0-9]+\\.html)" }, flags = { 2 })
 public class ImgSrcRu extends PluginForDecrypt {
 
     private static final String MAINPAGE = "http://imgsrc.ru";
@@ -46,7 +46,7 @@ public class ImgSrcRu extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         ArrayList<String> allPages = new ArrayList<String>();
-        String parameter = param.toString();
+        String parameter = param.toString().replaceAll("https?://(www\\.)?imgsrc\\.(ru|ro|su)/", "http://imgsrc.ru/");
         br.setFollowRedirects(true);
         br.setCookie(MAINPAGE + "/", "lang", "en");
         br.setCookie(MAINPAGE + "/", "iamlegal", "yeah");
