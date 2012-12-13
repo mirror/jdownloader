@@ -57,7 +57,7 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         }
 
         // they comment in fakes, so we will just try them all!
-        final String[] links = br.getRegex("\"(/[^<>\"/]*?=[a-z0-9]{32})\"").getColumn(0);
+        String[] links = br.getRegex("\"(/[^<>\"/]*?=[a-z0-9]{31,32})\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;
