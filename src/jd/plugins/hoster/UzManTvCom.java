@@ -24,6 +24,7 @@ import javax.script.ScriptEngineManager;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -88,13 +89,32 @@ public class UzManTvCom extends PluginForHost {
                 }
             }
         }
-        String jsOne = br.getRegex("</div><script type=\"text/javascript\">(.*?)</script>").getMatch(0);
-        String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
         String ext = br.getRegex("ext=([a-z0-9]{2,5})\\&").getMatch(0);
         if (ext == null) ext = "flv";
-        if (securedStuff == null || jsOne == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        securedStuff = execJS(jsOne + securedStuff);
-        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + securedStuff + "." + ext;
+        return "http://st2.uzmantv.com/c/" + crypticID + "_" + videoID + "_" + execJS(getCorrectJsAdditional()) + "." + ext;
+    }
+
+    private String getCorrectJsAdditional() {
+        String securedStuff = br.getRegex("var tok = (.*?);").getMatch(0);
+        String allJs[] = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
+        if (securedStuff == null && (allJs == null || allJs.length == 0)) return null;
+
+        int j = 0, bestMatch = 0, index = 0;
+        for (int i = 0; i < allJs.length; i++) {
+            for (String var : new Regex(allJs[i], "var ([^\\s=]+)\\s?=").getColumn(0)) {
+                if (var.length() > 3) {
+                    if (securedStuff.contains(var)) {
+                        j++;
+                    }
+                }
+            }
+            if (j > bestMatch) {
+                index = i;
+                bestMatch = j;
+            }
+            j = 0;
+        }
+        return allJs[index] + securedStuff;
     }
 
     @Override
@@ -129,7 +149,7 @@ public class UzManTvCom extends PluginForHost {
         DLLINK = getDllink();
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        downloadLink.setFinalFileName(filename + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
+        downloadLink.setFinalFileName(filename.replaceAll("\\?$", "") + DLLINK.substring(DLLINK.length() - 4, DLLINK.length()));
         DLLINK += DLLINKPART;
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
