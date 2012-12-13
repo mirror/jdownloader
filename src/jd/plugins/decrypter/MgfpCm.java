@@ -57,6 +57,7 @@ public class MgfpCm extends PluginForDecrypt {
             if (br.getRedirectLocation() != null) {
                 if (br.getRedirectLocation().contains("/pictures/")) {
                     parameter = br.getRedirectLocation();
+                    parameter += "?view=2";
                     logger.info("New parameter is set: " + parameter);
                     br.getPage(parameter);
                 } else {

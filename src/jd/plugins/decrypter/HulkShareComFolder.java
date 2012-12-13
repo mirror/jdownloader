@@ -47,8 +47,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
             return decryptedLinks;
         }
-        if (br.containsHTML("You have reached the download\\-limit") || br.containsHTML(">Page not found")) {
+        if (br.containsHTML("You have reached the download\\-limit")) {
             final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
+            dl.setAvailable(false);
+            decryptedLinks.add(dl);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice")) {
+            final DownloadLink dl = createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/"));
+            dl.setProperty("fileoffline", true);
             dl.setAvailable(false);
             decryptedLinks.add(dl);
             return decryptedLinks;

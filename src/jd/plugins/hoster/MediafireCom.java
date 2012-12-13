@@ -1022,6 +1022,7 @@ public class MediafireCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         final Browser apiBR = br.cloneBrowser();
+        apiBR.setCustomCharset("utf-8");
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             getSessionToken(apiBR, aa);

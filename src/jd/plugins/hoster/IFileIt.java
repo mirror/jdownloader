@@ -249,7 +249,7 @@ public class IFileIt extends PluginForHost {
         /* Nochmals das File überprüfen */
         requestFileInformation(downloadLink);
         if (UNDERMAINTENANCE) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
-        updateBrowser(br);
+        prepBrowser(br);
         br.setRequestIntervalLimit(getHost(), 250);
         simulateBrowser();
         br.setFollowRedirects(true);
@@ -280,7 +280,7 @@ public class IFileIt extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                updateBrowser(br);
+                prepBrowser(br);
                 br.getPage("https://secure.filecloud.io/user-login.html");
                 // We don't know if a captcha is needed so first we try without,
                 // if we get an errormessage we know a captcha is needed
@@ -425,7 +425,7 @@ public class IFileIt extends PluginForHost {
         return maxPrem.get();
     }
 
-    private void updateBrowser(Browser br) {
+    private void prepBrowser(final Browser br) {
         if (br == null) return;
         br.getHeaders().put("User-Agent", useragent);
         br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");

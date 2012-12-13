@@ -27,6 +27,7 @@ import jd.config.Property;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,9 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.orgdecrypted/(?!faq|register|login|terms|report|index|earn_money|upgrade|checker|sitemap|dmca|tos)[a-z0-9]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "speedload.org" }, urls = { "http://(www\\.)?speedload\\.orgdecrypted/[a-z0-9]+" }, flags = { 2 })
 public class SpeedLoadOrg extends PluginForHost {
 
     public SpeedLoadOrg(PluginWrapper wrapper) {
@@ -48,7 +47,7 @@ public class SpeedLoadOrg extends PluginForHost {
     }
 
     // DTemplate Version 0.1.6-psp
-    // mods:
+    // mods: everything, do NOT upgrade!
     // non account: 1 * 1
     // premium account: 1 * 20
     // protocol: no https
@@ -71,19 +70,18 @@ public class SpeedLoadOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error." + TYPE) || br.getURL().contains("/index." + TYPE)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        final String filename = br.getRegex("<div style=\"font\\-size:24pt;font\\-family:Arial;color:#545454;min\\-width:300px\">([^<>\"]*?)</div>").getMatch(0);
-        final String filesize = br.getRegex(">File Size:\\&nbsp;</span>([^<>\"]*?)</span>").getMatch(0);
-        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replace(",", "")));
+        br.setFollowRedirects(false);
+        br.getPage("http://speedload.org/api/single_link.php?shortUrl=" + getFID(link));
+        if (br.containsHTML("File Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        link.setFinalFileName(Encoding.htmlDecode(getJson("originalFilename")));
+        link.setDownloadSize(Long.parseLong(getJson("fileSize")));
+        link.setMD5Hash(getJson("md5"));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        br.getPage(downloadLink.getDownloadURL());
         boolean captcha = false;
         requestFileInformation(downloadLink);
         int wait = 60;
@@ -148,11 +146,6 @@ public class SpeedLoadOrg extends PluginForHost {
                 final String submitme = br.getRegex("name=\"submitme\" value=\"(\\d+)\"").getMatch(0);
                 if (submitme == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 br.postPage("http://" + this.getHost() + "/login." + TYPE, "terms=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submitme=" + submitme + "&submit.x=" + new Random().nextInt(100) + "&submit.y=" + new Random().nextInt(100));
-                if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (!br.containsHTML("\\(paid user\\)</span>")) {
-                    logger.info("Accounttype FREE is not supported!");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
                 final Cookies add = this.br.getCookies(MAINPAGE);
@@ -170,7 +163,7 @@ public class SpeedLoadOrg extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
             login(account, true);
@@ -178,6 +171,13 @@ public class SpeedLoadOrg extends PluginForHost {
             account.setValid(false);
             return ai;
         }
+        br.getPage("http://speedload.org/api/user_info.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        if (!"paid user".equals(getJson("level"))) {
+            ai.setStatus("Free Accounts are not supported!");
+            account.setValid(false);
+            return ai;
+        }
+        ai.setValidUntil(Long.parseLong(getJson("paidExpiryDate")) * 1000l);
         ai.setUnlimitedTraffic();
         account.setValid(true);
         ai.setStatus("Premium User");
@@ -188,13 +188,23 @@ public class SpeedLoadOrg extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+        return result;
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
     }
 
     @Override

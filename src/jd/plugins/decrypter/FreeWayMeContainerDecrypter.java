@@ -25,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "free-way.me" }, urls = { "https://(www\\.)?free\\-way\\.me/container\\.php\\?contid=[a-z0-9]+\\&contname=.+" }, flags = { 0 })
@@ -65,6 +66,9 @@ public class FreeWayMeContainerDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(Encoding.htmlDecode(contName.trim()));
+        fp.addLinks(decryptedLinks);
         return decryptedLinks;
     }
 

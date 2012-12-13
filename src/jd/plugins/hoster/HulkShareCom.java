@@ -578,10 +578,11 @@ public class HulkShareCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         correctDownloadLink(link);
         br.setCookie(COOKIE_HOST, "lang", "english");
+        if (link.getBooleanProperty("fileoffline")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         br.getPage(link.getDownloadURL());
         String argh = br.getRedirectLocation();
         // Handling for direct links
