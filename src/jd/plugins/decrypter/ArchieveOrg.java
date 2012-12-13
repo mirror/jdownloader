@@ -59,7 +59,9 @@ public class ArchieveOrg extends PluginForDecrypt {
                 return null;
             }
             for (String singleLink : links) {
-                decryptedLinks.add(createDownloadlink("directhttp://" + br.getURL() + singleLink));
+                final DownloadLink dl = createDownloadlink("directhttp://" + br.getURL() + singleLink);
+                dl.setAvailable(true);
+                decryptedLinks.add(dl);
             }
         } else {
             // Old way
@@ -72,7 +74,7 @@ public class ArchieveOrg extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink("directhttp://http://archive.org" + singleLink));
             }
         }
-        FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "archive\\.org/details/(.+)").getMatch(0).trim());
         fp.addLinks(decryptedLinks);
         return decryptedLinks;

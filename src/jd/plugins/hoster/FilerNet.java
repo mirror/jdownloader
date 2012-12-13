@@ -186,7 +186,7 @@ public class FilerNet extends PluginForHost {
             return ai;
         }
         ai.setTrafficLeft(Long.parseLong(getJson("traffic", br.toString())));
-        ai.setValidUntil(System.currentTimeMillis() + Long.parseLong(getJson("until", br.toString())));
+        ai.setValidUntil(Long.parseLong(getJson("until", br.toString())) * 1000);
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;

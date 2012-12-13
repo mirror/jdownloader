@@ -40,7 +40,11 @@ public class WatchSeriesEu extends PluginForDecrypt {
         final String parameter = param.toString();
         br.getPage(parameter);
         if (br.containsHTML(">Um, Where did the page go|You either took a wrong turn or the site is screwed")) {
-            logger.info("Link offline: " + parameter);
+            logger.info("Link offline (invalid link): " + parameter);
+            return decryptedLinks;
+        }
+        if (br.containsHTML(">Sorry, there are no links available for this episode")) {
+            logger.info("Link offline (offline): " + parameter);
             return decryptedLinks;
         }
         final String fpName = br.getRegex("<title>Watch Online ([^<>\"]*?) \\- Watch Series</title>").getMatch(0);
