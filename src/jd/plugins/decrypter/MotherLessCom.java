@@ -143,7 +143,7 @@ public class MotherLessCom extends PluginForDecrypt {
         for (int i = 1; i <= numberOfPages; i++) {
             String[] picturelinks = br.getRegex("class=\"thumbnail mediatype_image\" rel=\"[A-Z0-9]+\">[\t\n\r ]+<div class=\"thumbnail\\-img-wrap\" id=\"wrapper_[A-Z0-9]+\">[\t\n\r ]+<a([\t\n\r ]+)?href=\"((http://motherless\\.com)?/[A-Z0-9]+(/[A-Z0-9]+)?)\"").getColumn(1);
             // stupid site jumps URLS for NextPage depending on parameter
-            String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\">NEXT \\&raquo;</a></div>").getMatch(0);
+            String NextPage = br.getRegex("<a href=\"(/[A-Z0-9]{7,9}\\?page=\\d+)\"[^>]+>NEXT").getMatch(0);
             if (picturelinks != null && picturelinks.length != 0) {
                 logger.info("Decrypting page " + i + " which contains " + picturelinks.length + " links.");
                 for (String singlelink : picturelinks) {
@@ -152,7 +152,7 @@ public class MotherLessCom extends PluginForDecrypt {
                     if (fpName != null) dl.setProperty("package", fpName);
                     dl.setProperty("dltype", "image");
                     // fast add.
-                    if (numberOfPages > 5) dl.setAvailable(true);
+                    if (numberOfPages >= 2) dl.setAvailable(true);
                     ret.add(dl);
                 }
             }
