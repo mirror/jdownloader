@@ -717,25 +717,30 @@ public class TbCm extends PluginForDecrypt {
 						continue;
 					}
 					dlLink = LinksFound.get(format)[0];
-					try {
-						if (fast) {
-							this.addtopos(cMode, dlLink, 0, vQuality, format);
-						} else if (this.br.openGetConnection(dlLink)
-								.getResponseCode() == 200) {
-							this.addtopos(cMode, dlLink,
-									this.br.getHttpConnection()
-											.getLongContentLength(), vQuality,
-									format);
-						}
-					} catch (final Throwable e) {
-						e.printStackTrace();
-					} finally {
+					// Skip MP3 but handle 240p flv
+					if (!(format == 5 && mp3 && !flv)) {
 						try {
-							this.br.getHttpConnection().disconnect();
+							if (fast) {
+								this.addtopos(cMode, dlLink, 0, vQuality,
+										format);
+							} else if (this.br.openGetConnection(dlLink)
+									.getResponseCode() == 200) {
+								this.addtopos(cMode, dlLink, this.br
+										.getHttpConnection()
+										.getLongContentLength(), vQuality,
+										format);
+							}
 						} catch (final Throwable e) {
+							e.printStackTrace();
+						} finally {
+							try {
+								this.br.getHttpConnection().disconnect();
+							} catch (final Throwable e) {
+							}
 						}
 					}
-					if (format == 0 || format == 5 || format == 6) {
+					// Handle MP3
+					if ((format == 0 || format == 5 || format == 6) && mp3) {
 						try {
 							if (fast) {
 								this.addtopos(DestinationFormat.AUDIOMP3,
