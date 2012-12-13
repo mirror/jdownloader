@@ -129,20 +129,20 @@ public class TurboBitNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        // standard link
-        String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)\\.html").getMatch(0);
+        // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
+        String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
         if (uid == null) {
-            // http(s)://turbobit.net/uid/name.html
-            uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)/.*").getMatch(0);
+            // download/free/
+            uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
             if (uid == null) {
-                // download/free/
-                uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
-                if (uid == null) {
-                    // support for public premium links
-                    uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
-                    if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-                }
+                // support for public premium links
+                uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
+                if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             }
+        }
+        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
+            link.setProperty("LINKUID", uid);
+            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
         if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
             link.setProperty("LINKUID", uid);
@@ -151,14 +151,6 @@ public class TurboBitNet extends PluginForHost {
         if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
             link.setProperty("LINKUID", uid);
             link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://turbobit.net/download"));
-        }
-        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+\\.html")) {
-            link.setProperty("LINKUID", uid);
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
-        }
-        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+/.*")) {
-            link.setProperty("LINKUID", uid);
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
         }
 
     }
