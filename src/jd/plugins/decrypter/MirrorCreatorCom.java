@@ -51,13 +51,13 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         param.setCryptedUrl(parameter);
         br.getPage(parameter);
         /* Error handling */
-        if (br.containsHTML(">Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid")) {
+        if (br.containsHTML("(>Unfortunately, the link you have clicked is not available|>Error \\- Link disabled or is invalid|>Links Unavailable as the File Belongs to Suspended Account\\. <)")) {
             logger.info("The following link should be offline: " + param.toString());
             return decryptedLinks;
         }
 
         // they comment in fakes, so we will just try them all!
-        String[] links = br.getRegex("\"(/[^<>\"/]*?=[a-z0-9]{31,32})\"").getColumn(0);
+        String[] links = br.getRegex("\"(/[^<>\"/]*?=[a-z0-9]{30,32})\"").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("A critical error happened! Please inform the support. : " + param.toString());
             return null;

@@ -19,6 +19,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,11 +31,20 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nakido.com" }, urls = { "http://(www\\.)?nakido\\.com/[A-Z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nakido.com" }, urls = { "http://(www\\.)?(nakido\\.com/[A-Z0-9]+|naki\\.do/[a-zA-Z0-9]+)" }, flags = { 0 })
 public class NakidoCom extends PluginForHost {
 
     public NakidoCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) throws IOException {
+        if (link.getDownloadURL().matches("http://(www\\.)?naki\\.do/[a-zA-Z0-9]+")) {
+            Browser correctBr = new Browser();
+            correctBr.getPage(link.getDownloadURL());
+            link.setUrlDownload(correctBr.getRedirectLocation());
+        }
     }
 
     @Override
@@ -50,11 +62,27 @@ public class NakidoCom extends PluginForHost {
         requestFileInformation(downloadLink);
         long size = downloadLink.getDownloadSize();
         br.setFollowRedirects(true);
-        String dllink = br.getRegex("else.*?x\\.href=\\'(.*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\\'(/[A-Z0-9]+/[A-Z0-9]+\\?attach.*?)\\'").getMatch(0);
-        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        if (dllink.equals("javascript:void(0)")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available!");
-        dllink = "http://www.nakido.com" + dllink;
+        String hashID = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([A-Z0-9]+)").getMatch(0);
+        if (hashID == null) {
+            logger.warning("Cant find 'hashID'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String key = br.getRegex("\"(/dl\\?filekey=[A-Z0-9]+[^\"]+)\"").getMatch(0);
+        if (key != null) br.getPage(key);
+        String o = br.getRegex("Nakido\\.downloads\\[\'" + hashID + "o\'\\]=\'([a-z0-9]+)\';").getMatch(0);
+        if (o == null) {
+            logger.warning("Cant find 'o'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("/dl/ticket?f=" + hashID + "&o=" + o);
+        String hashNwait = br.getRegex(hashID + "#(\\d+)").getMatch(0);
+        if (hashNwait == null) {
+            logger.warning("Cant find 'hashNwait'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Integer wait = Integer.parseInt(hashNwait);
+        if (wait > 0) sleep(wait * 1001l, downloadLink);
+        String dllink = "http://www.nakido.com/" + hashID + "/" + Encoding.urlEncode(downloadLink.getFinalFileName());
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (!(dl.getConnection().isContentDisposition())) {
             br.followConnection();
