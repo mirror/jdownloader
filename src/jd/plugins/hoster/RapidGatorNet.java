@@ -469,7 +469,7 @@ public class RapidGatorNet extends PluginForHost {
                 account.setValid(false);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", null) + (24 * 60 * 60 * 1000));
             }
             ai.setStatus("Premium User");
             try {
