@@ -94,7 +94,12 @@ public class SoundcloudCom extends PluginForHost {
         final String filesize = getXML("original-content-size", source);
         if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
         final String description = getXML("description", source);
-        if (description != null) parameter.setComment(description);
+        if (description != null) {
+            try {
+                parameter.setComment(description);
+            } catch (Throwable e) {
+            }
+        }
         String username = getXML("username", source);
         filename = Encoding.htmlDecode(filename.trim());
         String type = getXML("original-format", source);
