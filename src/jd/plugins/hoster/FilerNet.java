@@ -98,7 +98,8 @@ public class FilerNet extends PluginForHost {
         }
         link.setFinalFileName(getJson("name", br.toString()));
         link.setDownloadSize(Long.parseLong(getJson("size", br.toString())));
-        link.setMD5Hash(getJson("hash", br.toString()));
+        /* hash != md5, its the hash of fileID */
+        link.setMD5Hash(null);
         return AvailableStatus.TRUE;
     }
 
