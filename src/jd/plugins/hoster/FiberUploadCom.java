@@ -100,7 +100,12 @@ public class FiberUploadCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        // checking old domain link (fiberupload.com) already in LinkGrabber/Download
+        // if so, redirect to fiberupload.net
+        if (link.getHost().equalsIgnoreCase("fiberupload.com"))
+            br.setFollowRedirects(true);
+        else
+            br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "lang", "english");
         try {
             getPage(link.getDownloadURL());
