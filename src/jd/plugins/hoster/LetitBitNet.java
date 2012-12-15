@@ -259,6 +259,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String getLinkViaSkymonkDownloadMethod(String s) throws IOException {
+        if (!getPluginConfig().getBooleanProperty("STATUS", true)) return null;
         Browser skymonk = new Browser();
         skymonk.setCustomCharset("UTF-8");
         skymonk.getHeaders().put("Pragma", null);
@@ -650,6 +651,8 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "STATUS", JDL.L("plugins.hoster.letitbit.status", "Use SkyMonk?")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), LetitBitNet.ENABLEUNLIMITEDSIMULTANMAXFREEDLS, JDL.L("plugins.hoster.letitbitnet.enableunlimitedsimultanfreedls", "Enable unlimited (20) max simultanious free downloads (can cause problems, use at your own risc)")).setDefaultValue(false));
     }
 
