@@ -27,6 +27,8 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -37,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.locale.JDL;
 
 import org.w3c.dom.Document;
 
@@ -47,8 +50,11 @@ public class RTLnowDe extends PluginForHost {
 
     private String   DLCONTENT;
 
+    private Boolean  DEFAULTTIMEOUT = false;
+
     public RTLnowDe(final PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     private long crc32Hash(final String wahl) throws UnsupportedEncodingException {
@@ -161,6 +167,8 @@ public class RTLnowDe extends PluginForHost {
             filename += " - Staffel " + season;
         }
         filename = filename.trim();
+
+        if (folge == null) return AvailableStatus.FALSE;
         folge = folge.trim();
         if (folge.endsWith(".")) {
             folge = folge.substring(0, folge.length() - 1);
@@ -199,8 +207,7 @@ public class RTLnowDe extends PluginForHost {
         rtmp.setApp(DLCONTENT.split("@")[1]);
         rtmp.setUrl(DLCONTENT.split("@")[0] + DLCONTENT.split("@")[1]);
         rtmp.setResume(true);
-        /* test */
-        rtmp.setTimeOut(-1);
+        if (!getPluginConfig().getBooleanProperty("DEFAULTTIMEOUT", false)) rtmp.setTimeOut(-1);
     }
 
     private XPath xmlParser(final String linkurl) throws Exception {
@@ -221,6 +228,10 @@ public class RTLnowDe extends PluginForHost {
         } catch (final Throwable e2) {
             return null;
         }
+    }
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "DEFAULTTIMEOUT", JDL.L("plugins.hoster.rtlnowde.enabledeafulttimeout", "Enable default timeout?")).setDefaultValue(false));
     }
 
 }
