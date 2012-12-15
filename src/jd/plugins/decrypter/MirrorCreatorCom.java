@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -63,26 +64,32 @@ public class MirrorCreatorCom extends PluginForDecrypt {
             return null;
         }
         for (String link : links) {
-
-            br.getPage("http://www.mirrorcreator.com" + link);
-            String[] redirectLinks = br.getRegex("(/redirect?/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
-            if (redirectLinks == null || redirectLinks.length == 0) redirectLinks = br.getRegex("><a href=(.*?)target=").getColumn(0);
+            Browser br2 = br.cloneBrowser();
+            br2.getPage("http://www.mirrorcreator.com" + link);
+            String[] redirectLinks = br2.getRegex("(/redirect?/[0-9A-Z]+/[a-z0-9]+)").getColumn(0);
             if (redirectLinks == null || redirectLinks.length == 0) {
-                logger.warning("Mirror Creator been dicks, continuing...");
-                continue;
+                redirectLinks = br2.getRegex("><a href=(.*?)target=").getColumn(0);
+                if (redirectLinks == null || redirectLinks.length == 0) {
+                    logger.warning("Scanning for redirectLinks, possible change in html, continuing...");
+                    continue;
+                }
             }
-
+            if (redirectLinks == null || redirectLinks.length == 0) {
+                logger.warning("Excausted redirect search, Please report issue to JDownloader Development team. : " + param.toString());
+                return null;
+            }
             final String nicelookinghost = "mirrorcreator.com";
             logger.info("Found " + redirectLinks.length + " " + nicelookinghost + " links to decrypt...");
             for (String singlelink : redirectLinks) {
+                br2 = br.cloneBrowser();
                 String dllink = null;
                 // Handling for links that need to be regexed or that need to be get by redirect
                 if (singlelink.matches("/redirect?/[0-9A-Z]+/[a-z0-9]+")) {
-                    br.getPage("http://www.mirrorcreator.com" + singlelink);
-                    dllink = br.getRedirectLocation();
+                    br2.getPage("http://www.mirrorcreator.com" + singlelink);
+                    dllink = br2.getRedirectLocation();
                     if (dllink == null) {
-                        dllink = br.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
-                        if (dllink == null) dllink = br.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
+                        dllink = br2.getRegex("Please <a href=(\"|\\')?(http.*?)(\"|\\')? ").getMatch(1);
+                        if (dllink == null) dllink = br2.getRegex("redirecturl\">(https?://[^<>]+)</div>").getMatch(0);
                     }
                 } else {
                     // Handling for already regexed final-links
