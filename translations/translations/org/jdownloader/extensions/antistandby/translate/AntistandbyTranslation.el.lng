@@ -1,5 +1,5 @@
 gui_config_antistandby_whiledl2=Λήψεις είναι σε εξέλιξη
 gui_config_antistandby_whilejd2=ο JDownloader είναι σε εξέλιξη
-jd_plugins_optional_antistandby_jdantistandby=Αποτροπή Αναμονής (JDAntiStandby)
+jd_plugins_optional_antistandby_jdantistandby=Αποτροπή Αναμονής
 jd_plugins_optional_antistandby_jdantistandby_description=Αποτρέπει την μετάβαση του υπολογιστή σε κατάσταση Αναμονής
 mode=Αποτροπή αναμονής/αδρανοποίησης όταν
