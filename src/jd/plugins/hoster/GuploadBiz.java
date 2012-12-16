@@ -68,7 +68,7 @@ public class GuploadBiz extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
-        if (br.getURL().contains("/error.html")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("/error.html") || br.getURL().contains("/index.php")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final Regex fInfo = br.getRegex("<th class=\"descr\">[\t\n\r ]+<strong>([^<>\"]*?) \\(([^<>\"]*?)\\)<br/>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
@@ -144,8 +144,9 @@ public class GuploadBiz extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.postPage(MAINPAGE + "/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
                 if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                if (br.containsHTML("/upgrade\\.php\">upgrade account</a>") || !br.containsHTML("/upgrade\\.php\">extend account</a>")) {
-                    logger.info("Accounttype FREE is not supported!");
+                br.getPage(MAINPAGE + "/account_edit.php");
+                if (!br.containsHTML(">Account Type:</font></b>&nbsp;&nbsp; <b><font color=\"#878787\"> Paid User<")) {
+                    logger.info("FREE Accounts are not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 // Save cookies
@@ -173,11 +174,11 @@ public class GuploadBiz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage(MAINPAGE + "/upgrade.html");
-        ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("Reverts To Free Account:[\t\n\r ]+</td>[\t\n\r ]+<td>[\t\n\r ]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (!br.getURL().endsWith("/account_edit.php")) br.getPage(MAINPAGE + "/account_edit.php");
+        final String expire = br.getRegex(">Premium Valid Until:[^\\:]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         account.setValid(true);
+        ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");
         return ai;
     }

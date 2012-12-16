@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -27,6 +26,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -37,7 +37,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jumbofiles.org" }, urls = { "http://(www\\.)?jumbofiles\\.org/(linkfile|newfile)\\?n=\\d+" }, flags = { 2 })
 public class JumboFilesOrg extends PluginForHost {
@@ -116,7 +115,24 @@ public class JumboFilesOrg extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage("http://jumbofiles.org/login", "sukey=yes&id=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                int repeat = 3;
+                for (int i = 0; i <= repeat; i++) {
+
+                    br.getPage("http://jumbofiles.org/login");
+                    Form login = br.getFormbyProperty("name", "FL");
+                    if (login == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (br.containsHTML("<img src=\"ckimg\" />")) {
+                        DownloadLink dummyLink = new DownloadLink(null, "Account", "jumbofiles.org", "http://jumbofiles.org", true);
+                        login.put("key", getCaptchaCode("ckimg", dummyLink));
+                    }
+                    login.put("id", account.getUser());
+                    login.put("password", account.getPass());
+                    br.submitForm(login);
+                    if (br.containsHTML("Please enter the correct verification code"))
+                        continue;
+                    else
+                        break;
+                }
                 if (!br.containsHTML("Account type:<br> <h3>Premium<")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -144,15 +160,10 @@ public class JumboFilesOrg extends PluginForHost {
             return ai;
         }
         br.getPage("http://jumbofiles.org/my_account");
-        ai.setUnlimitedTraffic();
-        final String expire = br.getRegex(">Upgrade to the Platinum members, Expiration date:([^<>\"]*?)</td>").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
-        }
+        // no expire time shown...
         account.setValid(true);
+        ai.setUnlimitedTraffic();
+        ai.setExpired(false);
         ai.setStatus("Premium User");
         return ai;
     }
