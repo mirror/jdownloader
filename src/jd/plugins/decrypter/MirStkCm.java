@@ -27,7 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "http://(www\\.)?(mirrorstack\\.com|uploading\\.to|copyload\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com)/([a-z0-9]{1,2}_)?[a-z0-9]{12}" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mirrorstack.com" }, urls = { "https?://(www\\.)?(mirrorstack\\.com|multishared\\.com|onmirror\\.com|multiupload\\.biz|lastbox\\.net|mirrorhive\\.com)/([a-z0-9]{2}_)?[a-z0-9]{12}" }, flags = { 0 })
 public class MirStkCm extends PluginForDecrypt {
 
     /*
@@ -46,8 +46,22 @@ public class MirStkCm extends PluginForDecrypt {
      * It's best to use linkgrabbers default auto packagename sorting.
      */
 
-    // version 0.5
-    private static final String MULTISHARED = "http://(www\\.)?multishared\\.com/([a-z0-9]{1,2}_)?[a-z0-9]{12}";
+    // 16/12/2012
+    // mirrorstack.com = up, multiple pages deep, requiring custom r_counter
+    // uploading.to = down/sudoparked = 173.192.223.71-static.reverse.softlayer.com
+    // copyload.com = down/sudoparked = 208.43.167.115-static.reverse.softlayer.com
+    // multishared.com = up, custom fields for singleLinks && finallinks
+    // onmirror.com = up, finallink are redirects on first singleLink page
+    // multiupload.biz = up, multiple pages deep, with waits on last page
+    // lastbox.net = up, finallink are redirects on first singleLink page
+    // mirrorhive.com = up, finallink are redirects on first singleLink page
+
+    // version 0.6
+
+    // Single link format eg. http://sitedomain/xx_uid. xx = hoster abbreviation
+    private static final String regexSingleLink = "(https?://[^/]+/[a-z0-9]{2}_[a-z0-9]{12})";
+    // Normal link format eg. http://sitedomain/uid
+    private static final String regexNormalLink = "(https?://[^/]+/[a-z0-9]{12})";
 
     public MirStkCm(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,67 +70,85 @@ public class MirStkCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        // easier to set redirects on and off than to define every provider.
-        // It also creates less maintenance if provider changes things up.
+        // Easier to set redirects on and off than to define every provider. It also creates less maintenance if provider changes things up.
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.containsHTML("(?i)>(File )?Not Found</")) {
+        if (br.containsHTML(">(File )?Not Found</")) {
             logger.warning("Invalid URL, either removed or never existed :" + parameter);
             return decryptedLinks;
         }
         br.setFollowRedirects(false);
-        String finallink = null;
         String[] singleLinks = null;
+        // multishared have normal hoster links outside SingleLink'.
+        if (parameter.matches(".+multishared.com/[a-z0-9]{12}")) {
+            singleLinks = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http[^\\']+)").getColumn(0);
+        }
         // Add a single link parameter to String[]
-        if (parameter.matches("http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12}")) {
+        else if (parameter.matches(regexSingleLink)) {
             singleLinks = new Regex(parameter, "(.+)").getColumn(0);
-        } else if (parameter.matches(MULTISHARED)) {
-            singleLinks = br.getRegex("id=\\'stat\\d+_\\d+\\'><a href=\\'(http[^<>\"\\']*?)\\'").getColumn(0);
         }
-        // Standard parameter, find all singleLinks
-        else if (parameter.matches("http://[^/<>\"\\' ]+/([a-z]_)?[a-z0-9]{12}")) {
-            singleLinks = br.getRegex("<a href=\\'(http://[^/<>\"\\' ]+/[a-z0-9]{2}_[a-z0-9]{12})\\'").getColumn(0);
+        // Normal links, find all singleLinks
+        else if (parameter.matches(regexNormalLink)) {
+            singleLinks = br.getRegex("<a href=\\'" + regexSingleLink + "\\'").getColumn(0);
             if (singleLinks == null || singleLinks.length == 0) {
-                logger.warning("Couldn't find singleLinks... :" + parameter);
-                return null;
+                singleLinks = br.getRegex(regexSingleLink).getColumn(0);
             }
         }
-        // Process links found. Each provider has a slightly different
-        // requirement and outcome
-        for (String singleLink : singleLinks) {
-            if (parameter.matches(MULTISHARED)) {
-                br.getHeaders().put("Referer", "http://multishared.com/r_counter");
-                br.getPage(singleLink);
-                finallink = br.getRegex("<frame src=\"(http[^<>\"]*?)\"").getMatch(0);
-            } else if (parameter.contains("uploading.to/")) {
-                br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
-                br.getPage(singleLink);
-                finallink = br.getRegex("frame src=\"([^\"\\' <>]*?)\"").getMatch(0);
-            } else if (parameter.contains("copyload.com/") || parameter.contains("multiupload.biz/")) {
-                br.getHeaders().put("Referer", new Regex(parameter, "(https?://[\\w+\\.\\d\\-]+(:\\d+)?)/").getMatch(0) + "/r_counter");
-                br.getPage(singleLink);
-                finallink = br.getRedirectLocation();
-            } else {
-                Browser brc = br.cloneBrowser();
-                brc.getPage(singleLink);
-                finallink = brc.getRedirectLocation();
-                if (finallink == null) {
-                    brc.getPage("/?q=r_counter");
-                    Thread.sleep(1000);
-                    brc.getPage(singleLink);
-                    finallink = brc.getRedirectLocation();
+        if (singleLinks == null || singleLinks.length == 0) {
+            logger.warning("Couldn't find singleLinks... :" + parameter);
+            return null;
+        }
+        // make sites with long waits return back into the script making it multi-threaded, otherwise singleLinks * results = long time.
+        if (singleLinks.length > 1 && parameter.matches(".+(multiupload\\.biz)/.+")) {
+            for (String singleLink : singleLinks) {
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
+        } else {
+            // Process links found. Each provider has a slightly different requirement and outcome
+            for (String singleLink : singleLinks) {
+                String finallink = null;
+                if (!singleLink.matches(regexSingleLink)) {
+                    finallink = singleLink;
                 }
-            }
-            if (finallink == null) {
-                logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
-                logger.warning("Continuing...");
-                continue;
-            }
-            DownloadLink link;
-            decryptedLinks.add(link = createDownloadlink(finallink));
-            try {
-                distribute(link);
-            } catch (final Throwable e) {
+                Browser brc = br.cloneBrowser();
+                if (finallink == null) {
+                    brc.getPage(singleLink);
+                    if (parameter.matches(".+(multishared\\.com)/.+")) {
+                        finallink = brc.getRegex("<frame src=\"(http[^\"]+)").getMatch(0);
+                    } else {
+                        finallink = brc.getRedirectLocation();
+                        if (finallink == null) {
+                            String referer = null;
+                            String add_char = "";
+                            Integer wait = 0;
+                            if (parameter.matches(".+(mirrorstack\\.com)/.+")) {
+                                add_char = "?";
+                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/" + add_char + "q=r_counter";
+                            } else if (parameter.matches(".+(multiupload\\.biz)/.+")) {
+                                add_char = "?";
+                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0).replace("http://", "https://") + "/r_counter";
+                                wait = 20;
+                            } else {
+                                referer = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0) + "/r_counter";
+                            }
+                            brc.getHeaders().put("Referer", referer);
+                            Thread.sleep(wait * 1000);
+                            brc.getPage(singleLink + add_char);
+                            finallink = brc.getRedirectLocation();
+                            if (finallink == null) {
+                                logger.warning("WARNING: Couldn't find finallink. Please report this issue to JD Developement team. : " + parameter);
+                                logger.warning("Continuing...");
+                                continue;
+                            }
+                        }
+                    }
+                }
+                DownloadLink link = createDownloadlink(finallink);
+                decryptedLinks.add(link);
+                try {
+                    distribute(link);
+                } catch (final Throwable e) {
+                }
             }
         }
         return decryptedLinks;

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -58,10 +59,14 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         }
 
         // they comment in fakes, so we will just try them all!
-        String[] links = br.getRegex("\"(/[^<>\"/]*?=[a-z0-9]{30,32})\"").getColumn(0);
+        String[] links = br.getRegex("(/[^<>\"/]*?=[a-z0-9]{25,32})\"").getColumn(0);
         if (links == null || links.length == 0) {
-            logger.warning("A critical error happened! Please inform the support. : " + param.toString());
-            return null;
+            String uid = new Regex(parameter, "/([A-Z0-9]{8})/").getMatch(0);
+            links = br.getRegex("\"(/[^\"]+uid=" + uid + "[^\"]+)\"").getColumn(0);
+            if (links == null || links.length == 0) {
+                logger.warning("A critical error happened! Please inform the support. : " + param.toString());
+                return null;
+            }
         }
         for (String link : links) {
             Browser br2 = br.cloneBrowser();
@@ -107,5 +112,4 @@ public class MirrorCreatorCom extends PluginForDecrypt {
         logger.warning("Task Complete! : " + param.toString());
         return decryptedLinks;
     }
-
 }
