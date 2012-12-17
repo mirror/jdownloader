@@ -28,7 +28,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://[\\w\\.]*?hoerbuch\\.in/protection/folder_\\d+\\.html" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hoerbuch.in" }, urls = { "http://(www\\.)?hoerbuch\\.in/protection/(folder_\\d+|[a-z0-9]+/[a-z0-9]+)\\.html" }, flags = { 0 })
 public class RsHrbchn extends PluginForDecrypt {
     private final String ua = RandomUserAgent.generate();
 
@@ -37,28 +37,40 @@ public class RsHrbchn extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> passwords = new ArrayList<String>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<String> passwords = new ArrayList<String>();
         passwords.add("www.hoerbuch.in");
+        br.setFollowRedirects(false);
         br.getHeaders().put("User-Agent", ua);
-        String parameter = param.toString();
+        final String parameter = param.toString();
         br.getPage("http://hoerbuch.in/wp/");
         br.getPage(parameter);
-        Form form = br.getForm(1);
-        if (form == null) return null;
-        br.submitForm(form);
-        String links[] = br.getRegex("on.png.*?href=\"(http.*?)\"").getColumn(0);
-        for (String link : links) {
-            if (link.contains("in/protection")) {
-                Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(false);
-                brc.getPage(link);
-                if (brc.getRedirectLocation() != null) {
-                    decryptedLinks.add(this.createDownloadlink(brc.getRedirectLocation()));
-                }
-            } else {
-                decryptedLinks.add(this.createDownloadlink(link));
+        if (parameter.matches("http://(www\\.)?hoerbuch\\.in/protection/folder_\\d+\\.html")) {
+            final Form form = br.getForm(1);
+            if (form == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
             }
+            br.submitForm(form);
+            final String links[] = br.getRegex("on\\.png.*?href=\"(http.*?)\"").getColumn(0);
+            for (String link : links) {
+                if (link.contains("in/protection")) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getPage(link);
+                    if (brc.getRedirectLocation() != null) {
+                        decryptedLinks.add(this.createDownloadlink(brc.getRedirectLocation()));
+                    }
+                } else {
+                    decryptedLinks.add(this.createDownloadlink(link));
+                }
+            }
+        } else {
+            final String finallink = br.getRedirectLocation();
+            if (finallink == null) {
+                logger.warning("Decrypter broken for link: " + parameter);
+                return null;
+            }
+            decryptedLinks.add(this.createDownloadlink(finallink));
         }
         return decryptedLinks;
     }
