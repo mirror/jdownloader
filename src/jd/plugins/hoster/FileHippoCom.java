@@ -95,15 +95,15 @@ public class FileHippoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         br.setFollowRedirects(false);
-        String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
-        String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
-        String pages[] = new String[] { mirrorPage, normalPage };
+        final String normalPage = br.getRegex("id=\"dlbox\">[\n\r\t ]+<a href=\"(/.*?)\"").getMatch(0);
+        final String mirrorPage = br.getRegex("table id=\"dlboxinner\"[^\n\r\t]*?<a href=\"(/.*?)\"").getMatch(0);
+        final String pages[] = new String[] { mirrorPage, normalPage };
         for (String page : pages) {
             if (page != null) {
                 page = MAINPAGE + page;
                 br.getPage(page);
             }
-            String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"1; url=(/.*?)\"").getMatch(0);
+            String dllink = br.getRegex("http\\-equiv=\"Refresh\" content=\"\\d+; url=(/.*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("id=\"_ctl0_contentMain_lnkURL\" class=\"black\" href=\"(/.*?)\"").getMatch(0);
                 if (dllink == null) {
@@ -115,6 +115,7 @@ public class FileHippoCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 br.followConnection();
+                if (!br.getURL().contains("filehippo.com")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download links to external site");
                 continue;
             }
             downloadLink.setFinalFileName(getFileNameFromHeader(dl.getConnection()));

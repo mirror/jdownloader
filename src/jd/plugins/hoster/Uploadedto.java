@@ -63,7 +63,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "(http://(www\\.)?uploaded\\.(to|net)/.*?(file/|\\?id=|\\&id=)[\\w]+/?)|(http://(www\\.)?ul\\.to/(?!folder)(\\?id=|&id=)?[\\w\\-]+/.+)|(http://(www\\.)??ul\\.to/(?!folder)(\\?id=|\\&id=)?[\\w\\-]+/?)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded|ul)\\.(to|net)/file/[\\w]+" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
     public static class StringContainer {
@@ -293,18 +293,8 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        String url = link.getDownloadURL();
-        url = url.replaceFirst("http://.*?/", "http://uploaded.net/");
-        url = url.replaceFirst("\\.net/.*?id=", ".net/file/");
-        if (!url.contains("/file/")) {
-            url = url.replaceFirst("uploaded.net/", "uploaded.net/file/");
-        }
-        String[] parts = url.split("\\/");
-        String newLink = "";
-        for (int t = 0; t < Math.min(parts.length, 5); t++) {
-            newLink += parts[t] + "/";
-        }
-        link.setUrlDownload(newLink);
+        final String url = link.getDownloadURL();
+        link.setUrlDownload("http://uploaded.net/file/" + new Regex(url, "([a-z0-9]+)$").getMatch(0));
     }
 
     public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {

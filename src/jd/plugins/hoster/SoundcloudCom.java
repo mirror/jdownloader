@@ -91,6 +91,7 @@ public class SoundcloudCom extends PluginForHost {
             parameter.getLinkStatus().setStatusText(JDL.L("plugins.hoster.SoundCloudCom.status.pluginBroken", "The host plugin is broken!"));
             return AvailableStatus.FALSE;
         }
+        filename = Encoding.htmlDecode(filename.trim().replace("\"", "'"));
         final String filesize = getXML("original-content-size", source);
         if (filesize != null) parameter.setDownloadSize(Long.parseLong(filesize));
         final String description = getXML("description", source);
@@ -101,7 +102,6 @@ public class SoundcloudCom extends PluginForHost {
             }
         }
         String username = getXML("username", source);
-        filename = Encoding.htmlDecode(filename.trim());
         String type = getXML("original-format", source);
         if (type == null) type = "mp3";
         username = username.trim();
@@ -151,7 +151,7 @@ public class SoundcloudCom extends PluginForHost {
     }
 
     public String getXML(final String parameter, final String source) {
-        return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>\"]*?)</" + parameter + ">").getMatch(1);
+        return new Regex(source, "<" + parameter + "( type=\"[^<>\"/]*?\")?>([^<>]*?)</" + parameter + ">").getMatch(1);
     }
 
     @Override

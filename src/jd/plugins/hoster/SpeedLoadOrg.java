@@ -18,14 +18,8 @@ package jd.plugins.hoster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 
 import jd.PluginWrapper;
-import jd.config.Property;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -121,44 +115,12 @@ public class SpeedLoadOrg extends PluginForHost {
 
     private static final Object LOCK = new Object();
 
-    @SuppressWarnings("unchecked")
-    private void login(Account account, boolean force) throws Exception {
+    private void login(Account account) throws Exception {
         synchronized (LOCK) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Object ret = account.getProperty("cookies", null);
-                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
-                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
-                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
-                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
-                    if (account.isValid()) {
-                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
-                            final String key = cookieEntry.getKey();
-                            final String value = cookieEntry.getValue();
-                            this.br.setCookie(MAINPAGE, key, value);
-                        }
-                        return;
-                    }
-                }
-                br.setFollowRedirects(true);
-                br.getPage("http://speedload.org/login.php");
-                final String submitme = br.getRegex("name=\"submitme\" value=\"(\\d+)\"").getMatch(0);
-                if (submitme == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.postPage("http://" + this.getHost() + "/login." + TYPE, "terms=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submitme=" + submitme + "&submit.x=" + new Random().nextInt(100) + "&submit.y=" + new Random().nextInt(100));
-                // Save cookies
-                final HashMap<String, String> cookies = new HashMap<String, String>();
-                final Cookies add = this.br.getCookies(MAINPAGE);
-                for (final Cookie c : add.getCookies()) {
-                    cookies.put(c.getKey(), c.getValue());
-                }
-                account.setProperty("name", Encoding.urlEncode(account.getUser()));
-                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
-                account.setProperty("cookies", cookies);
-            } catch (final PluginException e) {
-                account.setProperty("cookies", Property.NULL);
-                throw e;
-            }
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(false);
+            br.getPage("http://speedload.org/api/user_info.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.containsHTML("User not found")) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -166,12 +128,11 @@ public class SpeedLoadOrg extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            login(account);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://speedload.org/api/user_info.php?username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         if (!"paid user".equals(getJson("level"))) {
             ai.setStatus("Free Accounts are not supported!");
             account.setValid(false);
@@ -185,10 +146,13 @@ public class SpeedLoadOrg extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
+        br.getPage("http://speedload.org/api/single_link.php?shortUrl=" + getFID(link) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        String dllink = getJson("directDownloadLink");
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        dllink = dllink.replace("\\", "");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -3);
         if (!dl.getConnection().isContentDisposition()) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -209,7 +173,7 @@ public class SpeedLoadOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 5;
     }
 
     @Override

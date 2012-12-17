@@ -26,7 +26,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://(www\\.)?myupload\\.(dk|uk)/showfile/[0-9a-zA-Z]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myupload.dk" }, urls = { "http://(www\\.)?myupload\\.(dk|uk)/showfile/[^<>\"/]+" }, flags = { 0 })
 public class MyuploadDK extends PluginForHost {
 
     public MyuploadDK(PluginWrapper wrapper) {

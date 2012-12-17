@@ -103,15 +103,11 @@ public class FileGagCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "<b>Filename:</b></td>[\t\n\r ]+<td nowrap>([^<>\"]*?)</td><").getMatch(0);
+        String filename = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
         if (filename == null) {
-            filename = new Regex(correctedBR, "window\\.bi_software_filename = \\'([^<>\"]*?)\\'").getMatch(0);
+            filename = new Regex(correctedBR, ">Download File: <span style=\"color:#9ad700; font\\-size:16px;\">([^<>\"]*?)</span>").getMatch(0);
         }
-        String filesize = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
-        if (filesize == null) {
-            filesize = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
-            if (filesize == null) filesize = new Regex(correctedBR, "<span style=\"color:#aaa7a7; font\\-size:14px;\">\\(([^<>\"/]*?)\\)</span><").getMatch(0);
-        }
+        String filesize = new Regex(correctedBR, "<span style=\"color:#aaa7a7; font\\-size:14px;\">\\(([^<>\"/]*?)\\)</span><").getMatch(0);
         if (filename == null || filename.equals("")) {
             if (correctedBR.contains("You have reached the download-limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");

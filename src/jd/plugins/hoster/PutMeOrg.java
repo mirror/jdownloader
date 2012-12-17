@@ -393,7 +393,7 @@ public class PutMeOrg extends PluginForHost {
 
         String finallink = null;
         if (decoded != null) {
-            finallink = new Regex(decoded, "file:\\'(http://[^<>\"]*?)\\'").getMatch(0);
+            finallink = new Regex(decoded, "value=\"src=(http://[^<>\"]*?)\\&").getMatch(0);
         }
         return finallink;
     }

@@ -73,7 +73,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             if (parameter.contains("/sets/")) {
                 fpName = (((SoundcloudCom) hostPlugin).getXML("username", br.toString())) + " - " + new Regex(parameter, "/sets/(.+)$").getMatch(0);
                 final String[] items = br.getRegex("<track>(.*?)</track>").getColumn(0);
-                if (items == null || items.length == 0) {
+                final String usernameOfSet = new Regex(parameter, "soundcloud\\.com/(.*?)/sets/").getMatch(0);
+                if (items == null || items.length == 0 || usernameOfSet == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
@@ -83,7 +84,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                         logger.warning("Decrypter broken for link: " + parameter);
                         return null;
                     }
-                    final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + (((SoundcloudCom) hostPlugin).getXML("username", item)) + "/" + permalink);
+                    final DownloadLink dl = createDownloadlink("https://soundclouddecrypted.com/" + usernameOfSet + "/" + permalink);
                     final AvailableStatus status = ((SoundcloudCom) hostPlugin).checkStatus(dl, item);
                     dl.setAvailableStatus(status);
                     decryptedLinks.add(dl);

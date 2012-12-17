@@ -322,7 +322,7 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         // Regexes 1 + 2 are for stuff from the first page, rest is for pages
         // 2-end
-        final String[][] regexesPage1 = { { "<td class=\"video_thumb\"><a href=\"/video(\\d+_\\d+)\"", "0" } };
+        final String[][] regexesPage1 = { { "id=\"video_row(\\d+_\\d+)\"", "0" } };
         final String[][] regexesAllOthers = { { "\\[(\\d+, \\d+), \\'", "0" } };
         final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
         final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
