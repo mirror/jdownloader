@@ -77,6 +77,38 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
+        // correct link stuff goes here, stable is lame!
+        for (DownloadLink link : urls) {
+            if (link.getProperty("FILEUID") == null) {
+                try {
+                    // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
+                    String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
+                    if (uid == null) {
+                        // download/free/
+                        uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
+                        if (uid == null) {
+                            // support for public premium links
+                            uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
+                            if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                        }
+                    }
+                    if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
+                        link.setProperty("LINKUID", uid);
+                        link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
+                    }
+                    if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
+                        link.setProperty("LINKUID", uid);
+                        link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
+                    }
+                    if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
+                        link.setProperty("LINKUID", uid);
+                        link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://turbobit.net/download"));
+                    }
+                } catch (PluginException e) {
+                    return false;
+                }
+            }
+        }
         try {
             final Browser br = new Browser();
             br.setCookie(MAINPAGE, "user_lang", "en");
@@ -125,34 +157,6 @@ public class TurboBitNet extends PluginForHost {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws PluginException {
-        // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
-        String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
-        if (uid == null) {
-            // download/free/
-            uid = new Regex(link.getDownloadURL(), "download/free/([a-z0-9]+)").getMatch(0);
-            if (uid == null) {
-                // support for public premium links
-                uid = new Regex(link.getDownloadURL(), "download/redirect/[A-Za-z0-9]+/([a-z0-9]+)").getMatch(0);
-                if (uid == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            }
-        }
-        if (link.getDownloadURL().matches("https?://[^/]+/[a-z0-9]+(/[^/]+)?\\.html")) {
-            link.setProperty("LINKUID", uid);
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+", "://turbobit.net"));
-        }
-        if (link.getDownloadURL().matches("https?://[^/]+/download/free/.*")) {
-            link.setProperty("LINKUID", uid);
-            link.setUrlDownload(MAINPAGE + "/" + uid + ".html");
-        }
-        if (link.getDownloadURL().matches("https?://[^/]+/?/download/redirect/.*")) {
-            link.setProperty("LINKUID", uid);
-            link.setUrlDownload(link.getDownloadURL().replaceAll("://[^/]+//download", "://turbobit.net/download"));
-        }
-
     }
 
     private String escape(final String s) {
@@ -692,7 +696,6 @@ public class TurboBitNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         /** Old linkcheck code can be found in rev 16195 */
-        correctDownloadLink(downloadLink);
         checkLinks(new DownloadLink[] { downloadLink });
         if (!downloadLink.isAvailabilityStatusChecked()) { return AvailableStatus.UNCHECKED; }
         if (downloadLink.isAvailabilityStatusChecked() && !downloadLink.isAvailable()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
