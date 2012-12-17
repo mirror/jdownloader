@@ -29,7 +29,6 @@ import javax.swing.SwingUtilities;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
-import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -158,15 +157,21 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         // shared IP error
         if (br.containsHTML("<strong>The usage of different IPs is not possible!</strong>")) {
-            // for no account!?
-            if (acc == null) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "The usage of different IPs is not possible!", 60 * 60 * 1000L);
-            } else {
-                // for Premium
-                acc.setValid(false);
-                UserIO.getInstance().requestMessageDialog(0, "ShareOnlineBiz Premium Error (account has been deactivated, free mode enabled)", "Server reports: " + "You're trying to use your account from more than one IP-Adress.\n" + "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n" + "You are free to buy a further access for pay accounts, in order to use it from every place you want to.\n" + "A contempt of this rules can result in a complete account deactivation.");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium disabled, continued as free user");
-            }
+            /* disabled as it causes problem, added debug to find cause */
+            logger.info("IPDEBUG: " + br.toString());
+            // // for no account!?
+            // if (acc == null) {
+            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "The usage of different IPs is not possible!", 60 * 60 * 1000L);
+            // } else {
+            // // for Premium
+            // acc.setValid(false);
+            // UserIO.getInstance().requestMessageDialog(0, "ShareOnlineBiz Premium Error (account has been deactivated, free mode enabled)", "Server reports: "
+            // + "You're trying to use your account from more than one IP-Adress.\n" +
+            // "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n" +
+            // "You are free to buy a further access for pay accounts, in order to use it from every place you want to.\n" +
+            // "A contempt of this rules can result in a complete account deactivation.");
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium disabled, continued as free user");
+            // }
         }
         String url = br.getURL();
         if (url.endsWith("/free/") || url.endsWith("/free")) {
