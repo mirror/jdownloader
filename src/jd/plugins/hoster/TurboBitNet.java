@@ -79,7 +79,7 @@ public class TurboBitNet extends PluginForHost {
         if (urls == null || urls.length == 0) { return false; }
         // correct link stuff goes here, stable is lame!
         for (DownloadLink link : urls) {
-            if (link.getProperty("FILEUID") == null) {
+            if (link.getProperty("LINKUID") == null) {
                 try {
                     // standard links turbobit.net/uid.html && turbobit.net/uid/filename.html
                     String uid = new Regex(link.getDownloadURL(), "https?://[^/]+/([a-z0-9]+)(/[^/]+)?\\.html").getMatch(0);
