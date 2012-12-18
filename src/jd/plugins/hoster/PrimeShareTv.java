@@ -67,7 +67,6 @@ public class PrimeShareTv extends PluginForHost {
         br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         String dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        dllink = null;
         if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv:\\d+/get/[^<>\"]*?)(\"|\\')").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Chunkload possible but deactivated because of server problems
