@@ -27,7 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "http://(www\\.)?(uploaded|ul)\\.(to|net)/(folder|f)/[a-z0-9]+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)|ul\\.to)/(f|folder)/[a-z0-9]+" }, flags = { 0 })
 public class UploadedToFolder extends PluginForDecrypt {
 
     public UploadedToFolder(PluginWrapper wrapper) {
@@ -36,35 +36,36 @@ public class UploadedToFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replace("ul.to/", "uploaded.net/");
-        parameter = parameter.replace("uploaded.to/", "uploaded.net/").replace("/folder/", "/f/");
+        String parameter = param.toString().replaceAll("(www\\.)?(ul\\.to|uploaded\\to)/(f|folder)/", "uploaded.net/f/");
         br.setFollowRedirects(true);
-        br.setCookie("http://uploaded.net", "lang", "de");
+        String baseURL = "http://uploaded.net/";
+        if (parameter.contains("https://")) baseURL = baseURL.replace("http://", "https://");
+        br.setCookie(baseURL, "lang", "de");
         br.getPage(parameter);
         if (br.containsHTML("(title=\"enthaltene Dateien\" style=\"cursor:help\">\\(0\\)</span>|<i>enthält keine Dateien</i>)")) {
             logger.info("Folder empty: " + parameter);
             return decryptedLinks;
         }
-        if (br.getURL().contains("uploaded.net/404") || br.containsHTML("(<h1>Seite nicht gefunden<br|>Error: 404<|<title>uploaded.*?\\- where your files have to be uploaded to</title>)")) {
+        if (br.getURL().contains(baseURL + "404") || br.containsHTML("(<h1>Seite nicht gefunden<br|>Error: 404<|<title>uploaded.*?\\- where your files have to be uploaded to</title>)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
         String fpName = br.getRegex("<h1><a href=\"folder/[a-z0-9]+\">(.*?)</a></h1>").getMatch(0);
         if (fpName == null) fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         final String[] links = br.getRegex("\"(file/[a-z0-9]+)/from/").getColumn(0);
-        final String[] folders = br.getRegex("\"(/folder/[a-z0-9]+)\"").getColumn(0);
+        final String[] folders = br.getRegex("\"(folder/[a-z0-9]+)\"").getColumn(0);
         if ((links == null || links.length == 0) && (folders == null || folders.length == 0)) {
             logger.warning("Decrypter broken for link: " + parameter);
             return null;
         }
         if (links != null && links.length != 0) {
             for (final String dl : links)
-                decryptedLinks.add(createDownloadlink("http://uploaded.net/" + dl));
+                decryptedLinks.add(createDownloadlink(baseURL + dl));
         }
         if (folders != null && folders.length != 0) {
             final String fid = new Regex(parameter, "([a-z0-9]+)$").getMatch(0);
             for (final String dl : folders)
-                if (!dl.contains(fid)) decryptedLinks.add(createDownloadlink("http://uploaded.net" + dl));
+                if (!dl.contains(fid)) decryptedLinks.add(createDownloadlink(baseURL + dl));
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

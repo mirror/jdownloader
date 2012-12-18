@@ -451,7 +451,7 @@ public class Uploadedto extends PluginForHost {
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
         String baseURL = "http://uploaded.net/";
-        if (downloadLink.getDownloadURL().contains("https://")) baseURL.replace("http://", "https://");
+        if (downloadLink.getDownloadURL().contains("https://")) baseURL = baseURL.replace("http://", "https://");
 
         logger.info("Free mode");
         String currentIP = getIP();
