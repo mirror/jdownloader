@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDHexUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5.de/\\w+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "decrypted://(www\\.)?tele5\\.de/\\w+" }, flags = { 0 })
 public class TeleFiveDe extends PluginForHost {
 
     private String  DLLINK       = null;

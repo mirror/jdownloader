@@ -31,7 +31,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDHexUtils;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5.de/\\w+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tele5.de" }, urls = { "http://(www\\.)?tele5\\.de/\\w+" }, flags = { 0 })
 public class TeleFiveDeDecrypter extends PluginForDecrypt {
 
     public TeleFiveDeDecrypter(final PluginWrapper wrapper) {
