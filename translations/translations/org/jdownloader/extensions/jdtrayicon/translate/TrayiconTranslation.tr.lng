@@ -1,7 +1,7 @@
 JDGui_windowClosing_try_answer_totaskbar=Görev Çubuğuna Kapat
 JDGui_windowClosing_try_answer_tray=Tepsiye Gizle
 JDGui_windowClosing_try_asnwer_close=JDownloader'dan çık
-JDGui_windowClosing_try_msg_2=Lütfen bunlardan bir tanesini seçin\r\n   -Görev Çubuğuna kapat (Yürütülmekte olan indirmeler devam edecektir)\r\n   -Sistem Tepsisine Gizle (Yürütülmekte olan indirmeler arka planda devam edecektir)\r\n   -JDownloader'den Çık (Yürütülmekte olan tüm indirmeleri iptal et)
+JDGui_windowClosing_try_msg_2=Lütfen bu seçeneklerden bir tanesini seçin\r\n   -Görev Çubuğuna kapat > Yürütülmekte olan indirmeler devam edecektir\r\n   -Sistem Tepsisine Gizle > Yürütülmekte olan indirmeler arka planda devam edecektir\r\n   -JDownloader'den Çık > Yürütülmekte olan tüm indirmeleri iptal et
 JDGui_windowClosing_try_title_=Tepsiye Kapat
 OnCloseAction_exit=Uygulamadan Çık
 OnCloseAction_totaskbar=Görev Çubuğuna Kapat
