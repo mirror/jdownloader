@@ -63,8 +63,12 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded|ul)\\.(to|net)/file/[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/file/[\\w]+|ul\\.to/[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
+
+    // DEV NOTES:
+    // supported hosts: https? + www + uploaded.to/files/UID, uploaded.net/files/UID, ul.to/UID
+    // other: respects https in download methods, even though final download link isn't https (free tested).
 
     public static class StringContainer {
         public String string = null;
@@ -293,8 +297,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        final String url = link.getDownloadURL();
-        link.setUrlDownload("http://uploaded.net/file/" + new Regex(url, "([a-z0-9]+)$").getMatch(0));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/)", "://uploaded.net/file/"));
     }
 
     public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {
@@ -412,6 +415,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     private String getID(final DownloadLink downloadLink) {
+        // keep in mind all corrected links are uploaded.net/file/uid at this stage
         return new Regex(downloadLink.getDownloadURL(), "uploaded.net/file/([\\w]+)/?").getMatch(0);
     }
 
@@ -446,6 +450,9 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        String baseURL = "http://uploaded.net/";
+        if (downloadLink.getDownloadURL().contains("https://")) baseURL.replace("http://", "https://");
+
         logger.info("Free mode");
         String currentIP = getIP();
         try {
@@ -473,8 +480,8 @@ public class Uploadedto extends PluginForHost {
             workAroundTimeOut(br);
             String id = getID(downloadLink);
             br.setFollowRedirects(false);
-            br.setCookie("http://uploaded.net/", "lang", "de");
-            br.getPage("http://uploaded.net/language/de");
+            br.setCookie(baseURL, "lang", "de");
+            br.getPage(baseURL + "language/de");
             if (br.containsHTML("<title>[^<].*?\\- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
 
             /**
@@ -498,7 +505,7 @@ public class Uploadedto extends PluginForHost {
                 }
             }
 
-            br.getPage("http://uploaded.net/file/" + id);
+            br.getPage(baseURL + "file/" + id);
             if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
             if (br.containsHTML(">Sie haben die max\\. Anzahl an Free\\-Downloads f\\&#252;r diese Stunde erreicht")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1001l);
@@ -515,12 +522,12 @@ public class Uploadedto extends PluginForHost {
                 downloadLink.setProperty("pass", passCode);
             }
             final Browser brc = br.cloneBrowser();
-            brc.getPage("http://uploaded.net/js/download.js");
+            brc.getPage(baseURL + "js/download.js");
             final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
             final String wait = br.getRegex("Aktuelle Wartezeit: <span>(\\d+)</span> Sekunden</span>").getMatch(0);
             if (rcID == null || wait == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("http://uploaded.net/io/ticket/slot/" + getID(downloadLink), "");
+            br.postPage(baseURL + "io/ticket/slot/" + getID(downloadLink), "");
             if (!br.containsHTML("\\{succ:true\\}")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final long timebefore = System.currentTimeMillis();
             final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
@@ -534,7 +541,7 @@ public class Uploadedto extends PluginForHost {
                 if (i == 0 && passedTime < Integer.parseInt(wait)) {
                     sleep((Integer.parseInt(wait) - passedTime) * 1001l, downloadLink);
                 }
-                br.postPage("http://uploaded.net/io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
+                br.postPage(baseURL + "io/ticket/captcha/" + getID(downloadLink), "recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + c);
                 if (br.containsHTML("\"err\":\"captcha\"")) {
                     rc.reload();
                     continue;
@@ -546,7 +553,7 @@ public class Uploadedto extends PluginForHost {
             if (br.containsHTML("err\":\"Leider sind derzeit all unsere")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free Downloadslots available", 15 * 60 * 1000l);
             if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", RECONNECTWAIT);
             if (br.containsHTML("welche von Free\\-Usern gedownloadet werden kann")) throw new PluginException(LinkStatus.ERROR_FATAL, "Only Premium users are allowed to download files lager than 1,00 GB.");
-            String url = br.getRegex("url:\\'(http:.*?)\\'").getMatch(0);
+            String url = br.getRegex("url:\\'(http.*?)\\'").getMatch(0);
             if (url == null) url = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
@@ -731,6 +738,9 @@ public class Uploadedto extends PluginForHost {
             handlePremium_API(downloadLink, account);
             return;
         }
+        String baseURL = "http://uploaded.net/";
+        if (downloadLink.getDownloadURL().contains("https://")) baseURL.replace("http://", "https://");
+
         requestFileInformation(downloadLink);
         login(account);
         if (account.getBooleanProperty("free")) {
@@ -739,9 +749,9 @@ public class Uploadedto extends PluginForHost {
             logger.info("Premium mode");
             br.setFollowRedirects(false);
             String id = getID(downloadLink);
-            br.getPage("http://uploaded.net/file/" + id + "/ddl");
+            br.getPage(baseURL + "file/" + id + "/ddl");
             if (br.containsHTML("<title>[^<].*?- Wartungsarbeiten</title>")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "ServerMaintenance", 10 * 60 * 1000);
-            String error = new Regex(br.getRedirectLocation(), "http://uploaded.net/\\?view=(.*)").getMatch(0);
+            String error = new Regex(br.getRedirectLocation(), "https?://uploaded\\.net/\\?view=(.*)").getMatch(0);
             if (error == null) {
                 error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&i").getMatch(0);
             }
