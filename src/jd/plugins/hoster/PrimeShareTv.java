@@ -61,13 +61,14 @@ public class PrimeShareTv extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
         int wait = 10;
-        final String waittime = br.getRegex("var qTime = (\\d+);").getMatch(0);
+        final String waittime = br.getRegex("var cWaitTime = (\\d+);").getMatch(0);
         if (waittime != null) wait = Integer.parseInt(waittime);
         sleep(wait * 1001, downloadLink);
         br.postPage(br.getURL(), "hash=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
         if (br.containsHTML("files per hour for free users\\.<")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        String dllink = br.getRegex("file: \\'(http://[^<>\"]*?)\\'").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://s\\d+\\.primeshare\\.tv:\\d+/get/[^<>\"]*?)(\"|\\')").getMatch(1);
+        String dllink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+        dllink = null;
+        if (dllink == null) dllink = br.getRegex("(\"|\\')(http://[a-z0-9]+\\.primeshare\\.tv:\\d+/get/[^<>\"]*?)(\"|\\')").getMatch(1);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Chunkload possible but deactivated because of server problems
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);

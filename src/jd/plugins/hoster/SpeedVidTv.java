@@ -65,8 +65,7 @@ public class SpeedVidTv extends PluginForHost {
 
     // DEV NOTES
     /**
-     * Script notes: Streaming versions of this script sometimes redirect you to
-     * their directlinks when accessing this link + the link ID:
+     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
      * http://somehoster.in/vidembed-
      * */
     // XfileSharingProBasic Version 2.5.9.0
@@ -315,19 +314,14 @@ public class SpeedVidTv extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -362,7 +356,16 @@ public class SpeedVidTv extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "file: \"(http://[^<>\"]*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            if (dllink == null) {
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
+                    }
+                }
+            }
         }
         return dllink;
     }
@@ -384,6 +387,33 @@ public class SpeedVidTv extends PluginForHost {
             }
         }
         return dllink;
+    }
+
+    private String decodeDownloadLink(final String s) {
+        String decoded = null;
+
+        try {
+            Regex params = new Regex(s, "\\'(.*?[^\\\\])\\',(\\d+),(\\d+),\\'(.*?)\\'");
+
+            String p = params.getMatch(0).replaceAll("\\\\", "");
+            int a = Integer.parseInt(params.getMatch(1));
+            int c = Integer.parseInt(params.getMatch(2));
+            String[] k = params.getMatch(3).split("\\|");
+
+            while (c != 0) {
+                c--;
+                if (k[c].length() != 0) p = p.replaceAll("\\b" + Integer.toString(c, a) + "\\b", k[c]);
+            }
+
+            decoded = p;
+        } catch (Exception e) {
+        }
+
+        String finallink = null;
+        if (decoded != null) {
+            finallink = new Regex(decoded, "file:\"(http://[^<>\"]*?)\"").getMatch(0);
+        }
+        return finallink;
     }
 
     private void getPage(final String page) throws Exception {
