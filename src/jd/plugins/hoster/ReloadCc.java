@@ -98,6 +98,18 @@ public class ReloadCc extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
+    private String getPassword(final DownloadLink downloadLink) throws PluginException {
+        String passCode = null;
+        logger.info("pw protected link");
+        if (downloadLink.getStringProperty("pass", null) == null) {
+            passCode = getUserInput(null, downloadLink);
+        } else {
+            /* gespeicherten PassCode holen */
+            passCode = downloadLink.getStringProperty("pass", null);
+        }
+        return passCode;
+    }
+
     @Override
     public void handleMultiHost(DownloadLink link, Account account) throws Exception {
         br = newBrowser();
@@ -106,7 +118,7 @@ public class ReloadCc extends PluginForHost {
         try {
             br.getPage("http://api.reload.cc/dl?via=jd&v=1&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account) + "&uri=" + Encoding.urlEncode(link.getDownloadURL()));
         } catch (BrowserException e) {
-            handleAPIErrors(br, account, link);
+            handleAPIErrors(br, account, link, null);
         }
 
         String dllink = br.getRegex("link\": \"(http[^\"]+)").getMatch(0);
@@ -123,6 +135,8 @@ public class ReloadCc extends PluginForHost {
         // if ("uploaded.to".equalsIgnoreCase(link.getHost())) maxConnections = 1;
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxConnections);
+            if (!handleAPIErrors(br, account, link, dllink)) return;
+
             if (dl.getConnection().isContentDisposition()) {
                 /* contentdisposition, lets download it */
                 dl.startDownload();
@@ -137,7 +151,7 @@ public class ReloadCc extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (BrowserException e) {
-            handleAPIErrors(br, account, link);
+            if (!handleAPIErrors(br, account, link, dllink)) return;
         }
     }
 
@@ -186,7 +200,7 @@ public class ReloadCc extends PluginForHost {
         try {
             ret = br.getPage("http://api.reload.cc/login?via=jd&v=1&get_supported=true&user=" + Encoding.urlEncode(account.getUser()) + "&" + getPasswordParam(account));
         } catch (BrowserException e) {
-            handleAPIErrors(br, account, null);
+            handleAPIErrors(br, account, null, null);
         } catch (ConnectException e) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No connection possible", 3 * 60 * 1000l);
         }
@@ -212,14 +226,13 @@ public class ReloadCc extends PluginForHost {
         return pwd;
     }
 
-    private void handleAPIErrors(Browser br, Account account, DownloadLink downloadLink) throws PluginException {
+    private boolean handleAPIErrors(Browser br, Account account, DownloadLink downloadLink, String ddl) throws Exception {
         int status = br.getHttpConnection().getResponseCode();
         String statusMessage = br.getRegex("\"msg\":\"([^\"]+)").getMatch(0);
+        if (status >= 200 && status <= 299) return true;
+
         try {
             switch (status) {
-            case 200:
-                /* all okay */
-                return;
             case 400:
                 /* not a valid link, do not try again with this multihoster */
                 if (statusMessage == null) statusMessage = "Invalid DownloadLink";
@@ -249,11 +262,17 @@ public class ReloadCc extends PluginForHost {
                 if (statusMessage == null) statusMessage = "Fair use limit reached!";
                 tempUnavailableHoster(account, downloadLink, 10 * 60 * 1000);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, statusMessage, 10 * 60 * 1000l);
+            case 412:
+            case 417:
+                String pwd = this.getPassword(downloadLink);
+                ddl += "&filepwd=" + Encoding.urlEncode(pwd);
+                handleDL(account, downloadLink, ddl);
+                return false;
             case 428:
                 /* hoster currently not possible,block host for 30 mins */
                 if (statusMessage == null) statusMessage = "Hoster currently not possible";
                 tempUnavailableHoster(account, downloadLink, 30 * 60 * 1000);
-                break;
+                return false;
             case 503:
                 /* temp multihoster issue, maintenance period, block host for 10 mins */
                 if (statusMessage == null) statusMessage = "Hoster temporarily not possible";
@@ -263,6 +282,8 @@ public class ReloadCc extends PluginForHost {
             default:
                 /* unknown error, do not try again with this multihoster */
                 if (statusMessage == null) statusMessage = "Unknown error: " + statusMessage;
+                logger.info(statusMessage);
+                logger.info("HTTP status code: " + status);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final PluginException e) {
