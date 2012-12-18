@@ -43,10 +43,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gupload.biz" }, urls = { "http://(www\\.)?gupload\\.biz/[a-z0-9]+" }, flags = { 2 })
 public class GuploadBiz extends PluginForHost {
 
-    public GuploadBiz(PluginWrapper wrapper) {
-        super(wrapper);
-        this.enablePremium(MAINPAGE + "/register.html");
-    }
+    private final String MAINPAGE = "http://gupload.biz";
 
     // DTemplate Version 0.1-psp
     // mods: added server error errorhandling
@@ -56,12 +53,15 @@ public class GuploadBiz extends PluginForHost {
     // protocol: no https
     // captchatype: recaptcha
 
+    public GuploadBiz(PluginWrapper wrapper) {
+        super(wrapper);
+        this.enablePremium(MAINPAGE + "/register.html");
+    }
+
     @Override
     public String getAGBLink() {
         return MAINPAGE + "/terms.html";
     }
-
-    private final String MAINPAGE = "http://gupload.biz";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
@@ -119,6 +119,11 @@ public class GuploadBiz extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
     private static Object LOCK = new Object();
 
     @SuppressWarnings("unchecked")
@@ -142,10 +147,10 @@ public class GuploadBiz extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                br.postPage(MAINPAGE + "/login.html", "submit=Login&submitme=1&loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()));
+                br.postPage(MAINPAGE + "/login.php", "loginUsername=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&submit=login&submitme=1");
                 if (br.getCookie(MAINPAGE, "spf") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                br.getPage(MAINPAGE + "/account_edit.php");
-                if (!br.containsHTML(">Account Type:</font></b>&nbsp;&nbsp; <b><font color=\"#878787\"> Paid User<")) {
+                br.getPage(MAINPAGE + "/upgrade.php");
+                if (!br.containsHTML("Account Type:[\r\n\t ]+</td>[\r\n\t ]+<td>[\r\n\t ]+Paid User")) {
                     logger.info("FREE Accounts are not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -174,8 +179,8 @@ public class GuploadBiz extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        if (!br.getURL().endsWith("/account_edit.php")) br.getPage(MAINPAGE + "/account_edit.php");
-        final String expire = br.getRegex(">Premium Valid Until:[^\\:]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+        if (!br.getURL().endsWith("/upgrade.php")) br.getPage(MAINPAGE + "/upgrade.php");
+        final String expire = br.getRegex("Premium Valid Until:[^\\:]+(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yyyy hh:mm:ss", null));
         account.setValid(true);
         ai.setUnlimitedTraffic();
@@ -187,7 +192,7 @@ public class GuploadBiz extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
@@ -204,11 +209,6 @@ public class GuploadBiz extends PluginForHost {
 
     @Override
     public void reset() {
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return -1;
     }
 
     @Override
