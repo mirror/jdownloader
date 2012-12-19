@@ -1,3 +1,4 @@
+UpdateException_proxyconnect=代理伺服器連接失敗：%s1
 UpdateException_unknownbranch=正在更新 %s1 版本失敗
 UpdateServer_UpdaterGui_UpdaterGui_path=安裝路徑：%s1
 UpdateServer_UpdaterGui_UpdaterGui_started=開始更新：%s1
@@ -41,6 +42,7 @@ guiless_done=更新完成。
 guiless_download_data=正在下載更新套件...
 guiless_downloadfinished=下載已完成。
 guiless_extract=解壓縮檔案....
+guiless_files_ready_for_install=%s1 個檔案正在等待以開始安裝！
 guiless_installFinished=安裝已完成
 guiless_locked_closed_app=%s1 已關閉。立刻繼續。
 guiless_update_failed=更新失敗。原因： %s1

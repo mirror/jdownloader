@@ -72,6 +72,7 @@ gui_menu_extensions=工具
 gui_setting_folderchooser_title=選擇目錄
 gui_settings__gui_title=外觀設定
 gui_settings_basicauth_title=基本驗證
+gui_settings_downloadcontroll_description=連接限制，下載順序，優先順序，...下載控制器的詳細資訊。
 gui_settings_downloadcontroll_title=下載管理
 gui_settings_downloadpath_description=在這裡設定預設下載路徑。變更預設路徑，只有新的下載會影響。
 gui_settings_general_title=一般設定
