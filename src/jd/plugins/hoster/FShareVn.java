@@ -76,7 +76,7 @@ public class FShareVn extends PluginForHost {
             while (true) {
                 links.clear();
                 while (true) {
-                    /* we test 50 links at once, maybre even more is possible */
+                    /* we test 50 links at once, maybe even more is possible */
                     if (index == urls.length || links.size() > 49) {
                         break;
                     }
@@ -180,7 +180,7 @@ public class FShareVn extends PluginForHost {
         br.setReadTimeout(120 * 1000);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        br.getHeaders().put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.getHeaders().put("Accept-Encoding", "gzip, deflate");
         br.setCustomCharset("UTF-8");
@@ -263,7 +263,7 @@ public class FShareVn extends PluginForHost {
                 }
                 br.setFollowRedirects(false);
                 br.getPage("https://www.fshare.vn/login.php");
-                br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=http%3A%2F%2Fwww.fshare.vn%2Flogin.php&auto_login=1");
+                br.postPage("https://www.fshare.vn/login.php", "login_useremail=" + Encoding.urlEncode(account.getUser()) + "&login_password=" + Encoding.urlEncode(account.getPass()) + "&url_refe=/index.php&auto_login=1");
                 if (br.getCookie("https://www.fshare.vn", "fshare_userpass") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -292,8 +292,8 @@ public class FShareVn extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://www.fshare.vn/index.php");
-        String validUntil = br.getRegex(">Hạn dùng:<strong class=\"color_red\">\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
+        if (!br.getURL().endsWith("/index.php")) br.getPage("/index.php");
+        String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
             try {
