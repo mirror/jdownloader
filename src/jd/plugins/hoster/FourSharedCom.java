@@ -61,7 +61,9 @@ public class FourSharedCom extends PluginForHost {
         setConfigElements();
     }
 
-    // TODO: Implement API: http://www.4shared.com/developer/
+    /**
+     * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
+     * */
     private static final String DOWNLOADSTREAMS              = "DOWNLOADSTREAMS";
     private static final String DOWNLOADSTREAMSERRORHANDLING = "DOWNLOADSTREAMSERRORHANDLING";
 

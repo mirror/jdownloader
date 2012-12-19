@@ -42,7 +42,9 @@ public class FrShrdFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
-    // TODO: Implement API: http://www.4shared.com/developer/
+    /**
+     * TODO: Implement API: http://www.4shared.com/developer/ 19.12.12: Their support never responded so we don't know how to use the API...
+     * */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
