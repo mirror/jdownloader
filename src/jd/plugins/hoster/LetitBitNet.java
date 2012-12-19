@@ -266,14 +266,13 @@ public class LetitBitNet extends PluginForHost {
         skymonk.getHeaders().put("Cache-Control", null);
         skymonk.getHeaders().put("Accept-Charset", null);
         skymonk.getHeaders().put("Accept-Encoding", null);
-        skymonk.getHeaders().put("Accept", null);
-        skymonk.getHeaders().put("Accept-Language", null);
+        skymonk.getHeaders().put("Accept", "*/*");
+        skymonk.getHeaders().put("Accept-Language", "en-EN");
         skymonk.getHeaders().put("User-Agent", null);
         skymonk.getHeaders().put("Referer", null);
         skymonk.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
 
-        int rd = (int) Math.random() * 6 + 1;
-        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&sh=" + JDHash.getMD5(String.valueOf(Math.random())) + rd + "&sp=" + (49 + rd) + "&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.12");
+        skymonk.postPage("http://api.letitbit.net/internal/index4.php", "action=LINK_GET_DIRECT&link=" + s + "&free_link=1&appid=" + JDHash.getMD5(String.valueOf(Math.random())) + "&version=2.1");
         String[] result = skymonk.getRegex("([^\r\n]+)").getColumn(0);
         if (result == null || result.length == 0) return null;
 
