@@ -76,7 +76,7 @@ public class FastShareCz extends PluginForHost {
         if (br.containsHTML("(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         br.setFollowRedirects(false);
         final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-        String action = br.getRegex("(/free/\\?u=\\d+\\&r=[^<>\"/]*?)><b>").getMatch(0);
+        String action = br.getRegex("(/free/\\?u=\\d+\\&r=[^<>\"/]*?)>").getMatch(0);
         if (action == null) action = br.getRegex("(/free/\\?u=.*?=>)").getMatch(0);
         if (captchaLink == null || action == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.postPage(MAINPAGE + action, "code=" + getCaptchaCode(MAINPAGE + captchaLink, downloadLink));
