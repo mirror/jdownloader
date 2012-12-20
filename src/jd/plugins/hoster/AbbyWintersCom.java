@@ -79,7 +79,7 @@ public class AbbyWintersCom extends PluginForHost {
         } else {
             String username = br.getRegex("title=\"View profile: ([^<>\"]*?)\"").getMatch(0);
             if (username == null) username = br.getRegex("</span>([^<>\"]*?)<span class=\"icon_videoclip\">").getMatch(0);
-            final String videoName = br.getRegex("<title>([^<>\"]*?): .*?</title>").getMatch(0);
+            final String videoName = br.getRegex("<title>([^<>\"]*?)Video: .*?</title>").getMatch(0);
             if (username != null && videoName != null) filename = Encoding.htmlDecode(username) + " - " + Encoding.htmlDecode(videoName) + ".mp4";
         }
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

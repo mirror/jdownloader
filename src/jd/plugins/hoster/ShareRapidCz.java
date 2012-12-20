@@ -73,14 +73,13 @@ public class ShareRapidCz extends PluginForHost {
         }
         long realTraffic = 0l;
         /**
-         * Trafficleft actually only caused problems because in the night you
-         * got no limit when downloading from this host so i guess it's the best
-         * not to show any traffic-information
+         * Don't show the remaining traffic as it might be wrong!
          */
         String trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
         if (trafficleft != null) {
             logger.info("Free traffic equals: " + trafficleft);
-            ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            // ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+            ai.setUnlimitedTraffic();
             realTraffic = SizeFormatter.getSize(trafficleft);
             trafficleft = ", " + trafficleft.trim() + " traffic left";
         } else {
@@ -172,7 +171,10 @@ public class ShareRapidCz extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Disk, na kterém se soubor nachází, je dočasně odpojen, zkuste to prosím později")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is on a damaged hard drive disk", 60 * 60 * 1000); }
         if (br.containsHTML("Soubor byl chybně nahrán na server")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file isn't uploaded correctly", 60 * 60 * 1000); }
-        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Not enough traffic left to download this file!"); }
+        if (br.containsHTML("Již Vám došel kredit a vyčerpal jste free limit")) {
+            logger.info("Not enough traffic left!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+        }
         String dllink = br.getRegex("\"(http://s[0-9]{1,2}\\.share-rapid\\.com/download.*?)\"").getMatch(0);
         boolean nonTrafficPremium = false;
         if (dllink == null) {

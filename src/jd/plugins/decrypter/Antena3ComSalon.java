@@ -48,6 +48,11 @@ public class Antena3ComSalon extends PluginForDecrypt {
             logger.info("Link offline: " + link.toString());
             return decryptedLinks;
         }
+        // Offline3
+        if (br.containsHTML(">El contenido al que estás intentando acceder no existe<")) {
+            logger.info("Link offline: " + link.toString());
+            return decryptedLinks;
+        }
         final String[] links = br.getRegex("<archivo>(.*?)</archivo>").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + link.toString());
