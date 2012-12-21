@@ -670,6 +670,8 @@ public class MediafireCom extends PluginForHost {
                     }
                 }
                 if (url == null) {
+                    // TODO: This errorhandling is missing for premium users!
+                    handleNonAPIErrors(downloadLink);
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
                     if (br.getRegex("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
@@ -981,7 +983,7 @@ public class MediafireCom extends PluginForHost {
                 if (form == null) {
                     form = br.getFormBySubmitvalue("login_email");
                 }
-                if (form == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 form.put("login_email", Encoding.urlEncode(account.getUser()));
                 form.put("login_pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
@@ -1084,6 +1086,13 @@ public class MediafireCom extends PluginForHost {
 
     private String getFID(final DownloadLink downloadLink) {
         return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
+    }
+
+    private void handleNonAPIErrors(final DownloadLink dl) throws PluginException {
+        if (br.getURL().contains("mediafire.com/error.php?errno=382")) {
+            dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override

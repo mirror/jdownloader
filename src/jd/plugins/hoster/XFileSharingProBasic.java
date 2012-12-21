@@ -76,7 +76,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.5.9.8
+    // XfileSharingProBasic Version 2.5.9.9
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -518,14 +518,17 @@ public class XFileSharingProBasic extends PluginForHost {
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
-            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
-            if (oldExtension != null)
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5)
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             else
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+                downloadLink.setFinalFileName(oldName + newExtension);
         }
     }
 

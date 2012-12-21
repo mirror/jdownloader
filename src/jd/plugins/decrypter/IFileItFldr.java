@@ -35,6 +35,7 @@ public class IFileItFldr extends PluginForDecrypt {
         super(wrapper);
     }
 
+    // TODO: Implement API: http://code.google.com/p/filecloud/wiki/FetchTagDetails
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString().replace("ifile.it/", "filecloud.io/");

@@ -137,7 +137,7 @@ public class GeneralMultiuploadDecrypter extends PluginForDecrypt {
         } else if (parameter.contains("needmirror.com/")) {
             dllink = brc.getRegex(">Please <a href=\"([^\"\\']+)\"").getMatch(0);
         } else if (parameter.contains("go4up.com/")) {
-            dllink = brc.getRegex("<meta http\\-equiv=\"REFRESH\" content=\"\\d+;url=([^\"]+)").getMatch(0);
+            dllink = brc.getRegex("window\\.location = \"(http[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("qooy.com/") || parameter.contains("maxmirror.com/")) {
             dllink = brc.getRegex("<a style=\"text\\-decoration: none;border:none;\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
         } else if (parameter.contains("exzip.net/")) {
