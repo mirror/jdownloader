@@ -37,6 +37,7 @@ public class BxNt extends PluginForDecrypt {
     private static final Pattern FEED_FILETITLE_PATTERN       = Pattern.compile("<title>(.*?)<\\/title>", Pattern.DOTALL);
     private static final Pattern FEED_DL_LINK_PATTERN         = Pattern.compile("<media:content url=\\\"(.*?)\\\"\\s*/>", Pattern.DOTALL);
     private static final Pattern SINGLE_DOWNLOAD_LINK_PATTERN = Pattern.compile("(https?://(www|[a-z0-9\\-_]+)\\.box\\.com/index\\.php\\?rm=box_download_shared_file\\&amp;file_id=.+?\\&amp;shared_name=\\w+)");
+    private static final String  ERROR                        = "(<h2>The webpage you have requested was not found\\.</h2>|<h1>404 File Not Found</h1>|Oops &mdash; this shared file or folder link has been removed\\.|RSS channel not found)";
 
     public BxNt(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,25 +45,32 @@ public class BxNt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String cryptedlink = parameter.toString().replace("box.net/", "box.com/").replace("box.com/s/", "box.com/shared/");
         logger.finer("Decrypting: " + cryptedlink);
         // check if page is a rss feed
         if (cryptedlink.endsWith("rss.xml")) {
-            return feedExists(cryptedlink) ? decryptFeed(cryptedlink) : null;
+            if (feedExists(cryptedlink)) {
+                decryptFeed(cryptedlink);
+            } else {
+                logger.warning("Invalid URL or URL no longer exists : " + cryptedlink);
+            }
         } else {
-            // String alllinks[] =
-            // br.getRegex(",\"shared_link\":\"(.*?)\"").getColumn(0);
+            // String alllinks[] = br.getRegex(",\"shared_link\":\"(.*?)\"").getColumn(0);
             // if it's not a rss feed, check if an rss feed exists
             String baseUrl = new Regex(cryptedlink, BASE_URL_PATTERN).getMatch(0);
             String feedUrl = baseUrl + "/rss.xml";
-            ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
             if (feedExists(feedUrl)) {
                 decryptedLinks = decryptFeed(feedUrl);
+            } else {
+                logger.warning("Invalid URL or URL no longer exists : " + cryptedlink);
+                return decryptedLinks;
             }
             if (decryptedLinks.size() != 0) return decryptedLinks;
             // there is no feed -> it's a single file download
             return decryptSingleDLPage(cryptedlink);
         }
+        return decryptedLinks;
     }
 
     /**
@@ -70,8 +78,7 @@ public class BxNt extends PluginForDecrypt {
      * 
      * @param cryptedUrl
      *            the url of the download page
-     * @return a list that contains the extracted download link, null if the
-     *         download link couldn't be extracted.
+     * @return a list that contains the extracted download link, null if the download link couldn't be extracted.
      * @throws IOException
      */
     private ArrayList<DownloadLink> decryptSingleDLPage(String cryptedUrl) throws IOException {
@@ -90,8 +97,7 @@ public class BxNt extends PluginForDecrypt {
      * 
      * @param feedUrl
      *            the url of the rss feed
-     * @return a list of decrypted links, null if the links could not be
-     *         extracted.
+     * @return a list of decrypted links, null if the links could not be extracted.
      * @throws IOException
      */
     private ArrayList<DownloadLink> decryptFeed(String feedUrl) throws IOException {
@@ -121,35 +127,29 @@ public class BxNt extends PluginForDecrypt {
     }
 
     /** Maybe useful in the future */
-    // private ArrayList<DownloadLink> decryptFolderAndSingleLink(String
-    // cryptedUrl) throws IOException {
+    // private ArrayList<DownloadLink> decryptFolderAndSingleLink(String cryptedUrl) throws IOException {
     // ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     // br.getPage(cryptedUrl);
     // /**
-    // * If it's a folder, decrypt all links, if it's a file just return the
-    // * link for the hosterplugin
+    // * If it's a folder, decrypt all links, if it's a file just return the link for the hosterplugin
     // */
     // if
     // (br.containsHTML("(Folder Shared from Box|flash_folder = \\'/static/flash/|page = \\'folder\\'|\"type\":\"folder\"|\"is_network_folder\")"))
     // {
     // final String correctedBR = br.toString().replace("\\", "");
-    // String[] fileIDs = new Regex(correctedBR,
-    // "\"shared_link\":\"http://www\\.box\\.com/file/(\\d+)/encoded").getColumn(0);
+    // String[] fileIDs = new Regex(correctedBR, "\"shared_link\":\"http://www\\.box\\.com/file/(\\d+)/encoded").getColumn(0);
     // if (fileIDs == null || fileIDs.length == 0) {
     // fileIDs = new Regex(correctedBR, "\"link_info_(\\d+)\"").getColumn(0);
     // if (fileIDs == null || fileIDs.length == 0) {
     // fileIDs = new Regex(correctedBR, "\"id\":\"(\\d+)\"").getColumn(0);
     // }
     // }
-    // final String folderID = new Regex(cryptedUrl,
-    // "box\\.com/s/(.+)").getMatch(0);
-    // String folderID2 = new Regex(correctedBR,
-    // "start_item = \\'d_(\\d+)\\'").getMatch(0);
+    // final String folderID = new Regex(cryptedUrl, "box\\.com/s/(.+)").getMatch(0);
+    // String folderID2 = new Regex(correctedBR, "start_item = \\'d_(\\d+)\\'").getMatch(0);
     // if (folderID2 == null) {
     // folderID2 = new Regex(correctedBR, "\\{\"p_(\\d+)\"").getMatch(0);
     // if (folderID2 == null) {
-    // folderID2 = new Regex(correctedBR,
-    // "\"shared_item\":\"(\\d+)\"").getMatch(0);
+    // folderID2 = new Regex(correctedBR, "\"shared_item\":\"(\\d+)\"").getMatch(0);
     // }
     // }
     // if (folderID == null || folderID2 == null || (fileIDs == null ||
@@ -158,12 +158,10 @@ public class BxNt extends PluginForDecrypt {
     // return null;
     // }
     // for (String fileID : fileIDs) {
-    // decryptedLinks.add(createDownloadlink("http://www.box.com/shared/" +
-    // folderID + "/1/" + folderID2 + "/" + fileID));
+    // decryptedLinks.add(createDownloadlink("http://www.box.com/shared/" + folderID + "/1/" + folderID2 + "/" + fileID));
     // }
     // } else {
-    // decryptedLinks.add(createDownloadlink(cryptedUrl.replace("box.net/s/",
-    // "boxdecrypted.net/s/")));
+    // decryptedLinks.add(createDownloadlink(cryptedUrl.replace("box.net/s/", "boxdecrypted.net/s/")));
     // }
     // return decryptedLinks;
     // }
@@ -178,7 +176,7 @@ public class BxNt extends PluginForDecrypt {
      */
     private boolean feedExists(String feedUrl) throws IOException {
         br.getPage(feedUrl);
-        return !br.containsHTML("RSS channel not found");
+        return !br.containsHTML(ERROR);
     }
 
 }
