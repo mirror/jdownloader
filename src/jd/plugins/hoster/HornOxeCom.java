@@ -40,7 +40,7 @@ public class HornOxeCom extends PluginForHost {
         for (int i = 0; i <= repeat; i++) {
             Browser br2 = br.cloneBrowser();
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br2.getURL(), true, 1);
+                dl = jd.plugins.BrowserAdapter.openDownload(br2, link, link.getStringProperty("DDLink"), true, 1);
                 if (!dl.getConnection().isContentDisposition() && !dl.getConnection().getContentType().startsWith("video")) {
                     br2.followConnection();
                     if (br2.containsHTML("No htmlCode read")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDL.L("plugins.hoster.hornoxe.videotemporaryunavailable", "This video is temporary unavailable!"), 60 * 60 * 1000l);
@@ -75,10 +75,13 @@ public class HornOxeCom extends PluginForHost {
         int repeat = 3;
         for (int i = 0; i <= repeat; i++) {
             if (worked) break;
+            Browser br2 = br.cloneBrowser();
+            br2.getHeaders().put("Referer", link.getDownloadURL());
             try {
-                con = br.openGetConnection(file);
+                con = br2.openGetConnection(file);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
+                    link.setProperty("DDLink", br2.getURL());
                     worked = true;
                 }
             } catch (Throwable e) {
@@ -89,14 +92,14 @@ public class HornOxeCom extends PluginForHost {
                 }
             }
             if (!worked) {
-                br.getHeaders().put("Referer", link.getDownloadURL());
                 continue;
             }
         }
-        if (!worked) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        return AvailableStatus.TRUE;
-
+        if (!worked) {
+            return AvailableStatus.UNCHECKED;
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override

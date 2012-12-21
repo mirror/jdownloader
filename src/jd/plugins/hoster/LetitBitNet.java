@@ -78,7 +78,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        /* convert directdownload links to normal links */
+        /* convert direct download links to normal links */
         link.setUrlDownload(link.getDownloadURL().replaceAll("/ddownload", "/download").replaceAll("\\?", "%3F").replace("www.", "").replaceAll("http://s\\d+.", "http://"));
     }
 
@@ -169,9 +169,7 @@ public class LetitBitNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        // /* set english language */
-        // br.postPage(downloadLink.getDownloadURL(),
-        // "en.x=10&en.y=8&vote_cr=en");
+        // br.postPage(downloadLink.getDownloadURL(), "en.x=10&en.y=8&vote_cr=en");
         String filename = br.getRegex("\"file-info\">File:: <span>(.*?)</span>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("name=\"realname\" value=\"(.*?)\"").getMatch(0);
@@ -197,9 +195,8 @@ public class LetitBitNet extends PluginForHost {
             if (br.containsHTML("Forbidden word")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // Their names often differ from other file hosting services. I noticed
-        // that when in the filenames from other hosting services there are
-        // "-"'s, letitbit uses "_"'s so let's correct this here ;)
+        // Their names often differ from other file hosting services. I noticed that when in the filenames from other hosting services there
+        // are "-"'s, letitbit uses "_"'s so let's correct this here ;)
         downloadLink.setFinalFileName(filename.trim().replace("_", "-"));
         if (filesize != null) downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
         return AvailableStatus.TRUE;
@@ -371,20 +368,19 @@ public class LetitBitNet extends PluginForHost {
             }
             if (br2.toString().contains("error_wrong_captcha")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        // Downloadlimit is per day so let's just wait 3 hours
+        // Download limit is per day so let's just wait 3 hours
         if (br2.containsHTML("error_free_download_blocked")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
         if (br2.containsHTML("callback_file_unavailable")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerError", 30 * 60 * 1000l);
         LinkedList<String> finallinksx = new LinkedList<String>();
         String[] finallinks = br2.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
-        // More comon for shareflare.net
+        // More common for shareflare.net
         if ((finallinks == null || finallinks.length == 0) && br2.toString().length() < 500) finallinks = br2.getRegex("(http:[^<>\"].+)").getColumn(0);
         if (finallinks == null || finallinks.length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         for (final String finallink : finallinks) {
             if (!finallinksx.contains(finallink) && finallink.startsWith("http")) finallinksx.add(finallink);
         }
-        // Grab last links, this might changes and has to be fixed if users get
-        // "server error" in JD while it's working via browser. If this is
-        // changed often we should consider trying the whole list of finallinks.
+        // Grab last links, this might changes and has to be fixed if users get "server error" in JD while it's working via browser. If this
+        // is changed often we should consider trying the whole list of finallinks.
         final String url = finallinksx.peekLast();
         if (url == null || url.length() > 1000 || !url.startsWith("http")) {
             if (br2.containsHTML("error_free_download_blocked")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free download blocked", 2 * 60 * 60 * 1000l); }
@@ -463,11 +459,11 @@ public class LetitBitNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         if (account.getUser() == null || account.getUser().trim().length() == 0) {
-            account.setValid(true);
             // Reset stuff because it can only be checked while downloading
             ai.setValidUntil(-1);
-            ai.setTrafficLeft(-1);
+            ai.setUnlimitedTraffic();
             ai.setStatus("Status can only be checked while downloading!");
+            account.setValid(true);
             return ai;
         }
         try {
@@ -594,8 +590,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     private String getUrl(final Account account) throws IOException {
-        // This information can only be found before each download so lets set
-        // it here
+        // This information can only be found before each download so lets set it here
         String points = br.getRegex("\">Points:</acronym>(.*?)</li>").getMatch(0);
         String expireDate = br.getRegex("\">Expire date:</acronym> ([0-9\\-]+) \\[<acronym class").getMatch(0);
         if (expireDate == null) expireDate = br.getRegex("\">Period of validity:</acronym>(.*?) \\[<acronym").getMatch(0);
@@ -626,7 +621,7 @@ public class LetitBitNet extends PluginForHost {
 
     private void prepareBrowser(final Browser br) {
         /*
-         * last time they did not block the useragent, we just need this stuff below ;)
+         * last time they did not block the user-agent, we just need this stuff below ;)
          */
         if (br == null) { return; }
         br.getHeaders().put("Accept", "*/*");

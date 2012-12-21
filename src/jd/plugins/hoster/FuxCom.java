@@ -32,8 +32,6 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fux.com" }, urls = { "http://(www\\.)?fux\\.com/video/\\d+" }, flags = { 0 })
 public class FuxCom extends PluginForHost {
 
-    private String DLLINK = null;
-
     public FuxCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -51,7 +49,7 @@ public class FuxCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getStringProperty("DDLink"), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -66,27 +64,39 @@ public class FuxCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(<title>Fux \\- Error \\- Page not found</title>|<h2>Page<br />not found</h2>|We can\\'t find that page you\\'re looking for|<h3>Oops\\!</h3>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<li><h3>(.*?)</h3></li>").getMatch(0);
-        DLLINK = br.getRegex("config : \\'(/.*?)\\'").getMatch(0);
-        if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.getPage("http://www.fux.com" + Encoding.htmlDecode(DLLINK));
-        DLLINK = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename == null) {
+            logger.warning("Couldn't find 'filename'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String player = br.getRegex("<script type=\"text/javascript\" src=\"(/players/FuxStream/Configurations/video\\.php\\?idm=\\d+)\"></script>").getMatch(0);
+        if (player == null) {
+            logger.warning("Couldn't find 'player'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        Browser br2 = br.cloneBrowser();
+        br2.getPage(player);
+        String DLLINK = br2.getRegex("videoURL=\\'(.*?)\\'").getMatch(0);
+        if (DLLINK == null) {
+            logger.warning("Couldn't find 'DDLINK'");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = Encoding.htmlDecode(filename.trim());
         if (DLLINK.contains(".m4v"))
             downloadLink.setFinalFileName(filename + ".m4v");
         else
             downloadLink.setFinalFileName(filename + ".flv");
-        Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br2.openGetConnection(DLLINK.trim());
-            if (!con.getContentType().contains("html"))
+            con = br.openGetConnection(DLLINK.trim());
+            if (!con.getContentType().contains("html")) {
                 downloadLink.setDownloadSize(con.getLongContentLength());
-            else
+                downloadLink.setProperty("DDLink", br.getURL());
+            } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {
