@@ -50,6 +50,7 @@ gui_config_reconnect_selectrouter_example=例如： 3Com ADSL
 gui_config_routeripfinder_notfound=無法找到您的路由器主機名稱
 gui_config_routeripfinder_ready=IP 找到： %s1
 gui_fengshuiconfig_routerip=路由器 IP
+ipcheckreverted=現在已停用 IP 檢查。我們建議啟用全域 IP 檢查。否則您重新連接時可能會失敗。
 jd_controlling_reconnect_plugins_liveheader_LiveHeaderReconnect_actionPerformed_save=儲存
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_message=您已停用 IP 驗證。這將會大大的增加重新連線時間！\n\n\n\n幾個更進一步的模組，像是重新連接紀錄都將被停用。
 jd_gui_swing_jdgui_settings_panels_downloadandnetwork_advanced_ipcheckdisable_warning_title=已停用 IP 驗證

@@ -9,6 +9,7 @@ OnMinimizeAction_ask=詢問我
 OnMinimizeAction_totaskbar=最小化到工作列
 OnMinimizeAction_totray=關閉到系統匣
 jd_plugins_optional_jdtrayicon_jdlighttray=系統列
+jd_plugins_optional_jdtrayicon_jdlighttray_description=允許最小化或關閉 JDownloader 到通知區域，和其他相關的功能，例如密碼保護和更多功能。
 plugins_optional_JDLightTray_always=永遠
 plugins_optional_JDLightTray_closetotray2=按一下「關閉 <X>」動作
 plugins_optional_JDLightTray_minimizetotray=按一下「最小化 <_>」動作
