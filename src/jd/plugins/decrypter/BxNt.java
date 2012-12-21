@@ -63,12 +63,12 @@ public class BxNt extends PluginForDecrypt {
             if (feedExists(feedUrl)) {
                 decryptedLinks = decryptFeed(feedUrl);
             } else {
-                logger.warning("Invalid URL or URL no longer exists : " + cryptedlink);
-                return decryptedLinks;
+                logger.info("RSS page contains 'ERRORS'");
             }
-            if (decryptedLinks.size() != 0) return decryptedLinks;
-            // there is no feed -> it's a single file download
-            return decryptSingleDLPage(cryptedlink);
+            if (decryptedLinks.size() == 0) {
+                logger.info("Haven't found any links to decrypt, now trying decryptSingleDLPage");
+                decryptSingleDLPage(cryptedlink);
+            }
         }
         return decryptedLinks;
     }
@@ -86,7 +86,10 @@ public class BxNt extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(cryptedUrl);
         String decryptedLink = br.getRegex(SINGLE_DOWNLOAD_LINK_PATTERN).getMatch(0);
-        if (decryptedLink == null) return null;
+        if (decryptedLink == null) {
+            logger.warning("Couldn't find any single links to decrypt. " + cryptedUrl);
+            return null;
+        }
         decryptedLink = Encoding.htmlDecode(decryptedLink);
         decryptedLinks.add(createDownloadlink(decryptedLink.replaceAll("box\\.(net|com)/s", "boxdecrypted.com/s")));
         return decryptedLinks;
