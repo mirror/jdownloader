@@ -111,6 +111,7 @@ FilterTableModel_initColumns_invalid_condition_=不正確的條件 - 請檢查�
 FinishedDateColumn_FinishedDateColumn=完成日期
 GUISettings_save_language_changed_restart_required_title=需要重新啟動！
 HosterColumn_HosterColumn=主機
+IfFileExistsDialog_layoutDialogContent_overwrite_=覆寫現有的檔案
 IfFileExistsDialog_layoutDialogContent_skip_=略過檔案
 JDGui_showStatsDialog_message_=JDownloader 2 為了取得更好的使用者體驗，\r\n我們需要一些有關您如何使用 JDownloader，其中哪些功能是您喜歡或不喜歡的資訊。\r\n為了得到這個資訊，JDownloader 將收集匿名的使用統計資料。據我們瞭解，有使用者可能不希望這樣。\r\n您可以在任何時候停用在進階設定中的統計管理 (Stats Manager)。\r\n\r\n如果您有任何問題，請在我們的技術支援聊天隨時聯絡我們的開發團隊。
 JDGui_showStatsDialog_no_=不，謝了
