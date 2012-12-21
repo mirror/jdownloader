@@ -260,6 +260,7 @@ downloadview_all=全部下載
 downloadview_failed=下載失敗
 downloadview_running=執行中的下載
 downloadview_successful=完成下載
+extensionManager_title=延伸模組
 extensiontablemodel_column_enabled=啟用/停用
 filecolumn_title=名稱
 gui_btn_select=選擇
