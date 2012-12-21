@@ -108,6 +108,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("name=\"twitter:player\" content=\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\\&").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink(externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             // Try to find the biggest picture
             for (int i = 1000; i >= 10; i--) {
                 externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/tumblr_[a-z0-9]+_" + i + "\\.jpg)\"").getMatch(0);
@@ -121,8 +127,8 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
 
             if (externID == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.info("Found nothing here so the decrypter is either broken or there isn't anything to decrypt. Link: " + parameter);
+                return decryptedLinks;
             }
 
         } else if (parameter.matches("http://(www\\.)?[\\w\\.\\-]*?\\.tumblr\\.com/image/\\d+")) {

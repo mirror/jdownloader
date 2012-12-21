@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -72,22 +73,34 @@ public class ShareRapidCz extends PluginForHost {
             return ai;
         }
         long realTraffic = 0l;
+        String trafficleft = null;
         /**
-         * Don't show the remaining traffic as it might be wrong!
-         */
-        String trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
-        if (trafficleft != null) {
-            logger.info("Free traffic equals: " + trafficleft);
-            // ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+         * Expire unlimited -> Unlimited traffic for a specified amount of time Normal expire -> Expire date + trafficleft
+         * 
+         * */
+        final String expireUnlimited = br.getRegex("<td>Paušální stahování aktivní\\. Vyprší </td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>").getMatch(0);
+        if (expireUnlimited != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireUnlimited, "dd.MM.yy - HH:mm", Locale.ENGLISH));
             ai.setUnlimitedTraffic();
-            realTraffic = SizeFormatter.getSize(trafficleft);
-            trafficleft = ", " + trafficleft.trim() + " traffic left";
+            /** Remove property in case account was a free acount but changes to */
+            account.setProperty("freeaccount", false);
+            ai.setStatus("Premium User with unlimited traffic");
+            account.setValid(true);
+            return ai;
         } else {
-            trafficleft = "";
-            ai.setUnlimitedTraffic();
+            trafficleft = br.getMatch("<td>GB:</td><td>([^<>\"]*?)<a");
+            if (trafficleft != null) {
+                logger.info("Available traffic equals: " + trafficleft);
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficleft));
+                realTraffic = SizeFormatter.getSize(trafficleft);
+                trafficleft = ", " + trafficleft.trim() + " traffic left";
+            } else {
+                trafficleft = "";
+                ai.setUnlimitedTraffic();
+            }
+            final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
+            if (expires != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", Locale.ENGLISH));
         }
-        final String expires = br.getMatch("Neomezený tarif vyprší</td><td><strong>([0-9]{1,2}.[0-9]{1,2}.[0-9]{2,4} - [0-9]{1,2}:[0-9]{1,2})</strong>");
-        if (expires != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expires, "dd.MM.yy - HH:mm", null));
         if (realTraffic > 0l) {
             /**
              * Max simultan downloads (higher than 1) only works if you got any
