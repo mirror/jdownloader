@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turtleshare.com" }, urls = { "http://(www\\.)?turtleshare.com/download/[a-z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "turtleshare.com" }, urls = { "https?://(www\\.)?turtleshare.com/download/[a-z0-9]+/" }, flags = { 0 })
 public class TurtleShareCom extends PluginForHost {
 
     public TurtleShareCom(PluginWrapper wrapper) {
@@ -68,7 +68,7 @@ public class TurtleShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file is only available to Premium Members");
         }
         String dllink = br.getRegex("<div class=\"download_btn\\-wrap\"><a href=\"(http://[^<>\"]*?)\" class=\"download_button slow\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("\"(http://dl\\d+\\.turtleshare\\.com/download/[a-z0-9]+/[A-Za-z0-9]+/?)\"").getMatch(0);
+        if (dllink == null) dllink = br.getRegex("\"(https?://dl\\d+\\.turtleshare\\.com/download/[a-z0-9]+/[A-Za-z0-9]+/?)\"").getMatch(0);
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
