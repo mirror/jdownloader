@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -37,10 +38,16 @@ public class Premium4Me extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
 
+    private static HashMap<String, Integer>                connectionLimits   = new HashMap<String, Integer>();
+
+    private static AtomicBoolean                           shareOnlineLocked  = new AtomicBoolean(false);
+
     public Premium4Me(PluginWrapper wrapper) {
         super(wrapper);
         setStartIntervall(2 * 1000L);
         this.enablePremium("http://premium4.me/");
+        /* limit connections for share-online to one */
+        connectionLimits.put("share-online.biz", 1);
     }
 
     @Override
@@ -172,7 +179,8 @@ public class Premium4Me extends PluginForHost {
             }
             br.setFollowRedirects(true);
             showMessage(link, "Phase 2/3: Get link");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium4.me/getfile.php?link=" + url, true, -5);
+            int connections = getConnections(link.getHost());
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, "http://premium4.me/getfile.php?link=" + url, true, connections);
             if (dl.getConnection().getResponseCode() == 404) {
                 /* file offline */
                 dl.getConnection().disconnect();
@@ -199,6 +207,9 @@ public class Premium4Me extends PluginForHost {
             dl.startDownload();
         } finally {
             br.setFollowRedirects(dofollow);
+            if (link.getHost().equals("share-online.biz")) {
+                shareOnlineLocked.set(false);
+            }
         }
     }
 
@@ -235,6 +246,10 @@ public class Premium4Me extends PluginForHost {
                 }
             }
         }
+        if (downloadLink.getHost().equals("share-online.biz")) {
+            if (shareOnlineLocked.get()) { return false; }
+            shareOnlineLocked.set(true);
+        }
         return true;
     }
 
@@ -248,6 +263,12 @@ public class Premium4Me extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    private int getConnections(String host) {
+        if (connectionLimits.containsKey(host)) { return connectionLimits.get(host); }
+        // default is up to 10 connections
+        return -10;
     }
 
 }
