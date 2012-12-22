@@ -85,6 +85,8 @@ public class Uploadedto extends PluginForHost {
     private static StringContainer lastIP                       = new StringContainer();
     private boolean                usePremiumAPI                = true;
     private static final long      RECONNECTWAIT                = 10800000;
+    private static final String    NOCHUNKS                     = "NOCHUNKS";
+    private static final String    NORESUME                     = "NORESUME";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
@@ -752,6 +754,11 @@ public class Uploadedto extends PluginForHost {
                 logger.info("Download blocked (IP), disabling account...");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
+            int chunks = 0;
+            boolean resume = true;
+            if (downloadLink.getBooleanProperty(Uploadedto.NOCHUNKS, false) || resume == false) {
+                chunks = 1;
+            }
             if (br.getRedirectLocation() == null) {
                 /* ul does not take care of set language.... */
                 if (br.containsHTML(">Traffic exhausted") || br.containsHTML(">Traffickontingent aufgebraucht")) {
@@ -767,11 +774,11 @@ public class Uploadedto extends PluginForHost {
                 if (form.getAction() == null || form.getAction().contains("access")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 logger.info("Download from:" + form.getAction());
                 form.setMethod(MethodType.GET);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, form, true, chunks);
             } else {
                 logger.info("Direct Downloads active");
                 logger.info("Download from:" + br.getRedirectLocation());
-                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, 0);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, br.getRedirectLocation(), true, chunks);
             }
             try {
                 /* remove next major update */
@@ -809,7 +816,25 @@ public class Uploadedto extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dl.startDownload();
+            if (!this.dl.startDownload()) {
+                try {
+                    if (dl.externalDownloadStop()) return;
+                } catch (final Throwable e) {
+                }
+                if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                    if (downloadLink.getBooleanProperty(Uploadedto.NORESUME, false) == false) {
+                        downloadLink.setChunksProgress(null);
+                        downloadLink.setProperty(Uploadedto.NORESUME, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                } else {
+                    /* unknown error, we disable multiple chunks */
+                    if (downloadLink.getBooleanProperty(Uploadedto.NOCHUNKS, false) == false) {
+                        downloadLink.setProperty(Uploadedto.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
         }
     }
 

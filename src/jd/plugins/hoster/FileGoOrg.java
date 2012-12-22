@@ -19,8 +19,8 @@ package jd.plugins.hoster;
 import java.io.File;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -28,10 +28,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filego.org" }, urls = { "http://(www\\.)?filego\\.org/((\\?d|download\\.php\\?id)=[A-Z0-9]+|((en|ru|fr|es|de)/)?file/[0-9]+/)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filego.org" }, urls = { "http://(www\\.)?filego\\.org/\\?d=[A-Z0-9]+" }, flags = { 0 })
 public class FileGoOrg extends PluginForHost {
 
     public FileGoOrg(PluginWrapper wrapper) {
@@ -46,22 +47,32 @@ public class FileGoOrg extends PluginForHost {
     }
 
     private static final String COOKIE_HOST = "http://filego.org";
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("(en|ru|fr|es|de)/file/", "file/"));
-    }
+    private static final String NOCHUNKS    = "NOCHUNKS";
+    private static final String NORESUME    = "NORESUME";
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.setCookie(COOKIE_HOST, "yab_mylang", "en");
+        // Not needed but using the latest FF is probably no bad idea
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:17.0) Gecko/20100101 Firefox/17.0");
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+        br.setCookie(COOKIE_HOST, "Fg_mylang", "en");
         br.getPage(parameter.getDownloadURL());
-        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML("(Your requested file is not found|No file found)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.getURL().contains("&code=DL_FileNotFound") || br.containsHTML(">The file did not exist or has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = getData("Filename:");
+        if (filename == null) {
+            // embeded
+            filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+            if (filename == null) {
+                // embeded failover
+                filename = br.getRegex("<meta name=\"description\" content=\"(.*?), \"").getMatch(0);
+                if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         String filesize = getData("File size:");
-        if (filename == null || filename.matches("")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // no filesize for embed videos!
         parameter.setFinalFileName(filename.trim());
         if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
@@ -71,62 +82,108 @@ public class FileGoOrg extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
         requestFileInformation(downloadLink);
-        String finalLink = br.getRegex("url: \\'(http://[^<>\"]*?)\\'").getMatch(0);
+
+        String finalLink = null;
+        // first try to get the streaming link (skips captcha)
+        try {
+            /**
+             * We could also use: http://filego.org/fghtml5.php?id=ID or http://filego.org/fgdivx.php?id=ID
+             */
+            br.getPage("http://filego.org/fgflash.php?id=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)$").getMatch(0));
+            finalLink = br.getRegex("\\'(http://s\\d+\\.filego\\.org/[^<>\";]*?\\.mp4)\\'").getMatch(0);
+        } catch (final Exception e) {
+        }
         if (finalLink == null) {
-            if (br.containsHTML("value=\"Free Users\""))
+            // embeded content
+            final Form free = br.getFormbyProperty("name", "vali2");
+            if (free == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            int val3 = Integer.parseInt(free.getInputField("val3").getValue());
+            free.remove("val3");
+            final String vvar = br.getRegex("var secon=(\\d+);").getMatch(0);
+            final String add = br.getRegex("parseInt\\(secon\\) \\+ (\\d+);").getMatch(0);
+            if (vvar != null && add != null) {
+                val3 += Integer.parseInt(vvar) + Integer.parseInt(add);
+            } else {
+                val3 += 20;
+            }
+            free.put("val3", Integer.toString(val3));
+            br.submitForm(free);
+            // Download still works without account
+            // if (br.containsHTML("Guest Can\\&#39;t Download Video")) {
+            // try {
+            // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+            // } catch (final Throwable e) {
+            // if (e instanceof PluginException) throw (PluginException) e;
+            // }
+            // throw new PluginException(LinkStatus.ERROR_FATAL, "Only downloadable via account!");
+            // }
+            // old stuff
+            if (br.containsHTML("value=\"Free Users\"")) {
                 br.postPage(downloadLink.getDownloadURL(), "Free=Free+Users");
-            else if (br.getFormbyProperty("name", "entryform1") != null) br.submitForm(br.getFormbyProperty("name", "entryform1"));
+            } else if (br.getFormbyProperty("name", "entryform1") != null) {
+                br.submitForm(br.getFormbyProperty("name", "entryform1"));
+            }
             final String rcID = br.getRegex("challenge\\?k=([^<>\"]*?)\"").getMatch(0);
             if (rcID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-            jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+            final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+            final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
             rc.setId(rcID);
             rc.load();
-            File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-            String c = getCaptchaCode(cf, downloadLink);
+            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+            final String c = getCaptchaCode(cf, downloadLink);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage(downloadLink.getDownloadURL(), "downloadverify=1&d=1&recaptcha_response_field=" + c + "&recaptcha_challenge_field=" + rc.getChallenge());
             if (br.containsHTML("incorrect\\-captcha\\-sol")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             finalLink = findLink();
-            if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             int wait = 100;
             final String waittime = br.getRegex("countdown\\((\\d+)\\);").getMatch(0);
             if (waittime != null) wait = Integer.parseInt(waittime);
             sleep(wait * 1001l, downloadLink);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, false, 1);
+
+        int chunks = 0;
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(FileGoOrg.NORESUME, false)) resume = false;
+        if (downloadLink.getBooleanProperty(FileGoOrg.NOCHUNKS, false) || resume == false) {
+            chunks = 1;
+        }
+
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalLink, resume, chunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
 
             if (br.containsHTML(">AccessKey is expired, please request")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL server error, waittime skipped?");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
-    }
-
-    private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
-        if (finalLink == null) {
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            for (String alink : sitelinks) {
-                alink = Encoding.htmlDecode(alink);
-                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                    finalLink = alink;
-                    break;
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(FileGoOrg.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(FileGoOrg.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            } else {
+                /* unknown error, we disable multiple chunks */
+                if (downloadLink.getBooleanProperty(FileGoOrg.NOCHUNKS, false) == false) {
+                    downloadLink.setProperty(FileGoOrg.NOCHUNKS, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         }
+    }
+
+    private String findLink() throws Exception {
+        final String finalLink = br.getRegex("\\'(http://[a-z0-9]+\\.filego\\.org/fl/[a-z0-9]+/[^<>\"]*?)\\'").getMatch(0);
+        if (finalLink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return finalLink;
     }
 
     private String getData(final String data) {
         return br.getRegex("<b>" + data + "</b></td>[\t\n\r ]+<td>(<font size=\"\\d+\">)?([^<>\"]*?)<").getMatch(1);
-    }
-
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
     }
 
     // do not add @Override here to keep 0.* compatibility
