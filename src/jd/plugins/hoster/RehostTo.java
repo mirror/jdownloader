@@ -213,6 +213,8 @@ public class RehostTo extends PluginForHost {
         String[] hosts = new Regex(hostsSup, "([^\",]+),?").getColumn(0);
         if (hosts == null || hosts.length == 0) { return null; }
         ArrayList<String> supportedHosts = new ArrayList<String>(Arrays.asList(hosts));
+        // Workaround for old freakshare domain
+        if (supportedHosts.contains("freakshare.net") || !supportedHosts.contains("freakshare.com")) supportedHosts.add("freakshare.com");
         ai.setProperty("multiHostSupport", supportedHosts);
         return ai;
     }
