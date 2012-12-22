@@ -117,7 +117,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName.trim());
+                fp.setName(Encoding.htmlDecode(fpName.trim()));
                 fp.addLinks(decryptedLinks);
             }
         } else {
