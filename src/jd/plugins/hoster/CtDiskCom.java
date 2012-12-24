@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -62,9 +61,10 @@ public class CtDiskCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"file_title\">(.*?)(<span style=\"font\\-size: \\d+%; margin\\-left: \\d+px; \">\\(真实文件名被隐藏\\)</span>)?</div>").getMatch(0);
+        String filename = br.getRegex("<div class=\"top_title\"[^>]+>(.*?)<").getMatch(0);
         if (filename == null) filename = br.getRegex("<title>(.*?) \\- 免费高速下载 \\- 城通网盘").getMatch(0);
-        String filesize = br.getRegex("(<li>大小：\\-?|文件大小: <b>\\-)([0-9,\\.]+ (M|B|K))").getMatch(1);
+        String filesize = br.getRegex("\">\\(([\\d\\,\\.]+ (KB|MB|GB))\\)</span><").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("([\\d\\,\\.]+ (KB|MB|GB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         if (filesize != null) link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll("(,|\\-)", "").replace("M", "MB").replace("K", "KB")));
@@ -74,38 +74,16 @@ public class CtDiskCom extends PluginForHost {
     public void doFree(DownloadLink downloadLink, boolean premium, int maxchunks) throws Exception, PluginException {
         String dllink = checkDirectLink(downloadLink, "directlink");
         if (dllink == null) {
-            String noCaptcha = br.getRegex("value=\"点击进入下载列表\"  style=\"width: 120px; height: 33px; font\\-weight: bold;\" onclick=\"window\\.location\\.href=\\'(/.*?)\\';\"").getMatch(0);
-            if (noCaptcha == null) noCaptcha = br.getRegex("\\'(/downhtml/\\d+/\\d+/\\d+/[a-z0-9]+\\.html)\\'").getMatch(0);
-            if (premium && noCaptcha == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (noCaptcha != null) {
-                br.getPage("http://www.ctdisk.com" + noCaptcha);
-            } else {
-                final String hash = br.getRegex("name=\"hash_id\" value=\"([a-z0-9]{32})\"").getMatch(0);
-                if (!br.containsHTML("/randcodeV2\\.php") || !br.containsHTML("guest_loginV2\\.php") || hash == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                final String fid = new Regex(downloadLink.getDownloadURL(), "(\\d+)$").getMatch(0);
-                String code = getCaptchaCode("http://www.400gb.com/randcodeV2.php?fid=" + fid + "&rand=0." + System.currentTimeMillis(), downloadLink);
-                /** No waittime anymore */
-                // long timeBefore = System.currentTimeMillis();
-                // String waittime =
-                // br.getRegex("var maxtime_\\d+ = (\\d+);").getMatch(0);
-                // int wait = 6;
-                // if (waittime != null) wait = Integer.parseInt(waittime);
-                // int passedTime = (int) ((System.currentTimeMillis() -
-                // timeBefore)
-                // / 1000) - 1;
-                // wait -= passedTime;
-                // sleep(wait * 1001, downloadLink);
-                br.postPage("http://www.400gb.com/guest_loginV2.php", "file_id=" + fid + "&randcode=" + code + "&Comfirm.x=" + new Random().nextInt(200) + "&Comfirm.y=" + new Random().nextInt(200) + "&hash_id=" + hash);
-                if (br.getURL().contains("guest_loginV2.php")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\"").getMatch(0);
+                if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
             }
-            dllink = br.getRegex("\"([^<>\"/]*?)\" id=\"(telcom_free|unicom_free)\"").getMatch(0);
-            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = Encoding.Base64Decode(Encoding.htmlDecode(dllink));
             if (!dllink.startsWith("http")) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
 
-        // Check if link is working. If not try mirror. Limits can be
-        // extended/skipped using this method :D
+        // Check if link is working. If not try mirror. Limits can be extended/skipped using this method :D
         boolean failed = false;
         URLConnectionAdapter con = null;
         Browser br2 = br.cloneBrowser();
@@ -173,8 +151,7 @@ public class CtDiskCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // Works best this way. Maximum that worked for me was 6
-        return 5;
+        return 1;
     }
 
     @Override
