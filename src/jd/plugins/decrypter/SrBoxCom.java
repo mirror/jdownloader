@@ -110,11 +110,12 @@ public class SrBoxCom extends PluginForDecrypt {
                     }
                     if (strExtension != "") {
                         if (fpName != null) {
-                            iIndex = fpName.lastIndexOf(')');
                             String strName = fpName;
+                            iIndex = fpName.lastIndexOf(')');
                             if (iIndex == fpName.length() - 1) {
                                 iIndex = fpName.lastIndexOf(" (");
-                                strName = fpName.substring(0, iIndex);
+                                if (iIndex == -1) iIndex = fpName.lastIndexOf("(");
+                                if (iIndex != -1) strName = fpName.substring(0, iIndex);
                             }
                             if (TabImage.length > 1) {
                                 strName += "_" + Integer.toString(iImageIndex);
