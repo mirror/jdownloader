@@ -76,7 +76,7 @@ public class FileViceCom extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.5.9.8
+    // XfileSharingProBasic Version 2.6.0.0
     // mods:
     // non account: 2 * 1
     // free account: same as above
