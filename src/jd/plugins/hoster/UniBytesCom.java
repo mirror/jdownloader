@@ -54,7 +54,7 @@ public class UniBytesCom extends PluginForHost {
         br.setCookiesExclusive(true);
         // define custom browser headers and language settings.
         br.setCookie(MAINPAGE, "lang", "en");
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         if (agent == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("mediafire.com");
@@ -68,8 +68,6 @@ public class UniBytesCom extends PluginForHost {
         this.setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
-        // Use the english language
-        br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;

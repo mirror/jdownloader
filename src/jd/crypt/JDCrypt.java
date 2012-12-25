@@ -28,10 +28,10 @@ import org.jdownloader.logging.LogController;
 import sun.security.pkcs.PKCS7;
 
 /**
- * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form to byte arrays. ALog
- * AES CBC Mode is used.
+ * JDCrypt class provides a few easy to use functions to encrypt or decrypt data. Use {@link jd.utils.JDHexUtils} to split Keys in Hex form
+ * to byte arrays. ALog AES CBC Mode is used.
  * 
- * @author unkown
+ * @author unknown
  * 
  */
 public final class JDCrypt {
@@ -148,7 +148,7 @@ public final class JDCrypt {
     }
 
     /**
-     * Returns the hash of the JD signatur (1287 bit/16 Byte)
+     * Returns the hash of the JD signature (1287 bit/16 Byte)
      * 
      * @return
      */

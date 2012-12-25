@@ -74,8 +74,7 @@ public class RyuShareCom extends PluginForHost {
     // premium: unlimited
     // protocol: no https
     // captchatype: null
-    // other: i've been able to connect with 7 chunks at times.. its not
-    // reliable if 4 causes problems reduce it more.
+    // other: i've been able to connect with 7 chunks at times.. it's not reliable if 4 causes problems reduce it more.
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -157,8 +156,7 @@ public class RyuShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // More chunks sometimes possible but server error chance is very high
-        // then
+        // More chunks sometimes possible but server error chance is very high then
         doFree(downloadLink, true, -2, "freelink");
     }
 
@@ -363,8 +361,13 @@ public class RyuShareCom extends PluginForHost {
             }
             if (correctedBR.contains("\">Skipped countdown<")) throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
         }
+        if (new Regex(correctedBR, "(You have reached the download\\-limit)").matches()) {
+            // eg. <font class="err">You have reached the download-limit: 188888 Mb for last 1 days</font>
+            // user has transfered as history event, not a waiting event going forward... so will try and wait 2 hours ??
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 2 * 60 * 60 * 1000);
+        }
         /** Wait time reconnect handling */
-        if (new Regex(correctedBR, "(You have reached the download\\-limit|You have to wait)").matches()) {
+        else if (new Regex(correctedBR, "(You have to wait)").matches()) {
             // adjust this regex to catch the wait time string for COOKIE_HOST
             String WAIT = new Regex(correctedBR, "((You have reached the download\\-limit|You have to wait)[^<>]+)").getMatch(0);
             String tmphrs = new Regex(WAIT, "\\s+(\\d+)\\s+hours?").getMatch(0);

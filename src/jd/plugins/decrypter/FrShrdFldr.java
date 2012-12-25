@@ -48,7 +48,7 @@ public class FrShrdFldr extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceFirst(".com/(dir|fodler|minifolder)/", "com/folder/");
+        String parameter = param.toString().replaceFirst(".com/(dir|folder|minifolder)/", ".com/folder/");
         br.setFollowRedirects(true);
         try {
             br.setCookie(getHost(), "4langcookie", "en");

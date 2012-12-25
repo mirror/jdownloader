@@ -56,8 +56,7 @@ public class U115Com extends PluginForHost {
     public U115Com(PluginWrapper wrapper) {
         super(wrapper);
         /**
-         * 10 seconds waittime between the downloadstart of simultan DLs of this
-         * host
+         * 10 seconds waittime between the downloadstart of simultan DLs of this host
          */
         this.setStartIntervall(10000l);
         this.enablePremium();
@@ -71,7 +70,6 @@ public class U115Com extends PluginForHost {
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepareBrowser(br);
-        br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             if (br.getRedirectLocation().equals(UNDERMAINTENANCEURL)) {
@@ -133,8 +131,7 @@ public class U115Com extends PluginForHost {
     }
 
     /**
-     * Here we got mirrors, sometimes a mirror does not work so we'll check
-     * until we find a working one here
+     * Here we get mirrors, sometimes a mirror does not work so we'll check until we find a working one.
      * 
      * @throws PluginException
      */
@@ -282,8 +279,7 @@ public class U115Com extends PluginForHost {
         ai.setUnlimitedTraffic();
         account.setValid(true);
         /**
-         * Didn't ever have a premium login, plugin is only designed for free
-         * accounts!
+         * Doesn't have a premium login, plugin is only designed for free accounts!
          */
         ai.setStatus("Registered (free) User");
         return ai;

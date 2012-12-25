@@ -29,6 +29,9 @@ public class DownloadLinkStorable implements Storable {
         return link.getUniqueID().getID();
     }
 
+    /**
+     * @since JD2
+     */
     public void setUID(long id) {
         link.getUniqueID().setID(id);
     }

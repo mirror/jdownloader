@@ -59,13 +59,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.com|dfiles\\.eu|dfiles\\.ru)(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.com|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
     private static String        UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
     private static final String  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
-    private static final String  MAINPAGE                 = "http://depositfiles.com";
+    public static String         MAINPAGE                 = null;
+    public static final String   DOMAINS                  = "(depositfiles\\.com|dfiles\\.(eu|ru))";
 
     public String                DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern        FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
@@ -77,9 +78,36 @@ public class DepositFiles extends PluginForHost {
 
     private static AtomicInteger simultanpremium          = new AtomicInteger(1);
 
+    static {
+        /**
+         * best of worst situation! Each JD component that loads plugins into memory will repeats this feature x times at start. (currently
+         * three times)
+         **/
+
+        if (MAINPAGE == null) {
+            Browser testBr = new Browser();
+            try {
+                testBr.setFollowRedirects(true);
+                testBr.getPage("http://depositfiles.com");
+                String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
+                if (baseURL != null) MAINPAGE = baseURL;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
+        this.enablePremium(MAINPAGE + "/signup.php?ref=down1");
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        if (!link.getDownloadURL().contains(MAINPAGE.replaceAll("https?://(www\\.)?", ""))) {
+            // currently respects users protocol choice on link import
+            link.setUrlDownload(link.getDownloadURL().replaceAll("(dfiles\\.(eu|ru)|depositfiles\\.com)(/.*?)?/files", MAINPAGE.replaceAll("https?://(www\\.)?", "") + "/de/files"));
+        }
     }
 
     private static void showFreeDialog(final String domain) {
@@ -190,13 +218,6 @@ public class DepositFiles extends PluginForHost {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("dfiles.eu/", "depositfiles.com/"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
-        link.setUrlDownload(link.getDownloadURL().replaceAll("https://", "http://"));
-    }
-
-    @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         setBrowserExclusive();
@@ -253,7 +274,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://depositfiles.com/en/agreem.html";
+        return MAINPAGE + "/en/agreem.html";
     }
 
     private String getDllink() throws Exception {
@@ -276,7 +297,7 @@ public class DepositFiles extends PluginForHost {
             return lol[0];
         } else {
             String fid = br.getRegex("var fid = '(.*?)'").getMatch(0);
-            if (fid != null) { return "http://depositfiles.com/get_file.php?fid=" + fid; }
+            if (fid != null) { return MAINPAGE + "/get_file.php?fid=" + fid; }
         }
         return null;
     }
@@ -395,9 +416,9 @@ public class DepositFiles extends PluginForHost {
             br.getHeaders().put("Accept-Language", "de");
             br.setFollowRedirects(true);
             br.getPage(dllink);
-            br.getPage("http://depositfiles.com/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
+            br.getPage(MAINPAGE + "/get_file.php?fid=" + fid + "&challenge=" + rc.getChallenge() + "&response=" + Encoding.urlEncode(c));
             if (br.containsHTML("(onclick=\"check_recaptcha|load_recaptcha)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            String finallink = br.getRegex("\"(http://fileshare\\d+\\.depositfiles\\.com/auth.*?)\"").getMatch(0);
+            String finallink = br.getRegex("\"(http://fileshare\\d+\\." + DOMAINS + "/auth.*?)\"").getMatch(0);
             if (finallink == null) finallink = br.getRegex("<form action=\"(http://.*?)\"").getMatch(0);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finallink, true, 1);
@@ -550,6 +571,8 @@ public class DepositFiles extends PluginForHost {
     private String getDonloadManagerVersion() {
         Browser brc = br.cloneBrowser();
         try {
+            brc.setFollowRedirects(true);
+            // I assume they don't redirect for this subdomain, just incase...
             brc.getPage("http://system.depositfiles.com/api/get_downloader_version.php");
         } catch (Throwable e) {
             return null;
@@ -595,18 +618,21 @@ public class DepositFiles extends PluginForHost {
                     Thread.sleep(2000);
                     final Form login = br.getFormBySubmitvalue("Anmelden");
                     if (login != null) {
-                        login.setAction("http://depositfiles.com/login.php?return=%2F");
+                        login.setAction(MAINPAGE + "/login.php?return=%2F");
                         login.put("login", Encoding.urlEncode(account.getUser()));
                         login.put("password", Encoding.urlEncode(account.getPass()));
                         br.submitForm(login);
-                    } else if (!showCaptcha || !br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    } else if (!showCaptcha || !br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
+                        //
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 } else {
                     UA = "Mozilla/5.0 (Windows; U; Windows NT 5.1; ru; rv:1.8.1.20) DepositFiles/FileManager " + dmVersion;
                     br.getHeaders().put("User-Agent", UA);
                     br.setFollowRedirects(true);
                     Thread.sleep(2000);
-                    br.postPage("http://depositfiles.com/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    br.getPage("http://depositfiles.com/gold/");
+                    br.postPage(MAINPAGE + "/de/login.php", "go=1&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                    br.getPage(MAINPAGE + "/gold/");
                 }
                 br.setFollowRedirects(false);
                 if (showCaptcha && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
