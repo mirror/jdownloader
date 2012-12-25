@@ -55,36 +55,45 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tusfiles.net" }, urls = { "https?://(www\\.)?tusfiles\\.net/[a-z0-9]{12}" }, flags = { 2 })
-public class TusFilesNet extends PluginForHost {
+@HostPlugin(revision = "$Revision: 19124 $", interfaceVersion = 2, names = { "filevice.com" }, urls = { "https?://(www\\.)?filevice\\.com/[a-z0-9]{12}" }, flags = { 2 })
+public class FileViceCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://tusfiles.net";
+    private final String         COOKIE_HOST                  = "http://filevice.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
-    // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
-    // don't touch
+    private static final boolean SUPPORTSHTTPS                = false;
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.5.9.6
+    // XfileSharingProBasic Version 2.5.9.8
     // mods:
-    // non account: 1 * 2
-    // free account: untested, set same as FREE
-    // premium account: 10 * 2
+    // non account: 2 * 1
+    // free account: same as above
+    // premium account: 20 * 1 (more results in errors)
     // protocol: no https
-    // captchatype: null 4dignum solvemedia recaptcha
-    // other:
+    // captchatype: 4dignum
+    // other: no redirects, custom wait
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(COOKIE_HOST + "/" + new Regex(link.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
+        // link cleanup, but respect users protocol choosing.
+        if (!SUPPORTSHTTPS) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
+        }
+        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
     @Override
@@ -92,7 +101,7 @@ public class TusFilesNet extends PluginForHost {
         return COOKIE_HOST + "/tos.html";
     }
 
-    public TusFilesNet(PluginWrapper wrapper) {
+    public FileViceCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(COOKIE_HOST + "/premium.html");
     }
@@ -109,7 +118,7 @@ public class TusFilesNet extends PluginForHost {
 
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
     }
 
@@ -146,12 +155,31 @@ public class TusFilesNet extends PluginForHost {
 
     private String[] scanInfo(final String[] fileInfo) {
         // standard traits from base page
-        final Regex fInfo = new Regex(correctedBR, "<li>(<small>)?([^<>\"]*?)(</small>)?</li>[\t\n\r ]+<li><b>Size:</b> <small>([^<>\"]*?)</small></li>");
         if (fileInfo[0] == null) {
-            fileInfo[0] = fInfo.getMatch(1);
+            fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                // traits from download1 page below.
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+> ?)+?([^<>\"\\']+)").getMatch(1);
+                    // next two are details from sharing box
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                        }
+                    }
+                }
+            }
         }
         if (fileInfo[1] == null) {
-            fileInfo[1] = fInfo.getMatch(3);
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                }
+            }
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
@@ -160,7 +188,7 @@ public class TusFilesNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")
@@ -171,14 +199,13 @@ public class TusFilesNet extends PluginForHost {
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
-        // Is it a videohoster? If so, we can get the downloadlink directly!
+        // Third, do they provide video hosting?
         if (dllink == null && VIDEOHOSTER) {
             final Browser brv = br.cloneBrowser();
             brv.getPage(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
             dllink = brv.getRedirectLocation();
         }
-
-        // Third, continue like normal.
+        // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
             final Form download1 = getFormByKey("op", "download1");
@@ -189,7 +216,6 @@ public class TusFilesNet extends PluginForHost {
                 dllink = getDllink();
             }
         }
-
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -301,6 +327,7 @@ public class TusFilesNet extends PluginForHost {
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -369,7 +396,7 @@ public class TusFilesNet extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(http://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([a-z0-9]+\\.)?" + COOKIE_HOST.replace("http://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -454,12 +481,15 @@ public class TusFilesNet extends PluginForHost {
     private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+        String ttt = new Regex(correctedBR, "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "id=\"countdown_str\"[^>]+>Wait <span[^>]+>(\\d+)</span> seconds</span>").getMatch(0);
+            if (ttt != null) {
+                int tt = Integer.parseInt(ttt);
+                tt -= passedTime;
+                logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+                if (tt > 0) sleep(tt * 1000l, downloadLink);
+            }
         }
     }
 
@@ -488,14 +518,17 @@ public class TusFilesNet extends PluginForHost {
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
-            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
-            if (oldExtension != null)
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5)
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             else
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+                downloadLink.setFinalFileName(oldName + newExtension);
         }
     }
 
@@ -571,9 +604,6 @@ public class TusFilesNet extends PluginForHost {
         if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
 
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
-    private static Object        LOCK    = new Object();
-
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
@@ -585,10 +615,11 @@ public class TusFilesNet extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
+        // these fields are currently within html comments
+        final String space[][] = new Regex(br, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) (KB|MB|GB|TB)</b>").getMatches();
         if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(br, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
@@ -597,7 +628,7 @@ public class TusFilesNet extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             ai.setStatus("Registered (free) User");
             try {
-                maxPrem.set(2);
+                maxPrem.set(1);
                 // free accounts can still have captcha.
                 totalMaxSimultanFreeDownload.set(maxPrem.get());
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -614,7 +645,7 @@ public class TusFilesNet extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 try {
-                    maxPrem.set(2);
+                    maxPrem.set(1);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
@@ -684,7 +715,7 @@ public class TusFilesNet extends PluginForHost {
         login(account, false);
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
-            doFree(downloadLink, true, 1, "freelink2");
+            doFree(downloadLink, true, -2, "freelink2");
         } else {
             String dllink = checkDirectLink(downloadLink, "premlink");
 
@@ -708,7 +739,7 @@ public class TusFilesNet extends PluginForHost {
             }
 
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
