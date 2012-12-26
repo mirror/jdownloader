@@ -1,3 +1,4 @@
+UpdateException_proxyauth=代理伺服器身份驗證無效：%s1
 UpdateException_proxyconnect=代理伺服器連接失敗：%s1
 UpdateException_unknownbranch=正在更新 %s1 版本失敗
 UpdateException_unknownbranch_gui=%s1 版本不存在！
