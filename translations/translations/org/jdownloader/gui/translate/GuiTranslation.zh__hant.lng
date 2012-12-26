@@ -147,6 +147,7 @@ JDToolbarOffer_JDToolbarOffer_title_=新增！
 JDUpdater_JDUpdater_object_icon=檢查更新
 JDUpdater_JDUpdater_updates_available_msg_=%s1 更新準備安裝。
 JDUpdater_JDUpdater_updates_available_title_=有可用的更新！
+JDUpdater_run_lasttry_msg_=您的 JDownloader 安裝已損壞，並且無法修復更新。請下載最新的 http://jdownloader.org/download 版本，並安裝它。
 JDUpdater_run_lasttryfailed_title_=安裝損壞！
 LinkGrabberPanel_LinkGrabberPanel_btn_showsidebar_tt_up=顯示/隱藏側邊列
 LinkGrabberPanel_onConfigValueModified_title_=側邊列隱藏
