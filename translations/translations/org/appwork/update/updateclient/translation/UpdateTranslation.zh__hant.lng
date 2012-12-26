@@ -49,6 +49,7 @@ guiless_extract=解壓縮檔案....
 guiless_files_ready_for_install=%s1 個檔案正在等待以開始安裝！
 guiless_installFinished=安裝已完成
 guiless_locked_closed_app=%s1 已關閉。立刻繼續。
+guiless_progress2=進度：%s1% | %s2/%s3
 guiless_update_failed=更新失敗。原因： %s1
 interrupted_title=已取消
 locked=無法更新。%s1 仍在執行。
