@@ -251,6 +251,7 @@ TestWaitDialog_layoutDialogContent_testlink_=測試連結：
 account_remove_action_msg=確定移除 %s1
 account_remove_action_title=確定移除 %s1 帳號？
 accountdialog_check=檢查帳號
+accountdialog_check_expired=帳號登錄資訊是正確的，但您的帳號已過期 %s1。
 accountdialog_check_expired_renew=現在續訂帳號！
 accountdialog_check_expired_title=續訂帳號嗎？
 accountdialog_check_failed=帳號檢查失敗
