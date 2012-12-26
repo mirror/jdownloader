@@ -167,7 +167,7 @@ public class FastShareCz extends PluginForHost {
                 logger.info("Trafficlimit reached!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
-            dllink = br.getRegex("(http://data\\d+\\.fastshare\\.cz/download\\.php\\?id=\\d+\\&[^<>\"]*?) style=color").getMatch(0);
+            dllink = br.getRegex("(http://data\\d+\\.fastshare\\.cz/download\\.php\\?id=\\d+\\&[^<>\"]*?)\"").getMatch(0);
         }
         if (dllink == null) {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
