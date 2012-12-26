@@ -39,7 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.EditDistance;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/(df|st|so|hf|fs|mu|rc|rs|nl|u[tl]|ff|fc|wu|ry)[_-].*", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "serienjunkies.org", "dokujunkies.org" }, urls = { "http://[\\w\\.]*?serienjunkies\\.org/.*?/[a-z]{2}[_-].*", "http://[\\w\\.]*?dokujunkies\\.org/[\\w\\-/]+.*\\.html" }, flags = { 0, 0 })
 public class Srnnks extends PluginForDecrypt {
     class DecryptRunnable implements Runnable {
 
@@ -55,10 +55,7 @@ public class Srnnks extends PluginForDecrypt {
 
         public void run() {
 
-            // sj heuristic detection.
-
-            // this makes the jobber useless... but we have to use the 300 ms to
-            // work around sj's firewall
+            // sj heuristic detection. this makes the jobber useless... but we have to use the 300 ms to work around sj's firewall
             try {
                 Thread.sleep(FW_WAIT);
                 try {
@@ -90,9 +87,7 @@ public class Srnnks extends PluginForDecrypt {
                             throw new Exception("no Redirect found");
                         }
                     } else {
-
                         throw new Exception("no Frame found");
-
                     }
                 }
 
@@ -210,10 +205,8 @@ public class Srnnks extends PluginForDecrypt {
 
         } else if (parameter.getCryptedUrl().contains("serienjunkies.org")) {
             try {
-                // Browser.setRequestIntervalLimitGlobal("serienjunkies.org",
-                // 400);
-                // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org",
-                // 400);
+                // Browser.setRequestIntervalLimitGlobal("serienjunkies.org", 400);
+                // Browser.setRequestIntervalLimitGlobal("download.serienjunkies.org", 400);
 
                 final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                 Form[] forms;
@@ -290,9 +283,7 @@ public class Srnnks extends PluginForDecrypt {
 
                             // das bild in der Form ist das captcha
                             String captchaLink = new Regex(form.getHtmlCode(), "<IMG SRC=\"(.*?)\"").getMatch(0);
-                            // if (captchaLink == null) { throw new
-                            // Exception("Serienjunkies Captcha konnte nicht gefunden werden!");
-                            // }
+                            // if (captchaLink == null) { throw new Exception("Serienjunkies Captcha konnte nicht gefunden werden!"); }
                             if (captchaLink != null) {
                                 System.out.println("CAPTCHA!!!");
                                 // only each 5 link needs captchas
@@ -321,9 +312,7 @@ public class Srnnks extends PluginForDecrypt {
                                     Browser.download(captcha, urlc);
                                 }
                                 if ("7ebca510a6a18c1e8f6e8d98c3118874".equals(JDHash.getMD5(captcha))) {
-                                    // dummy captcha without content.. wait
-                                    // before
-                                    // reloading
+                                    // dummy captcha without content.. wait before reloading
                                     logger.warning("Dummy Captcha. wait 3 seconds");
                                     Thread.sleep(3000);
                                     try {
@@ -334,10 +323,7 @@ public class Srnnks extends PluginForDecrypt {
                                     continue;
                                 }
                                 String code;
-                                // wenn es ein Einzellink ist soll die
-                                // Captchaerkennung
-                                // benutzt
-                                // werden
+                                // wenn es ein Einzellink ist soll die Captchaerkennung benutzt werden
 
                                 if (captchaLink.contains(".gif")) {
                                     code = this.getCaptchaCode("einzellinks.serienjunkies.org", captcha, parameter);
@@ -384,8 +370,7 @@ public class Srnnks extends PluginForDecrypt {
                                 actions.add(frm.getAction());
                             }
                         }
-                        // es wurden keine Links gefunden also wurde das Captcha
-                        // falsch eingegeben
+                        // es wurden keine Links gefunden also wurde das Captcha falsch eingegeben
                         if (actions.size() == 0) {
                             progress.setStatus(10);
                             // progress.setStatusText("Captcha code falsch");
@@ -406,10 +391,7 @@ public class Srnnks extends PluginForDecrypt {
                             }
                         }
 
-                        // wenn keine links drinnen sind ist bestimmt was mit
-                        // dem
-                        // captcha
-                        // schief gegangen einfach nochmal versuchen
+                        // wenn keine links drinnen sind ist bestimmt was mit dem captcha schief gegangen einfach nochmal versuchen
                         if (ret.size() != 0) { return ret; }
                     }
 
