@@ -1,5 +1,7 @@
 AbstractConfigPanel_addPair_enabled=啟用/停用這個選項
 AddContainerAction=載入 Linkcontainer
+AddContainerAction_actionPerformed_=載入連結容器
+AddContainerAction_actionPerformed_extensions=連結容器 (%s1)
 AddLinksAction_=新增下載
 AddLinksDialog_AddLinksDialog_confirm=繼續
 AddLinksDialog_createExtracOptionsPanel_downloadpassword=為受保護的連結輸入密碼
