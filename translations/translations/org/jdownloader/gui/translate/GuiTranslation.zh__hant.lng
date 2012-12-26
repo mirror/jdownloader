@@ -114,6 +114,7 @@ FilterRuleDialog_layoutDialogContent_lbl_size=檔案大小
 FilterRuleDialog_layoutDialogContent_lbl_type=檔案類型
 FilterRuleDialog_layoutDialogContent_name=條件名稱
 FilterRule_toString_and=及 %s1
+FilterRule_toString_comma=, %s1
 FilterRule_toString_hoster=主機網址 %s1
 FilterRule_toString_hoster2=網址(%s1) %s2
 FilterRule_toString_name=檔名 %s1

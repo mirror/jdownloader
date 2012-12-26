@@ -7,6 +7,7 @@ AccountNew_layoutDialogContent_password=密碼
 AccountNew_layoutDialogContent_save=記憶
 AppWorkUtils_Graph_getAverageSpeedString=Ø %s1/s |
 AppWorkUtils_Graph_getSpeedString=目前：%s1/s
+COMMANDLINEAPP_COMMAND=指令 -> -
 COPYCUTPASTE_COPY=複製
 COPYCUTPASTE_CUT=剪下
 COPYCUTPASTE_DELETE=刪除
