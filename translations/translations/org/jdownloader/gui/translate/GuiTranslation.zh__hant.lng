@@ -379,6 +379,7 @@ gui_treetable_tooltip_priority2=更高
 gui_treetable_tooltip_priority3=最高
 gui_treetable_tooltip_priority_1=低
 jd_gui_skins_simple_simplegui_menubar_filemenu=檔案
+jd_gui_swing_components_AboutDialog_appworkutilities=AppWork 公用程式：
 jd_gui_swing_components_AboutDialog_browser=瀏覽器：
 jd_gui_swing_components_AboutDialog_builddate=組建日期：
 jd_gui_swing_components_AboutDialog_core=核心：
