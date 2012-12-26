@@ -57,6 +57,7 @@ PASSWORDDIALOG_PASSWORDCHANGE_OLDPASSWORD=舊密碼：
 ResetColumnsAction=重置欄位
 SEARCHDIALOG_BUTTON_FIND=找尋
 SearchContextAction=搜尋資料表
+ShortCuts_key_ctrl=ctrl
 Statusbar_Statusbar_visiturl_tooltip=拜訪我們的首頁
 active=啟用
 connecting=連接中...

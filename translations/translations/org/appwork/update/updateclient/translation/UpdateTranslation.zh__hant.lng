@@ -26,6 +26,7 @@ branch_updated=使用 %s1 版本
 call_failed_wait=更新伺服器忙碌。請 30 秒後再重試一次。
 cancel_update=取消更新
 close=關閉
+could_not_install_file=無法安裝檔案：%s1
 could_not_overwrite=無法覆寫檔案 %s1。
 details=更多...
 dialog_rly_cancel=確定要取消更新？
