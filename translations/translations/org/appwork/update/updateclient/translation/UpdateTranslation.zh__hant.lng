@@ -1,3 +1,4 @@
+UpdateException_SignatureViolation=無法驗證此更新的來源！
 UpdateException_proxyauth=代理伺服器身份驗證無效：%s1
 UpdateException_proxyconnect=代理伺服器連接失敗：%s1
 UpdateException_unknownbranch=正在更新 %s1 版本失敗
@@ -24,6 +25,7 @@ UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=找到 %s1 個更新！
 UpdateServer_UpdaterGui_onUpdaterModuleStart_download=下載 %s1
 UpdateServer_UpdaterGui_runInEDT_mainbar=更新伺服器忙碌。
 Updater_missing_title=更新程式遺失
+Updater_sign_key_mismatch=無法驗證此更新的來源！
 branch_resetted2=%s1 版本不存在！
 branch_updated=使用 %s1 版本
 call_failed_wait=更新伺服器忙碌。請 30 秒後再重試一次。
