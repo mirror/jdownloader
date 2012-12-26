@@ -478,12 +478,15 @@ public class TurboBitNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
         }
-        // A couple redirects at this point, depending on link type, which the md5sum provided within the URL args, within the final
-        // redirect
+        br.setFollowRedirects(false);
+        // Future redirects at this point, but we want to catch them not process them in order to get the MD5sum. Which provided within the
+        // URL args, within the final redirect
         // example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
         br.getPage(downloadUrl);
-        downloadUrl = br.getRedirectLocation();
+        if (br.getRedirectLocation() != null) {
+            dllink = br.getRedirectLocation();
+        }
         if (downloadUrl.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(downloadUrl, "md5=([a-z0-9]{32})").getMatch(0);
             if (md5sum != null) downloadLink.setMD5Hash(md5sum);
@@ -535,13 +538,15 @@ public class TurboBitNet extends PluginForHost {
         if (!dllink.contains("turbobit.net")) {
             dllink = MAINPAGE + dllink;
         }
-        br.setFollowRedirects(true);
-        // A couple redirects at this point, depending on link type, which the md5sum provided within the URL args, within the final
-        // redirect
+        br.setFollowRedirects(false);
+        // Future redirects at this point, but we want to catch them not process them in order to get the MD5sum. Which provided within the
+        // URL args, within the final redirect
         // example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
         br.getPage(dllink);
-        dllink = br.getRedirectLocation();
+        if (br.getRedirectLocation() != null) {
+            dllink = br.getRedirectLocation();
+        }
         if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
             if (md5sum != null) link.setMD5Hash(md5sum);
@@ -577,13 +582,15 @@ public class TurboBitNet extends PluginForHost {
         requestFileInformation(link);
         br.setCookie(MAINPAGE, "JD", "1");
         String dllink = link.getDownloadURL();
-        br.setFollowRedirects(true);
-        // A couple redirects at this point, depending on link type, which the md5sum provided within the URL args, within the final
-        // redirect
+        br.setFollowRedirects(false);
+        // Future redirects at this point, but we want to catch them not process them in order to get the MD5sum. Which provided within the
+        // URL args, within the final redirect
         // example url structure
         // http://s\\d{2}.turbobit.ru:\\d+/download.php?name=FILENAME.FILEEXTENTION&md5=793379e72eef01ed1fa3fec91eff5394&fid=b5w4jikojflm&uid=free&speed=59&till=1356198536&trycount=1&ip=YOURIP&sid=60193f81464cca228e7bb240a0c39130&browser=201c88fd294e46f9424f724b0d1a11ff&did=800927001&sign=7c2e5d7b344b4a205c71c18c923f96ab
         br.getPage(dllink);
-        dllink = br.getRedirectLocation();
+        if (br.getRedirectLocation() != null) {
+            dllink = br.getRedirectLocation();
+        }
         if (dllink.matches(".+&md5=[a-z0-9]{32}.+")) {
             String md5sum = new Regex(dllink, "md5=([a-z0-9]{32})").getMatch(0);
             if (md5sum != null) link.setMD5Hash(md5sum);
