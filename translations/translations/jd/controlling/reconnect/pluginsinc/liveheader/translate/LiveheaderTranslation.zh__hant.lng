@@ -1,4 +1,5 @@
 DataCompareDialog_DataCompareDialog_=比較路由器資訊
+DataCompareDialog_layoutDialogContent_firmware=韌體/版本
 DataCompareDialog_layoutDialogContent_firmware_help=輸入您的路由器韌體版本... 不知道可以留空
 DataCompareDialog_layoutDialogContent_ip=IP 或主機名稱
 DataCompareDialog_layoutDialogContent_ip_help=輸入網頁介面主機名稱...

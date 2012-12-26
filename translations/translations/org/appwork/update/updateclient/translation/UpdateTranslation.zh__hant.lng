@@ -1,5 +1,6 @@
 UpdateException_proxyconnect=代理伺服器連接失敗：%s1
 UpdateException_unknownbranch=正在更新 %s1 版本失敗
+UpdateException_unknownbranch_gui=%s1 版本不存在！
 UpdateServer_UpdaterGui_UpdaterGui_path=安裝路徑：%s1
 UpdateServer_UpdaterGui_UpdaterGui_started=開始更新：%s1
 UpdateServer_UpdaterGui_layoutGUI_details=更新紀錄
@@ -22,6 +23,7 @@ UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=找到 %s1 個更新！
 UpdateServer_UpdaterGui_onUpdaterModuleStart_download=下載 %s1
 UpdateServer_UpdaterGui_runInEDT_mainbar=更新伺服器忙碌。
 Updater_missing_title=更新程式遺失
+branch_resetted2=%s1 版本不存在！
 branch_updated=使用 %s1 版本
 call_failed_wait=更新伺服器忙碌。請 30 秒後再重試一次。
 cancel_update=取消更新
