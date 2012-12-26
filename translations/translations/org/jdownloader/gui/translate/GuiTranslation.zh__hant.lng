@@ -323,6 +323,7 @@ gui_config_captcha_settings=驗證碼設定
 gui_config_captcha_train_level=顯示起始點
 gui_config_captcha_train_show_timeout=倒數計時驗證碼視窗
 gui_config_download_autostart=自動開始下載
+gui_config_download_autostart_desc=Choose if, and when JDownloader should start pending downloads without user interaction...
 gui_config_download_crc=SFV/ CRC 存在時則執行比對！
 gui_config_download_max_chunks=每個下載最大區塊
 gui_config_download_simultan_downloads=最大同時下載數
