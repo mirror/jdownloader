@@ -30,6 +30,6 @@ plugins_optional_trayIcon_speed=速度:
 popup_downloadfolder=開啟下載資料夾
 popup_exit=結束 JDownloader
 popup_pause=暫停下載
-popup_reconnect=現在重新連接
+popup_reconnect=現在重新連線
 popup_reconnecttoggle=自動重新連線已啟用
 popup_update=檢查更新

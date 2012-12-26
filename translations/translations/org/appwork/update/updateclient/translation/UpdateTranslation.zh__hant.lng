@@ -37,6 +37,7 @@ error_occured_detailed=無法完成更新。
 error_unknown=%s1
 error_unknown_app=無法更新 %s1。請稍後再試一次！
 error_unknown_branch=未知版本：%s1
+filelog_deletedfile=尚未安裝的檔案：%s1
 filelog_installedfile=已安裝檔案 %s1
 getPanelTitle=正在更新 %s1
 guiless_done=更新完成。
