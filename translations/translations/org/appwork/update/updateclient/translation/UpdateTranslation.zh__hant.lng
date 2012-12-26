@@ -65,6 +65,7 @@ guiless_update_failed=更新失敗。原因： %s1
 guiless_updates_waiting_for_download=%s1 個檔案必須下載
 guiless_you_are_up2date=您已經有最新版本
 interrupted_title=已取消
+keychange=正在更新簽名金鑰
 list_optionals_header=可選套件
 locked=無法更新。%s1 仍在執行。
 locked_dialog_msg=無法安裝更新。好像 %s1 仍在執行。請關閉 %s1 主應用程式。
