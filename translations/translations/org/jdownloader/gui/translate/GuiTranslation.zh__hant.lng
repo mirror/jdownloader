@@ -343,6 +343,7 @@ gui_column_proxytype_socks5_tt=SOCKS 5 協定代理伺服器
 gui_column_use=使用
 gui_column_user=使用者名稱
 gui_column_version=版本
+gui_config_barrierfree_captchasize=驗證碼對話方塊的大小
 gui_config_captcha_jac_disable=停用 [反驗證碼外掛]
 gui_config_captcha_settings=驗證碼設定
 gui_config_captcha_train_level=顯示起始點
