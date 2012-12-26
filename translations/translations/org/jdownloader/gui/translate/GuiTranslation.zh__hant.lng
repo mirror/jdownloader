@@ -457,6 +457,6 @@ system_download_autostart_countdown=顯示倒數計時 (秒)
 system_download_triggerfileexists=如果檔案已經存在：
 system_download_triggerfileexists_ask=每個檔案皆詢問
 system_download_triggerfileexists_overwrite=覆寫
-system_download_triggerfileexists_rename=自動更名
+system_download_triggerfileexists_rename=自動重新命名
 system_download_triggerfileexists_skip=略過連結
 userio_errorregex=.*(錯誤|失敗).*
