@@ -308,6 +308,7 @@ action_settings_menu=設定
 action_settings_menu_tooltip=開啟控制台
 action_start_update_tooltip=檢查更新。
 action_stop_downloads_tooltip=停止所有執行中的下載
+added_date_column_dateformat=dd.MM.yy HH:mm
 added_date_column_title=加入日期
 authtablemodel_column_enabled=使用登錄
 authtablemodel_column_host=主機/網址
