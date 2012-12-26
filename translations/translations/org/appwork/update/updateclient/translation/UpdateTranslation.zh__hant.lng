@@ -52,6 +52,7 @@ guiless_downloadfinished=下載已完成。
 guiless_extract=解壓縮檔案....
 guiless_files_ready_for_install=%s1 個檔案正在等待以開始安裝！
 guiless_files_wait_for_removal=%s1 個檔案已經過時，將被刪除。
+guiless_filtering=與已安裝的檔案比較檔案清單
 guiless_installFinished=安裝已完成
 guiless_locked_closed_app=%s1 已關閉。立刻繼續。
 guiless_progress2=進度：%s1% | %s2/%s3
