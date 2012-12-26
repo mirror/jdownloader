@@ -266,6 +266,7 @@ ResultTableModel_initColumns_ruledesc_=相符規則條件
 ResultTableModel_initColumns_size_=檔案大小
 SearchField_SearchField_helptext=輸入檔名篩選運算式...
 SendLogDialog_SendLogDialog_title_=傳送 Bug 報告
+SendLogDialog_layoutDialogContent_desc_=何時發生問題？請檢查所有可能值得考慮的項目！
 SetCommentAction_SetCommentAction_object_=設定註解
 SetCommentAction_actionPerformed_dialog_title_=編輯連結/任務註解
 SetDownloadFolderAction_SetDownloadFolderAction_=設定下載目錄
