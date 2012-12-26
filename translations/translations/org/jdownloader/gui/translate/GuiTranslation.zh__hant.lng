@@ -258,6 +258,7 @@ SpeedlimitEditor_SpeedlimitEditor_=速度限制
 StatusBarImpl_initGUI_abort_linkgrabber=中止連結擷取器
 StatusBarImpl_initGUI_linkgrabber=連結擷取器動作
 StatusBarImpl_initGUI_linkgrabber_desc_inactive=- 閒置 -
+StatusColumn_StatusColumn=任務動作
 StopSignColumn_StopSignColumn=下載控制
 SwingGui_setVisible_password_=需要密碼
 TaskColumn_getStringValue_finished_=已完成
