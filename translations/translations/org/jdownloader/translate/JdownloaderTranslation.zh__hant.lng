@@ -77,6 +77,7 @@ gui_menu_extensions=工具
 gui_setting_folderchooser_title=選擇目錄
 gui_settings__gui_title=外觀設定
 gui_settings_advanced_description=在這裡找到的所有設定僅適用於進階使用者！如果您 100% 不知道您在做什麼，請不要改變任何東西。
+gui_settings_basicauth_description=在這裡加入 HTTP 和 FTP 憑證。基本驗證可用於基本登錄，並不需要額外的外掛。\r使用用於進階/黃金/白金帳號的帳號管理器！
 gui_settings_basicauth_title=基本驗證
 gui_settings_downloadcontroll_description=連接限制，下載順序，優先順序，...下載控制器的詳細資訊。
 gui_settings_downloadcontroll_title=下載管理
