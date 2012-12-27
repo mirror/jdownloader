@@ -212,7 +212,8 @@ public class Zippysharecom extends PluginForHost {
                     if (varZ != null) {
                         math += varZ;
                     }
-                    final String data = execJS(math, false);
+                    String data = execJS(math, true);
+                    if (data == null) data = execJS(math, false);
                     if (DLLINK.contains(var)) {
                         DLLINK = DLLINK.replace("\"+" + var + "+\"", data);
                     }
