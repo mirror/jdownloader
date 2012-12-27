@@ -20,6 +20,7 @@ UpdateServer_UpdaterGui_onStateChange_hashlist=聯絡更新伺服器
 UpdateServer_UpdaterGui_onStateChange_install=正在安裝
 UpdateServer_UpdaterGui_onStateChange_package=建立更新套件
 UpdateServer_UpdaterGui_onStateChange_successful=成功
+UpdateServer_UpdaterGui_onUpdaterEvent_branch=更新 %s1 | %s2-版本
 UpdateServer_UpdaterGui_onUpdaterEvent_remove=移除 %s1
 UpdateServer_UpdaterGui_onUpdaterModuleEnd_end_filtering=找到 %s1 個更新！
 UpdateServer_UpdaterGui_onUpdaterModuleStart_download=下載 %s1
