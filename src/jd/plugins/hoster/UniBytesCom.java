@@ -70,6 +70,7 @@ public class UniBytesCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("<p>File not found or removed</p>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Page Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(FATALSERVERERROR)) return AvailableStatus.UNCHECKABLE;
         String filename = br.getRegex("id=\"fileName\" style=\"[^\"\\']+\">(.*?)</span>").getMatch(0);
         String filesize = br.getRegex("\\((\\d+\\.\\d+ [A-Za-z]+)\\)</h3><script>").getMatch(0);
