@@ -136,7 +136,7 @@ public class UploadingCom extends PluginForHost {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/files/(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B|KB|MB|GB))</span></div></div>");
+                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (bytes|B|KB|MB|GB))</span></div></div>");
                     String status = allMatches.getMatch(0);
                     String filename = allMatches.getMatch(2);
                     String filesize = allMatches.getMatch(3);
@@ -206,7 +206,9 @@ public class UploadingCom extends PluginForHost {
         if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filesize = br.getRegex("file_size\">([\\d\\.]+ (B|KB|MB|GB|TB))</span>").getMatch(0);
+        if (filesize == null) filesize = br.getRegex("size tip_container\">([\\d\\.]+ (bytes|B|KB|MB|GB|TB))").getMatch(0);
         String filename = br.getRegex(">File link</label>[\t\n\r ]+<input type=\"text\" class=\"copy_field\" value=\"http://(www\\.)?uploading\\.com/files/(get/)?\\w+/([^<>/\"]+)").getMatch(2);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) - Free Download").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<title>Download ([^<>\"]*?) (kostenlos von Uploading\\.com herunterladen|for free on uploading\\.com)</title>").getMatch(0);
             if (filename == null) {
