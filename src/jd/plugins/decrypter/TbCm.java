@@ -49,6 +49,7 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -56,14 +57,13 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
 
     static {
         String installerSource = null;
         try {
-
             installerSource = JDIO.readFileToString(JDUtilities.getResourceFile("src.dat"));
             PLUGIN_DISABLED.set(installerSource.contains("\"PS\""));
         } catch (Throwable e) {
@@ -82,7 +82,6 @@ public class TbCm extends PluginForDecrypt {
         VIDEOWEBM("Video (Webm)", new String[] { ".webm" }),
         VIDEO3GP("Video (3GP)", new String[] { ".3gp" }),
         UNKNOWN("Unknown (unk)", new String[] { ".unk" }),
-
         VIDEOIPHONE("Video (IPhone)", new String[] { ".mp4" });
 
         private String   text;
@@ -105,7 +104,6 @@ public class TbCm extends PluginForDecrypt {
         public String toString() {
             return this.text;
         }
-
     }
 
     static class Info {
@@ -123,10 +121,10 @@ public class TbCm extends PluginForDecrypt {
     HashMap<DestinationFormat, ArrayList<Info>> possibleconverts    = null;
 
     private static final String                 TEMP_EXT            = ".tmp$";
-
-    ArrayList<String>                           done                = new ArrayList<String>();
     private boolean                             pluginloaded        = false;
     private boolean                             verifyAge           = false;
+
+    private HashMap<String, FilePackage>        filepackages        = new HashMap<String, FilePackage>();
 
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
@@ -172,7 +170,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -320,25 +319,12 @@ public class TbCm extends PluginForDecrypt {
         info.add(tmp);
     }
 
-    private void addVideosCurrentPage(final ArrayList<DownloadLink> links, String playlistID) {
-        final String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+\\&amp;list=[a-z\\-_A-Z0-9]+\\&amp;index=\\d+\\&amp;feature=[a-z\\-_A-Z0-9]+)\"").getColumn(0);
-        for (String video : videos) {
-            video = Encoding.htmlDecode(video);
-            if (done.contains(video)) continue;
-            done.add(video);
-            video = new Regex(video, "(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&").getMatch(0);
-            if (video == null) continue;
-            links.add(this.createDownloadlink("http://www.youtube.com" + video));
-        }
-    }
-
     public boolean canHandle(final String data) {
         if (PLUGIN_DISABLED.get() == true) return false;
         return super.canHandle(data);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-
         this.possibleconverts = new HashMap<DestinationFormat, ArrayList<Info>>();
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (PLUGIN_DISABLED.get() == true) return decryptedLinks;
@@ -359,7 +345,24 @@ public class TbCm extends PluginForDecrypt {
             String id = new Regex(parameter, "v/([a-z\\-_A-Z0-9]+)").getMatch(0);
             if (id != null) parameter = "http://www.youtube.com/watch?v=" + id;
         }
-        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/")) {
+
+        ArrayList<String> linkstodecrypt = new ArrayList<String>();
+
+        boolean prem = false;
+        final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
+        if (accounts != null && accounts.size() != 0) {
+            Iterator<Account> it = accounts.iterator();
+            while (it.hasNext()) {
+                Account n = it.next();
+                if (n.isEnabled() && n.isValid()) {
+                    prem = this.login(n);
+                    break;
+                }
+            }
+        }
+
+        // Parse playlist
+        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || (parameter.contains("list=") && parameter.contains("watch\\?v="))) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
                 String id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
                 if (id == null) {
@@ -370,37 +373,146 @@ public class TbCm extends PluginForDecrypt {
                 }
                 if (id != null) parameter = "http://www.youtube.com/view_play_list?p=" + id;
             }
-            String playlistID = new Regex(parameter, "\\?list=([a-zA-Z0-9]+)").getMatch(0);
-            if (playlistID == null) playlistID = new Regex(parameter, "list\\?p=([a-zA-Z0-9]+)").getMatch(0);
-            parameter = parameter.replaceFirst("playlist\\?", "view_play_list?");
-            this.br.getPage(parameter);
-            this.addVideosCurrentPage(decryptedLinks, playlistID);
-            if (!parameter.contains("page=")) {
-                final String[] pages = this.br.getRegex("<a href=(\"|')(http://www.youtube.com/view_play_list\\?p=.*?page=\\d+)(\"|')").getColumn(1);
-                for (int i = 0; i < pages.length - 1; i++) {
-                    this.br.getPage(pages[i]);
-                    this.addVideosCurrentPage(decryptedLinks, playlistID);
+
+            String page = parameter;
+
+            // Parse every page to get all videos
+            do {
+                this.br.getPage(page);
+                String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+\\&amp;index=\\d+").getColumn(0);
+                if (videos.length == 0) videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
+                for (String video : videos) {
+                    video = Encoding.htmlDecode(video);
+                    linkstodecrypt.add("http://www.youtube.com" + video);
                 }
-            }
+
+                // Get all page links
+                String[][] next = br.getRegex("<a href=\"(/playlist\\?list=[a-z\\-_A-Z0-9]+\\&amp;page=\\d+)\" class=\"yt\\-uix\\-button  yt\\-uix\\-pager\\-button yt\\-uix\\-sessionlink yt\\-uix\\-button\\-hh\\-default\" data-sessionlink=\"[A-Za-z0-9=%\\-_]+\" data-page=\"\\d+\"><span class=\"yt\\-uix\\-button\\-content\">[^0-9]+</span></a>").getMatches();
+
+                if (next.length == 2 || (next.length == 1 && linkstodecrypt.size() == 100)) {
+                    page = "http://www.youtube.com" + unescape(next[next.length - 1][0]);
+                } else {
+                    page = "";
+                }
+            } while (page.length() != 0);
+        } else if (parameter.contains("/user/")) {
+            // Handle user links
+            parameter = "http://www.youtube.com/user/" + new Regex(parameter, "youtube\\.com/user/([a-z\\-_A-Z0-9]+)($|\\?.*?)").getMatch(0);
+            br.getPage(parameter + "/videos?view=0");
+
+            String next = null;
+
+            do {
+                String content = unescape(br.toString());
+
+                if (content.contains("iframe style=\"display:block;border:0;\" src=\"/error")) throw new PluginException(LinkStatus.ERROR_RETRY, "An unkown error occured");
+
+                String[][] links = new Regex(content, "a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\" class=\"ux\\-thumb\\-wrap yt\\-uix\\-sessionlink yt\\-uix\\-contextlink contains\\-addto spf\\-link\"").getMatches();
+
+                for (String[] url : links) {
+                    String video = Encoding.htmlDecode(url[0]);
+                    if (!video.startsWith("http://www.youtube.com")) video = "http://www.youtube.com" + video;
+                    linkstodecrypt.add(video);
+                }
+
+                next = new Regex(content, "button class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" type=\"button\" onclick=\";return false;\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
+                if (next == null) next = new Regex(content, "button onclick=\";return false;\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" type=\"button\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
+                if (next == null) next = new Regex(content, "button type=\"button\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" onclick=\";return false;\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
+                if (next == null) next = new Regex(content, "button onclick=\";return false;\" type=\"button\" class=\"yt\\-uix\\-load\\-more load\\-more\\-button yt\\-uix\\-button yt\\-uix\\-button\\-hh\\-default\" data\\-uix\\-load\\-more\\-href=\"(.*?)\"").getMatch(0);
+
+                if (next != null && next.length() > 0) {
+                    br.getPage("http://www.youtube.com" + next);
+                }
+            } while (next != null && next.length() > 0);
         } else {
-            boolean prem = false;
-            final ArrayList<Account> accounts = AccountController.getInstance().getAllAccounts("youtube.com");
-            if (accounts != null && accounts.size() != 0) {
-                Iterator<Account> it = accounts.iterator();
-                while (it.hasNext()) {
-                    Account n = it.next();
-                    if (n.isEnabled() && n.isValid()) {
-                        prem = this.login(n);
-                        break;
+            // Handle single video
+            linkstodecrypt.add(parameter);
+        }
+
+        SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
+        boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
+        final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
+        final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
+        final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
+        final boolean flv = cfg.getBooleanProperty("ALLOW_FLV", true);
+        final boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
+
+        final boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
+        final boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
+        final boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
+        final boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
+        final boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
+        final boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
+        final boolean best = cfg.getBooleanProperty("ALLOW_BEST2", false);
+        /* http://en.wikipedia.org/wiki/YouTube */
+        final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
+            private static final long serialVersionUID = -3028718522449785181L;
+
+            {
+                // **** FLV *****
+                if (mp3) {
+                    this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
+                    this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
+                    this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
+                }
+                if (flv || best) {
+                    if (q240p || best) {
+                        this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
+                    }
+                    if (q360p || best) {
+                        this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
+                    }
+                    if (q480p || best) {
+                        this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
+                    }
+                }
+
+                // **** 3GP *****
+                if ((threegp && q240p) || best) {
+                    this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono", "240p" });
+                    this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
+                }
+
+                // **** MP4 *****
+                if (mp4 || best) {
+                    if (q360p || best) {
+                        this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
+                    }
+                    if (q720p || best) {
+                        this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
+                    }
+                    if (q1080p || best) {
+                        this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080" });
+                    }
+                    if (qOriginal || best) {
+                        this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "Original" });
+                    }
+                }
+
+                // **** WebM *****
+                if (webm || best) {
+                    if (q360p || best) {
+                        this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
+                    }
+                    if (q720p || best) {
+                        this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
                     }
                 }
             }
+        };
+
+        // Force fast linkcheck if there are more then 20 videos in queue.
+        if (linkstodecrypt.size() > 20) fast = true;
+
+        for (String url : linkstodecrypt) {
+            // Make an little slepp to prevent DDoS
+            Thread.sleep(25);
 
             try {
-                if (this.StreamingShareLink.matcher(parameter).matches()) {
+                if (this.StreamingShareLink.matcher(url).matches()) {
                     // StreamingShareLink
 
-                    final String[] info = new Regex(parameter, this.StreamingShareLink).getMatches()[0];
+                    final String[] info = new Regex(url, this.StreamingShareLink).getMatches()[0];
 
                     for (final String debug : info) {
                         logger.info(debug);
@@ -412,23 +524,28 @@ public class TbCm extends PluginForDecrypt {
                     thislink.setProperty("convertto", info[3]);
 
                     decryptedLinks.add(thislink);
-                    return decryptedLinks;
+                    // return decryptedLinks;
+                    continue;
                 }
                 verifyAge = false;
-                final HashMap<Integer, String[]> LinksFound = this.getLinks(parameter, prem, this.br, 0);
+                final HashMap<Integer, String[]> LinksFound = this.getLinks(url, prem, this.br, 0);
                 String error = br.getRegex("<div id=\"unavailable\\-message\" class=\"\">[\t\n\r ]+<span class=\"yt\\-alert\\-vertical\\-trick\"></span>[\t\n\r ]+<div class=\"yt\\-alert\\-message\">([^<>\"]*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("<div class=\"yt\\-alert\\-message\">(.*?)</div>").getMatch(0);
                 if (error == null) error = br.getRegex("\\&reason=([^<>\"/]*?)\\&").getMatch(0);
                 if (br.containsHTML(UNSUPPORTEDRTMP)) error = "RTMP video download isn't supported yet!";
                 if ((LinksFound == null || LinksFound.isEmpty()) && error != null) {
                     error = Encoding.urlDecode(error, false);
-                    logger.info("Video unavailable: " + parameter);
+                    logger.info("Video unavailable: " + url);
                     logger.info("Reason: " + error.trim());
-                    return decryptedLinks;
+                    continue;
                 }
                 if (LinksFound == null || LinksFound.isEmpty()) {
-                    if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
-                    throw new DecrypterException("Video no longer available");
+                    if (linkstodecrypt.size() == 1) {
+                        if (verifyAge || this.br.getURL().toLowerCase().indexOf("youtube.com/get_video_info?") != -1 && !prem) { throw new DecrypterException(DecrypterException.ACCOUNT); }
+                        throw new DecrypterException("Video no longer available");
+                    } else {
+                        continue;
+                    }
                 }
 
                 /* First get the filename */
@@ -438,84 +555,10 @@ public class TbCm extends PluginForDecrypt {
                     LinksFound.remove(-1);
                 }
                 /* prefer videoID als filename? */
-                SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
                 if (cfg.getBooleanProperty("ISASFILENAME", false)) {
-                    String id = new Regex(parameter, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
+                    String id = new Regex(url, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
                 }
-                final boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
-                final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
-                final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
-                final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
-                final boolean flv = cfg.getBooleanProperty("ALLOW_FLV", true);
-                final boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
-
-                final boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
-                final boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
-                final boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
-                final boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
-                final boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
-                final boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
-                final boolean best = cfg.getBooleanProperty("ALLOW_BEST2", false);
-                /* http://en.wikipedia.org/wiki/YouTube */
-                final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
-                    /**
-                     * 
-                     */
-                    private static final long serialVersionUID = -3028718522449785181L;
-
-                    {
-                        // **** FLV *****
-                        if (mp3) {
-                            this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
-                            this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
-                            this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
-                        }
-                        if (flv || best) {
-                            if (q240p || best) {
-                                this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
-                            }
-                            if (q360p || best) {
-                                this.put(34, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "360p" });
-                            }
-                            if (q480p || best) {
-                                this.put(35, new Object[] { DestinationFormat.VIDEOFLV, "H.264", "AAC", "Stereo", "480p" });
-                            }
-                        }
-
-                        // **** 3GP *****
-                        if ((threegp && q240p) || best) {
-                            this.put(13, new Object[] { DestinationFormat.VIDEO3GP, "H.263", "AMR", "Mono", "240p" });
-                            this.put(17, new Object[] { DestinationFormat.VIDEO3GP, "H.264", "AAC", "Stereo", "240p" });
-                        }
-
-                        // **** MP4 *****
-                        if (mp4 || best) {
-                            if (q360p || best) {
-                                this.put(18, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "360p" });
-                            }
-                            if (q720p || best) {
-                                this.put(22, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "720p" });
-                            }
-                            if (q1080p || best) {
-                                this.put(37, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "1080" });
-                            }
-                            if (qOriginal || best) {
-                                this.put(38, new Object[] { DestinationFormat.VIDEOMP4, "H.264", "AAC", "Stereo", "Original" });
-                            }
-                        }
-
-                        // **** WebM *****
-                        if (webm || best) {
-                            if (q360p || best) {
-                                this.put(43, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "360p" });
-                            }
-                            if (q720p || best) {
-                                this.put(45, new Object[] { DestinationFormat.VIDEOWEBM, "VP8", "Vorbis", "Stereo", "720p" });
-                            }
-                        }
-                    }
-                };
 
                 /* check for wished formats first */
                 if (best) {
@@ -580,7 +623,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
@@ -623,15 +667,21 @@ public class TbCm extends PluginForDecrypt {
 
                 for (final Entry<DestinationFormat, ArrayList<Info>> next : this.possibleconverts.entrySet()) {
                     final DestinationFormat convertTo = next.getKey();
+
                     // create a package, for each quality.
-                    final FilePackage filePackage = FilePackage.getInstance();
-                    filePackage.setProperty("ALLOW_MERGE", true);
-                    filePackage.setName("YouTube " + convertTo.getText());
+                    FilePackage filePackage = filepackages.get(convertTo.getText());
+                    if (filePackage == null) {
+                        filePackage = FilePackage.getInstance();
+                        filePackage.setProperty("ALLOW_MERGE", true);
+                        filePackage.setName("YouTube " + convertTo.getText());
+                        filepackages.put(convertTo.getText(), filePackage);
+                    }
+
                     for (final Info info : next.getValue()) {
                         final DownloadLink thislink = this.createDownloadlink(info.link.replaceFirst("http", "httpJDYoutube"));
                         thislink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(thislink);
-                        thislink.setBrowserUrl(parameter);
+                        thislink.setBrowserUrl(url);
                         thislink.setFinalFileName(YT_FILENAME + info.desc + convertTo.getExtFirst());
                         thislink.setProperty("size", info.size);
                         String name = null;
@@ -639,14 +689,13 @@ public class TbCm extends PluginForDecrypt {
                             name = YT_FILENAME + info.desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
-                            /*
-                             * because demuxer will fail when mp3 file already exists
-                             */
+                            // because demuxer will fail when mp3 file already
+                            // exists
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
                         }
                         thislink.setProperty("convertto", convertTo.name());
-                        thislink.setProperty("videolink", parameter);
+                        thislink.setProperty("videolink", url);
                         thislink.setProperty("valid", true);
                         thislink.setProperty("fmtNew", info.fmt);
                         thislink.setProperty("LINKDUPEID", name);
@@ -654,15 +703,20 @@ public class TbCm extends PluginForDecrypt {
                     }
                 }
 
-                final String VIDEOID = new Regex(parameter, "watch\\?v=([\\w_\\-]+)").getMatch(0);
+                final String VIDEOID = new Regex(url, "watch\\?v=([\\w_\\-]+)").getMatch(0);
 
                 // Grab Subtitles
                 if (cfg.getBooleanProperty("ALLOW_SUBTITLES", true)) {
                     br.getPage("http://video.google.com/timedtext?type=list&v=" + VIDEOID);
 
-                    final FilePackage filePackage = FilePackage.getInstance();
-                    filePackage.setProperty("ALLOW_MERGE", true);
-                    filePackage.setName("YouTube subtitles");
+                    FilePackage filePackage = filepackages.get("YouTube subtitles");
+
+                    if (filepackages == null) {
+                        filePackage = FilePackage.getInstance();
+                        filePackage.setProperty("ALLOW_MERGE", true);
+                        filePackage.setName("YouTube subtitles");
+                        filepackages.put("YouTube subtitles", filePackage);
+                    }
 
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
 
@@ -672,7 +726,7 @@ public class TbCm extends PluginForDecrypt {
                         DownloadLink dlink = this.createDownloadlink(link.replaceFirst("http", "httpJDYoutube"));
                         dlink.setProperty("ALLOW_DUPE", true);
                         filePackage.add(dlink);
-                        dlink.setBrowserUrl(parameter);
+                        dlink.setBrowserUrl(url);
 
                         String name = YT_FILENAME + " (" + track[3] + ").xml";
                         dlink.setFinalFileName(name);
@@ -684,28 +738,29 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // Grab thumbnails
-                FilePackage filePackage = null;
-                if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false)) {
+                FilePackage filePackage = filepackages.get("YouTube thumbnails");
+                if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
                     filePackage.setName("YouTube thumbnails");
+                    filepackages.put("YouTube thumbnails", filePackage);
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false)) {
-                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + " (HQ).jpg", "http://img.youtube.com/vi/" + VIDEOID + "/hqdefault.jpg", parameter, filePackage));
+                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + " (HQ).jpg", "http://img.youtube.com/vi/" + VIDEOID + "/hqdefault.jpg", url, filePackage));
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false)) {
-                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + " (MQ).jpg", "http://img.youtube.com/vi/" + VIDEOID + "/mqdefault.jpg", parameter, filePackage));
+                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + " (MQ).jpg", "http://img.youtube.com/vi/" + VIDEOID + "/mqdefault.jpg", url, filePackage));
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false)) {
-                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + ".jpg", "http://img.youtube.com/vi/" + VIDEOID + "/default.jpg", parameter, filePackage));
+                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + ".jpg", "http://img.youtube.com/vi/" + VIDEOID + "/default.jpg", url, filePackage));
                 }
             } catch (final IOException e) {
                 this.br.getHttpConnection().disconnect();
                 logger.log(java.util.logging.Level.SEVERE, "Exception occurred", e);
-                return null;
+                // return null;
             }
         }
 
@@ -938,5 +993,4 @@ public class TbCm extends PluginForDecrypt {
         }
         return true;
     }
-
 }
