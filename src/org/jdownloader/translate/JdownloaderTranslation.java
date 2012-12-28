@@ -96,7 +96,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "<b><u>No Reconnect selected</u></b><br/><p>Reconnection is an advanced approach for skipping long waits that some hosts impose on free users. <br>It is not helpful while using a premium account.</p><p>Read more about Reconnect <a href='http://support.jdownloader.org/index.php?/Knowledgebase/Article/View/1/0/why-should-i-set-up-my-reconnect'>here</a></p>" })
     String jd_controlling_reconnect_plugins_DummyRouterPlugin_getGUI2();
 
-    @Default(lngs = { "en" }, values = { "%s1-CRC OK" })
+    @Default(lngs = { "en" }, values = { "[%s1] CRC OK" })
     String system_download_doCRC2_success(Object s1);
 
     @Default(lngs = { "en" }, values = { "Hoster problem?" })
@@ -144,7 +144,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Your current IP" })
     String gui_config_reconnect_showcase_currentip();
 
-    @Default(lngs = { "en" }, values = { "%s1-CRC FAILED" })
+    @Default(lngs = { "en" }, values = { "[%s1] CRC FAILED" })
     String system_download_doCRC2_failed(Object s1);
 
     @Default(lngs = { "en" }, values = { "No Internet connection?" })
@@ -159,7 +159,7 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Disconnect?" })
     String plugins_errors_disconnect();
 
-    @Default(lngs = { "en" }, values = { "%s1-CRC running" })
+    @Default(lngs = { "en" }, values = { "[%s1] CRC running" })
     String system_download_doCRC2(Object s1);
 
     @Default(lngs = { "en" }, values = { "File exists" })
