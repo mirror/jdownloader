@@ -136,10 +136,10 @@ public class UploadingCom extends PluginForHost {
                         logger.warning("Uploading.com availablecheck is broken!");
                         return false;
                     }
-                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (bytes|B|KB|MB|GB))</span></div></div>");
+                    Regex allMatches = new Regex(correctedHTML, "<div class=\"result clearfix (failed|ok)\">.+http://uploading\\.com/(files/)?(get/)?" + fileid + "/([^/\"]+).*?</a><span class=\"size\">([\\d\\.]+ (B(ytes)|KB|MB|GB))</span></div></div>");
                     String status = allMatches.getMatch(0);
-                    String filename = allMatches.getMatch(2);
-                    String filesize = allMatches.getMatch(3);
+                    String filename = allMatches.getMatch(3);
+                    String filesize = allMatches.getMatch(4);
                     if (filename == null || filesize == null) {
                         logger.warning("Uploading.com availablecheck is broken!");
                         dl.setAvailable(false);
@@ -198,37 +198,6 @@ public class UploadingCom extends PluginForHost {
             }
         }
         return ai;
-    }
-
-    public AvailableStatus fileCheck(DownloadLink downloadLink) throws PluginException, IOException {
-        correctDownloadLink(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filesize = br.getRegex("file_size\">([\\d\\.]+ (B|KB|MB|GB|TB))</span>").getMatch(0);
-        if (filesize == null) filesize = br.getRegex("size tip_container\">([\\d\\.]+ (bytes|B|KB|MB|GB|TB))").getMatch(0);
-        String filename = br.getRegex(">File link</label>[\t\n\r ]+<input type=\"text\" class=\"copy_field\" value=\"http://(www\\.)?uploading\\.com/files/(get/)?\\w+/([^<>/\"]+)").getMatch(2);
-        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?) - Free Download").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>Download ([^<>\"]*?) (kostenlos von Uploading\\.com herunterladen|for free on uploading\\.com)</title>").getMatch(0);
-            if (filename == null) {
-                // Last try to get the filename, if this
-                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/files/(get/)?\\w+/([a-zA-Z0-9 ._]+)").getMatch(1);
-                fname = fname.replace(" ", "_");
-                if (br.containsHTML(fname)) {
-                    filename = fname;
-                }
-            }
-        }
-        if (filename == null) {
-            if (br.containsHTML("<h2>Daily Download Limit</h2>")) return AvailableStatus.UNCHECKABLE;
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        downloadLink.setName(filename.trim());
-        if (filesize != null) {
-            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
-        }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -335,7 +304,7 @@ public class UploadingCom extends PluginForHost {
         logger.info("Submitting first ajax request");
         ajax.postPage("http://uploading.com/files/get/?ajax", "code=" + Encoding.urlEncode(fileID) + "&action=second_page");
         int wait = 60;
-        String waitTimer = ajax.getRegex("wait_time\":\"(\\d+)\"").getMatch(0);
+        String waitTimer = ajax.getRegex("wait_time\":(\")?(-?\\d+)(\")?").getMatch(1);
         if (waitTimer != null) wait = Integer.parseInt(waitTimer);
         try {
             sleep(wait * 1001l, link);
@@ -594,7 +563,32 @@ public class UploadingCom extends PluginForHost {
         setBrowserExclusive();
         prepBrowser();
         br.setFollowRedirects(true);
-        return fileCheck(downloadLink);
+        correctDownloadLink(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("but due to abuse or through deletion by")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("file was removed")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filesize = br.getRegex("<li class=\"size tip_container\">([\\d\\.]+ (B(ytes)?|KB|MB|GB|TB))<").getMatch(0);
+        String filename = br.getRegex(">Filemanager</a></li>[\r\n\t ]+<li>([^<>]+)</li>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta name=\"keywords\" content=\"([^,]+)").getMatch(0);
+            if (filename == null) {
+                // Last try to get the filename, if this
+                String fname = new Regex(downloadLink.getDownloadURL(), "uploading\\.com/(files/)?(get/)?\\w+/([\\w \\.]+)").getMatch(2);
+                fname = fname.replace(" ", "_");
+                if (br.containsHTML(fname)) {
+                    filename = fname;
+                }
+            }
+        }
+        if (filename == null) {
+            if (br.containsHTML("<h2>Daily Download Limit</h2>")) return AvailableStatus.UNCHECKABLE;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        downloadLink.setName(filename.trim());
+        if (filesize != null) {
+            downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+        }
+        return AvailableStatus.TRUE;
     }
 
     @Override

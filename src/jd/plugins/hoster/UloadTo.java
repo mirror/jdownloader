@@ -316,28 +316,13 @@ public class UloadTo extends PluginForHost {
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "<a href=\"(http://[a-zA-Z0-9\\.\\-]*?uload\\.to(:\\d+)?/d/.*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = new Regex(correctedBR, "dotted #bbb;padding.*?<a href=\"(.*?)\"").getMatch(0);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
-                dllink = new Regex(correctedBR, "This (direct link|download link) will be available for your IP.*?href=\"(http.*?)\"").getMatch(1);
-                if (dllink == null) {
-                    dllink = new Regex(correctedBR, "Download: <a href=\"(.*?)\"").getMatch(0);
-                    if (dllink == null) {
-                        dllink = new Regex(correctedBR, "<a href=\"(https?://[^\"]+)\"[^>]+>(Click to Download|Download File)").getMatch(0);
-                        if (dllink == null) {
-                            dllink = new Regex(correctedBR, "so\\.addVariable\\(\\'file\\',\\'([^\\']+)").getMatch(0);
-                            if (dllink == null) {
-                                String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
-                                if (cryptedScripts != null && cryptedScripts.length != 0) {
-                                    for (String crypted : cryptedScripts) {
-                                        dllink = decodeDownloadLink(crypted);
-                                        if (dllink != null) break;
-                                    }
-                                }
-                            }
-                        }
+                final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
+                if (cryptedScripts != null && cryptedScripts.length != 0) {
+                    for (String crypted : cryptedScripts) {
+                        dllink = decodeDownloadLink(crypted);
+                        if (dllink != null) break;
                     }
                 }
             }
