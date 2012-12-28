@@ -50,6 +50,7 @@ public class Youtube extends PluginForHost {
     private static Object       lock                    = new Object();
     private boolean             prem                    = false;
     private static final String IDASFILENAME            = "ISASFILENAME";
+    private static final String IDINFILENAME            = "IDINFILENAME";
     private static final String ALLOW_MP3               = "ALLOW_MP3";
     private static final String ALLOW_MP4               = "ALLOW_MP4";
     private static final String ALLOW_WEBM              = "ALLOW_WEBM";
@@ -241,7 +242,8 @@ public class Youtube extends PluginForHost {
                 String checkConnection = br.getRegex("iframeUri: '(https.*?)'").getMatch(0);
                 if (checkConnection != null) {
                     /*
-                     * dont know if this is important but seems to set pstMsg to 1 ;)
+                     * dont know if this is important but seems to set pstMsg to
+                     * 1 ;)
                      */
                     checkConnection = unescape(checkConnection);
                     br.cloneBrowser().getPage(checkConnection);
@@ -408,7 +410,9 @@ public class Youtube extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false));
+        ConfigEntry id = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false);
+        getConfig().addEntry(id);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDINFILENAME, JDL.L("plugins.hoster.youtube.idinfilename", "Use Video-ID additionally in filename?")).setDefaultValue(false).setEnabledCondidtion(id, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab best available resolution")).setDefaultValue(false);
