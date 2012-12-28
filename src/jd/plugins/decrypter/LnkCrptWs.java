@@ -35,6 +35,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 import javax.script.ScriptEngine;
@@ -1303,7 +1304,7 @@ public class LnkCrptWs extends PluginForDecrypt {
             decryptedJS = result.toString();
             String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
             if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
-            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[0-9a-zA-Z/]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0);
+            if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0);
             if (row != null) map.put(row[1], row[0]);
         }
 
@@ -1324,8 +1325,12 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
 
         /* CNL --> Container --> Webdecryption */
-        if (map.containsKey("cnl")) {
-            Browser cnlbr = br.cloneBrowser();
+        boolean webDecryption = br.containsHTML("BlueHeadLine.*?>Weblinks<");
+        boolean isCnlAvailable = map.containsKey("cnl");
+
+        // CNL
+        if (isCnlAvailable) {
+            final Browser cnlbr = br.cloneBrowser();
             cnlbr.getRequest().setHtmlCode(decryptedJS.replaceAll("\\\\", ""));
             Form cnlForm = cnlbr.getForm(0);
             if (cnlForm != null) {
@@ -1339,38 +1344,28 @@ public class LnkCrptWs extends PluginForDecrypt {
                     logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
                 }
             }
+            map.remove("cnl");
         }
 
-        File container = null;
-        if (map.containsKey("dlc")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc", true);
+        // Container
+        for (Entry<String, String> next : map.entrySet()) {
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + next.getKey(), true);
             if (!container.exists()) {
                 container.createNewFile();
             }
-            br.cloneBrowser().getDownload(container, map.get("dlc"));
-        } else if (map.containsKey("ccf")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf", true);
-            if (!container.exists()) {
-                container.createNewFile();
+            br.cloneBrowser().getDownload(container, next.getValue());
+            if (container != null) {
+                logger.info("Container found: " + container);
+                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                container.delete();
+                if (decryptedLinks.size() == 0) continue;
             }
-            br.cloneBrowser().getDownload(container, map.get("ccf"));
-        } else if (map.containsKey("rsdf")) {
-            container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf", true);
-            if (!container.exists()) {
-                container.createNewFile();
-            }
-            br.cloneBrowser().getDownload(container, map.get("rsdf"));
         }
 
-        if (container != null) {
-            // container available
-            logger.info("Container found: " + container);
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
-            if (decryptedLinks.size() > 0) { return decryptedLinks; }
-        }
-        /* we have to open the normal page for weblinks */
-        if (br.containsHTML("BlueHeadLine.*?>(Weblinks)<")) {
+        if (decryptedLinks.size() > 0) return decryptedLinks;
+
+        // Webdecryption
+        if (webDecryption) {
             br.getPage("http://linkcrypt.ws/dir/" + containerId);
             logger.info("ContainerID is null, trying webdecryption...");
             final Form[] forms = br.getForms();
@@ -1436,7 +1431,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         if (decryptedLinks == null || decryptedLinks.size() == 0) {
             logger.info("No links found, let's see if CNL2 is available!");
-            if (map.containsKey("cnl")) {
+            if (isCnlAvailable) {
                 LocalBrowser.openDefaultURL(new URL(parameter));
                 throw new DecrypterException(JDL.L("jd.controlling.CNL2.checkText.message", "Click'n'Load URL opened"));
             }
