@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -44,6 +45,7 @@ public class UniBytesCom extends PluginForHost {
     private static final String FATALSERVERERROR = "<u>The requested resource \\(\\) is not available\\.</u>";
     private static final String MAINPAGE         = "http://www.unibytes.com/";
     private static String       agent            = null;
+    private static final String freeDlLink       = "(https?://st\\d+\\.unibytes\\.com/fdload/file[^\"]+)";
 
     public UniBytesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -124,13 +126,14 @@ public class UniBytesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_/]+)").getMatch(0);
         requestFileInformation(downloadLink);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
-            dllink = dllink == null ? br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0) : dllink;
+            dllink = dllink == null ? br.getRegex(freeDlLink).getMatch(0) : dllink;
             if (dllink == null) {
                 if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
                 int iwait = 60;
@@ -147,22 +150,41 @@ public class UniBytesCom extends PluginForHost {
                 }
                 sleep(iwait * 1001l, downloadLink);
                 br.getPage(downloadLink.getDownloadURL() + "/free?&step=" + step + "&referer=");
-                dllink = br.getRedirectLocation();
-                if (dllink == null) {
-                    dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
+                if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(freeDlLink)) {
+                    dllink = br.getRedirectLocation();
                 }
-                String s = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-                if (dllink == null && s == null) {
-                    logger.warning("s2 equals null!");
+                if (dllink == null) {
+                    dllink = br.getRegex(freeDlLink).getMatch(0);
+                }
+                if ((dllink == null) && br.containsHTML("(id=\"noThanxDiv\".+\">no, thanks</a></div>|<a href=(\"|\\')(/" + uid + "/[^\"]+step=[^\"]+))")) {
+                    // for times with addition page of no thanks && steps
+                    String step2 = br.getRegex("<div style=\".+\" id=\"noThanxDiv\"><a href=\"([^\"]+)\".+\">no, thanks</a></div>").getMatch(0);
+                    if (step2 == null) {
+                        step2 = br.getRegex("<a href=\"([^\"]+)\"[^>]+\">no, thanks</a>").getMatch(0);
+                        if (step2 == null) step2 = br.getRegex("<a href=(\"|\\')(/" + uid + "/[^\"]+step=[^\"]+)").getMatch(1);
+                        if (step2 != null) {
+                            br.getPage(step2);
+                            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(freeDlLink)) {
+                                dllink = br.getRedirectLocation();
+                            } else {
+                                dllink = br.getRegex(freeDlLink).getMatch(0);
+                            }
+                        }
+                    }
+                }
+                String step3 = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
+                if (dllink == null && step3 == null) {
+                    logger.warning("'step3' equals null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                // not sure if this is captcha component required or even current...
                 if (dllink == null) {
-                    br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + s + "&referer=" + addedLinkCoded);
+                    br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + step3 + "&referer=" + addedLinkCoded);
                     if (br.containsHTML(CAPTCHATEXT)) {
                         logger.info("Captcha found");
                         for (int i = 0; i <= 5; i++) {
                             String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
-                            String post = "s=" + s + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
+                            String post = "s=" + step3 + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
                             br.postPage(downloadLink.getDownloadURL(), post);
                             if (!br.containsHTML(CAPTCHATEXT)) break;
                         }
@@ -170,7 +192,7 @@ public class UniBytesCom extends PluginForHost {
                     } else {
                         logger.info("Captcha not found");
                     }
-                    dllink = br.getRegex("\"(http://st\\d+\\.unibytes\\.com/fdload/file.*?)\"").getMatch(0);
+                    dllink = br.getRegex(freeDlLink).getMatch(0);
                     if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
                 }
             }
