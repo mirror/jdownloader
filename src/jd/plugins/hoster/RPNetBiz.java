@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -29,6 +30,7 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -172,8 +174,20 @@ public class RPNetBiz extends PluginForHost {
         return true;
     }
 
+    /**
+     * Temporary workaround to build the lonk link for bitshare shorthand links.
+     * Can be removed when rpnet accepts bitshare shorthand links.
+     */
+    private void bitshareWorkaround(DownloadLink link) throws Exception {
+        String shortLink = link.getDownloadURL();
+        br.getPage(shortLink);
+        Regex rex = new Regex(br, "Download:</td>[^\"]*<td><input type=\"text\" value=\"([^\"]+)\"", Pattern.DOTALL);
+        link.setUrlDownload(rex.getMatch(0));
+    }
+
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+        if (link.getDownloadURL().contains("bitshare.com/?f=")) bitshareWorkaround(link);
         showMessage(link, "Generating Link");
         /* request Download */
         String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(link.getDownloadURL());
