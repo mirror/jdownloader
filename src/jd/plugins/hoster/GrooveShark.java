@@ -376,7 +376,7 @@ public class GrooveShark extends PluginForHost {
             if (br.getRegex(INVALIDTOKEN).matches()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
 
             STREAMKEY = br.getRegex("streamKey\":\"(\\w+)\"").getMatch(0);
-            if (STREAMKEY == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 300 * 1000L); }
+            if (STREAMKEY == null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "IP limit reached. Try reconnect!", 30 * 60 * 1000L); }
             STREAMKEY = "streamKey=" + STREAMKEY.replace("_", "%5F");
             String ip = br.getRegex("ip\":\"(.*?)\"").getMatch(0);
             DLLINK = "http://" + ip + "/stream.php";
