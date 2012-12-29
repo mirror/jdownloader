@@ -41,8 +41,7 @@ public class NmLdsrg extends PluginForDecrypt {
     }
 
     /*
-     * Note: FilePackage gets overridden when crypt-it.com (link protection
-     * service) used. Old posts + streaming links still get caught.
+     * Note: FilePackage gets overridden when crypt-it.com (link protection service) used. Old posts + streaming links still get caught.
      */
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
@@ -122,7 +121,7 @@ public class NmLdsrg extends PluginForDecrypt {
                 logger.info("Captcha wrong, stopping...");
                 throw new DecrypterException(DecrypterException.CAPTCHA);
             }
-            String dllink = ajax.getRegex("\"response\":\"(http:[^<>\"]*?)\"").getMatch(0);
+            String dllink = ajax.getRegex("\"response\":(\\[)?\"(http[^<>\"]*?)\"").getMatch(0);
             // Links can fail for multiple reasons so let's skip them
             if (dllink == null) {
                 logger.info("Found a dead link: " + link);
