@@ -22,15 +22,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -71,8 +70,8 @@ public class RPNetBiz extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.getHeaders().put("Agent", "JDOWNLOADER");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.getHeaders().put("User-Agent", "JDOWNLOADER");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -174,35 +173,36 @@ public class RPNetBiz extends PluginForHost {
         return true;
     }
 
-    /**
-     * Temporary workaround to build the lonk link for bitshare shorthand links.
-     * Can be removed when rpnet accepts bitshare shorthand links.
-     */
-    private void bitshareWorkaround(DownloadLink link) throws Exception {
-        String shortLink = link.getDownloadURL();
-        br.getPage(shortLink);
-        Regex rex = new Regex(br, "Download:</td>[^\"]*<td><input type=\"text\" value=\"([^\"]+)\"", Pattern.DOTALL);
-        link.setUrlDownload(rex.getMatch(0));
-    }
-
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        if (link.getDownloadURL().contains("bitshare.com/?f=")) bitshareWorkaround(link);
+        // Temporary workaround for bitshare. Can be removed when rpnet accepts bitshare shorthand links.
+        String downloadURL = null;
+        if (link.getDownloadURL().contains("bitshare.com/?f=")) {
+            Browser newBr = new Browser();
+            newBr.getPage(link.getDownloadURL());
+            String rex = newBr.getRegex("Download:</td>[^\"]*<td><input type=\"text\" value=\"([^\"]+)\"").getMatch(0);
+            if (rex == null) {
+                logger.warning("Could not find 'rex'");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            downloadURL = rex;
+        } else {
+            downloadURL = link.getDownloadURL();
+        }
+        // end of workaround
         showMessage(link, "Generating Link");
         /* request Download */
-        String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(link.getDownloadURL());
+        String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
         br.getPage(apiDownloadLink);
         JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
         JSonArray links = (JSonArray) node.get("links");
 
-        // for now there is only one generated link per api call, could be
-        // changed in the future, therefore iterate anyway
+        // for now there is only one generated link per api call, could be changed in the future, therefore iterate anyway
         for (JSonNode linkNode : links) {
             JSonObject linkObj = (JSonObject) linkNode;
             JSonNode errorNode = linkObj.get("error");
             if (errorNode != null) {
-                // shows a more detailed error message returned by the API,
-                // especially if the DL Limit is reached for a host
+                // shows a more detailed error message returned by the API, especially if the DL Limit is reached for a host
                 String msg = errorNode.toString();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
             }
@@ -261,8 +261,7 @@ public class RPNetBiz extends PluginForHost {
             return;
         } else {
             /*
-             * download is not contentdisposition, so remove this host from
-             * premiumHosts list
+             * download is not contentdisposition, so remove this host from premiumHosts list
              */
             br.followConnection();
         }
@@ -280,6 +279,7 @@ public class RPNetBiz extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -294,7 +294,6 @@ public class RPNetBiz extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 URLConnectionAdapter postback = br.openPostConnection(mPremium + "login.php", "username=" + account.getUser() + "&password=" + account.getPass() + "&login=");
                 if (postback.getResponseCode() != 302) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 /** Save cookies */
