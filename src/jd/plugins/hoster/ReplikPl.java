@@ -33,10 +33,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 @HostPlugin(revision = "$Revision: 18484 $", interfaceVersion = 2, names = { "replik.pl" }, urls = { "http://replik\\.pl/fg/(.*)/" }, flags = { 2 })
 public class ReplikPl extends PluginForHost {
 
-    private static Object        LOCK     = new Object();
-    private static final String  MAINPAGE = "http://replik.pl/";
-    private static final String  USERTEXT = "Only downloadable for registered users!";
-    private static AtomicInteger maxFree  = new AtomicInteger(2);
+    private static Object        LOCK             = new Object();
+    private static final String  MAINPAGE         = "http://replik.pl/";
+    private static final String  USERTEXT         = "Only downloadable for registered users!";
+    private static AtomicInteger maxFree          = new AtomicInteger(2);
+    private static AtomicInteger maxChunksForFree = new AtomicInteger(2);
 
     public ReplikPl(final PluginWrapper wrapper) {
         super(wrapper);
@@ -74,7 +75,7 @@ public class ReplikPl extends PluginForHost {
 
         try {
             finalLink = "http://" + link.getHost() + finalLink;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 2);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, maxChunksForFree.get());
         } catch (Exception e) {
             if (br.getRequest().getHttpConnection().getResponseMessage().equals("Requested Range Not Satisfiable")) {
                 logger.warning("The file is unavailable");
