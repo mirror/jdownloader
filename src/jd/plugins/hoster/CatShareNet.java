@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2011  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -19,7 +19,6 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -36,21 +35,22 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19258 $", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://[www\\.]?catshare\\.net/([A-Za-z0-9]{16})/*.*" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 19258 $", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 0 })
 public class CatShareNet extends PluginForHost {
 
-    private String               BRBEFORE = "";
-    private String               HOSTER   = "http://catshare.net";
-    private static Object        LOCK     = new Object();
-    private static AtomicInteger maxFree  = new AtomicInteger(1);
+    private String BRBEFORE = "";
+    private String HOSTER   = "http://catshare.net";
+
+    // DEV NOTES
+    // captchatype: recaptcha
+    // non account: 1 * 1
 
     public CatShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(HOSTER + "/login");
+        // this.enablePremium(HOSTER + "/login");
     }
 
     public void checkErrors(DownloadLink theLink, boolean beforeRecaptcha) throws NumberFormatException, PluginException {
-
         // Some waittimes...
         if (beforeRecaptcha) {
             if (br.containsHTML("<h4 style=\"margin-right: 10px;\">Odczekaj <big id=\"counter\"></big> lub kup")) {
@@ -170,7 +170,7 @@ public class CatShareNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxFree.get();
+        return 1;
     }
 
     @Override
