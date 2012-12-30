@@ -63,7 +63,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/file/[\\w]+|ul\\.to/[\\w]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/file/[\\w]+|ul\\.to/(file/)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
     // DEV NOTES:
@@ -299,7 +299,7 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/)", "://uploaded.net/file/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/(file/)?)", "://uploaded.net/file/"));
     }
 
     public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {
