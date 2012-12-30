@@ -67,7 +67,7 @@ import org.appwork.utils.os.CrossSystem;
 public class Uploadedto extends PluginForHost {
 
     // DEV NOTES:
-    // supported hosts: https? + www + uploaded.to/files/UID, uploaded.net/files/UID, ul.to/UID
+    // supported hosts: https? + www + uploaded.to/files/UID, uploaded.net/files/UID, ul.to/(file/)?UID
     // other: respects https in download methods, even though final download link isn't https (free tested).
 
     public static class StringContainer {
@@ -222,6 +222,9 @@ public class Uploadedto extends PluginForHost {
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         if (urls == null || urls.length == 0) { return false; }
+        for (DownloadLink link : urls) {
+            correctDownloadLink(link);
+        }
         try {
             Browser br = new Browser();
             workAroundTimeOut(br);
@@ -355,14 +358,18 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (usePremiumAPI) return fetchAccountInfo_API(account);
-        return fetchAccountInfo_Website(account);
+        if (usePremiumAPI) {
+            return fetchAccountInfo_API(account);
+        } else {
+            return fetchAccountInfo_Website(account);
+        }
     }
 
     public AccountInfo fetchAccountInfo_Website(final Account account) throws Exception {
         AccountInfo ai = new AccountInfo();
         /* reset maxPrem workaround on every fetchaccount info */
         maxPrem.set(1);
+        prepBrowser();
         br.postPage("http://uploaded.net/status", "uid=" + Encoding.urlEncode(account.getUser()) + "&upw=" + Encoding.urlEncode(account.getPass()));
         if (br.containsHTML("blocked")) {
             ai.setStatus("Too many failed logins! Wait 15 mins");
@@ -613,6 +620,10 @@ public class Uploadedto extends PluginForHost {
     private void handleErrorCode(Browser br, Account acc, String usedToken, boolean throwPluginDefect) throws Exception {
         String errCode = br.getRegex("code\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode == null) errCode = br.getRegex("errCode\":\\s*?\"?(\\d+)").getMatch(0);
+        String message = br.getRegex("message\":\"([^\"]+)").getMatch(0);
+        if (message != null) {
+            message = unescape(message);
+        }
         if (errCode != null) {
             logger.info("ErrorCode: " + errCode);
             int code = Integer.parseInt(errCode);
@@ -634,6 +645,9 @@ public class Uploadedto extends PluginForHost {
                 }
             case 16:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            case 18:
+                // some encoded crap here.
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
@@ -676,7 +690,7 @@ public class Uploadedto extends PluginForHost {
                 // DANGER: Even after user changed password this token is still valid->Uploaded.to was contacted by psp but no response!
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
-                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
+                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
@@ -1032,6 +1046,12 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        JDUtilities.getPluginForHost("youtube.com");
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }
