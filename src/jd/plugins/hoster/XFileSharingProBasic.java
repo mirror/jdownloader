@@ -55,7 +55,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ForDevsToPlayWith.com" }, urls = { "https?://(www\\.)?ForDevsToPlayWith\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class XFileSharingProBasic extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -76,7 +76,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.6.0.0
+    // XfileSharingProBasic Version 2.6.0.2
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -87,12 +87,15 @@ public class XFileSharingProBasic extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
-        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         // link cleanup, but respect users protocol choosing.
         if (!SUPPORTSHTTPS) {
             link.setUrlDownload(link.getDownloadURL().replaceFirst("https://", "http://"));
         }
+        // strip video hosting url's to reduce possible duped links.
+        link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
+        // output the hostmask as we wish based on COOKIE_HOST url!
+        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
         link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
@@ -233,7 +236,7 @@ public class XFileSharingProBasic extends PluginForHost {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
-                // md5 can be on the subquent pages
+                // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
@@ -493,8 +496,7 @@ public class XFileSharingProBasic extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -521,7 +523,13 @@ public class XFileSharingProBasic extends PluginForHost {
         String oldName = downloadLink.getFinalFileName();
         if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        String newExtension = null;
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename.contains(".")) {
+            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        } else {
+            logger.info("HTTP headers don't contain filename.extension information");
+        }
         if (newExtension != null && !oldName.endsWith(newExtension)) {
             String oldExtension = null;
             if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));

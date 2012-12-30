@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 18484 $", interfaceVersion = 2, names = { "replik.pl" }, urls = { "http://replik\\.pl/fg/(.*)/" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: 18484 $", interfaceVersion = 2, names = { "replik.pl" }, urls = { "http://replik\\.pl/fg/(.*)/" }, flags = { 0 })
 public class ReplikPl extends PluginForHost {
 
     private static Object        LOCK             = new Object();
@@ -59,10 +59,9 @@ public class ReplikPl extends PluginForHost {
     }
 
     /* not used for now - only pl */
-    /*
-     * public void prepBrowser() { br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8"); br.setCookie(COOKIE_HOST, "lang",
-     * "english"); }
-     */
+    // public void prepBrowser() {
+    // br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8"); br.setCookie(MAINPAGE, "lang", "english");
+    // }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {

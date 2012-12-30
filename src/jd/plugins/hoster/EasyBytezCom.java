@@ -66,7 +66,7 @@ public class EasyBytezCom extends PluginForHost {
     public boolean              NOPREMIUM           = false;
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
-    private static Object LOCK                = new Object();
+    private static Object       LOCK                = new Object();
 
     public EasyBytezCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -349,6 +349,13 @@ public class EasyBytezCom extends PluginForHost {
                 if (br.containsHTML("Your IP is temporarily blocked due to 3 incorrect login attempts")) {
                     ai.setStatus("Your IP is temporarily blocked due to 3 incorrect login attempts");
                 }
+                account.setValid(false);
+                return ai;
+            }
+            // account disabled due to breach of terms and conditions
+            if (br.containsHTML(">Your account was disabled due to violation of our Terms of Service\\.<")) {
+                logger.warning("Hoster disabled account due to violation of hosters Terms of Service.");
+                ai.setStatus("Hoster disabled account due to violation of hosters Terms of Service.");
                 account.setValid(false);
                 return ai;
             }

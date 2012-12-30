@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(names = { "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 }, revision = "$Revision$", interfaceVersion = 2)
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "box.net" }, urls = { "(https?://(www|[a-z0-9\\-_]+)\\.box\\.(net|com)(/(shared/static/|rssdownload/).*|/index\\.php\\?rm=box_download_shared_file\\&file_id=.+?\\&shared_name=\\w+)|https?://www\\.boxdecrypted\\.(net|com)/s/[a-z0-9]+)" }, flags = { 0 })
 public class BoxNet extends PluginForHost {
     private static final String TOS_LINK               = "https://www.box.net/static/html/terms.html";
 
@@ -62,6 +62,8 @@ public class BoxNet extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
         // setup referer and cookies for single file downloads
         requestFileInformation(link);
+        // site has many redirects, it could be set off from requestFileInformation...
+        br.setFollowRedirects(true);
         if (link.getDownloadURL().matches(SLINK) && DLLINK == null) {
             String fid = br.getRegex("var file_id = \\'(\\d+)\\';").getMatch(0);
             if (fid == null) {
@@ -92,9 +94,15 @@ public class BoxNet extends PluginForHost {
         br.setFollowRedirects(true);
         /** Correct old box.NET links */
         correctDownloadLink(parameter);
-        // setup referer and cookies for single file downloads
+        // setup referrer and cookies for single file downloads
         if (parameter.getDownloadURL().matches(REDIRECT_DOWNLOAD_LINK)) {
-            br.getPage(parameter.getBrowserUrl());
+            br.setFollowRedirects(false);
+            br.getPage(parameter.getDownloadURL());
+            if (br.getRedirectLocation() != null) {
+                DLLINK = br.getRedirectLocation();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else if (parameter.getDownloadURL().matches(SLINK)) {
             br.getPage(parameter.getBrowserUrl());
             if (br.containsHTML("(this shared file or folder link has been removed|<title>Box \\- Free Online File Storage, Internet File Sharing, RSS Sharing, Access Documents \\&amp; Files Anywhere, Backup Data, Share Files</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -106,11 +114,12 @@ public class BoxNet extends PluginForHost {
             parameter.setName(filename.trim());
             if (filesize != null) parameter.setDownloadSize(SizeFormatter.getSize(filesize));
             DLLINK = br.getRegex(DLLINKREGEX).getMatch(0);
+            br.setFollowRedirects(false);
             return AvailableStatus.TRUE;
         }
         URLConnectionAdapter urlConnection = null;
         try {
-            urlConnection = br.openGetConnection(parameter.getDownloadURL());
+            urlConnection = br.openGetConnection(DLLINK);
             if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
                 urlConnection.disconnect();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

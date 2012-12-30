@@ -94,7 +94,7 @@ public class BitShareCom extends PluginForHost {
         br.getPage("http://bitshare.com/myaccount.html");
         String filesNum = br.getRegex("<a href=\"http://bitshare\\.com/myfiles\\.html\">(\\d+) files</a>").getMatch(0);
         if (filesNum != null) ai.setFilesNum(Integer.parseInt(filesNum));
-        String space = br.getRegex("<b>Storage</b><br />(.*?) / 1000").getMatch(0);
+        String space = br.getRegex("<b>Storage</b><br />([\r\n\t ]+)?([\\d+\\.]+ (b|mb|gb|tb)) / \\d+").getMatch(1);
         if (space != null) ai.setUsedSpace(space.trim());
         account.setValid(true);
         ai.setUnlimitedTraffic();

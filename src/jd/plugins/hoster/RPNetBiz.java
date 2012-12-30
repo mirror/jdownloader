@@ -192,6 +192,7 @@ public class RPNetBiz extends PluginForHost {
         // end of workaround
         showMessage(link, "Generating Link");
         /* request Download */
+        prepBrowser();
         String apiDownloadLink = mPremium + "client_api.php?username=" + Encoding.urlEncode(acc.getUser()) + "&password=" + Encoding.urlEncode(acc.getPass()) + "&action=generate&links=" + Encoding.urlEncode(downloadURL);
         br.getPage(apiDownloadLink);
         JSonObject node = (JSonObject) new JSonFactory(br.toString().replaceAll("\\\\/", "/")).parse();
