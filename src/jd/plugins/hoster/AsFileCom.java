@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2010  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -105,8 +105,8 @@ public class AsFileCom extends PluginForHost {
                 return;
             }
         }
-        br.setFollowRedirects(false);
         requestFileInformation(downloadLink);
+        br.setFollowRedirects(false);
         // Password handling
         if (br.getURL().contains("/password/")) {
             passCode = downloadLink.getStringProperty("pass", null);
@@ -228,7 +228,7 @@ public class AsFileCom extends PluginForHost {
                     logger.info("Free accounts are not supported!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                if (!br.containsHTML("<p>Your account:<strong> premium")) {
+                if (!br.containsHTML("(<p>Your account:<strong> premium|Your account is: PREMIUM<br />)")) {
                     logger.info("This is an unsupported accounttype!");
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -302,30 +302,37 @@ public class AsFileCom extends PluginForHost {
                 return;
             }
         }
-        br.setFollowRedirects(false);
         requestFileInformation(link);
         login(account, false);
+        br.setFollowRedirects(false);
         try {
-            br.getPage("http://asfile.com/en/premium-download/file/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
+            br.getPage("http://asfile.com/en/count_files/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("500")) {
                 logger.severe("500 error->account seems invalid!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
-        if (dllink == null) dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
         if (dllink == null) {
-            if (br.containsHTML("You have exceeded the download limit for today")) {
-                logger.info("You have exceeded the download limit for today");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            if (br.getRedirectLocation() != null) dllink = br.getRedirectLocation();
+            if (dllink == null) {
+                dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
+                    if (dllink == null) {
+                        if (br.containsHTML("You have exceeded the download limit for today")) {
+                            logger.info("You have exceeded the download limit for today");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                        if (br.containsHTML("index/pay")) {
+                            logger.info("Seems the account is no longer valid");
+                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                        }
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
             }
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-            if (br.containsHTML("index/pay")) {
-                logger.info("Seems the account is no longer valid");
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
