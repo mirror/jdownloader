@@ -1162,6 +1162,51 @@ public class LnkCrptWs extends PluginForDecrypt {
 
     }
 
+    /**
+     * if packed js contain 'soft hyphen' encoding as \u00ad(unicode) or %C2%AD(uft-8) then result is broken in rhino
+     * decodeURIComponent('\u00ad') --> is empty.
+     */
+    public static class JavaScriptUnpacker {
+
+        public static String decode(String packedJavaScript) {
+            /* packed with extended ascii */
+            if (new Regex(packedJavaScript, "c%a\\+161").matches()) {
+                String packed[] = new Regex(packedJavaScript, ("\\}\\(\'(.*?)\',(\\d+),(\\d+),\'(.*?)\'\\.split\\(\'\\|\\'\\),(\\d+)")).getRow(0);
+                if (packed == null) return null;
+                return nativeDecode(packed[0], Integer.parseInt(packed[1]), Integer.parseInt(packed[2]), packed[3].split("\\|"), Integer.parseInt(packed[4]));
+            }
+            return rhinoDecode(packedJavaScript);
+        }
+
+        private static String nativeDecode(String p, int a, int c, String k[], int e) {
+            LinkedHashMap<String, String> lm = new LinkedHashMap<String, String>();
+            while (c > 0) {
+                c--;
+                lm.put(e(c, a), k[c]);
+            }
+            for (Entry<String, String> next : lm.entrySet()) {
+                p = p.replace(next.getKey(), next.getValue());
+            }
+            return p;
+        }
+
+        private static String rhinoDecode(String eval) {
+            Object result = new Object();
+            final ScriptEngineManager manager = new ScriptEngineManager();
+            final ScriptEngine engine = manager.getEngineByName("javascript");
+            try {
+                result = engine.eval(eval);
+            } catch (final Throwable e) {
+            }
+            return result != null ? String.valueOf(result) : null;
+        }
+
+        private static String e(int c, int a) {
+            return (c < a ? "" : e(c / a, a)) + String.valueOf((char) (c % a + 161));
+        }
+
+    }
+
     public static String IMAGEREGEX(final String b) {
         final KeyCaptchaShowDialogTwo v = new KeyCaptchaShowDialogTwo();
         final byte[] o = JDHash.getMD5(Encoding.Base64Decode("Yzg0MDdhMDhiM2M3MWVhNDE4ZWM5ZGM2NjJmMmE1NmU0MGNiZDZkNWExMTRhYTUwZmIxZTEwNzllMTdmMmI4Mw==") + JDHash.getMD5("V2UgZG8gbm90IGVuZG9yc2UgdGhlIHVzZSBvZiBKRG93bmxvYWRlci4=")).getBytes();
@@ -1294,14 +1339,7 @@ public class LnkCrptWs extends PluginForDecrypt {
         }
         String decryptedJS = null;
         for (String c : containers) {
-            Object result = new Object();
-            final ScriptEngineManager manager = new ScriptEngineManager();
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                result = engine.eval(c);
-            } catch (final Throwable e) {
-            }
-            decryptedJS = result.toString();
+            decryptedJS = JavaScriptUnpacker.decode(c);
             String[] row = new Regex(decryptedJS, "href=\"(http.*?)\".*?(dlc|ccf|rsdf)").getRow(0);
             if (row == null) row = new Regex(decryptedJS, "href=\"([^\"]+)\"[^>]*>.*?<img.*?image/(.*?)\\.").getRow(0);
             if (row == null) row = new Regex(decryptedJS, "(http://linkcrypt\\.ws/container/[^\"]+)\".*?http://linkcrypt\\.ws/image/([a-z]+)\\.").getRow(0);
@@ -1337,8 +1375,9 @@ public class LnkCrptWs extends PluginForDecrypt {
                 try {
                     cnlbr.submitForm(cnlForm);
                     if (cnlbr.containsHTML("success")) return decryptedLinks;
-                    if (cnlbr.containsHTML("failed null")) {
+                    if (cnlbr.containsHTML("^failed")) {
                         logger.warning("linkcrypt.ws: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                        logger.warning("linkcrypt.ws: CNL2 Message: " + cnlbr.toString());
                     }
                 } catch (Throwable e) {
                     logger.info("linkcrypt.ws: ExternInterface(CNL2) is disabled!");
@@ -1388,18 +1427,11 @@ public class LnkCrptWs extends PluginForDecrypt {
                             if (clone.containsHTML("eval")) {
                                 final String[] evals = clone.getRegex("eval(.*?)[\r\n]+").getColumn(0);
                                 for (final String c : evals) {
-                                    Object result = new Object();
-                                    final ScriptEngineManager manager = new ScriptEngineManager();
-                                    final ScriptEngine engine = manager.getEngineByName("javascript");
-                                    try {
-                                        result = engine.eval(c);
-                                    } catch (final Throwable e) {
-                                    }
-                                    if (result == null) continue;
-                                    final String code = result.toString();
+                                    String code = JavaScriptUnpacker.decode(c);
+                                    if (code == null) continue;
                                     if (code.contains("ba2se") || code.contains("premfree")) {
-                                        String versch;
-                                        versch = new Regex(code, "ba2se='(.*?)'").getMatch(0);
+                                        code = code.replaceAll("\\\\", "");
+                                        String versch = new Regex(code, "ba2se=\'(.*?)\'").getMatch(0);
                                         if (versch == null) {
                                             versch = new Regex(code, ".*?='([^']*)'").getMatch(0);
                                             versch = Encoding.Base64Decode(versch);
