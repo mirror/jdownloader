@@ -76,7 +76,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.6.0.3
+    // XfileSharingProBasic Version 2.6.0.4
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -217,6 +217,17 @@ public class XFileSharingProBasic extends PluginForHost {
             final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                if (downloadLink.getName().contains("'")) {
+                    String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
+                    if (fname != null) {
+                        download1.put("fname", Encoding.urlEncode(fname));
+                    } else {
+                        logger.warning("Could not find 'fname'");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                // end of backward compatibility
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
                 dllink = getDllink();
@@ -226,8 +237,8 @@ public class XFileSharingProBasic extends PluginForHost {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
-            int repeat = 3;
-            for (int i = 1; i <= repeat; i++) {
+            int repeat = 2;
+            for (int i = 0; i <= repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
