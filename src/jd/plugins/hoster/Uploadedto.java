@@ -451,10 +451,14 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void doFree(final DownloadLink downloadLink, final Account account) throws Exception {
+        if (account == null) {
+            logger.info("Free, WEB download method in use!");
+        } else {
+            // good to know account been used.
+            logger.info("Free account, WEB download method in use!");
+        }
         String baseURL = "http://uploaded.net/";
         if (downloadLink.getDownloadURL().contains("https://")) baseURL = baseURL.replace("http://", "https://");
-
-        logger.info("Free mode");
         String currentIP = getIP();
         try {
             SubConfiguration config = null;
@@ -526,6 +530,10 @@ public class Uploadedto extends PluginForHost {
                     }
                     downloadLink.setProperty("pass", passCode);
                 }
+                // free account might not have captcha...
+                if (dllink == null) {
+                    dllink = br.getRegex("(\"|\\')(http://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                }
                 final Browser brc = br.cloneBrowser();
                 brc.getPage(baseURL + "js/download.js");
                 final String rcID = brc.getRegex("Recaptcha\\.create\\(\"([^<>\"]*?)\"").getMatch(0);
@@ -558,8 +566,13 @@ public class Uploadedto extends PluginForHost {
                 generalFreeErrorhandling(account);
                 if (br.containsHTML("limit\\-parallel")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You're already downloading", RECONNECTWAIT);
                 dllink = br.getRegex("url:\\'(http.*?)\\'").getMatch(0);
-                if (dllink == null) dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
-                if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (dllink == null) {
+                    dllink = br.getRegex("url:\\'(dl/.*?)\\'").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("(\"|\\')(http://[a-z0-9\\-]+\\.(uploaded\\.net|uploaded\\.to)/dl/[a-z0-9\\-]+)(\"|\\')").getMatch(1);
+                        if (dllink == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+                    }
+                }
             }
             dl = BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
             try {
@@ -646,7 +659,9 @@ public class Uploadedto extends PluginForHost {
             case 16:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 18:
-                // some encoded crap here.
+                // actual error messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
+                // EN: effectively they are saying wrong hash value provided, sha1 provided and expected md5sum. It also seems to throws
+                // this message when user:pass is incorrect (go figure)
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -751,7 +766,7 @@ public class Uploadedto extends PluginForHost {
         if (account.getBooleanProperty("free")) {
             doFree(downloadLink, account);
         } else {
-            logger.info("Premium mode");
+            logger.info("Premium account, WEB download method in use!");
             br.setFollowRedirects(false);
             String id = getID(downloadLink);
             br.getPage(baseURL + "file/" + id + "/ddl");
@@ -857,12 +872,11 @@ public class Uploadedto extends PluginForHost {
         String token = api_getAccessToken(account, false);
         String tokenType = api_getTokenType(account, token, false);
         if (!"premium".equals(tokenType)) {
-            logger.info("Free mode");
             login(account);
             doFree(downloadLink, account);
             return;
         }
-        logger.info("Premium mode");
+        logger.info("Premium account, API download method in use!");
         String id = getID(downloadLink);
         br.postPage("http://api.uploaded.net/api/download/jdownloader", "access_token=" + token + "&auth=" + id);
         String url = br.getRegex("link\":\\s*?\"(http.*?)\"").getMatch(0);

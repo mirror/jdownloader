@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2012  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -62,10 +62,8 @@ public class EgoFilesCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(MAINPAGE, "lang", "en");
         br.getPage(link.getDownloadURL());
-        // Link offline
-        if (br.containsHTML(">404 File not found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // Invalid link
-        if (br.containsHTML(">404 \\- Not Found<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // (Invalid link | Link offline, this also means country block!)
+        if (br.containsHTML("(>404 \\- Not Found<|>404 File not found<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         final String filename = br.getRegex("<div class=\"down\\-file\">([^<>\"]*?)<div").getMatch(0);
         final String filesize = br.getRegex("File size: ([^<>\"]*?) \\|").getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "filename or filesize not recognized"); }
@@ -149,6 +147,7 @@ public class EgoFilesCom extends PluginForHost {
                 br.setFollowRedirects(false);
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("http://egofiles.com/ajax/register.php", "log=1&loginV=" + Encoding.urlEncode(account.getUser()) + "&passV=" + Encoding.urlEncode(account.getPass()));
+                br.getHeaders().put("X-Requested-With", null);
                 if (br.getCookie(MAINPAGE, "p") == null || br.getCookie(MAINPAGE, "h") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();

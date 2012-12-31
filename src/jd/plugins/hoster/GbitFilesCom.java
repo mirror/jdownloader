@@ -62,7 +62,7 @@ public class GbitFilesCom extends PluginForHost {
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.5-raz
-    // mods:
+    // mods: waitTime
     // non account: 1 (no resume) * unlimited.
     // free account:
     // premium account:
@@ -182,7 +182,7 @@ public class GbitFilesCom extends PluginForHost {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
-                // md5 can be on the subquent pages
+                // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
@@ -290,19 +290,14 @@ public class GbitFilesCom extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -509,17 +504,19 @@ public class GbitFilesCom extends PluginForHost {
     private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        final String ttt = new Regex(correctedBR, "id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
-        if (ttt != null) {
-            int tt = Integer.parseInt(ttt);
-            tt -= passedTime;
-            logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
-            if (tt > 0) sleep(tt * 1000l, downloadLink);
+        String ttt = new Regex(correctedBR, "id=\"[a-z0-9]+\">(\\d+)</span> seconds</span>").getMatch(0);
+        if (ttt == null) {
+            ttt = new Regex(correctedBR, "<span id=\"countdown_str\"[^>]+>(Wait for a queue to download!)?.+?(The link will be available in:)?<span[^>]+>(\\d+)</span> seconds</span>").getMatch(2);
+            if (ttt != null) {
+                int tt = Integer.parseInt(ttt);
+                tt -= passedTime;
+                logger.info("Waittime detected, waiting " + ttt + " - " + passedTime + " seconds from now on...");
+                if (tt > 0) sleep(tt * 1000l, downloadLink);
+            }
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
