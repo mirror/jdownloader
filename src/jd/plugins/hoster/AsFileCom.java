@@ -302,36 +302,29 @@ public class AsFileCom extends PluginForHost {
                 return;
             }
         }
+        String uid = new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0);
+        if (uid == null) {
+            logger.warning("Couldn't find 'uid' value");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         requestFileInformation(link);
         login(account, false);
         br.setFollowRedirects(false);
         try {
-            br.getPage("http://asfile.com/en/count_files/" + new Regex(link.getDownloadURL(), "asfile\\.com/file/(.+)").getMatch(0));
+            br.getPage("http://asfile.com/en/premium-download/file/" + uid);
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("500")) {
                 logger.severe("500 error->account seems invalid!");
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
+        dllink = getDllink();
         if (dllink == null) {
-            if (br.getRedirectLocation() != null) dllink = br.getRedirectLocation();
+            br.getPage("http://asfile.com/en/count_files/" + uid);
+            dllink = getDllink();
             if (dllink == null) {
-                dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
-                    if (dllink == null) {
-                        if (br.containsHTML("You have exceeded the download limit for today")) {
-                            logger.info("You have exceeded the download limit for today");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
-                        logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                        if (br.containsHTML("index/pay")) {
-                            logger.info("Seems the account is no longer valid");
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                        }
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                }
+                logger.warning("Couldn't find 'dllink' value");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dllink = Encoding.htmlDecode(dllink);
@@ -345,6 +338,29 @@ public class AsFileCom extends PluginForHost {
         }
         link.setProperty("direct", dllink);
         dl.startDownload();
+    }
+
+    private String getDllink() throws PluginException {
+        String dllink = br.getRedirectLocation();
+        if (dllink == null) {
+            dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
+                if (dllink == null) {
+                    if (br.containsHTML("You have exceeded the download limit for today")) {
+                        logger.info("You have exceeded the download limit for today");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    if (br.containsHTML("index/pay")) {
+                        logger.info("Seems the account is no longer valid");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        }
+        return dllink;
     }
 
     @Override
