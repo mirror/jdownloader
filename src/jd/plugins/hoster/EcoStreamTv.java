@@ -59,7 +59,7 @@ public class EcoStreamTv extends PluginForHost {
         br.setFollowRedirects(true);
         br.postPage(downloadLink.getDownloadURL() + "?ss=1", "ss=1&sss=1");
         // No way to directly find out of it's online or not so let's just try
-        Regex importantVars = br.getRegex("\\(\"lc\\(\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
+        final Regex importantVars = br.getRegex("\\(\"lc\\(\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\',\\'([^<>\"]*?)\\'\\)");
         String var1 = importantVars.getMatch(0);
         String var2 = importantVars.getMatch(1);
         String var3 = importantVars.getMatch(2);
@@ -67,12 +67,16 @@ public class EcoStreamTv extends PluginForHost {
         if (var1 == null || var2 == null || var3 == null || var4 == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // They often change this link
-        br.postPage("http://www.ecostream.tv/lc/mq.php?s=" + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
+        // http://www.ecostream.tv/lo/mq.php?s=2f855d145c27cc07e3ec2da14d9f9f8c&k=6f4922f45568161a8cdf4ad2299f6d23&t=generic&key=1ff02ddd880a24745d5e2c9847346543
+        final Browser br2 = br.cloneBrowser();
+        br2.getPage("http://www.ecostream.tv/assets/js/common.js");
+        String postLink = br2.getRegex("url: \\'(http://(www\\.)?ecostream\\.tv/[^<>\"]*?)\\' ").getMatch(0);
+        if (postLink == null) postLink = "http://www.ecostream.tv/lo/mq.php?s=";
+        br.postPage(postLink + var1 + "&k=" + var2 + "&t=" + var3 + "&key=" + var4, "");
         DLLINK = br.getRegex("flashvars=\"file=((http:/)?/[^\"\\']+)\\&image=").getMatch(0);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         if (!DLLINK.startsWith("http://")) DLLINK = "http://www.ecostream.tv" + DLLINK;
-        Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;

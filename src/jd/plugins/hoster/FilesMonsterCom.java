@@ -289,6 +289,7 @@ public class FilesMonsterCom extends PluginForHost {
             }
             ai.setValidUntil(ms);
             account.setValid(true);
+            ai.setStatus("Premium User");
             return ai;
         } else {
             account.setValid(false);

@@ -223,7 +223,7 @@ public class RehostTo extends PluginForHost {
         String statusMessage = null;
         String error = null;
         // error message usually provided by redirect url!
-        if ((br.getRedirectLocation().contains("&error=") && br.getRedirectLocation() != null))
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("&error="))
             error = new Regex(br.getRedirectLocation(), "error=([^&]+)").getMatch(0);
         // but on download we are following redirects. We need to catch them on the current browser url!
         else if (br.getURL().contains("&error="))

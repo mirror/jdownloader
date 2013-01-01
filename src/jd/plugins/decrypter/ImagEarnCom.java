@@ -28,7 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com/(gallery|image)\\.php\\?id=\\d+" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagearn.com" }, urls = { "http://(www\\.)?imagearn\\.com//(gallery|image)\\.php\\?id=\\d+" }, flags = { 0 })
 public class ImagEarnCom extends PluginForDecrypt {
 
     public ImagEarnCom(PluginWrapper wrapper) {
@@ -42,37 +42,43 @@ public class ImagEarnCom extends PluginForDecrypt {
         String parameter = param.toString();
         br.getPage(parameter);
         String fpName = br.getRegex("<h3 class=\"page\\-title\"><strong>([^<>\"/]+)</strong>").getMatch(0);
-        if (parameter.contains("imagearn.com/gallery.php?id=")) {
+        if (parameter.contains("imagearn.com//gallery.php?id=")) {
             if (fpName == null) fpName = br.getRegex("<title>(.*?) \\- Image Earn</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             fpName = Encoding.htmlDecode(fpName.trim());
-            String[] links = br.getRegex("title=\"Click to view this image\"><img src=" + THUMBREGEX).getColumn(0);
-            if (links == null || links.length == 0) links = br.getRegex("<div class=\"glthumb\">[\t\n\r ]+<img src=" + THUMBREGEX).getColumn(0);
+            final String[] links = br.getRegex("\"(http://imagearn\\.com//image\\.php\\?id=\\d+)\"").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
             DecimalFormat df = new DecimalFormat("0000");
             int counter = 1;
-            for (String singleLink : links) {
-                DownloadLink dl = createDownloadlink("directhttp://" + singleLink.replaceAll("http://thumbs\\d+\\.imagearn\\.com/", "http://img.imagearn.com/imags/"));
+            for (final String singleLink : links) {
+                br.getPage(singleLink);
+                final String finallink = getDirectlink();
+                if (finallink == null) {
+                    logger.warning("Stopped at: " + singleLink);
+                    logger.warning("Decrypter broken for link: " + parameter);
+                    return null;
+                }
+                final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
                 dl.setAvailable(true);
                 dl.setFinalFileName(fpName + "_" + df.format(counter) + ".jpg");
                 decryptedLinks.add(dl);
                 counter++;
+                sleep(1500, param);
             }
         } else {
             if (fpName == null) fpName = br.getRegex("<title>Image \\- (.*?) \\- Image Earn</title>").getMatch(0);
-            String finallink = br.getRegex("<div id=\"image\"><center><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
-            if (finallink == null) finallink = br.getRegex("\"(http://img\\.imagearn\\.com/imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
+            String finallink = getDirectlink();
             if (finallink == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            DownloadLink dl = createDownloadlink("directhttp://" + finallink);
+            final DownloadLink dl = createDownloadlink("directhttp://" + finallink);
             dl.setAvailable(true);
             decryptedLinks.add(dl);
         }
@@ -82,6 +88,12 @@ public class ImagEarnCom extends PluginForDecrypt {
             fp.addLinks(decryptedLinks);
         }
         return decryptedLinks;
+    }
+
+    private String getDirectlink() {
+        String finallink = br.getRegex("<div id=\"image\"><center><a href=\"(http://[^<>\"\\']+)\"").getMatch(0);
+        if (finallink == null) finallink = br.getRegex("\"(http://img\\.imagearn\\.com/imags/\\d+/\\d+\\.jpg)\"").getMatch(0);
+        return finallink;
     }
 
 }

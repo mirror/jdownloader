@@ -42,7 +42,7 @@ public class DailyMotionCom extends PluginForHost {
     private static final String MAINPAGE               = "http://www.dailymotion.com/";
     private static final String REGISTEREDONLY         = "(his content as suitable for mature audiences only|You must be logged in, over 18 years old, and set your family filter OFF, in order to watch it)";
     private static final String REGISTEREDONLYUSERTEXT = "Download only possible for registered users";
-    private static final String COUNTRYBLOCK           = "(Dein Land nicht abrufbar|this content is not available for your country)";
+    private static final String COUNTRYBLOCK           = "(Dein Land nicht abrufbar|this content is not available for your country|This video has not been made available in your country by the owner)";
     private static final String COUNTRYBLOCKUSERTEXT   = "This video is not available for your country";
     private String[]            subtitles              = null;
 

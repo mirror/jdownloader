@@ -204,9 +204,6 @@ public class VKontakteRu extends PluginForDecrypt {
         if (vids.getMatches().length == 1) {
             parameter = "http://vk.com/video" + vids.getMatch(0) + "_" + vids.getMatch(1);
             if (!parameter.equalsIgnoreCase(br.getURL())) br.getPage(parameter);
-        } else {
-            /* not needed as we already have requested this page */
-            // br.getPage(parameter);
         }
         // Offline1
         if (br.containsHTML("(class=\"button_blue\"><button id=\"msg_back_button\">Wr\\&#243;\\&#263;</button>|<div class=\"body\">[\t\n\r ]+Access denied)")) {
@@ -215,6 +212,11 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         // Offline2
         if (br.containsHTML("class=\"title\">Error</div>")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
+        // Offline3
+        if (br.containsHTML("was removed from public access by request of the copyright holder")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -327,22 +329,24 @@ public class VKontakteRu extends PluginForDecrypt {
         final String oid = new Regex(parameter, "(\\d+)$").getMatch(0);
         final ArrayList<String> decryptedData = decryptMultiplePages(parameter, type, numberOfEntrys, regexesPage1, regexesAllOthers, 12, 12, 40, "http://vk.com/al_video.php", "act=load_videos_silent&al=1&oid=" + oid + "&offset=");
         int counter = 1;
+        int offlineCounter = 0;
         for (String singleVideo : decryptedData) {
             singleVideo = singleVideo.replace(", ", "_");
             logger.info("Decrypting video " + counter + " / " + numberOfEntrys);
             String completeVideolink = "http://vk.com/video" + singleVideo;
             br.getPage(completeVideolink);
-            // Invalid link
-            if (br.containsHTML(FILEOFFLINE)) {
-                logger.info("Link offline: " + completeVideolink);
-                continue;
-            }
-            final DownloadLink finallink = findVideolink(completeVideolink);
-            if (finallink == null) {
+            ArrayList<DownloadLink> temp = new ArrayList<DownloadLink>();
+            temp = decryptSingleVideo(temp, completeVideolink);
+            if (temp == null) {
                 logger.warning("Decrypter broken for link: " + parameter + "\n");
                 logger.warning("stopped at: " + completeVideolink);
                 return null;
+            } else if (temp.size() == 0) {
+                offlineCounter++;
+                logger.info("Continuing, found " + offlineCounter + " offline/invalid videolinks so far...");
+                continue;
             }
+            final DownloadLink finallink = temp.get(0);
             decryptedLinks.add(finallink);
             counter++;
         }
@@ -380,6 +384,12 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         embeddedVideo = new Regex(correctedBR, "url: \\'(http://player\\.digitalaccess\\.ru/[^<>\"/]*?\\&siteId=\\d+)\\&").getMatch(0);
         if (embeddedVideo != null) { return createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo)); }
+        embeddedVideo = new Regex(correctedBR, "\\?file=(http://(www\\.)?1tv\\.ru/[^<>\"]*?)\\'").getMatch(0);
+        if (embeddedVideo != null) {
+            br.getPage(Encoding.htmlDecode(embeddedVideo));
+            embeddedVideo = br.getRegex("<media:content url=\"(http://[^<>\"]*?)\"").getMatch(0);
+            if (embeddedVideo != null) return createDownloadlink("directhttp://" + Encoding.htmlDecode(embeddedVideo));
+        }
 
         final Browser br2 = br.cloneBrowser();
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");

@@ -100,7 +100,6 @@ public class SlideShareNet extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                // br.getPage("");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPage("https://www.slideshare.net/login", "remember=1&source_from=&authenticity_token=" + Encoding.urlEncode("") + "&user_login=" + Encoding.urlEncode(account.getUser()) + "&user_password=" + Encoding.urlEncode(account.getPass()));
                 if (!br.containsHTML("\"success\":true") || br.getCookie(MAINPAGE, "logged_in") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -156,7 +155,9 @@ public class SlideShareNet extends PluginForHost {
             final String slideshareID = br.getRegex("\"slideshow_id\":(\\d+)").getMatch(0);
             if (slideshareID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             final String timestamp = System.currentTimeMillis() + "";
-            br.getPage("https://www.slideshare.net/api/2/get_slideshow?api_key=" + Encoding.Base64Decode(APIKEY) + "&ts=" + timestamp + "&hash=" + JDHash.getSHA1(Encoding.Base64Decode(SHAREDSECRET) + timestamp) + "&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&slideshow_id=" + slideshareID + "&slideshow_url=" + Encoding.urlEncode("http://www.slideshare.net/webbmedia/webbmedia-group-2013-tech-trends"));
+            // Examplelink: http://www.slideshare.net/webbmedia/webbmedia-group-2013-tech-trends
+            final String getLink = "https://www.slideshare.net/api/2/get_slideshow?api_key=" + Encoding.Base64Decode(APIKEY) + "&ts=" + timestamp + "&hash=" + JDHash.getSHA1(Encoding.Base64Decode(SHAREDSECRET) + timestamp) + "&slideshow_id=" + slideshareID;
+            br.getPage(getLink);
             dllink = getXML("DownloadUrl");
         } else {
             br.getPage(link.getDownloadURL() + "/download");

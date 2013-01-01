@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeam.com" }, urls = { "http://(www\\.)?filebeam\\.com/[a-z0-9]{32}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filebeam.com" }, urls = { "http://(www\\.)?(filebeam\\.com/[a-z0-9]{32}|fbe\\.am/[A-Za-z0-9]+)" }, flags = { 0 })
 public class FileBeamCom extends PluginForHost {
 
     public FileBeamCom(PluginWrapper wrapper) {
@@ -43,12 +43,16 @@ public class FileBeamCom extends PluginForHost {
     }
 
     private static final String PASSWORDTEXT = ">Password Protected File<";
+    private static final String SHORTLINK    = "http://(www\\.)?fbe\\.am/[A-Za-z0-9]+";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
+        if (link.getDownloadURL().matches(SHORTLINK)) {
+            link.setUrlDownload(br.getURL());
+        }
         if (br.containsHTML("(>This file does not exist|This file was either delete by the uploader|or the file was never uploaded\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORDTEXT)) {
             link.getLinkStatus().setStatusText("This file is password protected.");

@@ -100,7 +100,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                 final String profileID = new Regex(parameter, "(\\d+)$").getMatch(0);
                 String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
                 final String ajaxpipeToken = br.getRegex("\"ajaxpipe_token\":\"([^<>\"]*?)\"").getMatch(0);
-                final String lastFbid = br.getRegex("\"fbPhotosRedesignMetadata(\\d+)\"").getMatch(0);
+                final String lastFbid = br.getRegex("last_fbid\\\\\":(\\d+)").getMatch(0);
                 final String user = br.getRegex("\"user\":\"(\\d+)\"").getMatch(0);
                 if (ajaxpipeToken == null || lastFbid == null || user == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
@@ -116,12 +116,13 @@ public class FaceBookComGallery extends PluginForDecrypt {
 
                     String[] links;
                     if (i > 1) {
-                        br.getPage("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__adt=" + i);
-                        System.out.println("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__adt=" + i);
+                        // http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=AXjh0532-0XYi1NU&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A382732800822%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A602545822%2C%22viewmode%22%3Anull%2C%22set%22%3A%22a.382730160822.172329.602545822%22%2C%22type%22%3A%223%22%7D&__user=100002060730823&__a=1&__req=l&__adt=4
+                        br.getPage("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__req=l&__adt=" + i);
+                        System.out.println("http://www.facebook.com/ajax/pagelet/generic.php/TimelinePhotosAlbumPagelet?ajaxpipe=1&ajaxpipe_token=" + ajaxpipeToken + "&no_script_path=1&data=%7B%22scroll_load%22%3Atrue%2C%22last_fbid%22%3A" + lastFbid + "%2C%22fetch_size%22%3A32%2C%22profile_id%22%3A" + profileID + "%2C%22viewmode%22%3Anull%2C%22set%22%3A%22" + setID + "%22%2C%22type%22%3A%221%22%7D&__user=" + user + "&__a=1&__req=l&__adt=" + i);
                         links = br.getRegex("data\\-starred\\-src=\\\\\"(http:[^<>\"]*?)\\\\\"").getColumn(0);
                         currentMaxPicCount = 32;
                     } else {
-                        links = br.getRegex("src=(http[^<>\"]*?_n\\.jpg)\\&amp;size=\\d+%2C\\d+\\&amp;theater\" rel=\"theater\"").getColumn(0);
+                        links = br.getRegex("data\\-starred\\-src=\"(http://[^<>\"]*?)\"").getColumn(0);
                     }
                     boolean doExtended = false;
                     if (links == null || links.length == 0) {

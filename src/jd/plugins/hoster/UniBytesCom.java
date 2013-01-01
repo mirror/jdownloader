@@ -129,77 +129,30 @@ public class UniBytesCom extends PluginForHost {
         String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_/]+)").getMatch(0);
         requestFileInformation(downloadLink);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
-        final String addedLinkCoded = Encoding.urlEncode(downloadLink.getDownloadURL());
         String dllink = br.getRedirectLocation();
         if (dllink == null || !dllink.contains("fdload/")) {
             dllink = dllink == null ? br.getRegex("<div id=\"exeLink\"><a href=\"(http:[^\"]+)").getMatch(0) : dllink;
             dllink = dllink == null ? br.getRegex(freeDlLink).getMatch(0) : dllink;
             if (dllink == null) {
+                // maybe outdated
                 if (br.containsHTML("(showNotUniqueIP\\(\\);|>Somebody else is already downloading using your IP-address<)")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Too many simultan downloads", 10 * 60 * 1000l);
-                int iwait = 60;
-                String regexedTime = br.getRegex("id=\"slowRest\">(\\d+)</").getMatch(0);
-                if (regexedTime == null) regexedTime = br.getRegex("var timerRest = (\\d+);").getMatch(0);
-                if (regexedTime != null) iwait = Integer.parseInt(regexedTime);
                 String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
                 if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
                 if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
-                String step = br.getRegex("/free\\?step=([^\"&]+)").getMatch(0);
-                if (step == null) {
-                    logger.warning("Couldn't find 'step'");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                sleep(iwait * 1001l, downloadLink);
-                br.getPage(downloadLink.getDownloadURL() + "/free?&step=" + step + "&referer=");
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(freeDlLink)) {
-                    dllink = br.getRedirectLocation();
-                }
+                // maybe outdated end
+
+                String stepForward = br.getRegex("\"(/[A-Za-z0-9\\-_]+/free\\?step=[^<>\"]*?)\"").getMatch(0);
+                if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage("http://www.unibytes.com" + stepForward);
+                stepForward = br.getRegex("\"(/[A-Za-z0-9\\-_]+/link\\?step=[^<>\"]*?)\"").getMatch(0);
+                if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage("http://www.unibytes.com" + stepForward);
+                dllink = br.getRegex(freeDlLink).getMatch(0);
                 if (dllink == null) {
-                    dllink = br.getRegex(freeDlLink).getMatch(0);
-                }
-                if ((dllink == null) && br.containsHTML("(id=\"noThanxDiv\".+\">no, thanks</a></div>|<a href=(\"|\\')(/" + uid + "/[^\"]+step=[^\"]+))")) {
-                    // for times with addition page of no thanks && steps
-                    String step2 = br.getRegex("<div style=\".+\" id=\"noThanxDiv\"><a href=\"([^\"]+)\".+\">no, thanks</a></div>").getMatch(0);
-                    if (step2 == null) {
-                        step2 = br.getRegex("<a href=\"([^\"]+)\"[^>]+\">no, thanks</a>").getMatch(0);
-                        if (step2 == null) step2 = br.getRegex("<a href=(\"|\\')(/" + uid + "/[^\"]+step=[^\"]+)").getMatch(1);
-                        if (step2 != null) {
-                            br.getPage(step2);
-                            if (br.getRedirectLocation() != null && br.getRedirectLocation().matches(freeDlLink)) {
-                                dllink = br.getRedirectLocation();
-                            } else {
-                                dllink = br.getRegex(freeDlLink).getMatch(0);
-                            }
-                        }
-                    }
-                }
-                String step3 = br.getRegex("name=\"s\" value=\"(.*?)\"").getMatch(0);
-                if (dllink == null && step3 == null) {
-                    logger.warning("'step3' equals null!");
+                    logger.warning("dllink equals null!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // not sure if this is captcha component required or even current...
-                if (dllink == null) {
-                    br.postPage(downloadLink.getDownloadURL(), "step=captcha&s=" + step3 + "&referer=" + addedLinkCoded);
-                    if (br.containsHTML(CAPTCHATEXT)) {
-                        logger.info("Captcha found");
-                        for (int i = 0; i <= 5; i++) {
-                            String code = getCaptchaCode("http://www.unibytes.com/captcha.jpg", downloadLink);
-                            String post = "s=" + step3 + "&referer=" + addedLinkCoded + "&step=last&captcha=" + code;
-                            br.postPage(downloadLink.getDownloadURL(), post);
-                            if (!br.containsHTML(CAPTCHATEXT)) break;
-                        }
-                        if (br.containsHTML(CAPTCHATEXT)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        logger.info("Captcha not found");
-                    }
-                    dllink = br.getRegex(freeDlLink).getMatch(0);
-                    if (dllink == null) dllink = br.getRegex("style=\"width: 650px; margin: 40px auto; text-align: center; font-size: 2em;\"><a href=\"(.*?)\"").getMatch(0);
                 }
             }
-        }
-        if (dllink == null) {
-            logger.warning("dllink equals null!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {

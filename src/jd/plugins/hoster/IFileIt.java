@@ -84,7 +84,7 @@ public class IFileIt extends PluginForHost {
             // First try API via apikey from account
             if (aa != null) {
                 try {
-                    apikey = getUrlEncodedAPIkey(aa);
+                    apikey = getUrlEncodedAPIkey(aa, this, br);
                     br.postPage("http://api.filecloud.io/api-fetch_file_details.api", "akey=" + apikey + "&ukey=" + fid);
                     failed = false;
                 } catch (final BrowserException e) {
@@ -132,11 +132,11 @@ public class IFileIt extends PluginForHost {
             downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             // Check with API
-            final String status = getJson("status");
+            final String status = getJson("status", br);
             if (status == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-            if (!"ok".equals(getJson("status"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            final String filename = getJson("name");
-            final String filesize = getJson("size");
+            if (!"ok".equals(getJson("status", br))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            final String filename = getJson("name", br);
+            final String filesize = getJson("size", br);
             if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             downloadLink.setFinalFileName(Encoding.htmlDecode(filename));
             downloadLink.setDownloadSize(Long.parseLong(filesize));
@@ -251,7 +251,7 @@ public class IFileIt extends PluginForHost {
     private void login(final Account account) throws Exception {
         br.setFollowRedirects(true);
         prepBrowser(br);
-        final String apikey = getUrlEncodedAPIkey(account);
+        final String apikey = getUrlEncodedAPIkey(account, this, br);
         if (apikey == null) {
             logger.info("Couldn't find akey (APIKEY) -> Account must be invalid!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -341,13 +341,13 @@ public class IFileIt extends PluginForHost {
         try {
             // Use cookies, check and refresh if needed
             login(account);
-            br.postPage("http://api.filecloud.io/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account));
+            br.postPage("http://api.filecloud.io/api-fetch_account_details.api", "akey=" + getUrlEncodedAPIkey(account, this, br));
         } catch (final PluginException e) {
             account.setValid(false);
             return ai;
         }
         // Only free acc support till now
-        if ("0".equals(getJson("is_premium"))) {
+        if ("0".equals(getJson("is_premium", br))) {
             ai.setStatus("Normal User");
             account.setProperty("typ", "free");
             try {
@@ -360,7 +360,7 @@ public class IFileIt extends PluginForHost {
         } else {
             ai.setStatus("Premium User");
             account.setProperty("typ", "premium");
-            ai.setValidUntil(Long.parseLong(getJson("premium_until")) * 1000);
+            ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
                 maxPrem.set(1);
                 account.setMaxSimultanDownloads(maxPrem.get());
@@ -378,11 +378,11 @@ public class IFileIt extends PluginForHost {
         if (UNDERMAINTENANCE) throw new PluginException(LinkStatus.ERROR_FATAL, UNDERMAINTENANCEUSERTEXT);
         login(account);
         if ("premium".equals(account.getStringProperty("typ", null))) {
-            final String apikey = getUrlEncodedAPIkey(account);
+            final String apikey = getUrlEncodedAPIkey(account, this, br);
             final String fid = getFid(link);
             if (apikey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             br.postPage("http://api.filecloud.io/api-fetch_download_url.api", "akey=" + apikey + "&ukey=" + fid);
-            String finallink = getJson("download_url");
+            String finallink = getJson("download_url", br);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             finallink = finallink.replace("\\", "");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -10);
@@ -400,21 +400,21 @@ public class IFileIt extends PluginForHost {
         }
     }
 
-    private String getUrlEncodedAPIkey(final Account aa) throws IOException {
-        String apikey = this.getPluginConfig().getStringProperty("apikey");
-        final String username = this.getPluginConfig().getStringProperty("username");
-        final String password = this.getPluginConfig().getStringProperty("password");
+    public static String getUrlEncodedAPIkey(final Account aa, final PluginForHost plu, final Browser br) throws IOException {
+        String apikey = plu.getPluginConfig().getStringProperty("apikey");
+        final String username = plu.getPluginConfig().getStringProperty("username");
+        final String password = plu.getPluginConfig().getStringProperty("password");
         // Check if we already have an apikey and if it's the correct one
         if (apikey == null || username == null || password == null || !aa.getUser().equals(username) || !aa.getPass().equals(password)) {
-            this.getPluginConfig().setProperty("apikey", Property.NULL);
-            this.getPluginConfig().setProperty("username", Property.NULL);
-            this.getPluginConfig().setProperty("password", Property.NULL);
+            plu.getPluginConfig().setProperty("apikey", Property.NULL);
+            plu.getPluginConfig().setProperty("username", Property.NULL);
+            plu.getPluginConfig().setProperty("password", Property.NULL);
             br.postPage("https://secure.filecloud.io/api-fetch_apikey.api", "username=" + Encoding.urlEncode(aa.getUser()) + "&password=" + Encoding.urlEncode(aa.getPass()));
-            apikey = getJson("akey");
+            apikey = getJson("akey", br);
             if (apikey != null) {
-                this.getPluginConfig().setProperty("apikey", apikey);
-                this.getPluginConfig().setProperty("username", aa.getUser());
-                this.getPluginConfig().setProperty("password", aa.getPass());
+                plu.getPluginConfig().setProperty("apikey", apikey);
+                plu.getPluginConfig().setProperty("username", aa.getUser());
+                plu.getPluginConfig().setProperty("password", aa.getPass());
             }
         }
         return Encoding.urlEncode(apikey);
@@ -449,7 +449,7 @@ public class IFileIt extends PluginForHost {
         br.getHeaders().remove("X-Requested-With");
     }
 
-    private String getJson(final String parameter) {
+    public static String getJson(final String parameter, final Browser br) {
         String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
         if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;

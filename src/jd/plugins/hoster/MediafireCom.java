@@ -1093,6 +1093,7 @@ public class MediafireCom extends PluginForHost {
             dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        if (br.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
     }
 
     @Override
