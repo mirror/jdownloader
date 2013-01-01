@@ -318,7 +318,7 @@ public class AsFileCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
         }
-        dllink = getDllink();
+        if (dllink == null) dllink = getDllink();
         if (dllink == null) {
             br.getPage("http://asfile.com/en/count_files/" + uid);
             dllink = getDllink();
@@ -351,12 +351,11 @@ public class AsFileCom extends PluginForHost {
                         logger.info("You have exceeded the download limit for today");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    if (br.containsHTML("index/pay")) {
-                        logger.info("Seems the account is no longer valid");
+                    // extend link is always present on every page! thus disables account constantly when ddlink == null
+                    if (!br.containsHTML("Your account is: PREMIUM<")) {
+                        logger.info("Seems the account is no longer 'Premium'");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
