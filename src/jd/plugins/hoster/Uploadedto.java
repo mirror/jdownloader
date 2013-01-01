@@ -89,6 +89,11 @@ public class Uploadedto extends PluginForHost {
     private static final String    NORESUME                     = "NORESUME";
 
     @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/(file/)?)", "://uploaded.net/file/"));
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.correctDownloadLink(downloadLink);
         String id = getID(downloadLink);
@@ -298,11 +303,6 @@ public class Uploadedto extends PluginForHost {
             return false;
         }
         return true;
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/(file/)?)", "://uploaded.net/file/"));
     }
 
     public AccountInfo fetchAccountInfo_API(final Account account) throws Exception {
@@ -630,6 +630,7 @@ public class Uploadedto extends PluginForHost {
         }
     }
 
+    /** API error handling **/
     private void handleErrorCode(Browser br, Account acc, String usedToken, boolean throwPluginDefect) throws Exception {
         String errCode = br.getRegex("code\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode == null) errCode = br.getRegex("errCode\":\\s*?\"?(\\d+)").getMatch(0);
@@ -642,6 +643,8 @@ public class Uploadedto extends PluginForHost {
             int code = Integer.parseInt(errCode);
             switch (code) {
             case 1:
+                // {"err":{"code":1,"message":"Benutzer nicht vorhanden: e74ac48bef744497c56efaf45072579fbc945b45"}}
+                // user does not exist, when random username entered into login field.
             case 2:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "User does not exist!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 3:
@@ -659,10 +662,15 @@ public class Uploadedto extends PluginForHost {
             case 16:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Disabled because of flood protection", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 18:
-                // actual error messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
-                // EN: effectively they are saying wrong hash value provided, sha1 provided and expected md5sum. It also seems to throws
-                // this message when user:pass is incorrect (go figure)
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                // {"err":{"code":18,"message":"Das \u00fcbergebene Passwort ist vom Typ sha1, erwartet wurde md5"}}
+                // messaged unescaped: Das übergebene Passwort ist vom Typ sha1, erwartet wurde md5
+                // effectively they are saying wrong hash value provided, sha1 provided and expected md5.
+                // been reported by users, seems random for some users and not others, when sha1 was used
+            case 19:
+                // {"err":{"code":19,"message":"Das \u00fcbergebene Passwort ist vom Typ md5, erwartet wurde sha1"}}
+                // message unescaped: Das übergebene Passwort ist vom Typ md5, erwartet wurde sha1
+                // effectively they are saying wrong hash value provided, md5 provided and expected sha1. It also seems to throws this
+                // been given randomly for some users and not others, when md5 was used (only used for a day to test)
             case 20:
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "Locked account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
             case 404:
@@ -705,7 +713,7 @@ public class Uploadedto extends PluginForHost {
                 // DANGER: Even after user changed password this token is still valid->Uploaded.to was contacted by psp but no response!
                 String token = account.getStringProperty("token", null);
                 if (token != null && liveToken == false) return token;
-                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getMD5(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
+                br.postPage("http://api.uploaded.net/api/user/login", "name=" + Encoding.urlEncode(account.getUser()) + "&pass=" + JDHash.getSHA1(URLDecoder.decode(account.getPass(), "UTF-8").toLowerCase(Locale.ENGLISH)) + "&ishash=1&app=JDownloader");
                 token = br.getRegex("access_token\":\"(.*?)\"").getMatch(0);
                 if (token == null) handleErrorCode(br, account, token, true);
                 account.setProperty("token", token);
