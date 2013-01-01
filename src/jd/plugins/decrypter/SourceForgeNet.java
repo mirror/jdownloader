@@ -30,7 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.locale.JDL;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?(sourceforge\\.net/projects/(.*?/files/extras/.*?/download|[a-z0-9\\-_]+/)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sourceforge.net" }, urls = { "https?://(www\\.)?(sourceforge\\.net/projects/([^/]+/files/.+/download|[^/]+/)|downloads\\.sourceforge\\.net/.+)" }, flags = { 0 })
 public class SourceForgeNet extends PluginForDecrypt {
 
     public SourceForgeNet(PluginWrapper wrapper) {
