@@ -17,7 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision: $", interfaceVersion = 2, names = { "x-art.com" }, urls = { "https?://x\\-art\\.com/members/(videos/.+)" }, flags = { 2 })
 public class XArtCom extends PluginForHost {
 
     private String HTTP_Auth = "";
