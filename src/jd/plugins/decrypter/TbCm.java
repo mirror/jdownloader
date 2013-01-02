@@ -745,11 +745,15 @@ public class TbCm extends PluginForDecrypt {
 
                 // Grab thumbnails
                 FilePackage filePackage = filepackages.get("YouTube thumbnails");
-                if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false)) && filePackage == null) {
+                if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
                     filePackage.setName("YouTube thumbnails");
                     filepackages.put("YouTube thumbnails", filePackage);
+                }
+
+                if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) {
+                    decryptedLinks.add(createThumbnailDownloadLink(YT_FILENAME + " (MAX).jpg", "http://img.youtube.com/vi/" + VIDEOID + "/maxresdefault.jpg", url, filePackage));
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false)) {

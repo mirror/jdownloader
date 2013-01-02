@@ -44,7 +44,7 @@ import jd.plugins.decrypter.TbCm.DestinationFormat;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z]{2}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default).jpg)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "(httpJDYoutube://[\\w\\.\\-]*?youtube\\.com/(videoplayback\\?.+|get_video\\?.*?video_id=.+&.+(&fmt=\\d+)?))|(httpJDYoutube://video\\.google\\.com/timedtext\\?type=track&name=.*?\\&lang=[a-z]{2}\\&v=[a-z\\-_A-Z0-9]+)|(httpJDYoutube://img\\.youtube.com/vi/[a-z\\-_A-Z0-9]+/(hqdefault|mqdefault|default|maxresdefault).jpg)" }, flags = { 2 })
 public class Youtube extends PluginForHost {
 
     private static Object       lock                    = new Object();
@@ -64,6 +64,7 @@ public class Youtube extends PluginForHost {
     private static final String ALLOW_ORIGINAL          = "ALLOW_ORIGINAL";
     private static final String ALLOW_BEST              = "ALLOW_BEST2";
     private static final String ALLOW_SUBTITLES         = "ALLOW_SUBTITLES";
+    private static final String ALLOW_THUMBNAIL_MAX     = "ALLOW_THUMBNAIL_MAX";
     private static final String ALLOW_THUMBNAIL_HQ      = "ALLOW_THUMBNAIL_HQ";
     private static final String ALLOW_THUMBNAIL_MQ      = "ALLOW_THUMBNAIL_MQ";
     private static final String ALLOW_THUMBNAIL_DEFAULT = "ALLOW_THUMBNAIL_DEFAULT";
@@ -431,6 +432,7 @@ public class Youtube extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_1080P, JDL.L("plugins.hoster.youtube.check1080p", "Grab 1080p?")).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_ORIGINAL, JDL.L("plugins.hoster.youtube.checkoriginal", "Grab Original?")).setEnabledCondidtion(hq, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_MAX, JDL.L("plugins.hoster.youtube.grabrhumbnailmax", "Grab max. resulution thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_HQ, JDL.L("plugins.hoster.youtube.grabrhumbnailhq", "Grab HQ (480x360) thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_MQ, JDL.L("plugins.hoster.youtube.grabrhumbnailmq", "Grab MQ (320x180) thumbnail?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_THUMBNAIL_DEFAULT, JDL.L("plugins.hoster.youtube.grabrhumbnaildefault", "Grab default (120x90) thumbnail?")).setDefaultValue(false));
