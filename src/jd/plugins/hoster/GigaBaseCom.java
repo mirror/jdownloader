@@ -57,6 +57,15 @@ public class GigaBaseCom extends PluginForHost {
         String dllink = br.getRegex(">Download types</span><br/><span class=\"c3\"><a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
         if (dllink == null) {
+            dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
+            dllink = downloadLink.getDownloadURL() + dllink;
+            br.getPage(dllink);
+            dllink = br.getRegex("id=\"noThanxDiv\"><a href=\"(/getfile/[^\"<>]*?/link\\?step=[^\"<>]*?)&referer=\"").getMatch(0);
+            dllink = downloadLink.getDownloadURL() + dllink;
+            br.getPage(dllink);
+            dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/dfile/[^\"<>]+)").getMatch(0);
+        }
+        if (dllink == null) {
             Form dlForm = br.getForm(2);
             if (dlForm != null) {
                 br.submitForm(dlForm);
@@ -86,6 +95,11 @@ public class GigaBaseCom extends PluginForHost {
         Regex fileInfo = br.getRegex("<div id=\"fileName\" style=\"[^<>\"]+\">(.*?)</div>[\t\n\r ]+\\(([^<>\"\\']+)\\)[\t\n\r ]+<a href=\"");
         String filename = fileInfo.getMatch(0);
         String filesize = fileInfo.getMatch(1);
+        if (filename == null || filesize == null) {
+            fileInfo = br.getRegex("<span title=\"(.*?)\" id=\"fileName\" style=\"[^<>\"]+\">.*?</span>[ \t\r\n]+\\(([^<>\"\\']+)\\)</h3>");
+            filename = fileInfo.getMatch(0);
+            filesize = fileInfo.getMatch(1);
+        }
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(Encoding.htmlDecode(filename.trim()));
         link.setDownloadSize(SizeFormatter.getSize(filesize));
