@@ -139,18 +139,22 @@ public class UniBytesCom extends PluginForHost {
                 String ipBlockedTime = br.getRegex("guestDownloadDelayValue\">(\\d+)</span>").getMatch(0);
                 if (ipBlockedTime == null) ipBlockedTime = br.getRegex("guestDownloadDelay\\((\\d+)\\);").getMatch(0);
                 if (ipBlockedTime != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(ipBlockedTime) * 60 * 1001l);
-                // maybe outdated end
-
-                String stepForward = br.getRegex("\"(/[A-Za-z0-9\\-_]+/free\\?step=[^<>\"]*?)\"").getMatch(0);
+                // step1
+                String stepForward = br.getRegex("\"(/" + uid + "/free\\?step=[^\"]+)").getMatch(0);
                 if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.getPage("http://www.unibytes.com" + stepForward);
-                stepForward = br.getRegex("\"(/[A-Za-z0-9\\-_]+/link\\?step=[^<>\"]*?)\"").getMatch(0);
-                if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                br.getPage("http://www.unibytes.com" + stepForward);
+                br.getPage(stepForward);
+                // links can be found after the first step in some regions!
                 dllink = br.getRegex(freeDlLink).getMatch(0);
                 if (dllink == null) {
-                    logger.warning("dllink equals null!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    // step2 - euroland require!
+                    stepForward = br.getRegex("\"(/" + uid + "/link\\?step=[^\"]+)").getMatch(0);
+                    if (stepForward == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    br.getPage(stepForward);
+                    dllink = br.getRegex(freeDlLink).getMatch(0);
+                    if (dllink == null) {
+                        logger.warning("dllink equals null!");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                 }
             }
         }
