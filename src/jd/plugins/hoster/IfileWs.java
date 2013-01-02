@@ -68,7 +68,7 @@ public class IfileWs extends PluginForHost {
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static final boolean VIDEOHOSTER                  = false;
     // note: can not be negative -x or 0 .:. [1-*]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
     private static AtomicInteger maxPrem                      = new AtomicInteger(1);
@@ -77,7 +77,7 @@ public class IfileWs extends PluginForHost {
     /** DEV NOTES */
     // XfileSharingProBasic Version 2.5.9.6
     // mods: getdllink, download1 form handling
-    // non account: 1 * 2
+    // non account: 2 * 1
     // free account: untested, set same as FREE
     // premium account: chunks * maxdls
     // protocol: no https
@@ -184,7 +184,7 @@ public class IfileWs extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, false, 1, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     @SuppressWarnings("unused")

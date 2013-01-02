@@ -65,6 +65,7 @@ public class RyuShareCom extends PluginForHost {
     private static final String  PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
     private static Object        LOCK                = new Object();
     private static AtomicInteger maxPrem             = new AtomicInteger(1);
+    private static final String  NOCHUNKS            = "NOCHUNKS";
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.5.6.0-raz
@@ -156,8 +157,7 @@ public class RyuShareCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        // More chunks sometimes possible but server error chance is very high then
-        doFree(downloadLink, true, -2, "freelink");
+        doFree(downloadLink, true, -17, "freelink");
     }
 
     public void doFree(DownloadLink downloadLink, boolean resumable, int maxchunks, String directlinkproperty) throws Exception, PluginException {
@@ -272,6 +272,9 @@ public class RyuShareCom extends PluginForHost {
             sleep(2 * 1000l, downloadLink);
         }
         logger.info("Final downloadlink = " + dllink + " starting the download...");
+        if (downloadLink.getBooleanProperty(RyuShareCom.NOCHUNKS, false)) {
+            maxchunks = 1;
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
@@ -282,12 +285,22 @@ public class RyuShareCom extends PluginForHost {
         }
         downloadLink.setProperty(directlinkproperty, dllink);
         if (passCode != null) downloadLink.setProperty("pass", passCode);
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            /* unknown error, we disable multiple chunks */
+            if (downloadLink.getBooleanProperty(RyuShareCom.NOCHUNKS, false) == false) {
+                downloadLink.setProperty(RyuShareCom.NOCHUNKS, Boolean.valueOf(true));
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return -1;
     }
 
     /** Remove HTML code which could break the plugin */

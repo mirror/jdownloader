@@ -27,11 +27,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 //movshare by pspzockerscene
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "movshare.net", "epornik.com" }, urls = { "http://(www\\.)?movshare\\.net/video/[a-z0-9]+", "http://(www\\.)?epornik\\.com/video/[a-z0-9]+" }, flags = { 0, 0 })
 public class MovShareNet extends PluginForHost {
 
     private static final String HUMANTEXT = "We need you to prove you\\'re human";
-
     private static final String EPRON     = "epornik.com/";
 
     public MovShareNet(PluginWrapper wrapper) {
@@ -61,8 +60,7 @@ public class MovShareNet extends PluginForHost {
                 Form IAmAHuman = br.getForm(0);
                 if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 /*
-                 * needed for stable 09581 working, post without data did not
-                 * set content length to 0
+                 * needed for stable 09581 working, post without data did not set content length to 0
                  */
                 IAmAHuman.put("submit", "");
                 br.submitForm(IAmAHuman);
@@ -72,10 +70,18 @@ public class MovShareNet extends PluginForHost {
         String filename = (br.getRegex("Title: </strong>(.*?)</td>( <td>)?").getMatch(0));
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         filename = filename.trim();
-        if (filename.equals("Untitled") || filename.equals("Title")) {
-            downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)").getMatch(0) + ".avi");
+        if (br.getURL().contains("movshare.net/")) {
+            if (filename.equals("Untitled") || filename.equals("Title")) {
+                downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "movshare\\.net/video/(.+)$").getMatch(0) + ".avi");
+            } else {
+                downloadLink.setFinalFileName(filename + ".avi");
+            }
         } else {
-            downloadLink.setFinalFileName(filename + ".avi");
+            if (filename.equals("Untitled") || filename.equals("Title")) {
+                downloadLink.setFinalFileName("Video " + new Regex(downloadLink.getDownloadURL(), "epornic\\.com/video/(.+)$").getMatch(0) + ".flv");
+            } else {
+                downloadLink.setFinalFileName(filename + ".flv");
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -88,8 +94,7 @@ public class MovShareNet extends PluginForHost {
                 Form IAmAHuman = br.getForm(0);
                 if (IAmAHuman == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 /*
-                 * needed for stable 09581 working, post without data did not
-                 * set content length to 0
+                 * needed for stable 09581 working, post without data did not set content length to 0
                  */
                 br.submitForm(IAmAHuman);
             }

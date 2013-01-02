@@ -61,14 +61,14 @@ public class DoneVideoCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = false;
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(2);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     /** DEV NOTES */
     // XfileSharingProBasic Version 2.6.0.4
     // mods:
-    // non account: 2 * 1
+    // non account: 2 * 2
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https

@@ -33,15 +33,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be" }, urls = { "http://(www\\.)?(deredactie|sporza)\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws/mediatheek/((programmas|redactietips|nieuws)/)?[\\w\\%]+/\\d\\.\\d+(/\\d\\.\\d+)?(/\\d\\.\\d+)?)" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/permalink/\\d\\.\\d+", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/sporza/videozone/programmas/sportweekend/\\d\\.\\d+/\\d\\.\\d+)" }, flags = { 0, 0 })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String DLLINK  = null;
-    private String JSARRAY = null;
+    private String              DLLINK  = null;
+    private String              JSARRAY = null;
+    private static final String SPORZA  = "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/sporza/videozone/programmas/sportweekend/\\d\\.\\d+/\\d\\.\\d+)";
 
     @Override
     public String getAGBLink() {

@@ -194,6 +194,7 @@ public class EasyBytezCom extends PluginForHost {
         if (BRBEFORE.contains("\"download1\"")) {
             br.postPage(downloadLink.getDownloadURL(), "op=download1&usr_login=&id=" + new Regex(downloadLink.getDownloadURL(), COOKIE_HOST.replace("http://", "") + "/" + "([a-z0-9]{12})").getMatch(0) + "&fname=" + Encoding.urlEncode(downloadLink.getName()) + "&referer=&method_free=Free+Download");
             doSomething();
+            if (BRBEFORE.contains(">No such file with this filename<")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         checkErrors(downloadLink, false, passCode);
         String md5hash = new Regex(BRBEFORE, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
