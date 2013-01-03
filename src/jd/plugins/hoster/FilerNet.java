@@ -32,6 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "http://(www\\.)?filer\\.net/(get|dl)/[a-z0-9]+" }, flags = { 2 })
 public class FilerNet extends PluginForHost {
@@ -44,6 +45,7 @@ public class FilerNet extends PluginForHost {
     private static final String DOWNLOADTEMPORARILYDISABLEDTEXT = "Download temporarily disabled!";
     private static final int    UNKNOWNERROR                    = 599;
     private static final String UNKNOWNERRORTEXT                = "Unknown file error";
+    private static final String NORESUME                        = "NORESUME";
 
     public FilerNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -137,7 +139,9 @@ public class FilerNet extends PluginForHost {
             }
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false)) resume = false;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // Temporary errorhandling for a bug which isn't handled by the API
@@ -145,7 +149,19 @@ public class FilerNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.setAllowFilenameFromURL(true);
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(FilerNet.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     // do not add @Override here to keep 0.* compatibility
@@ -210,15 +226,29 @@ public class FilerNet extends PluginForHost {
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Important!!
         br.getHeaders().put("Authorization", "");
-        // Chunks deactivated to prevent errors
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        boolean resume = true;
+        if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false)) resume = false;
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resume, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             // Temporary errorhandling for a bug which isn't handled by the API
             if (br.getURL().equals("http://filer.net/error/500")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl.startDownload();
+        dl.setAllowFilenameFromURL(true);
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+                if (downloadLink.getBooleanProperty(FilerNet.NORESUME, false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty(FilerNet.NORESUME, Boolean.valueOf(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
     }
 
     private void handleDownloadErrors() throws PluginException {
