@@ -28,7 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploking.com" }, urls = { "http://(www\\.)?uploking\\.com/file/[A-Za-z0-9]+/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploking.com" }, urls = { "http://(www\\.)?uploking\\.com/file/[A-Za-z0-9_\\-]+/" }, flags = { 0 })
 public class UploKingCom extends PluginForHost {
 
     public UploKingCom(PluginWrapper wrapper) {
