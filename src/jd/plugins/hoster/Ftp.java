@@ -37,7 +37,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^& \"\r\n]+" }, flags = { 0 })
+// DEV NOTES:
+// - ftp filenames can contain & characters!
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ftp" }, urls = { "ftp://.*?(?<!(hdmekani))\\.[a-zA-Z0-9]{2,}(:\\d+)?/[^\"\r\n ]+" }, flags = { 0 })
 public class Ftp extends PluginForHost {
 
     Long speed = 0L;
@@ -57,7 +60,7 @@ public class Ftp extends PluginForHost {
             if (new File(downloadLink.getFileOutput()).exists()) throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
             URL url = new URL(ftpurl);
             /* cut off all ?xyz at the end */
-            String filePath = new Regex(ftpurl, "://.*?/(.+?)(\\?|$)").getMatch(0);
+            String filePath = new Regex(ftpurl, "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             String name = null;
             ftp.connect(url);
             if (oldStyle()) {
@@ -272,7 +275,7 @@ public class Ftp extends PluginForHost {
         try {
             URL url = new URL(downloadLink.getDownloadURL());
             /* cut off all ?xyz at the end */
-            String filePath = new Regex(downloadLink.getDownloadURL(), "://.*?/(.+?)(\\?|$)").getMatch(0);
+            String filePath = new Regex(downloadLink.getDownloadURL(), "://[^/]+/(.+?)(\\?|$)").getMatch(0);
             ftp.connect(url);
             String name = null;
             if (oldStyle()) {
