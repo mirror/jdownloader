@@ -1,5 +1,5 @@
 action_tooltip=Aktivera för att stänga av datorn när nerladdningarna är klara.
-addons_jdshutdown_statusmessage_disabled=Programmet stängs INTE av JDownloader
+addons_jdshutdown_statusmessage_disabled=Datorn stängs INTE av JDownloader
 addons_jdshutdown_statusmessage_enabled=JDownloader kommer at att stänga av datorn efter att nerladdningen är färdig
 config_toolbarbutton=Toolbar Button synlig
 gui_config_jdshutdown_close=Stäng JD
@@ -19,7 +19,7 @@ interaction_shutdown_dialog_title_closejd=Stänga ner JD?
 interaction_shutdown_dialog_title_hibernate=Viloläge?
 interaction_shutdown_dialog_title_shutdown=Stänga av?
 interaction_shutdown_dialog_title_standby=Standby?
-jd_plugins_optional_jdshutdown=JD Shutdown
+jd_plugins_optional_jdshutdown=JD Avstängning
 jd_plugins_optional_jdshutdown_description=Automatiskt stänga av, viloläge eller avsluta JDownloader när nerladdningar är klar.
 lit_shutdownn=Stäng av
 show_admin=Administrator rättigheter krävs för att konfigurera JDownloader fö Viloläge eller Standby Mode

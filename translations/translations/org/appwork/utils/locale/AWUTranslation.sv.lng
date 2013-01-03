@@ -36,6 +36,7 @@ DIALOG_FILECHOOSER_helpButtonToolTipText=FileChoose hjälp
 DIALOG_FILECHOOSER_homeFolderAccessibleName=Hem
 DIALOG_FILECHOOSER_listViewButtonAccessibleName=Lista
 DIALOG_FILECHOOSER_lookInLabelText=Titta i:
+DIALOG_FILECHOOSER_networkfolder=Nätverk
 DIALOG_FILECHOOSER_newFolderAccessibleName=Ny katalog
 DIALOG_FILECHOOSER_newFolderErrorSeparator=:
 DIALOG_FILECHOOSER_newFolderErrorText=Ett fel uppstod vid skapa katalog
