@@ -566,23 +566,24 @@ public class RapidGatorNet extends PluginForHost {
         if (account.getBooleanProperty("nopremium")) {
             doFree(link);
         } else {
-
-            /* jsRedirect */
-            String reDirHash = handleJavaScriptRedirect();
-            if (reDirHash != null) {
-                logger.info("JSRedirect in premium");
-                br.getPage(link.getDownloadURL() + "?" + reDirHash);
-            }
-
-            String dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
-            if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+            String dllink = br.getRedirectLocation();
             if (dllink == null) {
-                if (br.containsHTML("You have reached daily quota of downloaded information for premium accounts")) {
-                    logger.info("You have reached daily quota of downloaded information for premium accounts");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                /* jsRedirect */
+                String reDirHash = handleJavaScriptRedirect();
+                if (reDirHash != null) {
+                    logger.info("JSRedirect in premium");
+                    br.getPage(link.getDownloadURL() + "?" + reDirHash);
                 }
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                dllink = br.getRegex("var premium_download_link = \\'(http://[^<>\"\\']+)\\';").getMatch(0);
+                if (dllink == null) dllink = br.getRegex("\\'(http://pr_srv\\.rapidgator\\.net//\\?r=download/index\\&session_id=[A-Za-z0-9]+)\\'").getMatch(0);
+                if (dllink == null) {
+                    if (br.containsHTML("You have reached daily quota of downloaded information for premium accounts")) {
+                        logger.info("You have reached daily quota of downloaded information for premium accounts");
+                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    }
+                    logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
             if (dl.getConnection().getContentType().contains("html")) {

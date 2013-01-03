@@ -40,6 +40,7 @@ public class UploKingCom extends PluginForHost {
         return "http://uploking.com/tos.html";
     }
 
+    // TODO: New version will come out: 10-12.01.2013
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();

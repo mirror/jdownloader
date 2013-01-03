@@ -16,7 +16,8 @@
 
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com" }, urls = { "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/download/\\d+/\\d+p" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.com" }, urls = { "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/(download/\\d+/\\d+p|film/\\d+)" }, flags = { 2 })
 public class EvilAngelCom extends PluginForHost {
 
     public EvilAngelCom(PluginWrapper wrapper) {
@@ -50,20 +51,51 @@ public class EvilAngelCom extends PluginForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
+    private static final String FILMLINK = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
+    private String              DLLINK   = null;
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
-            Browser br2 = br.cloneBrowser();
+            String filename = null;
+            login(aa, false);
+            if (link.getDownloadURL().matches(FILMLINK)) {
+                br.getPage(link.getDownloadURL());
+                filename = br.getRegex("<h1 class=\"title\">([^<>\"]*?)</h1>").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<h1 class=\"h1_title\">([^<>\"]*?)</h1>").getMatch(0);
+                    if (filename == null) filename = br.getRegex("<h2 class=\"h2_title\">([^<>\"]*?)</h2>").getMatch(0);
+                }
+                if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                filename = Encoding.htmlDecode(filename.trim());
+                /** INFO: There are also .wmv versions available but we prefer .mp4 here as 1080p is only available as .mp4 */
+                final String[] qualities = { "1080p", "720p", "540p", "480p", "240p" };
+                for (final String quality : qualities) {
+                    DLLINK = br.getRegex("\"(/en/[A-Za-z0-9\\-_]+/download/\\d+/" + quality + "/download/mp4)\"").getMatch(0);
+                    if (DLLINK != null) {
+                        filename = filename + "-" + quality + ".mp4";
+                        break;
+                    }
+                    if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    DLLINK = "http://members.evilangel.com" + DLLINK;
+                }
+            } else {
+                DLLINK = link.getDownloadURL();
+            }
+            final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br2.openGetConnection(link.getDownloadURL());
+                con = br2.openGetConnection(DLLINK);
                 if (!con.getContentType().contains("html")) {
                     link.setDownloadSize(con.getLongContentLength());
-                    link.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    if (filename == null)
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    else
+                        link.setFinalFileName(filename);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
@@ -74,6 +106,7 @@ public class EvilAngelCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
+
         } else {
             link.getLinkStatus().setStatusText("Links can only be chacked and downloaded via account!");
             return AvailableStatus.UNCHECKABLE;
@@ -100,6 +133,9 @@ public class EvilAngelCom extends PluginForHost {
             try {
                 // Load cookies
                 br.setCookiesExclusive(true);
+                br.setCookie(MAINPAGE, "enterSite", "en");
+                br.getHeaders().put("Accept-Language", "en-US,en;q=0.5");
+                br.setCustomCharset("utf-8");
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -115,10 +151,36 @@ public class EvilAngelCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(false);
-                br.setCookie(MAINPAGE, "enterSite", "en");
                 br.getPage("http://www.evilangel.com/en/login");
-                // Not working yet!
-                br.postPage("http://www.evilangel.com/en/login", "mDate=2012-12-02&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&mTime=13%3A49&submit=Click+here+to+login&mOffset=1&back=");
+                if (br.containsHTML(">We are experiencing some problems\\!<")) {
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setStatus("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
+                    logger.info("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+
+                final Date d = new Date();
+                SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                final String date = sd.format(d);
+                sd = new SimpleDateFormat("k:mm");
+                final String time = sd.format(d);
+                final String captcha = br.getRegex("name=\"captcha\\[id\\]\" value=\"([a-z0-9]{32})\"").getMatch(0);
+                String postData = "submit=Click+here+to+login&mOffset=1&back&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "=&mDate=" + Encoding.urlEncode(date) + "&mTime=" + Encoding.urlEncode(time);
+                // Handly stupid login captcha
+                if (captcha != null) {
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", "evilangel.com", "http://evilangel.com", true);
+                    final String code = getCaptchaCode("http://www.evilangel.com/en/captcha/" + captcha, dummyLink);
+                    postData += "&captcha%5Bid%5D=" + captcha + "&captcha%5Binput%5D=" + Encoding.urlEncode(code);
+                }
+                br.postPage("http://www.evilangel.com/en/login", postData);
+                if (br.containsHTML(">Your account is deactivated for abuse")) {
+                    final AccountInfo ai = new AccountInfo();
+                    ai.setStatus("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
+                    logger.info("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
+                    account.setAccountInfo(ai);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
                 if (br.getCookie(MAINPAGE, "save_login") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 // Save cookies
                 final HashMap<String, String> cookies = new HashMap<String, String>();
@@ -138,9 +200,12 @@ public class EvilAngelCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         try {
-            login(account, true);
+            // Prevent direct login to prevent login captcha
+            login(account, false);
+            br.getPage("http://members.evilangel.com/");
+            if (!br.containsHTML("Welcome back, <strong>")) login(account, true);
         } catch (PluginException e) {
             account.setValid(false);
             return ai;
