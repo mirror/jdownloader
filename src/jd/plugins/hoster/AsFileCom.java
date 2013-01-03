@@ -343,7 +343,7 @@ public class AsFileCom extends PluginForHost {
     private String getDllink() throws PluginException {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+            dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/(\\w+/)?[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
                 if (dllink == null) {
@@ -351,7 +351,7 @@ public class AsFileCom extends PluginForHost {
                         logger.info("You have exceeded the download limit for today");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
                     }
-                    // extend link is always present on every page! thus disables account constantly when ddlink == null
+                    // 'extend link' is present on every page! thus disables account constantly when ddlink == null
                     if (!br.containsHTML("Your account is: PREMIUM<")) {
                         logger.info("Seems the account is no longer 'Premium'");
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
