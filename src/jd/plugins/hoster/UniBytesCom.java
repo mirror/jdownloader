@@ -126,7 +126,7 @@ public class UniBytesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
-        String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_/]+)").getMatch(0);
+        String uid = new Regex(downloadLink.getDownloadURL(), "https?://[^/]+/([a-zA-Z0-9\\-\\.\\_]+)").getMatch(0);
         requestFileInformation(downloadLink);
         if (br.containsHTML(FATALSERVERERROR)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Fatal server error");
         String dllink = br.getRedirectLocation();
