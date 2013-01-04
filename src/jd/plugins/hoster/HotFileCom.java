@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2009  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -59,7 +59,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hotfile.com" }, urls = { "https?://[\\w\\.]*?hotfile\\.com/dl/\\d+/[0-9a-zA-Z]+/(.*?/|.+)?" }, flags = { 2 })
 public class HotFileCom extends PluginForHost {
     private static final String ua              = RandomUserAgent.generate();
-    private static Object LOCK            = new Object();
+    private static Object       LOCK            = new Object();
 
     private static final String UNLIMITEDMAXCON = "UNLIMITEDMAXCON";
 
@@ -265,8 +265,7 @@ public class HotFileCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         directDownload = false;
         /*
-         * for free users we dont use api filecheck, cause we have to call
-         * website anyway
+         * for free users we don't use api filecheck, cause we have to call website anyway
          */
         requestFileInformation(link);
         if ("http://hotfile.com/".equals(br.getURL())) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -364,6 +363,7 @@ public class HotFileCom extends PluginForHost {
                 }
                 if (br.containsHTML(">Your download expired, try again<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download-Session expired", 10 * 60 * 1000l);
                 if (br.containsHTML("You are currently downloading")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000l); }
+                if (br.containsHTML(">There is a temporary problem with accessing this file\\. Our technical team is resolving the problem right now\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 15 * 60 * 1000);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* filename workaround */
@@ -477,6 +477,7 @@ public class HotFileCom extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, finalUrl, true, getPluginConfig().getBooleanProperty(HotFileCom.UNLIMITEDMAXCON, false) == true ? 0 : -5);
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML(">There is a temporary problem with accessing this file\\. Our technical team is resolving the problem right now\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000);
             finalUrl = br.getRegex("<h3 style='margin-top: 20px'><a href=\"(.*?hotfile.*?)\">Click here to download</a></h3>").getMatch(0);
             if (finalUrl == null) {
                 finalUrl = br.getRegex("table id=\"download_file\".*?<a href=\"(.*?)\"").getMatch(0);/* polish */
@@ -486,6 +487,7 @@ public class HotFileCom extends PluginForHost {
         }
         if (!dl.getConnection().isContentDisposition()) {
             br.followConnection();
+            if (br.containsHTML(">There is a temporary problem with accessing this file\\. Our technical team is resolving the problem right now\\.<")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* filename workaround */

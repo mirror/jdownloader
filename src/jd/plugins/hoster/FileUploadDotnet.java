@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -31,17 +31,21 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "((http://(www\\.)?file\\-upload\\.net/(member/){0,1}download\\-\\d+/(.*?).html)|(http://(www\\.)?file\\-upload\\.net/(view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html))|(http://(www\\.)*?file\\-upload\\.net/member/data3\\.php\\?user=(.*?)\\&name=(.*)))" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "((http://(www\\.|en\\.)?file\\-upload\\.net/(member/){0,1}download\\-\\d+/(.*?).html)|(http://(www\\.)?file\\-upload\\.net/(view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html))|(http://(www\\.)*?file\\-upload\\.net/member/data3\\.php\\?user=(.*?)\\&name=(.*)))" }, flags = { 0 })
 public class FileUploadDotnet extends PluginForHost {
+
     private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
-
     private final Pattern PAT_VIEW     = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
-
     private final Pattern PAT_Member   = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
     private static String UA           = RandomUserAgent.generate();
 
     public FileUploadDotnet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void correctDownloadLink(final DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("http://en.file-upload", "http://www.file-upload"));
     }
 
     public String getAGBLink() {
@@ -68,7 +72,7 @@ public class FileUploadDotnet extends PluginForHost {
                     String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
                     // This name might be cut
                     if (filename == null) filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
-                    String filesize = br.getRegex("<b>Dateigröße:</b></td><td>([^<>\"]*?)</td>").getMatch(0);
+                    String filesize = br.getRegex("label>Dateigröße:</label><span>([^<>\"]*?)").getMatch(0);
                     if (filesize != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
@@ -99,12 +103,11 @@ public class FileUploadDotnet extends PluginForHost {
         requestFileInformation(downloadLink);
         br.getHeaders().put("User-Agent", UA);
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
-            String dllink = br.getRegex("\"(http://(www\\.)?file\\-upload\\.net/[a-z0-9\\-]+/data\\.php\\?id=\\d+\\&amp;name=[^<>\"/]*?)\"").getMatch(0);
-            final String valid = br.getRegex("name=\"valid\" value=\"(\\d+)\"").getMatch(0);
-            if (dllink == null || valid == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            String dllink = br.getRegex("(http://(www\\.)file\\-upload\\.net/download\\.php\\?valid=[\\d\\.]+&id=\\d+&name=[^\"\\']+)").getMatch(0);
+            if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             dllink = Encoding.htmlDecode(dllink);
             br.setFollowRedirects(true);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, "load6=+&valid=" + valid);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink);
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             String downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
