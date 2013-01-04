@@ -152,6 +152,7 @@ public class SrBoxCom extends PluginForDecrypt {
 
     protected DownloadLink createDownloadlink(String link, Boolean bVerify) {
         if (!link.startsWith("http")) return null;
+        if (link.contains("?media=")) return null;
         if (bVerify && link.startsWith("http://www.israbox.com")) return null;
 
         return super.createDownloadlink(link);
@@ -179,7 +180,7 @@ public class SrBoxCom extends PluginForDecrypt {
         strName = matcher.replaceAll("");
 
         // Replace Vol ou Vol. par 0
-        pattern = Pattern.compile("Vol(\\.| )", Pattern.CASE_INSENSITIVE);
+        pattern = Pattern.compile("Vol(\\. |\\.| )", Pattern.CASE_INSENSITIVE);
         matcher = pattern.matcher(strName);
         strName = matcher.replaceAll("0");
 
@@ -232,14 +233,18 @@ public class SrBoxCom extends PluginForDecrypt {
                 if (strWord.contains(strInExpression)) {
                     String[] AllCarac = strWord.split("\\" + strInExpression);
                     for (String strCarac : AllCarac) {
-                        String strFirstCarac = strCarac.substring(0, 1);
-                        try {
-                            strFirstCarac = strFirstCarac.toUpperCase();
-                        } catch (Exception e) {
+                        if (strCarac.length() > 1) {
+                            String strFirstCarac = strCarac.substring(0, 1);
+                            try {
+                                strFirstCarac = strFirstCarac.toUpperCase();
+                            } catch (Exception e) {
+                            }
+                            strTemp += strFirstCarac + strCarac.substring(strFirstCarac.length(), strCarac.length());
                         }
-                        strTemp += strFirstCarac + strCarac.substring(strFirstCarac.length(), strCarac.length()) + strInExpression;
+                        strTemp += strInExpression;
                         bFind = true;
                         bFindExpression = true;
+
                     }
                     if (AllCarac.length > 0 && strInExpression == ".") {
                         bRemoveLastExpression = AllCarac[AllCarac.length - 1].length() > 1;
