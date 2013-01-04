@@ -170,8 +170,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
-     * after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -429,33 +428,51 @@ public class TbCm extends PluginForDecrypt {
             linkstodecrypt.add(parameter);
         }
 
-        SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
+        final SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
         boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
-        final boolean mp3 = cfg.getBooleanProperty("ALLOW_MP3", true);
-        final boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
-        final boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
-        final boolean flv = cfg.getBooleanProperty("ALLOW_FLV", true);
-        final boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
-
-        final boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
-        final boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
-        final boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
-        final boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
-        final boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
-        final boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
         final boolean best = cfg.getBooleanProperty("ALLOW_BEST2", false);
+        final AtomicBoolean mp3 = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_MP3", true));
+        final AtomicBoolean flv = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_FLV", true));
         /* http://en.wikipedia.org/wiki/YouTube */
         final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
             private static final long serialVersionUID = -3028718522449785181L;
 
             {
+
+                boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
+                boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
+                boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
+                if (mp3.get() == mp4 == webm == flv.get() == threegp == false) {
+                    /* if no container is selected, then everything is enabled */
+                    mp3.set(true);
+                    mp4 = true;
+                    webm = true;
+                    flv.set(true);
+                    threegp = true;
+                }
+
+                boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
+                boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
+                boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
+                boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
+                boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
+                boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
+                if (q240p == q360p == q480p == q720p == q1080p == qOriginal == false) {
+                    q240p = true;
+                    q480p = true;
+                    q360p = true;
+                    q720p = true;
+                    q1080p = true;
+                    qOriginal = true;
+
+                }
                 // **** FLV *****
-                if (mp3) {
+                if (mp3.get()) {
                     this.put(0, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                     this.put(5, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Stereo" });
                     this.put(6, new Object[] { DestinationFormat.AUDIOMP3, "H.263", "MP3", "Mono" });
                 }
-                if (flv || best) {
+                if (flv.get() || best) {
                     if (q240p || best) {
                         this.put(5, new Object[] { DestinationFormat.VIDEOFLV, "H.263", "MP3", "Stereo", "240p" });
                     }
@@ -629,18 +646,18 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
                     dlLink = LinksFound.get(format)[0];
                     // Skip MP3 but handle 240p flv
-                    if (!(format == 5 && mp3 && !flv)) {
+                    if (!(format == 5 && mp3.get() && !flv.get())) {
                         try {
                             if (fast) {
                                 this.addtopos(cMode, dlLink, 0, vQuality, format);
                             } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                Thread.sleep(200);
                                 this.addtopos(cMode, dlLink, this.br.getHttpConnection().getLongContentLength(), vQuality, format);
                             }
                         } catch (final Throwable e) {
@@ -653,11 +670,12 @@ public class TbCm extends PluginForDecrypt {
                         }
                     }
                     // Handle MP3
-                    if ((format == 0 || format == 5 || format == 6) && mp3) {
+                    if ((format == 0 || format == 5 || format == 6) && mp3.get()) {
                         try {
                             if (fast) {
                                 this.addtopos(DestinationFormat.AUDIOMP3, dlLink, 0, "", format);
                             } else if (this.br.openGetConnection(dlLink).getResponseCode() == 200) {
+                                Thread.sleep(200);
                                 this.addtopos(DestinationFormat.AUDIOMP3, dlLink, this.br.getHttpConnection().getLongContentLength(), "", format);
                             }
                         } catch (final Throwable e) {
@@ -895,6 +913,7 @@ public class TbCm extends PluginForDecrypt {
                         hit = unescape(hit);
                         String hitUrl = new Regex(hit, "url=(http.*?)(\\&|$)").getMatch(0);
                         String sig = new Regex(hit, "url=http.*?(\\&|$)(sig|signature)=(.*?)(\\&|$)").getMatch(2);
+                        if (sig == null) sig = new Regex(hit, "(sig|signature)=(.*?)(\\&|$)").getMatch(1);
                         String hitFmt = new Regex(hit, "itag=(\\d+)").getMatch(0);
                         String hitQ = new Regex(hit, "quality=(.*?)(\\&|$)").getMatch(0);
                         if (hitUrl != null && hitFmt != null && hitQ != null) {

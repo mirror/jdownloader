@@ -45,7 +45,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/)?\\w+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploading.com" }, urls = { "http://[\\w\\.]*?uploading\\.com/files/(get/|thankyou/)?\\w+" }, flags = { 2 })
 public class UploadingCom extends PluginForHost {
 
     private static AtomicInteger simultanpremium = new AtomicInteger(1);
@@ -66,6 +66,9 @@ public class UploadingCom extends PluginForHost {
 
     public void correctDownloadLink(DownloadLink link) {
         if (!link.getDownloadURL().contains("/get")) link.setUrlDownload(link.getDownloadURL().replace("/files", "/files/get").replace("www.", ""));
+        if (link.getDownloadURL().contains("/thankyou")) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("/thankyou/", "/"));
+        }
     }
 
     public void prepBrowser() {
@@ -111,6 +114,7 @@ public class UploadingCom extends PluginForHost {
                 while (true) {
                     /* we test 100 links at once */
                     if (index == urls.length || links.size() > 100) break;
+                    correctDownloadLink(urls[index]);
                     links.add(urls[index]);
                     index++;
                 }

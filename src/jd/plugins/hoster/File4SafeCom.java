@@ -490,10 +490,10 @@ public class File4SafeCom extends PluginForHost {
         br.getPage(COOKIE_HOST + "/?op=my_account");
         doSomething();
         if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        if (new Regex(brbefore, "file4safe\\.com/\\?op=payments\">Premium</a>").matches()) {
-            account.setProperty("nopremium", true);
-        } else {
+        if (new Regex(brbefore, "Premium-Account expire:").matches()) {
             account.setProperty("nopremium", false);
+        } else {
+            account.setProperty("nopremium", true);
         }
     }
 

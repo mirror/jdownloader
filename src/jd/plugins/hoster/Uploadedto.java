@@ -63,7 +63,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/file/[\\w]+|ul\\.to/(file/)?[\\w]+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "uploaded.to" }, urls = { "https?://(www\\.)?(uploaded\\.(to|net)/(file/|\\?id=)?[\\w]+|ul\\.to/(file/|\\?id=)?[\\w]+)" }, flags = { 2 })
 public class Uploadedto extends PluginForHost {
 
     // DEV NOTES:
@@ -90,7 +90,8 @@ public class Uploadedto extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceAll("://(www\\.)?(uploaded\\.(to|net)/file/|ul\\.to/(file/)?)", "://uploaded.net/file/"));
+        String id = getID(link);
+        link.setUrlDownload("http://uploaded.net/file/" + id);
     }
 
     @Override
@@ -425,7 +426,12 @@ public class Uploadedto extends PluginForHost {
 
     private String getID(final DownloadLink downloadLink) {
         // keep in mind all corrected links are uploaded.net/file/uid at this stage
-        return new Regex(downloadLink.getDownloadURL(), "uploaded.net/file/([\\w]+)/?").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "/file/([\\w]+)/?").getMatch(0);
+        if (id != null) return id;
+        id = new Regex(downloadLink.getDownloadURL(), "\\?id=([\\w]+)/?").getMatch(0);
+        if (id != null) return id;
+        id = new Regex(downloadLink.getDownloadURL(), "(\\.net|\\.to)/([\\w]+)/?").getMatch(1);
+        return id;
     }
 
     @Override
