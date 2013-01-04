@@ -31,7 +31,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "((http://(www\\.|en\\.)?file\\-upload\\.net/(member/){0,1}download\\-\\d+/(.*?).html)|(http://(www\\.)?file\\-upload\\.net/(view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html))|(http://(www\\.)*?file\\-upload\\.net/member/data3\\.php\\?user=(.*?)\\&name=(.*)))" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "file-upload.net" }, urls = { "http://(www\\.|en\\.)?file\\-upload\\.net/((member/){0,1}download\\-\\d+/(.*?)\\.html|view\\-\\d+/(.*?)\\.html|member/view_\\d+_(.*?)\\.html|member/data3\\.php\\?user=(.*?)\\&name=(.*))" }, flags = { 0 })
 public class FileUploadDotnet extends PluginForHost {
 
     private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
@@ -45,7 +45,7 @@ public class FileUploadDotnet extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("http://en.file-upload", "http://www.file-upload"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("http://(en\\.)?file\\-upload", "http://www.file-upload"));
     }
 
     public String getAGBLink() {
