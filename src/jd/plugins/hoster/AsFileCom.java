@@ -343,7 +343,7 @@ public class AsFileCom extends PluginForHost {
     private String getDllink() throws PluginException {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = br.getRegex("\"(http://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/(\\w+/)?[A-Za-z0-9]+/[^<>\"\\'/]+)\"").getMatch(0);
+            dllink = br.getRegex("(https?://s\\d+\\.asfile\\.com/file/premium/[a-z0-9]+/\\d+/(\\w+/)?/?[A-Za-z0-9]+/[^<>\"\\']+)").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("<p><a href=\"(http://[^<>\"\\'/]+)\"").getMatch(0);
                 if (dllink == null) {
