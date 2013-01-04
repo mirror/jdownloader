@@ -76,7 +76,7 @@ public class XFileSharingProBasic extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     /** DEV NOTES */
-    // XfileSharingProBasic Version 2.6.0.4
+    // XfileSharingProBasic Version 2.6.0.5
     // mods:
     // non account: chunks * maxdls
     // free account: chunks * maxdls
@@ -759,6 +759,7 @@ public class XFileSharingProBasic extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();

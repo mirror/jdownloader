@@ -48,6 +48,7 @@ public class AnitubeCo extends PluginForHost {
         link.setUrlDownload(link.getDownloadURL().replaceFirst("\\.(co|tv|com\\.br|jp)", ".jp"));
     }
 
+    // Maybe broken, 01.01.12
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
