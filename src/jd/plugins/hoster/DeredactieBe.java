@@ -33,24 +33,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/permalink/\\d\\.\\d+", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/sporza/videozone/programmas/sportweekend/\\d\\.\\d+/\\d\\.\\d+)" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/permalink/\\d\\.\\d+", "http://(www\\.)?sporza\\.be/permalink/\\d\\.\\d+" }, flags = { 0, 0 })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String              DLLINK  = null;
-    private String              JSARRAY = null;
-    private static final String SPORZA  = "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/sporza/videozone/programmas/sportweekend/\\d\\.\\d+/\\d\\.\\d+)";
+    private String DLLINK  = null;
+    private String JSARRAY = null;
 
     @Override
     public String getAGBLink() {
         return "http://deredactie.be/";
-    }
-
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("sporza.be/", "deredactie.be/"));
     }
 
     @Override
@@ -64,6 +59,8 @@ public class DeredactieBe extends PluginForHost {
         if (!br.containsHTML("player\\.swf")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         JSARRAY = br.getRegex("(var vars\\d+.*?\\[\'w\'\\]\\s?=\\s?\'\\d+\';)").getMatch(0);
+        if (JSARRAY == null) makeJsArray(); // sporza.be
+
         if (JSARRAY == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         JSARRAY = JSARRAY.replaceAll("vars\\d+", "vars12345");
 
@@ -93,6 +90,15 @@ public class DeredactieBe extends PluginForHost {
                 con.disconnect();
             } catch (Throwable e) {
             }
+        }
+    }
+
+    private void makeJsArray() {
+        String sporza = br.getRegex("(data\\-video\\-id=.*?data\\-video\\-width\\s?=\\s?\"\\d+\")").getMatch(0);
+        if (sporza != null) {
+            sporza = sporza.replace("rtmp-server", "rtmpServer").replace("rtmp-path", "rtmpPath");
+            sporza = sporza.replaceAll("data\\-video-([^=]+)\\s?=\\s?\"([^\"]+)?\"", "vars12345['$1'] = '$2';");
+            if (sporza.contains("vars12345")) JSARRAY = "var vars12345 = Array();\n" + sporza;
         }
     }
 
@@ -131,7 +137,7 @@ public class DeredactieBe extends PluginForHost {
         rtmp.setUrl(DLLINK.split("@")[0]);
         rtmp.setSwfVfy("http://www.deredactie.be/html/flash/common/streamsense_jwp-v1.swf");
         rtmp.setResume(true);
-        rtmp.setTimeOut(-20);
+        rtmp.setRealTime();
     }
 
     @Override
