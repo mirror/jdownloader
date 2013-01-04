@@ -170,7 +170,11 @@ public class MdfrFldr extends PluginForDecrypt {
             // Try to re-use session token as long as possible (it's valid for 10 minutes)
             final String savedusername = this.getPluginConfig().getStringProperty("username");
             final String savedpassword = this.getPluginConfig().getStringProperty("password");
-            final long sessiontokenCreateDate = this.getPluginConfig().getLongProperty("sessiontokencreated", -1);
+            final String sessiontokenCreateDateObject = this.getPluginConfig().getStringProperty("sessiontokencreated2");
+            long sessiontokenCreateDate = -1;
+            if (sessiontokenCreateDateObject != null && sessiontokenCreateDateObject.length() > 0) {
+                sessiontokenCreateDate = Long.parseLong(sessiontokenCreateDateObject);
+            }
             if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
                 SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
             } else {
@@ -180,7 +184,7 @@ public class MdfrFldr extends PluginForDecrypt {
                 this.getPluginConfig().setProperty("username", aa.getUser());
                 this.getPluginConfig().setProperty("password", aa.getPass());
                 this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
-                this.getPluginConfig().setProperty("sessiontokencreated", System.currentTimeMillis());
+                this.getPluginConfig().setProperty("sessiontokencreated2", "" + System.currentTimeMillis());
                 this.getPluginConfig().save();
             }
         }

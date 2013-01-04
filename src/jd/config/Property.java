@@ -103,6 +103,9 @@ public class Property implements Serializable {
         }
     }
 
+    @Deprecated
+    /* DO not use in plugins for old 09581 Stable or try/catch */
+    /* @since jd2 */
     public long getLongProperty(final String key, final long def) {
         try {
             Object r = getProperty(key, def);

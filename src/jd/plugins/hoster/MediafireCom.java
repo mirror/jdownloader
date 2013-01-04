@@ -401,8 +401,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
-     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -469,8 +469,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
-     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
+     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -1069,7 +1069,11 @@ public class MediafireCom extends PluginForHost {
         // Try to re-use session token as long as possible (it's valid for 10 minutes)
         final String savedusername = this.getPluginConfig().getStringProperty("username");
         final String savedpassword = this.getPluginConfig().getStringProperty("password");
-        final long sessiontokenCreateDate = this.getPluginConfig().getLongProperty("sessiontokencreated", -1);
+        final String sessiontokenCreateDateObject = this.getPluginConfig().getStringProperty("sessiontokencreated2");
+        long sessiontokenCreateDate = -1;
+        if (sessiontokenCreateDateObject != null && sessiontokenCreateDateObject.length() > 0) {
+            sessiontokenCreateDate = Long.parseLong(sessiontokenCreateDateObject);
+        }
         if ((savedusername != null && savedusername.matches(aa.getUser())) && (savedpassword != null && savedpassword.matches(aa.getPass())) && System.currentTimeMillis() - sessiontokenCreateDate < 600000) {
             SESSIONTOKEN = this.getPluginConfig().getStringProperty("sessiontoken");
         } else {
@@ -1079,7 +1083,7 @@ public class MediafireCom extends PluginForHost {
             this.getPluginConfig().setProperty("username", aa.getUser());
             this.getPluginConfig().setProperty("password", aa.getPass());
             this.getPluginConfig().setProperty("sessiontoken", SESSIONTOKEN);
-            this.getPluginConfig().setProperty("sessiontokencreated", System.currentTimeMillis());
+            this.getPluginConfig().setProperty("sessiontokencreated2", "" + System.currentTimeMillis());
             this.getPluginConfig().save();
         }
     }

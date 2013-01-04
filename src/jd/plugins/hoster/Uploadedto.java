@@ -498,7 +498,11 @@ public class Uploadedto extends PluginForHost {
              * Free-Account Errorhandling: This allows users to switch between free accounts instead of reconnecting if a limit is reached
              */
             if (this.getPluginConfig().getBooleanProperty(ACTIVATEACCOUNTERRORHANDLING, false) && account != null) {
-                final long lastdownload = account.getLongProperty("LASTDOWNLOAD", 0);
+                final String lastdownloadString = account.getStringProperty("LASTDOWNLOAD2");
+                long lastdownload = 0;
+                if (lastdownloadString != null && lastdownloadString.length() > 0) {
+                    lastdownload = Long.parseLong(lastdownloadString);
+                }
                 final long passedTime = System.currentTimeMillis() - lastdownload;
                 if (passedTime < RECONNECTWAIT && lastdownload > 0) {
                     logger.info("Limit must still exist on account, disabling it");
@@ -611,7 +615,7 @@ public class Uploadedto extends PluginForHost {
                 br.followConnection();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (account != null) account.setProperty("LASTDOWNLOAD", System.currentTimeMillis());
+            if (account != null) account.setProperty("LASTDOWNLOAD2", "" + System.currentTimeMillis());
             dl.startDownload();
             hasDled.set(true);
         } catch (Exception e) {
@@ -631,7 +635,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, RECONNECTWAIT);
             } else {
                 logger.info("Limit reached, disabling account to use the next one!");
-                account.setProperty("LASTDOWNLOAD", System.currentTimeMillis());
+                account.setProperty("LASTDOWNLOAD2", "" + System.currentTimeMillis());
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
