@@ -79,10 +79,8 @@ public class AnimeRtioCom extends PluginForDecrypt {
 
     private String findLink(final String vidEntry) throws IOException {
         /**
-         * Important dev notice: here we got all regexes to decrypt links.
-         * Probably we ll never have all to decrypt 100% of the mirrors but
-         * before adding new regexes please check if the one you want to
-         * implement already exists but is broken!!
+         * Important dev notice: here we got all regexes to decrypt links. Probably we ll never have all to decrypt 100% of the mirrors but
+         * before adding new regexes please check if the one you want to implement already exists but is broken!!
          */
         String tempID = new Regex(vidEntry, "dailymotion\\.com/swf/video/([a-z0-9\\-_]+)\"").getMatch(0);
         if (tempID != null) return "http://www.dailymotion.com/video/" + tempID + "_" + System.currentTimeMillis();
@@ -94,8 +92,6 @@ public class AnimeRtioCom extends PluginForDecrypt {
             tempID = br.getRegex("<file>(http://[^<>\"]*?)</file>").getMatch(0);
             return tempID;
         }
-        tempID = new Regex(vidEntry, "glumbo\\.php\\?id=([a-z0-9]{12})").getMatch(0);
-        if (tempID != null) return "http://glumbouploads.com/" + tempID;
         tempID = new Regex(vidEntry, "streaming/veoh/v2\\.php\\?id=([^<>\"]*?)\"").getMatch(0);
         if (tempID != null) return "http://www.veoh.com/watch/" + tempID;
         tempID = new Regex(vidEntry, "putlockers\\.php\\?id=([^<>\"]*?)\"").getMatch(0);

@@ -32,6 +32,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class AllDebridCom extends PluginForHost {
@@ -43,6 +44,8 @@ public class AllDebridCom extends PluginForHost {
         setStartIntervall(4 * 1000l);
         this.enablePremium("http://www.alldebrid.com/offer/");
     }
+
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -159,7 +162,7 @@ public class AllDebridCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
         String user = Encoding.urlEncode(acc.getUser());
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
@@ -191,7 +194,11 @@ public class AllDebridCom extends PluginForHost {
             String msg = "(" + link.getLinkStatus().getRetryCount() + 1 + "/" + 3 + ")";
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 20 * 1000l);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, 0);
+        int maxChunks = 0;
+        if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, genlink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -208,7 +215,22 @@ public class AllDebridCom extends PluginForHost {
         /* save generated link */
         link.setProperty("genLinkAllDebrid", genlink);
         showMessage(link, "Phase 2/2: Download begins!");
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            final String errormessage = link.getLinkStatus().getErrorMessage();
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+                {
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(AllDebridCom.NOCHUNKS, false) == false) {
+                        link.setProperty(AllDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
+        }
     }
 
     @Override

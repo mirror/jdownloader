@@ -157,16 +157,20 @@ public class SuperUploadCom extends PluginForHost {
             return ai;
         }
         br.getPage("http://superupload.com/?account&page=panel");
-        ai.setUnlimitedTraffic();
-        String expire = br.getRegex("<BR>Exp.: (\\d{2}/\\d{2}/\\d{2}  \\-  \\d{2}:\\d{2}:\\d{2})").getMatch(0);
-        if (expire == null) {
-            account.setValid(false);
-            return ai;
+        if (br.containsHTML("<div class=\"sideProfile\">[\t\n\r ]+<span>Never expire</span>")) {
+            ai.setStatus("Lifetime Premium User");
         } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yy  -  hh:mm:ss", null));
+            ai.setStatus("Premium User");
+            final String expire = br.getRegex("<BR>Exp.: (\\d{2}/\\d{2}/\\d{2}  \\-  \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            } else {
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd/MM/yy  -  hh:mm:ss", null));
+            }
         }
+        ai.setUnlimitedTraffic();
         account.setValid(true);
-        ai.setStatus("Premium User");
         return ai;
     }
 
