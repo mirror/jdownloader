@@ -738,8 +738,8 @@ public class TbCm extends PluginForDecrypt {
                     if (filepackages == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
-                        filePackage.setName("YouTube subtitles");
-                        filepackages.put("YouTube subtitles", filePackage);
+                        filePackage.setName("YouTube Video (Subtitles)");
+                        filepackages.put("YouTube Video (Subtitles)", filePackage);
                     }
 
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
@@ -766,8 +766,8 @@ public class TbCm extends PluginForDecrypt {
                 if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
-                    filePackage.setName("YouTube thumbnails");
-                    filepackages.put("YouTube thumbnails", filePackage);
+                    filePackage.setName("YouTube Video (Thumbnails)");
+                    filepackages.put("YouTube Video (Thumbnails)", filePackage);
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) {

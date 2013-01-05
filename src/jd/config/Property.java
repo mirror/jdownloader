@@ -24,8 +24,8 @@ import java.util.HashMap;
 import org.appwork.exceptions.WTFException;
 
 /**
- * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache Dialogelemente zu
- * erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
+ * Von dieser Klasse kann abgeleitet werden wenn die Neue Klasse Properties unterstützen soll. Die SimpleGUI elemente nutzen das um einfache
+ * Dialogelemente zu erstellen. Ein Automatisiertes speichern/laden wird dadurch möglich
  * 
  * @author JD-Team
  * 
@@ -103,9 +103,12 @@ public class Property implements Serializable {
         }
     }
 
+    /**
+     * DO not use in plugins for old 09581 Stable or try/catch
+     * 
+     * @since JD2
+     * */
     @Deprecated
-    /* DO not use in plugins for old 09581 Stable or try/catch */
-    /* @since jd2 */
     public long getLongProperty(final String key, final long def) {
         try {
             Object r = getProperty(key, def);

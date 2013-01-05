@@ -58,17 +58,13 @@ public class DaClipsIn extends PluginForHost {
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+    private static final boolean VIDEOHOSTER                  = false;
     // note: can not be negative -x or 0 .:. [1-*]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
     // don't touch
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to
-     * their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
     // XfileSharingProBasic Version 2.5.8.9
     // mods: getdllink
     // non account: 8 * 20
@@ -76,7 +72,7 @@ public class DaClipsIn extends PluginForHost {
     // premium account: chunk * maxdl
     // protocol: no https
     // captchatype: null
-    // other:
+    // other: sister sites, movpod.in && gorillavid.in
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
@@ -193,17 +189,19 @@ public class DaClipsIn extends PluginForHost {
         doFree(downloadLink, true, -8, "freelink");
     }
 
+    @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
-        if (dllink == null) dllink = getDllink();
+        if (dllink == null) dllink = getDllink(br);
         // Try to get stream link
-        if (dllink == null) {
-            br.getPage("http://daclips.in/vidembed-" + downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().lastIndexOf("/")));
-            dllink = getDllink();
+        if (dllink == null && VIDEOHOSTER) {
+            final Browser brv = br.cloneBrowser();
+            brv.getPage(COOKIE_HOST + "/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            dllink = getDllink(brv);
         }
 
         // Third, continue like normal.
@@ -216,7 +214,7 @@ public class DaClipsIn extends PluginForHost {
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
             }
-            dllink = getDllink();
+            dllink = getDllink(br);
         }
 
         if (dllink == null) {
@@ -312,7 +310,7 @@ public class DaClipsIn extends PluginForHost {
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
 
-                dllink = getDllink();
+                dllink = getDllink(br);
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
                     checkErrors(downloadLink, true, passCode);
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
@@ -356,19 +354,14 @@ public class DaClipsIn extends PluginForHost {
     }
 
     /**
-     * Prevents more than one free download from starting at a given time. One
-     * step prior to dl.startDownload(), it adds a slot to maxFree which allows
-     * the next singleton download to start, or at least try.
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
      * 
-     * This is needed because xfileshare(website) only throws errors after a
-     * final dllink starts transferring or at a given step within pre download
-     * sequence. But this template(XfileSharingProBasic) allows multiple
-     * slots(when available) to commence the download sequence,
-     * this.setstartintival does not resolve this issue. Which results in x(20)
-     * captcha events all at once and only allows one download to start. This
-     * prevents wasting peoples time and effort on captcha solving and|or
-     * wasting captcha trading credits. Users will experience minimal harm to
-     * downloading as slots are freed up soon as current download begins.
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
      * 
      * @param controlFree
      *            (+1|-1)
@@ -400,10 +393,11 @@ public class DaClipsIn extends PluginForHost {
         }
     }
 
-    public String getDllink() {
-        String dllink = br.getRedirectLocation();
+    public String getDllink(Browser brg) {
+        if (brg == null) brg = br;
+        String dllink = brg.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
+            dllink = new Regex(brg, "file:([ ]+)?\"(http://[^<>\"]*?)\"").getMatch(1);
         }
         return dllink;
     }
