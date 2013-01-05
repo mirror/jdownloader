@@ -72,7 +72,8 @@ public class FileUploadDotnet extends PluginForHost {
                     String filename = br.getRegex("<title>File\\-Upload\\.net \\- ([^<>\"]*?)</title>").getMatch(0);
                     // This name might be cut
                     if (filename == null) filename = br.getRegex("<h1 class=\\'dateiname\\'>([^<>\"]*?)</h1>").getMatch(0);
-                    String filesize = br.getRegex("label>Dateigröße:</label><span>([^<>\"]*?)").getMatch(0);
+                    String filesize = br.getRegex("label>Dateigröße:</label><span>([^<>\"]+)").getMatch(0);
+                    if (filesize == null) filesize = br.getRegex("(\\d+(\\.\\d+)? ?(B(ytes)?|KB|MB|GB))").getMatch(0);
                     if (filesize != null) {
                         downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                     }
