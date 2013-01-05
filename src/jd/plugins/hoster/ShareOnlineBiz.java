@@ -47,7 +47,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "http://[\\w\\.]*?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "share-online.biz" }, urls = { "https?://(www\\.)?(share\\-online\\.biz|egoshare\\.com)/(download.php\\?id\\=|dl/)[\\w]+" }, flags = { 2 })
 public class ShareOnlineBiz extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, String>> ACCOUNTINFOS         = new HashMap<Account, HashMap<String, String>>();
@@ -161,13 +161,16 @@ public class ShareOnlineBiz extends PluginForHost {
             logger.info("IPDEBUG: " + br.toString());
             // // for no account!?
             // if (acc == null) {
-            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "The usage of different IPs is not possible!", 60 * 60 * 1000L);
+            // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "The usage of different IPs is not possible!", 60
+            // * 60 * 1000L);
             // } else {
             // // for Premium
             // acc.setValid(false);
-            // UserIO.getInstance().requestMessageDialog(0, "ShareOnlineBiz Premium Error (account has been deactivated, free mode enabled)", "Server reports: "
+            // UserIO.getInstance().requestMessageDialog(0,
+            // "ShareOnlineBiz Premium Error (account has been deactivated, free mode enabled)", "Server reports: "
             // + "You're trying to use your account from more than one IP-Adress.\n" +
-            // "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n" +
+            // "The usage of different IP addresses is not allowed with every type of access,\nthe same affects any kind of account sharing.\n"
+            // +
             // "You are free to buy a further access for pay accounts, in order to use it from every place you want to.\n" +
             // "A contempt of this rules can result in a complete account deactivation.");
             // throw new PluginException(LinkStatus.ERROR_PREMIUM, "Premium disabled, continued as free user");

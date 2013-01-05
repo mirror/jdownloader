@@ -89,15 +89,16 @@ public class UlozTo extends PluginForHost {
         }
         handleDownloadUrl(downloadLink);
         // not sure if this is still needed with 2012/02/01 changes
-        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
-        if (continuePage != null) {
-            downloadLink.setUrlDownload(continuePage);
-            br.getPage(downloadLink.getDownloadURL());
+        handleRedirect(downloadLink);
+        // For age restricted links
+        if (br.containsHTML("do=askAgeForm\\-submit")) {
+            br.postPage(br.getURL() + "?do=askAgeForm-submit", "agree=Souhlas%C3%ADm");
+            handleRedirect(downloadLink);
         }
         // Wrong links show the mainpage so here we check if we got the mainpage
         // or not
         if (br.containsHTML("(multipart/form\\-data|Chybka 404 \\- požadovaná stránka nebyla nalezena<br>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("(<title>Ulož.to</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("(<title>Ulož\\.to</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(PASSWORDPROTECTED)) {
             String filename = br.getRegex("<title>([^<>\"]*?) \\| Uloz\\.to</title>").getMatch(0);
             if (filename == null) filename = br.getRegex("<p>The <strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -120,6 +121,14 @@ public class UlozTo extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             logger.info("Getting redirect-page");
             br.getPage(br.getRedirectLocation());
+        }
+    }
+
+    private void handleRedirect(final DownloadLink downloadLink) throws IOException {
+        String continuePage = br.getRegex("<p><a href=\"(http://.*?)\">Please click here to continue</a>").getMatch(0);
+        if (continuePage != null) {
+            downloadLink.setUrlDownload(continuePage);
+            br.getPage(downloadLink.getDownloadURL());
         }
     }
 
