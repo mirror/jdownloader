@@ -666,12 +666,12 @@ public class DajTo extends PluginForHost {
                     logger.info("timeleft regexes seem to be broken");
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 60 * 60 * 1000l);
                 } else {
-                    int minutes = 0, seconds = 0, hours = 0, days = 0;
+                    long days = 0, hours = 0, minutes = 0, seconds = 0;
+                    if (tmpdays != null) days = Integer.parseInt(tmpdays);
                     if (tmphrs != null) hours = Integer.parseInt(tmphrs);
                     if (tmpmin != null) minutes = Integer.parseInt(tmpmin);
                     if (tmpsec != null) seconds = Integer.parseInt(tmpsec);
-                    if (tmpdays != null) days = Integer.parseInt(tmpdays);
-                    long timeLeft = (((days * 24 * 3600) + (3600 * hours) + (60 * minutes) + seconds) * 1000) + System.currentTimeMillis();
+                    long timeLeft = ((days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
                     ai.setValidUntil(timeLeft);
                     try {
                         maxPrem.set(20);
