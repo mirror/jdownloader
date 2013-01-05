@@ -59,14 +59,14 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.os.CrossSystem;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.com|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "depositfiles.com" }, urls = { "https?://(www\\.)?(depositfiles\\.(com|org)|dfiles\\.(eu|ru))(/\\w{1,3})?/files/[\\w]+" }, flags = { 2 })
 public class DepositFiles extends PluginForHost {
 
     private static String        UA                       = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:11.0) Gecko/20100101 Firefox/11.0";
     private static final String  FILE_NOT_FOUND           = "Dieser File existiert nicht|Entweder existiert diese Datei nicht oder sie wurde";
     private static final String  PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
     public static String         MAINPAGE                 = null;
-    public static final String   DOMAINS                  = "(depositfiles\\.com|dfiles\\.(eu|ru))";
+    public static final String   DOMAINS                  = "(depositfiles\\.(com|org)|dfiles\\.(eu|ru))";
 
     public String                DLLINKREGEX2             = "<div id=\"download_url\" style=\"display:none;\">.*?<form action=\"(.*?)\" method=\"get";
     private final Pattern        FILE_INFO_NAME           = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
@@ -79,11 +79,6 @@ public class DepositFiles extends PluginForHost {
     private static AtomicInteger simultanpremium          = new AtomicInteger(1);
 
     static {
-        /**
-         * best of worst situation! Each JD component that loads plugins into memory will repeats this feature x times at start. (currently
-         * three times)
-         **/
-
         if (MAINPAGE == null) {
             Browser testBr = new Browser();
             try {
@@ -106,7 +101,7 @@ public class DepositFiles extends PluginForHost {
     public void correctDownloadLink(final DownloadLink link) {
         if (!link.getDownloadURL().contains(MAINPAGE.replaceAll("https?://(www\\.)?", ""))) {
             // currently respects users protocol choice on link import
-            link.setUrlDownload(link.getDownloadURL().replaceAll("(dfiles\\.(eu|ru)|depositfiles\\.com)(/.*?)?/files", MAINPAGE.replaceAll("https?://(www\\.)?", "") + "/de/files"));
+            link.setUrlDownload(link.getDownloadURL().replaceAll("(dfiles\\.(eu|ru)|depositfiles\\.(com|org))(/.*?)?/files", MAINPAGE.replaceAll("https?://(www\\.)?", "") + "/de/files"));
         }
     }
 
