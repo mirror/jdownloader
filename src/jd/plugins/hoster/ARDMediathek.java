@@ -59,7 +59,7 @@ public class ARDMediathek extends PluginForHost {
 
     private void setupRTMPConnection(String[] stream, DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        rtmp.setPlayPath(stream[3]);
+        rtmp.setPlayPath(stream[3].split("\\?")[0]);
         rtmp.setUrl(stream[2]);
         rtmp.setResume(true);
         rtmp.setTimeOut(10);
