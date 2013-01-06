@@ -166,7 +166,7 @@ public class AllDebridCom extends PluginForHost {
         String user = Encoding.urlEncode(acc.getUser());
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
-        showMessage(link, "Phase 1/2: Generating Link");
+        showMessage(link, "Phase 1/2: Generating link");
 
         // here we can get a 503 error page, which causes an exception
         String genlink = br.getPage("http://www.alldebrid.com/service.php?pseudo=" + user + "&password=" + pw + "&link=" + url + "&view=1");
@@ -205,8 +205,12 @@ public class AllDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (!dl.getConnection().isContentDisposition()) {
-            /* unknown error */
             br.followConnection();
+            if (br.containsHTML(">An error occured while processing your request<")) {
+                logger.info("Retrying: Failed to generate alldebrid.com link because API connection failed for host link: " + link.getDownloadURL());
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
+            /* unknown error */
             logger.severe("AllDebrid(Error): " + br.toString());
             // disable hoster for 5min
             tempUnavailableHoster(acc, link, 5 * 60 * 1000l);

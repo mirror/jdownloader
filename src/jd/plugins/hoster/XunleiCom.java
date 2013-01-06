@@ -105,14 +105,30 @@ public class XunleiCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private String updateDownloadLink(DownloadLink downloadLink) throws IOException {
-        Browser br = new Browser();
+    private String updateDownloadLink(final DownloadLink downloadLink) throws IOException, PluginException {
+        final Browser br = new Browser();
         try {
-            String origin = downloadLink.getStringProperty("origin", null);
+            final String origin = downloadLink.getStringProperty("origin", null);
             if (origin == null) return null;
             br.setCustomCharset("utf-8");
             br.getPage(origin);
-            String originLink = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.*?)\\?").getMatch(0);
+            if (br.containsHTML("http://verify")) {
+                logger.info("xunlei.com decrypter: found captcha...");
+                final String fid = new Regex(origin, "([A-Z]+)$").getMatch(0);
+                for (int i = 0; i <= 3; i++) {
+                    final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
+                    if (captchaLink == null) {
+                        logger.warning("Decrypter broken for link: " + downloadLink.getDownloadURL());
+                        return null;
+                    }
+                    final String code = getCaptchaCode(captchaLink, downloadLink);
+                    br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
+                    if (!br.containsHTML("http://verify")) break;
+                }
+                if (br.containsHTML("http://verify")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                logger.info("Captcha passed!");
+            }
+            final String originLink = new Regex(downloadLink.getDownloadURL(), "https?://.*?/(.*?)\\?").getMatch(0);
             final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^/<>\"]+\\?key=[a-z0-9]+\\&file_url=[^/<>\"]+\\&file_type=\\d+\\&authkey=[A-Z0-9]+\\&exp_time=\\d+&from_uid=\\d+\\&task_id=\\d+\\&get_uid=\\d+)").getColumn(0);
             if (links == null || links.length == 0) { return null; }
             for (String aLink : links) {

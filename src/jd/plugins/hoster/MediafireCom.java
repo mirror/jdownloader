@@ -401,8 +401,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (common browsers) of specified array. This array contains current user agents gathered from httpd
+     * access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (X11; Linux i686; U; en) Presto/2.6.30 Version/10.63"
      */
@@ -469,8 +469,8 @@ public class MediafireCom extends PluginForHost {
     }
 
     /**
-     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from httpd access logs.
-     * Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
+     * Returns a random User-Agent String (from a portable device) of specified array. This array contains current user agents gathered from
+     * httpd access logs. Benefits over RandomUserAgent.* are: versions and respective release dates are valid.
      * 
      * @return eg. "Opera/9.80 (Android 4.0.3; Linux; Opera Mobi/ADR-1205181138; U; en) Presto/2.10.254 Version/12.00"
      */
@@ -1098,6 +1098,7 @@ public class MediafireCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
+        if (br.containsHTML("class=\"error_msg_title\">Permission Denied") || br.getURL().contains("mediafire.com/error.php?errno=388")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, host says 'Permission Denied', pls contact the mediafire.com support!");
     }
 
     @Override

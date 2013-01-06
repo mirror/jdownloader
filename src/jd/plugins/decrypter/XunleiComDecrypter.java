@@ -47,7 +47,8 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.containsHTML("http://verify")) {
-            logger.info("xunlei.com decrypter: found captcha, let's see if the experimental captcha implementation works...");
+            logger.info("xunlei.com decrypter: found captcha...");
+            final String fid = new Regex(parameter, "([A-Z]+)$").getMatch(0);
             for (int i = 0; i <= 3; i++) {
                 final String captchaLink = br.getRegex("\"(http://verify\\d+\\.xunlei\\.com/image\\?t=[^<>\"]*?)\"").getMatch(0);
                 if (captchaLink == null) {
@@ -55,11 +56,11 @@ public class XunleiComDecrypter extends PluginForDecrypt {
                     return null;
                 }
                 final String code = getCaptchaCode(captchaLink, param);
-                br.postPage(br.getURL(), "ref=&shortkey=" + new Regex(parameter, "([A-Z]+)$") + "&check_verify=" + code);
-                if (!br.containsHTML("验证码：<")) break;
+                br.getPage("http://kuai.xunlei.com/webfilemail_interface?v_code=" + code + "&shortkey=" + fid + "&ref=&action=check_verify");
+                if (!br.containsHTML("http://verify")) break;
             }
-            if (br.containsHTML("验证码：<")) throw new DecrypterException(DecrypterException.CAPTCHA);
-            logger.info("Passed experimental captcha handling!");
+            if (br.containsHTML("http://verify")) throw new DecrypterException(DecrypterException.CAPTCHA);
+            logger.info("Captcha passed!");
         }
         checks(parameter, br.getURL());
         // hoster download links
@@ -93,22 +94,23 @@ public class XunleiComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private void parseDownload(ArrayList<DownloadLink> ret, String parameter, String dlparm) throws Exception {
+    private void parseDownload(final ArrayList<DownloadLink> ret, final String parameter, final String dlparm) throws Exception {
         br.getPage(dlparm);
         checks(parameter, br.getURL());
-        final String fpName = br.getRegex("<span style=\"color:gray\">下载 (.*?) 分享的文件</span>").getMatch(0);
+        String fpName = br.getRegex("<span style=\"color:gray\">下载 (.*?) 分享的文件</span>").getMatch(0);
+        if (fpName == null) fpName = new Regex(parameter, "([A-Z0-9]+)$").getMatch(0);
         final String[] links = br.getRegex("\"(http://dl\\d+\\.[a-z]+\\d+\\.sendfile\\.vip\\.xunlei\\.com:\\d+/[^<>\"]+)").getColumn(0);
         if (links == null || links.length == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             return;
         }
         HashSet<String> fLinks = new HashSet<String>();
-        for (String aLink : links) {
+        for (final String aLink : links) {
             if (fLinks.add(aLink) == false) continue;
-            DownloadLink dl;
-            ret.add(dl = createDownloadlink(aLink));
+            final DownloadLink dl = createDownloadlink(aLink);
             dl.setProperty("origin", parameter);
             dl.setAvailable(true);
+            ret.add(dl);
         }
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();

@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -31,18 +32,21 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downmasters.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
 public class DownMastersCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(9);
+    private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     public DownMastersCom(PluginWrapper wrapper) {
         super(wrapper);
-        setStartIntervall(4 * 1000l);
+        this.setStartIntervall(3 * 1000l);
         this.enablePremium("http://downmasters.com/");
     }
 
@@ -59,22 +63,19 @@ public class DownMastersCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
-        /* reset maxPrem workaround on every fetchaccount info */
-        maxPrem.set(1);
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
         String username = Encoding.urlEncode(account.getUser());
         String pass = Encoding.urlEncode(account.getPass());
-        String page = null;
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        page = br.postPage("http://downmasters.com/api.php", "username=" + username + "&password=" + pass);
+        br.postPage("http://downmasters.com/accountapi.php", "username=" + username + "&password=" + pass);
         // "Invalid login" / "Banned" / "Valid login"
-        if ("7".equals(getJson("status", br.toString()))) {
+        if ("1".equals(getJson("status", br.toString()))) {
             account.setValid(true);
-        } else if ("4".equals(getJson("status", br.toString()))) {
-            ac.setStatus("Invalid login or no premium account!");
+        } else if (!"Premium".equals(getJson("type", br.toString()))) {
+            ac.setStatus("This is no premium account!");
             account.setValid(false);
             return ac;
         } else {
@@ -83,7 +84,8 @@ public class DownMastersCom extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        maxPrem.set(20);
+        final String expire = getJson("expire", br.toString());
+        ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH));
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
@@ -93,7 +95,7 @@ public class DownMastersCom extends PluginForHost {
         ac.setStatus("Premium User");
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
-        page = br.getPage("http://downmasters.com/hostapi.php");
+        br.getPage("http://downmasters.com/hostapi.php");
         hosts = br.getRegex("\"hosturl\":\"([^<>\"]*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
@@ -140,6 +142,11 @@ public class DownMastersCom extends PluginForHost {
         String user = Encoding.urlEncode(acc.getUser());
         String pw = Encoding.urlEncode(acc.getPass());
         String url = Encoding.urlEncode(link.getDownloadURL());
+        int maxChunks = 0;
+        if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+        showMessage(link, "Phase 1/2: Generating link");
         br.postPage("http://downmasters.com/api.php", "username=" + user + "&password=" + pw + "&link=" + url);
         String status = getJson("status", br.toString());
         if (status.equals("0")) {
@@ -152,15 +159,39 @@ public class DownMastersCom extends PluginForHost {
             logger.info("Unhandled download error on downmasters.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        showMessage(link, "Phase 2/2: Download begins!");
         dllink = dllink.replace("\\", "");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
+            if (br.containsHTML("Could not download partial file, please report this message to the adminstrator")) {
+                logger.info(br.toString());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
+            }
             logger.info("Unhandled download error on downmasters.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
         }
-        dl.startDownload();
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            final String errormessage = link.getLinkStatus().getErrorMessage();
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+                {
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false) == false) {
+                        link.setProperty(DownMastersCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
+        }
+    }
+
+    private void showMessage(DownloadLink link, String message) {
+        link.getLinkStatus().setStatusText(message);
     }
 
     @Override
