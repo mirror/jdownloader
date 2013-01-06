@@ -112,25 +112,25 @@ public class DreiSatDe extends PluginForHost {
                         if (fmt != null) fmt = fmt.toLowerCase(Locale.ENGLISH).trim();
                         if (fmt != null) {
                             /* best selection is done at the end */
-                            if (fmt.contains("low")) {
+                            if ("low".equals(fmt)) {
                                 if (this.getPluginConfig().getBooleanProperty(Q_LOW, true) == false) {
                                     continue;
                                 } else {
                                     fmt = "low";
                                 }
-                            } else if (fmt.contains("high")) {
+                            } else if ("high".equals(fmt)) {
                                 if (this.getPluginConfig().getBooleanProperty(Q_HIGH, true) == false) {
                                     continue;
                                 } else {
                                     fmt = "high";
                                 }
-                            } else if (fmt.contains("veryhigh")) {
+                            } else if ("veryhigh".equals(fmt)) {
                                 if (this.getPluginConfig().getBooleanProperty(Q_VERYHIGH, true) == false) {
                                     continue;
                                 } else {
                                     fmt = "veryhigh";
                                 }
-                            } else if (fmt.contains("hd")) {
+                            } else if ("hd".equals(fmt)) {
                                 if (this.getPluginConfig().getBooleanProperty(Q_HD, true) == false) {
                                     continue;
                                 } else {
@@ -224,17 +224,23 @@ public class DreiSatDe extends PluginForHost {
         rtmp.setApp(stream[1]);
         rtmp.setResume(true);
         rtmp.setSwfVfy("http://www.3sat.de/mediaplayer/5/EmbeddedPlayer.swf");
+        rtmp.setRealTime();
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
         if (downloadLink.getStringProperty("directURL", null) == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         String stream[] = downloadLink.getStringProperty("directURL").split("@");
         if (stream[0].startsWith("rtmp")) {
+            downloadLink.setProperty("FLVFIXER", true);
             dl = new RTMPDownload(this, downloadLink, stream[0]);
             setupRTMPConnection(stream, dl);
             if (!((RTMPDownload) dl).startDownload()) {
-                downloadLink.setProperty("directURL", null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
+                if (downloadLink.getLinkStatus().getStatus() != 513) {
+                    downloadLink.setProperty("directURL", null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait a moment...", 5 * 60 * 1000l);
+                }
             }
 
         } else {
@@ -270,7 +276,7 @@ public class DreiSatDe extends PluginForHost {
             if (app == null && host == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             if (!host.startsWith("rtmp://")) host = "rtmp://" + host;
             String q = downloadLink.getStringProperty("directQuality", "high");
-            String newUrl[] = br.getRegex("<video dur=\"([\\d:]+)\" paramGroup=\"gl\\-vod\\-rtmp\" src=\"([^\"]+)\" system\\-bitrate=\"(\\d+)\".*?<param name=\"quality\" value=\"" + q + "\".*?</video>").getRow(0);
+            String newUrl[] = br.getRegex("<video dur=\"([\\d:]+)\" paramGroup=\"gl\\-vod\\-rtmp\" src=\"([^\"]+)\" system\\-bitrate=\"(\\d+)\">[^<]+<param name=\"quality\" value=\"" + q + "\"").getRow(0);
             if (newUrl == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setProperty("directURL", host + "@" + app + "@" + newUrl[1]);
         }
