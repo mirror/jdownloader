@@ -353,7 +353,7 @@ public class IFileIt extends PluginForHost {
             try {
                 maxPrem.set(1);
                 // free accounts can still have captcha.
-                account.setMaxSimultanDownloads(maxPrem.get());
+                account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
             }
@@ -362,8 +362,8 @@ public class IFileIt extends PluginForHost {
             account.setProperty("typ", "premium");
             ai.setValidUntil(Long.parseLong(getJson("premium_until", br)) * 1000);
             try {
-                maxPrem.set(1);
-                account.setMaxSimultanDownloads(maxPrem.get());
+                maxPrem.set(5);
+                account.setMaxSimultanDownloads(5);
                 account.setConcurrentUsePossible(true);
             } catch (final Throwable e) {
             }
@@ -385,7 +385,7 @@ public class IFileIt extends PluginForHost {
             String finallink = getJson("download_url", br);
             if (finallink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             finallink = finallink.replace("\\", "");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -10);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, -2);
             if (dl.getConnection().getContentType().contains("html")) {
                 if (dl.getConnection().getResponseCode() == 503) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many connections", 10 * 60 * 1000l); }
                 br.followConnection();

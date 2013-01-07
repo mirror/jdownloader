@@ -80,13 +80,13 @@ public class DepositFiles extends PluginForHost {
 
     static {
         if (MAINPAGE == null) {
-            Browser testBr = new Browser();
             try {
+                Browser testBr = new Browser();
                 testBr.setFollowRedirects(true);
                 testBr.getPage("http://depositfiles.com");
                 String baseURL = new Regex(testBr.getURL(), "(https?://[^/]+)").getMatch(0);
                 if (baseURL != null) MAINPAGE = baseURL;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }

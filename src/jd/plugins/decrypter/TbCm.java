@@ -442,7 +442,7 @@ public class TbCm extends PluginForDecrypt {
                 boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
                 boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
                 boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
-                if (mp3.get() == mp4 == webm == flv.get() == threegp == false) {
+                if (mp3.get() == false && mp4 == false && webm == false && flv.get() == false && threegp == false) {
                     /* if no container is selected, then everything is enabled */
                     mp3.set(true);
                     mp4 = true;
@@ -457,7 +457,7 @@ public class TbCm extends PluginForDecrypt {
                 boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
                 boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
                 boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
-                if (q240p == q360p == q480p == q720p == q1080p == qOriginal == false) {
+                if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false) {
                     q240p = true;
                     q480p = true;
                     q360p = true;

@@ -134,6 +134,7 @@ public class DataPortCz extends PluginForHost {
         login(account);
         br.setFollowRedirects(false);
         br.getPage(link.getDownloadURL());
+        if (br.getRedirectLocation() != null) br.getPage(br.getRedirectLocation());
         String dllink = br.getRegex("><strong>Stažení ZDARMA</strong></a> <a href=\"(http://.*?)\"").getMatch(0);
         if (dllink == null) dllink = br.getRegex("\"(http://dataport\\.cz/stahuj\\-soubor/.*?)\"").getMatch(0);
         if (dllink == null) {
@@ -145,6 +146,7 @@ public class DataPortCz extends PluginForHost {
             logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
