@@ -51,6 +51,7 @@ public class Youtube extends PluginForHost {
     private boolean             prem                    = false;
     private static final String IDASFILENAME            = "ISASFILENAME";
     private static final String IDINFILENAME            = "IDINFILENAME";
+    private static final String USEUPLOADERINNAME       = "USEUPLOADERINNAME";
     private static final String ALLOW_MP3               = "ALLOW_MP3";
     private static final String ALLOW_MP4               = "ALLOW_MP4";
     private static final String ALLOW_WEBM              = "ALLOW_WEBM";
@@ -414,6 +415,7 @@ public class Youtube extends PluginForHost {
         ConfigEntry id = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false);
         getConfig().addEntry(id);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDINFILENAME, JDL.L("plugins.hoster.youtube.idinfilename", "Use Video-ID additionally in filename?")).setDefaultValue(false).setEnabledCondidtion(id, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USEUPLOADERINNAME, JDL.L("plugins.hoster.youtube.useuploaderinname", "Use uploader name in filename?")).setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_SUBTITLES, JDL.L("plugins.hoster.youtube.grabsubtitles", "Grab subtitles?")).setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         ConfigEntry hq = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ALLOW_BEST, JDL.L("plugins.hoster.youtube.checkbest", "Only grab best available resolution")).setDefaultValue(false);

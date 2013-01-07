@@ -57,7 +57,7 @@ import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 import de.savemytube.flv.FLV;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youtube.com" }, urls = { "https?://[\\w\\.]*?youtube\\.com/(embed/|.*?watch.*?v=|.*?watch.*?v%3D|view_play_list\\?p=|playlist\\?(p|list)=|.*?g/c/|.*?grid/user/|v/|user/)[a-z\\-_A-Z0-9]+(.*?page=\\d+)?(.*?list=[a-z\\-_A-Z0-9]+)?" }, flags = { 0 })
 public class TbCm extends PluginForDecrypt {
     private static AtomicBoolean PLUGIN_DISABLED = new AtomicBoolean(false);
 
@@ -170,7 +170,8 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
+     * after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -361,7 +362,7 @@ public class TbCm extends PluginForDecrypt {
         }
 
         // Parse playlist
-        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || (parameter.contains("list=") && parameter.contains("watch\\?v="))) {
+        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || (parameter.contains("list=") && parameter.contains("watch?v="))) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
                 String id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
                 if (id == null) {
@@ -379,6 +380,7 @@ public class TbCm extends PluginForDecrypt {
             do {
                 this.br.getPage(page);
                 String[] videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+\\&amp;index=\\d+").getColumn(0);
+                if (parameter.contains("list=") && parameter.contains("watch?v=")) videos = this.br.getRegex("<a class=\"yt\\-uix\\-contextlink \" href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
                 if (videos.length == 0) videos = this.br.getRegex("<a href=\"(/watch\\?v=[a-z\\-_A-Z0-9]+)\\&amp;list=[a-z\\-_A-Z0-9]+").getColumn(0);
                 for (String video : videos) {
                     video = Encoding.htmlDecode(video);
@@ -522,7 +524,7 @@ public class TbCm extends PluginForDecrypt {
         if (linkstodecrypt.size() > 20) fast = true;
 
         for (String url : linkstodecrypt) {
-            // Make an little slepp to prevent DDoS
+            // Make an little sleep to prevent DDoS
             Thread.sleep(25);
 
             try {
@@ -570,6 +572,12 @@ public class TbCm extends PluginForDecrypt {
                 if (LinksFound.containsKey(-1)) {
                     YT_FILENAME = LinksFound.get(-1)[0];
                     LinksFound.remove(-1);
+                }
+
+                // Use uploader name in filename
+                if (cfg.getBooleanProperty("USEUPLOADERINNAME", false)) {
+                    String uploadername = br.getRegex("feature=watch\" dir=\"ltr\">(.*?)</a><span class=\"yt\\-user\\-separator\">").getMatch(0);
+                    if (uploadername != null) YT_FILENAME = uploadername + " - " + YT_FILENAME;
                 }
 
                 if (cfg.getBooleanProperty("IDINFILENAME", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
@@ -646,7 +654,8 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the moment
+                         * we do not want to download unknown formats at the
+                         * moment
                          */
                         continue;
                     }
