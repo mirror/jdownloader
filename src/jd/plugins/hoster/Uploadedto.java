@@ -646,7 +646,7 @@ public class Uploadedto extends PluginForHost {
         String errCode = br.getRegex("code\":\\s*?\"?(\\d+)").getMatch(0);
         if (errCode == null) errCode = br.getRegex("errCode\":\\s*?\"?(\\d+)").getMatch(0);
         String message = br.getRegex("message\":\"([^\"]+)").getMatch(0);
-        if (message == null) message = br.getRegex("err\":\\[([^\"]+)\"\\]").getMatch(0);
+        if (message == null) message = br.getRegex("err\":\\[\"([^\"]+)\"\\]").getMatch(0);
         if (message != null) {
             message = unescape(message);
         }
@@ -707,7 +707,7 @@ public class Uploadedto extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Upload User deleted");
             case 8013:
                 // {"err":["Leider haben wir Zugriffe von zu vielen verschiedenen IPs auf Ihren Account feststellen k&#246;nnen, Account-Sharing ist laut unseren AGB strengstens untersagt. Sie k&#246;nnen f&#252;r den heutigen Tag leider keine Premium-Downloads mehr starten."],"errCode":8013}
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Your account been flagged for 'Account sharing', Please contact " + this.getHost() + " support for resolution.", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             case 8016:
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server in maintenance", 20 * 60 * 1000l);
             case 8017:

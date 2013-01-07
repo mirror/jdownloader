@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://((www\\.)?fsx\\.hu/download\\.php\\?s=\\d+\\&d=[^<>\"]+\\&h=[a-z0-9]+|s.*?.fsx.hu/.+/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://((www\\.)?(fsx|mfs\\.hu/download\\.php\\?s=\\d+\\&d=[^<>\"]+\\&h=[a-z0-9]+|s.*?\\.(fsx|mfs)\\.hu/.+/.+)" }, flags = { 2 })
 public class FsxHu extends PluginForHost {
 
     public FsxHu(final PluginWrapper wrapper) {
@@ -45,6 +45,11 @@ public class FsxHu extends PluginForHost {
     }
 
     private static final String REGISTEREDONLY = JDL.L("plugins.hoster.fsxhu.errors.onlyregistered", "Only registered users can download this file");
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replace("fsx.hu/", "mfs.hu/"));
+    }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -118,10 +123,10 @@ public class FsxHu extends PluginForHost {
                 }
             }
         }
-        br.getPage("http://www.fsx.hu/download.php?i=1");
+        br.getPage("/download.php?i=1");
         for (int i = 0; i <= 3; i++) {
-            final String code = getCaptchaCode("http://www.fsx.hu/" + captcha, downloadLink);
-            br.postPage("http://www.fsx.hu/download.php?i=1", "capcha=" + code);
+            final String code = getCaptchaCode("/" + captcha, downloadLink);
+            br.postPage("/download.php?i=1", "capcha=" + code);
             if (br.containsHTML("download\\.php")) break;
             if (br.containsHTML("/?(kep(\\d+)?\\.php)")) continue;
             break;
@@ -133,13 +138,13 @@ public class FsxHu extends PluginForHost {
             if (place != null) {
                 downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.fsxhu.waiting", "Waiting for link, current place: " + place));
                 sleep(16 * 1000l, downloadLink);
-                br.getPage("http://www.fsx.hu/download.php");
+                br.getPage("/download.php");
             } else {
                 break;
             }
         }
         String url = br.getRegex("<div class=\"gombbefoglalo\" style=\"text\\-align:center;float:left;\">[\t\n\r ]+<a [^>]+? href=\"(http://.*?)\"").getMatch(0);
-        if (url == null) url = br.getRegex("\"(http://s\\d+\\.fsx\\.hu/[a-z0-9]+/\\d+/[^\"<>]+)\"").getMatch(0);
+        if (url == null) url = br.getRegex("\"(http://s\\d+\\.(fsx|mfs)\\.hu/[a-z0-9]+/\\d+/[^\"<>]+)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         dl = BrowserAdapter.openDownload(br, downloadLink, url, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
@@ -189,10 +194,11 @@ public class FsxHu extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies("www.fsx.hu");
+        br.clearCookies("www.mfs.hu");
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("(>A kiválasztott fájl nem található|>vagy eltávolításra került)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        br.getPage("http://www.fsx.hu/download.php?i=1");
+        br.getPage("/download.php?i=1");
         final String filename = br.getRegex("<h1 style=\"padding\\-bottom:0;font\\-size:16px;\">(.+?)</h1>").getMatch(0);
         final String filesize = br.getRegex("Méret: (\\d+) Bájt ?<br").getMatch(0);
         if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
