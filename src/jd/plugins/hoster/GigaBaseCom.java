@@ -76,7 +76,7 @@ public class GigaBaseCom extends PluginForHost {
             if (dllink == null) dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/down/[^\"<>]+)").getMatch(0);
             if (dllink == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download, maybe your country is blocked?!"); }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             if (br.containsHTML("HTTP Status 404")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
