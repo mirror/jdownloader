@@ -49,10 +49,18 @@ public class IndianPornVideosCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("This video does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<h2 class=\"he2\"><span>([^<>\"]*?)</span></h2>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>Indian Porn Videos \\- ([^<>\"]*?)</title>").getMatch(0);
-        DLLINK = br.getRegex("var playlist = \\[  \\{ url: \\'(http[^<>\"]*?)\\'").getMatch(0);
-        if (DLLINK == null) DLLINK = br.getRegex("\\'(http://stream\\.indianpornvideos\\.com:\\d+/[^<>\"]*?)\\'").getMatch(0);
+        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\" />").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]+) \\- Indian Porn Videos</title>").getMatch(0);
+        DLLINK = br.getRegex("\\{ url: \\'(https?://stream\\.indianpornvideos\\.com//[^\\']+)' }").getMatch(0);
+        if (DLLINK == null) {
+            // existing fail over.
+            DLLINK = br.getRegex("\\'(http://stream\\.indianpornvideos\\.com(:\\d+)?/[^<>\"]*?)\\'").getMatch(0);
+            if (DLLINK == null) {
+                // hd apparently is less in size than default... try it yourself.
+                DLLINK = br.getRegex("play\\(\\'(https?://stream\\.indianpornvideos\\.com/[^\\']+)\\'\\); return false;\">HD<").getMatch(0);
+                if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();
