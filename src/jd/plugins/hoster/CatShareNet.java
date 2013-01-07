@@ -35,7 +35,7 @@ import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19258 $", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 0 })
 public class CatShareNet extends PluginForHost {
 
     private String BRBEFORE = "";
@@ -200,7 +200,7 @@ public class CatShareNet extends PluginForHost {
 
         String fileName = new Regex(BRBEFORE, "<h3 class=\"pull-left\" style=\"margin-left: 10px;\">(.*)</h3>[ \t\n\r\f]+<h3 class=\"pull-right\"").getMatch(0);
 
-        String fileSize = new Regex(BRBEFORE, "<h3 class=\"pull-right\" style=\"margin-right: 10px;\">(.+)</h3>[ \t\n\r\f]+<div class=\"span12 pull-left\"").getMatch(0);
+        String fileSize = new Regex(BRBEFORE, "<h3 class=\"pull-right\" style=\"margin-right: 10px;\">(.+?)</h3>").getMatch(0);
 
         if (fileName == null || fileSize == null) {
             logger.warning("For link: " + downloadURL + ", final filename or filesize is null!");
