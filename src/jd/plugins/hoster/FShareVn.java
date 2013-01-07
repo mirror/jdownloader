@@ -217,7 +217,7 @@ public class FShareVn extends PluginForHost {
             doFree(link);
         } else {
             String dllink = br.getRedirectLocation();
-            if (dllink == null) dllink = br.getRegex("\"(http://sdownload\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) dllink = br.getRegex("\"(http://[a-z0-9]+\\.fshare\\.vn/vip/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             if (dllink.contains("logout")) throw new PluginException(LinkStatus.ERROR_FATAL, "FATAL premium error");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
@@ -294,6 +294,7 @@ public class FShareVn extends PluginForHost {
         }
         if (!br.getURL().endsWith("/index.php")) br.getPage("/index.php");
         String validUntil = br.getRegex(">Hạn dùng:<strong[^>]+>\\&nbsp;(\\d+\\-\\d+\\-\\d+)</strong>").getMatch(0);
+        if (validUntil == null) validUntil = br.getRegex(">Hạn dùng:<strong>\\&nbsp;([^<>\"]*?)</strong>").getMatch(0);
         if (validUntil != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(validUntil, "dd-MM-yyyy", Locale.ENGLISH));
             try {

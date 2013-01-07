@@ -41,7 +41,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 public class DownMastersCom extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(9);
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
     public DownMastersCom(PluginWrapper wrapper) {
@@ -148,12 +148,31 @@ public class DownMastersCom extends PluginForHost {
         }
         showMessage(link, "Phase 1/2: Generating link");
         br.postPage("http://downmasters.com/api.php", "username=" + user + "&password=" + pw + "&link=" + url);
-        String status = getJson("status", br.toString());
-        if (status.equals("0")) {
+        final int status = Integer.parseInt(getJson("status", br.toString()));
+        switch (status) {
+        case 0:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (status.equals("2")) {
+        case 2:
+            logger.info("Bandwidth limit for the host is reached, retrying later...");
             tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+        case 3:
+            logger.info("Host is down, retrying later...");
+            tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+        case 4:
+            logger.info("This is no premium account!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 5:
+            logger.info("This account is banned!");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        case 6:
+            // This should never happen
+            logger.info("Host not supported");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Host not supported by multi-host, please contact our support!");
+        case 7:
+            logger.info("Link invalid");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         }
+        if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error, please report this to the downmasters.com support!"); }
         String dllink = getJson("dmlink", br.toString());
         if (dllink == null) {
             logger.info("Unhandled download error on downmasters.com: " + br.toString());
@@ -170,7 +189,6 @@ public class DownMastersCom extends PluginForHost {
             }
             logger.info("Unhandled download error on downmasters.com: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-
         }
         if (!this.dl.startDownload()) {
             try {
