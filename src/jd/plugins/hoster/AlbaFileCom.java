@@ -469,12 +469,12 @@ public class AlbaFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String space = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (Mb|GB)</b>").getMatch(0);
+        String space = new Regex(correctedBR, ">Used space.*?<td.*?b>[\r\n\t ]+([0-9\\.]+) ?(Mb|GB)?").getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim() + " Mb");
         account.setValid(true);
-        String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        String availabletraffic = new Regex(correctedBR, "Traffic available[^>]+:</TD>[\r\n\t ]+<TD[^>]+><b>[\r\n\t ]+([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic.trim()));
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -486,7 +486,8 @@ public class AlbaFileCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         } else {
-            String expire = new Regex(correctedBR, Pattern.compile("<td>Premium(\\-| )Account expires?:</td>.*?<td>(<b>)?(\\d{1,2} [A-Za-z]+ \\d{4})(</b>)?</td>", Pattern.CASE_INSENSITIVE)).getMatch(2);
+            String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
+
             if (expire == null) {
                 ai.setExpired(true);
                 account.setValid(false);
