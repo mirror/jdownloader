@@ -1,5 +1,5 @@
 //    jDownloader - Downloadmanager
-//    Copyright (C) 2012  JD-Team support@jdownloader.org
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
 //    it under the terms of the GNU General Public License as published by
@@ -28,12 +28,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(cyberlocker\\.ch|filevice\\.com|filexb\\.com|wizzfile\\.com|rapidfileshare\\.net|rd\\-fs\\.com|hostinoo\\.com|fireget\\.com|filedefend\\.com|creafile\\.net|247upload\\.com|dippic\\.com|4savefile\\.com|4bytez\\.com|fileprohost\\.com|bitupload\\.com|galaxy\\-file\\.com|aa\\.vg|fileza\\.net|allbox4\\.com|netuploaded\\.com|ishareupload\\.com|project\\-free\\-upload\\.com|upfile\\.biz|syfiles\\.com|gorillavid\\.in|ezzfile\\.it|foxishare\\.com|your\\-filehosting\\.com|mp3the\\.net|mummyfile\\.com|kongsifile\\.com|filerose\\.com|shareupload\\.com|gbitfiles\\.com|ddl\\.mn|spaceha\\.com|mooshare\\.biz|flashdrive\\.it|zooupload\\.com|filemade\\.com|xenubox\\.com|backupload\\.net|mixshared\\.com|longfiles\\.com|helluploads\\.com|novafile\\.com|vidpe\\.com|filetechnology\\.com|saryshare\\.com|orangefiles\\.com|squillion\\.com|ufile\\.eu|fileor\\.com|filesega\\.com|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|nosupload\\.com|idup\\.in|potload\\.com|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|vidstream\\.in)|ginbig\\.com|vidbux\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|fileduct\\.com|henchfile\\.com|boltsharing\\.com|xtilourbano\\.info)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "XFileShareProFolder" }, urls = { "http://(www\\.)?(hotfiles\\.ws|cyberlocker\\.ch|filevice\\.com|filexb\\.com|wizzfile\\.com|rapidfileshare\\.net|rd\\-fs\\.com|hostinoo\\.com|fireget\\.com|filedefend\\.com|creafile\\.net|247upload\\.com|dippic\\.com|4savefile\\.com|4bytez\\.com|fileprohost\\.com|bitupload\\.com|galaxy\\-file\\.com|aa\\.vg|fileza\\.net|allbox4\\.com|netuploaded\\.com|ishareupload\\.com|project\\-free\\-upload\\.com|upfile\\.biz|syfiles\\.com|gorillavid\\.in|ezzfile\\.it|foxishare\\.com|your\\-filehosting\\.com|mp3the\\.net|mummyfile\\.com|kongsifile\\.com|filerose\\.com|shareupload\\.com|gbitfiles\\.com|ddl\\.mn|spaceha\\.com|mooshare\\.biz|flashdrive\\.it|zooupload\\.com|filemade\\.com|xenubox\\.com|backupload\\.net|mixshared\\.com|longfiles\\.com|helluploads\\.com|novafile\\.com|vidpe\\.com|filetechnology\\.com|saryshare\\.com|orangefiles\\.com|squillion\\.com|ufile\\.eu|fileor\\.com|filesega\\.com|qtyfiles\\.com|pizzaupload\\.com|filesbb\\.com|free\\-uploading\\.com|megaul\\.com|megaup1oad\\.net|fireuploads\\.net|filestay\\.com|(igetfile\\.com|pandamemo\\.com)|free\\-uploading\\.com|uload\\.to|cosmobox\\.org|filereactor\\.com|uploadjet\\.net|fileove\\.com|rapidapk\\.com|filehost\\.ws|hyshare\\.com|(squillion\\.com|uppit\\.com)|nosupload\\.com|idup\\.in|potload\\.com|uploadbaz\\.com|simpleshare\\.org|ryushare\\.com|lafiles\\.com|clicktoview\\.org|lumfiles\\.com|bloonga\\.com|gigfiles\\.net|shareonline\\.org|downloadani\\.me|movdivx\\.com|filenuke\\.com|((flashstream\\.in|sharefiles4u\\.com)|xvidstage\\.com|vidstream\\.in)|ginbig\\.com|vidbux\\.com|queenshare\\.com|filesabc\\.com|((fiberupload|bulletupload)\\.com)|edoc\\.com|easybytez\\.com|filesabc\\.com|fileduct\\.com|henchfile\\.com|boltsharing\\.com|xtilourbano\\.info)/(users/[a-z0-9_]+/.+|folder/\\d+/.+)" }, flags = { 0 })
 public class XFileShareProFolder extends PluginForDecrypt {
 
     // DEV NOTES
     // other: keep last /.+ for fpName. Not needed otherwise.
-    // other: group sister sites or aliased domains together for easy of maintenance.
+    // other: group sister sites or aliased domains together, for easy maintenance.
     // TODO: add spanning folders + page support, at this stage it's not important.
     // TODO: remove old xfileshare folder plugins after next major update.
 
@@ -65,6 +65,11 @@ public class XFileShareProFolder extends PluginForDecrypt {
             }
         }
         String folders[] = br.getRegex("folder.?\\.gif.*?<a href=\"(.+?" + HOST + "[^\"]+users/[^\"]+)").getColumn(0);
+        if (folders != null && folders.length > 0) {
+            for (String dl : folders) {
+                decryptedLinks.add(createDownloadlink(dl));
+            }
+        }
         // name isn't needed, other than than text output for fpName.
         String fpName = new Regex(parameter, "folder/\\d+/.+/(.+)").getMatch(0); // name
         if (fpName == null) {
@@ -81,11 +86,6 @@ public class XFileShareProFolder extends PluginForDecrypt {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName.trim());
             fp.addLinks(decryptedLinks);
-        }
-        if (folders != null && folders.length > 0) {
-            for (String dl : folders) {
-                decryptedLinks.add(createDownloadlink(dl));
-            }
         }
         return decryptedLinks;
     }
