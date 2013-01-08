@@ -584,7 +584,7 @@ public class TbCm extends PluginForDecrypt {
                     if (id != null) YT_FILENAME = YT_FILENAME + " - " + id.toUpperCase(Locale.ENGLISH);
                 }
 
-                /* prefer videoID als filename? */
+                /* prefer videoID as filename? */
                 if (cfg.getBooleanProperty("ISASFILENAME", false)) {
                     String id = new Regex(url, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = id.toUpperCase(Locale.ENGLISH);
@@ -720,8 +720,7 @@ public class TbCm extends PluginForDecrypt {
                             name = YT_FILENAME + info.desc + convertTo.getExtFirst();
                             thislink.setProperty("name", name);
                         } else {
-                            // because demuxer will fail when mp3 file already
-                            // exists
+                            // because demuxer will fail when mp3 file already exists
                             name = YT_FILENAME + info.desc + ".tmp";
                             thislink.setProperty("name", name);
                         }
@@ -740,7 +739,7 @@ public class TbCm extends PluginForDecrypt {
                 if (cfg.getBooleanProperty("ALLOW_SUBTITLES", true)) {
                     br.getPage("http://video.google.com/timedtext?type=list&v=" + VIDEOID);
 
-                    FilePackage filePackage = filepackages.get("YouTube subtitles");
+                    FilePackage filePackage = filepackages.get("YouTube Video (Subtitles)");
 
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
@@ -769,7 +768,7 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // Grab thumbnails
-                FilePackage filePackage = filepackages.get("YouTube thumbnails");
+                FilePackage filePackage = filepackages.get("YouTube Video (Thumbnails)");
                 if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
