@@ -43,10 +43,10 @@ public class FShareVnFolder extends PluginForDecrypt {
         boolean failed = false;
         br.getPage(parameter);
         if (!br.containsHTML("filename")) throw new DecrypterException(JDL.L("plugins.decrypt.errormsg.unavailable", "Perhaps wrong URL or the download is not available anymore."));
-        String[] linkinformation = br.getRegex("(=\"http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+/\" target=\"_blank\"><span class=\"filename\">.*?</span></a><br />[\n\t\r ]+<span class=\"filesize\">[0-9\\.]+ .*?</span>)").getColumn(0);
+        String[] linkinformation = br.getRegex("(=\"http://(www\\.)?fshare\\.vn/file/[A-Z0-9]+/\"[^>]+><span class=\"filename\">[^<]+</span></a><br[^>]+>[\n\t\r ]+<span class=\"filesize\">[\\d\\.]+[^<]+</span>)").getColumn(0);
         if (linkinformation == null || linkinformation.length == 0) {
             failed = true;
-            linkinformation = br.getRegex("(http://fshare\\.vn(www\\.)?/file/[A-Z0-9]+)").getColumn(0);
+            linkinformation = br.getRegex("(https?://(www\\.)?fshare\\.vn/file/[A-Z0-9]+)").getColumn(0);
         }
         if (linkinformation == null || linkinformation.length == 0) return null;
         for (String data : linkinformation) {
