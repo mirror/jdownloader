@@ -43,7 +43,7 @@ public class DpstFlsCm extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (MAINPAGE == null) {
+        if (MAINPAGE == null || DOMAINS == null) {
             /* we first have to load the plugin, before we can reference it */
             JDUtilities.getPluginForHost("depositfiles.com");
             MAINPAGE = jd.plugins.hoster.DepositFiles.MAINPAGE;

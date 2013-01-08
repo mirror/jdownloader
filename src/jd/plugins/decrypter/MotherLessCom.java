@@ -27,6 +27,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "motherless.com" }, urls = { "http://(www\\.)?(members\\.)?motherless\\.com/(?!privacy|popular|register|premium|members|galleries|contact)(g/[\\w\\-]+/[A-Z0-9]{7}|[A-Z0-9]{7,9}(/[A-Z0-9]{7})?)" }, flags = { 0 })
 public class MotherLessCom extends PluginForDecrypt {
@@ -54,6 +55,7 @@ public class MotherLessCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        JDUtilities.getPluginForHost("motherless.com");
         br.getHeaders().put("User-Agent", jd.plugins.hoster.MotherLessCom.ua);
         // alters 'domain/(g/name/)uid' by removing all but uid
         String parameter = param.toString().replaceAll("motherless\\.com/g/[\\w\\-]+/", "motherless.com/");
