@@ -57,6 +57,7 @@ public class MdfrFldr extends PluginForDecrypt {
         if (parameter.endsWith("mediafire.com") || parameter.endsWith("mediafire.com/")) return decryptedLinks;
         parameter = parameter.replaceAll("(&.+)", "").replaceAll("(#.+)", "");
         this.setBrowserExclusive();
+        br.setCustomCharset("utf-8");
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.7 (KHTML, like Gecko) Chrome/16.0.912.75 Safari/535.7");
         if (parameter.matches("http://download\\d+\\.mediafire.+")) {
             /* direct download */

@@ -36,11 +36,18 @@ public class MltpldCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        String parameter = param.toString();
+        String parameter = param.toString().replace("multiupload.com/", "multiupload.nl/");
         br.getPage(parameter);
         if (br.getRedirectLocation() != null) {
-            /* domain redirection */
-            br.getPage(br.getRedirectLocation());
+            String redirect = br.getRedirectLocation();
+            // lets just return the result back into JD, and proper plugin can pick it up if we have support.
+            if (!redirect.matches("http.+multiupload\\.(com|nl)/.+")) {
+                decryptedLinks.add(createDownloadlink(redirect));
+                return decryptedLinks;
+            } else {
+                /* domain redirection */
+                br.getPage(redirect);
+            }
         }
         if (br.containsHTML(">Unfortunately, the link you have clicked is not available")) {
             logger.info("Link offline: " + parameter);

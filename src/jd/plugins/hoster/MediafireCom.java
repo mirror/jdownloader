@@ -1028,6 +1028,7 @@ public class MediafireCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
+        br.setCustomCharset("utf-8");
         downloadLink.setProperty("type", Property.NULL);
         if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
         final String fid = getFID(downloadLink);
@@ -1037,7 +1038,6 @@ public class MediafireCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         final Browser apiBR = br.cloneBrowser();
-        apiBR.setCustomCharset("utf-8");
         final Account aa = AccountController.getInstance().getValidAccount(this);
         if (aa != null) {
             getSessionToken(apiBR, aa);
