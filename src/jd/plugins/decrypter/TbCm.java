@@ -170,8 +170,7 @@ public class TbCm extends PluginForDecrypt {
     }
 
     /**
-     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs
-     * after the completed download.
+     * Converts the Google Closed Captions subtitles to SRT subtitles. It runs after the completed download.
      * 
      * @param downloadlink
      *            . The finished link to the Google CC subtitle file.
@@ -654,8 +653,7 @@ public class TbCm extends PluginForDecrypt {
                         cMode = DestinationFormat.UNKNOWN;
                         vQuality = "(" + LinksFound.get(format)[1] + "_" + format + ")";
                         /*
-                         * we do not want to download unknown formats at the
-                         * moment
+                         * we do not want to download unknown formats at the moment
                          */
                         continue;
                     }
@@ -744,7 +742,7 @@ public class TbCm extends PluginForDecrypt {
 
                     FilePackage filePackage = filepackages.get("YouTube subtitles");
 
-                    if (filepackages == null) {
+                    if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
                         filePackage.setName("YouTube Video (Subtitles)");
