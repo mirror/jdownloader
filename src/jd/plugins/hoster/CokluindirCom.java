@@ -65,7 +65,7 @@ public class CokluindirCom extends PluginForHost {
 
     public void prepBrowser() {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(mProt + mName, "lang", "english");
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
@@ -162,20 +162,17 @@ public class CokluindirCom extends PluginForHost {
 
     private void handleDL(DownloadLink link, String dllink) throws Exception {
         /* we want to follow redirects in final stage */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (dl.getConnection().isContentDisposition()) {
             /* contentdisposition, lets download it */
             dl.startDownload();
             return;
         } else {
-            /*
-             * download is not contentdisposition, so remove this host from premiumHosts list
-             */
+            /* download is not contentdisposition, so remove this host from premiumHosts list */
             br.followConnection();
+            /* temp disabled the host */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-
-        /* temp disabled the host */
-        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     /** no override to keep plugin compatible to old stable */
@@ -232,6 +229,7 @@ public class CokluindirCom extends PluginForHost {
             try {
                 /** Load cookies */
                 br.setCookiesExclusive(true);
+                prepBrowser();
                 final Object ret = account.getProperty("cookies", null);
                 boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
                 if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
@@ -246,7 +244,6 @@ public class CokluindirCom extends PluginForHost {
                         return;
                     }
                 }
-                prepBrowser();
                 br.getPage(mProt + mName + "/giris.php?isim=" + Encoding.urlEncode(account.getUser()) + "&parola=" + Hash.getMD5(account.getPass()));
                 handleErrors(account, null);
                 if (br.getCookie(mProt + mName, "cokluindir") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
