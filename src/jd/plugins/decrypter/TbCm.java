@@ -126,6 +126,9 @@ public class TbCm extends PluginForDecrypt {
 
     private HashMap<String, FilePackage>        filepackages        = new HashMap<String, FilePackage>();
 
+    private static final String                 NAME_SUBTITLES      = "subtitles";
+    private static final String                 NAME_THUMBNAILS     = "thumbnails";
+
     public static boolean ConvertFile(final DownloadLink downloadlink, final DestinationFormat InType, final DestinationFormat OutType) {
         System.out.println("Convert " + downloadlink.getName() + " - " + InType.getText() + " - " + OutType.getText());
         if (InType.equals(OutType)) {
@@ -360,6 +363,8 @@ public class TbCm extends PluginForDecrypt {
             }
         }
 
+        boolean multiple_videos = true;
+
         // Parse playlist
         if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || (parameter.contains("list=") && parameter.contains("watch?v="))) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
@@ -427,6 +432,7 @@ public class TbCm extends PluginForDecrypt {
         } else {
             // Handle single video
             linkstodecrypt.add(parameter);
+            multiple_videos = false;
         }
 
         final SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
@@ -527,6 +533,8 @@ public class TbCm extends PluginForDecrypt {
             Thread.sleep(25);
 
             try {
+                this.possibleconverts.clear();
+
                 if (this.StreamingShareLink.matcher(url).matches()) {
                     // StreamingShareLink
 
@@ -704,7 +712,10 @@ public class TbCm extends PluginForDecrypt {
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
-                        filePackage.setName("YouTube " + convertTo.getText());
+                        if (multiple_videos)
+                            filePackage.setName("YouTube " + convertTo.getText());
+                        else
+                            filePackage.setName(YT_FILENAME + " " + convertTo.getText());
                         filepackages.put(convertTo.getText(), filePackage);
                     }
 
@@ -739,13 +750,16 @@ public class TbCm extends PluginForDecrypt {
                 if (cfg.getBooleanProperty("ALLOW_SUBTITLES", true)) {
                     br.getPage("http://video.google.com/timedtext?type=list&v=" + VIDEOID);
 
-                    FilePackage filePackage = filepackages.get("YouTube Video (Subtitles)");
+                    FilePackage filePackage = filepackages.get(NAME_SUBTITLES);
 
                     if (filePackage == null) {
                         filePackage = FilePackage.getInstance();
                         filePackage.setProperty("ALLOW_MERGE", true);
-                        filePackage.setName("YouTube Video (Subtitles)");
-                        filepackages.put("YouTube Video (Subtitles)", filePackage);
+                        if (multiple_videos)
+                            filePackage.setName("Youtube (Subtitles)");
+                        else
+                            filePackage.setName(YT_FILENAME + " (Subtitles)");
+                        filepackages.put(NAME_SUBTITLES, filePackage);
                     }
 
                     String[][] matches = br.getRegex("<track id=\"(.*?)\" name=\"(.*?)\" lang_code=\"(.*?)\" lang_original=\"(.*?)\".*?/>").getMatches();
@@ -768,12 +782,15 @@ public class TbCm extends PluginForDecrypt {
                 }
 
                 // Grab thumbnails
-                FilePackage filePackage = filepackages.get("YouTube Video (Thumbnails)");
+                FilePackage filePackage = filepackages.get(NAME_THUMBNAILS);
                 if ((cfg.getBooleanProperty("ALLOW_THUMBNAIL_HQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MQ", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_DEFAULT", false) || cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) && filePackage == null) {
                     filePackage = FilePackage.getInstance();
                     filePackage.setProperty("ALLOW_MERGE", true);
-                    filePackage.setName("YouTube Video (Thumbnails)");
-                    filepackages.put("YouTube Video (Thumbnails)", filePackage);
+                    if (multiple_videos)
+                        filePackage.setName("Youtube (Thumbnails)");
+                    else
+                        filePackage.setName(YT_FILENAME + " (Thumbnails)");
+                    filepackages.put(NAME_THUMBNAILS, filePackage);
                 }
 
                 if (cfg.getBooleanProperty("ALLOW_THUMBNAIL_MAX", false)) {
