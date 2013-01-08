@@ -16,10 +16,11 @@
 
 package jd.controlling.downloadcontroller;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,7 +52,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
 import org.appwork.utils.event.queue.QueueAction;
-import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.zip.ZipIOReader;
 import org.appwork.utils.zip.ZipIOWriter;
@@ -244,14 +244,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         return ret;
     }
 
-    private String getCheckFileName() {
-        return "check.info";
-    }
-
-    private String getJDRootFileName() {
-        return "jdroot.path";
-    }
-
     /**
      * return a list of all DownloadLinks from a given FilePackage with status
      * 
@@ -271,10 +263,6 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             }
         }
         return ret;
-    }
-
-    private File getDownloadListFile() {
-        return Application.getResource("cfg/downloadList.zip");
     }
 
     /**
@@ -374,6 +362,28 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
         return false;
     }
 
+    private ArrayList<File> getAvailableDownloadLists() {
+        File[] filesInCfg = Application.getResource("cfg/").listFiles();
+        ArrayList<Long> sortedAvailable = new ArrayList<Long>();
+        ArrayList<File> ret = new ArrayList<File>();
+        if (filesInCfg != null) {
+            for (File downloadList : filesInCfg) {
+                if (downloadList.isFile() && downloadList.getName().startsWith("downloadList")) {
+                    String counter = new Regex(downloadList.getName(), "downloadList(\\d+)\\.zip").getMatch(0);
+                    if (counter != null) sortedAvailable.add(Long.parseLong(counter));
+                }
+            }
+            Collections.sort(sortedAvailable, Collections.reverseOrder());
+        }
+        for (Long loadOrder : sortedAvailable) {
+            ret.add(Application.getResource("cfg/downloadList" + loadOrder + ".zip"));
+        }
+        if (Application.getResource("cfg/downloadList.zip").exists()) {
+            ret.add(Application.getResource("cfg/downloadList.zip"));
+        }
+        return ret;
+    }
+
     /**
      * load all FilePackages/DownloadLinks from Database
      */
@@ -383,23 +393,15 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             return;
         }
         LinkedList<FilePackage> lpackages = null;
-        try {
-            /* try fallback to load tmp file */
-            lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".tmp"));
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        try {
-            /* load from new json zip */
-            if (lpackages == null) lpackages = load(getDownloadListFile());
-        } catch (final Throwable e) {
-            logger.log(e);
-        }
-        try {
-            /* try fallback to load tmp file */
-            if (lpackages == null) lpackages = load(new File(getDownloadListFile().getAbsolutePath() + ".bak"));
-        } catch (final Throwable e) {
-            logger.log(e);
+        for (File downloadList : getAvailableDownloadLists()) {
+            try {
+                lpackages = load(downloadList);
+                if (lpackages != null) {
+                    break;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+            }
         }
         try {
             /* fallback to old hsqldb */
@@ -452,78 +454,39 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                 ZipIOReader zip = null;
                 try {
                     zip = new ZipIOReader(file);
-                    ZipEntry check = zip.getZipFile(getCheckFileName());
-                    if (check != null) {
-                        /* parse checkFile if it exists */
-                        String checkString = null;
-                        {
-                            /* own scope so we can reuse checkIS */
-                            InputStream checkIS = null;
-                            try {
-                                checkIS = zip.getInputStream(check);
-                                byte[] checkbyte = IO.readStream(1024, checkIS);
-                                checkString = new String(checkbyte, "UTF-8");
-                                checkbyte = null;
-                            } finally {
-                                try {
-                                    checkIS.close();
-                                } catch (final Throwable e) {
-                                }
-                            }
-                        }
-                        if (checkString != null) {
-                            /* checkFile exists, lets verify */
-                            MessageDigest md = MessageDigest.getInstance("SHA1");
-                            byte[] buffer = new byte[1024];
-                            int found = 0;
-                            for (ZipEntry entry : zip.getZipFiles()) {
-                                if (entry.getName().matches("^\\d+$")) {
-                                    found++;
-                                    DigestInputStream checkIS = null;
-                                    try {
-                                        checkIS = new DigestInputStream(zip.getInputStream(entry), md);
-                                        while (checkIS.read(buffer) >= 0) {
-                                        }
-                                    } finally {
-                                        try {
-                                            checkIS.close();
-                                        } catch (final Throwable e) {
-                                        }
-                                    }
-                                }
-                            }
-                            String hash = HexFormatter.byteArrayToHex(md.digest());
-                            String time = new Regex(checkString, "(\\d+)").getMatch(0);
-                            String numberCheck = new Regex(checkString, ".*?:(\\d+)").getMatch(0);
-                            String hashCheck = new Regex(checkString, ".*?:.*?:(.+)").getMatch(0);
-                            boolean numberOk = (numberCheck != null && Integer.parseInt(numberCheck) == found);
-                            boolean hashOk = (hashCheck != null && hashCheck.equalsIgnoreCase(hash));
-                            logger.info("DownloadListVerify: TimeStamp(" + time + ")|numberOfPackages(" + found + "):" + numberOk + "|hash:" + hashOk);
-                        }
-                        check = null;
-                    }
                     /* lets restore the FilePackages from Json */
                     HashMap<Integer, FilePackage> map = new HashMap<Integer, FilePackage>();
+                    DownloadControllerStorable dcs = null;
+                    InputStream is = null;
                     for (ZipEntry entry : zip.getZipFiles()) {
-                        if (entry.getName().matches("^\\d+$")) {
-                            int packageIndex = Integer.parseInt(entry.getName());
-                            InputStream is = null;
-                            try {
+                        try {
+                            if (entry.getName().matches("^\\d+$")) {
+                                int packageIndex = Integer.parseInt(entry.getName());
                                 is = zip.getInputStream(entry);
                                 byte[] bytes = IO.readStream((int) entry.getSize(), is);
                                 String json = new String(bytes, "UTF-8");
                                 bytes = null;
-                                FilePackageStorable storable = JSonStorage.restoreFromString(json, new TypeRef<FilePackageStorable>() {
+                                FilePackageStorable storable = JSonStorage.stringToObject(json, new TypeRef<FilePackageStorable>() {
                                 }, null);
                                 json = null;
                                 if (storable != null) {
                                     map.put(packageIndex, storable._getFilePackage());
+                                } else {
+                                    throw new WTFException("restored a null FilePackageStorable");
                                 }
-                            } finally {
-                                try {
-                                    is.close();
-                                } catch (final Throwable e) {
-                                }
+                            } else if ("extraInfo".equalsIgnoreCase(entry.getName())) {
+                                is = zip.getInputStream(entry);
+                                byte[] bytes = IO.readStream((int) entry.getSize(), is);
+                                String json = new String(bytes, "UTF-8");
+                                bytes = null;
+                                dcs = JSonStorage.stringToObject(json, new TypeRef<DownloadControllerStorable>() {
+                                }, null);
+                                json = null;
+                            }
+                        } finally {
+                            try {
+                                is.close();
+                            } catch (final Throwable e) {
                             }
                         }
                     }
@@ -535,28 +498,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     for (Integer position : positions) {
                         ret2.add(map.get(position));
                     }
-                    if (JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
+                    if (dcs != null && JsonConfig.create(GeneralSettings.class).isConvertRelativePathesJDRoot()) {
                         try {
-                            ZipEntry jdRoot = zip.getZipFile(getJDRootFileName());
-                            String oldJDRoot = null;
-                            if (jdRoot != null) {
-                                /* parse jdRoot.path if it exists */
-                                InputStream checkIS = null;
-                                try {
-                                    checkIS = zip.getInputStream(jdRoot);
-                                    byte[] checkbyte = IO.readStream(1024, checkIS);
-                                    oldJDRoot = new String(checkbyte, "UTF-8");
-                                    checkbyte = null;
-                                } finally {
-                                    try {
-                                        checkIS.close();
-                                    } catch (final Throwable e) {
-                                    }
-                                }
-                                jdRoot = null;
-                            }
-                            if (!StringUtils.isEmpty(oldJDRoot)) {
-                                String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
+                            String oldRootPath = dcs.getRootPath();
+                            if (!StringUtils.isEmpty(oldRootPath)) {
+                                String newRoot = JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath();
                                 /*
                                  * convert pathes relative to JDownloader root,only in jared version
                                  */
@@ -565,18 +511,19 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                                         /* no need to convert relative pathes */
                                         continue;
                                     }
-                                    String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).toString();
-                                    if (pkgPath.startsWith(oldJDRoot)) {
+                                    String pkgPath = LinkTreeUtils.getDownloadDirectory(pkg).getAbsolutePath();
+                                    if (pkgPath.startsWith(oldRootPath + "/")) {
                                         /*
                                          * folder is inside JDRoot, lets update it
                                          */
-                                        String restPath = pkgPath.substring(oldJDRoot.length());
-                                        String newPath = new File(newRoot, restPath).toString();
+                                        String restPath = pkgPath.substring(oldRootPath.length());
+                                        String newPath = new File(newRoot, restPath).getAbsolutePath();
                                         pkg.setDownloadDirectory(newPath);
                                     }
                                 }
                             }
                         } catch (final Throwable e) {
+                            /* this method can throw exceptions, eg in SVN */
                             logger.log(e);
                         }
                     }
@@ -702,25 +649,38 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
      * @param packages
      * @param file
      */
-    private boolean save(java.util.List<FilePackage> packages, File file) {
+    private boolean save(java.util.List<FilePackage> packages, File file) throws IOException {
         synchronized (SAVELOADLOCK) {
-            boolean ret = false;
+            List<File> availableDownloadLists = null;
+            if (file == null) {
+                availableDownloadLists = getAvailableDownloadLists();
+                if (availableDownloadLists.size() > 0) {
+                    String counter = new Regex(availableDownloadLists.get(0).getName(), "downloadList(\\d+)\\.zip").getMatch(0);
+                    if (counter != null) {
+                        file = Application.getResource("cfg/downloadList" + (Long.parseLong(counter) + 1) + ".zip");
+                    }
+                }
+                if (file == null) file = Application.getResource("cfg/downloadList.zip");
+            }
             if (packages != null && file != null) {
-                /* prepare tmp file */
-                final File tmpfile = new File(file.getAbsolutePath() + ".tmp");
-                final File bakfile = new File(file.getAbsolutePath() + ".bak");
-                tmpfile.getParentFile().mkdirs();
-                tmpfile.delete();
-                ZipIOWriter zip = null;
-                int index = 0;
-                /* prepare formatter for package filenames in zipfiles */
+                if (file.exists()) {
+                    if (file.isDirectory()) throw new IOException("File " + file + " is a directory");
+                    if (file.delete() == false) throw new IOException("Could not delete file " + file);
+                } else {
+                    if (file.getParentFile().exists() == false && file.getParentFile().mkdirs() == false) throw new IOException("Could not create parentFolder for file " + file);
+                }
+                /* prepare formatter(001,0001...) for package filenames in zipfiles */
                 String format = "%02d";
                 if (packages.size() >= 10) {
                     format = String.format("%%0%dd", (int) Math.log10(packages.size()) + 1);
                 }
+                boolean deleteFile = true;
+                ZipIOWriter zip = null;
+                FileOutputStream fos = null;
                 try {
-                    MessageDigest md = MessageDigest.getInstance("SHA1");
-                    zip = new ZipIOWriter(tmpfile, true);
+                    fos = new FileOutputStream(file);
+                    zip = new ZipIOWriter(new BufferedOutputStream(fos, 32767));
+                    int index = 0;
                     for (FilePackage pkg : packages) {
                         /* convert FilePackage to JSon */
                         FilePackageStorable storable = new FilePackageStorable(pkg);
@@ -728,61 +688,47 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                         storable = null;
                         byte[] bytes = string.getBytes("UTF-8");
                         string = null;
-                        md.update(bytes);
                         zip.addByteArry(bytes, true, "", String.format(format, (index++)));
                     }
-                    String check = System.currentTimeMillis() + ":" + packages.size() + ":" + HexFormatter.byteArrayToHex(md.digest());
-                    zip.addByteArry(check.getBytes("UTF-8"), true, "", getCheckFileName());
+                    DownloadControllerStorable dcs = new DownloadControllerStorable();
                     try {
                         /*
-                         * add current JDRoot directory to savefile so we can convert pathes if needed
+                         * set current RootPath of JDownloader, so we can update it when user moves JDownloader folder
                          */
-                        String currentROOT = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
-                        zip.addByteArry(currentROOT.getBytes("UTF-8"), true, "", getJDRootFileName());
+                        dcs.setRootPath(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath());
+                    } catch (final Throwable e) {
+                        /* the method above can throw exceptions, eg in SVN */
+                        logger.log(e);
+                    }
+                    zip.addByteArry(JSonStorage.toString(dcs).getBytes("UTF-8"), true, "", "extraInfo");
+                    /* close ZipIOWriter */
+                    zip.close();
+                    deleteFile = false;
+                    try {
+                        int keepXOld = Math.max(JsonConfig.create(GeneralSettings.class).getKeepXOldLists(), 0);
+                        if (availableDownloadLists != null && availableDownloadLists.size() > keepXOld) {
+                            availableDownloadLists = availableDownloadLists.subList(keepXOld, availableDownloadLists.size());
+                            for (File oldDownloadList : availableDownloadLists) {
+                                logger.info("Delete outdated DownloadList: " + oldDownloadList + " " + oldDownloadList.delete());
+                            }
+                        }
                     } catch (final Throwable e) {
                         logger.log(e);
                     }
-                    /* close ZipIOWriter, so we can rename tmp file now */
-                    try {
-                        zip.close();
-                    } catch (final Throwable e) {
-                        return false;
-                    }
-                    /* backup existing file list to .bak */
-                    if (file.exists()) {
-                        if (bakfile.exists() == false || bakfile.delete() == true) {
-                            if (!file.renameTo(bakfile)) {
-                                logger.log(new WTFException("Could not backup old List: " + file.getAbsolutePath()));
-                                return false;
-                            }
-                        } else {
-                            logger.log(new WTFException("Could delete existing backup old List: " + bakfile.getAbsolutePath()));
-                            return false;
-                        }
-                    }
-                    /* rename tmpfile to destination file */
-                    if (!tmpfile.renameTo(file)) {
-                        logger.log(new WTFException("Could not rename file: " + tmpfile + " to " + file));
-                        if (bakfile.exists() && bakfile.renameTo(file) == false) {
-                            logger.log(new WTFException("Could not restore file: " + bakfile + " to " + file));
-                        }
-                        return false;
-                    } else {
-                        if (bakfile.exists() && bakfile.delete() == false) {
-                            logger.log(new WTFException("Could delete backup old List: " + bakfile.getAbsolutePath()));
-                        }
-                        return true;
-                    }
+                    return true;
                 } catch (final Throwable e) {
                     logger.log(e);
                 } finally {
                     try {
-                        zip.close();
+                        fos.close();
                     } catch (final Throwable e) {
+                    }
+                    if (deleteFile && file.exists()) {
+                        file.delete();
                     }
                 }
             }
-            return ret;
+            return false;
         }
     }
 
@@ -799,7 +745,11 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
             readUnlock(readL);
         }
         /* save as new Json ZipFile */
-        save(packages, getDownloadListFile());
+        try {
+            save(packages, null);
+        } catch (IOException e) {
+            logger.log(e);
+        }
     }
 
     public void setLoadAllowed(boolean allowLoad) {

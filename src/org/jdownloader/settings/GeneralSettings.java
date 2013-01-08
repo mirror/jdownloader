@@ -177,6 +177,14 @@ public interface GeneralSettings extends ConfigInterface {
     int getWaittimeOnConnectionLoss();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Keep max X old lists on disk (DownloadList,Linkgrabber)")
+    @DefaultIntValue(5)
+    @SpinnerValidator(min = 0, max = 20)
+    int getKeepXOldLists();
+
+    void setKeepXOldLists(int x);
+
+    @AboutConfig
     boolean isAddNewLinksOnTop();
 
     @AboutConfig

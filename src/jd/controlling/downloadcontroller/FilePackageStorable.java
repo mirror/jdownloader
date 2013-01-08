@@ -10,7 +10,7 @@ import org.appwork.storage.Storable;
 
 public class FilePackageStorable implements Storable {
 
-    private FilePackage                     filePackage;
+    private FilePackage                          filePackage;
     private java.util.List<DownloadLinkStorable> links;
 
     @SuppressWarnings("unused")
