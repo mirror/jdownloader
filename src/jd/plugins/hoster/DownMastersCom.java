@@ -171,6 +171,10 @@ public class DownMastersCom extends PluginForHost {
         case 7:
             logger.info("Link invalid");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
+        case 8:
+            // Actually I don't know what this error means but if it happens, it happens for all links of a host->Disable them!
+            logger.info("Dedicated server detected, retrying later...");
+            tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
         }
         if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error, please report this to the downmasters.com support!"); }
         String dllink = getJson("dmlink", br.toString());

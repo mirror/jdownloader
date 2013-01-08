@@ -16,7 +16,6 @@
 
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +35,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/files/[^/]+" }, flags = { 2 })
 public class ServiFileCom extends PluginForHost {
@@ -62,27 +62,32 @@ public class ServiFileCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        link.setName(new Regex(link.getDownloadURL(), "servifile\\.com/files/(.+)").getMatch(0));
-        // We cannot check status here, only after captcha!
-        link.getLinkStatus().setStatusText("Status can only be chacked after the captcha!");
-        return AvailableStatus.UNCHECKABLE;
+        br.getPage(link.getDownloadURL());
+        if (br.containsHTML(">The file you have requested does not exist")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Regex dlInfo = br.getRegex("<h1 style=\"text\\-align:left;\">([^<>\"]*?) \\((\\d+(\\.\\d+)? [A-Za-z]{1,5}), \\d+ descargas\\)</h1>");
+        final String filename = dlInfo.getMatch(0);
+        final String filesize = dlInfo.getMatch(1);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        br.getPage(downloadLink.getDownloadURL());
 
-        final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-        final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-        final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
-        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        rc.setId(id);
-        rc.load();
-        final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-        final String c = getCaptchaCode(cf, downloadLink);
-        br.postPage(br.getURL(), "entrar=no&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" + Encoding.urlEncode(c));
-        if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        // final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+        // final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+        // final String id = br.getRegex("\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+        // if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        // rc.setId(id);
+        // rc.load();
+        // final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+        // final String c = getCaptchaCode(cf, downloadLink);
+        // br.postPage(br.getURL(), "entrar=no&recaptcha_challenge_field=" + rc.getChallenge() + "&recaptcha_response_field=" +
+        // Encoding.urlEncode(c));
+        // if (br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (br.containsHTML(">The file you have requested does not exists")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         String getLink = br.getRegex(GETLINKREGEX).getMatch(0);
