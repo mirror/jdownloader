@@ -41,6 +41,9 @@ public class Account extends Property {
         return concurrentUsePossible;
     }
 
+    /**
+     * @since JD2
+     * */
     public void setConcurrentUsePossible(boolean concurrentUsePossible) {
         this.concurrentUsePossible = concurrentUsePossible;
     }
@@ -95,7 +98,11 @@ public class Account extends Property {
         return maxDownloads;
     }
 
-    /*-1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this*/
+    /**
+     * -1 = unlimited, 0 = use deprecated getMaxSimultanPremiumDownloadNum/getMaxSimultanFreeDownloadNum,>1 = use this
+     * 
+     * @since JD2
+     * */
     public void setMaxSimultanDownloads(int max) {
         if (max < 0) {
             maxDownloads = -1;

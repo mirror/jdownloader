@@ -19,12 +19,20 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.Property;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,12 +42,14 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "catshare.net" }, urls = { "http://(www\\.)?catshare\\.net/[A-Za-z0-9]{16}" }, flags = { 2 })
 public class CatShareNet extends PluginForHost {
 
-    private String BRBEFORE = "";
-    private String HOSTER   = "http://catshare.net";
+    private String        BRBEFORE = "";
+    private String        HOSTER   = "http://catshare.net";
+    private static Object LOCK     = new Object();
 
     // DEV NOTES
     // captchatype: recaptcha
@@ -47,7 +57,7 @@ public class CatShareNet extends PluginForHost {
 
     public CatShareNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(HOSTER + "/login");
+        this.enablePremium(HOSTER + "/login");
     }
 
     public void checkErrors(DownloadLink theLink, boolean beforeRecaptcha) throws NumberFormatException, PluginException {
@@ -164,6 +174,9 @@ public class CatShareNet extends PluginForHost {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
             dllink = new Regex(BRBEFORE, "Download: <a href=\"(.*?)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = new Regex(BRBEFORE, "(https?://(\\w+\\.)?catshare\\.net/dl/(\\d+/){4}[^\"]+)").getMatch(0);
+            }
         }
         return dllink;
     }
@@ -210,6 +223,118 @@ public class CatShareNet extends PluginForHost {
         link.setName(fileName.trim());
         link.setDownloadSize(SizeFormatter.getSize(fileSize));
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo();
+        try {
+            login(account, true);
+        } catch (PluginException e) {
+            account.setValid(false);
+            return ai;
+        }
+        String expire = br.getRegex(">Konto premium ważne do : <strong>(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})<").getMatch(0);
+        if (expire == null) {
+            expire = br.getRegex("(\\d{4}\\-\\d+{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            if (expire == null) {
+                ai.setExpired(true);
+                account.setValid(false);
+                return ai;
+            }
+        }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH));
+        account.setValid(true);
+        ai.setUnlimitedTraffic();
+        try {
+            account.setMaxSimultanDownloads(-1);
+            account.setConcurrentUsePossible(true);
+        } catch (final Throwable e) {
+            // not available in old Stable 0.9.581
+        }
+
+        ai.setStatus("Premium User");
+        return ai;
+    }
+
+    private void login(Account account, boolean force) throws Exception {
+        synchronized (LOCK) {
+            try {
+                /** Load cookies */
+                br.setCookiesExclusive(true);
+                final Object ret = account.getProperty("cookies", null);
+                boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
+                if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));
+                if (acmatch && ret != null && ret instanceof HashMap<?, ?> && !force) {
+                    final HashMap<String, String> cookies = (HashMap<String, String>) ret;
+                    if (account.isValid()) {
+                        for (final Map.Entry<String, String> cookieEntry : cookies.entrySet()) {
+                            final String key = cookieEntry.getKey();
+                            final String value = cookieEntry.getValue();
+                            this.br.setCookie("http://catshare.net", key, value);
+                        }
+                        return;
+                    }
+                }
+                br.getPage("http://catshare.net/login");
+                Form login = br.getForm(0);
+                if (login == null) {
+                    logger.warning("Couldn't find login form");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("user_email", Encoding.urlEncode(account.getUser()));
+                login.put("user_password", Encoding.urlEncode(account.getPass()));
+                br.submitForm(login);
+                br.getPage("/");
+                if (!br.containsHTML("Konto:[\r\t\n ]+Premium \\(<b>\\d+ dni</b>\\)")) {
+                    logger.warning("Couldn't determin premium status!");
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                /** Save cookies */
+                final HashMap<String, String> cookies = new HashMap<String, String>();
+                final Cookies add = this.br.getCookies("http://catshare.net");
+                for (final Cookie c : add.getCookies()) {
+                    cookies.put(c.getKey(), c.getValue());
+                }
+                account.setProperty("name", Encoding.urlEncode(account.getUser()));
+                account.setProperty("pass", Encoding.urlEncode(account.getPass()));
+                account.setProperty("cookies", cookies);
+            } catch (final PluginException e) {
+                account.setProperty("cookies", Property.NULL);
+                throw e;
+            }
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
+        String passCode = null;
+        requestFileInformation(downloadLink);
+        login(account, false);
+        br.getPage(downloadLink.getDownloadURL());
+        doSomething();
+        String dllink = getDllink();
+        if (dllink == null) {
+            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+
+        logger.info("Final downloadlink = " + dllink + " starting the download...");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection();
+            doSomething();
+            checkServerErrors();
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (passCode != null) downloadLink.setProperty("pass", passCode);
+        dl.startDownload();
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override

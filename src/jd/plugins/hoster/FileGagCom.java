@@ -59,13 +59,13 @@ public class FileGagCom extends PluginForHost {
     private static final String MAINTENANCE         = ">This server is in maintenance mode";
     private static final String MAINTENANCEUSERTEXT = "This server is under Maintenance";
     private static final String ALLWAIT_SHORT       = "Waiting till new downloads can be started";
+    private static final String PREMIUMONLY1        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
+    private static final String PREMIUMONLY2        = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
+
     private static Object       LOCK                = new Object();
 
     // XfileSharingProBasic Version 2.5.4.7
-    /**
-     * This is only for developers to easily implement hosters using the "xfilesharing (Pro)" script (more informations can be found on
-     * xfilesharing.net)!
-     */
+
     @Override
     public void correctDownloadLink(DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
@@ -92,35 +92,76 @@ public class FileGagCom extends PluginForHost {
         return true;
     }
 
-    @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+    public void prepBrowser(final Browser br) {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        br.setFollowRedirects(true);
+        prepBrowser(br);
         getPage(link.getDownloadURL());
-        if (new Regex(correctedBR, Pattern.compile("(No such file|>File Not Found<|>The file was removed by|Reason (of|for) deletion:\n)", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
-            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.xfilesharingprobasic.undermaintenance", MAINTENANCEUSERTEXT));
+        if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
+            link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
-        String filename = new Regex(correctedBR, "name=\"fname\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = new Regex(correctedBR, ">Download File: <span style=\"color:#9ad700; font\\-size:16px;\">([^<>\"]*?)</span>").getMatch(0);
+        if (br.getURL().contains("/?op=login&redirect=")) {
+            link.getLinkStatus().setStatusText(PREMIUMONLY2);
+            return AvailableStatus.UNCHECKABLE;
         }
-        String filesize = new Regex(correctedBR, "<span style=\"color:#aaa7a7; font\\-size:14px;\">\\(([^<>\"/]*?)\\)</span><").getMatch(0);
-        if (filename == null || filename.equals("")) {
-            if (correctedBR.contains("You have reached the download-limit")) {
+        String[] fileInfo = new String[3];
+        scanInfo(fileInfo);
+        if (fileInfo[0] == null || fileInfo[0].equals("")) {
+            if (correctedBR.contains("You have reached the download(\\-| )limit")) {
                 logger.warning("Waittime detected, please reconnect to make the linkchecker work!");
                 return AvailableStatus.UNCHECKABLE;
             }
-            logger.warning("The filename equals null, throwing \"plugin defect\" now...");
+            logger.warning("filename equals null, throwing \"plugin defect\"");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = filename.replaceAll("(</b>|<b>|\\.html)", "");
-        link.setProperty("plainfilename", filename);
-        link.setFinalFileName(filename.trim());
-        if (filesize != null && !filesize.equals("")) link.setDownloadSize(SizeFormatter.getSize(filesize));
+        if (fileInfo[2] != null && !fileInfo[2].equals("")) link.setMD5Hash(fileInfo[2].trim());
+        fileInfo[0] = fileInfo[0].replaceAll("(</b>|<b>|\\.html)", "");
+        link.setFinalFileName(fileInfo[0].trim());
+        if (fileInfo[1] != null && !fileInfo[1].equals("")) link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         return AvailableStatus.TRUE;
+    }
+
+    private String[] scanInfo(final String[] fileInfo) {
+        // standard traits from base page
+        if (fileInfo[0] == null) {
+            fileInfo[0] = new Regex(correctedBR, "You have requested.*?https?://(www\\.)?" + this.getHost() + "/[A-Za-z0-9]{12}/(.*?)</font>").getMatch(1);
+            if (fileInfo[0] == null) {
+                fileInfo[0] = new Regex(correctedBR, "fname\"( type=\"hidden\")? value=\"(.*?)\"").getMatch(1);
+                if (fileInfo[0] == null) {
+                    fileInfo[0] = new Regex(correctedBR, "<h2>Download File(.*?)</h2>").getMatch(0);
+                    // traits from download1 page below.
+                    if (fileInfo[0] == null) {
+                        fileInfo[0] = new Regex(correctedBR, "Filename:? ?(<[^>]+>[\r\n\t ]?+)+?([^<>\"\\']+)").getMatch(1);
+                        // next two are details from sharing box
+                        if (fileInfo[0] == null) {
+                            fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+>(.+) \\- [\\d\\.]+ (KB|MB|GB)</a></textarea>[\r\n\t ]+</div>").getMatch(0);
+                            if (fileInfo[0] == null) {
+                                fileInfo[0] = new Regex(correctedBR, "copy\\(this\\);.+\\](.+) \\- [\\d\\.]+ (KB|MB|GB)\\[/URL\\]").getMatch(0);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (fileInfo[1] == null) {
+            fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ bytes)\\)").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
+                if (fileInfo[1] == null) {
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+                }
+            }
+        }
+        if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
+        return fileInfo;
     }
 
     @Override
@@ -254,21 +295,22 @@ public class FileGagCom extends PluginForHost {
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
-        regexStuff.add("(display: none;\">.*?</div>)");
+        regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
+
         for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
                 }
             }
-        }
-        for (String fun : someStuff) {
-            correctedBR = correctedBR.replace(fun, "");
         }
     }
 
