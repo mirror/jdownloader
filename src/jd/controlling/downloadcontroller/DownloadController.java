@@ -658,6 +658,8 @@ public class DownloadController extends PackageController<FilePackage, DownloadL
                     String counter = new Regex(availableDownloadLists.get(0).getName(), "downloadList(\\d+)\\.zip").getMatch(0);
                     if (counter != null) {
                         file = Application.getResource("cfg/downloadList" + (Long.parseLong(counter) + 1) + ".zip");
+                    } else {
+                        file = Application.getResource("cfg/downloadList1.zip");
                     }
                 }
                 if (file == null) file = Application.getResource("cfg/downloadList.zip");
