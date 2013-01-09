@@ -50,8 +50,6 @@ public class RTLnowDe extends PluginForHost {
 
     private String   DLCONTENT;
 
-    private Boolean  DEFAULTTIMEOUT = false;
-
     public RTLnowDe(final PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();

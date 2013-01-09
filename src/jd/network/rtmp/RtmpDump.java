@@ -275,6 +275,7 @@ public class RtmpDump extends RTMPDownload {
             long iSize = 0;
             long before = 0;
             long lastTime = System.currentTimeMillis();
+            boolean complete = false;
 
             String timeoutMessage = "rtmpdump timed out while waiting for a reply after";
             long readerTimeOut = 10000l;
@@ -377,6 +378,12 @@ public class RtmpDump extends RTMPDownload {
                             }
                         }
                     }
+                    if (progressFloat >= 99.8 && progressFloat < 100) {
+                        if (line.toLowerCase().contains("download may be incomplete")) {
+                            complete = true;
+                            break;
+                        }
+                    }
                     if (!line.toLowerCase().contains("download complete")) continue;
 
                     // autoresuming when FMS sends NetStatus.Play.Stop and
@@ -418,7 +425,7 @@ public class RtmpDump extends RTMPDownload {
                 return false;
             }
             if (line != null) {
-                if (line.toLowerCase().contains("download complete")) {
+                if (line.toLowerCase().contains("download complete") || complete) {
                     downloadLink.setDownloadSize(BYTESLOADED);
                     if (downloadLink.getBooleanProperty("FLVFIXER", false)) {
                         if (!FixFlv(tmpFile)) return false;

@@ -221,10 +221,11 @@ public class DreiSatDe extends PluginForHost {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
         rtmp.setPlayPath(stream[2]);
         rtmp.setUrl(stream[0] + "/" + stream[1]);
-        rtmp.setApp(stream[1]);
+        // rtmp.setApp(stream[1]);
         rtmp.setResume(true);
-        rtmp.setSwfVfy("http://www.3sat.de/mediaplayer/5/EmbeddedPlayer.swf");
+        // rtmp.setSwfVfy("http://www.3sat.de/mediaplayer/5/EmbeddedPlayer.swf");
         rtmp.setRealTime();
+        rtmp.setTimeOut(5);
     }
 
     private void download(final DownloadLink downloadLink) throws Exception {
@@ -236,10 +237,8 @@ public class DreiSatDe extends PluginForHost {
             setupRTMPConnection(stream, dl);
             if (!((RTMPDownload) dl).startDownload()) {
                 if (downloadLink.getLinkStatus().getStatus() != 513) {
-                    downloadLink.setProperty("directURL", null);
+                    // downloadLink.setProperty("directURL", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait a moment...", 5 * 60 * 1000l);
                 }
             }
 
