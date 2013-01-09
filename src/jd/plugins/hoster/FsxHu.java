@@ -36,7 +36,7 @@ import jd.utils.locale.JDL;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://((www\\.)?(fsx|mfs\\.hu/download\\.php\\?s=\\d+\\&d=[^<>\"]+\\&h=[a-z0-9]+|s.*?\\.(fsx|mfs)\\.hu/.+/.+)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fsx.hu" }, urls = { "http://((www\\.)?(fsx|mfs\\.hu/download\\.php\\?s=\\d+\\&d=[^<>\"]+\\&h=[a-z0-9]+|s.*?\\.(fsx|mfs)\\.hu/.+/.+))" }, flags = { 2 })
 public class FsxHu extends PluginForHost {
 
     public FsxHu(final PluginWrapper wrapper) {
