@@ -62,17 +62,21 @@ public class FreePornCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("(unavailablevideo\\.jpg\"|<h1>Oooops\\.\\.\\. We can\\'t find this video or it doesn\\'t exist</h1>|\">Here is a list of recommended videos for you|<title>Free Porn, Porn Tube, Free Porn Videos, Sex Movie, Porn - FreePorn\\.com</title>)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<span class=\"fleft\">(.*?)</span>").getMatch(0);
-        if (filename == null) filename = br.getRegex("<title>(.*?) \\- FreePorn\\.com</title>").getMatch(0);
-        String path = br.getRegex("value=\\'file=(.*?)\\&").getMatch(0);
-        if (path == null || filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        br.postPage("http://www.freeporn.com/getcdnurl/", "cacheBuster=" + String.valueOf(System.currentTimeMillis()) + "&jsonRequest={\"returnType\":\"json\",\"request\":\"getAllData\",\"path\":\"" + path + "\"}");
-        DLLINK = br.getRegex("file\":\"(.*?)\"").getMatch(0).replace("\\", "");
+        br.setFollowRedirects(false);
+        if (br.containsHTML(">Sorry, this video is no longer available|<title>Page not found \\- Free Porn</title>|<title>Coming Soon</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = br.getRegex("id=\"embed_tumblr\" data\\-title=\"([^<>\"]*?)\"").getMatch(0);
+        if (filename == null) filename = br.getRegex("<title>([^<>\"]*?)\\- Free Porn</title>").getMatch(0);
+        String path = br.getRegex("\\&path=([^<>\"/\\&]*?)\\&file=").getMatch(0);
+        final String cb = br.getRegex("\\?cb=(\\d+)\\'").getMatch(0);
+        if (path == null || filename == null || cb == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        path = Encoding.urlEncode(path);
+        br.postPage("http://www.freeporn.com/getcdnurl/", "jsonRequest=%7B%22playerOnly%22%3A%22true%22%2C%22height%22%3A%22478%22%2C%22file%22%3A%22" + path + "%22%2C%22htmlHostDomain%22%3A%22www%2Efreeporn%2Ecom%22%2C%22loaderUrl%22%3A%22http%3A%2F%2Fcdn1%2Estatic%2Eatlasfiles%2Ecom%2Fplayer%2Fmemberplayer%2Eswf%3Fcb%3D" + cb + "%22%2C%22path%22%3A%22" + path + "%22%2C%22request%22%3A%22getAllData%22%2C%22cb%22%3A%22" + cb + "%22%2C%22appdataurl%22%3A%22http%3A%2F%2Fwww%2Efreeporn%2Ecom%2Fgetcdnurl%2F%22%2C%22width%22%3A%22638%22%2C%22returnType%22%3A%22json%22%7D&cacheBuster=" + String.valueOf(System.currentTimeMillis()));
+        DLLINK = br.getRegex("\"file\":([ ]+)?\"(.*?)\"").getMatch(1);
         if (DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".flv");
+        DLLINK = DLLINK.replace("\\", "");
+        downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp4");
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
         br2.setFollowRedirects(true);

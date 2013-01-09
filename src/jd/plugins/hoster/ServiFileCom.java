@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import jd.PluginWrapper;
@@ -37,6 +38,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "servifile.com" }, urls = { "http://(www\\.)?servifile\\.com/files/[^/]+" }, flags = { 2 })
 public class ServiFileCom extends PluginForHost {
@@ -171,10 +173,12 @@ public class ServiFileCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
+        final String hostedFiles = br.getRegex("<td>Files Hosted:</td>[\t\r\n ]+<td>(\\d+)</td>").getMatch(0);
         if (hostedFiles != null) ai.setFilesNum(Integer.parseInt(hostedFiles));
-        String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
+        final String space = br.getRegex("<td>Spaced Used:</td>[\t\n\r ]+<td>(.*?) " + PREMIUMLIMIT).getMatch(0);
         if (space != null) ai.setUsedSpace(space.trim());
+        final String expire = br.getRegex(">Premium end date:</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
+        if (expire != null) ai.setValidUntil(TimeFormatter.getMilliSeconds(expire.trim(), "dd-MM-yyyy", Locale.ENGLISH));
         account.setValid(true);
         ai.setUnlimitedTraffic();
         ai.setStatus("Premium User");

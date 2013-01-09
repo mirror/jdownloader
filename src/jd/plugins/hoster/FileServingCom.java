@@ -57,6 +57,7 @@ public class FileServingCom extends PluginForHost {
     // DEV NOTES
     // other: unsure about the expire time, if it only shows days or what...
     // only had one account to play with.
+    // belongs to mydrive.com
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {

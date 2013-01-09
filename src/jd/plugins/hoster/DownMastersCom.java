@@ -72,9 +72,9 @@ public class DownMastersCom extends PluginForHost {
         // check if account is valid
         br.postPage("http://downmasters.com/accountapi.php", "username=" + username + "&password=" + pass);
         // "Invalid login" / "Banned" / "Valid login"
-        if ("1".equals(getJson("status", br.toString()))) {
+        if ("1".equals(getJson("status"))) {
             account.setValid(true);
-        } else if (!"Premium".equals(getJson("type", br.toString()))) {
+        } else if (!"Premium".equals(getJson("type"))) {
             ac.setStatus("This is no premium account!");
             account.setValid(false);
             return ac;
@@ -84,7 +84,7 @@ public class DownMastersCom extends PluginForHost {
             account.setValid(false);
             return ac;
         }
-        final String expire = getJson("expire", br.toString());
+        final String expire = getJson("expire");
         ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH));
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
@@ -117,9 +117,9 @@ public class DownMastersCom extends PluginForHost {
         return ac;
     }
 
-    private String getJson(final String parameter, final String source) {
-        String result = new Regex(source, "\"" + parameter + "\":(\\d+)").getMatch(0);
-        if (result == null) result = new Regex(source, "\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
+    private String getJson(final String parameter) {
+        String result = br.getRegex("\"" + parameter + "\":(\\d+)").getMatch(0);
+        if (result == null) result = br.getRegex("\"" + parameter + "\":\"([^<>\"]*?)\"").getMatch(0);
         return result;
     }
 
@@ -148,16 +148,17 @@ public class DownMastersCom extends PluginForHost {
         }
         showMessage(link, "Phase 1/2: Generating link");
         br.postPage("http://downmasters.com/api.php", "username=" + user + "&password=" + pw + "&link=" + url);
-        final int status = Integer.parseInt(getJson("status", br.toString()));
+
+        final int status = Integer.parseInt(getJson("status"));
         switch (status) {
         case 0:
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         case 2:
             logger.info("Bandwidth limit for the host is reached, retrying later...");
-            tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+            tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);
         case 3:
             logger.info("Host is down, retrying later...");
-            tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
         case 4:
             logger.info("This is no premium account!");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -174,16 +175,20 @@ public class DownMastersCom extends PluginForHost {
         case 8:
             // Actually I don't know what this error means but if it happens, it happens for all links of a host->Disable them!
             logger.info("Dedicated server detected, retrying later...");
-            tempUnavailableHoster(acc, link, 2 * 60 * 1000l);
+            tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
         }
+
         if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error, please report this to the downmasters.com support!"); }
-        String dllink = getJson("dmlink", br.toString());
+
+        String dllink = getJson("dmlink");
         if (dllink == null) {
-            logger.info("Unhandled download error on downmasters.com: " + br.toString());
+            logger.warning("Unhandled download error on downmasters.com:");
+            logger.warning(br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        showMessage(link, "Phase 2/2: Download begins!");
         dllink = dllink.replace("\\", "");
+        showMessage(link, "Phase 2/2: Download begins!");
+
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();

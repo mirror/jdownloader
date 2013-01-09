@@ -134,7 +134,7 @@ public class TusFilesNet extends PluginForHost {
                 logger.warning("filename equals null, throwing \"plugin defect\"");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             String[] fileInfo = new String[3];
