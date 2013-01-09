@@ -94,7 +94,7 @@ public class DepositFiles extends PluginForHost {
 
     public DepositFiles(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE + "/signup.php?ref=down1");
+        this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
     @Override
