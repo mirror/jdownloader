@@ -98,10 +98,15 @@ public class ImDbCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL() + "/player");
+        final String downloadURL = downloadLink.getDownloadURL();
+        br.getPage(downloadURL);
+        // get the fileName from main download link page
+        // fileName on the /player subpage may be wrong
+        String fileName = br.getRegex("<title>(.*?) - IMDb</title>").getMatch(0);
+        br.getPage(downloadURL + "/player");
         if (br.containsHTML("(<title>IMDb Video Player: </title>|This video is not available\\.)")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        if (fileName == null) fileName = br.getRegex("<title>IMDb Video Player: (.*?)</title>").getMatch(0);
+        if (fileName == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
         br.getPage("http://www.imdb.com/video/imdb/" + new Regex(downloadLink.getDownloadURL(), IDREGEX).getMatch(0) + "/player?uff=3");
         DLLINK = br.getRegex("addVariable\\(\"file\", \"((http|rtmp).*?)\"\\)").getMatch(0);
         if (DLLINK == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
@@ -111,12 +116,12 @@ public class ImDbCom extends PluginForHost {
             DLLINK = DLLINK + "#" + playPath;
         }
         DLLINK = Encoding.htmlDecode(DLLINK);
-        filename = filename.trim();
+        fileName = fileName.trim();
         String ending = ".flv";
         if (DLLINK.contains(".mp4")) {
             ending = ".mp4";
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ending);
+        downloadLink.setFinalFileName(Encoding.htmlDecode(fileName) + ending);
         if (!DLLINK.startsWith("rtmp")) {
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
