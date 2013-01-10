@@ -30,6 +30,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.locale.JDL;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -43,6 +44,8 @@ public class SimplyDebridCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("http://simply-debrid.com/buy.php");
     }
+
+    private static final String NOCHUNKS = "NOCHUNKS";
 
     @Override
     public String getAGBLink() {
@@ -142,6 +145,10 @@ public class SimplyDebridCom extends PluginForHost {
             showMessage(link, "Server überlastet!");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
         }
+        if (br.containsHTML("No htmlCode read")) {
+            logger.info("Unknown API error, disabling current host...");
+            tempUnavailableHoster(account, link, 2 * 60 * 60 * 1000l);
+        }
 
         // crazy API
         if (dllink.contains("Erreur")) dllink = new Regex(dllink, "(.*?)Erreur").getMatch(0);
@@ -170,7 +177,11 @@ public class SimplyDebridCom extends PluginForHost {
 
         // all ok, start downloading...
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        int maxChunks = 0;
+        if (link.getBooleanProperty(SimplyDebridCom.NOCHUNKS, false)) {
+            maxChunks = 1;
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getResponseCode() == 404) {
             /* file offline */
             dl.getConnection().disconnect();
@@ -198,8 +209,22 @@ public class SimplyDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry in few secs" + msg, 10 * 1000l);
         }
         showMessage(link, "Phase 3/3: Download...");
-        dl.startDownload();
-
+        if (!this.dl.startDownload()) {
+            try {
+                if (dl.externalDownloadStop()) return;
+            } catch (final Throwable e) {
+            }
+            final String errormessage = link.getLinkStatus().getErrorMessage();
+            if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
+                {
+                    /* unknown error, we disable multiple chunks */
+                    if (link.getBooleanProperty(SimplyDebridCom.NOCHUNKS, false) == false) {
+                        link.setProperty(SimplyDebridCom.NOCHUNKS, Boolean.valueOf(true));
+                        throw new PluginException(LinkStatus.ERROR_RETRY);
+                    }
+                }
+            }
+        }
     }
 
     @Override
