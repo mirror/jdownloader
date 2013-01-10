@@ -38,7 +38,7 @@ import org.appwork.utils.Regex;
 public class DebridLinkFr extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
-    private static AtomicInteger                           maxPrem            = new AtomicInteger(7);
+    private static AtomicInteger                           maxPrem            = new AtomicInteger(1);
 
     public DebridLinkFr(PluginWrapper wrapper) {
         super(wrapper);
