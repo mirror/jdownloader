@@ -85,7 +85,7 @@ public class DownMastersCom extends PluginForHost {
             return ac;
         }
         final String expire = getJson("expire");
-        ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "MM-dd-yyyy", Locale.ENGLISH));
+        ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);

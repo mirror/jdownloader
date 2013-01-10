@@ -68,30 +68,48 @@ public class DebridLinkFr extends PluginForHost {
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
         br.getPage("http://debrid-link.fr/api/?act=1&user=" + username + "&pass=" + pass);
-        // "Invalid login" / "Banned" / "Valid login"f
-        if (br.toString().equalsIgnoreCase("Valid login")) {
-            account.setValid(true);
-        } else if ("KO".equals(getJson("CONNECTED"))) {
-            ac.setStatus("invalid login. Wrong password?");
+
+        // Errorhandling
+        int errorcode = 0;
+        final String errorcodeString = getJson("ID");
+        if (errorcodeString != null) errorcode = Integer.parseInt(getJson("ID"));
+        switch (errorcode) {
+        case 1:
+            ac.setStatus("Account is banned");
             account.setValid(false);
             return ac;
-        } else if ("0".equals(getJson("ACCOUNT"))) {
-            ac.setStatus("Free Account (not supported)");
+        case 2:
+            ac.setStatus("Account is banned until midnight");
             account.setValid(false);
             return ac;
-        } else if ("1".equals(getJson("ACCOUNT"))) {
-            ac.setStatus("Premium Account");
-            account.setValid(true);
-            ac.setValidUntil(System.currentTimeMillis() + Integer.parseInt(getJson("PREMIUMLEFT")) * 1000);
-        } else if ("2".equals(getJson("ACCOUNT"))) {
-            ac.setStatus("unknownLifetime Premium Account");
-            account.setValid(true);
-        } else {
-            // unknown error
-            ac.setStatus("Unknown account status");
+        case 3:
+            ac.setStatus("Username or password wrong");
             account.setValid(false);
             return ac;
         }
+        if ("KO".equals(getJson("CONNECTED"))) {
+            ac.setStatus("invalid login. Wrong password?");
+            account.setValid(false);
+            return ac;
+
+        }
+
+        // Differ between accounttypes
+        final int statuscode = Integer.parseInt(getJson("ACCOUNT"));
+        switch (statuscode) {
+        case 0:
+            ac.setStatus("Free Account (not supported)");
+            account.setValid(false);
+            return ac;
+        case 1:
+            ac.setStatus("Premium Account");
+            account.setValid(true);
+            ac.setValidUntil(System.currentTimeMillis() + Integer.parseInt(getJson("PREMIUMLEFT")) * 1000);
+        case 2:
+            ac.setStatus("Lifetime Premium Account");
+            account.setValid(true);
+        }
+
         int maxChunks = Integer.parseInt(getJson("NB_CONNECT_PER_DOWNLOAD"));
         int maxOverallConnections = Integer.parseInt(getJson("NB_CONNECT_PER_SERVER"));
         int calculatedMaxDls = maxOverallConnections / maxChunks;
