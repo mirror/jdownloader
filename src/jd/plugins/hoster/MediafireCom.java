@@ -669,9 +669,9 @@ public class MediafireCom extends PluginForHost {
                     } catch (Throwable e) {
                     }
                 }
+                handleNonAPIErrors(downloadLink, br);
                 if (url == null) {
                     // TODO: This errorhandling is missing for premium users!
-                    handleNonAPIErrors(downloadLink);
                     captchaCorrect = false;
                     Form form = br.getFormbyProperty("name", "form_captcha");
                     if (br.getRegex("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
@@ -818,6 +818,7 @@ public class MediafireCom extends PluginForHost {
             String url = dlURL;
             boolean passwordprotected = false;
             boolean useAPI = false;
+            // the below if statement is always false by the above: useAPI = false
             if (url == null && useAPI) {
                 this.fileID = getID(downloadLink);
                 this.br.postPageRaw("http://www.mediafire.com/basicapi/premiumapi.php", "premium_key=" + MediafireCom.CONFIGURATION_KEYS.get(account) + "&files=" + this.fileID);
@@ -860,6 +861,7 @@ public class MediafireCom extends PluginForHost {
                 this.fileID = getID(downloadLink);
                 br.setFollowRedirects(false);
                 br.getPage("http://www.mediafire.com/?" + fileID);
+                handleNonAPIErrors(downloadLink, br);
                 if ((br.containsHTML("Enter Password") && br.containsHTML("display:block;\">This file is"))) {
                     this.handlePremiumPassword(downloadLink, account);
                     return;
@@ -871,6 +873,7 @@ public class MediafireCom extends PluginForHost {
             this.br.setFollowRedirects(true);
             this.dl = jd.plugins.BrowserAdapter.openDownload(this.br, downloadLink, url, true, 0);
             if (!this.dl.getConnection().isContentDisposition()) {
+                handleNonAPIErrors(downloadLink, this.br);
                 logger.info("Error (4)");
                 logger.info(dl.getConnection() + "");
                 this.br.followConnection();
@@ -1093,13 +1096,37 @@ public class MediafireCom extends PluginForHost {
         return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
-    private void handleNonAPIErrors(final DownloadLink dl) throws PluginException {
-        if (br.getURL().contains("mediafire.com/error.php?errno=382")) {
+    private void handleNonAPIErrors(final DownloadLink dl, Browser imported) throws PluginException, IOException {
+        // imported browser affects this.br so lets make a new browser just for error checking.
+        Browser eBr = new Browser();
+        // catch, and prevent a null imported browser
+        if (imported == null) {
+            imported = this.br.cloneBrowser();
+        }
+        if (imported != null) {
+            eBr = imported.cloneBrowser();
+        } else {
+            // prob not required...
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // Some errors are only provided if isFollowingRedirects==true. As this isn't always the case throughout the plugin, lets grab the
+        // redirect page so we can use .containsHTML
+        if (!eBr.isFollowingRedirects()) {
+            if (eBr.getRedirectLocation() != null) {
+                eBr.getPage(eBr.getRedirectLocation());
+            }
+        }
+
+        // error checking below!
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=388.+")) {
+            // 388 = identified as copyrighted work
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
             dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
-        if (br.containsHTML("class=\"error_msg_title\">Permission Denied") || br.getURL().contains("mediafire.com/error.php?errno=388")) throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, host says 'Permission Denied', pls contact the mediafire.com support!");
+        if (eBr.containsHTML("class=\"error\\-title\">Temporarily Unavailable</p>")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file is temporarily unavailable!", 30 * 60 * 1000l);
     }
 
     @Override
