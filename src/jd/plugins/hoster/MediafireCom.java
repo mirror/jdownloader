@@ -1048,7 +1048,8 @@ public class MediafireCom extends PluginForHost {
             return AvailableStatus.TRUE;
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
-        downloadLink.setName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
+        // stable has issues with utf-8 filenames provided from Content-Disposition, even when customcharset is used..
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getXML("filename", apiBR.toString())));
         downloadLink.setAvailable(true);
         return AvailableStatus.TRUE;
     }
