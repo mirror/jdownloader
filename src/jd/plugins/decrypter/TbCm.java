@@ -438,17 +438,17 @@ public class TbCm extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("youtube.com");
         boolean fast = cfg.getBooleanProperty("FAST_CHECK2", false);
         final boolean best = cfg.getBooleanProperty("ALLOW_BEST2", false);
-        final AtomicBoolean mp3 = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_MP3", true));
-        final AtomicBoolean flv = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_FLV", true));
+        final AtomicBoolean mp3 = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_MP3_V2", true));
+        final AtomicBoolean flv = new AtomicBoolean(cfg.getBooleanProperty("ALLOW_FLV_V2", true));
         /* http://en.wikipedia.org/wiki/YouTube */
         final HashMap<Integer, Object[]> ytVideo = new HashMap<Integer, Object[]>() {
             private static final long serialVersionUID = -3028718522449785181L;
 
             {
 
-                boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4", true);
-                boolean webm = cfg.getBooleanProperty("ALLOW_WEBM", true);
-                boolean threegp = cfg.getBooleanProperty("ALLOW_3GP", true);
+                boolean mp4 = cfg.getBooleanProperty("ALLOW_MP4_V2", true);
+                boolean webm = cfg.getBooleanProperty("ALLOW_WEBM_V2", true);
+                boolean threegp = cfg.getBooleanProperty("ALLOW_3GP_V2", true);
                 if (mp3.get() == false && mp4 == false && webm == false && flv.get() == false && threegp == false) {
                     /* if no container is selected, then everything is enabled */
                     mp3.set(true);
@@ -458,12 +458,12 @@ public class TbCm extends PluginForDecrypt {
                     threegp = true;
                 }
 
-                boolean q240p = cfg.getBooleanProperty("ALLOW_240P", true);
-                boolean q360p = cfg.getBooleanProperty("ALLOW_360P", true);
-                boolean q480p = cfg.getBooleanProperty("ALLOW_480P", true);
-                boolean q720p = cfg.getBooleanProperty("ALLOW_720P", true);
-                boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", true);
-                boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL", true);
+                boolean q240p = cfg.getBooleanProperty("ALLOW_240P_V2", true);
+                boolean q360p = cfg.getBooleanProperty("ALLOW_360P_V2", true);
+                boolean q480p = cfg.getBooleanProperty("ALLOW_480P_V2", true);
+                boolean q720p = cfg.getBooleanProperty("ALLOW_720P_V2", true);
+                boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P_V2", true);
+                boolean qOriginal = cfg.getBooleanProperty("ALLOW_ORIGINAL_V2", true);
                 if (q240p == false && q360p == false && q480p == false && q720p == false && q1080p == false && qOriginal == false) {
                     q240p = true;
                     q480p = true;
@@ -587,7 +587,7 @@ public class TbCm extends PluginForDecrypt {
                     if (uploadername != null) YT_FILENAME = uploadername + " - " + YT_FILENAME;
                 }
 
-                if (cfg.getBooleanProperty("IDINFILENAME", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
+                if (cfg.getBooleanProperty("IDINFILENAME_V2", false) && !cfg.getBooleanProperty("ISASFILENAME", false)) {
                     String id = new Regex(url, "v=([a-z\\-_A-Z0-9]+)").getMatch(0);
                     if (id != null) YT_FILENAME = YT_FILENAME + " - " + id.toUpperCase(Locale.ENGLISH);
                 }
