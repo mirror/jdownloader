@@ -10,4 +10,5 @@ literally_control_url=控制網址
 literally_router=UPNP 路由器
 literally_service_type=伺服器類型
 malformedurl=控制網址無法使用。嘗試 UPNP 自動設定。
+servicetype_help=輸入服務類型 (例如：urn:schemas-upnp-org:service:ConnectionManager:1)
 try_reconnect=嘗試 UPNP 重新連線：%s1
