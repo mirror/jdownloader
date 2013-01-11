@@ -119,7 +119,10 @@ public class EgoFilesCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!\nGot response:\n" + dl.getConnection().getResponseMessage());
             br.followConnection();
             logger.info("browser code: " + br.getRequest().getHtmlCode());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
+            if (br.containsHTML("Download link has expired. Try again or go premium to download it faster."))
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Download link has expired");
+            else
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "getConnection returns html");
         }
         dl.startDownload();
     }
@@ -200,8 +203,16 @@ public class EgoFilesCom extends PluginForHost {
         if (dllink == null) dllink = br.getRegex("<h2 class=\"grey\\-brake\">[ \t\n\r\f]+<a href=\"(http://[^<>\"]*?)\"").getMatch(0);
 
         if (dllink == null) {
-            logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
+            // based on the logs only, need real Premium to check
+            final String limitMsg = br.getRegex("<h2 class=\"grey\\-brake\">(.*?)</h2>").getMatch(0);
+            if (limitMsg != null) {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\nMessage: " + limitMsg);
+                UserIO.getInstance().requestMessageDialog(0, "EgoFiles.com Premium Error", limitMsg + "\r\nPremium disabled, will continue downloads as Free User");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            } else {
+                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!\n" + br.getRequest().getHtmlCode());
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "final dllink is null");
+            }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
         if (dl.getConnection().getContentType().contains("html")) {
