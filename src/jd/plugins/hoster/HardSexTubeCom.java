@@ -61,7 +61,6 @@ public class HardSexTubeCom extends PluginForHost {
                 filename = br.getRegex("<div id=\\'tabdetails\\' style=\" \">.*?<h1>(.*?)</h1>").getMatch(0);
             }
         }
-        br.getPage("http://vidii.hardsextube.com/video/" + new Regex(downloadLink.getDownloadURL(), "(\\d+)/$").getMatch(0) + "/confige.xml");
         final String name = br.getRegex("Name=\"FLVServer\" Value=\"(http://[^<>\"]*?)\"").getMatch(0);
         final String path = br.getRegex("Name=\"FLV\" Value=\"(/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || name == null || path == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -69,6 +69,7 @@ public class SunPornoCom extends PluginForHost {
         if (filename == null) filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         DLLINK = br.getRegex("addVariable\\(\\'file\\', \\'(http://.*?)\\'\\)").getMatch(0);
         if (DLLINK == null) DLLINK = br.getRegex("\\'(http://\\d+\\.\\d+\\.\\d+\\.\\d+/v/[a-z0-9]+/.*?)\\'").getMatch(0);
+        if (DLLINK == null) DLLINK = br.getRegex("\"(http://vstreamcdn\\.com/[^<>\"]*?)\"").getMatch(0);
         if (filename == null || DLLINK == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         DLLINK = Encoding.htmlDecode(DLLINK);
         filename = filename.trim();

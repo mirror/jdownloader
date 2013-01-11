@@ -273,7 +273,7 @@ public class MegasharesCom extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    public void handlePremium(final DownloadLink downloadLink, final Account account) throws Exception {
         requestFileInformation(downloadLink);
         synchronized (LOCK) {
             login(account);
@@ -307,6 +307,7 @@ public class MegasharesCom extends PluginForHost {
             correctDownloadLink(downloadLink);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (!this.dl.startDownload()) {
             try {
                 if (dl.externalDownloadStop()) return;

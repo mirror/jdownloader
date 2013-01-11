@@ -139,13 +139,13 @@ public class UlozTo extends PluginForHost {
         if (downloadLink.getDownloadURL().matches(QUICKDOWNLOAD)) throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLYUSERTEXT);
         if (br.containsHTML(PASSWORDPROTECTED)) throw new PluginException(LinkStatus.ERROR_FATAL, "This link is password protected");
         String dllink = null;
-        Browser br2 = br.cloneBrowser();
+        final Browser br2 = br.cloneBrowser();
         br2.setFollowRedirects(true);
         boolean failed = true;
         for (int i = 0; i <= 5; i++) {
             String captchaUrl = br.getRegex(Pattern.compile("\"(http://img\\.uloz\\.to/captcha/\\d+\\.png)\"")).getMatch(0);
             Form captchaForm = br.getFormbyProperty("id", "frm-downloadDialog-freeDownloadForm");
-            final String captchaKey = br.getRegex("id=\"captcha_key\" name=\"captcha_key\" value=\"([^<>\"]*?)\"").getMatch(0);
+            final String captchaKey = br.getRegex("name=\"captcha_key\" value=\"([^<>\"]*?)\"").getMatch(0);
             if (captchaForm == null || captchaUrl == null || captchaKey == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
 
             String key = null, code = null, ts = null, sign = null, cid = null;

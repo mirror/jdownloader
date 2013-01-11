@@ -76,9 +76,21 @@ public class OneFichierCom extends PluginForHost {
         br.setCustomCharset("utf-8");
         br.getPage(link.getDownloadURL() + "?e=1");
         if (br.containsHTML(">The requested file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Software error:<") || br.toString().equals("wait")) {
-            link.getLinkStatus().setStatusText("Cannot check availibility because a limit has been reached!");
+        if (br.containsHTML(">Le fichier demandé n\\'existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML(">Software error:<")) {
+            link.getLinkStatus().setStatusText("Cannot check availibility because of a server error!");
             return AvailableStatus.UNCHECKABLE;
+        }
+        if (br.toString().equals("wait")) {
+            br.getPage(link.getDownloadURL());
+            final String siteFilename = br.getRegex(">Nom du fichier :</th><td>([^<>\"]*?)</td>").getMatch(0);
+            String siteFilesize = br.getRegex("<th>Taille :</th><td>([^<>\"]*?)</td>").getMatch(0);
+            if (siteFilename == null || siteFilesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            link.setName(Encoding.htmlDecode(siteFilename));
+            siteFilesize = siteFilesize.replace("Mo", "MB");
+            siteFilesize = siteFilesize.replace("Go", "GB");
+            link.setDownloadSize(SizeFormatter.getSize(siteFilesize));
+            return AvailableStatus.TRUE;
         }
         if (br.containsHTML("password")) {
             pwProtected = true;

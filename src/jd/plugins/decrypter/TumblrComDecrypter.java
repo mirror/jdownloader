@@ -114,6 +114,12 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 return decryptedLinks;
             }
+            externID = br.getRegex("\\\\x3csource src=\\\\x22(http://[^<>\"]*?)\\\\x22").getMatch(0);
+            if (externID != null) {
+                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
+                decryptedLinks.add(dl);
+                return decryptedLinks;
+            }
             // Try to find the biggest picture
             for (int i = 1000; i >= 10; i--) {
                 externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/tumblr_[a-z0-9]+_" + i + "\\.jpg)\"").getMatch(0);
