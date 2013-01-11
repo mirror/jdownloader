@@ -30,14 +30,14 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 18484 $", interfaceVersion = 2, names = { "replik.pl" }, urls = { "http://replik\\.pl/fg/(.*)/" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "replik.pl" }, urls = { "http://replik\\.pl/(.*)" }, flags = { 0 })
 public class ReplikPl extends PluginForHost {
 
     private static Object        LOCK             = new Object();
     private static final String  MAINPAGE         = "http://replik.pl/";
     private static final String  USERTEXT         = "Only downloadable for registered users!";
     private static AtomicInteger maxFree          = new AtomicInteger(2);
-    private static AtomicInteger maxChunksForFree = new AtomicInteger(2);
+    private static AtomicInteger maxChunksForFree = new AtomicInteger(4);
 
     public ReplikPl(final PluginWrapper wrapper) {
         super(wrapper);
@@ -100,6 +100,7 @@ public class ReplikPl extends PluginForHost {
         br.getPage(link.getDownloadURL());
         // Link offline
         if (br.containsHTML("Element nie może zostać wyświetlony")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Brak dostępu do strony")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Brak dostępu do strony!"); }
 
         final String fileName = br.getRegex("<h1 id=\"file_title\">[ \t\n\r\f]+<span>(.*?)</span>").getMatch(0);
         final String fileSize = br.getRegex("<td>Rozmiar:&nbsp;</td>[ \t\n\r\f]+<td>[ \t\n\r\f]+<strong>[ \t\n\r\f]+(.*?)[ \t\n\r\f]+</strong>[ \t\n\r\f]+</td>").getMatch(0);
