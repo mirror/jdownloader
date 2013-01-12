@@ -988,3 +988,6 @@ jd/plugins/hoster/BuckShareCom.class
 jd/plugins/hoster/TerabitTo.class
 jd/plugins/hoster/GlumboUploadsCom.class
 jd/plugins/decrypter/GlumboUploadsComFolder.class
+jd/plugins/hoster/FourUpMe.class
+jd/plugins/decrypter/MassMirrorCom.class
+jd/plugins/hoster/TurboUploadCom.class

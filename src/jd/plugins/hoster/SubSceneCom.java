@@ -46,7 +46,7 @@ public class SubSceneCom extends PluginForHost {
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>An error occurred while processing your request|>Server Error)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if ((br.containsHTML("<li class=\"deleted\">")) && (!br.containsHTML("mac"))) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filename = br.getRegex("<div class=\"details\">[\t\n\r ]+<h1>([^<>\"]*?)<a target=\"").getMatch(0);
+        String filename = br.getRegex("<title>([^<>\"]*?)\\- Subscene</title>").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".zip");
         return AvailableStatus.TRUE;
@@ -55,11 +55,11 @@ public class SubSceneCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        final String mac = br.getRegex("name=\"mac\" id=\"mac\" value=\"([^<>\"]*?)\"").getMatch(0);
-        if (mac == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dllink = br.getRegex("\"(/subtitle/download\\?mac=[^<>\"]*?)\"").getMatch(0);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         // Resume and chunks disabled, not needed for such small files & can't
         // test
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://subscene.com/subtitle/download", "mac=" + mac, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, "http://subscene.com" + dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

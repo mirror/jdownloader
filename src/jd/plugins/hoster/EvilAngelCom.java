@@ -54,6 +54,10 @@ public class EvilAngelCom extends PluginForHost {
     private static final String FILMLINK = "http://(www\\.)?members\\.evilangel.com/en/[A-Za-z0-9\\-_]+/film/\\d+";
     private String              DLLINK   = null;
 
+    /**
+     * NOTE: While making the plugin, the testaccount was banned temporarily and we didn't get new password/username from the user->Plugin
+     * isn't 100% done yet! http://svn.jdownloader.org/issues/6793
+     */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
