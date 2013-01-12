@@ -91,20 +91,31 @@ public class Rlnks extends PluginForDecrypt {
             progress.setRange(0);
 
             /* use cnl2 button if available */
-            if (br.containsHTML("cnl2.swf")) {
-                final String flashVars = br.getRegex("flashVars\" value=\"(.*?)\"").getMatch(0);
-                if (flashVars != null) {
-                    final Browser cnlbr = new Browser();
-                    cnlbr.setConnectTimeout(5000);
-                    cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
+            String cnlUrl = "http://127\\.0\\.0\\.1:9666/flash/addcrypted2";
+            if (br.containsHTML(cnlUrl)) {
+                final Browser cnlbr = br.cloneBrowser();
+
+                Form cnlForm = null;
+                for (Form f : cnlbr.getForms()) {
+                    if (f.containsHTML(cnlUrl)) cnlForm = f;
+                }
+                if (cnlForm != null) {
+                    String jk = cnlbr.getRegex("<input type=\"hidden\" name=\"jk\" value=\"([^\"]+)\"").getMatch(0);
+                    cnlForm.remove("jk");
+                    cnlForm.put("jk", (jk != null ? jk.replaceAll("\\+", "%2B") : "nothing"));
                     try {
-                        cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
-                        if (cnlbr.containsHTML("success")) { return decryptedLinks; }
-                    } catch (final Throwable e) {
+                        cnlbr.submitForm(cnlForm);
+                        if (cnlbr.containsHTML("success")) return decryptedLinks;
+                        if (cnlbr.containsHTML("^failed")) {
+                            logger.warning("relink.us: CNL2 Postrequest was failed! Please upload now a logfile, contact our support and add this loglink to your bugreport!");
+                            logger.warning("relink.us: CNL2 Message: " + cnlbr.toString());
+                        }
+                    } catch (Throwable e) {
+                        logger.info("relink.us: ExternInterface(CNL2) is disabled!");
                     }
                 }
             }
-            if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) { return null; }
+            if (!br.containsHTML("download.php\\?id=[a-f0-9]+") && !br.containsHTML("getFile\\(")) return null;
             if (!decryptContainer(page, parameter, "dlc", decryptedLinks)) {
                 if (!decryptContainer(page, parameter, "ccf", decryptedLinks)) {
                     decryptContainer(page, parameter, "rsdf", decryptedLinks);
@@ -119,7 +130,7 @@ public class Rlnks extends PluginForDecrypt {
                     decryptLinks(decryptedLinks, param);
                 }
             }
-            if (decryptedLinks.isEmpty() && br.containsHTML("swf/cnl2.swf")) { throw new DecrypterException("CNL2 only, open this link in Browser"); }
+            if (decryptedLinks.isEmpty() && br.containsHTML(cnlUrl)) throw new DecrypterException("CNL2 only, open this link in Browser");
             return decryptedLinks;
         }
     }
@@ -205,9 +216,8 @@ public class Rlnks extends PluginForDecrypt {
                 }
                 ALLFORM = br.getFormbyProperty("name", "form");
                 ALLFORM = ALLFORM == null && b ? br.getForm(0) : ALLFORM;
-                if (ALLFORM != null) {
-                    continue;
-                }
+                if (ALLFORM != null && ALLFORM.getAction().startsWith("http://www.relink.us/container_password.php")) continue;
+                ALLFORM = null;
                 break;
             }
         }

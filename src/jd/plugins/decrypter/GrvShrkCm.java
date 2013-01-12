@@ -151,7 +151,14 @@ public class GrvShrkCm extends PluginForDecrypt {
                 method = "popular";
             }
             String parameterMethod = method;
-            method = method.equals("artist") ? method + "GetSongsEx" : method + "GetSongs";
+
+            if (method.equals("artist")) {
+                method += "GetAllSongsEx";
+            } else if (method.equals("album")) {
+                method += "GetAllSongs";
+            } else {
+                method += "GetSongs";
+            }
             String t1 = null, rawPostTrue;
 
             String rawPost = getPostParameterString(parameter, method);

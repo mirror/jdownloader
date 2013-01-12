@@ -33,7 +33,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/permalink/\\d\\.\\d+", "http://(www\\.)?sporza\\.be/permalink/\\d\\.\\d+" }, flags = { 0, 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "deredactie.be", "sporza.be" }, urls = { "http://(www\\.)?deredactie\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws([^/]+)?/mediatheek.+)", "http://(www\\.)?sporza\\.be/(permalink/\\d\\.\\d+|cm/vrtnieuws([^/]+)?/mediatheek.+)" }, flags = { 0, 0 })
 public class DeredactieBe extends PluginForHost {
 
     public DeredactieBe(PluginWrapper wrapper) {
@@ -46,6 +46,12 @@ public class DeredactieBe extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://deredactie.be/";
+    }
+
+    @Override
+    public void correctDownloadLink(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/cm/vrtnieuws/mediatheek/[^/]+/[^/]+/[^/]+/([0-9\\.]+)(.+)?", "/permalink/$1"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("/cm/vrtnieuws([^/]+)?/mediatheek(\\w+)?/([0-9\\.]+)(.+)?", "/permalink/$3"));
     }
 
     @Override

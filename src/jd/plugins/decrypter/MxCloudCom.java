@@ -86,7 +86,7 @@ public class MxCloudCom extends PluginForDecrypt {
         final String playResource = parameter.replace(MAINPAGE, "");
         String playerUrl = br.getRegex("playerUrl:\'(.*?)\'").getMatch(0);
         playerUrl = playerUrl == null ? MAINPAGE + "/player/" : MAINPAGE + playerUrl;
-        br.setCookie(MAINPAGE, "play-resource", Encoding.urlEncode(playResource));
+        br.setCookie(MAINPAGE, "play-uri", Encoding.urlEncode(playResource));
         br.getPage(playerUrl);
         String playInfoUrl = br.getRegex("playinfo: ?\'(.*?)\'").getMatch(0);
         final String playModuleSwfUrl = br.getRegex("playerModuleSwfUrl: ?\'(.*?)\'").getMatch(0);
