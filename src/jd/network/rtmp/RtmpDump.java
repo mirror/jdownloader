@@ -109,20 +109,11 @@ public class RtmpDump extends RTMPDownload {
         } else if (CrossSystem.isMac()) {
             RTMPDUMP = Application.getResource("tools/mac/rtmpdump/rtmpdump").getAbsolutePath();
         }
-        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) {
-            RTMPDUMP = null;
-        }
+        if (RTMPDUMP != null && !new File(RTMPDUMP).exists()) RTMPDUMP = null;
         if (RTMPDUMP == null && (CrossSystem.isLinux() || CrossSystem.isMac())) {
-            if (RTMPDUMP == null && (RTMPDUMP = "/usr/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
-                RTMPDUMP = null;
-            }
-            if (RTMPDUMP == null && (RTMPDUMP = "/usr/local/bin/rtmpdump") != null && !new File(RTMPDUMP).exists()) {
-                RTMPDUMP = null;
-            }
+            if (!new File("/usr/bin/rtmpdump").exists() || !new File("/usr/local/bin/rtmpdump").exists()) RTMPDUMP = null;
         }
-        if (RTMPDUMP == null) {
-            RTMPDUMP = "";
-        }
+        if (RTMPDUMP == null) RTMPDUMP = "";
         return RTMPDUMP.length() > 0;
     }
 
@@ -147,7 +138,7 @@ public class RtmpDump extends RTMPDownload {
      * @return The version number of the RTMPDump executable
      */
     public synchronized String getRtmpDumpVersion() throws Exception {
-        if (RTMPVERSION != null) { return RTMPVERSION; }
+        if (RTMPVERSION != null) return RTMPVERSION;
         if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "RTMPDump not found!");
         final String arg = " -h";
         NativeProcess verNP = null;
@@ -240,7 +231,7 @@ public class RtmpDump extends RTMPDownload {
     }
 
     public boolean start(final RtmpUrlConnection rtmpConnection) throws Exception {
-        if (!findRtmpDump()) { throw new PluginException(LinkStatus.ERROR_FATAL, "Error " + RTMPDUMP + " not found!"); }
+        if (!findRtmpDump()) throw new PluginException(LinkStatus.ERROR_FATAL, "Error rtmpdump not found!");
 
         boolean debug = config.isRtmpDumpDebugModeEnabled();
         if (debug) rtmpConnection.setVerbose();
