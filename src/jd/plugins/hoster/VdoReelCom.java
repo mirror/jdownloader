@@ -24,8 +24,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.crypt.Base64;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -47,7 +51,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision: 19338 $", interfaceVersion = 2, names = { "vdoreel.com" }, urls = { "DISABLEDhttps?://(www\\.)?vdoreel\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
+@HostPlugin(revision = "$Revision: 19338 $", interfaceVersion = 2, names = { "vdoreel.com" }, urls = { "https?://(www\\.)?vdoreel\\.com/(vidembed\\-)?[a-z0-9]{12}" }, flags = { 0 })
 public class VdoReelCom extends PluginForHost {
 
     private String               correctedBR                  = "";
@@ -187,7 +191,6 @@ public class VdoReelCom extends PluginForHost {
         doFree(downloadLink, true, 0, "freelink");
     }
 
-    @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         br.setFollowRedirects(false);
         String passCode = null;
@@ -202,12 +205,17 @@ public class VdoReelCom extends PluginForHost {
             brv.getPage(COOKIE_HOST + "/xml2/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".xml");
             // String a = brv.getRegex("CDATA\\[([^\\]]+)").getMatch(0);
             String a = brv.getRegex("CDATA\\[([^\\]]+={0,2})").getMatch(0);
-            if (a == null) {
+            if (a == null || a.length() < 10) {
                 logger.warning("Can't find 'a'");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // decypher stuff here.
-
+            try {
+                Cipher c = Cipher.getInstance("DES/ECB/PKCS5Padding");
+                SecretKeySpec keySpec = new SecretKeySpec("N%66=]H6".getBytes(), "DES");
+                c.init(Cipher.DECRYPT_MODE, keySpec);
+                dllink = new String(c.doFinal(Base64.decode(a.substring(0, a.length() - 6))));
+            } catch (Throwable e) {
+            }
         }
         // Fourth, continue like normal.
         if (dllink == null) {
