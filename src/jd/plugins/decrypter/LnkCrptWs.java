@@ -1369,7 +1369,13 @@ public class LnkCrptWs extends PluginForDecrypt {
         // CNL
         if (isCnlAvailable) {
             final Browser cnlbr = br.cloneBrowser();
-            cnlbr.getRequest().setHtmlCode(decryptedJS.replaceAll("\\\\", ""));
+            decryptedJS = decryptedJS.replaceAll("\\\\", "");
+
+            /* Workaround for the stable and parseInputFields method */
+            String jk = new Regex(decryptedJS, "(?i)NAME=\"jk\" VALUE=\"([^\"]+)\">").getMatch(0);
+            decryptedJS = decryptedJS.replaceAll("(?i)NAME=\"jk\" VALUE=\"[^\"]+\">", "NAME=\"jk\" VALUE=\"" + Encoding.urlEncode(jk) + "\">");
+
+            cnlbr.getRequest().setHtmlCode(decryptedJS);
             Form cnlForm = cnlbr.getForm(0);
             if (cnlForm != null) {
                 try {
