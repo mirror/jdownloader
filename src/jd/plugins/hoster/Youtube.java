@@ -49,6 +49,7 @@ public class Youtube extends PluginForHost {
 
     private static Object       lock                    = new Object();
     private boolean             prem                    = false;
+    private static final String ISVIDEOANDPLAYLIST      = "ISVIDEOANDPLAYLIST";
     private static final String IDASFILENAME            = "ISASFILENAME";
     private static final String IDINFILENAME            = "IDINFILENAME_V2";
     private static final String USEUPLOADERINNAME       = "USEUPLOADERINNAME";
@@ -410,6 +411,8 @@ public class Youtube extends PluginForHost {
     }
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), ISVIDEOANDPLAYLIST, new String[] { JDL.L("plugins.host.youtube.isvideoandplaylist.video", "Only add video"), JDL.L("plugins.host.youtube.isvideoandplaylist.playlist", "Add playlist and video"), JDL.L("plugins.host.youtube.isvideoandplaylist.ask", "Ask everytime") }, JDL.L("plugins.host.youtube.isvideoandplaylist", "If a video also contains a playlist?")).setDefaultValue(2));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_CHECK, JDL.L("plugins.hoster.youtube.fast", "Fast LinkCheck?")).setDefaultValue(false));
         ConfigEntry id = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), IDASFILENAME, JDL.L("plugins.hoster.youtube.idasfilename", "Use Video-ID as filename?")).setDefaultValue(false);
         getConfig().addEntry(id);

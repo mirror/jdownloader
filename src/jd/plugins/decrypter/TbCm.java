@@ -36,6 +36,7 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.gui.UserIO;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
@@ -365,8 +366,29 @@ public class TbCm extends PluginForDecrypt {
 
         boolean multiple_videos = true;
 
+        // Check if link contains a viedo and a playlist
+        int choice = -1;
+        if (parameter.contains("list=") && parameter.contains("watch?v=")) {
+            choice = getPluginConfig().getIntegerProperty("ISVIDEOANDPLAYLIST", 2);
+            // choice == 0 -> Only video
+            // choice == 1 -> Playlist
+            // choice == 2 -> Ask
+
+            if (choice == 2) {
+                int ret = UserIO.getInstance().requestConfirmDialog(0, parameter, JDL.L("plugins.host.youtube.isvideoandplaylist.question.message", "The Youtube link contains a video an a playlist. What do you want do download?"), null, JDL.L("plugins.host.youtube.isvideoandplaylist.question.onlyvideo", "Only video"), JDL.L("plugins.host.youtube.isvideoandplaylist.question.playlist", "Complete playlist"));
+                // Video selected
+                if (ret == 2) choice = 0;
+                // Playlist selected
+                if (ret == 4) choice = 1;
+            }
+
+            if (choice == 0) {
+                parameter = new Regex(parameter, "(http://www\\.youtube\\.com/watch\\?v=[a-z\\-_A-Z0-9]+).*?").getMatch(0);
+            }
+        }
+
         // Parse playlist
-        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || (parameter.contains("list=") && parameter.contains("watch?v="))) {
+        if (parameter.contains("view_play_list") || parameter.contains("playlist") || parameter.contains("g/c/") || parameter.contains("grid/user/") || choice == 1) {
             if (parameter.contains("g/c/") || parameter.contains("grid/user/")) {
                 String id = new Regex(parameter, "g/c/([a-z\\-_A-Z0-9]+)").getMatch(0);
                 if (id == null) {
