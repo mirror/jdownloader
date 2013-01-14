@@ -63,6 +63,7 @@ public class VideoSlasherCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
+        br.postPage(br.getURL(), "foo=bar&confirm=Close+Ad+and+Watch+as+Free+User");
         final String playlist = br.getRegex("\\'(/playlist/[a-z0-9]+)\\'").getMatch(0);
         if (playlist == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         br.getPage("http://www.videoslasher.com" + playlist);

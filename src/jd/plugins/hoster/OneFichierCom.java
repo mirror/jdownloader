@@ -17,6 +17,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
@@ -59,12 +60,71 @@ public class OneFichierCom extends PluginForHost {
         setConfigElements();
     }
 
-    public void correctDownloadLink(DownloadLink link) {
+    public void correctDownloadLink(final DownloadLink link) {
         // Remove everything after the domain
         if (!link.getDownloadURL().endsWith("/")) {
             Regex idhostandName = new Regex(link.getDownloadURL(), "https?://(.*?)\\.(.*?)(/|$)");
-            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1) + "/");
+            link.setUrlDownload("http://" + idhostandName.getMatch(0) + "." + idhostandName.getMatch(1));
+        } else {
+            String addedLink = link.getDownloadURL().replace("https://", "http://");
+            if (addedLink.endsWith("/")) addedLink = addedLink.substring(0, addedLink.length() - 1);
+            link.setUrlDownload(addedLink);
         }
+    }
+
+    @Override
+    public boolean checkLinks(final DownloadLink[] urls) {
+        if (urls == null || urls.length == 0) { return false; }
+        try {
+            final Browser br = new Browser();
+            br.getHeaders().put("User-Agent", "");
+            br.getHeaders().put("Accept", "");
+            br.getHeaders().put("Accept-Language", "");
+            br.setCookiesExclusive(true);
+            final StringBuilder sb = new StringBuilder();
+            final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            int index = 0;
+            while (true) {
+                links.clear();
+                while (true) {
+                    /* we test 100 links at once */
+                    if (index == urls.length || links.size() > 100) {
+                        break;
+                    }
+                    links.add(urls[index]);
+                    index++;
+                }
+                sb.delete(0, sb.capacity());
+                for (final DownloadLink dl : links) {
+                    correctDownloadLink(dl);
+                    sb.append("links[]=");
+                    sb.append(Encoding.urlEncode(dl.getDownloadURL()));
+                    sb.append("&");
+                }
+                br.postPageRaw("http://1fichier.com/check_links.pl", sb.toString());
+                for (final DownloadLink dllink : links) {
+                    final String addedLink = dllink.getDownloadURL();
+                    if (br.containsHTML(addedLink + ";;;NOT FOUND")) {
+                        dllink.setAvailable(false);
+                    } else {
+                        final String[][] linkInfo = br.getRegex(dllink.getDownloadURL() + ";([^;]+);(\\d+)").getMatches();
+                        if (linkInfo.length != 1) {
+                            logger.warning("Linkchecker for 1fichier.com is broken!");
+                            return false;
+                        }
+                        dllink.setAvailable(true);
+                        dllink.setFinalFileName(Encoding.htmlDecode(linkInfo[0][0]));
+                        dllink.setDownloadSize(SizeFormatter.getSize(linkInfo[0][1]));
+                    }
+                }
+                if (index == urls.length) {
+                    break;
+                }
+            }
+        } catch (final Exception e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -74,9 +134,8 @@ public class OneFichierCom extends PluginForHost {
         prepareBrowser(br);
         br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
-        br.getPage(link.getDownloadURL() + "?e=1");
-        if (br.containsHTML(">The requested file has been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML(">Le fichier demandé n\\'existe pas")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.postPage("http://1fichier.com/check_links.pl", "links[]=" + Encoding.urlEncode(link.getDownloadURL()));
+        if (br.containsHTML(";;;NOT FOUND")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.containsHTML(">Software error:<")) {
             link.getLinkStatus().setStatusText("Cannot check availibility because of a server error!");
             return AvailableStatus.UNCHECKABLE;
@@ -97,7 +156,7 @@ public class OneFichierCom extends PluginForHost {
             link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.onefichiercom.passwordprotected", "This link is password protected"));
             return AvailableStatus.UNCHECKABLE;
         }
-        final String[][] linkInfo = br.getRegex("https?://[^;]+;([^;]+);([0-9]+);(\\d+)").getMatches();
+        final String[][] linkInfo = br.getRegex("http://[^;]+;([^;]+);(\\d+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
             logger.warning("Available Status broken for link");
             return null;
@@ -112,11 +171,12 @@ public class OneFichierCom extends PluginForHost {
             link.setDownloadSize(size = SizeFormatter.getSize(filesize));
             if (size > 0) link.setProperty("VERIFIEDFILESIZE", size);
         }
-        if ("1".equalsIgnoreCase(linkInfo[0][2])) {
-            link.setProperty("HOTLINK", true);
-        } else {
-            link.setProperty("HOTLINK", Property.NULL);
-        }
+        // Not available in new API
+        // if ("1".equalsIgnoreCase(linkInfo[0][2])) {
+        // link.setProperty("HOTLINK", true);
+        // } else {
+        // link.setProperty("HOTLINK", Property.NULL);
+        // }
 
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         return AvailableStatus.TRUE;

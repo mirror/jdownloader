@@ -561,6 +561,7 @@ public class NovaFileCom extends PluginForHost {
         account.setValid(true);
         String availabletraffic = new Regex(correctedBR, ">Traffic Available:</td>[\r\n\t ]+<td>([\\-\\d\\.]+ (MB|GB))</td>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
+            if (availabletraffic.contains("-")) availabletraffic = "0";
             ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
         } else {
             ai.setUnlimitedTraffic();
@@ -586,7 +587,7 @@ public class NovaFileCom extends PluginForHost {
                 expire = expire.replaceAll("(<b>|</b>)", "");
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", null));
                 try {
-                    maxPrem.set(20);
+                    maxPrem.set(1);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
