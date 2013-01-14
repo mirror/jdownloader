@@ -487,7 +487,7 @@ public class MediafireCom extends PluginForHost {
     private static AtomicInteger                             maxPrem               = new AtomicInteger(1);
     private static final String                              PRIVATEFOLDERUSERTEXT = "This is a private folder. Re-Add this link while your account is active to make it work!";
     private String                                           SESSIONTOKEN          = null;
-    private String                                           ERRORCODE             = null;
+    private String                                           errorCode             = null;
     /**
      * Map to cache the configuration keys
      */
@@ -1032,6 +1032,7 @@ public class MediafireCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.br.setFollowRedirects(false);
         br.setCustomCharset("utf-8");
+        System.out.println(1);
         downloadLink.setProperty("type", Property.NULL);
         if (downloadLink.getBooleanProperty("offline")) return AvailableStatus.FALSE;
         final String fid = getFID(downloadLink);
@@ -1046,9 +1047,16 @@ public class MediafireCom extends PluginForHost {
             getSessionToken(apiBR, aa);
         }
         apiRequest(apiBR, "http://www.mediafire.com/api/file/get_info.php", "?quick_key=" + fid);
-        if ("114".equals(ERRORCODE)) {
+        if ("114".equals(errorCode)) {
             downloadLink.setProperty("privatefile", true);
             return AvailableStatus.TRUE;
+        }
+
+        if ("110".equals(errorCode)) {
+            // <response><action>file/get_info</action><message>Unknown or Invalid
+            // QuickKey</message><error>110</error><result>Error</result><current_api_version>2.15</current_api_version></response>
+
+            return AvailableStatus.FALSE;
         }
         downloadLink.setDownloadSize(SizeFormatter.getSize(getXML("size", apiBR.toString() + "b")));
         // stable has issues with utf-8 filenames provided from Content-Disposition, even when customcharset is used..
@@ -1066,7 +1074,7 @@ public class MediafireCom extends PluginForHost {
             br.getPage(url + data);
         else
             br.getPage(url + data + "&session_token=" + SESSIONTOKEN);
-        ERRORCODE = getXML("error", br.toString());
+        errorCode = getXML("error", br.toString());
     }
 
     private void getSessionToken(final Browser apiBR, final Account aa) throws IOException {
@@ -1093,6 +1101,9 @@ public class MediafireCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink downloadLink) {
+        // http://www.mediafire.com/file/dyvzdsdsasdg1y4d/myfile format
+        String id = new Regex(downloadLink.getDownloadURL(), "file/([a-z0-9]+)/").getMatch(0);
+        if (id != null) return id;
         return new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0);
     }
 
