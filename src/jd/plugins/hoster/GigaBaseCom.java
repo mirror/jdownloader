@@ -59,11 +59,21 @@ public class GigaBaseCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("href=\"/getfile/[^\"<>]*?(/free\\?step=[^\"<>]*?)&referer=").getMatch(0);
             dllink = downloadLink.getDownloadURL() + dllink;
+
+            /* workaround for old stable bug */
+            dllink = dllink.replaceAll("\\/\\/", "/");
+            dllink = dllink.replaceAll("http:\\/", "http://");
+
             br.getPage(dllink);
             // some coutries (Poland, Germany) are redirected by one more page with possibility of SMS-payment
             dllink = br.getRegex("id=\"noThanxDiv\"><a href=\"(/getfile/[^\"<>]*?/link\\?step=[^\"<>]*?)&referer=\"").getMatch(0);
             if (dllink != null) {
                 dllink = downloadLink.getDownloadURL() + dllink;
+
+                /* workaround for old stable bug */
+                dllink = dllink.replaceAll("\\/\\/", "/");
+                dllink = dllink.replaceAll("http:\\/", "http://");
+
                 br.getPage(dllink);
             }
             dllink = br.getRegex("\"(http://st\\d+\\.gigabase\\.com/dfile/[^\"<>]+)").getMatch(0);
