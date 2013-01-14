@@ -24,8 +24,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -35,19 +33,21 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "youku.com" }, urls = { "http://v\\.youku.com/v_show/id_.*?\\.html" }, flags = { 0 })
 public class YkCm extends PluginForDecrypt {
 
-    private double                      SEED  = 0;
-    private int                         PARTS = 0;
+    private double                      SEED    = 0;
+    private int                         PARTS   = 0;
     private String[]                    streamTypes;
     private HashMap<String, String>     fileDesc;
     private HashMap<String, String>     streamFileId;
     private HashMap<String, String>     streamSizes;
     private HashMap<String, String[][]> videoParts;
+    private String                      videoId = null;
 
     public YkCm(final PluginWrapper wrapper) {
         super(wrapper);
@@ -84,23 +84,13 @@ public class YkCm extends PluginForDecrypt {
         return SEED / 65536;
     }
 
-    private String decodeUnicode(final String s) {
-        final Pattern p = Pattern.compile("\\\\u([0-9a-fA-F]{4})");
-        String res = s;
-        final Matcher m = p.matcher(res);
-        while (m.find()) {
-            res = res.replaceAll("\\" + m.group(0), Character.toString((char) Integer.parseInt(m.group(1), 16)));
-        }
-        return res;
-    }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.getPage(parameter);
 
-        final String videoId = br.getRegex("var videoId2= \\'(.*?)\\'").getMatch(0);
+        videoId = br.getRegex("var videoId2= \\'(.*?)\\'").getMatch(0);
         if (videoId == null) { return null; }
         // get Playlist
         final Date date = new Date();
@@ -129,7 +119,6 @@ public class YkCm extends PluginForDecrypt {
             if (fileName == null || fileSize == null) {
                 continue;
             }
-            fileName = decodeUnicode(fileName);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fileName + "_" + sType.toUpperCase());
             SEED = Double.parseDouble(fileDesc.get("seed"));
@@ -182,7 +171,7 @@ public class YkCm extends PluginForDecrypt {
         final String st = new Regex(jsonString, "\"streamtypes\":\\[(.*?)\\]").getMatch(0);
         final String se = new Regex(jsonString, "\"segs\":\\{(.*?)\\},\"streamsizes").getMatch(0);
         final String seed = new Regex(jsonString, "\"seed\":(\\d+)").getMatch(0);
-        final String title = new Regex(jsonString, "\"title\":\"(.*?)\"").getMatch(0);
+        final String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\"").getMatch(0);
 
         if (sfi != null && ss != null && st != null && se != null && seed != null && title != null) {
 
@@ -192,7 +181,7 @@ public class YkCm extends PluginForDecrypt {
 
             fileDesc = new HashMap<String, String>();
             fileDesc.put("seed", seed);
-            fileDesc.put("title", title);
+            fileDesc.put("title", unescape(title));
 
             streamTypes = new Regex(st, "\"(.*?)\"").getColumn(0);
 
@@ -233,6 +222,12 @@ public class YkCm extends PluginForDecrypt {
             return true;
         }
         return false;
+    }
+
+    private String unescape(final String s) {
+        /* we have to make sure the youtube plugin is loaded */
+        JDUtilities.getPluginForHost("youtube.com");
+        return jd.plugins.hoster.Youtube.unescape(s);
     }
 
 }

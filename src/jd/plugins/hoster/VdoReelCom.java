@@ -65,14 +65,14 @@ public class VdoReelCom extends PluginForHost {
     private static final boolean VIDEOHOSTER                  = true;
     private static final boolean SUPPORTSHTTPS                = false;
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(1);
     // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
 
     // DEV NOTES
     // XfileSharingProBasic Version 2.6.0.7
     // mods: videohoster section..
-    // non account: chunks * maxdls
+    // non account: 2 * 1
     // free account: chunks * maxdls
     // premium account: chunks * maxdls
     // protocol: no https
@@ -188,7 +188,7 @@ public class VdoReelCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        doFree(downloadLink, true, 0, "freelink");
+        doFree(downloadLink, true, -2, "freelink");
     }
 
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
@@ -203,7 +203,6 @@ public class VdoReelCom extends PluginForHost {
             // jwplayer - http://vdoreel.com/test/ExorcomPlayer.swf
             final Browser brv = br.cloneBrowser();
             brv.getPage(COOKIE_HOST + "/xml2/" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0) + ".xml");
-            // String a = brv.getRegex("CDATA\\[([^\\]]+)").getMatch(0);
             String a = brv.getRegex("CDATA\\[([^\\]]+={0,2})").getMatch(0);
             if (a == null || a.length() < 10) {
                 logger.warning("Can't find 'a'");

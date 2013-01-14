@@ -1118,9 +1118,18 @@ public class MediafireCom extends PluginForHost {
         }
 
         // error checking below!
-        if (eBr.getURL().matches(".+/error\\.php\\?errno=388.+")) {
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=388.+?")) {
             // 388 = identified as copyrighted work
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (eBr.getURL().matches(".+/error\\.php\\?errno=394.+?")) {
+            /*
+             * The file you attempted to download is an archive that is encrypted or password protected. MediaFire does not support
+             * unlimited downloads of encrypted or password protected archives and the limit for this file has been reached. MediaFire
+             * understands the need for users to transfer encrypted and secured files, we offer this service starting at $1.50 per month. We
+             * have informed the owner that sharing of this file has been limited and how they can resolve this issue.
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Download not possible, retriction based on uploaders account");
         }
         if (eBr.getURL().contains("mediafire.com/error.php?errno=382")) {
             dl.getLinkStatus().setStatusText("File Belongs to Suspended Account.");
