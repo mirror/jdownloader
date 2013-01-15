@@ -18,6 +18,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.controlling.filter.FilterRule;
 import org.jdownloader.controlling.packagizer.PackagizerController;
 
@@ -47,6 +48,8 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private CrawledLinkModifier       modifyHandler        = null;
     private BrokenCrawlerHandler      brokenCrawlerHandler = null;
     private boolean                   autoConfirmEnabled   = false;
+
+    private transient UniqueAlltimeID uniqueID             = new UniqueAlltimeID();
 
     public boolean isAutoConfirmEnabled() {
         return autoConfirmEnabled;
@@ -394,6 +397,11 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
      */
     public BrokenCrawlerHandler getBrokenCrawlerHandler() {
         return brokenCrawlerHandler;
+    }
+
+    public UniqueAlltimeID getUniqueID() {
+        if (dlLink != null) return dlLink.getUniqueID();
+        return uniqueID;
     }
 
     /**

@@ -49,7 +49,7 @@ public class CrawledLinkStorable implements Storable {
     public long getUID() {
         DownloadLink dll = link.getDownloadLink();
         if (dll != null) return dll.getUniqueID().getID();
-        return -1;
+        return link.getUniqueID().getID();
     }
 
     public void setUID(long id) {
@@ -81,7 +81,10 @@ public class CrawledLinkStorable implements Storable {
 
     public CrawledLink _getCrawledLink() {
         DownloadLink dll = link.getDownloadLink();
-        if (dll != null) dll.getUniqueID().setID(UID);
+        if (dll != null) {
+            dll.getUniqueID().setID(UID);
+        }
+        link.getUniqueID().setID(UID);
         return link;
     }
 
