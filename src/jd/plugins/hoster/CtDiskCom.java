@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -39,7 +41,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?(ctdisk|400gb)\\.com/file/\\d+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "ctdisk.com" }, urls = { "http://(www\\.)?(ctdisk|400gb|pipipan)\\.com/file/\\d+" }, flags = { 2 })
 public class CtDiskCom extends PluginForHost {
 
     private static final String DLLINKREGEX2 = ">电信限速下载</a>[\t\n\r ]+<a href=\"(http://.*?)\"";
@@ -52,12 +54,20 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("ctdisk.com/", "400gb.com/"));
+        link.setUrlDownload(link.getDownloadURL().replaceAll("(ctdisk|pipipan)\\.com/", "400gb.com/"));
+    }
+
+    public void prepBrowser(final Browser br) {
+        // define custom browser headers and language settings.
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
+        br.setConnectTimeout(120000);
+        br.setReadTimeout(120000);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        prepBrowser(br);
         br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("(>提示：本文件已到期。成为VIP后才能下载所有文件|<title>成为VIP即可下载全部视频和文件</title>|>注意：高级VIP可下载所有文件|color=\"#FF0000\" face=\"黑体\">点击立即成为VIP</font>|>Woops\\!找不到文件 \\- 免费高速下载|>对不起，这个文件已到期或被删除。您可以注册城通会)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -72,7 +82,26 @@ public class CtDiskCom extends PluginForHost {
     }
 
     public void doFree(DownloadLink downloadLink, boolean premium, int maxchunks) throws Exception, PluginException {
+        String uid = new Regex(downloadLink.getDownloadURL(), "file/(\\d+)").getMatch(0);
+        if (uid == null) {
+            logger.warning("Could not find file UID");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String dllink = checkDirectLink(downloadLink, "directlink");
+        Form free = br.getFormbyProperty("name", "user_form");
+        if (free != null && dllink == null) {
+            String captcha = br.getRegex("((https?://[^/]+)?/randcodeV2\\.php\\?fid=" + uid + "&rand=)").getMatch(0);
+            if (captcha != null) {
+                captcha = captcha + new Random().nextInt(999999999);
+                String code = getCaptchaCode(captcha, downloadLink);
+                free.put("randcode", code);
+            } else {
+                logger.warning("Couldn't find the captcha image");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.submitForm(free);
+        }
+
         if (dllink == null) {
             dllink = br.getRegex("<a class=\"local\" href=\"([^\"]+)\" id=\"local_free\">").getMatch(0);
             if (dllink == null) {
@@ -184,6 +213,7 @@ public class CtDiskCom extends PluginForHost {
         synchronized (LOCK) {
             // Load cookies
             br.setCookiesExclusive(true);
+            prepBrowser(br);
             final Object ret = account.getProperty("cookies", null);
             boolean acmatch = Encoding.urlEncode(account.getUser()).equals(account.getStringProperty("name", Encoding.urlEncode(account.getUser())));
             if (acmatch) acmatch = Encoding.urlEncode(account.getPass()).equals(account.getStringProperty("pass", Encoding.urlEncode(account.getPass())));

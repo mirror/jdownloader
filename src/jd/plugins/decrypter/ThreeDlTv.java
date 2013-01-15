@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2009  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -73,12 +73,12 @@ public class ThreeDlTv extends PluginForDecrypt {
                 return decryptedLinks;
             }
             for (int i = 0; i <= 3; i++) {
-                final String captchaLink = br.getRegex("(\"|\\')(/index\\.php\\?action=captcha\\&id=\\d+\\&sig=[a-z0-9]+)(\"|\\')").getMatch(1);
+                final String captchaLink = br.getRegex("\"((https?://(\\w+\\.)?3dl\\.tv)?/index\\.php\\?action=captcha\\&token=[^\"\\']+)").getMatch(0);
                 if (captchaLink == null) {
                     logger.warning("Decrypter broken for link: " + parameter);
                     return null;
                 }
-                final String code = getCaptchaCode(currentdomain + captchaLink, param);
+                final String code = getCaptchaCode(captchaLink, param);
                 br.postPage(parameter, "answer=" + code);
                 if (br.containsHTML(">Die von dir eingegebene Anwort ist nicht g")) continue;
                 break;

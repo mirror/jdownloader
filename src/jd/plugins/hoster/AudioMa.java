@@ -28,9 +28,9 @@ import jd.plugins.PluginForHost;
 
 
 @HostPlugin(revision = "$Revision: 18859 $", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
-public class AudioMaCom extends PluginForHost {
+public class AudioMa extends PluginForHost {
 
-    public AudioMaCom(PluginWrapper wrapper) {
+    public AudioMa(PluginWrapper wrapper) {
         super(wrapper);
     }
 
