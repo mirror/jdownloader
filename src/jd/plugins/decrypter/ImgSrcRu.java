@@ -162,7 +162,7 @@ public class ImgSrcRu extends PluginForDecrypt {
                         fp.add(dlink);
                         try {
                             distribute(dlink);
-                        } catch (final Exception e) {
+                        } catch (final Throwable e) {
                             // Not available in old Stable
                         }
                     }

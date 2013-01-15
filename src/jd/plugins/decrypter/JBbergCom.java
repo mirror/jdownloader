@@ -96,7 +96,7 @@ public class JBbergCom extends PluginForDecrypt {
             dl._setFilePackage(fp);
             try {
                 distribute(dl);
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
                 // Not available in old Stable 0.9851
             }
             decryptedLinks.add(dl);

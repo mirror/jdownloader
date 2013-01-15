@@ -226,7 +226,7 @@ public class NCryptIn extends PluginForDecrypt {
                     final DownloadLink dl = createDownloadlink(finallink);
                     try {
                         distribute(dl);
-                    } catch (final Exception e) {
+                    } catch (final Throwable e) {
                         // No available in old 0.851 Stable
                     }
                     decryptedLinks.add(dl);

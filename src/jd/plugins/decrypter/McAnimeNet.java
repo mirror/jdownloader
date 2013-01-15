@@ -68,7 +68,7 @@ public class McAnimeNet extends PluginForDecrypt {
             dl.setAvailable(true);
             try {
                 distribute(dl);
-            } catch (final Exception e) {
+            } catch (final Throwable e) {
                 // Not available in 0.9.851 Stable
             }
             decryptedLinks.add(dl);

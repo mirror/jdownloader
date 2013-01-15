@@ -75,7 +75,7 @@ public class EHentaiOrg extends PluginForDecrypt {
                 decryptedLinks.add(dl);
                 try {
                     distribute(dl);
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     // No available in old Stable
                 }
                 sleep(2 * 1000, param);

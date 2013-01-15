@@ -73,7 +73,7 @@ public class ApunkaBollyWoodNet extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 try {
                     distribute(dl);
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     // Not available in old Stable
                 }
                 decryptedLinks.add(dl);

@@ -79,7 +79,7 @@ public class NowFolderNet extends PluginForDecrypt {
                 fp.add(dl);
                 try {
                     distribute(dl);
-                } catch (final Exception e) {
+                } catch (final Throwable e) {
                     // Not available in old 0.9.581 Stable
                 }
                 decryptedLinks.add(dl);
