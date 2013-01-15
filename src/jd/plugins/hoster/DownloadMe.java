@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -36,22 +37,21 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "downmasters.com" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
-public class DownMastersCom extends PluginForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "download.me" }, urls = { "REGEX_NOT_POSSIBLE_RANDOM-asdfasdfsadfsdgfd32423" }, flags = { 2 })
+public class DownloadMe extends PluginForHost {
 
     private static HashMap<Account, HashMap<String, Long>> hostUnavailableMap = new HashMap<Account, HashMap<String, Long>>();
     private static AtomicInteger                           maxPrem            = new AtomicInteger(20);
     private static final String                            NOCHUNKS           = "NOCHUNKS";
 
-    public DownMastersCom(PluginWrapper wrapper) {
+    public DownloadMe(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(3 * 1000l);
-        this.enablePremium("http://downmasters.com/");
+        this.enablePremium("http://www.download.me/");
     }
 
     @Override
     public String getAGBLink() {
-        return "http://downmasters.com/tos.php";
+        return "http://www.download.me/terms";
     }
 
     @Override
@@ -60,7 +60,7 @@ public class DownMastersCom extends PluginForHost {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(Account account) throws Exception {
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ac = new AccountInfo();
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);
@@ -69,22 +69,30 @@ public class DownMastersCom extends PluginForHost {
         String hosts[] = null;
         ac.setProperty("multiHostSupport", Property.NULL);
         // check if account is valid
-        br.postPage("http://downmasters.com/accountapi.php", "username=" + username + "&password=" + pass);
+        br.getPage("https://www.download.me/dlapi/user?mail=" + username + "&passwd=" + pass);
+        final String userCookie = br.getCookie("http://download.me/", "user");
         // "Invalid login" / "Banned" / "Valid login"
-        if ("1".equals(getJson("status"))) {
+        final String status = getJson("status");
+        if ("0".equals(status)) {
+            ac.setStatus("Username or password wrong!");
+            account.setValid(false);
+            return ac;
+        } else if ("1".equals(status)) {
             account.setValid(true);
-        } else if (!"Premium".equals(getJson("type"))) {
-            ac.setStatus("This is no premium account!");
+        } else if (userCookie == null) {
+            // unknown error 1
+            ac.setStatus("Cookie error, unknown account status");
             account.setValid(false);
             return ac;
         } else {
-            // unknown error
+            // unknown error 2
             ac.setStatus("Unknown account status");
             account.setValid(false);
             return ac;
         }
-        final String expire = getJson("expire");
-        ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd-MM-yyyy", Locale.ENGLISH));
+        account.setProperty("usercookie", userCookie);
+        final String expire = getJson("premuntil");
+        ac.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
         try {
             account.setMaxSimultanDownloads(maxPrem.get());
             account.setConcurrentUsePossible(true);
@@ -94,23 +102,20 @@ public class DownMastersCom extends PluginForHost {
         ac.setStatus("Premium User");
         ac.setUnlimitedTraffic();
         // now let's get a list of all supported hosts:
-        br.getPage("http://downmasters.com/hostapi.php");
-        hosts = br.getRegex("\"hosturl\":\"([^<>\"]*?)\"").getColumn(0);
+        br.getPage("https://www.download.me/dlapi/hosters");
+        final String hostArrayText = br.getRegex("\"data\":\\[(.*?)\\]").getMatch(0);
+        if (hostArrayText != null) hosts = new Regex(hostArrayText, "\"([^<>\"/]*?)\"").getColumn(0);
         ArrayList<String> supportedHosts = new ArrayList<String>();
         for (String host : hosts) {
             if (!host.isEmpty()) {
-                if (host.equals("uploaded.net")) {
-                    supportedHosts.add("uploaded.to");
-                } else {
-                    supportedHosts.add(host.trim());
-                }
+                supportedHosts.add(host.trim());
             }
         }
 
         if (supportedHosts.size() == 0) {
-            ac.setStatus("Account valid: 0 Hosts via downmasters.com available");
+            ac.setStatus("Account valid: 0 Hosts via download.me available");
         } else {
-            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via downmasters.com available");
+            ac.setStatus("Account valid: " + supportedHosts.size() + " Hosts via download.me available");
             ac.setProperty("multiHostSupport", supportedHosts);
         }
         return ac;
@@ -133,66 +138,41 @@ public class DownMastersCom extends PluginForHost {
     }
 
     /** no override to keep plugin compatible to old stable */
-    public void handleMultiHost(DownloadLink link, Account acc) throws Exception {
-        String user = Encoding.urlEncode(acc.getUser());
-        String pw = Encoding.urlEncode(acc.getPass());
+    public void handleMultiHost(final DownloadLink link, final Account acc) throws Exception {
+        br.setCookie("http://download.me/", "user", acc.getStringProperty("usercookie", null));
         String url = Encoding.urlEncode(link.getDownloadURL());
         int maxChunks = 0;
-        if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(DownloadMe.NOCHUNKS, false)) {
             maxChunks = 1;
         }
-        showMessage(link, "Phase 1/2: Generating link");
-        br.postPage("http://downmasters.com/api.php", "username=" + user + "&password=" + pw + "&link=" + url);
+        showMessage(link, "Phase 1/3: Generating id");
+        br.getPage("https://www.download.me/dlapi/file?url=" + url);
+        final String id = getJson("id");
+        if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+
+        showMessage(link, "Phase 2/3: Generating downloadlink");
+        br.getPage("https://www.download.me/dlapi/file?id=503947");
 
         final int status = Integer.parseInt(getJson("status"));
         switch (status) {
         case 0:
             logger.info("Multi-Host API reports that link is offline!");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        case 2:
-            logger.info("Bandwidth limit for the host is reached, retrying later...");
-            tempUnavailableHoster(acc, link, 2 * 60 * 60 * 1000l);
-        case 3:
-            logger.info("Host is down, retrying later...");
-            tempUnavailableHoster(acc, link, 10 * 60 * 1000l);
-        case 4:
-            logger.info("This is no premium account!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        case 5:
-            logger.info("This account is banned!");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        case 6:
-            // This should never happen
-            logger.info("Host not supported");
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Host not supported by multi-host, please contact our support!");
-        case 7:
-            logger.info("Link invalid");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 1 * 60 * 1000l);
-        case 8:
-            // Actually I don't know what this error means but if it happens, it happens for all links of a host->Disable them!
-            logger.info("Dedicated server detected, retrying later...");
-            tempUnavailableHoster(acc, link, 30 * 60 * 1000l);
         }
 
-        if (br.containsHTML("No htmlCode read")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error, please report this to the downmasters.com support!"); }
-
-        String dllink = getJson("dmlink");
+        String dllink = getJson("dlurl");
         if (dllink == null) {
-            logger.warning("Unhandled download error on downmasters.com:");
+            logger.warning("Unhandled download error on download.me:");
             logger.warning(br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = dllink.replace("\\", "");
-        showMessage(link, "Phase 2/2: Download begins!");
+        showMessage(link, "Phase 3/3: Download begins!");
 
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
-            if (br.containsHTML("Could not download partial file, please report this message to the adminstrator")) {
-                logger.info(br.toString());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
-            }
-            logger.info("Unhandled download error on downmasters.com: " + br.toString());
+            logger.info("Unhandled download error on download.me: " + br.toString());
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!this.dl.startDownload()) {
@@ -204,8 +184,8 @@ public class DownMastersCom extends PluginForHost {
             if (errormessage != null && (errormessage.startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || errormessage.equals("Unerwarteter Mehrfachverbindungsfehlernull"))) {
                 {
                     /* unknown error, we disable multiple chunks */
-                    if (link.getBooleanProperty(DownMastersCom.NOCHUNKS, false) == false) {
-                        link.setProperty(DownMastersCom.NOCHUNKS, Boolean.valueOf(true));
+                    if (link.getBooleanProperty(DownloadMe.NOCHUNKS, false) == false) {
+                        link.setProperty(DownloadMe.NOCHUNKS, Boolean.valueOf(true));
                         throw new PluginException(LinkStatus.ERROR_RETRY);
                     }
                 }

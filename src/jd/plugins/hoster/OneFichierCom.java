@@ -158,7 +158,7 @@ public class OneFichierCom extends PluginForHost {
         }
         final String[][] linkInfo = br.getRegex("http://[^;]+;([^;]+);(\\d+)").getMatches();
         if (linkInfo == null || linkInfo.length == 0) {
-            logger.warning("Available Status broken for link");
+            logger.warning("Available Status broken for link: " + link.getDownloadURL());
             return null;
         }
         String filename = linkInfo[0][0];
