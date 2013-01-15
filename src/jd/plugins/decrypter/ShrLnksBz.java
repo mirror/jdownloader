@@ -77,13 +77,17 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Pragma", null);
         br.getHeaders().put("User-Agent", ua);
         br.getHeaders().put("Accept", "*/*");
-        br.getHeaders().put("Accept-Language", "en-us");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.getHeaders().put("Accept-Encoding", "gzip,deflate");
         br.getHeaders().put("Accept-Charset", "utf-8,*");
         br.getHeaders().put("Keep-Alive", "115");
         br.getHeaders().put("Connection", "keep-alive");
 
         br.getPage(parameter);
+        if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
+            logger.info("Link offline: " + parameter);
+            return decryptedLinks;
+        }
         /* Very important! */
         final String gif[] = br.getRegex("/template/images/([^\"]+)\\.gif").getColumn(-1);
         if (gif != null) {
@@ -107,8 +111,7 @@ public class ShrLnksBz extends PluginForDecrypt {
         if (br.getRedirectLocation() != null) {
             br.getPage(br.getRedirectLocation());
         }
-
-        if (br.containsHTML("Der Inhalt konnte nicht gefunden werden")) {
+        if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;
         }
@@ -122,14 +125,13 @@ public class ShrLnksBz extends PluginForDecrypt {
                     return null;
                 }
                 pwform.setAction(parameter);
-                // First try the stored password, if that doesn't work, ask the
-                // user to enter it
-                if (latestPassword == null) {
+                // First try the stored password, if that doesn't work, ask the user to enter it
+                if (latestPassword == null || latestPassword.equals("")) {
                     latestPassword = Plugin.getUserInput("Enter password for: " + parameter, param);
                 }
                 pwform.put("password", latestPassword);
                 br.submitForm(pwform);
-                if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
+                if (br.containsHTML("This folder requires a password\\.")) {
                     getPluginConfig().setProperty("PASSWORD", null);
                     getPluginConfig().save();
                     continue;
@@ -140,7 +142,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 }
                 break;
             }
-            if (br.containsHTML("Das eingegebene Passwort ist falsch")) {
+            if (br.containsHTML("This folder requires a password\\.")) {
                 getPluginConfig().setProperty("PASSWORD", null);
                 getPluginConfig().save();
                 throw new DecrypterException(DecrypterException.PASSWORD);
@@ -180,7 +182,7 @@ public class ShrLnksBz extends PluginForDecrypt {
                 if (nexturl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE + nexturl);
-                if (br.containsHTML("Die getroffene Auswahl war falsch")) {
+                if (br.containsHTML("> Your choice was wrong\\.<")) {
                     br.getPage(parameter);
                     if (i == max && auto) {
                         i = 0;
@@ -190,15 +192,17 @@ public class ShrLnksBz extends PluginForDecrypt {
                 }
                 break;
             }
-            if (br.containsHTML("Die getroffene Auswahl war falsch")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
+            if (br.containsHTML("> Your choice was wrong\\.<")) { throw new DecrypterException(DecrypterException.CAPTCHA); }
         }
         /* use cnl2 button if available */
         if (br.containsHTML("/cnl2/")) {
             String flashVars = br.getRegex("swfobject.embedSWF\\(\"(.*?)\"").getMatch(0);
             if (flashVars != null) {
                 final Browser cnlbr = new Browser();
-                final String[] encVars = cnlbr.getPage(MAINPAGE + "get/cnl2/_" + flashVars).toString().split(";;");
-                if (encVars.length < 3) {
+                String test = cnlbr.getPage(MAINPAGE + "get/cnl2/_" + flashVars);
+                String[] encVars = null;
+                if (test != null) encVars = test.split("\\;\\;");
+                if (encVars == null || encVars.length < 3) {
                     logger.warning("CNL code broken!");
                 } else {
                     final String jk = new StringBuffer(Encoding.Base64Decode(encVars[1])).reverse().toString();
@@ -212,7 +216,11 @@ public class ShrLnksBz extends PluginForDecrypt {
                     cnlbr.getHeaders().put("jd.randomNumber", System.getProperty("jd.randomNumber"));
                     try {
                         cnlbr.postPage("http://127.0.0.1:9666/flash/addcrypted2", flashVars);
-                        if (cnlbr.containsHTML("success")) { return decryptedLinks; }
+                        if (cnlbr.containsHTML("success")) {
+                            return decryptedLinks;
+                        } else {
+                            logger.warning("Click-N-Load failed!");
+                        }
                     } catch (final Throwable e) {
                     }
                 }
