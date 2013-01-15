@@ -82,9 +82,9 @@ public class CrawledLinkStorable implements Storable {
     public CrawledLink _getCrawledLink() {
         DownloadLink dll = link.getDownloadLink();
         if (dll != null) {
-            dll.getUniqueID().setID(UID);
+            if (UID != -1) dll.getUniqueID().setID(UID);
         }
-        link.getUniqueID().setID(UID);
+        if (UID != -1) link.getUniqueID().setID(UID);
         return link;
     }
 
