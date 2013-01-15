@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2013  JD-Team support@jdownloader.org
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
 //This program is distributed in the hope that it will be useful,
 //but WITHOUT ANY WARRANTY; without even the implied warranty of
 //MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
 
@@ -51,7 +51,9 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LnkCrptWs;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
@@ -64,34 +66,43 @@ public class OteUploadCom extends PluginForHost {
 
     private String               correctedBR                  = "";
     private static final String  PASSWORDTEXT                 = "<br><b>Passwor(d|t):</b> <input";
-    private final String         COOKIE_HOST                  = "http://oteupload.com";
+    private static final String  COOKIE_HOST                  = "https://www.oteupload.com";
     private static final String  MAINTENANCE                  = ">This server is in maintenance mode";
     private static final String  MAINTENANCEUSERTEXT          = JDL.L("hoster.xfilesharingprobasic.errors.undermaintenance", "This server is under Maintenance");
     private static final String  ALLWAIT_SHORT                = JDL.L("hoster.xfilesharingprobasic.errors.waitingfordownloads", "Waiting till new downloads can be started");
     private static final String  PREMIUMONLY1                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly1", "Max downloadable filesize for free users:");
     private static final String  PREMIUMONLY2                 = JDL.L("hoster.xfilesharingprobasic.errors.premiumonly2", "Only downloadable via premium or registered");
-    // note: can not be negative -x or 0 .:. [1-*]
+    private static final boolean VIDEOHOSTER                  = false;
+    private static final boolean SUPPORTSHTTPS                = true;
+    // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
     private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    // don't touch
+    // don't touch the following!
     private static AtomicInteger maxFree                      = new AtomicInteger(1);
+    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
+    private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
-    // XfileSharingProBasic Version 2.5.7.4
+    // XfileSharingProBasic Version 2.6.0.8
     // mods:
     // non account: 1 * 1
-    // free account: untested, set same as free
+    // free account: same as above, untested.
     // premium account: 20 * 20
-    // protocol: no https
-    // captchatype: null
-    // other: no redirects
+    // protocol: https
+    // captchatype: 4dignum
+    // other: site enforces https, but not for downloads, huge timeout issues due to server loads. sqldb becomes unresponsive
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
+        // link cleanup, but respect users protocol choosing.
+        if (SUPPORTSHTTPS) {
+            link.setUrlDownload(link.getDownloadURL().replaceFirst("http://", "https://"));
+        }
+        // strip video hosting url's to reduce possible duped links.
+        link.setUrlDownload(link.getDownloadURL().replace("/vidembed-", "/"));
+        // output the hostmask as we wish based on COOKIE_HOST url!
+        String desiredHost = new Regex(COOKIE_HOST, "https?://([^/]+)").getMatch(0);
+        String importedHost = new Regex(link.getDownloadURL(), "https?://([^/]+)").getMatch(0);
+        link.setUrlDownload(link.getDownloadURL().replaceAll(importedHost, desiredHost));
     }
 
     @Override
@@ -116,8 +127,10 @@ public class OteUploadCom extends PluginForHost {
 
     public void prepBrowser(final Browser br) {
         // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setCookie(COOKIE_HOST, "lang", "english");
+        br.setReadTimeout(2 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
     }
 
     @Override
@@ -128,7 +141,7 @@ public class OteUploadCom extends PluginForHost {
         br.setFollowRedirects(false);
         // they use images for the following errors, but still present within html comments.
         if (new Regex(correctedBR, "(No such file|>File Not Found<|>The file was removed by|Reason for deletion:\n|/images/404\\.png)").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (correctedBR.contains(MAINTENANCE)) {
+        if (new Regex(correctedBR, MAINTENANCE).matches()) {
             link.getLinkStatus().setStatusText(MAINTENANCEUSERTEXT);
             return AvailableStatus.TRUE;
         }
@@ -192,7 +205,7 @@ public class OteUploadCom extends PluginForHost {
             if (fileInfo[1] == null) {
                 fileInfo[1] = new Regex(correctedBR, "</font>[ ]+\\(([^<>\"\\'/]+)\\)(.*?)</font>").getMatch(0);
                 if (fileInfo[1] == null) {
-                    fileInfo[1] = new Regex(correctedBR, "([\\d\\.]+ ?(KB|MB|GB))").getMatch(0);
+                    fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
                 }
             }
         }
@@ -267,30 +280,48 @@ public class OteUploadCom extends PluginForHost {
         }
     }
 
+    @SuppressWarnings("unused")
     public void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        checkShowFreeDialog();
+        br.setFollowRedirects(false);
         String passCode = null;
         // First, bring up saved final links
         String dllink = checkDirectLink(downloadLink, directlinkproperty);
         // Second, check for streaming links on the first page
         if (dllink == null) dllink = getDllink();
-        // Third, continue like normal.
+        // Third, do they provide video hosting?
+        if (dllink == null && VIDEOHOSTER) {
+            final Browser brv = br.cloneBrowser();
+            brv.getPage("/vidembed-" + new Regex(downloadLink.getDownloadURL(), "([a-z0-9]+)$").getMatch(0));
+            dllink = brv.getRedirectLocation();
+        }
+        // Fourth, continue like normal.
         if (dllink == null) {
             checkErrors(downloadLink, false, passCode);
-            Form download1 = getFormByKey("op", "download1");
+            final Form download1 = getFormByKey("op", "download1");
             if (download1 != null) {
                 download1.remove("method_premium");
+                // stable is lame, issue finding input data fields correctly. eg. closes at ' quotation mark - remove when jd2 goes stable!
+                if (downloadLink.getName().contains("'")) {
+                    String fname = new Regex(br, "<input type=\"hidden\" name=\"fname\" value=\"([^\"]+)\">").getMatch(0);
+                    if (fname != null) {
+                        download1.put("fname", Encoding.urlEncode(fname));
+                    } else {
+                        logger.warning("Could not find 'fname'");
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                // end of backward compatibility
                 sendForm(download1);
                 checkErrors(downloadLink, false, passCode);
+                dllink = getDllink();
             }
-            dllink = getDllink();
         }
         if (dllink == null) {
             Form dlForm = br.getFormbyProperty("name", "F1");
             if (dlForm == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             // how many forms deep do you want to try.
-            int repeat = 3;
-            for (int i = 1; i <= repeat; i++) {
+            int repeat = 2;
+            for (int i = 0; i <= repeat; i++) {
                 dlForm.remove(null);
                 final long timeBefore = System.currentTimeMillis();
                 boolean password = false;
@@ -299,7 +330,7 @@ public class OteUploadCom extends PluginForHost {
                     password = true;
                     logger.info("The downloadlink seems to be password protected.");
                 }
-                // md5 can be on the subquent pages
+                // md5 can be on the subsequent pages
                 if (downloadLink.getMD5Hash() == null) {
                     String md5hash = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
                     if (md5hash != null) downloadLink.setMD5Hash(md5hash.trim());
@@ -308,16 +339,16 @@ public class OteUploadCom extends PluginForHost {
                 if (correctedBR.contains(";background:#ccc;text-align")) {
                     logger.info("Detected captcha method \"plaintext captchas\" for this host");
                     /** Captcha method by ManiacMansion */
-                    String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
+                    final String[][] letters = new Regex(br, "<span style=\\'position:absolute;padding\\-left:(\\d+)px;padding\\-top:\\d+px;\\'>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
+                    final SortedMap<Integer, String> capMap = new TreeMap<Integer, String>();
                     for (String[] letter : letters) {
                         capMap.put(Integer.parseInt(letter[0]), Encoding.htmlDecode(letter[1]));
                     }
-                    StringBuilder code = new StringBuilder();
+                    final StringBuilder code = new StringBuilder();
                     for (String value : capMap.values()) {
                         code.append(value);
                     }
@@ -325,7 +356,7 @@ public class OteUploadCom extends PluginForHost {
                     logger.info("Put captchacode " + code.toString() + " obtained by captcha metod \"plaintext captchas\" in the form.");
                 } else if (correctedBR.contains("/captchas/")) {
                     logger.info("Detected captcha method \"Standard captcha\" for this host");
-                    String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
+                    final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
                     String captchaurl = null;
                     if (sitelinks == null || sitelinks.length == 0) {
                         logger.warning("Standard captcha captchahandling broken!");
@@ -346,32 +377,40 @@ public class OteUploadCom extends PluginForHost {
                     logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 } else if (new Regex(correctedBR, "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
                     logger.info("Detected captcha method \"Re Captcha\" for this host");
-                    PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
-                    jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
-                    rc.setForm(dlForm);
-                    String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    final PluginForHost recplug = JDUtilities.getPluginForHost("DirectHTTP");
+                    final jd.plugins.hoster.DirectHTTP.Recaptcha rc = ((DirectHTTP) recplug).getReCaptcha(br);
+                    final String id = new Regex(correctedBR, "\\?k=([A-Za-z0-9%_\\+\\- ]+)\"").getMatch(0);
+                    if (id == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     rc.setId(id);
                     rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    String c = getCaptchaCode(cf, downloadLink);
-                    Form rcform = rc.getForm();
-                    rcform.put("recaptcha_challenge_field", rc.getChallenge());
-                    rcform.put("recaptcha_response_field", Encoding.urlEncode(c));
+                    final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                    final String c = getCaptchaCode(cf, downloadLink);
+                    dlForm.put("recaptcha_challenge_field", rc.getChallenge());
+                    dlForm.put("recaptcha_response_field", Encoding.urlEncode(c));
                     logger.info("Put captchacode " + c + " obtained by captcha metod \"Re Captcha\" in the form and submitted it.");
-                    dlForm = rc.getForm();
                     /** wait time is often skippable for reCaptcha handling */
                     skipWaittime = true;
+                } else if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    logger.info("Detected captcha method \"solvemedia\" for this host");
+                    final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("linkcrypt.ws");
+                    final jd.plugins.decrypter.LnkCrptWs.SolveMedia sm = ((LnkCrptWs) solveplug).getSolveMedia(br);
+                    final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    final String code = getCaptchaCode(cf, downloadLink);
+                    final String chid = sm.getChallenge(code);
+                    dlForm.put("adcopy_challenge", chid);
+                    dlForm.put("adcopy_response", "manual_challenge");
                 }
                 /* Captcha END */
                 if (password) passCode = handlePassword(passCode, dlForm, downloadLink);
                 if (!skipWaittime) waitTime(timeBefore, downloadLink);
                 sendForm(dlForm);
                 logger.info("Submitted DLForm");
-                checkErrors(downloadLink, true, passCode);
+
                 dllink = getDllink();
                 if (dllink == null && (!br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"") || i == repeat)) {
+                    checkErrors(downloadLink, true, passCode);
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    break;
                 } else if (dllink == null && br.containsHTML("<Form name=\"F1\" method=\"POST\" action=\"\"")) {
                     dlForm = br.getFormbyProperty("name", "F1");
                     continue;
@@ -380,9 +419,12 @@ public class OteUploadCom extends PluginForHost {
                 }
             }
         }
+        checkErrors(downloadLink, true, passCode);
+        if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         logger.info("Final downloadlink = " + dllink + " starting the download...");
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
         if (dl.getConnection().getContentType().contains("html")) {
+            if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
             correctBR();
@@ -430,28 +472,28 @@ public class OteUploadCom extends PluginForHost {
     /** Remove HTML code which could break the plugin */
     public void correctBR() throws NumberFormatException, PluginException {
         correctedBR = br.toString();
-        ArrayList<String> someStuff = new ArrayList<String>();
         ArrayList<String> regexStuff = new ArrayList<String>();
+
+        // remove custom rules first!!! As html can change because of generic cleanup rules.
+
+        // generic cleanup
         regexStuff.add("<\\!(\\-\\-.*?\\-\\-)>");
         regexStuff.add("(display: ?none;\">.*?</div>)");
         regexStuff.add("(visibility:hidden>.*?<)");
         for (String aRegex : regexStuff) {
-            String lolz[] = br.getRegex(aRegex).getColumn(0);
-            if (lolz != null) {
-                for (String dingdang : lolz) {
-                    someStuff.add(dingdang);
+            String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+            if (results != null) {
+                for (String result : results) {
+                    correctedBR = correctedBR.replace(result, "");
                 }
             }
-        }
-        for (String fun : someStuff) {
-            correctedBR = correctedBR.replace(fun, "");
         }
     }
 
     public String getDllink() {
         String dllink = br.getRedirectLocation();
         if (dllink == null) {
-            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://", "") + ")(:\\d{1,4})?/(files|d)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
+            dllink = new Regex(correctedBR, "(\"|\\')(https?://(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|([\\w\\-]+\\.)?" + COOKIE_HOST.replaceAll("https?://(www\\.)?", "") + ")(:\\d{1,4})?/(files|d|cgi\\-bin/dl\\.cgi)/(\\d+/)?[a-z0-9]+/[^<>\"/]*?)(\"|\\')").getMatch(1);
             if (dllink == null) {
                 final String cryptedScripts[] = new Regex(correctedBR, "p\\}\\((.*?)\\.split\\('\\|'\\)").getColumn(0);
                 if (cryptedScripts != null && cryptedScripts.length != 0) {
@@ -522,6 +564,7 @@ public class OteUploadCom extends PluginForHost {
         correctBR();
     }
 
+    @SuppressWarnings("unused")
     private void postPage(final String page, final String postdata) throws Exception {
         br.postPage(page, postdata);
         correctBR();
@@ -532,11 +575,9 @@ public class OteUploadCom extends PluginForHost {
         correctBR();
     }
 
-    private void waitTime(long timeBefore, DownloadLink downloadLink) throws PluginException {
+    private void waitTime(long timeBefore, final DownloadLink downloadLink) throws PluginException {
         int passedTime = (int) ((System.currentTimeMillis() - timeBefore) / 1000) - 1;
         /** Ticket Time */
-        // final String ttt = new Regex(correctedBR,
-        // "id=\"countdown_str\">[^<>\"]+<span id=\"[^<>\"]+\"( class=\"[^<>\"]+\")?>([\n ]+)?(\\d+)([\n ]+)?</span>").getMatch(2);
         final String ttt = new Regex(correctedBR, "id=\"countdown_str\">Please Wait.*?<span id=\".*?\" style=\"font-size:18px;\">(\\d+)</span>").getMatch(0);
         if (ttt != null) {
             int tt = Integer.parseInt(ttt);
@@ -546,8 +587,7 @@ public class OteUploadCom extends PluginForHost {
         }
     }
 
-    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key,
-    // String value)
+    // TODO: remove this when v2 becomes stable. use br.getFormbyKey(String key, String value)
     /**
      * Returns the first form that has a 'key' that equals 'value'.
      * 
@@ -571,14 +611,23 @@ public class OteUploadCom extends PluginForHost {
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
+        String oldName = downloadLink.getFinalFileName();
+        if (oldName == null) oldName = downloadLink.getName();
         final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-        if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
-            final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));
-            if (oldExtension != null)
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName().replace(oldExtension, newExtension));
+        String newExtension = null;
+        // some streaming sites do not provide proper file.extension within headers (Content-Disposition or the fail over getURL()).
+        if (serverFilename.contains(".")) {
+            newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
+        } else {
+            logger.info("HTTP headers don't contain filename.extension information");
+        }
+        if (newExtension != null && !oldName.endsWith(newExtension)) {
+            String oldExtension = null;
+            if (oldName.contains(".")) oldExtension = oldName.substring(oldName.lastIndexOf("."));
+            if (oldExtension != null && oldExtension.length() <= 5)
+                downloadLink.setFinalFileName(oldName.replace(oldExtension, newExtension));
             else
-                downloadLink.setFinalFileName(downloadLink.getFinalFileName() + newExtension);
+                downloadLink.setFinalFileName(oldName + newExtension);
         }
     }
 
@@ -647,19 +696,13 @@ public class OteUploadCom extends PluginForHost {
             logger.info("Only downloadable via premium");
             throw new PluginException(LinkStatus.ERROR_FATAL, PREMIUMONLY2);
         }
-        if (correctedBR.contains(MAINTENANCE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
+        if (new Regex(correctedBR, MAINTENANCE).matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, MAINTENANCEUSERTEXT, 2 * 60 * 60 * 1000l);
     }
 
     public void checkServerErrors() throws NumberFormatException, PluginException {
         if (new Regex(correctedBR, Pattern.compile("No file", Pattern.CASE_INSENSITIVE)).matches()) throw new PluginException(LinkStatus.ERROR_FATAL, "Server error");
-        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) {
-            logger.warning("Server says link offline, please recheck that!");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (new Regex(correctedBR, "(File Not Found|<h1>404 Not Found</h1>)").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 30 * 60 * 1000l);
     }
-
-    private static AtomicInteger maxPrem = new AtomicInteger(1);
-    private static Object        LOCK    = new Object();
 
     @Override
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
@@ -672,12 +715,24 @@ public class OteUploadCom extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) of [0-9\\.]+ (KB|MB|GB|TB)</b>").getMatches();
-        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        final String space[][] = new Regex(correctedBR, "<td>Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getMatches();
+        if ((space != null && space.length != 0) && (space[0][0] != null && space[0][1] != null)) {
+            // free users it's provided by default
+            ai.setUsedSpace(space[0][0] + " " + space[0][1]);
+        } else if (space != null && space.length != 0) {
+            // premium users the Mb value isn't provided for some reason...
+            ai.setUsedSpace(space[0][0] + "Mb");
+        }
         account.setValid(true);
-        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD><TD><b>([^<>\"\\']+)</b>").getMatch(0);
+        final String availabletraffic = new Regex(correctedBR, "Traffic available.*?:</TD></TR>[\r\n\t ]+<TR><TD><b>([^<>\"\\']+)</b>").getMatch(0);
         if (availabletraffic != null && !availabletraffic.contains("nlimited") && !availabletraffic.equalsIgnoreCase(" Mb")) {
-            ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            availabletraffic.trim();
+            // need to set 0 traffic left, as getSize returns a positive result, even when negative value supplied.
+            if (!availabletraffic.startsWith("-")) {
+                ai.setTrafficLeft(SizeFormatter.getSize(availabletraffic));
+            } else {
+                ai.setTrafficLeft(0);
+            }
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -690,6 +745,7 @@ public class OteUploadCom extends PluginForHost {
                 account.setMaxSimultanDownloads(maxPrem.get());
                 account.setConcurrentUsePossible(false);
             } catch (final Throwable e) {
+                // not available in old Stable 0.9.581
             }
         } else {
             final String expire = new Regex(correctedBR, "(\\d{1,2} (January|February|March|April|May|June|July|August|September|October|November|December) \\d{4})").getMatch(0);
@@ -700,10 +756,11 @@ public class OteUploadCom extends PluginForHost {
             } else {
                 ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
                 try {
-                    maxPrem.set(-1);
+                    maxPrem.set(20);
                     account.setMaxSimultanDownloads(maxPrem.get());
                     account.setConcurrentUsePossible(true);
                 } catch (final Throwable e) {
+                    // not available in old Stable 0.9.581
                 }
             }
             ai.setStatus("Premium User");
@@ -733,14 +790,16 @@ public class OteUploadCom extends PluginForHost {
                     }
                 }
                 br.setFollowRedirects(true);
-                getPage(COOKIE_HOST + "/login.html");
+                getPage(COOKIE_HOST.replace("http:", "https:") + "/login.html");
                 final Form loginform = br.getFormbyProperty("name", "FL");
                 if (loginform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 loginform.put("login", Encoding.urlEncode(account.getUser()));
                 loginform.put("password", Encoding.urlEncode(account.getPass()));
                 sendForm(loginform);
                 if (br.getCookie(COOKIE_HOST, "login") == null || br.getCookie(COOKIE_HOST, "xfss") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                getPage(COOKIE_HOST + "/?op=my_account");
+                if (!br.getURL().contains("/?op=my_account")) {
+                    getPage("/?op=my_account");
+                }
                 if (!new Regex(correctedBR, "(Premium(\\-| )Account expire|>Renew premium<)").matches()) {
                     account.setProperty("nopremium", true);
                 } else {
@@ -767,41 +826,24 @@ public class OteUploadCom extends PluginForHost {
         String passCode = null;
         requestFileInformation(downloadLink);
         login(account, false);
-        br.setFollowRedirects(false);
-        String dllink = null;
         if (account.getBooleanProperty("nopremium")) {
             requestFileInformation(downloadLink);
             doFree(downloadLink, true, 1, "freelink2");
         } else {
-            dllink = checkDirectLink(downloadLink, "premlink");
+            String dllink = checkDirectLink(downloadLink, "premlink");
+
             if (dllink == null) {
-                br.setFollowRedirects(true);
-                URLConnectionAdapter con = null;
-                try {
-                    /* enabled direct download handling */
-                    con = br.openGetConnection(downloadLink.getDownloadURL());
-                    if (!con.getContentType().contains("html")) {
-                        dllink = br.getURL();
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
+                br.setFollowRedirects(false);
+                getPage(downloadLink.getDownloadURL());
+                dllink = getDllink();
                 if (dllink == null) {
-                    getPage(downloadLink.getDownloadURL());
-                    br.setFollowRedirects(false);
+                    checkErrors(downloadLink, true, passCode);
+                    Form dlform = br.getFormbyProperty("name", "F1");
+                    if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
+                    sendForm(dlform);
                     dllink = getDllink();
-                    if (dllink == null) {
-                        checkErrors(downloadLink, true, passCode);
-                        Form dlform = br.getFormbyProperty("name", "F1");
-                        if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        if (new Regex(correctedBR, PASSWORDTEXT).matches()) passCode = handlePassword(passCode, dlform, downloadLink);
-                        sendForm(dlform);
-                        dllink = getDllink();
-                        checkErrors(downloadLink, true, passCode);
-                    }
+                    checkErrors(downloadLink, true, passCode);
                 }
             }
             if (dllink == null) {
@@ -809,9 +851,9 @@ public class OteUploadCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("Final downloadlink = " + dllink + " starting the download...");
-            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
             if (dl.getConnection().getContentType().contains("html")) {
+                if (dl.getConnection().getResponseCode() == 503) throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 5 * 60 * 1000l);
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection();
                 correctBR();
