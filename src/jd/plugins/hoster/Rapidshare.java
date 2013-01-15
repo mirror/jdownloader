@@ -72,6 +72,9 @@ public class Rapidshare extends PluginForHost {
                 ret.secMD5 = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(1);
                 ret.secTim = new Regex(ret.url, "files/\\d+/t(.*?)-(.*?)/").getMatch(0);
             }
+            if (ret.name != null) {
+                ret.name = ret.name.replaceAll("&", "%26");
+            }
             return ret;
         }
 
