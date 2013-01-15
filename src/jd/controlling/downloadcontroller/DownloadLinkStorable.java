@@ -33,7 +33,7 @@ public class DownloadLinkStorable implements Storable {
      * @since JD2
      */
     public void setUID(long id) {
-        link.getUniqueID().setID(id);
+        if (id != -1) link.getUniqueID().setID(id);
     }
 
     public String getName() {
