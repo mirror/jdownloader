@@ -171,7 +171,10 @@ public class YkCm extends PluginForDecrypt {
         final String st = new Regex(jsonString, "\"streamtypes\":\\[(.*?)\\]").getMatch(0);
         final String se = new Regex(jsonString, "\"segs\":\\{(.*?)\\},\"streamsizes").getMatch(0);
         final String seed = new Regex(jsonString, "\"seed\":(\\d+)").getMatch(0);
-        final String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\"").getMatch(0);
+        // for volume based videos 1-x within the series http://www.youku.com/show_page/id_zcbff19f8962411de83b1.html
+        String title = new Regex(jsonString, "\"vidEncoded\":\"" + videoId + "\",\"title\":\"(.*?)\"").getMatch(0);
+        // standard video and title format. http://v.youku.com/v_show/id_XNTAxODE3NDgw.html
+        if (title == null) title = new Regex(jsonString, ",\"title\":\"(.*?)\"").getMatch(0);
 
         if (sfi != null && ss != null && st != null && se != null && seed != null && title != null) {
 

@@ -991,3 +991,11 @@ jd/plugins/decrypter/GlumboUploadsComFolder.class
 jd/plugins/hoster/FourUpMe.class
 jd/plugins/decrypter/MassMirrorCom.class
 jd/plugins/hoster/TurboUploadCom.class
+jd/plugins/hoster/BoltSharingCom.class
+jd/plugins/hoster/FileDoveCom.class
+jd/plugins/hoster/FileReactorCom.class
+jd/plugins/hoster/FileRoseCom.class
+jd/plugins/hoster/Filestrum.class
+jd/plugins/hoster/SharpFileCom.class
+jd/plugins/decrypter/SharpFileComFolder.class
+
