@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://(www\\.)?4fastfile\\.com(/[a-z]+)?/abv\\-fs/\\d+.+" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "4fastfile.com" }, urls = { "http://(www\\.)?4fastfile\\.com(/[a-z]+)?/abv\\-fs/[\\d\\-]+/.+" }, flags = { 2 })
 public class FourFastFileCom extends PluginForHost {
 
     public FourFastFileCom(PluginWrapper wrapper) {
@@ -87,6 +87,7 @@ public class FourFastFileCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        this.setBrowserExclusive();
         requestFileInformation(downloadLink);
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,8 +104,8 @@ public class FourFastFileCom extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
         login(account);
+        requestFileInformation(link);
         br.getPage(link.getDownloadURL());
         Form dlform = br.getFormbyProperty("id", "abv-fs-download-form");
         if (dlform == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -132,17 +133,21 @@ public class FourFastFileCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
         br.getPage(link.getDownloadURL());
         if (br.containsHTML("This file is either removed due to copyright claim or deleted by his owner\\.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        if (br.containsHTML("(>4FastFile\\.com \\- Access Denied|You may need to login below or register to access this page\\.<)")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<title>4FastFile\\.com \\- Download (.*?)</title>").getMatch(0);
         if (filename == null) filename = br.getRegex("<td class=\"file\\-name\">(.*?)</td>").getMatch(0);
         String filesize = br.getRegex("<td class=\"file-size\">(.*?)</td>").getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        return AvailableStatus.TRUE;
+        if (br.containsHTML("(>4FastFile\\.com \\- Access Denied|You may need to login below or register to access this page\\.<)")) {
+            // usually this is shown for invalid link type (adjust the regex url listener to fix this!)
+            logger.warning("Possible error, RE: An account required to access page information!");
+            return AvailableStatus.UNCHECKABLE;
+        } else {
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override

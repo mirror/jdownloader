@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -15,8 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.hoster;
-
-import java.io.IOException;
+import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,16 +26,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "NULLIFIED_http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
-public class AudioMackCom extends PluginForHost {
 
-    // DEV NOTES
-    // TODO: Delete this plugin when JD2 goes live.
-    // Due to updater/windows issues, this plugin can not make it stable/nightly within Microsoft OS.
+@HostPlugin(revision = "$Revision: 18859 $", interfaceVersion = 2, names = { "audiomack.com" }, urls = { "http://(www\\.)?audiomack\\.com/song/[a-z0-9\\-_]+/[a-z0-9\\-_]+" }, flags = { 0 })
+public class AudioMaCom extends PluginForHost {
 
-    // USE AudioMa
-
-    public AudioMackCom(PluginWrapper wrapper) {
+    public AudioMaCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
