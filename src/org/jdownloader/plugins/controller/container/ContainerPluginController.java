@@ -13,6 +13,7 @@ import org.jdownloader.container.C;
 import org.jdownloader.container.D;
 import org.jdownloader.container.MetaLink;
 import org.jdownloader.container.R;
+import org.jdownloader.container.SFT;
 
 public class ContainerPluginController {
 
@@ -36,6 +37,7 @@ public class ContainerPluginController {
             plugins.add(new D());
             plugins.add(new MetaLink());
             plugins.add(new R());
+            plugins.add(new SFT());
         } catch (final Throwable e) {
             Log.exception(e);
         }
