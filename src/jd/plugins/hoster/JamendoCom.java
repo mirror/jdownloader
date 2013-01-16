@@ -34,7 +34,8 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(track/|download/album/|download/a|download/track/)\\d+" }, flags = { 0 })
 public class JamendoCom extends PluginForHost {
 
-    private String PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
+    private String             PREFER_HIGHQUALITY = "PREFER_HIGHQUALITY";
+    public static final String PREFER_WHOLEALBUM  = "PREFER_WHOLEALBUM";
 
     public JamendoCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -192,6 +193,7 @@ public class JamendoCom extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_HIGHQUALITY, JDL.L("plugins.hoster.jamendo", "Prefer High Quality Download")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_WHOLEALBUM, JDL.L("plugins.decrypt.jamendoalbum", "Prefer whole Album as Zip")).setDefaultValue(true));
     }
 
 }

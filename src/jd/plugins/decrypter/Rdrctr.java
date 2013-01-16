@@ -89,6 +89,7 @@ public class Rdrctr extends PluginForDecrypt {
 
         declink = redirectcheck;
         if (declink == null) declink = br.getRegex("<iframe frameborder=\"0\"  src=\"(.*?)\"").getMatch(0);
+        if (declink == null) declink = br.getRegex("<meta http\\-equiv=\"refresh\" content=\"\\d+; url=(http://[^<>\"]*?)\">").getMatch(0);
         if (declink == null) {
             declink = declink2;
         }
@@ -111,5 +112,4 @@ public class Rdrctr extends PluginForDecrypt {
         decryptedLinks.add(createDownloadlink(declink));
         return decryptedLinks;
     }
-
 }

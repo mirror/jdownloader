@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gulfup.com" }, urls = { "http://(www\\.)?gulfup\\.com/[A-Za-z0-9]+" }, flags = { 0 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "gulfup.com" }, urls = { "http://(www\\.)?gulfup\\.com/\\?[A-Za-z0-9]+" }, flags = { 0 })
 public class GulfUpCom extends PluginForHost {
 
     public GulfUpCom(PluginWrapper wrapper) {

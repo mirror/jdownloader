@@ -848,7 +848,6 @@ jd/plugins/hoster/TangleCom.class
 jd/plugins/hoster/CumFoxCom.class
 jd/plugins/hoster/DragonUploadzCom.class
 jd/plugins/hoster/IShareFastCom.class
-jd/plugins/hoster/BatShareCom.class
 jd/plugins/hoster/CrocShareCom.class
 jd/plugins/hoster/XFileShareEu.class
 jd/plugins/hoster/KickLoadCom.class
@@ -998,4 +997,7 @@ jd/plugins/hoster/FileRoseCom.class
 jd/plugins/hoster/Filestrum.class
 jd/plugins/hoster/SharpFileCom.class
 jd/plugins/decrypter/SharpFileComFolder.class
-
+jd/plugins/hoster/BrontoFileCom.class
+jd/plugins/hoster/YourFileHostingCom.class
+jd/plugins/hoster/SpeedFileCz.class
+jd/plugins/hoster/CoolShareCz.class

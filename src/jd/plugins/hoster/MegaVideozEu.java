@@ -60,7 +60,7 @@ public class MegaVideozEu extends PluginForHost {
         br.getPage("http://megavideoz.eu/get_video.php?v=" + new Regex(downloadLink.getDownloadURL(), "([A-Z0-9]+)/$").getMatch(0) + "&start=0");
         final String dllink = br.getRedirectLocation();
         if (dllink == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, false, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

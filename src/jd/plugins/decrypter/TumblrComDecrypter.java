@@ -63,7 +63,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
                 } catch (Throwable e) {
                 }
             }
-            String fpName = br.getRegex("<title>([^<>]*?)</title>").getMatch(0);
+            String fpName = br.getRegex("<title>([^/\"]*?)</title>").getMatch(0);
             if (fpName == null) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
@@ -122,7 +122,7 @@ public class TumblrComDecrypter extends PluginForDecrypt {
             }
             // Try to find the biggest picture
             for (int i = 1000; i >= 10; i--) {
-                externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com/tumblr_[a-z0-9]+_" + i + "\\.jpg)\"").getMatch(0);
+                externID = br.getRegex("\"(http://\\d+\\.media\\.tumblr\\.com(/[a-z0-9]{32})?/tumblr_[A-Za-z0-9_]+_" + i + "\\.(jpg|gif|png))\"").getMatch(0);
                 if (externID != null) break;
             }
             if (externID != null) {

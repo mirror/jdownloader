@@ -32,7 +32,7 @@ import jd.utils.locale.JDL;
 
 import org.appwork.utils.formatter.SizeFormatter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?-download-\\d+\\.(s)?html)" }, flags = { 2 })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "http://(www\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?\\-download\\-\\d+\\.(s)?html)" }, flags = { 2 })
 public class SoftPediaCom extends PluginForHost {
 
     private static final String SOFTPEDIASERVERS = "allservers";
@@ -142,6 +142,8 @@ public class SoftPediaCom extends PluginForHost {
                 if (filename == null) filename = br.getRegex("<title>Download (.*?) Free \\- ").getMatch(0);
             }
         }
+        // For fre trail programms
+        if (filename == null) filename = br.getRegex("<title>Download ([^<>\"]*?)\\- Softpedia</title>").getMatch(0);
         String filesize = br.getRegex("([0-9\\.]+ (MB|KB))").getMatch(0);
         if (filename == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         link.setName(filename.trim());

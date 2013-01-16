@@ -410,7 +410,13 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(false);
             sleep(2 * 1000l, link);
             String url = link.getDownloadURL().replace("en/index.html", "");
-            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
+            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));// Maybe
+                                                                                                                                     // check
+                                                                                                                                     // via
+                                                                                                                                     // basic
+                                                                                                                                     // auth
+                                                                                                                                     // (admin
+                                                                                                                                     // said)
             URLConnectionAdapter con = br.openGetConnection(url);
             if (con.getResponseCode() == 401) {
                 try {

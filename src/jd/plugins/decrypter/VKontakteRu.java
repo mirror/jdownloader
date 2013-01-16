@@ -398,6 +398,8 @@ public class VKontakteRu extends PluginForDecrypt {
         // No external video found, try finding a hosted video
         String additionalStuff = "videos/";
         String urlPart = br2.getRegex(vidID + ", \\'(https?://[a-z0-9\\.]+/[a-z0-9]+(/[a-z0-9]+)?)/video/").getMatch(0);
+        // Try to get it via normal html
+        if (urlPart == null) urlPart = br.getRegex(vidID + ", \\'(https?://[a-z0-9\\.]+/[a-z0-9]+(/[a-z0-9]+)?)/video/").getMatch(0);
         if (urlPart == null) urlPart = new Regex(correctedBR, "\"host\":\"(.*?)\"").getMatch(0);
         String vtag = new Regex(correctedBR, "\"vtag\":\"(.*?)\"").getMatch(0);
         String videoID = new Regex(correctedBR, "\"vkid\":\"(.*?)\"").getMatch(0);

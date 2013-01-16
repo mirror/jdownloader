@@ -36,37 +36,6 @@ public class PornHubCom extends PluginForHost {
         return -1;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestVideo(link);
-        if (dlUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        dl.startDownload();
-    }
-
-    @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        requestVideo(downloadLink);
-        setBrowserExclusive();
-        br.setFollowRedirects(true);
-        try {
-            if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
-                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
-                br.getHttpConnection().disconnect();
-                return AvailableStatus.TRUE;
-            }
-        } finally {
-            if (br.getHttpConnection() != null) {
-                br.getHttpConnection().disconnect();
-            }
-        }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-    }
-
     private AvailableStatus requestVideo(final DownloadLink downloadLink) throws IOException, PluginException {
         setBrowserExclusive();
         br.setCookie("http://pornhub.com/", "age_verified", "1");
@@ -104,6 +73,37 @@ public class PornHubCom extends PluginForHost {
         linksplit = dlUrl.split("\\.");
         downloadLink.setFinalFileName(file_name.replace("\"", "'") + ".flv");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestVideo(link);
+        if (dlUrl == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT); }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlUrl, true, 0);
+        if (dl.getConnection().getContentType().contains("html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        dl.startDownload();
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
+        requestVideo(downloadLink);
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
+        try {
+            if (!br.openGetConnection(dlUrl).getContentType().contains("html")) {
+                downloadLink.setDownloadSize(br.getHttpConnection().getLongContentLength());
+                br.getHttpConnection().disconnect();
+                return AvailableStatus.TRUE;
+            }
+        } finally {
+            if (br.getHttpConnection() != null) {
+                br.getHttpConnection().disconnect();
+            }
+        }
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override

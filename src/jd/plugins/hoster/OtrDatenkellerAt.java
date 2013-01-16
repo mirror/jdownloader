@@ -203,7 +203,7 @@ public class OtrDatenkellerAt extends PluginForHost {
     }
 
     @Override
-    public void handlePremium(DownloadLink link, Account account) throws Exception {
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         // Force login or download fails
         login(account, true);
@@ -219,6 +219,10 @@ public class OtrDatenkellerAt extends PluginForHost {
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection();
+            if (br.containsHTML("wurde wegen Missbrauch geblockt")) {
+                logger.info("Account wurde wegen Missbrauch geblockt.");
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();

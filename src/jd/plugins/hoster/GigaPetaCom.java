@@ -165,8 +165,9 @@ public class GigaPetaCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie("http://gigapeta.com", "lang", "us");
         br.setDebug(true);
+        br.getPage("http://gigapeta.com/");
         br.postPage("http://gigapeta.com/", "auth_login=" + Encoding.urlEncode(account.getUser()) + "&auth_passwd=" + Encoding.urlEncode(account.getPass()));
-        String accType = br.getRegex("You have <b>(.*?)</b> account").getMatch(0);
+        String accType = br.getRegex("You have <b>([^<>\"]*?)</b> account till").getMatch(0);
         if (accType == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         if (accType.equals("basic")) nopremium = true;
         if (br.getCookie("http://gigapeta.com/", "sess") == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

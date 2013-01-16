@@ -201,7 +201,7 @@ public class JumboFilesCom extends PluginForHost {
                 if (dl.externalDownloadStop()) return;
             } catch (final Throwable e) {
             }
-            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload"))) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && (downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Server does not support chunkload")) || downloadLink.getLinkStatus().getErrorMessage().startsWith(JDL.L("download.error.message.rangeheaders", "Unexpected rangeheader")))) {
                 if (downloadLink.getBooleanProperty(JumboFilesCom.NORESUME, false) == false) {
                     downloadLink.setChunksProgress(null);
                     downloadLink.setProperty(JumboFilesCom.NORESUME, Boolean.valueOf(true));
