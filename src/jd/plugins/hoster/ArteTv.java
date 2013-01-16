@@ -229,10 +229,10 @@ public class ArteTv extends PluginForHost {
 
     private void setupRTMPConnection(DownloadInterface dl) {
         jd.network.rtmp.url.RtmpUrlConnection rtmp = ((RTMPDownload) dl).getRtmpConnection();
-        /* liveweb */
-        String[] uri = CLIPURL.split("(?i)/MP4:liveweb");
+        String type = new Regex(CLIPURL, "(?i)/(mp4:(liveweb|geo))").getMatch(0);
+        String[] uri = CLIPURL.split("(?i)/" + type);
         if (uri != null && uri.length == 2) {
-            rtmp.setPlayPath("MP4:liveweb" + uri[1]);
+            rtmp.setPlayPath(type + uri[1]);
             rtmp.setUrl(uri[0]);
             rtmp.setApp(new Regex(uri[0], "rtmp.?://[^/]+/(.*?)$").getMatch(0));
         } else {
