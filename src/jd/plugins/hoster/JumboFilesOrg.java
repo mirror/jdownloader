@@ -144,15 +144,18 @@ public class JumboFilesOrg extends PluginForHost {
             account.setValid(false);
             return ai;
         }
-        br.getPage("http://jumbofiles.org/my_account");
+        br.getPage("/my_account");
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("<\\!\\-\\-Premium exp: ([^<>\"]*?)\\-\\->").getMatch(0);
+        String expire = br.getRegex("<\\!\\-\\-Premium exp: ([^<>\"]*?)\\-\\->").getMatch(0);
         if (expire == null) {
-            account.setValid(false);
-            return ai;
-        } else {
-            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
+            // picks up the first date in the /my_account 'Account Log' table.
+            expire = br.getRegex("Expiration date:(\\d{4}\\-\\d{2}\\-\\d{2})").getMatch(0);
+            if (expire == null) {
+                account.setValid(false);
+                return ai;
+            }
         }
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd", Locale.ENGLISH));
         account.setValid(true);
         ai.setStatus("Premium User");
         return ai;

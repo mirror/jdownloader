@@ -71,10 +71,6 @@ public class PreFilesCom extends PluginForHost {
     private static Object        LOCK                         = new Object();
 
     // DEV NOTES
-    /**
-     * Script notes: Streaming versions of this script sometimes redirect you to their directlinks when accessing this link + the link ID:
-     * http://somehoster.in/vidembed-
-     * */
     // XfileSharingProBasic Version 2.5.6.8-raz
     // mods:modified download1 form
     // non account: 1 * 1
@@ -157,10 +153,13 @@ public class PreFilesCom extends PluginForHost {
     private String[] scanInfo(String[] fileInfo) {
         // standard traits from base page
         if (fileInfo[0] == null) {
-            fileInfo[0] = new Regex(correctedBR, "<div class=\"filename_bar\"><h2>([^<>\"]*?)<small>").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "<div class=\"filename_bar\">(<[^>]+>)+?<h2>([^<>\"]*?)<small>").getMatch(1);
         }
         if (fileInfo[1] == null) {
             fileInfo[1] = new Regex(correctedBR, "<small>\\(([^<>\"]*?)\\)</small>").getMatch(0);
+            if (fileInfo[1] == null) {
+                fileInfo[1] = new Regex(correctedBR, "(\\d+(\\.\\d+)? ?(KB|MB|GB))").getMatch(0);
+            }
         }
         if (fileInfo[2] == null) fileInfo[2] = new Regex(correctedBR, "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
         return fileInfo;
