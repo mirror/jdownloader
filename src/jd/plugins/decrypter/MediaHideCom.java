@@ -30,11 +30,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediahide.com" }, urls = { "http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+)" }, flags = { 0 })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mediahide.com" }, urls = { "http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+|paste/[A-Za-z0-9\\-]+)" }, flags = { 0 })
 public class MediaHideCom extends PluginForDecrypt {
 
     public MediaHideCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public int getMaxConcurrentProcessingInstances() {
+        return 2;
     }
 
     private static final String PASSCODETEXT = ">This post is password protected";
@@ -72,8 +76,10 @@ public class MediaHideCom extends PluginForDecrypt {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links)
-                if (!singleLink.matches("http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+)")) decryptedLinks.add(createDownloadlink(singleLink));
+            for (String singleLink : links) {
+                if (singleLink.matches("http://(www\\.)?mediahide\\.com/(\\?[A-Za-z0-9]+|paste/\\?p=\\d+|paste/[A-Za-z0-9\\-]+)")) continue;
+                decryptedLinks.add(createDownloadlink(singleLink));
+            }
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
