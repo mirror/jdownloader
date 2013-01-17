@@ -844,6 +844,26 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return ret;
     }
 
+    public List<DownloadLink> getRunningDownloadLinks() {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        synchronized (DownloadControllers) {
+            for (SingleDownloadController con : DownloadControllers) {
+                ret.add(con.getDownloadLink());
+            }
+        }
+        return ret;
+    }
+
+    public List<FilePackage> getRunningFilePackages() {
+        HashSet<FilePackage> ret = new HashSet<FilePackage>();
+        synchronized (DownloadControllers) {
+            for (SingleDownloadController con : DownloadControllers) {
+                ret.add(con.getDownloadLink().getParentNode());
+            }
+        }
+        return new ArrayList<FilePackage>(ret);
+    }
+
     public boolean hasRunningDownloads(FilePackage pkg) {
         synchronized (DownloadControllers) {
             for (SingleDownloadController con : DownloadControllers) {
