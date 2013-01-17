@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2012  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -410,13 +410,9 @@ public class OneFichierCom extends PluginForHost {
             br.setFollowRedirects(false);
             sleep(2 * 1000l, link);
             String url = link.getDownloadURL().replace("en/index.html", "");
-            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));// Maybe
-                                                                                                                                     // check
-                                                                                                                                     // via
-                                                                                                                                     // basic
-                                                                                                                                     // auth
-                                                                                                                                     // (admin
-                                                                                                                                     // said)
+            if (!url.endsWith("/")) url = url + "/";
+            url = url + "?u=" + Encoding.urlEncode(account.getUser()) + "&p=" + Encoding.urlEncode(JDHash.getMD5(account.getPass()));
+
             URLConnectionAdapter con = br.openGetConnection(url);
             if (con.getResponseCode() == 401) {
                 try {
