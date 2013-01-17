@@ -8,12 +8,6 @@ import jd.plugins.PluginsC;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.logging.Log;
-import org.jdownloader.container.AMZ;
-import org.jdownloader.container.C;
-import org.jdownloader.container.D;
-import org.jdownloader.container.MetaLink;
-import org.jdownloader.container.R;
-import org.jdownloader.container.SFT;
 
 public class ContainerPluginController {
 
@@ -32,12 +26,32 @@ public class ContainerPluginController {
     public void init() {
         List<PluginsC> plugins = new ArrayList<PluginsC>();
         try {
-            plugins.add(new AMZ());
-            plugins.add(new C());
-            plugins.add(new D());
-            plugins.add(new MetaLink());
-            plugins.add(new R());
-            plugins.add(new SFT());
+            plugins.add(new org.jdownloader.container.AMZ());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.C());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.D());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.MetaLink());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.R());
+        } catch (final Throwable e) {
+            Log.exception(e);
+        }
+        try {
+            plugins.add(new org.jdownloader.container.SFT());
         } catch (final Throwable e) {
             Log.exception(e);
         }

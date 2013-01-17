@@ -546,7 +546,9 @@ public class Rapidshare extends PluginForHost {
                 logger.info(error);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, Long.parseLong(ipwait) * 1000l);
             }
-            if (error.startsWith("This server's filesystem is in maintenance")) {
+            if (error.startsWith("Download permission denied by")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (error.startsWith("This server's filesystem is in maintenance")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This server's filesystem is in maintenance.", 2 * 60 * 60 * 1000l);
             } else if ("RapidPro expired.".equals(error)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

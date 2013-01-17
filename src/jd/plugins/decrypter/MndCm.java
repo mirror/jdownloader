@@ -19,6 +19,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -26,8 +27,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jamendo.com" }, urls = { "http://[\\w\\.\\-]*?jamendo\\.com/.?.?/?(album/\\d+|artist/.+|list/a\\d+)" }, flags = { 0 })
 public class MndCm extends PluginForDecrypt {
@@ -40,7 +39,7 @@ public class MndCm extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = parameter.toString();
-        final PluginForHost jamendoHostPlugin = JDUtilities.getPluginForHost("jamendo.com");
+        SubConfiguration cfg = SubConfiguration.getConfig("jamendo.com");
         if (url.contains("/album") || url.contains("list/a")) {
             /* Einzelnes Album */
             String AlbumID = new Regex(url, "album/(\\d+)").getMatch(0);
@@ -60,7 +59,7 @@ public class MndCm extends PluginForDecrypt {
                 packageName = packageName + Artist;
             }
             fp.setName(packageName);
-            if (jamendoHostPlugin.getPluginConfig().getBooleanProperty(jd.plugins.hoster.JamendoCom.PREFER_WHOLEALBUM, true)) {
+            if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
                 DownloadLink link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + AlbumID);
                 link.setName(packageName);
                 link.setAvailable(true);
@@ -82,7 +81,7 @@ public class MndCm extends PluginForDecrypt {
             String Albums[] = br.getRegex("href=\"/en/album/(\\d+)/share\"").getColumn(0);
             DownloadLink link;
             for (String Album : Albums) {
-                if (jamendoHostPlugin.getPluginConfig().getBooleanProperty(jd.plugins.hoster.JamendoCom.PREFER_WHOLEALBUM, true)) {
+                if (cfg.getBooleanProperty("PREFER_WHOLEALBUM", true)) {
                     link = createDownloadlink("http://storage-new.newjamendo.com/en/download/a" + Album);
                 } else
                     link = createDownloadlink("http://www.jamendo.com/en/album/" + Album);

@@ -3,12 +3,12 @@ package org.jdownloader.container.sft;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.zip.Inflater;
+
+import org.appwork.utils.IO;
 
 public class sftBinary {
 
@@ -17,13 +17,7 @@ public class sftBinary {
     public static final byte[] MAGIC       = "\0001F99569B3ZA94Q13A5DBKDKDTTISSSTFFBV5345HFUFHFGHKHKKGFJHHESASOOSIWOA5DB771GFGDFCTSDFF264RFFJKWJWR799CILDSL894DPOMCYWWR334343NG48DHRFQYL569POH11SUJR4334RFCTSDFF264RFFHS677HUZT567MNVX99CILDSLFCTSDFF264RFF894DPOMCYWWR3343OWBV4584JHHDGJFCCCSEWQ967HDHFGRKKFSDFJ".getBytes();
 
     public static sftContainer load(File file) throws Exception {
-        if (file.length() > MAX_SIZE) throw new Exception("file size to big");
-
-        InputStream is = new FileInputStream(file);
-        byte[] rawFileData = new byte[(int) file.length()];
-        is.read(rawFileData);
-        is.close();
-
+        byte[] rawFileData = IO.readFile(file, MAX_SIZE);
         String sftMagic = new String(Arrays.copyOfRange(rawFileData, 3, 6));
         sftContainer container = null;
         if (sftMagic.equals("SFT")) {
@@ -100,9 +94,7 @@ public class sftBinary {
 
         ByteArrayInputStream bis = new ByteArrayInputStream(body);
         DataInputStream ois = new DataInputStream(bis);
-
         DelphiFormBinLoader dfm = new DelphiFormBinLoader(ois);
-
         return new sftContainerV8(dfm, magicDecryptionKey);
     }
 
