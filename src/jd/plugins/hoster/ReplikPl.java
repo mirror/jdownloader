@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -67,13 +68,20 @@ public class ReplikPl extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         String finalLink = br.getRegex("<input type=\"hidden\" name=\"download_url\" value=\"(.*)\" id=\"download_url\" /></div>").getMatch(0);
+        String node = br.getRegex("<input type=\"hidden\" name=\"node_mid\" value=\"(.*)\" id=\"node_mid\" /></div>").getMatch(0);
+
         if (finalLink == null) {
             logger.warning("finalLink for link: " + link.getDownloadURL() + " is null!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "finalLink equals null!");
         }
 
+        Browser brClone = br.cloneBrowser();
+        brClone.getPage("http://" + link.getHost() + "/gt/" + node);
+        final String token = getJson("token", brClone);
+        if (token == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "download token is null!"); }
         try {
-            finalLink = "http://" + link.getHost() + finalLink;
+            finalLink = "http://" + link.getHost() + finalLink + "?token=" + token;
+
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, maxChunksForFree.get());
         } catch (Exception e) {
             if (br.getRequest().getHttpConnection().getResponseMessage().equals("Requested Range Not Satisfiable")) {
@@ -125,6 +133,11 @@ public class ReplikPl extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    public static String getJson(final String parameter, final Browser br2) {
+        String result = br2.getRegex("\"" + parameter + "\": \"(.{128})\"").getMatch(0);
+        return result;
     }
 
 }
