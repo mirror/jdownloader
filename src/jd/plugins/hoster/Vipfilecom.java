@@ -191,9 +191,7 @@ public class Vipfilecom extends PluginForHost {
     public AccountInfo fetchAccountInfo(Account account) throws Exception {
         synchronized (LOCK) {
             final AccountInfo ai = new AccountInfo();
-            // Reset stuff because it can only be checked while downloading
-            ai.setValidUntil(-1);
-            ai.setTrafficLeft(-1);
+            // Reset stuff because it can only be checked while downloading ;
             ai.setStatus("Status can only be checked while downloading!");
             account.setValid(true);
             return ai;
