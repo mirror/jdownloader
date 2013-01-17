@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2011  JD-Team support@jdownloader.org
+//Copyright (C) 2009  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -27,14 +27,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "xsharez.com" }, urls = { "https?://(www\\.)?xsharez\\.com/(p|d)/[a-z0-9]+" }, flags = { 0 })
-public class XSharezCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "savelinks.net" }, urls = { "http://(www\\.)?savelinks\\.net/(p|d)/[a-z0-9]+" }, flags = { 0 })
+public class SaveLinksNet extends PluginForDecrypt {
 
-    public XSharezCom(PluginWrapper wrapper) {
+    public SaveLinksNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         final PluginForDecrypt solveplug = JDUtilities.getPluginForDecrypt("safelinking.net");
@@ -51,5 +50,4 @@ public class XSharezCom extends PluginForDecrypt {
 
         return decryptedLinks;
     }
-
 }
