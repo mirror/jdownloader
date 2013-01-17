@@ -16,5 +16,5 @@ public interface LinkCollectorAPI extends RemoteAPIInterface {
 
     Long getChildrenChanged(Long structureWatermark);
 
-    Boolean startDownloads(List<String> linkIds);
+    Boolean startDownloads(List<Long> linkIds);
 }

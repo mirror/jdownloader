@@ -22,5 +22,4 @@ public class JDAPIImpl implements JDAPI {
         CrawlerPluginController.getInstance().init(true);
         return true;
     }
-
 }

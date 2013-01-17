@@ -2,6 +2,7 @@ package org.jdownloader.api.linkcollector;
 
 import jd.controlling.linkcrawler.CrawledPackage;
 
+import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.Storable;
 
 public class CrawledPackageAPIStorable implements Storable {

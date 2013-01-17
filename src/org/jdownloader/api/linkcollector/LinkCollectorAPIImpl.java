@@ -14,6 +14,7 @@ import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 import jd.plugins.FilePackage;
 
 import org.appwork.remoteapi.APIQuery;
+import org.appwork.remoteapi.QueryResponseMap;
 
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
@@ -165,7 +166,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
     }
 
     @Override
-    public Boolean startDownloads(final List<String> linkIds) {
+    public Boolean startDownloads(final List<Long> linkIds) {
 
         LinkCollector lc = LinkCollector.getInstance();
         DownloadController dc = DownloadController.getInstance();
@@ -178,7 +179,7 @@ public class LinkCollectorAPIImpl implements LinkCollectorAPI {
 
             @Override
             public boolean isChildrenNodeFiltered(CrawledLink node) {
-                return linkIds != null && linkIds.contains(node.getLinkID());
+                return linkIds != null && linkIds.contains(node.getUniqueID().getID());
             }
         });
 

@@ -2,6 +2,7 @@ package org.jdownloader.api.linkcollector;
 
 import jd.controlling.linkcrawler.CrawledLink;
 
+import org.appwork.remoteapi.QueryResponseMap;
 import org.appwork.storage.Storable;
 
 public class CrawledLinkAPIStorable implements Storable {
@@ -17,8 +18,8 @@ public class CrawledLinkAPIStorable implements Storable {
         this.link = link;
     }
 
-    public String getLinkID() {
-        return link.getLinkID();
+    public Long getUniqueID() {
+        return link.getUniqueID().getID();
     }
 
     public void setName(String name) {
