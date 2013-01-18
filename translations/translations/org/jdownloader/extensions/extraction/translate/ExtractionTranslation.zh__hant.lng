@@ -6,6 +6,7 @@ ValidateArchiveAction_actionPerformed_bad=壓縮檔有 %s1 個分割是並不完
 archivename=壓縮檔名稱
 cannot_extract_incopmplete=無法解壓縮 %s1。壓縮檔不完整！
 close=關閉
+context_cleanup=解壓縮後清除
 context_password=解壓縮密碼
 context_password_msg=設定密碼以解壓縮 %s1。
 context_password_msg2=設定密碼以解壓縮 %s1。\r\n建議的密碼：\r\n%s2
