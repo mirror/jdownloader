@@ -83,6 +83,8 @@ public class ShrLnksBz extends PluginForDecrypt {
         br.getHeaders().put("Keep-Alive", "115");
         br.getHeaders().put("Connection", "keep-alive");
 
+        parameter += "?lng=en";
+
         br.getPage(parameter);
         if (br.containsHTML("(>No usable content was found<|not able to find the desired content under the given URL.<)")) {
             logger.info("Link offline: " + parameter);
